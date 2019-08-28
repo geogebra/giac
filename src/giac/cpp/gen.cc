@@ -8638,9 +8638,9 @@ namespace giac {
       if (approx.type==_DOUBLE_ ){
 #ifdef HAVE_LIBMPFR
 	// FIXME?? try to avoid rounding error with more digits
-	if (fabs(approx._DOUBLE_val)<1e-8 && (a-b).type!=_FRAC){
+	if (fabs(approx._DOUBLE_val)<1e-5 && (a-b).type!=_FRAC){
 	  gen tmp=accurate_evalf(eval(a-b,1,contextptr),1000);
-	  tmp=evalf_double(approx,1,contextptr);
+	  tmp=evalf_double(tmp,1,contextptr);
 	  if (tmp.type==_DOUBLE_)
 	    approx=tmp;
 	}
@@ -12000,7 +12000,116 @@ namespace giac {
   }
 
   /* I/O: Print routines */
+int sprint_int(char * s,int r){
+  char * ptr=s;
+  if (r<0){
+    *ptr='-';
+    ++ptr;
+    r=-r;
+  }
+  int i;
+  if (r==0){
+    *ptr='0';
+    *(ptr+1)=0;
+    return 1;
+  }
+  *(ptr+10)=0;
+  for (i=9;r;--i){
+    *(ptr+i)='0'+r%10;
+    r/=10;
+  }
+  ++i;
+  if (i>0){ // shift left i char
+    char * buf;
+    for (buf=ptr+i;buf<=ptr+9;++buf){
+      *(buf-i)=*buf;
+    }
+    *(buf-i)=0;
+    ptr=buf-i;
+  }
+  else
+    ptr += 10;
+  return ptr-s;
+}
+
+void sprint_double(char * s,double d){
+  char * buf=s;
+  if (d==0){
+    strcpy(buf,"0.0");
+    return;
+  }
+  if (d<0){
+    *buf='-';
+    ++buf;
+    d=-d;
+  }
+  int i=d;
+  if (i==d && d<1e9){
+    sprint_int(buf,i);
+    return;
+  }
+  for (i=0;i<280 && d>=1.0;i+=14){
+    d=d*1e-14;
+  }
+  for (;i>-280 && d<1.0;i-=14){
+    d=d*1e14;
+  }
+  for (;i<310 && d>=1.0;++i){
+    d=d*.1;
+  }
+  if (i==310){
+    strcpy(buf,"inf");
+    return;
+  }
+  for (;i>-310 && d<1.0;--i){
+    d=d*10;
+  }
+  if (i==-310){
+    strcpy(buf,"0.0");
+    return;
+  }
+  // 1.0<=d<10, d*10^i
+  d=d/10; ++i; // 0.1<=d<1, d*10^i
+  *buf='.';
+  char * ptr=buf;
+  ++buf;
+  int r=(int)(d*1e9+.5);
+  if (r>=1e9){
+    r=r/10;
+    ++i;
+  }
+  buf += sprint_int(buf,r);
+  if (i>0 && i<7){
+    // move . i positions to the right
+    for (int j=0;j<i;++j){
+      *ptr=*(ptr+1);
+      ++ptr;
+    }
+    *ptr='.';
+    i=0;
+  }
+  for (;;--buf){
+    char ch=*(buf-1);
+    if (ch!='0'){
+      *buf=0;
+      break;
+    }
+  }
+  if (i!=0){
+    *buf='e';
+    ++buf;
+    sprint_int(buf,i);
+  }
+}
+
   string print_DOUBLE_(double d,GIAC_CONTEXT){
+#ifdef NUMWORKS
+    {
+      char s[256];
+      sprint_double(s,d);
+      return s;
+    }
+#endif
     if (my_isnan(d))
       return calc_mode(contextptr)==1?"?":"undef";
     if (my_isinf(d))
