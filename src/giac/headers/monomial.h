@@ -25,6 +25,7 @@
 #include <cmath>
 #include <map>
 #include <string>
+#include <cassert>
 #ifdef USTL
 #include <pair>
 #endif

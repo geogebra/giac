@@ -2037,8 +2037,13 @@ namespace giac {
   gen tsimplify_noexpln(const gen & e,int s1,int s2,GIAC_CONTEXT){
     int te=taille(e,65536);
     gen g=e;
-    if (s1>1 && angle_radian(contextptr))
-      g=subst(e,sincostan_tab,trig2exp_tab,false,contextptr,false); // g=trig2exp(e,contextptr);
+    if (s1>1 && angle_radian(contextptr)){
+#ifdef FXCG
+      vecteur v1(loptab(e,sincostan_tab));
+      if (!v1[0].is_symb_of_sommet(at_tan) || !v1[1].is_symb_of_sommet(at_tan))
+#endif
+	g=subst(g,sincostan_tab,trig2exp_tab,false,contextptr,false); // g=trig2exp(e,contextptr);
+    }
     if (s2>1 && angle_radian(contextptr))
       g=subst(g,asinacosatan_tab,atrig2ln_tab,false,contextptr,false);//g=atrig2ln(g,contextptr);
     bool b=complex_mode(contextptr);
@@ -2531,7 +2536,10 @@ namespace giac {
 	  return quotesubst(g,vabs2,vabs,contextptr);
 	}
       }
-      g=recursive_normal(trigcos(g,contextptr),contextptr); 
+#ifdef FXCG
+      if (s1!=2 || !v1[0].is_symb_of_sommet(at_tan) || !v1[1].is_symb_of_sommet(at_tan))
+#endif
+	g=recursive_normal(trigcos(g,contextptr),contextptr); 
       return quotesubst(g,vabs2,vabs,contextptr);
     }
     gen reg,img;

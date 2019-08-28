@@ -21,6 +21,7 @@
 #include "vector.h"
 #include <iostream>
 #include <string>
+#include <cassert>
 
 //////////////////////////////////////////
 /// this commented and the old put back due to build issues... temporary change to get build going

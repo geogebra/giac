@@ -1788,6 +1788,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 #else
   int LIST_SIZE_LIMIT = 1000 ;
   int FACTORIAL_SIZE_LIMIT = 254 ;
+  int CALL_LAPACK = 1111;
 #endif
   int GAMMA_LIMIT = 100 ;
   int NEWTON_DEFAULT_ITERATION=40;

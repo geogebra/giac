@@ -5788,7 +5788,7 @@ namespace giac {
       }
     }
 #ifndef RTOS_THREADX
-#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG
+#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined NUMWORKS
 #ifdef HAVE_LIBPTHREAD
     pthread_mutex_lock(&context_list_mutex);
 #endif
