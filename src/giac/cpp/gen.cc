@@ -4935,7 +4935,7 @@ namespace giac {
       if (b.is_symb_of_sommet(at_prod) && b._SYMBptr->feuille.type==_VECT){
 	const vecteur & bf=*b._SYMBptr->feuille._VECTptr;
 	if (bf.size()==2 && is_integer(bf[0]) && bf[1].is_symb_of_sommet(at_inv) && is_cinteger(bf[1]._SYMBptr->feuille))
-	  return a+fraction(bf[0],bf[1]._SYMBptr->feuille);
+	  return (*a._FRACptr)+fraction(bf[0],bf[1]._SYMBptr->feuille);
       }
       return sym_add(_FRAC2_SYMB(a),b,contextptr);
     }
@@ -4949,7 +4949,7 @@ namespace giac {
       if (a.is_symb_of_sommet(at_prod) && a._SYMBptr->feuille.type==_VECT){
 	const vecteur & af=*a._SYMBptr->feuille._VECTptr;
 	if (af.size()==2 && is_integer(af[0]) && af[1].is_symb_of_sommet(at_inv) && is_cinteger(af[1]._SYMBptr->feuille))
-	  return fraction(af[0],af[1]._SYMBptr->feuille)+b;
+	  return fraction(af[0],af[1]._SYMBptr->feuille)+(*b._FRACptr);
       }
       return sym_add(a,_FRAC2_SYMB(b),contextptr);
     }
@@ -7054,7 +7054,16 @@ namespace giac {
       }
       return symbolic_plot_makevecteur(b_._SYMBptr->sommet,b_._SYMBptr->feuille*a,false,contextptr);
     }
+    if (a.is_symb_of_sommet(at_neg)){
+      if (b.is_symb_of_sommet(at_neg))
+	return operator_times(a._SYMBptr->feuille,b._SYMBptr->feuille,contextptr);
+      return -operator_times(a._SYMBptr->feuille,b,contextptr);
+    }
+    if (b.is_symb_of_sommet(at_neg))
+      return -operator_times(a,b._SYMBptr->feuille,contextptr);
     if (a.type==_FRAC){
+      if (b.is_symb_of_sommet(at_inv) && is_cinteger(b._SYMBptr->feuille))
+	return (*a._FRACptr)*fraction(1,b._SYMBptr->feuille);
       if ( (b.type!=_SYMB) && (b.type!=_IDNT) ) {
 	if (b.type==_EXT)
 	  return fraction(a._FRACptr->num*b,a._FRACptr->den).normal();
@@ -7063,6 +7072,8 @@ namespace giac {
       return sym_mult(_FRAC2_SYMB(a),b,contextptr);
     }
     if (b.type==_FRAC){
+      if (a.is_symb_of_sommet(at_inv) && is_cinteger(a._SYMBptr->feuille))
+	return fraction(1,a._SYMBptr->feuille)*(*b._FRACptr);
       if ( (a.type!=_SYMB) && (a.type!=_IDNT) ){
 	if (a.type==_EXT)
 	  return fraction(a*b._FRACptr->num,b._FRACptr->den).normal();
@@ -7070,13 +7081,10 @@ namespace giac {
       }
       return sym_mult(a,_FRAC2_SYMB(b),contextptr);
     }
-    if (a.is_symb_of_sommet(at_neg)){
-      if (b.is_symb_of_sommet(at_neg))
-	return operator_times(a._SYMBptr->feuille,b._SYMBptr->feuille,contextptr);
-      return -operator_times(a._SYMBptr->feuille,b,contextptr);
-    }
-    if (b.is_symb_of_sommet(at_neg))
-      return -operator_times(a,b._SYMBptr->feuille,contextptr);
+    if (is_cinteger(a) && b.is_symb_of_sommet(at_inv) && is_cinteger(b._SYMBptr->feuille))
+      return a/b._SYMBptr->feuille;
+    if (is_cinteger(b) && a.is_symb_of_sommet(at_inv) && is_cinteger(a._SYMBptr->feuille))
+      return b/a._SYMBptr->feuille;
     if (a.type<=_CPLX && b.is_symb_of_sommet(at_inv)&& b._SYMBptr->feuille.type<=_CPLX)
       return fraction(a,b._SYMBptr->feuille).normal();
     if (b.type<=_CPLX && a.is_symb_of_sommet(at_inv)&& a._SYMBptr->feuille.type<=_CPLX)
