@@ -9698,8 +9698,11 @@ namespace giac {
   static bool modified_islesscomplexthanf(const gen& a,const gen& b){
     if (a.type!=b.type && (a.type<=_CPLX || b.type<=_CPLX))
       return a.type<b.type;
-    if (a.is_symb_of_sommet(at_neg))
+    if (a.is_symb_of_sommet(at_neg)){
+      if (b.is_symb_of_sommet(at_neg))
+	return modified_islesscomplexthanf(a._SYMBptr->feuille,b._SYMBptr->feuille);
       return modified_islesscomplexthanf(a._SYMBptr->feuille,b);
+    }
     if (b.is_symb_of_sommet(at_neg))
       return modified_islesscomplexthanf(a,b._SYMBptr->feuille);
     if (a.is_symb_of_sommet(at_inv)){
@@ -9714,8 +9717,11 @@ namespace giac {
 	return modified_islesscomplexthanf(a,b._SYMBptr->feuille);
       return true;
     }
-    if (a.is_symb_of_sommet(at_pow))
+    if (a.is_symb_of_sommet(at_pow)){
+      if (b.is_symb_of_sommet(at_pow))
+	return modified_islesscomplexthanf(a._SYMBptr->feuille[0],b._SYMBptr->feuille[0]);
       return modified_islesscomplexthanf(a._SYMBptr->feuille[0],b);
+    }
     if (b.is_symb_of_sommet(at_pow))
       return modified_islesscomplexthanf(a,b._SYMBptr->feuille[0]);
     if (a.type!=b.type){
