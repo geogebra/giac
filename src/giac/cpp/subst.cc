@@ -97,7 +97,7 @@ namespace giac {
   }
 
   gen tanh2exp(const gen & e,GIAC_CONTEXT){
-    gen a=pow(exp(e,contextptr),2);
+    gen a=exp(2*e,contextptr);//pow(exp(e,contextptr),2);
     return rdiv(a-plus_one,a+plus_one,contextptr);
   }
 
