@@ -4231,12 +4231,12 @@ namespace giac {
       addprec += int(std::floor(evalf_double(ln(tmp,context0),1,context0)._DOUBLE_val));
     w=accurate_evalf(w,nbits+addprec);
     z=accurate_evalf(z,nbits+addprec);
-    double eps=std::pow(.5,nbits);
+    gen eps=accurate_evalf(pow(inv(2,context0),nbits,context0),100);//std::pow(.5,nbits);
     while (1){
       // wnext=w-(w*exp(w)-z)/(exp(w)*(w+1)-(w+2)*(w*exp(w)-z)/(2*w+2))
       gen expw(exp(w,context0)),wexpwz(w*expw-z),w1(w+1);
       gen wnext(w-wexpwz/(w1*expw-(w+2)*wexpwz/w1/2));
-      if (abs(wnext-w,context0)<eps*(1.0+abs(w,context0)))
+      if (is_greater(eps*(1+abs(w,context0)),abs(wnext-w,context0),context0))
 	return accurate_evalf(wnext,nbits);
       w=wnext;
     }
