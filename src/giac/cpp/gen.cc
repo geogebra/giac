@@ -12579,10 +12579,14 @@ void sprint_double(char * s,double d){
       s= "rgba[";
       break;
     case _LIST__VECT:
+#ifdef NUMWORKS
+      s="[";
+#else
       if (tex)
 	s="\\{";
       else
 	s=abs_calc_mode(contextptr)==38?"{":"list[";
+#endif
       break;
     case _GGB__VECT:
       if (calc_mode(contextptr)==1)
