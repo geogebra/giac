@@ -975,6 +975,19 @@ namespace giac {
     return s;
   }
 
+  // parser helper
+  gen symb_test_equal(const gen & a,const gen & op,const gen & b){
+    if (a.is_symb_of_sommet(at_and) && a._SYMBptr->feuille[1].is_symb_of_sommet(*op._FUNCptr)){
+      vecteur v=*a._SYMBptr->feuille._VECTptr;
+      v.push_back(symbolic(*op._FUNCptr,makesequence(v[1]._SYMBptr->feuille[1],b)));
+      return symbolic(at_and,gen(v,_SEQ__VECT));
+    }
+    if (is_inequation(a) || a.is_symb_of_sommet(at_different) || (a.is_symb_of_sommet(at_same) && (b.type!=_INT_ || b.subtype!=_INT_BOOLEAN))){ 
+      return symb_and(a,symbolic(*op._FUNCptr,gen(makevecteur(a._SYMBptr->feuille[1],b),_SEQ__VECT)));
+    } 
+    return symbolic(*op._FUNCptr,gen(makevecteur(a,b),_SEQ__VECT));  
+  }
+
   // utility for default argument handling
   static void default_args(gen & a,gen & b,GIAC_CONTEXT){
 #ifndef GIAC_DEFAULT_ARGS

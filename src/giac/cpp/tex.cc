@@ -1370,6 +1370,11 @@ namespace giac {
     }
     return 0;
   }
+#if defined USE_GMP_REPLACEMENTS || defined GIAC_GGB || defined EMCC
+  bool has_improved_latex_export(const gen &g,string &s,GIAC_CONTEXT){
+    return false;
+  }
+#endif
   gen _latex(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
 #if !defined NSPIRE && !defined FXCG
@@ -1379,7 +1384,10 @@ namespace giac {
       return plus_one;
     }
 #endif
-    return string2gen(gen2tex(g,contextptr),false);
+    string s;
+    if (!has_improved_latex_export(g,s,contextptr))
+      s=gen2tex(g,contextptr);
+    return string2gen(s,false);
   }
   static const char _latex_s []="latex";
   static define_unary_function_eval (__latex,&_latex,_latex_s);

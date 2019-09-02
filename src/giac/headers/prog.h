@@ -76,6 +76,8 @@ namespace giac {
   gen quote_program(const gen & args,GIAC_CONTEXT);
   gen _program(const gen & args,const gen & name,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_program ;
+  // parser helper
+  gen symb_test_equal(const gen & a,const gen & op,const gen & b);
   void adjust_sst_at(const gen & name,GIAC_CONTEXT); //used in symbolic.cc by nr_eval
   void program_leave(const gen & save_debug_info,bool save_sst_mode,debug_struct * dbgptr);
 

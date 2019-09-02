@@ -25,7 +25,7 @@
 #ifndef NO_NAMESPACE_GIAC 
 namespace giac { 
 #endif // ndef NO_NAMESPACE_GIAC */
-
+  struct plot_attr ;
 #ifndef GIAC_HAS_STO_38
   // k is reduced modulo 126
   void arc_en_ciel(int k,int & r,int & g,int & b);

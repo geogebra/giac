@@ -19,6 +19,9 @@
 #include "first.h"
 #include <string>
 #include "vector.h"
+#if !defined USE_GMP_REPLACEMENTS && !defined GIAC_GGB && !defined EMCC
+#include "markup.h"
+#endif
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
