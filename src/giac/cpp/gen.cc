@@ -11901,20 +11901,46 @@ namespace giac {
     s=int(chaine.size());
     if (!s)
       return 1;
-    int res=try_parse(chaine,contextptr);
-    gen g=parsed_gen(contextptr);
-    if (g.type<=_FLOAT_){
-      parse_result=aplatir_plus_only(g);
-      // parse_result=aplatir_fois_plus(g);
-      if (g.type==_SYMB && parse_result.type==_SYMB)
-	parse_result.subtype=g.subtype;
-      return res;
+#ifdef HAVE_LIBPTHREAD
+    static pthread_mutex_t parse_mutex = PTHREAD_MUTEX_INITIALIZER;
+    int locked = pthread_mutex_lock(&parse_mutex);
+#else // HAVE_LIBPTHREAD
+    int locked = 0;
+#endif
+    int res = 1;
+#ifndef NO_STDEXCEPT
+    try {
+#endif
+      res=try_parse(chaine,contextptr);
+      gen g=parsed_gen(contextptr);
+      if (g.type<=_FLOAT_){
+	parse_result=aplatir_plus_only(g);
+	// parse_result=aplatir_fois_plus(g);
+	if (g.type==_SYMB && parse_result.type==_SYMB)
+	  parse_result.subtype=g.subtype;
+#ifdef HAVE_LIBPTHREAD
+        if (!locked)
+          pthread_mutex_unlock(&parse_mutex);
+#endif
+	return res;
+      }
+      parsed_gen(0,contextptr);
+      parse_result.type=0;
+      parse_result=0;
+      CERR << "Incomplete parse" << endl;
+#ifdef HAVE_LIBPTHREAD
+      if (!locked)
+        pthread_mutex_unlock(&parse_mutex);
+#endif
+#ifndef NO_STDEXCEPT
+    } catch (std::runtime_error &e) {
+#ifdef HAVE_LIBPTHREAD
+      if (!locked)
+        pthread_mutex_unlock(&parse_mutex);
+#endif
     }
-    parsed_gen(0,contextptr);
-    parse_result.type=0;
-    parse_result=0;
-    CERR << "Incomplete parse" << endl;
-    return res;
+#endif // exception
+     return res;
   }
 
   gen::gen(const string & s,GIAC_CONTEXT){
