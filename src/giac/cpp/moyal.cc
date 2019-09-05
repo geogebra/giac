@@ -3925,7 +3925,7 @@ namespace giac {
     gen a,x;
     if (!find_n_x(g,n,x,a))
       return gensizeerr(contextptr);
-    if (has_evalf(x,a,1,contextptr) && a.type==_DOUBLE_){
+    if (has_evalf(x,a,1,contextptr) && a.type==_DOUBLE_ && j0!=NULL){
       double d=a._DOUBLE_val;
       switch (kind){
       case 1:

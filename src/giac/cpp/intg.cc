@@ -3459,6 +3459,7 @@ namespace giac {
     }
     gen rem,borne_inf,borne_sup,res,v0orig,aorig,borig;
     if (s==4){
+#ifndef POCKETCAS
       if ( (has_num_coeff(v[0]) ||
 	    v[2].type==_FLOAT_ || v[2].type==_DOUBLE_ || v[2].type==_REAL ||
 	    v[3].type==_FLOAT_ || v[3].type==_DOUBLE_ || v[3].type==_REAL)){
@@ -3470,6 +3471,7 @@ namespace giac {
 	if (ld==vecteur(1,v[1]) || ld.empty())
 	  return intnum(gen(makevecteur(v[0],v[1],v[2],v[3]),_SEQ__VECT),false,contextptr,true);
       }
+#endif
       v0orig=v[0];
       aorig=borne_inf=v[2];
       borig=borne_sup=v[3];

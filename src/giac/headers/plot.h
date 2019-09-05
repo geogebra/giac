@@ -248,7 +248,7 @@ namespace giac {
   // return parametrization for a parametric curve and translate
   // ellipsis/hyperbola to a rational parametrization
   // m will contain the complex depending on gen_t 
-  bool find_curve_parametrization(const gen & geo_obj,gen & m,const gen & gen_t,double T,gen & tmin,gen & tmax,gen & tstep,GIAC_CONTEXT);
+  bool find_curve_parametrization(const gen & geo_obj,gen & m,const gen & gen_t,double T,gen & tmin,gen & tmax,bool tminmax_defined,GIAC_CONTEXT);
   // test if a point f is on a parametric curve e
   // compute t if true
   bool on(const gen & e_orig,const gen & f,gen & t,GIAC_CONTEXT);

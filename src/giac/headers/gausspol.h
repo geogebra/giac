@@ -536,7 +536,7 @@ namespace giac {
 #endif
     else {
       index_t i(pdim);
-      index_t::iterator iitbeg=i.begin(),iitback=i.end()-1,iitbackm1=iitback-1;
+      index_t::iterator /*iitbeg=i.begin(),*/ iitback=i.end()-1,iitbackm1=iitback-1;
       for (--prevu;it!=itend;++it,++jt){
 	u=it->u;
 	if (prevu<=u+*iitback){

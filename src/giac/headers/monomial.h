@@ -903,7 +903,7 @@ namespace giac {
   template<class T>
   void Nextcoeff(typename std::vector< monomial<T> >::const_iterator & it,const typename std::vector< monomial<T> >::const_iterator & itend,std::vector< monomial<T> > & v){
     int n=it->index.front();
-    int d=it->index.size();
+    //int d=it->index.size();
     for (;(it!=itend) && (it->index.front()==n);++it)
       v.push_back(it->trunc1());
   }

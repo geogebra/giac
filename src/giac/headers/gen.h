@@ -565,13 +565,13 @@ namespace giac {
 #ifdef SMARTPTR64
     gen()  {
       * ((ulonglong * ) this)=0;
-#ifdef COMPILE_FOR_STABILITY
+#if defined COMPILE_FOR_STABILITY && !defined(POCKETCAS)
       control_c();
 #endif
     };
 #else
     gen(): type(_INT_),subtype(0),val(0) {
-#ifdef COMPILE_FOR_STABILITY
+#if defined COMPILE_FOR_STABILITY && !defined(POCKETCAS)
       control_c();
 #endif
     };
@@ -602,25 +602,25 @@ namespace giac {
     gen(int i) {
       * ((ulonglong * ) this)=0;
       val=i;
-#ifdef COMPILE_FOR_STABILITY
+#ifdef COMPILE_FOR_STABILITY 
       control_c();
 #endif
     };
     gen(size_t i) {
       * ((ulonglong * ) this)=0;
       val=int(i);
-#ifdef COMPILE_FOR_STABILITY
+#ifdef COMPILE_FOR_STABILITY 
       control_c();
 #endif
     };
 #else
     gen(int i): type(_INT_),subtype(0),val(i) {
-#ifdef COMPILE_FOR_STABILITY
+#if defined COMPILE_FOR_STABILITY && !defined(POCKETCAS)
       control_c();
 #endif
     };
     gen(size_t i): type(_INT_),subtype(0),val((int)i)  {
-#ifdef COMPILE_FOR_STABILITY
+#if defined COMPILE_FOR_STABILITY && !defined(POCKETCAS)
       control_c();
 #endif
     };

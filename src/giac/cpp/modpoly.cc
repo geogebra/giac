@@ -5633,6 +5633,7 @@ namespace giac {
 	  gen & g=res[j];
 	  operator_minus_eq(g,res[j-1],context0);
 	  gen dx(x[j]-x[j-k]);
+#ifndef USE_GMP_REPLACEMENTS
 	  if (divexact && g.type==_ZINT && g.ref_count()==1 && dx.type==_INT_){
 	    mpz_t * z=g._ZINTptr;
 	    if (dx.val>0)
@@ -5643,6 +5644,7 @@ namespace giac {
 	    }
 	  }
 	  else
+#endif
 	    g=g/dx;
 	}
       }

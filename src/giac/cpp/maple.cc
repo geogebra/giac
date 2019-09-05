@@ -3876,7 +3876,7 @@ namespace giac {
   static define_unary_function_eval (__cprint,&_cprint,_cprint_s);
   define_unary_function_ptr5( at_cprint ,alias_at_cprint,&__cprint,_QUOTE_ARGUMENTS,true);
 
-#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
   int cpp_write_compile(const string & filename,const string & funcname,const string &s,GIAC_CONTEXT){
     ofstream of(filename.c_str());
 #ifdef __APPLE__

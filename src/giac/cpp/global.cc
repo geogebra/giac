@@ -150,6 +150,7 @@ namespace giac {
   time_t caseval_begin,caseval_current;
   double caseval_maxtime=15; // max 15 seconds
   int caseval_n=0,caseval_mod=0,caseval_unitialized=-123454321;
+#if !defined POCKETCAS
   void control_c(){
 #ifdef NSPIRE
     if (on_key_pressed()){ ctrl_c=true; interrupted=true; }
@@ -178,6 +179,7 @@ namespace giac {
     }
 #endif // NSPIRE
   }
+#endif // POCKETCAS
 #endif // TIMEOUT
 
 #ifdef NSPIRE_NEWLIB
@@ -1901,7 +1903,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 
   void ctrl_c_signal_handler(int signum){
     ctrl_c=true;
-#if !defined NSPIRE_NEWLIB && !defined WIN32 && !defined BESTA_OS && !defined NSPIRE && !defined FXCG
+#if !defined NSPIRE_NEWLIB && !defined WIN32 && !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
     if (child_id)
       kill(child_id,SIGINT);
 #endif
@@ -3041,7 +3043,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   bool system_browser_command(const string & file){
-#ifdef BESTA_OS
+#if defined BESTA_OS || defined POCKETCAS
     return false;
 #else
 #ifdef WIN32

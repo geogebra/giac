@@ -300,7 +300,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
 #elif defined FIR
 #define control_c()
 #else
-#ifdef TIMEOUT
+#if defined TIMEOUT && !defined POCKETCAS
   void control_c();
 #else
 #if 0

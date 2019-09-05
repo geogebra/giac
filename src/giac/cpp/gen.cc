@@ -572,7 +572,7 @@ namespace giac {
   }
 
   gen::gen(long i) { 
-#ifdef COMPILE_FOR_STABILITY
+#ifdef COMPILE_FOR_STABILITY 
     control_c();
 #endif
 #ifdef SMARTPTR64
@@ -609,7 +609,7 @@ namespace giac {
   }
 
   gen::gen(longlong i) { 
-#ifdef COMPILE_FOR_STABILITY
+#ifdef COMPILE_FOR_STABILITY 
     control_c();
 #endif
 #ifdef SMARTPTR64
@@ -666,7 +666,7 @@ namespace giac {
   }
 
   gen::gen(longlong i,int nbits) { 
-#ifdef COMPILE_FOR_STABILITY
+#ifdef COMPILE_FOR_STABILITY 
     control_c();
 #endif
 #ifdef SMARTPTR64
@@ -704,7 +704,7 @@ namespace giac {
 
 #ifdef INT128
   gen::gen(int128_t i) { 
-#ifdef COMPILE_FOR_STABILITY
+#ifdef COMPILE_FOR_STABILITY 
     control_c();
 #endif
 #ifdef SMARTPTR64
@@ -729,7 +729,7 @@ namespace giac {
       bool signe=(i<0);
       if (signe)
 	i=-i;
-#if 1
+#if !defined(USE_GMP_REPLACEMENTS)
       mpz_import(*_ZINTptr,4/* count*/,-1/*1 for least significant first*/,4/* sizeof unsigned*/,0,0,&i);
       // CERR << gen(*_ZINTptr) ;
 #else
@@ -769,7 +769,7 @@ namespace giac {
 #endif
       return;
     }
-#ifdef COMPILE_FOR_STABILITY
+#ifdef COMPILE_FOR_STABILITY 
     control_c();
 #endif
 #ifdef SMARTPTR64
@@ -804,7 +804,7 @@ namespace giac {
 #endif
 
   gen::gen(const identificateur & s){
-#ifdef COMPILE_FOR_STABILITY
+#ifdef COMPILE_FOR_STABILITY 
     control_c();
 #endif
 #ifdef SMARTPTR64
@@ -873,7 +873,7 @@ namespace giac {
 #endif
 
   gen::gen(const symbolic & s){
-#ifdef COMPILE_FOR_STABILITY
+#ifdef COMPILE_FOR_STABILITY 
     control_c();
 #endif
 #ifdef SMARTPTR64
@@ -11715,7 +11715,7 @@ namespace giac {
       }
     }
 #if !defined(WIN32) && defined(HAVE_PTHREAD_H)
-    if (contextptr && thread_param_ptr(contextptr)->stackaddr){
+    if (contextptr && thread_param_ptr(contextptr)->stackaddr && thread_param_ptr(contextptr)->stacksize/2){
       gen er;
       short int err=s.size();
       if (debug_infolevel>10000)

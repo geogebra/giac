@@ -582,7 +582,11 @@ namespace giac {
 	Z=z0+zV0*Z;
 	if (is_undef(ratparam))
 	  ratparam=Z;
+#if defined POCKETCAS
+	param_curves.push_back(makevecteur(Z,t,-10,10,0.1,q,ratparam));
+#else
 	param_curves.push_back(makevecteur(Z,t,-4,4,0.1,q,ratparam));
+#endif
       }
     } 
     else {
@@ -708,7 +712,11 @@ namespace giac {
 	    ratparam=vp0*gen((sprodcoeff<0)?(t+plus_one/t)/2:(t-plus_one/t)/2)+cst_i*vp1*((sprodcoeff<0)?(t-plus_one/t)/2:(t+plus_one/t)/2);
 	    ratparam=z0+zV0*ratparam;
 	  }
+#if defined POCKETCAS
+	  param_curves.push_back(makevecteur(tmp,t,-10,10,0.1,q,ratparam));
+#else
 	  param_curves.push_back(makevecteur(tmp,t,-3.14,3.14,0.0314,q,ratparam));
+#endif
 	  if (noratparam){
 	    if (numeric){
 	      tmp=(sprodcoeff<0?-1:1)*evalf(vp0,1,contextptr)*symbolic(sprodcoeff<0?at_cosh:at_sinh,t)+(sprodcoeff<0?1:-1)*cst_i*evalf(vp1,1,contextptr)*symbolic(sprodcoeff<0?at_sinh:at_cosh,t);
@@ -718,7 +726,11 @@ namespace giac {
 	      tmp=(sprodcoeff<0?-1:1)*vp0*symbolic(sprodcoeff<0?at_cosh:at_sinh,t)+(sprodcoeff<0?1:-1)*cst_i*vp1*symbolic(sprodcoeff<0?at_sinh:at_cosh,t);
 	      tmp=z0+zV0*tmp;
 	    }
+#if defined POCKETCAS
+	    param_curves.push_back(makevecteur(tmp,t,-10,10,0.1,q,ratparam));
+#else
 	    param_curves.push_back(makevecteur(tmp,t,-3,3,0.1,q,ratparam));
+#endif
 	  }
 	}
       }

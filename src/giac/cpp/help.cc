@@ -67,7 +67,7 @@ namespace giac {
   };
 
   const static_help_t static_help[]={
-#if !defined RTOS_THREADX && !defined BESTA_OS && !defined GIAC_HAS_STO_38 && !defined(NUMWORKS)
+#if !defined RTOS_THREADX && !defined BESTA_OS && !defined GIAC_HAS_STO_38 && !defined(NUMWORKS) && !defined POCKETCAS
 #include "static_help.h"
 #else
     { "", { "", "", "", "",""}, "", "", "" },

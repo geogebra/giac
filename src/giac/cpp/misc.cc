@@ -7622,7 +7622,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	gprintf(gettext("Even function %gen. Reflection Oy"),vecteur(1,f),1,contextptr);
       else
 	gprintf(gettext("Odd function %gen. Center O"),vecteur(1,f),1,contextptr);
-      if (do_inflex_tabsign & 1==1)
+      if ((do_inflex_tabsign & 1)==1)
 	xmin=0;
     }
     gen xmin0=ratnormal(xmin,contextptr),xmax0=ratnormal(xmax,contextptr);

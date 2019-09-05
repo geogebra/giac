@@ -19,9 +19,6 @@
 #include "first.h"
 #include <string>
 #include "vector.h"
-#if !defined USE_GMP_REPLACEMENTS && !defined GIAC_GGB && !defined EMCC
-#include "markup.h"
-#endif
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
@@ -35,6 +32,7 @@ namespace giac {
   extern const char mbox_end[];
   class gen;
 
+  bool has_improved_latex_export(const gen &g,std::string &s,GIAC_CONTEXT);
   bool is_clipped(double a,double xmin,double xmax,double b,double ymin,double ymax,double c,double & x0,double &y0,double & x1,double &y1);
 
   bool clip_line(double x1,double y1,double x2,double y2,double xmin,double ymin,double xmax,double ymax,int mode,double & xa,double & ya,double & xb,double & yb);
