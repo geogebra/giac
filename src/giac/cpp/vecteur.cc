@@ -75,6 +75,15 @@ using namespace std;
 #ifdef HAVE_LIBLAPACK
 #include <f2c.h>
 #include <clapack.h>
+#ifdef POCKETCAS
+#if defined(__LP64__) && defined(__ARMv8__)
+#undef __x86_64__
+#endif
+#include <Accelerate/Accelerate.h>
+#if defined(__LP64__) && defined(__ARMv8__)
+#define __x86_64__
+#endif
+#endif // POCKETCAS
 #undef abs
 #undef min
 #endif
@@ -4614,7 +4623,11 @@ namespace giac {
 	  matrice2lapack(btran,B,context0);
 	  double alpha=1.0;
 	  double beta=0.0;
+#ifdef POCKETCAS
+	  cblas_dgemm(CblasColMajor, CblasNoTrans, CblasTrans, M, N, K, alpha, A, /*LDA*/ M, B, /*LDB*/ N, beta, C, /*LDC*/ M);
+#else
 	  dgemm_((char*)"N",(char*)"T",&M,&N,&K,&alpha,A,/*LDA*/&M,B,/*LDB*/&N,&beta,C,/*LDC*/&M);
+#endif
 	  lapack2matrice(C,resrows,rescols,res);
 	  delete [] A; delete [] B; delete [] C;
 	  return true;
@@ -15421,7 +15434,9 @@ namespace giac {
 #ifdef HAVE_LIBLAPACK
     if (!CAN_USE_LAPACK
 	|| dgeqrf_ == NULL
-	|| dorgqr_ == NULL)
+	|| dorgqr_ == NULL
+	|| &dgeqrf_ == NULL
+	|| &dorgqr_ == NULL)
       return gensizeerr(gettext("LAPACK not available"));
     
     const matrice &m = *args._VECTptr;
@@ -15668,7 +15683,9 @@ namespace giac {
 #ifdef HAVE_LIBLAPACK
       if (!CAN_USE_LAPACK
 	  || dgeqrf_ == NULL
-	  || dorgqr_ == NULL)
+	  || dorgqr_ == NULL
+	  || &dgeqrf_ == NULL
+	  || &dorgqr_ == NULL)
 	return gensizeerr(gettext("LAPACK not available"));
       
       const matrice &m = *args._VECTptr;

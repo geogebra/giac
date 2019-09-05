@@ -3421,6 +3421,12 @@ namespace giac {
     alg_lvar(e,l);
     if (!l.empty() && l.front().type==_VECT && l.front()._VECTptr->empty())
       l=lvar(e);
+#ifdef POCKETCAS
+    if (l.size()==1 && contains(l.front(),vx_var)){ // x first
+      l=vecteur(1,vecteur(1,vx_var));
+      alg_lvar(e,l);
+    }
+#endif
     /* if (calc_mode(contextptr)==1 && l.size()==1 && l.front().type==_VECT){
       sort(l.front()._VECTptr->begin(),l.front()._VECTptr->end(),islesscomplexthanf);
       } */

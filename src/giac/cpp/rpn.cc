@@ -31,7 +31,7 @@ using namespace std;
 #include <unistd.h>
 #if !defined(NSPIRE) && !defined FXCG && !defined(__VISUALC__) && !defined(NUMWORKS)// #ifndef NSPIRE
 #include <dirent.h>
-#ifndef __MINGW_H
+#if !defined(__MINGW_H) && !defined(HAVE_NO_PWD_H)
 #include <pwd.h>
 #endif // MINGW
 #endif // NSPIRE
@@ -3169,10 +3169,12 @@ namespace giac {
       return gentypeerr(contextptr);
     if (args._VECTptr->front().type==_INT_)
       return gen((void *)(unsigned long)args._VECTptr->front().val, args._VECTptr->back().val);
+#ifndef USE_GMP_REPLACEMENTS
     if (args._VECTptr->front().type==_ZINT){
       unsigned long u=mpz_get_ull(*args._ZINTptr);
       return gen((void *)u,args._VECTptr->back().val);
     }
+#endif
     return gentypeerr(contextptr);
   }
   static const char _pointer_s[]="pointer";
@@ -4346,7 +4348,11 @@ namespace giac {
       return apply(g,_Celsius2Fahrenheit,contextptr);
     return (g*gen(9))/5+32;
   }
+#ifdef POCKETCAS
+  static const char _Celsius2Fahrenheit_s []="CelsiusToFahrenheit";
+#else
   static const char _Celsius2Fahrenheit_s []="Celsius2Fahrenheit";
+#endif
   static define_unary_function_eval (__Celsius2Fahrenheit,&_Celsius2Fahrenheit,_Celsius2Fahrenheit_s);
   define_unary_function_ptr5( at_Celsius2Fahrenheit ,alias_at_Celsius2Fahrenheit,&__Celsius2Fahrenheit,0,T_UNARY_OP);
 
@@ -4355,7 +4361,11 @@ namespace giac {
       return apply(g,_Fahrenheit2Celsius,contextptr);
     return (g-32)*gen(5)/9;
   }
+#ifdef POCKETCAS
+  static const char _Fahrenheit2Celsius_s []="FahrenheitToCelsius";
+#else
   static const char _Fahrenheit2Celsius_s []="Fahrenheit2Celsius";
+#endif
   static define_unary_function_eval (__Fahrenheit2Celsius,&_Fahrenheit2Celsius,_Fahrenheit2Celsius_s);
   define_unary_function_ptr5( at_Fahrenheit2Celsius ,alias_at_Fahrenheit2Celsius,&__Fahrenheit2Celsius,0,T_UNARY_OP);
 
