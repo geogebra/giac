@@ -2947,7 +2947,7 @@ namespace giac {
 #ifdef TIMEOUT
       control_c();
 #endif
-      if (ctrl_c || interrupted || p.empty() || is_undef(p.front().exponent)) 
+      if (ctrl_c || interrupted || (!p.empty() &&  is_undef(p.front().exponent))) 
 	return false;
       if (!p.empty() && !is_undef(p.front().coeff) ){
 	// substitution of ln(w) by +-g should not be useful anymore
