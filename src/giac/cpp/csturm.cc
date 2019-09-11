@@ -80,7 +80,7 @@ namespace giac {
       if (b.front().type==_VECT) {
 	// ddeg should be even if b0 is a _POLY1
 	if (ddeg%2==0)
-	  *logptr(contextptr) << gettext("Singular parametric Sturm sequence ") << a << "/" << b << endl;
+	  *logptr(contextptr) << gettext("Singular parametric Sturm sequence ") << a << "/" << b << '\n';
       }
       else
 	b0=abs(b.front(),contextptr); 
@@ -310,7 +310,7 @@ namespace giac {
 	if (res[6].type==_VECT && !equalposcomp(*res[6]._VECTptr,0))
 	  return res;
 	else
-	  CERR << "list of quotients is not regular" << endl;
+	  CERR << "list of quotients is not regular" << '\n';
       }
     }
     */
@@ -329,11 +329,11 @@ namespace giac {
     gen g=csturm_seq(S,R,listquo,coeffP,coeffR,contextptr);
     int typeseq=-1;
     if (debug_infolevel)
-      *logptr(contextptr)  << "segment " << a << ".." << b << ", im/re:" << S << "|" << R << ", gcd:" << g << endl;
+      *logptr(contextptr)  << "segment " << a << ".." << b << ", im/re:" << S << "|" << R << ", gcd:" << g << '\n';
     if (g.type==_VECT && g._VECTptr->size()==P.size()){
       // if g==P (up to a constant), use real Sturm sequences
       if (debug_infolevel)
-	*logptr(contextptr)  << "Real-kind roots: " << g << endl;
+	*logptr(contextptr)  << "Real-kind roots: " << g << '\n';
       R=*g._VECTptr;
       S=derivative(R);
       g=csturm_seq(S,R,listquo,coeffP,coeffR,contextptr);
@@ -389,7 +389,7 @@ namespace giac {
     // res += tmp;
     res=(debut?1:signe)*res;
     if (debug_infolevel)
-      *logptr(contextptr)  << "segment " << a << ".." << b << " index contribution " << res << endl;
+      *logptr(contextptr)  << "segment " << a << ".." << b << " index contribution " << res << '\n';
     return res;
   }
 
@@ -836,11 +836,11 @@ namespace giac {
   static int complex_roots(const modpoly & P,const gen & a0,const gen & b0,const gen & a1,const gen & b1,const vecteur & seq1,const vecteur & seq2,const vecteur & seq3,const vecteur & seq4,vecteur & realroots,vecteur & complexroots,double eps,vecteur & horiz_sturm,vecteur & vert_sturm){
     int n=csturm_square(P,a0,b0,a1,b1,seq1,seq2,seq3,seq4,context0);
     if (debug_infolevel && n)
-      CERR << a0 << "," << b0 << ".." << a1 << "," << b1 << ":" << n/2 << endl;
+      CERR << a0 << "," << b0 << ".." << a1 << "," << b1 << ":" << n/2 << '\n';
     if (n<=0)
       return 2*n;
     if (eps<=0){
-      *logptr(context0) << gettext("Bad precision, using 1e-12 instead of ")+print_DOUBLE_(eps,14) << endl;
+      *logptr(context0) << gettext("Bad precision, using 1e-12 instead of ")+print_DOUBLE_(eps,14) << '\n';
       eps=1e-12;
     }
     if (is_strictly_greater(eps,a1-a0,context0) && is_strictly_greater(eps,b1-b0,context0)){
@@ -1032,7 +1032,7 @@ namespace giac {
       }
       sumdr2 += delta;
       if (!is_greater(deltar*deltar,sumdr2,context0)){
-	CERR << "Unable to certify " << v[i] << endl ;
+	CERR << "Unable to certify " << v[i] << '\n' ;
 	return false;
       }
       if (N<P.size()-epsn){
@@ -1084,7 +1084,7 @@ namespace giac {
 	if (!is_exactly_zero(vradius[i]))
 	  vradius[i]=min(epsg,pow(plus_two,int(evalf_double(ln(vradius[i],context0),1,context0)._DOUBLE_val/std::log(2.))+1),context0);
 	if (debug_infolevel)
-	  CERR << CLOCK() << " isolated " << r << " radius " << vradius[i] << endl;
+	  CERR << CLOCK() << " isolated " << r << " radius " << vradius[i] << '\n';
 	if (nextconj){
 	  v[i+1]=conj(r,context0);
 	  vradius[i+1]=vradius[i];
@@ -1094,7 +1094,7 @@ namespace giac {
       }
       sumdr2 += delta;
       if (!is_greater(deltar*deltar,sumdr2,context0)){
-	CERR << "Unable to certify " << v[i] << endl ;
+	CERR << "Unable to certify " << v[i] << '\n' ;
 	return false;
       }
       if (N<int(P.size())-epsn){
@@ -1137,10 +1137,10 @@ namespace giac {
       for (;n<400;n*=2){
 	double cureps=std::pow(2.0,-n);
 	if (debug_infolevel)
-	  CERR << CLOCK() << " proot at precision " << cureps << endl;
+	  CERR << CLOCK() << " proot at precision " << cureps << '\n';
 	vecteur v=proot(P,cureps,n);
 	if (debug_infolevel)
-	  CERR << CLOCK() << " proot end at precision " << cureps << endl;
+	  CERR << CLOCK() << " proot end at precision " << cureps << '\n';
 	vecteur vradius(v.size());
 	unsigned i=0;
 	int kmax=int(std::log(eps)/std::log(cureps))+4;
@@ -1184,7 +1184,7 @@ namespace giac {
 	  return res;
 	} // end if i==v.size()
       } // end for n
-      CERR << "proot isolation did not work, trying complex Sturm sequences" << endl;
+      CERR << "proot isolation did not work, trying complex Sturm sequences" << '\n';
     }
     bool aplati=(a0==a1) && (b0==b1);
     if (!aplati && complexe && (a0==a1 || b0==b1) )

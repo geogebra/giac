@@ -377,7 +377,7 @@ namespace giac {
       }
       else {
 	if (!escape_real(contextptr) && !complex_mode(contextptr))
-	  *logptr(contextptr) << "Taking ln of negative real " << e << endl;
+	  *logptr(contextptr) << "Taking ln of negative real " << e << '\n';
 #ifdef _SOFTMATH_H
 	return M_PI*cst_i+std::giac_gnuwince_log(-e._DOUBLE_val);
 #else
@@ -395,7 +395,7 @@ namespace giac {
 	return e._REALptr->log();
       else {
 	if (!escape_real(contextptr) && !complex_mode(contextptr))
-	  *logptr(contextptr) << "Taking ln of negative real " << e << endl;
+	  *logptr(contextptr) << "Taking ln of negative real " << e << '\n';
 	return (-e)._REALptr->log()+cst_pi*cst_i;
       }
     }
@@ -1012,7 +1012,7 @@ namespace giac {
 #ifdef NO_STDEXCEPT
       u=ifactors(e_copy,contextptr);
       if (is_undef(u)){
-	*logptr(contextptr) << gettext("Unable to factor ") << e << endl;
+	*logptr(contextptr) << gettext("Unable to factor ") << e << '\n';
 	simpl=e;
 	pos=true;
 	return;
@@ -1022,14 +1022,14 @@ namespace giac {
 	u=ifactors(e_copy,contextptr);
       } catch (std::runtime_error & err){
 	last_evaled_argptr(contextptr)=NULL;
-	*logptr(contextptr) << gettext("Unable to factor ") << e << endl;
+	*logptr(contextptr) << gettext("Unable to factor ") << e << '\n';
 	simpl=e;
 	pos=true;
 	return;      
       }
 #endif // no_stdexcept
     }
-    // *logptr(contextptr) << u.size() << endl;
+    // *logptr(contextptr) << u.size() << '\n';
     gen f;
     int m,k;
     const_iterateur it=u.begin(),itend=u.end();
@@ -1279,7 +1279,7 @@ namespace giac {
 	rho=evalf(rho,1,contextptr);
 	if (rho.type>=_IDNT)
 	  return pow(e,plus_one_half,contextptr);
-	*logptr(contextptr) << "Warning converting to approx sqrt"<<endl;
+	*logptr(contextptr) << "Warning converting to approx sqrt"<<'\n';
       }
 #ifdef EMCC
       if (rho.type>=_IDNT)
@@ -2876,7 +2876,7 @@ namespace giac {
       gen expo=arg._SPOL1ptr->front().exponent;
       char sv=series_variable_name(contextptr);
       if (expo!=1)
-	*logptr(contextptr) << "order_size argument should always be the series variable name. This means that O("<<sv<<"^"<<expo << ") should be written "<< sv << "^" << expo <<"*order_size("<< sv << ")" << endl;
+	*logptr(contextptr) << "order_size argument should always be the series variable name. This means that O("<<sv<<"^"<<expo << ") should be written "<< sv << "^" << expo <<"*order_size("<< sv << ")" << '\n';
       return sparse_poly1(1,monome(undef,0));
     }
     return symb_order_size(arg);
@@ -3330,7 +3330,7 @@ namespace giac {
       r.push_back(makevecteur(Pmin,a));
       return sto(b_,a,in_place,contextptr_);
     }
-    // *logptr(contextptr) << "Sto " << "->" << b << endl;
+    // *logptr(contextptr) << "Sto " << "->" << b << '\n';
     const context * contextptr=contextptr_;
     if (contextptr && contextptr->parent)
       contextptr=contextptr->parent;
@@ -3423,7 +3423,7 @@ namespace giac {
 	    if (a.type==_DOUBLE_ && a._DOUBLE_val<=RAND_MAX && a._DOUBLE_val>=-RAND_MAX){
 	      int i=int(a._DOUBLE_val);
 	      if (i!=a._DOUBLE_val)
-		*logptr(contextptr) << gettext("Converting ") << a._DOUBLE_val << gettext(" to integer ") << i << endl;
+		*logptr(contextptr) << gettext("Converting ") << a._DOUBLE_val << gettext(" to integer ") << i << '\n';
 	      return sto(i,b,in_place,contextptr);
 	    }
 	    if (a.type!=_INT_){
@@ -3525,7 +3525,7 @@ namespace giac {
 	if (!done) {// store b globally
 	  if (contains(lidnt(a),b)){
 	    if (a.is_symb_of_sommet(at_when) || a.is_symb_of_sommet(at_ifte) || a.is_symb_of_sommet(at_program))
-	      *logptr(contextptr) << b.print(contextptr)+gettext(": recursive definition") << endl;
+	      *logptr(contextptr) << b.print(contextptr)+gettext(": recursive definition") << '\n';
 	    else
 	      return gensizeerr(b.print(contextptr)+gettext(": recursive definition (in sto) "));
 	  }
@@ -3550,7 +3550,7 @@ namespace giac {
       } // end if (contextptr)
       if (contains(lidnt(a),b)){
 	if (a.is_symb_of_sommet(at_when) || a.is_symb_of_sommet(at_ifte) || a.is_symb_of_sommet(at_program))
-	  *logptr(contextptr) << b.print(contextptr)+gettext(": recursive definition") << endl;
+	  *logptr(contextptr) << b.print(contextptr)+gettext(": recursive definition") << '\n';
 	else
 	  return gensizeerr(b.print(contextptr)+gettext(": recursive definition (in sto) "));
       }
@@ -3591,7 +3591,7 @@ namespace giac {
 #if !defined NSPIRE && !defined FXCG
 	  if (!secure_run && variables_are_files(contextptr)){
 	    ofstream a_out((b._IDNTptr->name()+string(cas_suffixe)).c_str());
-	    a_out << aa << endl;
+	    a_out << aa << '\n';
 	  }
 #endif
 	}
@@ -4037,7 +4037,7 @@ namespace giac {
       }
       string errmsg=b.print(contextptr)+ gettext(" is a reserved word, sto not allowed: ")+a.print(contextptr);
       if (abs_calc_mode(contextptr)!=38)
-	*logptr(contextptr) << errmsg << endl;
+	*logptr(contextptr) << errmsg << '\n';
       return makevecteur(string2gen(errmsg,false),a);
     }
     if (a==b) return a;
@@ -4873,7 +4873,7 @@ namespace giac {
     gen prod(operator_times(a,b,contextptr));
     */
     if (debug_infolevel>3)
-      CERR << CLOCK() << " begin _prod" << endl;
+      CERR << CLOCK() << " begin _prod" << '\n';
     for (;it!=itend;++it){
       if ( (it->type==_SYMB) && (it->_SYMBptr->sommet==at_inv) && (it->_SYMBptr->feuille.type!=_VECT) )
 	prod = rdiv(prod,it->_SYMBptr->feuille,contextptr);
@@ -4884,7 +4884,7 @@ namespace giac {
 	  prod = operator_times(prod,*it,contextptr);
       }
       if (debug_infolevel>3)
-	CERR << CLOCK() << " in _prod" << endl;
+	CERR << CLOCK() << " in _prod" << '\n';
     }
     return prod;
   }
@@ -5095,7 +5095,7 @@ namespace giac {
     vecteur lv(1,var);
     lvar(v,lv);
     if (lv.size()!=1)
-      *logptr(contextptr) << gettext("Too many variables ")+gen(lv).print(contextptr) << endl;
+      *logptr(contextptr) << gettext("Too many variables ")+gen(lv).print(contextptr) << '\n';
     gen aa=e2r(a,lv,contextptr),aan,aad,bb=e2r(p,lv,contextptr),bbn,bbd;
     fxnd(aa,aan,aad);
     if ( (aad.type==_POLY) && (aad._POLYptr->lexsorted_degree() ) )
@@ -5282,9 +5282,9 @@ namespace giac {
     if (abs_calc_mode(contextptr)==38)
       return false;
     if (contains(lidnt(b),i__IDNT_e))
-      *logptr(contextptr) << gettext("Implicit multiplication does not work with complex numbers.")<<endl;
+      *logptr(contextptr) << gettext("Implicit multiplication does not work with complex numbers.")<<'\n';
     else
-      *logptr(contextptr) << gettext("Warning : using implicit multiplication for (") << a.print(contextptr) << ")(" << b.print(contextptr) << ')' << endl;
+      *logptr(contextptr) << gettext("Warning : using implicit multiplication for (") << a.print(contextptr) << ")(" << b.print(contextptr) << ')' << '\n';
     return true;
   }
   gen check_symb_of(const gen& a,const gen & b0,GIAC_CONTEXT){
@@ -5304,7 +5304,7 @@ namespace giac {
     if (va.empty()){
       if (abs_calc_mode(contextptr)==38)
 	return gensizeerr("Invalid implicit multiplication for ("+ a.print(contextptr)+")(" + b.print(contextptr)+')');
-      *logptr(contextptr) << "Warning, input parsed as a constant function " << a << " applied to " << b << endl;
+      *logptr(contextptr) << "Warning, input parsed as a constant function " << a << " applied to " << b << '\n';
     }
     if (!va.empty() && calc_mode(contextptr)==38){
       // check names in va
@@ -5377,7 +5377,7 @@ namespace giac {
   static const char * const * const aspen_quoted_name_tab_end=aspen_quoted_name_tab+sizeof(aspen_quoted_name_tab)/sizeof(char *);
   gen _of(const gen & args,const context * contextptr){
     gen qf,b,f,value;
-    // *logptr(contextptr) << &qf << endl;
+    // *logptr(contextptr) << &qf << '\n';
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_VECT)
       return symb_of(args);
@@ -5434,7 +5434,7 @@ namespace giac {
       return sto(ve,v,contextptr);
     }
     if (f.type<=_POLY || f.type==_FRAC || f.type==_FLOAT_)
-      *logptr(contextptr) << "Warning, constant function " << f << " applied to " << b << endl;
+      *logptr(contextptr) << "Warning, constant function " << f << " applied to " << b << '\n';
     if ( f.is_symb_of_sommet(at_program) && qf.type==_IDNT ){
       value=f._SYMBptr->feuille;
       if (value.type!=_VECT)
@@ -5535,7 +5535,7 @@ namespace giac {
 #ifdef GIAC_HAS_STO_38
       alert(gettext("Python compatibility enabled. List index will start at 0, run index:=1 or of:=1 to disable Python compatibility."),contextptr);
 #else
-      *logptr(contextptr) << gettext("Python compatibility enabled. List index will start at 0, run index:=1 or python_compat(0) to disable Python compatibility.") << endl;
+      *logptr(contextptr) << gettext("Python compatibility enabled. List index will start at 0, run index:=1 or python_compat(0) to disable Python compatibility.") << '\n';
 #endif
     }
     if (storcl_38){
@@ -5825,7 +5825,7 @@ namespace giac {
     if (step_infolevel(contextptr) && args._VECTptr->size()==2 && args._VECTptr->front().type==_INT_ && args._VECTptr->back().type==_INT_)
       return step_gcd(args._VECTptr->front().val,args._VECTptr->back().val,contextptr);
     if (debug_infolevel>2)
-      CERR << "gcd begin " << CLOCK() << endl;
+      CERR << "gcd begin " << CLOCK() << '\n';
     vecteur::const_iterator it=args._VECTptr->begin(),itend=args._VECTptr->end();
     if (ckmatrix(args) && itend-it==2 && it->subtype!=_POLY1__VECT && (it+1)->subtype!=_POLY1__VECT)
       return apply(*it,*(it+1),contextptr,gcd);
@@ -5989,7 +5989,7 @@ namespace giac {
 	if (same_warning){
 	  string s=autosimplify(contextptr);
 	  if (unlocalize(s)!="'simplify'"){
-	    *logptr(contextptr) << gettext("Warning, the test a==b is performed by checking\nthat the internal representation of ") << s << gettext("(a-b) is not 0.\nTherefore a==b may return false even if a and b are mathematically equal,\nif they have different internal representations.\nYou can explicitly call a simplification function like simplify(a-b)==0 to avoid this.") << endl;
+	    *logptr(contextptr) << gettext("Warning, the test a==b is performed by checking\nthat the internal representation of ") << s << gettext("(a-b) is not 0.\nTherefore a==b may return false even if a and b are mathematically equal,\nif they have different internal representations.\nYou can explicitly call a simplification function like simplify(a-b)==0 to avoid this.") << '\n';
 	    same_warning=false;
 	  }
 	}
@@ -6775,7 +6775,7 @@ namespace giac {
 	      v.erase(v.begin()+i);
 	      --i;
 	    }
-	    if (strcmp("endl",a._IDNTptr->id_name)==0){
+	    if (strcmp("'\n'",a._IDNTptr->id_name)==0){
 	      nl=*b._STRNGptr;
 	      hasnl=true;
 	      v.erase(v.begin()+i);
@@ -6796,7 +6796,7 @@ namespace giac {
   gen _print(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if ( debug_infolevel && (args.type==_IDNT) && args._IDNTptr->localvalue && (!args._IDNTptr->localvalue->empty()))
-      *logptr(contextptr) << gettext("Local var protected ") << (*args._IDNTptr->localvalue)[args._IDNTptr->localvalue->size()-2].val << endl;
+      *logptr(contextptr) << gettext("Local var protected ") << (*args._IDNTptr->localvalue)[args._IDNTptr->localvalue->size()-2].val << '\n';
     gen tmp=args.eval(eval_level(contextptr),contextptr);
     string nl("\n"),sep(",");
     bool nlsep=nl_sep(tmp,nl,sep);
@@ -6806,7 +6806,7 @@ namespace giac {
       if (args.type==_IDNT)
         messages_to_print += args.print(contextptr) + ":"; 
       messages_to_print += tmp.print(contextptr) +'\n';
-      // *logptr(contextptr) << "Child " << messages_to_print << endl;
+      // *logptr(contextptr) << "Child " << messages_to_print << '\n';
     }
 #endif
     if (tmp.type==_VECT && !tmp._VECTptr->empty() && tmp._VECTptr->front()==gen("Unquoted",contextptr)){
@@ -7167,7 +7167,7 @@ namespace giac {
     if (a.type!=_INT_ || b.type!=_INT_)
       return Gamma(a+1,contextptr)/Gamma(b+1,contextptr)/Gamma(a-b+1,contextptr);
     if (a.val<0 || b.val<0){
-      *logptr(contextptr) << "comb with negative argument " << a << "," << b <<endl;
+      *logptr(contextptr) << "comb with negative argument " << a << "," << b <<'\n';
       //return gensizeerr(contextptr);
     }
     return comb((unsigned long int) a.val,(unsigned long int) b.val);
@@ -8125,7 +8125,7 @@ namespace giac {
       bm++;
       Pm=bm*Pm1+a2m1*Pm2;
       Qm=bm*Qm1+a2m1*Qm2;
-      // cerr << Pm/Qm << " " << Pm2/Qm2 << endl;
+      // cerr << Pm/Qm << " " << Pm2/Qm2 << '\n';
       if (absdouble(Pm/Qm-Pm2/Qm2)<1e-16){
 	double res=Pm/Qm;
 	if (regularize)
@@ -8561,7 +8561,7 @@ namespace giac {
       return d;
 #if 0 //def HAVE_LIBGSL // for check only
       double val=gsl_sf_psi_n(n,x._DOUBLE_val);
-      CERR << d << " " << val << endl;
+      CERR << d << " " << val << '\n';
       return d;
 #endif 
     }
@@ -8579,7 +8579,7 @@ namespace giac {
     if (is_integral(n))
       return Psi(x,n.val,contextptr);
     if (is_integral(x)){
-      *logptr(contextptr) << "Warning, please use Psi(x,n), not Psi(n,x)" << endl;
+      *logptr(contextptr) << "Warning, please use Psi(x,n), not Psi(n,x)" << '\n';
       return Psi(n,x.val,contextptr);
     }
     return gensizeerr(contextptr);
@@ -8615,7 +8615,7 @@ namespace giac {
     static bool warnmod=true;
     if (f.type==_MOD){
       if (warnmod){
-	*logptr(contextptr) << "// Warning: a % b returns the class of a in Z/bZ. Use irem(a,b) for remainder" << endl;
+	*logptr(contextptr) << "// Warning: a % b returns the class of a in Z/bZ. Use irem(a,b) for remainder" << '\n';
 	warnmod=false;
       }
       f=*f._MODptr;
@@ -8626,7 +8626,7 @@ namespace giac {
     }
     if (b.type==_MOD){
       if (warnmod){
-	*logptr(contextptr) << "// Warning: a % b returns the class of a in Z/bZ. Use irem(a,b) for remainder" << endl;
+	*logptr(contextptr) << "// Warning: a % b returns the class of a in Z/bZ. Use irem(a,b) for remainder" << '\n';
 	warnmod=false;
       }
       b=*b._MODptr;
@@ -9867,7 +9867,7 @@ namespace giac {
   define_unary_function_ptr5( at_Ei_f ,alias_at_Ei_f,&__Ei_f,0,true);
   static gen Ei_replace(const gen & g,GIAC_CONTEXT){
     if (has_i(g)){
-      *logptr(contextptr) << "Ei with non real argument: "+g.print() << endl;
+      *logptr(contextptr) << "Ei with non real argument: "+g.print() << '\n';
       return Ei(g,contextptr);
     }
     return _Ei_f(g,contextptr)*exp(g,contextptr);
@@ -10210,7 +10210,7 @@ namespace giac {
     if (n.type!=_INT_)
       return gensizeerr(contextptr);
     if (n==1)
-      *logptr(contextptr) << gettext("Warning, Ei(x,1) is defined as -Ei(-x), not as Ei(x)") << endl;
+      *logptr(contextptr) << gettext("Warning, Ei(x,1) is defined as -Ei(-x), not as Ei(x)") << '\n';
     return Ei(x,n.val,contextptr);
   }
   static const char _Ei_s []="Ei";
@@ -10976,30 +10976,30 @@ namespace giac {
   void fonction_bidon(){
 #if !defined GIAC_GENERIC_CONSTANTS && !defined NSPIRE && !defined FXCG
     ofstream of("log");
-    of << gen_inv_2 << endl;
-    of <<  alias_cst_two_pi_tab << " " <<  cst_two_pi_refv << endl;
-    of <<  alias_cst_pi_over_2_tab << " " <<  cst_pi_over_2_refv << endl;
-    of <<  alias_plus_sqrt3_tab << " " <<  plus_sqrt3_refv << endl;
-    of <<  alias_plus_sqrt2_tab << " " <<  plus_sqrt2_refv << endl;
-    of <<  alias_plus_sqrt6_tab << " " <<  plus_sqrt6_refv << endl;
-    of <<  alias_minus_sqrt3_2_tab << " " <<  minus_sqrt3_2_refv << endl;
-    of <<  alias_minus_sqrt2_2_tab << " " <<  minus_sqrt2_2_refv << endl;
-    of <<  alias_minus_sqrt3_3_tab << " " <<  minus_sqrt3_3_refv << endl;
-    of <<  alias_plus_sqrt3_2_tab << " " <<  plus_sqrt3_2_refv << endl;
-    of <<  alias_plus_sqrt2_2_tab << " " <<  plus_sqrt2_2_refv << endl;
-    of <<  alias_plus_sqrt3_3_tab << " " <<  plus_sqrt3_3_refv << endl;
-    of <<  alias_cos_pi_12_4_tab << " " <<  cos_pi_12_4_refv << endl;
-    of <<  alias_cos_pi_12_tab << " " <<  cos_pi_12_refv << endl;
-    of <<  alias_minus_cos_pi_12_4_tab << " " <<  minus_cos_pi_12_4_refv << endl;
-    of <<  alias_minus_cos_pi_12_tab << " " <<  minus_cos_pi_12_refv << endl;
-    of <<  alias_sin_pi_12_4_tab << " " <<  sin_pi_12_4_refv << endl;
-    of <<  alias_sin_pi_12_tab << " " <<  sin_pi_12_refv << endl;
-    of <<  alias_minus_sin_pi_12_4_tab << " " <<  minus_sin_pi_12_4_refv << endl;
-    of <<  alias_minus_sin_pi_12_tab << " " <<  minus_sin_pi_12_refv << endl;
-    of <<  alias_tan_pi_12_tab << " " <<  tan_pi_12_refv << endl;
-    of <<  alias_tan_5pi_12_tab << " " <<  tan_5pi_12_refv << endl;
-    of <<  alias_rad2deg_e_tab << " " <<  rad2deg_e_refv << endl;
-    of <<  alias_deg2rad_e_tab << " " <<  deg2rad_e_refv << endl;
+    of << gen_inv_2 << '\n';
+    of <<  alias_cst_two_pi_tab << " " <<  cst_two_pi_refv << '\n';
+    of <<  alias_cst_pi_over_2_tab << " " <<  cst_pi_over_2_refv << '\n';
+    of <<  alias_plus_sqrt3_tab << " " <<  plus_sqrt3_refv << '\n';
+    of <<  alias_plus_sqrt2_tab << " " <<  plus_sqrt2_refv << '\n';
+    of <<  alias_plus_sqrt6_tab << " " <<  plus_sqrt6_refv << '\n';
+    of <<  alias_minus_sqrt3_2_tab << " " <<  minus_sqrt3_2_refv << '\n';
+    of <<  alias_minus_sqrt2_2_tab << " " <<  minus_sqrt2_2_refv << '\n';
+    of <<  alias_minus_sqrt3_3_tab << " " <<  minus_sqrt3_3_refv << '\n';
+    of <<  alias_plus_sqrt3_2_tab << " " <<  plus_sqrt3_2_refv << '\n';
+    of <<  alias_plus_sqrt2_2_tab << " " <<  plus_sqrt2_2_refv << '\n';
+    of <<  alias_plus_sqrt3_3_tab << " " <<  plus_sqrt3_3_refv << '\n';
+    of <<  alias_cos_pi_12_4_tab << " " <<  cos_pi_12_4_refv << '\n';
+    of <<  alias_cos_pi_12_tab << " " <<  cos_pi_12_refv << '\n';
+    of <<  alias_minus_cos_pi_12_4_tab << " " <<  minus_cos_pi_12_4_refv << '\n';
+    of <<  alias_minus_cos_pi_12_tab << " " <<  minus_cos_pi_12_refv << '\n';
+    of <<  alias_sin_pi_12_4_tab << " " <<  sin_pi_12_4_refv << '\n';
+    of <<  alias_sin_pi_12_tab << " " <<  sin_pi_12_refv << '\n';
+    of <<  alias_minus_sin_pi_12_4_tab << " " <<  minus_sin_pi_12_4_refv << '\n';
+    of <<  alias_minus_sin_pi_12_tab << " " <<  minus_sin_pi_12_refv << '\n';
+    of <<  alias_tan_pi_12_tab << " " <<  tan_pi_12_refv << '\n';
+    of <<  alias_tan_5pi_12_tab << " " <<  tan_5pi_12_refv << '\n';
+    of <<  alias_rad2deg_e_tab << " " <<  rad2deg_e_refv << '\n';
+    of <<  alias_deg2rad_e_tab << " " <<  deg2rad_e_refv << '\n';
     of << plus_inf << " ";
     of << minus_inf << " ";
     of << plus_one_half << " ";
@@ -11023,13 +11023,13 @@ namespace giac {
     of << tan_pi_12 << " ";
     of << tan_5pi_12 << " ";
     of << minus_tan_pi_12 << " ";
-    of << minus_tan_5pi_12 << " " << endl;
+    of << minus_tan_5pi_12 << " " << '\n';
     of << cst_two_pi << " " ;
     of << cst_pi_over_2 << " ";
     of << cst_inv_pi << " ";
-    of << cst_inv_180 << " " << endl;
+    of << cst_inv_180 << " " << '\n';
     of << rad2deg_e << " " ;
-    of << deg2rad_e << " " << endl;
+    of << deg2rad_e << " " << '\n';
 #endif
   }
 

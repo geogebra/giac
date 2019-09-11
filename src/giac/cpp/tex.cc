@@ -945,7 +945,7 @@ namespace giac {
 #ifndef NO_STDEXCEPT
     } catch (std::runtime_error & error ){
       last_evaled_argptr(contextptr)=NULL;
-      CERR << error.what() << endl;
+      CERR << error.what() << '\n';
     }
 #endif
     if (e.type==_CPLX){
@@ -1315,6 +1315,9 @@ namespace giac {
 
   // assume math mode enabled
   string gen2tex(const gen & e,GIAC_CONTEXT){
+    string s;
+    if (has_improved_latex_export(e,s,false,contextptr))
+      return s;
     switch (e.type){
     case _INT_: case _ZINT: case _REAL:
       if (e.subtype==_INT_BOOLEAN)
@@ -1371,8 +1374,10 @@ namespace giac {
     return 0;
   }
 #if defined USE_GMP_REPLACEMENTS || defined GIAC_GGB || defined EMCC
-  bool has_improved_latex_export(const gen &g,string &s,GIAC_CONTEXT){
+  bool has_improved_latex_export(const gen &g,string &s,bool override_texmacs,GIAC_CONTEXT){
     return false;
+  }
+  void enable_texmacs_compatible_latex_export(bool yes){
   }
 #endif
   gen _latex(const gen & g,GIAC_CONTEXT){
@@ -1380,12 +1385,12 @@ namespace giac {
 #if !defined NSPIRE && !defined FXCG
     if (!secure_run && g.type==_VECT && g.subtype==_SEQ__VECT && g._VECTptr->size()==2 && (*g._VECTptr)[1].type==_STRNG){
       ofstream of((*g._VECTptr)[1]._STRNGptr->c_str());
-      of << gen2tex(g._VECTptr->front(),contextptr) << endl;
+      of << gen2tex(g._VECTptr->front(),contextptr) << '\n';
       return plus_one;
     }
 #endif
     string s;
-    if (!has_improved_latex_export(g,s,contextptr))
+    if (!has_improved_latex_export(g,s,true,contextptr))
       s=gen2tex(g,contextptr);
     return string2gen(s,false);
   }
@@ -1408,7 +1413,7 @@ namespace giac {
     const_iterateur it=v.begin(),itend=v.end();
     for (;it!=itend;++it){
       gen sortie=*it;
-      // CERR << "graph2tex " << *it << endl;
+      // CERR << "graph2tex " << *it << '\n';
       if (sortie.type==_POINTER_ && sortie.subtype==_FL_WIDGET_POINTER && fl_widget_updatepict_function)
 	sortie = fl_widget_updatepict_function(sortie);
       if (sortie.type!=_VECT)
@@ -1597,14 +1602,14 @@ namespace giac {
     // Begin eukleides code with redirected stdout
     FILE * filecol=fopen((get_path(s)+"fltkcol.tex").c_str(),"w");
     if (!filecol){
-      CERR << "Unable to open color file fltkcol.tex" << endl;
+      CERR << "Unable to open color file fltkcol.tex" << '\n';
       return 0;
     }
     fprintf(filecol,"%s",tex_color);
     fclose(filecol);
     FILE * file=fopen(s.c_str(), "w");
     if (!file){
-      CERR << "Unable to open file "+s << endl;
+      CERR << "Unable to open file "+s << '\n';
       return 0;
     }
     fprintf(file,"%s",tex_preamble);

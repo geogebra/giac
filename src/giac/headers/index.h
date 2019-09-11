@@ -312,6 +312,15 @@ namespace giac {
     size_t size() const { return riptr->i.size(); }
     bool is_zero() const ; 
     size_t total_degree() const ;
+#ifdef NUMWORKS
+    friend stdostream & operator << (stdostream & os,const index_m & m ){
+      os << ":index_m:[ " ;
+      for (index_t::const_iterator it=m.begin();it!=m.end();++it)
+	os << *it << " ";
+      os << "] " ;
+      return(os);
+    }
+#endif
 #ifdef NSPIRE
     template<class T> friend nio::ios_base<T> & operator << (nio::ios_base<T> & os,const index_m & m ){
       os << ":index_m:[ " ;
@@ -330,7 +339,7 @@ namespace giac {
     }
 #endif
     void dbgprint() const {
-      COUT << *this << std::endl;
+      COUT << *this << '\n';
     }
     // set first index element to 0
     index_m set_first_zero() const { index_t i(riptr->i); i[0]=0; return i; }
@@ -507,6 +516,15 @@ namespace giac {
     size_t size() const ;
     bool is_zero() const ;
     size_t total_degree() const ;
+#ifdef NUMWORKS
+    friend stdostream & operator << (stdostream & os,const index_m & m ){
+      os << ":index_m:[ " ;
+      for (index_t::const_iterator it=m.begin();it!=m.end();++it)
+	os << *it << " ";
+      os << "] " ;
+      return(os);
+    }
+#endif
 #ifdef NSPIRE
     template<class T> friend nio::ios_base<T> & operator << (nio::ios_base<T> & os,const index_m & m ){
       os << ":index_m:[ " ;
@@ -525,7 +543,7 @@ namespace giac {
     }
 #endif
     void dbgprint() const {
-      COUT << *this << std::endl;
+      COUT << *this << '\n';
     }
     // set first index element to 0
     index_m set_first_zero() const;

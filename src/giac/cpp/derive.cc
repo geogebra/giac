@@ -334,7 +334,7 @@ namespace giac {
 	if (!is_zero(derive(v1,i,contextptr)) || !is_zero(derive(v2,i,contextptr)) || ! is_zero(derive(v3,i,contextptr)) )
 	  return gensizeerr(gettext("diff of sum with boundaries or mute variable depending on differentiation variable"));
 	if (is_inf(v2) || is_inf(v3))
-	  *logptr(contextptr) << gettext("Warning, assuming derivative commutes with infinite sum") << endl;
+	  *logptr(contextptr) << gettext("Warning, assuming derivative commutes with infinite sum") << '\n';
 	return _sum(makesequence(derive(v0,i,contextptr),v1,v2,v3),contextptr);
       }
       if ( (vs==2 || (vs==3 && is_zero(v[2]))) && (s.sommet==at_upper_incomplete_gamma || s.sommet==at_lower_incomplete_gamma || s.sommet==at_Gamma)){
@@ -576,7 +576,7 @@ namespace giac {
     return f;
   }
   gen derive(const gen & e,const gen & vars,GIAC_CONTEXT){
-    //  cout << e << " " << vars << endl;
+    //  cout << e << " " << vars << '\n';
     if (is_equal(e))
       return symb_equal(derive(e._SYMBptr->feuille[0],vars,contextptr),
 			derive(e._SYMBptr->feuille[1],vars,contextptr));
@@ -801,7 +801,7 @@ namespace giac {
     step_infolevel(contextptr)=0;
     gen d=_derive(makesequence(arg,var),contextptr);
     gen deq=_equal(makesequence(d,0*var),contextptr);
-    // *logptr(contextptr) << "Critical points for "<< arg <<": solving " << deq << " with respect to " << var << endl;
+    // *logptr(contextptr) << "Critical points for "<< arg <<": solving " << deq << " with respect to " << var << '\n';
     int c=calc_mode(contextptr);
     calc_mode(0,contextptr);
     gen s=_solve(makesequence(deq,var),contextptr);
@@ -819,36 +819,36 @@ namespace giac {
       gen d2=_derive(makesequence(d,var),contextptr);
       step_infolevel(contextptr)=savestep;
       gprintf(step_extrema2,gettext("Hessian at %gen : %gen"),makevecteur(var,d2),contextptr);
-      // *logptr(contextptr) << "Hessian " << d2 << endl;
+      // *logptr(contextptr) << "Hessian " << d2 << '\n';
       vecteur v=*s._VECTptr;
       int vs=int(v.size());
       for (int i=0;i<vs;++i){
 	gen g=simplify(subst(d2,var,v[i],false,contextptr),contextptr);
 	gprintf(step_extrema3,gettext("Hessian at %gen : %gen"),makevecteur(v[i],g),contextptr);
-	// *logptr(contextptr) << "Hessian at " << v[i] << ": " << g << endl;
+	// *logptr(contextptr) << "Hessian at " << v[i] << ": " << g << '\n';
 	if (ckmatrix(g)){
 	  g=evalf(g,1,contextptr);
 	  if (g.type!=_VECT || !is_numericm(*g._VECTptr,true)){
 	    gprintf(step_extrema4,gettext("%gen critical point (unknown type)"),makevecteur(v[i]),contextptr);
-	    // *logptr(contextptr) << v[i] << " critical point (unknown type)" << endl;
+	    // *logptr(contextptr) << v[i] << " critical point (unknown type)" << '\n';
 	    continue;
 	  }
 	  vecteur w=megvl(*g._VECTptr,contextptr);
 	  if (!ckmatrix(w)){
 	    gprintf(step_extrema4,gettext("%gen critical point (unknown type)"),makevecteur(v[i]),contextptr);
-	    // *logptr(contextptr) << v[i] << " critical point (unknown type)" << endl;
+	    // *logptr(contextptr) << v[i] << " critical point (unknown type)" << '\n';
 	    continue;
 	  }
 	  int j=0,ws=int(w.size());
 	  for (;j<ws;++j){
 	    if (is_zero(w[0][0])){
 	      gprintf(step_extrema5,gettext("%gen critical point (0 as eigenvalue) %gen"),makevecteur(v[i],_diag(w,contextptr)),contextptr);
-	      // *logptr(contextptr) << v[i] << " critical point (0 as eigenvalue) " << _diag(w,contextptr) << endl;
+	      // *logptr(contextptr) << v[i] << " critical point (0 as eigenvalue) " << _diag(w,contextptr) << '\n';
 	      break;
 	    }
 	    if (is_positive(-w[0][0]*w[j][j],contextptr)){
 	      gprintf(step_extrema5,gettext("%gen is a saddle point (2 eigenvalues with opposite sign) %gen"),makevecteur(v[i],_diag(w,contextptr)),contextptr);
-	      // *logptr(contextptr) << v[i] << " saddle point (2 eigenvalues with opposite sign) " << _diag(w,contextptr) << endl;
+	      // *logptr(contextptr) << v[i] << " saddle point (2 eigenvalues with opposite sign) " << _diag(w,contextptr) << '\n';
 	      break;
 	    }
 	  }
@@ -856,11 +856,11 @@ namespace giac {
 	    res.push_back(v[i]);
 	    if (is_positive(w[0][0],contextptr)){
 	      gprintf(step_extrema6,gettext("%gen is a local minimum %gen"),makevecteur(v[i],_diag(w,contextptr)),contextptr);
-	      // *logptr(contextptr) << v[i] << " local minimum " << _diag(w,contextptr) << endl;
+	      // *logptr(contextptr) << v[i] << " local minimum " << _diag(w,contextptr) << '\n';
 	    }
 	    else {
 	      gprintf(step_extrema6,gettext("%gen is a local maximum %gen"),makevecteur(v[i],_diag(w,contextptr)),contextptr);
-	      // *logptr(contextptr) << v[i] << " local maximum " << _diag(w,contextptr) << endl;
+	      // *logptr(contextptr) << v[i] << " local maximum " << _diag(w,contextptr) << '\n';
 	    }
 	  }
 	  continue;
@@ -877,23 +877,23 @@ namespace giac {
 	}
 	if (d%2==0 && is_strictly_positive(g,contextptr)){
 	  gprintf(step_extrema7,gettext("%gen is a local minimum"),makevecteur(v[i]),contextptr);
-	  // *logptr(contextptr) << v[i] << " local minimum" << endl;
+	  // *logptr(contextptr) << v[i] << " local minimum" << '\n';
 	  res.push_back(v[i]);
 	  continue;
 	}
 	if (d%2==0 && is_strictly_positive(-g,contextptr)){
 	  gprintf(step_extrema7,gettext("%gen is a local maximum"),makevecteur(v[i]),contextptr);
-	  // *logptr(contextptr) << v[i] << " local maximum" << endl;
+	  // *logptr(contextptr) << v[i] << " local maximum" << '\n';
 	  res.push_back(v[i]);
 	  continue;
 	}
 	if (d==NEWTON_DEFAULT_ITERATION){
 	  gprintf(step_extrema4,gettext("%gen is a critical point (unknown type)"),makevecteur(v[i]),contextptr);
-	  //*logptr(contextptr) << v[i] << " critical point (unknown type)" << endl;
+	  //*logptr(contextptr) << v[i] << " critical point (unknown type)" << '\n';
 	}
 	else {
 	  gprintf(step_extrema8,gettext("%gen is an inflection point"),makevecteur(v[i]),contextptr);
-	  // *logptr(contextptr) << v[i] << " inflection point" << endl;
+	  // *logptr(contextptr) << v[i] << " inflection point" << '\n';
 	}
       }
       if (extrema_only)
@@ -1045,7 +1045,7 @@ namespace giac {
 	continue;
       if (u==at_floor || u==at_ceil || u==at_round || u==at_abs || u==at_sign || u==at_max || u==at_min)
 	continue;
-      *logptr(contextptr) << g << gettext(" function not supported, doing like if it was defined") << endl;
+      *logptr(contextptr) << g << gettext(" function not supported, doing like if it was defined") << '\n';
     }
   }
   gen domain(const gen & f,const gen & x,int mode,GIAC_CONTEXT){
@@ -1065,7 +1065,7 @@ namespace giac {
 #ifndef NO_STDEXCEPT
     } catch (std::runtime_error & e ) { 
       last_evaled_argptr(contextptr)=NULL;
-      *logptr(contextptr) << e.what() << endl;
+      *logptr(contextptr) << e.what() << '\n';
     }
 #endif
     complex_mode(b,contextptr);

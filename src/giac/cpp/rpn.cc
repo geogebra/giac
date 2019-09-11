@@ -720,7 +720,7 @@ namespace giac {
     if (!rpn_mode(contextptr) || (args.type!=_VECT))
       return symbolic(at_rpn_prog,args);
     vecteur pile(history_out(contextptr));
-    *logptr(contextptr) << pile << " " << args << endl;
+    *logptr(contextptr) << pile << " " << args << '\n';
     return gen(rpn_eval(*args._VECTptr,pile,contextptr),_RPN_STACK__VECT);
   }
   static const char _rpn_prog_s []="rpn_prog";
@@ -2286,7 +2286,7 @@ namespace giac {
     if (!ckmatrix(args0))
       return gentypeerr(contextptr);
     if (!has_num_coeff(args0))
-      *logptr(contextptr) << gettext("SVD is implemented for numeric matrices, running evalf first") << endl;
+      *logptr(contextptr) << gettext("SVD is implemented for numeric matrices, running evalf first") << '\n';
     gen args=evalf(args0,1,contextptr);
     gen res= _svd(gen(makevecteur(args,-1),_SEQ__VECT),contextptr);
     if (res.type==_VECT) res.subtype=_LIST__VECT;
@@ -3060,7 +3060,7 @@ namespace giac {
     }
     // orthogonal projection of each vector of B on image of A
     if (A.size()>20)
-      *logptr(contextptr) << "LSQ: exact data, running Gramschmidt instead of qr, this is much slower for large matrices" << endl;
+      *logptr(contextptr) << "LSQ: exact data, running Gramschmidt instead of qr, this is much slower for large matrices" << '\n';
     matrice r,Ag=gramschmidt(A,r,false,contextptr);
     for (int i=0;i<bs;++i){
       gen Bi=B[i];
@@ -3367,7 +3367,7 @@ namespace giac {
     qualify(parsed,unexported_declared_global_vars,prog,contextptr);
     qualify(parsed,exported_variable_names,prog,contextptr);
 #if !defined RTOS_THREADX && !defined NSPIRE && !defined FXCG
-    ofstream of("c:\\log"); of << "=" << assignation_by_equal << endl << "undecl vars:" << undeclared_global_vars << endl << "decl vars:" << declared_global_vars << endl << "decl func.:" << declared_functions << endl << "exported func:" << exported_function_names << endl << "exported vars:"<<exported_variable_names << endl << "unknown exported:"<<unknown_exported << endl << "unexported:" << unexported << endl << "unexported declared global vars:"<<unexported_declared_global_vars << endl << "views:" << views << endl << "errors:" << errors << endl << "prog:"<<prog << endl << "parsed:" << parsed; of.close();   
+    ofstream of("c:\\log"); of << "=" << assignation_by_equal << '\n' << "undecl vars:" << undeclared_global_vars << '\n' << "decl vars:" << declared_global_vars << '\n' << "decl func.:" << declared_functions << '\n' << "exported func:" << exported_function_names << '\n' << "exported vars:"<<exported_variable_names << '\n' << "unknown exported:"<<unknown_exported << '\n' << "unexported:" << unexported << '\n' << "unexported declared global vars:"<<unexported_declared_global_vars << '\n' << "views:" << views << '\n' << "errors:" << errors << '\n' << "prog:"<<prog << '\n' << "parsed:" << parsed; of.close();   
 #endif
     return int(errors.size());
   }

@@ -222,7 +222,7 @@ namespace giac {
 	continue;
       }
       if (is_strictly_positive(expa,contextptr))
-	*logptr(contextptr) << gettext("Warning, exponential x coeff is positive ") << expa << endl;
+	*logptr(contextptr) << gettext("Warning, exponential x coeff is positive ") << expa << '\n';
       vecteur varx(lvarx(coeff,x));
       int varxs=int(varx.size());
       if (!varxs){ // Dirac function
@@ -507,7 +507,7 @@ namespace giac {
       return res;
     }
     if (solution_generale.type==_VECT)
-      *logptr(contextptr) << gettext("Boundary conditions for parametric curve not implemented") << endl;
+      *logptr(contextptr) << gettext("Boundary conditions for parametric curve not implemented") << '\n';
     // solve boundary conditions
     iterateur jt=v.begin()+1,jtend=v.end();
     for (unsigned ndiff=0;jt!=jtend;++ndiff,++jt){
@@ -1007,7 +1007,7 @@ namespace giac {
 		vecteur v=*sol._VECTptr;
 		reverse(v.begin(),v.end());
 		sol=symb_horner(-v,x);
-		*logptr(contextptr) << "Polynomial solution found " << sol << endl;
+		*logptr(contextptr) << "Polynomial solution found " << sol << '\n';
 		// now solve equation a*y''+b*y'+c*y+d=0 with y=sol*z
 		// a*sol*z''+(2*a*sol'+b*sol)*z'=d
 		gen res=desolve_lin1(a0*sol,2*a0*derive(sol,x,contextptr)+b0*sol,d,x,parameters,step_info,contextptr);
@@ -1224,7 +1224,7 @@ namespace giac {
 	  vecteur newsol=solve(res-x,*t._IDNTptr,3,contextptr);
 	  if (is_undef(newsol)){
 	    newsol.clear();
-	    *logptr(contextptr) << "Unable to solve implicit equation "<< res-x << "=0 in " << t << endl;
+	    *logptr(contextptr) << "Unable to solve implicit equation "<< res-x << "=0 in " << t << '\n';
 	  }
 #else
 	  vecteur newsol;
@@ -1233,7 +1233,7 @@ namespace giac {
 	  } catch(std::runtime_error & err){
 	    last_evaled_argptr(contextptr)=NULL;
 	    newsol.clear();
-	    *logptr(contextptr) << "Unable to solve implicit equation "<< res-x << "=0 in " << t << endl;
+	    *logptr(contextptr) << "Unable to solve implicit equation "<< res-x << "=0 in " << t << '\n';
 	  }
 #endif
 	  if (newsol.empty())
@@ -1275,7 +1275,7 @@ namespace giac {
 	  vecteur newsol=solve(implicitsol,*y._IDNTptr,3,contextptr);
 	  if (is_undef(newsol)){
 	    newsol.clear();
-	    *logptr(contextptr) << "Unable to solve implicit equation "<< implicitsol << "=0 in " << y << endl;
+	    *logptr(contextptr) << "Unable to solve implicit equation "<< implicitsol << "=0 in " << y << '\n';
 	  }
 #else
 	  vecteur newsol;
@@ -1286,7 +1286,7 @@ namespace giac {
 	  } catch(std::runtime_error & err){
 	    last_evaled_argptr(contextptr)=NULL;
 	    newsol.clear();
-	    *logptr(contextptr) << "Unable to solve implicit equation "<< implicitsol << "=0 in " << y << endl;
+	    *logptr(contextptr) << "Unable to solve implicit equation "<< implicitsol << "=0 in " << y << '\n';
 	  }
 	  calc_mode(cm,contextptr);
 #endif
@@ -1297,7 +1297,7 @@ namespace giac {
 	  if (step_info)
 	    gprintf("Order 1 x-incomplete differential equation",vecteur(0),step_info,contextptr);
 	  if (debug_infolevel)
-	    *logptr(contextptr) << gettext("Incomplete") << endl;
+	    *logptr(contextptr) << gettext("Incomplete") << '\n';
 	  gen pr=integrate_without_lnabs(inv(*it,contextptr),y,contextptr)+parameters.back();
 	  sol=mergevecteur(sol,solve(pr-x,*y._IDNTptr,3,contextptr));
 	  continue;
@@ -1330,7 +1330,7 @@ namespace giac {
 	  if (step_info)
 	    gprintf("Order 1 Homogeneous differential equation",vecteur(0),step_info,contextptr);
 	  if (debug_infolevel)
-	    *logptr(contextptr) << gettext("Homogeneous differential equation") << endl;
+	    *logptr(contextptr) << gettext("Homogeneous differential equation") << '\n';
 	  tmpsto=sto(doubleassume_and(vecteur(2,0),0,1,false,contextptr),x,contextptr);
 	  if (is_undef(tmpsto))
 	    return tmpsto;
@@ -1345,7 +1345,7 @@ namespace giac {
 	  // Try to find t in x=pr
 	  vecteur v=protect_solve(x-pr,*t._IDNTptr,1,contextptr);
 	  if (!v.empty() && !is_undef(v)){
-	    *logptr(contextptr) << "solve(" << pr << "=" << x << "," << t << ") returned " << v << ".\nIf solutions were missed consider paramplot(" << makevecteur(pr,t*pr) << "," << t << ")" << endl;
+	    *logptr(contextptr) << "solve(" << pr << "=" << x << "," << t << ") returned " << v << ".\nIf solutions were missed consider paramplot(" << makevecteur(pr,t*pr) << "," << t << ")" << '\n';
 	    for (unsigned j=0;j<v.size();++j){
 	      sol.push_back(x*v[j]);
 	    }
@@ -1705,7 +1705,7 @@ namespace giac {
       polynome ipnum(dim),ipden(dim);
       partfrac(num,den,vden,pfde_VECT,ipnum,ipden);
       if (!is_zero(ipnum))
-	*logptr(contextptr) << gettext("Warning, z*argument has a non-zero integral part") << endl;
+	*logptr(contextptr) << gettext("Warning, z*argument has a non-zero integral part") << '\n';
       vector< pf<gen> >::iterator it=pfde_VECT.begin();
       vector< pf<gen> >::const_iterator itend=pfde_VECT.end();
       gen a,A,B;
@@ -2074,7 +2074,7 @@ namespace giac {
     gen laur=_series(makesequence(r,x,inf,1,_POLY1__VECT),contextptr);
     bool success=false;
     if (kovacic_iscase1(poles,dinf)) {
-      cerr << "Case 1 of Kovacic algorithm" << endl;
+      cerr << "Case 1 of Kovacic algorithm" << '\n';
       /* step 1 */
       gen_map alpha_plus,alpha_minus,sqrt_r;
       gen alpha_inf_plus,alpha_inf_minus;
@@ -2175,7 +2175,7 @@ namespace giac {
       }
     }
     if (!success && kovacic_iscase2(poles)) {
-      cerr << "Case 2 of Kovacic algorithm" << endl;
+      cerr << "Case 2 of Kovacic algorithm" << '\n';
       /* step 1 */
       gen_map E;
       for (const_iterateur it=poles.begin();it!=poles.end();++it) {
@@ -2268,7 +2268,7 @@ namespace giac {
       }
     }
     if (!success && kovacic_iscase3(cpfr,x,poles,dinf,contextptr)) {
-      cerr << "Case 3 of Kovacic algorithm" << endl;
+      cerr << "Case 3 of Kovacic algorithm" << '\n';
       vector<int> nv=vecteur_2_vector_int(makevecteur(4,6,12));
       for (vector<int>::const_iterator nt=nv.begin();nt!=nv.end();++nt) {
 	int n=*nt;
@@ -2355,7 +2355,7 @@ namespace giac {
 	    for (int i=0;i<=n;++i) {
 	      ac[i]=_collect(pow(S,i)*P[i+1]/_factorial(n-i,contextptr),contextptr);
 	    }
-	    *logptr(contextptr) << "Warning: outputting the algebraic expression for ω" << endl;
+	    *logptr(contextptr) << "Warning: outputting the algebraic expression for ω" << '\n';
 	    ac=strip_gcd(ac,contextptr);
 	    gen omg=pow(w,4)*ac[4]+pow(w,3)*ac[3]+pow(w,2)*ac[2]+w*ac[1]+ac[0];
 	    if (!is_zero(dy_coeff)) {

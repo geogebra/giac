@@ -271,7 +271,7 @@ namespace giac {
 	A.push_back(li);
 	// A*sqrt(norme2) pour avoir la matrice prod vect(n,ei) avec norme(n)=1;
 	A=multvecteur(sqrt(norme2,contextptr),A);
-	//cout<<A<<endl;
+	//cout<<A<<'\n';
 	gen theta=n[1];
 	R=*(recursive_normal(multvecteur(cos(theta,contextptr),midn(3))+multvecteur(1-cos(theta,contextptr),ntn)+multvecteur(sin(theta,contextptr),A),contextptr)._VECTptr); 
       }

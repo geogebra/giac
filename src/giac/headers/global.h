@@ -304,13 +304,13 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   void control_c();
 #else
 #if 0
-#define control_c() if (ctrl_c) { interrupted = true; CERR << "Throwing exception for user interruption." << std::endl; throw(std::runtime_error("Stopped by user interruption.")); }
+#define control_c() if (ctrl_c) { interrupted = true; CERR << "Throwing exception for user interruption." << '\n'; throw(std::runtime_error("Stopped by user interruption.")); }
 #else
 #define control_c() if (ctrl_c) { \
 interrupted = true; \
 std::string source_path = __FILE__; \
 std::string source_filename = source_path.substr(source_path.find_last_of("/\\") + 1); \
-CERR << "Throwing exception for user interruption (" << source_filename << ":" << __LINE__ << ")" << std::endl; \
+CERR << "Throwing exception for user interruption (" << source_filename << ":" << __LINE__ << ")" << '\n'; \
 throw(std::runtime_error("Stopped by user interruption.")); \
 }
 #endif
@@ -330,7 +330,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     dbgprint_vector(size_t i,const T & t) : std::imvector<T>::imvector(i,t) { };
     // ~dbgprint_vector() { };
     // inherited destructors
-    void dbgprint() const { COUT << *this << std::endl; }
+    void dbgprint() const { COUT << *this << '\n'; }
   };
 #else // IMMEDIATE_VECTOR
   template <class T> class dbgprint_vector: public std::vector<T> {
@@ -345,7 +345,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     dbgprint_vector(size_t i,const T & t) : std::vector<T>::vector(i,t) { };
     // ~dbgprint_vector() { };
     // inherited destructors
-    void dbgprint() const { COUT << *this << std::endl; }
+    void dbgprint() const { COUT << *this << '\n'; }
   };
 #endif // IMMEDIATE_VECTOR
   
@@ -385,7 +385,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
       }
       return res;
     }
-    void dbgprint() { COUT << *this << std::endl; }
+    void dbgprint() { COUT << *this << '\n'; }
   };
 
   struct user_function {
@@ -568,7 +568,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
 #ifdef NSPIRE
     nio::console * _logptr_;
 #else
-#ifdef WITH_MYOSTREAM
+#if 1 // def WITH_MYOSTREAM
     my_ostream * _logptr_;
 #else
     std::ostream * _logptr_;

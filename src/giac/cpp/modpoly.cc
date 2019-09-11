@@ -1097,7 +1097,7 @@ namespace giac {
     modpoly::const_iterator itb_mid=itb_end-mid;
     lowlow.reserve(3*mid);
     Mulmodpolymod(ita_mid,ita_end,itb_mid,itb_end,env,lowlow,intcoeff,taille,seuil_kara);
-    // COUT << "lowlow" << lowlow << endl;
+    // COUT << "lowlow" << lowlow << '\n';
     // new_coord.reserve(2*mid);
     Mulmodpolymod(ita,ita_mid,itb,itb_mid,env,new_coord,intcoeff,taille,seuil_kara);
 #if 0
@@ -1112,7 +1112,7 @@ namespace giac {
       return;
     }
 #endif
-    // COUT << "new_coord" << new_coord << endl;
+    // COUT << "new_coord" << new_coord << '\n';
     lowhigh.reserve(3*mid);
     Addmodpoly(ita,ita_mid,ita_mid,ita_end,env,Aplus);
     modpoly::const_iterator itap=Aplus.begin(),itap_end=Aplus.end();
@@ -1124,7 +1124,7 @@ namespace giac {
       modpoly::const_iterator itbp=Bplus.begin(),itbp_end=Bplus.end();
       Mulmodpolymod(itap,itap_end,itbp,itbp_end,env,lowhigh,intcoeff,taille,seuil_kara);
     }
-    // COUT << "lowhigh" << lowhigh << endl;
+    // COUT << "lowhigh" << lowhigh << '\n';
     submodpoly(lowhigh,new_coord,env,lowhigh);
     mergemodpoly(new_coord,lowlow,2*mid);
 #if 0
@@ -1133,13 +1133,13 @@ namespace giac {
     addmodpoly(new_coord,lowhigh,env,new_coord);
 #else
     submodpoly(lowhigh,lowlow,env,lowlow);
-    // COUT << "lowh-hh-ll" << lowlow << endl;
+    // COUT << "lowh-hh-ll" << lowlow << '\n';
     shiftmodpoly(lowlow,mid);
     addmodpoly(new_coord,lowlow,env,new_coord);
 #endif
     // modpoly verif;
     // Muldense_POLY1(ita,ita_end,itb,itb_end,env,verif);
-    // COUT << "newcoord" << new_coord << "=?" << verif << endl;
+    // COUT << "newcoord" << new_coord << "=?" << verif << '\n';
   }
 
 
@@ -1226,21 +1226,21 @@ namespace giac {
     modpoly::const_iterator itb_mid=itb_end-mid;
     lowlow.reserve(3*mid);
     Mulmodpolysmall(ita_mid,ita_end,itb_mid,itb_end,env,lowlow);
-    // COUT << "lowlow" << lowlow << endl;
+    // COUT << "lowlow" << lowlow << '\n';
     // new_coord.reserve(2*mid);
     Mulmodpolysmall(ita,ita_mid,itb,itb_mid,env,new_coord);
-    // COUT << "new_coord" << new_coord << endl;
+    // COUT << "new_coord" << new_coord << '\n';
     lowhigh.reserve(2*mid);
     Addmodpoly(ita,ita_mid,ita_mid,ita_end,env,Aplus);
     Addmodpoly(itb,itb_mid,itb_mid,itb_end,env,Bplus);
     modpoly::const_iterator itap=Aplus.begin(),itap_end=Aplus.end();
     modpoly::const_iterator itbp=Bplus.begin(),itbp_end=Bplus.end();
     Mulmodpolysmall(itap,itap_end,itbp,itbp_end,env,lowhigh);
-    // COUT << "lowhigh" << lowhigh << endl;
+    // COUT << "lowhigh" << lowhigh << '\n';
     submodpoly(lowhigh,new_coord,env,lowhigh);
     mergemodpoly(new_coord,lowlow,2*mid);
     submodpoly(lowhigh,lowlow,env,lowlow);
-    // COUT << "lowh-hh-ll" << lowlow << endl;
+    // COUT << "lowh-hh-ll" << lowlow << '\n';
     shiftmodpoly(lowlow,mid);
     addmodpoly(new_coord,lowlow,env,new_coord);
   }
@@ -1288,13 +1288,13 @@ namespace giac {
 	    break;
 	}
 	if (ita==ita_end && itb==itb_end){
-	  //CERR << "// fftmult" << endl;
+	  //CERR << "// fftmult" << '\n';
 	  if (fftmult(a,b,new_coord,(env && env->moduloon && is_zero(env->coeff) && env->modulo.type==_INT_)?env->modulo.val:0)){
 #if 0
 	    vecteur save=new_coord;
 	    Muldense_POLY1(a.begin(),ita_end,b.begin(),itb_end,env,new_coord);
 	    if (save!=new_coord)
-	      CERR << " fft mult error poly1" << a << "*" << b << ";" << (env && env->moduloon && is_zero(env->coeff)?env->modulo:zero) << endl;
+	      CERR << " fft mult error poly1" << a << "*" << b << ";" << (env && env->moduloon && is_zero(env->coeff)?env->modulo:zero) << '\n';
 #endif
 	    return ;
 	  }
@@ -1313,14 +1313,14 @@ namespace giac {
 
   modpoly operator_times (const modpoly & a, const modpoly & b,environment * env) {
     // Multiplication
-    // COUT << a <<"*" << b << "[" << modulo << "]" << endl;
+    // COUT << a <<"*" << b << "[" << modulo << "]" << '\n';
     if (a.empty())
       return a;
     if (b.empty())
       return b;
     modpoly new_coord;
     operator_times(a,b,env,new_coord);
-    // COUT << new_coord << endl;
+    // COUT << new_coord << '\n';
     return new_coord;
   }
 
@@ -1377,7 +1377,7 @@ namespace giac {
     modpoly::const_iterator ita_begin=ita;
     if (ita==itb && ita_end==itb_end){
       // square polynomial
-      // CERR << "square size " << ita_end-ita << endl;
+      // CERR << "square size " << ita_end-ita << '\n';
       for ( ; ita!=ita_end; ++ita ){
 	modpoly::const_iterator ita_cur=ita,itb_cur=itb;
 	gen res;
@@ -1406,7 +1406,7 @@ namespace giac {
       }
       return;
     }
-    // CERR << "non square size " << ita_end-ita << endl;
+    // CERR << "non square size " << ita_end-ita << '\n';
     for ( ; ita!=ita_end; ++ita ){
       modpoly::const_iterator ita_cur=ita,itb_cur=itb;
       gen res;
@@ -1552,25 +1552,25 @@ namespace giac {
     int rs=int(p.size()+q.size()-1);
     res.resize(rs);
     if (debug_infolevel) 
-      CERR << CLOCK()*1e-6 << " mulmodpoly_interpolate horner " << endl;
+      CERR << CLOCK()*1e-6 << " mulmodpoly_interpolate horner " << '\n';
     for (int i=-n;i<=n;++i){
       X.push_back(i);
       if (debug_infolevel>1) 
-	CERR << CLOCK()*1e-6 << " mulmodpoly_interpolate horner2 " << i << endl;
+	CERR << CLOCK()*1e-6 << " mulmodpoly_interpolate horner2 " << i << '\n';
       horner2(p,i,px);
       if (debug_infolevel>1) 
-	CERR << CLOCK()*1e-6 << " mulmodpoly_interpolate mult " << endl;
+	CERR << CLOCK()*1e-6 << " mulmodpoly_interpolate mult " << '\n';
       if (&p==&q){
 	mulmodpoly_kara_naive(px,px,0,pqx,20);
 #if 0
 	vecteur tmp; mulmodpoly(px,px,0,tmp); 	
 	if (tmp!=pqx) {
 	  ofstream of("bugfft");
-	  of << "p:=" << gen(px,_POLY1__VECT) << ":;" << endl;
-	  of << "correct p2 " << gen(pqx,_POLY1__VECT) << ":;" << endl;
-	  of << "wront p2 " << gen(tmp,_POLY1__VECT) << ":;" << endl;
+	  of << "p:=" << gen(px,_POLY1__VECT) << ":;" << '\n';
+	  of << "correct p2 " << gen(pqx,_POLY1__VECT) << ":;" << '\n';
+	  of << "wront p2 " << gen(tmp,_POLY1__VECT) << ":;" << '\n';
 	  tmp=pqx-tmp;
-	  of << "difference" << tmp << endl;
+	  of << "difference" << tmp << '\n';
 	}
 #endif
       }
@@ -1581,11 +1581,11 @@ namespace giac {
       Y.push_back(pqx);
     }
     if (debug_infolevel) 
-      CERR << CLOCK()*1e-6 << " mulmodpoly_interpolate reorder " << endl;
+      CERR << CLOCK()*1e-6 << " mulmodpoly_interpolate reorder " << '\n';
     vecteur Yr;
     reorder(Y,Yr);
     if (debug_infolevel) 
-      CERR << CLOCK()*1e-6 << " mulmodpoly_interpolate rebuild " << endl;
+      CERR << CLOCK()*1e-6 << " mulmodpoly_interpolate rebuild " << '\n';
     for (int i=0;i<rs;++i){
       vecteur y=gen2vecteur(Yr[i]);
       if (y.size()<2*n+1)
@@ -1594,7 +1594,7 @@ namespace giac {
       res[i]=y;
     }
     if (debug_infolevel) 
-      CERR << CLOCK()*1e-6 << " mulmodpoly_interpolate end " << endl;
+      CERR << CLOCK()*1e-6 << " mulmodpoly_interpolate end " << '\n';
   }
 
   void operator_times (const modpoly & a, const modpoly & b,environment * env,modpoly & new_coord) {
@@ -1934,7 +1934,7 @@ namespace giac {
   }
 
   bool DivRem(const modpoly & th, const modpoly & other, environment * env,modpoly & quo, modpoly & rem,bool allowrational){
-    // COUT << "DivRem" << th << "," << other << endl;
+    // COUT << "DivRem" << th << "," << other << '\n';
     if (other.empty()){
 #ifndef NO_STDEXCEPT
       setsizeerr(gettext("modpoly.cc/DivRem"));
@@ -2056,13 +2056,13 @@ namespace giac {
       }
       /*
       if (env && !env->moduloon) {
-	CERR << quo << endl;
-	CERR << quo*other << endl;
+	CERR << quo << '\n';
+	CERR << quo*other << '\n';
 	CERR << "[";
 	for (int i=1;i<a;++i)
 	  CERR << tmp[a-i] << "," ;
-	CERR << tmp[0] << "]" << endl;
-	CERR << endl;
+	CERR << tmp[0] << "]" << '\n';
+	CERR << '\n';
       }
       */
     } // end for (;;)
@@ -2094,7 +2094,7 @@ namespace giac {
 	}      
       }
     }
-    // COUT << "DivRem" << th << "-" << other << "*" << quo << "=" << rem << " " << th-other*quo << endl;
+    // COUT << "DivRem" << th << "-" << other << "*" << quo << "=" << rem << " " << th-other*quo << '\n';
     delete [] tmp;
     return true;
   }
@@ -2111,7 +2111,7 @@ namespace giac {
 	if (!is_zero(t % o))
 	  return false;
 	// if ((n>1) && (m>1))
-	//  COUT << ( th[n-2]-other[m-2]*(t/o) ) % o << endl;
+	//  COUT << ( th[n-2]-other[m-2]*(t/o) ) % o << '\n';
       }
     }
     environment * env=new environment;
@@ -2659,7 +2659,7 @@ namespace giac {
       }
       if (aa!=aend && compute_cof){
 	if (debug_infolevel>20)
-	  CERR << "gcdsmallmodpoly, compute cofactors " << CLOCK() << endl;
+	  CERR << "gcdsmallmodpoly, compute cofactors " << CLOCK() << '\n';
 #if defined VISUALC || defined BESTA_OS
 	int * qsave=new int[std::max(as,bs)], *qcur=qsave,*qend=qsave+std::max(as,bs);
 #else
@@ -2680,7 +2680,7 @@ namespace giac {
 	    dq.coord.push_back(monomial<gen>(smod(*qcur,m),deg,1,1));
 	}
 	if (debug_infolevel>20)
-	  CERR << "gcdsmallmodpoly, end compute cofactors " << CLOCK() << endl;
+	  CERR << "gcdsmallmodpoly, end compute cofactors " << CLOCK() << '\n';
 #if defined VISUALC || defined BESTA_OS
 	delete [] qsave; 
 #endif
@@ -2833,7 +2833,7 @@ namespace giac {
       gen s=b.front();
       mulmodpoly(b,invenv(s,env),env,b);
       DivRem(a,b,env,quo,rem);
-      // COUT << "a:" << a << "b:" << b << "q:" << quo << "r:" << rem << endl;
+      // COUT << "a:" << a << "b:" << b << "q:" << quo << "r:" << rem << '\n';
       swap(a,b); // newa=b,  
       swap(b,rem); // newb=rem
     }
@@ -2976,8 +2976,8 @@ namespace giac {
     d.reserve(aend-a);
     for (;a!=aend;++a)
       d.push_back(*a);
-    // CERR << d << " " << pcof << " " << p << endl;
-    // CERR << d << " " << qcof << " " << q << endl;
+    // CERR << d << " " << pcof << " " << p << '\n';
+    // CERR << d << " " << qcof << " " << q << '\n';
 #if defined VISUALC || defined BESTA_OS
     delete [] asave;
     delete [] bsave;
@@ -2986,7 +2986,7 @@ namespace giac {
   }
 
   static void dbgp(const modpoly & a){
-    COUT << a << endl;
+    COUT << a << '\n';
   }
 
   static bool content_mod(const polynome & p,vecteur & gcd,environment * env){
@@ -3018,7 +3018,7 @@ namespace giac {
     for (;it!=itend;++it){
       /*
 	if (it->type!=_INT_){
-	CERR << v << endl;
+	CERR << v << '\n';
 	setsizeerr(gen(v).print(context0));
 	}
       */
@@ -3148,13 +3148,13 @@ namespace giac {
     int e=0; // number of evaluations
     int alpha=0,ps,qs;
     if (debug_infolevel>1)
-      CERR << "gcdmod find alpha dim " << d.dim << " " << CLOCK() << endl;
+      CERR << "gcdmod find alpha dim " << d.dim << " " << CLOCK() << '\n';
     vector<int> palpha,qalpha,pcofactalpha,qcofactalpha,g,g1;
     for (;;++alpha){
       if (alpha==modulo)
 	setsizeerr(gettext("Modgcd: no suitable evaluation point"));
       if (debug_infolevel>1)
-	CERR << "gcdmod eval " << alpha << " dim " << d.dim << " " << CLOCK() << endl;
+	CERR << "gcdmod eval " << alpha << " dim " << d.dim << " " << CLOCK() << '\n';
       palpha=pevaln(pxn,alpha,modulo);
       if (palpha.empty())
 	continue;
@@ -3178,13 +3178,13 @@ namespace giac {
 	continue;
       // palpha and qalpha are p_prim and q_prim evaluated at xn=alpha
       if (debug_infolevel>1)
-	CERR << "gcdmod gcd at " << alpha << " dim " << d.dim << " " << CLOCK() << endl;
+	CERR << "gcdmod gcd at " << alpha << " dim " << d.dim << " " << CLOCK() << '\n';
       gcdsmallmodpoly(palpha,qalpha,modulo,g,pcofactalpha,qcofactalpha);
       int gdeg(g.size()-1);
       int gcd_plus_delta_deg=gcddeg+Delta.size()-1;
       if (gdeg==delta){
 	if (debug_infolevel>1)
-	  CERR << "gcdmod interp dim " << d.dim << " " << CLOCK() << endl;
+	  CERR << "gcdmod interp dim " << d.dim << " " << CLOCK() << '\n';
 	g1=g;
 	mulmodpoly(g1,smod(hornermod(Delta,alpha,modulo)*invmod(g.front(),modulo),modulo),modulo);
 	smallmodpoly2modpoly(g1-pevaln(d,alpha,modulo),modulo,g1);
@@ -3196,7 +3196,7 @@ namespace giac {
 	    || is_zero(g1)
 	    ){
 	  if (debug_infolevel)
-	    CERR << "gcdmod pp1mod dim " << d.dim << " " << CLOCK() << endl;
+	    CERR << "gcdmod pp1mod dim " << d.dim << " " << CLOCK() << '\n';
 	  polynome pD,QP(dim),QQ(dim),R(d);
 	  vecteur vtmp;
 	  pp_mod(R,vtmp,&env);
@@ -3204,7 +3204,7 @@ namespace giac {
 	  // This removes the polynomial in x1 that we multiplied by
 	  // (it was necessary to know the lcoeff of the interpolated poly)
 	  if (debug_infolevel)
-	    CERR << "gcdmod check dim " << d.dim << " " << CLOCK() << endl;
+	    CERR << "gcdmod check dim " << d.dim << " " << CLOCK() << '\n';
 	  divremmod(p,pD,modulo,QP,R);
 	  // Now, gcd divides pD for gcddeg+1 values of x1
 	  // degree(pD)<=degree(gcd)
@@ -3236,12 +3236,12 @@ namespace giac {
 	      qcofactor=qcofactor*QQ;
 	      qcofactor=smod(q_orig.coord.front().value*invmod(qcofactor.coord.front().value,modulo)*qcofactor,modulo);
 	      if (debug_infolevel)
-		CERR << "gcdmod found dim " << d.dim << " " << CLOCK() << endl;
+		CERR << "gcdmod found dim " << d.dim << " " << CLOCK() << '\n';
 	      return;
 	    }
 	  }
 	  if (debug_infolevel)
-	    CERR << "Gcdmod bad guess " << endl;
+	    CERR << "Gcdmod bad guess " << '\n';
 	  continue;
 	}
 	else
@@ -3366,7 +3366,7 @@ namespace giac {
 
   bool gcd_modular(const polynome &p_orig, const polynome & q_orig, polynome & pgcd,polynome & pcofactor,polynome & qcofactor,bool compute_cofactors){
     if (debug_infolevel>1)
-      CERR << "gcd modular algo begin " << CLOCK() << endl;
+      CERR << "gcd modular algo begin " << CLOCK() << '\n';
     int dim=p_orig.dim;
     vector< T_unsigned<gen,hashgcd_U> > p,q,g,pcof,qcof;
     index_t d(dim);
@@ -3421,13 +3421,13 @@ namespace giac {
 
   bool mod_gcd(const polynome &p_orig, const polynome & q_orig, const gen & modulo, polynome & pgcd,polynome & pcofactor,polynome & qcofactor,bool compute_cofactors){
     if (debug_infolevel)
-      CERR << "modgcd begin " << CLOCK()*1e-6 << endl;
+      CERR << "modgcd begin " << CLOCK()*1e-6 << '\n';
     int dim=p_orig.dim;
     if ( dim==1 || p_orig.coord.empty() || is_one(q_orig) || q_orig.coord.empty() || is_one(p_orig) || modulo.type!=_INT_ ){
       return mod_gcd_c(p_orig,q_orig,modulo,pgcd,pcofactor,qcofactor,compute_cofactors);
     }
     if (debug_infolevel)
-      CERR << "modgcd begin dim>=2 " << CLOCK()*1e-6 << endl;
+      CERR << "modgcd begin dim>=2 " << CLOCK()*1e-6 << '\n';
     std::vector<hashgcd_U> vars(dim);
     vector< T_unsigned<int,hashgcd_U> > p,q,g,pcof,qcof;
     index_t d(dim);
@@ -3476,7 +3476,7 @@ namespace giac {
       return true;
     env.complexe=!estreel;
     if (debug_infolevel)
-      CERR << "xn_gcdmod content/x1..xn-1 dim " << dim << " " << CLOCK() << endl;
+      CERR << "xn_gcdmod content/x1..xn-1 dim " << dim << " " << CLOCK() << '\n';
     // Make p and q primitive with respect to x1,...,xn-1
     // i.e. the coeff of p and q wrt x1,...,xn-1 which are polynomials in xn
     // are relative prime 
@@ -3570,7 +3570,7 @@ namespace giac {
     // gcd of leading coefficients of p and q viewed as poly in X_1...X_n-1
     // with coeff in Z[X_n]
     if (debug_infolevel)
-      CERR << "gcdmod lcoeffn dim " << dim-1 << " " << CLOCK() << endl;
+      CERR << "gcdmod lcoeffn dim " << dim-1 << " " << CLOCK() << '\n';
     gen lp(pxn.coord.front().value),lq(qxn.coord.front().value);
     vecteur Delta(1,1),lcoeffp(1,1),lcoeffq(1,1);
     if (lp.type==_VECT)
@@ -3607,7 +3607,7 @@ namespace giac {
       convert_back_xn(qxn,q);
     }
     if (debug_infolevel)
-      CERR << "dim " << dim << ", full lift:" << sumdeg << " , gcdlift:" << gcdlift/(1+dim) << " compute cofactors=" << compute_cof << endl;
+      CERR << "dim " << dim << ", full lift:" << sumdeg << " , gcdlift:" << gcdlift/(1+dim) << " compute cofactors=" << compute_cof << '\n';
     d=polynome(dim-1);
     polynome dp(dim-1),dq(dim-1),g1(dim-1);
     // we are now interpolating G=gcd(p,q)*a poly/xn
@@ -3622,14 +3622,14 @@ namespace giac {
     int e=0; // number of evaluations
     int alpha=0;
     if (debug_infolevel>1)
-      CERR << "gcdmod find alpha dim " << d.dim << " " << CLOCK() << endl;
+      CERR << "gcdmod find alpha dim " << d.dim << " " << CLOCK() << '\n';
     for (;;++alpha){
       if (alpha==modulo){
-	CERR << "Modgcd: no suitable evaluation point" << endl;
+	CERR << "Modgcd: no suitable evaluation point" << '\n';
 	return false;
       }
       if (debug_infolevel>1)
-	CERR << "gcdmod eval " << alpha << " dim " << d.dim << " " << CLOCK() << endl;
+	CERR << "gcdmod eval " << alpha << " dim " << d.dim << " " << CLOCK() << '\n';
       index_t * pdegptr=&pdeg;
       const polynome & palpha=pevaln(pxn,alpha,modulo,pdegptr,estreel);
       if (palpha.coord.empty())
@@ -3661,7 +3661,7 @@ namespace giac {
       // continue;
       // palpha and qalpha are p_prim and q_prim evaluated at xn=alpha
       if (debug_infolevel>1)
-	CERR << "gcdmod gcd at " << alpha << " dim " << d.dim << " " << CLOCK() << endl;
+	CERR << "gcdmod gcd at " << alpha << " dim " << d.dim << " " << CLOCK() << '\n';
       polynome g(dim-1),gp(dim-1),gq(dim-1);
       index_t * tmpptr=0;
       if (compute_cof && e>liftdeg0 && e<=liftdeg){
@@ -3764,7 +3764,7 @@ namespace giac {
 #else
 	    // Build the matrix, each line has coeffs / vzero
 	    if (debug_infolevel>1)
-	      CERR << CLOCK()*1e-6 << " SPMOD start" << endl;
+	      CERR << CLOCK()*1e-6 << " SPMOD start" << '\n';
 	    matrice m; m.reserve(e+1);
 	    for (int j=0;j<=e;++j){
 	      index_t::reverse_iterator it=vzero.rbegin(),itend=vzero.rend();
@@ -3780,11 +3780,11 @@ namespace giac {
 	    // Reduce linear system modulo modulo
 	    gen det; vecteur pivots; matrice mred;
 	    if (debug_infolevel>1)
-	      CERR << CLOCK()*1e-6 << " SPMOD begin rref" << endl;
+	      CERR << CLOCK()*1e-6 << " SPMOD begin rref" << '\n';
 	    if (!modrref(m,mred,pivots,det,0,int(m.size()),0,int(m.front()._VECTptr->size())-1,true,false,modulo,false,false))
 	      return false;
 	    if (debug_infolevel>1)
-	      CERR << CLOCK()*1e-6 << " SPMOD end rref" << endl;
+	      CERR << CLOCK()*1e-6 << " SPMOD end rref" << '\n';
 	    if (!is_zero(det)){	      
 	      // Last column is the solution, it should be polynomials
 	      // that must be untrunced with index = to non-0 coeff of vzero
@@ -3819,7 +3819,7 @@ namespace giac {
 	      polynome pD,QP(dim),QQ(dim),R(dim);
 	      convert_back_xn(trygcd,pD);
 	      if (debug_infolevel>1)
-		CERR << CLOCK()*1e-6 << " SPMOD try gcd candidate" << endl;
+		CERR << CLOCK()*1e-6 << " SPMOD try gcd candidate" << '\n';
 	      if (pD.coord.size()<=p.coord.size() && pD.coord.size()<=q.coord.size() && divremmod(p,pD,modulo,QP,R) && R.coord.empty()){
 		if (divremmod(q,pD,modulo,QQ,R) && R.coord.empty()){
 		  pD=pD*cont;
@@ -3839,7 +3839,7 @@ namespace giac {
 	  } // end if gcddeg-nzero==e
 	} // end if (nzero)
 	if (debug_infolevel>1)
-	  CERR << "gcdmod interp dim " << d.dim << " " << CLOCK() << endl;
+	  CERR << "gcdmod interp dim " << d.dim << " " << CLOCK() << '\n';
 	if (compute_cof){
 	  // interpolate p cofactor
 	  mulpoly(gp,smod(hornermod(lcoeffp,alpha,modulo)*invmod(gp.coord.front().value,modulo),modulo),g1);
@@ -3889,7 +3889,7 @@ namespace giac {
 		qcofactor=smod(q_orig.coord.front().value*invmod(qcofactor.coord.front().value,modulo)*qcofactor,modulo);
 	      }
 	      if (debug_infolevel)
-		CERR << "gcdmod end dim " << dim << " " << CLOCK() << endl;
+		CERR << "gcdmod end dim " << dim << " " << CLOCK() << '\n';
 	      return true;
 	    }
 	    d.coord.clear(); dp.coord.clear(); dq.coord.clear();
@@ -3901,7 +3901,7 @@ namespace giac {
 	else {
 	  if (e>gcddeg || is_zero(g1)){
 	    if (debug_infolevel)
-	      CERR << "gcdmod pp1mod dim " << dim << " " << CLOCK() << endl;
+	      CERR << "gcdmod pp1mod dim " << dim << " " << CLOCK() << '\n';
 	    polynome pD,QP(dim),QQ(dim),R(d);
 	    if (!pp_mod(R,vtmp,&env))
 	      return false;
@@ -3909,7 +3909,7 @@ namespace giac {
 	    // This removes the polynomial in xn that we multiplied by
 	    // (it was necessary to know the lcoeff of the interpolated poly)
 	    if (debug_infolevel)
-	      CERR << "gcdmod check dim " << dim << " " << CLOCK() << endl;
+	      CERR << "gcdmod check dim " << dim << " " << CLOCK() << '\n';
 	    // Now, gcd divides pD for gcddeg+1 values of x1
 	    // degree(pD)<=degree(gcd)
 	    if (divremmod(p,pD,modulo,QP,R) && R.coord.empty()){
@@ -3941,12 +3941,12 @@ namespace giac {
 		  qcofactor=smod(q_orig.coord.front().value*invmod(qcofactor.coord.front().value,modulo)*qcofactor,modulo);
 		}
 		if (debug_infolevel)
-		  CERR << "gcdmod found dim " << d.dim << " " << CLOCK() << endl;
+		  CERR << "gcdmod found dim " << d.dim << " " << CLOCK() << '\n';
 		return true;
 	      }
 	    }
 	    if (debug_infolevel)
-	      CERR << "Gcdmod bad guess " << endl;
+	      CERR << "Gcdmod bad guess " << '\n';
 	  } // end if (e>gcddeg)
 	} // end else [if (compute_cof)]
 	continue;
@@ -4059,8 +4059,8 @@ namespace giac {
 	      int p2t=coefftype(P2n,p2g);
 	      polynome P12g=gcd(P1n,P2n);
 	      if (p1t==0 && p2t==0 && P12g.lexsorted_degree()==0){
-		//CERR << P1n % pp1 << endl;
-		//CERR << P2n % pp2 << endl;
+		//CERR << P1n % pp1 << '\n';
+		//CERR << P2n % pp2 << '\n';
 		P1=P1n/pp1;
 		P2=P2n/pp2;
 		// solve sylvester matrix * []=d
@@ -4083,7 +4083,7 @@ namespace giac {
 		  u=den1*u;		
 		if (!is_one(den2))
 		  v=den2*v;
-		//CERR << (operator_times(u,p1,0)+operator_times(v,p2,0))/D << endl;
+		//CERR << (operator_times(u,p1,0)+operator_times(v,p2,0))/D << '\n';
 		return;
 	      }
 	    }
@@ -4121,7 +4121,7 @@ namespace giac {
 		  u=den1*u;		
 		if (!is_one(den2))
 		  v=den2*v;
-		//CERR << (operator_times(u,p1,0)+operator_times(v,p2,0))/D << endl;
+		//CERR << (operator_times(u,p1,0)+operator_times(v,p2,0))/D << '\n';
 		return;
 	      }
 	    }
@@ -4191,16 +4191,16 @@ namespace giac {
     mulmodpoly(b,s,env,d); // d=b*s;
     if (swapped){
       mulmodpoly(ub,s,env,v);
-      // COUT << ub << "*" << s << "=" << v << endl;
-      // COUT << "swapped" << d << "-" << v << "*" << p2 << "/" << p1 << endl;
+      // COUT << ub << "*" << s << "=" << v << '\n';
+      // COUT << "swapped" << d << "-" << v << "*" << p2 << "/" << p1 << '\n';
       u=operator_div(operator_minus(d,operator_times(v,p2,env),env),p1,env);
     }
     else {
       mulmodpoly(ub,s,env,u);
-      // COUT << d << "-" << u << "*" << p1 << "/" << p2 << endl;
+      // COUT << d << "-" << u << "*" << p1 << "/" << p2 << '\n';
       v=operator_div(operator_minus(d,operator_times(u,p1,env),env),p2,env);
     }
-    // COUT << "Verif " << p1 << "*" << u << "+" << p2 << "*" << v << "=" << p1*u+p2*v << " " << d << endl;
+    // COUT << "Verif " << p1 << "*" << u << "+" << p2 << "*" << v << "=" << p1*u+p2*v << " " << d << '\n';
   }
 
   // Solve a=b*x modulo the polynomial n 
@@ -4301,8 +4301,8 @@ namespace giac {
       operator_times(pi[k-1],a[n-k-1],env,tmp);
       pi.push_back(tmp);
     }
-    // COUT << "a:" << a << endl;
-    // COUT << "pi:" << pi << endl;
+    // COUT << "a:" << a << '\n';
+    // COUT << "pi:" << pi << '\n';
     modpoly c(1,plus_one),U(1),v(1),d(1),q,r;
     // compute u[0] using egcd(a[0],p[n-2])
     // since a[0]*()+p[n-2]*u[0]=c
@@ -4321,7 +4321,7 @@ namespace giac {
       operator_times(v,c,env,tmp); DivRem(tmp,pi[n-k-2],env,q,c); // c=(v*c) % pi[n-k-2];
     }
     u.push_back(c);
-    // COUT << "u:" << u << endl;
+    // COUT << "u:" << u << '\n';
     return true;
   }
   
@@ -4614,7 +4614,7 @@ namespace giac {
   void ducos_e1(const modpoly & A,const modpoly & Sd1,const modpoly & Se,const gen & sd,modpoly & res){
     int d=int(A.size())-1,e=int(Sd1.size())-1,dim=1;
     if (debug_infolevel>3)
-      CERR << CLOCK()*1e-6 << " ducos_e1 begin d=" << d << endl;
+      CERR << CLOCK()*1e-6 << " ducos_e1 begin d=" << d << '\n';
     gen cd1(Sd1.front()),se(Se.front());
     vector< modpoly > Hv(e);
     Hv.reserve(d);
@@ -4641,23 +4641,23 @@ namespace giac {
     D.reserve(d);
     // split next loop in 2 parts, because Hv indexes lower than e are straightforward
     if (debug_infolevel>3)
-      CERR << CLOCK()*1e-6 << " ducos_e1 D begin" << endl;
+      CERR << CLOCK()*1e-6 << " ducos_e1 D begin" << '\n';
     for (int j=e-1;j>=0;--j){
       D.push_back(A[A.size()-1-j]*se);
     }
     if (debug_infolevel>3)
-      CERR << CLOCK()*1e-6 << " ducos_e1 D j=e " << e << "<" << d << endl;
+      CERR << CLOCK()*1e-6 << " ducos_e1 D j=e " << e << "<" << d << '\n';
     for (int j=e;j<d;++j){
       D = D + A[A.size()-1-j]*Hv[j];
     }
     if (debug_infolevel>3)
-      CERR << CLOCK()*1e-6 << " ducos_e1 D end, start division" << endl;
+      CERR << CLOCK()*1e-6 << " ducos_e1 D end, start division" << '\n';
     if (is_integer(A.front())) 
       iquo(D,A.front()); 
     else 
       D = D/A.front();
     if (debug_infolevel>3)
-      CERR << CLOCK()*1e-6 << " ducos_e1 D ready" << endl;
+      CERR << CLOCK()*1e-6 << " ducos_e1 D ready" << '\n';
     modpoly & Hd1=Hv.back();
     Hd1.push_back(0); // X*Hd1
     int hd1=int(Hd1.size())-1-e;
@@ -4676,13 +4676,13 @@ namespace giac {
     //res=cd1*(Hd1+D)-(hd*Sd1);
 #endif
     if (debug_infolevel>3)
-      CERR << CLOCK()*1e-6 << " ducos_e1 D final division" << endl;
+      CERR << CLOCK()*1e-6 << " ducos_e1 D final division" << '\n';
     trim_inplace(res); // res=trim(res,0);
     if (is_integer(sd)) iquo(res,sd); else res=res/sd;
     if (!res.empty() && res.front()==0)
-      CERR << "err" << endl;
+      CERR << "err" << '\n';
     if (debug_infolevel>3)
-      CERR << CLOCK()*1e-6 << " ducos_e1 end" << endl;
+      CERR << CLOCK()*1e-6 << " ducos_e1 end" << '\n';
     if ( (d-e+1)%2)
       res=-res;
   }
@@ -5443,7 +5443,7 @@ namespace giac {
 	res=-mres;
       }
     }
-    //if (res!=norm(p,contextptr)) CERR << "intnorm err" << endl;
+    //if (res!=norm(p,contextptr)) CERR << "intnorm err" << '\n';
     return res;
   }
 
@@ -5456,7 +5456,7 @@ namespace giac {
   dense_POLY1 ichinrem(const dense_POLY1 &p,const dense_POLY1 & q,const gen & pmod,const gen & qmod){
     gen u,v,d,tmp,pqmod(pmod*qmod);
     egcd(pmod,qmod,u,v,d);
-    // COUT << u << "*" << pmod << "+" << v << "*" << qmod << "=" << d << " " << u*pmod+v*qmod << endl;
+    // COUT << u << "*" << pmod << "+" << v << "*" << qmod << "=" << d << " " << u*pmod+v*qmod << '\n';
     dense_POLY1::const_iterator a = p.begin();
     dense_POLY1::const_iterator a_end = p.end();
     dense_POLY1::const_iterator b = q.begin();
@@ -5470,7 +5470,7 @@ namespace giac {
       res.push_back(smod(*a-iquo(u*(*a),d),pqmod));
     for (;a!=a_end;++a,++b){
       res.push_back(smod(*a+iquo(u*(*b-*a),d) *pmod,pqmod)) ;
-      // COUT << a->value << " " << b->value << "->" << tmp << " " << pqmod << endl;
+      // COUT << a->value << " " << b->value << "->" << tmp << " " << pqmod << '\n';
     }
     return res;
   }
@@ -5478,7 +5478,7 @@ namespace giac {
   // p and q assumed to have the same size, gcd(pmod,qmod)=1
   bool ichinrem_inplace(dense_POLY1 &p,const dense_POLY1 & q,const gen & pmod,int qmodval){
     if (debug_infolevel>2)
-      CERR << CLOCK()*1e-6 << " ichinrem begin"<< endl;
+      CERR << CLOCK()*1e-6 << " ichinrem begin"<< '\n';
     gen u,v,d,tmp,pqmod(qmodval*pmod),pqmod2=iquo(pqmod,2),minuspqmod2=-pqmod2;
     egcd(pmod,qmodval,u,v,d);
     if (u.type==_ZINT)
@@ -5534,14 +5534,14 @@ namespace giac {
     }
     mpz_clear(tmpz);
     if (debug_infolevel>2)
-      CERR << CLOCK()*1e-6 << " ichinrem end"<< endl;
+      CERR << CLOCK()*1e-6 << " ichinrem end"<< '\n';
     return true;
   }
 
   // p and q assumed to have the same size, gcd(pmod,qmod)=1
   int ichinrem_inplace(dense_POLY1 &p,const vector<int> & q,const gen & pmod,int qmodval){
     if (debug_infolevel>2)
-      CERR << CLOCK()*1e-6 << " ichinrem begin"<< endl;
+      CERR << CLOCK()*1e-6 << " ichinrem begin"<< '\n';
     gen u,v,d,tmp,pqmod(qmodval*pmod),pqmod2=iquo(pqmod,2),minuspqmod2=-pqmod2;
     egcd(pmod,qmodval,u,v,d);
     if (u.type==_ZINT)
@@ -5601,7 +5601,7 @@ namespace giac {
     }
     mpz_clear(tmpz);
     if (debug_infolevel>2)
-      CERR << CLOCK()*1e-6 << " ichinrem end"<< endl;
+      CERR << CLOCK()*1e-6 << " ichinrem end"<< '\n';
     return changed?1:2;
   }
 
@@ -6063,12 +6063,12 @@ namespace giac {
       int m=env->modulo.val;
 #ifndef FXCG
       if (debug_infolevel>2)
-	CERR << CLOCK()*1e-6 << " begin fft int " << W.size() << " memory " << memory_usage()*1e-6 << "M" << endl;
+	CERR << CLOCK()*1e-6 << " begin fft int " << W.size() << " memory " << memory_usage()*1e-6 << "M" << '\n';
 #endif
       fft(F,W,RES,m);
 #ifndef FXCG
       if (debug_infolevel>2)
-	CERR << CLOCK()*1e-6 << " end fft int " << W.size() << " memory " << memory_usage()*1e-6 << "M" << endl;
+	CERR << CLOCK()*1e-6 << " end fft int " << W.size() << " memory " << memory_usage()*1e-6 << "M" << '\n';
 #endif
       unsigned n=unsigned(RES.size());
       res.clear();
@@ -6233,7 +6233,7 @@ namespace giac {
   void fft2( complex<double> * A, int n, double theta){
 #ifndef FXCG
     if (debug_infolevel>2)
-      CERR << CLOCK()*1e-6 << " begin fft2 C " << n << " memory " << memory_usage()*1e-6 << "M" << endl;
+      CERR << CLOCK()*1e-6 << " begin fft2 C " << n << " memory " << memory_usage()*1e-6 << "M" << '\n';
 #endif
     vector< complex<double> > W,T(n);
     W.reserve(n); 
@@ -6250,7 +6250,7 @@ namespace giac {
     fft2(A,n,&W.front(),&T.front());
 #ifndef FXCG
     if (debug_infolevel>2)
-      CERR << CLOCK()*1e-6 << " end fft C " << n << " memory " << memory_usage()*1e-6 << "M" << endl;
+      CERR << CLOCK()*1e-6 << " end fft C " << n << " memory " << memory_usage()*1e-6 << "M" << '\n';
 #endif
   }
 
@@ -7305,7 +7305,7 @@ namespace giac {
   void fft2(int * A, int n, int w, int p){
 #ifndef FXCG
     if (debug_infolevel>2)
-      CERR << CLOCK()*1e-6 << " begin fft2 int " << n << " memory " << memory_usage()*1e-6 << "M" << endl;
+      CERR << CLOCK()*1e-6 << " begin fft2 int " << n << " memory " << memory_usage()*1e-6 << "M" << '\n';
 #endif
     vector<int> W,T(n);
     fft2w(W,n,w,p);
@@ -7317,7 +7317,7 @@ namespace giac {
       if (*a<0) *a += p;
 #ifndef FXCG
     if (debug_infolevel>2)
-      CERR << CLOCK()*1e-6 << " end fft int " << n << " memory " << memory_usage()*1e-6 << "M" << endl;
+      CERR << CLOCK()*1e-6 << " end fft int " << n << " memory " << memory_usage()*1e-6 << "M" << '\n';
 #endif
   }
 
@@ -7391,13 +7391,13 @@ namespace giac {
     const int p1=2013265921; int r=1227303670;
     if (modulo==p1){
       if (debug_infolevel>3)
-	CERR << CLOCK()*1e-6 << " + begin" << endl;
+	CERR << CLOCK()*1e-6 << " + begin" << '\n';
       if (makeplus){
 	makepositive(&fftmult_p.front(),as,p1);
 	makepositive(&fftmult_q.front(),bs,p1);
       }
       if (debug_infolevel>3)
-	CERR << CLOCK()*1e-6 << " + end" << endl;
+	CERR << CLOCK()*1e-6 << " + end" << '\n';
       int w=powmod(r,(1u<<(27-logrs)),p1);
       W.clear();
 #if 0
@@ -7961,7 +7961,7 @@ namespace giac {
 	++begin;
 	if (begin==end){
 	  if (end==source+zsize){
-	    CERR << "unexpected carry" << endl;
+	    CERR << "unexpected carry" << '\n';
 	    break;
 	  }
 	  finalcarry=sign?s:-s;
@@ -8040,7 +8040,7 @@ namespace giac {
       else shift=128;
       if (shift==64){
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " begin Kronecker gmp conversion " << rs << endl;
+	  CERR << CLOCK()*1e-6 << " begin Kronecker gmp conversion " << rs << '\n';
 	vecteur2vectorint(p,modulo,a);
 	//makepositive(&a.front(),ps,modulo);
 	vecteur2vectorint(q,modulo,b);
@@ -8055,12 +8055,12 @@ namespace giac {
 	  B[i]=b[i];
 	mpz_import(tmp1,ps,1,sizeof(longlong),0,0,&A.front());
 	mpz_import(tmp2,qs,1,sizeof(longlong),0,0,&B.front());
-	//CERR << gen(tmp1) << endl << gen(tmp2) << endl;
+	//CERR << gen(tmp1) << '\n' << gen(tmp2) << '\n';
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " begin Kronecker gmp mult " << rs << endl;
+	  CERR << CLOCK()*1e-6 << " begin Kronecker gmp mult " << rs << '\n';
 	mpz_mul(tmp1,tmp1,tmp2);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " end Kronecker gmp mult " << rs << endl;
+	  CERR << CLOCK()*1e-6 << " end Kronecker gmp mult " << rs << '\n';
 	size_t countp;
 	mpz_export(&C.front(),&countp,1,sizeof(longlong),0,0,tmp1);
 	for (int i=0;i<rs;++i){
@@ -8070,7 +8070,7 @@ namespace giac {
 	}
 	mpz_clear(tmp1); mpz_clear(tmp2);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " end Kronecker conversion " << rs << endl;
+	  CERR << CLOCK()*1e-6 << " end Kronecker conversion " << rs << '\n';
 	return true;
       }
     }
@@ -8091,17 +8091,17 @@ namespace giac {
 	vecteur2vectorint(p,reduce,a);
 	vecteur2vectorint(q,reduce,b);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << ( (modulo==p2 || modulo==p3 || modulo==p4)?" begin fft2 p234 ":" begin fft2 p1 ") << rs << endl;
+	  CERR << CLOCK()*1e-6 << ( (modulo==p2 || modulo==p3 || modulo==p4)?" begin fft2 p234 ":" begin fft2 p1 ") << rs << '\n';
 	if (modulo==p2 || modulo==p3 || modulo==p4) 
 	  fft2mult(reduce,a,b,resp1,modulo,W,tmp_p,tmp_q,false,true,false);
 	else {
 	  fft2mult(reduce,a,b,resp1,p1,W,tmp_p,tmp_q,false,true,false);
 	}
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << ( (modulo==p2 || modulo==p3 || modulo==p4)?" end fft2 p234 ":" end fft2 p1 ") << rs << endl;
+	  CERR << CLOCK()*1e-6 << ( (modulo==p2 || modulo==p3 || modulo==p4)?" end fft2 p234 ":" end fft2 p1 ") << rs << '\n';
 	if (test>=p1/2 && modulo!=p1 && modulo!=p2 && modulo!=p3 && modulo!=p4) {
 	  if (debug_infolevel>2)
-	    CERR << CLOCK()*1e-6 << " begin fft2 p2 " << rs << endl;
+	    CERR << CLOCK()*1e-6 << " begin fft2 p2 " << rs << '\n';
 	  if (!modulo){
 	    vecteur2vectorint(p,p2,a);
 	    vecteur2vectorint(q,p2,b);
@@ -8109,7 +8109,7 @@ namespace giac {
 	  reduce=modulo?modulo:p2;
 	  fft2mult(reduce,a,b,resp2,p2,W,tmp_p,tmp_q,false,true,false);
 	  if (debug_infolevel>2)
-	    CERR << CLOCK()*1e-6 << " end fft2 p2 " << rs << endl;
+	    CERR << CLOCK()*1e-6 << " end fft2 p2 " << rs << '\n';
 	  int p1modinv=invmod(p1,p2);
 	  int modulo2=modulo/2;
 	  if (modulo){
@@ -8136,7 +8136,7 @@ namespace giac {
 	    }
 	  }
 	  if (debug_infolevel>2)
-	    CERR << CLOCK()*1e-6 << " end fft2 chinrem " << rs << endl;
+	    CERR << CLOCK()*1e-6 << " end fft2 chinrem " << rs << '\n';
 	  if (!modulo){
 	    reverse(pq.begin(),pq.end());
 	    return true;
@@ -8151,16 +8151,16 @@ namespace giac {
 	vecteur2vectorint(p,modulo,a);
 	vecteur2vectorint(q,modulo,b);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " begin fftp1 " << rs << endl;
+	  CERR << CLOCK()*1e-6 << " begin fftp1 " << rs << '\n';
 	fft2mult(modulo,a,b,resp1,p1,W,tmp_p,tmp_q,false,false,false);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " begin fftp2 " << rs << endl;
+	  CERR << CLOCK()*1e-6 << " begin fftp2 " << rs << '\n';
 	fft2mult(modulo,a,b,resp2,p2,W,tmp_p,tmp_q,false,false,false);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " begin fftp4 " << rs << endl;
+	  CERR << CLOCK()*1e-6 << " begin fftp4 " << rs << '\n';
 	fft2mult(modulo,a,b,resp3,p4,W,tmp_p,tmp_q,false,false,false);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " begin ichinrem " << modulo << endl;
+	  CERR << CLOCK()*1e-6 << " begin ichinrem " << modulo << '\n';
 	int n1=invmod(n,p1); if (n1<0) n1+=p1;
 	int n2=invmod(n,p2); if (n2<0) n2+=p2;
 	int n3=invmod(n,p4); if (n3<0) n3+=p4;
@@ -8190,7 +8190,7 @@ namespace giac {
 	  resp1[i]=u;
 	}
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " end ichinrem " << modulo << endl;
+	  CERR << CLOCK()*1e-6 << " end ichinrem " << modulo << '\n';
 	reverse(resp1.begin(),resp1.end());
 	return true;
       }
@@ -8198,16 +8198,16 @@ namespace giac {
 	vecteur2vectorint(p,modulo,a);
 	vecteur2vectorint(q,modulo,b);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " begin fftp1 " << rs << endl;
+	  CERR << CLOCK()*1e-6 << " begin fftp1 " << rs << '\n';
 	fft2mult(modulo,a,b,resp1,p1,W,tmp_p,tmp_q,false,false,false);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " begin fftp2 " << rs << endl;
+	  CERR << CLOCK()*1e-6 << " begin fftp2 " << rs << '\n';
 	fft2mult(modulo,a,b,resp2,p2,W,tmp_p,tmp_q,false,false,false);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " begin fftp3 " << rs << endl;
+	  CERR << CLOCK()*1e-6 << " begin fftp3 " << rs << '\n';
 	fft2mult(modulo,a,b,resp3,p3,W,tmp_p,tmp_q,false,false,false);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " begin ichinrem " << modulo << endl;
+	  CERR << CLOCK()*1e-6 << " begin ichinrem " << modulo << '\n';
 	int n1=invmod(n,p1); if (n1<0) n1+=p1;
 	int n2=invmod(n,p2); if (n2<0) n2+=p2;
 	int n3=invmod(n,p3); if (n3<0) n3+=p3;
@@ -8237,7 +8237,7 @@ namespace giac {
 	  resp1[i]=u;
 	}
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " end ichinrem " << modulo << endl;
+	  CERR << CLOCK()*1e-6 << " end ichinrem " << modulo << '\n';
 	reverse(resp1.begin(),resp1.end());
 	return true;
       }
@@ -8276,18 +8276,18 @@ namespace giac {
 	// mpz_export(&target,&countp,0,nbytes,0,8*(4-nbytes),integer);
 	// sign is ignored by mpz_export
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " begin fft2 bigint conversion " << zsize << endl;
+	  CERR << CLOCK()*1e-6 << " begin fft2 bigint conversion " << zsize << '\n';
 	zsplit(p,zsize,nbytes*8,pz);
 	zsplit(q,zsize,nbytes*8,qz);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " begin fft2 int " << rs << endl;
+	  CERR << CLOCK()*1e-6 << " begin fft2 int " << rs << '\n';
 	// fftmult call below should be threaded...
-	// CERR << pz << endl << qz << endl;
+	// CERR << pz << '\n' << qz << '\n';
 	// pz and qz must be positive!
 	fft2mult(p1,pz,qz,resp1,p1,W,tmp_p,tmp_q,false,true,true);
 	fft2mult(p2,pz,qz,resp2,p2,W,tmp_p,tmp_q,false,true,true);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " end fft2 int, begin ichinrem " << rs << endl;
+	  CERR << CLOCK()*1e-6 << " end fft2 int, begin ichinrem " << rs << '\n';
 	reverse(resp1.begin(),resp1.end());
 	reverse(resp2.begin(),resp2.end());
 	// resp1 and resp2 have size (p.size()+q.size())*rs-1
@@ -8302,14 +8302,14 @@ namespace giac {
 	  else if (res<-p1p2sur2) res+=p1p2;
 	  pqz[i]=res;
 	}
-	//CERR << "pz:" << pz << endl <<"qz:" << qz << endl << "resp1:"<<resp1 << endl << "resp2"<<resp2 << endl ;
-	//CERR << "pqz" << pqz << endl;
+	//CERR << "pz:" << pz << '\n' <<"qz:" << qz << '\n' << "resp1:"<<resp1 << '\n' << "resp2"<<resp2 << '\n' ;
+	//CERR << "pqz" << pqz << '\n';
 	pq.resize(rs);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " begin int back conversion " << zsize << endl;
+	  CERR << CLOCK()*1e-6 << " begin int back conversion " << zsize << '\n';
 	zbuild(pqz,zsize,nbytes*8,pq);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " end fft2 " << rs << endl;
+	  CERR << CLOCK()*1e-6 << " end fft2 " << rs << '\n';
 	// fill pq from pqz using mpz_import
 	// carry handling 
 	// sum(x_k*B^k): iquorem(x_k,b^2) add quo to x_{k+2},
@@ -8322,17 +8322,17 @@ namespace giac {
       }
 #endif
       if (debug_infolevel>2)
-	CERR << CLOCK()*1e-6 << " begin fft2 int, p1 " << rs << endl;
+	CERR << CLOCK()*1e-6 << " begin fft2 int, p1 " << rs << '\n';
       // first prime used is p1
       fftmult(p,q,P,Q,pq,p1,a,b,resp1,resp2,resp3,W,tmp_p,tmp_q,false);
       if (debug_infolevel>2)
-	CERR << CLOCK()*1e-6 << " end fft2 int p1 " << rs << endl;
+	CERR << CLOCK()*1e-6 << " end fft2 int p1 " << rs << '\n';
       gen bound=p1;
       if (debug_infolevel>2)
-	CERR << CLOCK()*1e-6 << " begin fft2 int p2 " << rs << endl;
+	CERR << CLOCK()*1e-6 << " begin fft2 int p2 " << rs << '\n';
       fftmult(p,q,P,Q,pq,p2,a,b,resp2,resp1,resp3,W,tmp_p,tmp_q,false);
       if (debug_infolevel>2)
-	CERR << CLOCK()*1e-6 << " end fft2 int p2 " << rs << endl;
+	CERR << CLOCK()*1e-6 << " end fft2 int p2 " << rs << '\n';
       bound=p2*bound;
 #if 1
       int p1modinv=invmod(p1,p2);
@@ -8385,7 +8385,7 @@ namespace giac {
 	int i=0;
 	for (;i<ps;){
 	  if (debug_infolevel>2)
-	    CERR << CLOCK()*1e-6 << " Prime " << i << " of " << ps << endl;
+	    CERR << CLOCK()*1e-6 << " Prime " << i << " of " << ps << '\n';
 	  for (int j=0;j<nthreads;++j,++i){
 	    if (i>=ps){
 	      multparam[j].prime=0;
@@ -8421,10 +8421,10 @@ namespace giac {
 	prime=primes[i];
 	curres.clear();
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " BEGIN FFT2 MOD " << prime << endl;
+	  CERR << CLOCK()*1e-6 << " BEGIN FFT2 MOD " << prime << '\n';
 	fftmult(p,q,P,Q,curres,prime,a,b,resp1,resp2,resp3,W,tmp_p,tmp_q,false);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " END FFT2 MOD " << prime << endl;
+	  CERR << CLOCK()*1e-6 << " END FFT2 MOD " << prime << '\n';
 	ichinrem_inplace(pq,resp1,bound,prime); // pq=ichinrem(pq,curres,bound,prime);
 	bound=prime*bound;
       }
@@ -8449,9 +8449,9 @@ namespace giac {
 
   bool fftmult(const modpoly & p,const modpoly & q,modpoly & pq,int modulo){
     vector<int> a,b,resp1,resp2,resp3,W,tmp_p,tmp_q;
-    if (debug_infolevel>2) CERR << CLOCK()*1e-6 << " intnorm begin" << endl;
+    if (debug_infolevel>2) CERR << CLOCK()*1e-6 << " intnorm begin" << '\n';
     gen P=intnorm(p,context0), Q=intnorm(q,context0); // coeff assumed to be integers -> no context
-    if (debug_infolevel>2) CERR << CLOCK()*1e-6 << " intnorm end" << endl;
+    if (debug_infolevel>2) CERR << CLOCK()*1e-6 << " intnorm end" << '\n';
     return fftmult(p,q,P,Q,pq,modulo,a,b,resp1,resp2,resp3,W,tmp_p,tmp_q,true);
   }
 
@@ -8475,7 +8475,7 @@ namespace giac {
     dense_POLY1 pp(modularize(p,0,env)),qq(modularize(q,0,env));
     if (is_undef(pp) || is_undef(qq))
       return false;
-    // COUT << "modular gcd 1 " << pp << " " << qq << endl;
+    // COUT << "modular gcd 1 " << pp << " " << qq << '\n';
     gen gcdfirstcoeff(gcd(pp.front(),qq.front(),context0));
     int gcddeg= giacmin(int(pp.size()),int(qq.size()))-1;
     gen bound(pow(gen(2),gcddeg+1)* abs(gcdfirstcoeff,context0));
@@ -8508,7 +8508,7 @@ namespace giac {
       gcdmodpoly(pp,qq,env,gcdmod);
       if (is_undef(gcdmod))
 	return false;
-      // COUT << "Modulo:" << modulo << " " << gcdmod << endl;
+      // COUT << "Modulo:" << modulo << " " << gcdmod << '\n';
       gen adjustcoeff=gcdfirstcoeff*invmod(gcdmod.front(),env->modulo);
       mulmodpoly(gcdmod,adjustcoeff,env,gcdmod);
       int m=int(gcdmod.size())-1;
@@ -8530,9 +8530,9 @@ namespace giac {
 	    productmodulo=env->modulo;
 	  }
 	  else {
-	    // COUT << "Old gcd:" << productmodulo << " " << currentgcd << endl ;
+	    // COUT << "Old gcd:" << productmodulo << " " << currentgcd << '\n' ;
 	    currentgcd=ichinrem(gcdmod,currentgcd,env->modulo,productmodulo);
-	    // COUT << "Combined to " << currentgcd << endl;
+	    // COUT << "Combined to " << currentgcd << '\n';
 	    productmodulo=productmodulo*env->modulo;
 	  }
 	}
@@ -8693,7 +8693,7 @@ namespace giac {
       zztemp=ecriture[i];
       z += zztemp;
     }
-    // CERR << temp << " " << z <<endl;
+    // CERR << temp << " " << z <<'\n';
   }
 #endif
 
@@ -8704,7 +8704,7 @@ namespace giac {
     zzstep=65536;
     NTL::ZZ z;
     ininttype2ZZ(temp,step,z,zzstep);
-    // COUT << "cl_I2ZZ" << i << " -> " << z << endl;
+    // COUT << "cl_I2ZZ" << i << " -> " << z << '\n';
     return NTL::ZZ(z);
   }
 
@@ -8731,7 +8731,7 @@ namespace giac {
     zzstep=65536;
     NTL::ZZ zztemp(z);
     inZZ2inttype(zztemp,zzstep,temp,step);
-    // COUT << "zz2cl_I " << z << " -> " << temp << endl;
+    // COUT << "zz2cl_I " << z << " -> " << temp << '\n';
     return inttype(temp);
   }
 
@@ -8745,7 +8745,7 @@ namespace giac {
   }
 
   void ZZX2tab(const NTL::ZZX & f,int & degree,inttype * & tab){
-    // COUT << f << endl;
+    // COUT << f << '\n';
     degree=deg(f);
     tab = new inttype[degree+1] ;
     for (int i=degree;i>=0;i--){
@@ -8759,12 +8759,12 @@ namespace giac {
     int degree=p.size()-1;
     for (int i=0;i<=degree;i++)
       SetCoeff(f,i,p[degree-i].val);
-    CERR << f << endl;
+    CERR << f << '\n';
     return f;
   }
 
   modpoly GF2X2modpoly(const NTL::GF2X & f){
-    // COUT << f << endl;
+    // COUT << f << '\n';
     int degree=deg(f);
     modpoly tab (degree+1) ;
     for (int i=degree;i>=0;i--){
@@ -8783,12 +8783,12 @@ namespace giac {
       conv(tmp,inttype2ZZ(p[degree-i]));
       SetCoeff(f,i,tmp);
     }
-    CERR << f << endl;
+    CERR << f << '\n';
     return f;
   }
 
   modpoly ZZ_pX2modpoly(const NTL::ZZ_pX & f){
-    // COUT << f << endl;
+    // COUT << f << '\n';
     int degree=deg(f);
     modpoly tab (degree+1) ;
     for (int i=degree;i>=0;i--){
@@ -8870,7 +8870,7 @@ namespace giac {
       inttype * res;
       ntlgcd(tabp,np,tabq,nq,res,nd);
       d=tab2polynome(res,nd);
-      // COUT << "PGCD=" << d << endl;
+      // COUT << "PGCD=" << d << '\n';
       delete [] res;
       delete [] tabp;
       delete [] tabq;

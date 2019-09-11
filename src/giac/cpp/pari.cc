@@ -266,7 +266,7 @@ namespace giac {
 
   // WARNING: If g is a matrix this print the transpose of the matrix
   static string GEN2string(const GEN & g){
-    // cerr << typ(g) << " " << t_MAT << endl;
+    // cerr << typ(g) << " " << t_MAT << '\n';
     char * ch;
     string s;
     if ((typ(g)==t_MAT) || (typ(g)==t_COL)){
@@ -532,7 +532,7 @@ namespace giac {
     if (neg)
       g=gneg(g);
     if (debug_infolevel)
-      CERR << "real converted to pari " << GEN2gen(g,vecteur(0)) << endl;
+      CERR << "real converted to pari " << GEN2gen(g,vecteur(0)) << '\n';
     else e=GEN2gen(g,vecteur(0));
     // for some strange reason, converting g to a gen fixes a bug in conversion
     return g;
@@ -727,7 +727,7 @@ namespace giac {
       s+=",";
     }
     s+="]";
-    // cerr << s << endl;
+    // cerr << s << '\n';
     GEN pari_factmod=gp_read_str((char *) s.c_str());
     GEN pari_modulo=gen2GEN(modulo,vecteur(0),0);
     GEN pari_res=combine_factors(pari_a,pari_factmod,pari_modulo,0,1);
@@ -762,7 +762,7 @@ namespace giac {
 	if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
 #endif
 	avma = av;
-	*logptr(contextptr) << gettext("Error in PARI subsystem") << endl;
+	*logptr(contextptr) << gettext("Error in PARI subsystem") << '\n';
 	PARI_stack_limit = save_pari_stack_limit ;
 	// setsizeerr();
 	return undef;
@@ -831,7 +831,7 @@ namespace giac {
 	if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
 #endif
 	avma = av;
-	*logptr(contextptr) << gettext("Error in PARI subsystem") << endl;
+	*logptr(contextptr) << gettext("Error in PARI subsystem") << '\n';
 	// setsizeerr();
 	return undef;
       } 
@@ -846,7 +846,7 @@ namespace giac {
 	if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
 #endif
 	avma = av;
-	*logptr(contextptr) << gettext("Error in PARI subsystem") << endl;
+	*logptr(contextptr) << gettext("Error in PARI subsystem") << '\n';
 	// setsizeerr();
 	return undef;
       } 
@@ -960,7 +960,7 @@ namespace giac {
 	      ((void (*)(ANYARG))call)(_ARGS_);
 	      res = gnil; break;
 	    }	  
-	  // cerr << GEN2string(res) << endl;
+	  // cerr << GEN2string(res) << '\n';
 	  gen resg(GEN2gen(res,vars));
 	  PARI_stack_limit = save_pari_stack_limit ;
 	  avma=av;
@@ -1083,7 +1083,7 @@ namespace giac {
     long av=get_pari_avma();
     GEN G=gen2GEN(change_subtype(p,_POLY1__VECT),vecteur(0),contextptr);
     if (debug_infolevel)
-      CERR << "pari_polroots " << GEN2gen(G,vecteur(1,vx_var)) << endl;
+      CERR << "pari_polroots " << GEN2gen(G,vecteur(1,vx_var)) << '\n';
     G=roots(G,prec);
     tmp=GEN2gen(G,vecteur(0));
     avma=av;

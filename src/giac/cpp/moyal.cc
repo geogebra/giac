@@ -98,7 +98,7 @@ namespace giac {
       am=m*(a+b-1+m)/(a+2*m-1)/(a+2*m)*x;
       Pm=Pm1+am*Pm2;
       Qm=Qm1+am*Qm2;
-      // cerr << Pm/Qm << " " << Pm2/Qm2 << endl;
+      // cerr << Pm/Qm << " " << Pm2/Qm2 << "\n";
       if (absdouble(Pm/Qm-Pm2/Qm2)<1e-16*absdouble(Pm/Qm)){
 	double res=Pm/Qm;
 #if 0 // def VISUALC // no lgamma available
@@ -600,7 +600,7 @@ namespace giac {
       if (abs_calc_mode(contextptr)==38)
 	return gensizeerr(contextptr);
       if (calc_mode(contextptr)!=1)
-	*logptr(contextptr) << "Assuming probability=" << p << endl; 
+	*logptr(contextptr) << "Assuming probability=" << p << "\n"; 
     }
     return comb(n,k,contextptr)*pow(p,k,contextptr)*pow(1-p,n-k,contextptr);
   }
@@ -757,7 +757,7 @@ namespace giac {
 	return 1;
       long_double cumul=std::pow(p,r),current=cumul;
       if (cumul==0){
-	*logptr(contextptr) << gettext("Underflow") <<endl;
+	*logptr(contextptr) << gettext("Underflow") <<"\n";
 	return undef;
       }
       // negbinomial(r,p,k+1)/negbinomial(r,p,k)))=(1-p)*(k+r)/(k+1)
@@ -1443,7 +1443,7 @@ namespace giac {
     if (!is_undef(res))
       return res;
     // for example student_icdf(100,0.95)
-    *logptr(contextptr) << "Low accuracy" << endl;
+    *logptr(contextptr) << "Low accuracy" << "\n";
     return x0;
   }
   gen _student_icdf(const gen & g,GIAC_CONTEXT){
@@ -2067,11 +2067,11 @@ namespace giac {
       return gensizeerr(contextptr); // symbolic(at_betad_icdf,makesequence(alpha_orig,beta_orig,t_orig));
     double y=t._DOUBLE_val;
     if (y<=1e-13){
-      *logptr(contextptr) << "Underflow to 0" << endl;
+      *logptr(contextptr) << "Underflow to 0" << "\n";
       return 0;
     }
     if (y>=1-1e-13){
-      *logptr(contextptr) << "Overflow to 1" << endl;
+      *logptr(contextptr) << "Overflow to 1" << "\n";
       return 1;
     }
     // Initial guess
@@ -2188,11 +2188,11 @@ namespace giac {
       return gensizeerr(contextptr); // symbolic(at_gammad_icdf,makesequence(alpha_orig,beta_orig,t_orig));
     double y=t._DOUBLE_val;
     if (y<=1e-13){
-      *logptr(contextptr) << "Underflow" << endl;
+      *logptr(contextptr) << "Underflow" << "\n";
       return 0;
     }
     if (y>=1-1e-13){
-      *logptr(contextptr) << "Overflow" << endl;
+      *logptr(contextptr) << "Overflow" << "\n";
       return plus_inf;
     }
     identificateur x(" x");
@@ -2946,13 +2946,13 @@ namespace giac {
       if (typetest==0) *logptr(contextptr) << "<>";
       if (typetest==1) *logptr(contextptr) << ">";
       if (typetest==-1) *logptr(contextptr) << "<";
-      *logptr(contextptr) << "\nranksum "<< w << ", shifted ranksum " << w-M*(M+1.)/2 << endl;
+      *logptr(contextptr) << "\nranksum "<< w << ", shifted ranksum " << w-M*(M+1.)/2 << "\n";
       double W=M*N+M*(M+1.)/2-w._DOUBLE_val;
       if (typetest==0){
 	*logptr(contextptr) << "u1=" << W << " ,u2=" << M*N-W ; 
 	if (W>M*(N/2.))
 	  W=M*N-W;
-	*logptr(contextptr) << ", u=min(u1,u2)=" << W << endl;
+	*logptr(contextptr) << ", u=min(u1,u2)=" << W << "\n";
       }
       gen p=wilcoxonp(M,N,contextptr);
       if (p.type!=_VECT || p._VECTptr->size()<double(M)*N) return gensizeerr(contextptr);
@@ -2970,14 +2970,14 @@ namespace giac {
 	  if (um==-1 && typetest==0 && is_greater(Q,seuil,contextptr))
 	    um=int(i)-1;
 	}
-	*logptr(contextptr) << "Limit value to reject H0 " << um << endl;
+	*logptr(contextptr) << "Limit value to reject H0 " << um << "\n";
 	P=2*P;
       }
       if (typetest==1)
 	P=1-P;
       *logptr(contextptr) << "P-value " << P << " (" << evalf_double(P,1,contextptr) << "), alpha=" << alpha;
       bool ok=is_greater(P,alpha,contextptr);
-      *logptr(contextptr) << (ok?" H0 not rejected":" H0 rejected") << endl;
+      *logptr(contextptr) << (ok?" H0 not rejected":" H0 rejected") << "\n";
       return ok?1:0;
     }
     gen w=wilcoxons(*x._VECTptr,m,contextptr);
@@ -2987,7 +2987,7 @@ namespace giac {
     if (typetest==0) *logptr(contextptr) << "<>";
     if (typetest==1) *logptr(contextptr) << ">";
     if (typetest==-1) *logptr(contextptr) << "<";
-    *logptr(contextptr) << m << endl;
+    *logptr(contextptr) << m << "\n";
     gen p=wilcoxonp(n);
     if (p.type!=_VECT)
       return gensizeerr(contextptr);
@@ -3012,7 +3012,7 @@ namespace giac {
     total=evalf_double(total/pow(plus_two,n,contextptr),1,contextptr);
     if (typetest==0)
       total=2*total;
-    *logptr(contextptr) << gettext("Wilcoxon statistic: ") << w << gettext(", p-value: ") << total << gettext(", confidence level: ") << alpha << endl;
+    *logptr(contextptr) << gettext("Wilcoxon statistic: ") << w << gettext(", p-value: ") << total << gettext(", confidence level: ") << alpha << "\n";
     if (is_greater(total,alpha,contextptr))
       return 1;
     return 0;
@@ -3098,10 +3098,10 @@ namespace giac {
       int m=giacmin(X),M=giacmax(X);
       // guess if data=effectifs or data=values
       if (X.size()>=50 && int(X.size())>5*(M-m)){
-	*logptr(contextptr) << gettext("Guessing data is a list of values, adequation to uniform discret distribution between ")<<m << gettext(" and ") <<  M << endl;
+	*logptr(contextptr) << gettext("Guessing data is a list of values, adequation to uniform discret distribution between ")<<m << gettext(" and ") <<  M << "\n";
 	return _chisquaret(makesequence(g,vecteur(M-m+1,1./(M-m))),contextptr);
       }
-      *logptr(contextptr) << gettext("Guessing data is the list of number of elements in each class, adequation to uniform distribution")<<endl;
+      *logptr(contextptr) << gettext("Guessing data is the list of number of elements in each class, adequation to uniform distribution")<<"\n";
       return _chisquaret(makesequence(g,vecteur(X.size(),1./X.size())),contextptr);     
     }
     // parse arguments for keyword classes
@@ -3182,7 +3182,7 @@ namespace giac {
 	    res += tmp2*tmp2/tmp1;
 	  }
 	}
-	*logptr(contextptr) << s << gettext(" samples Chi2 test result ") << res << gettext(",\nreject adequation if superior to chisquare_icdf(") << k-1 << ",0.95)=" <<  chisquare_icdf(k-1,0.95,contextptr) << " or chisquare_icdf(" << k-1 <<",1-alpha) if alpha!=5%" << endl;	
+	*logptr(contextptr) << s << gettext(" samples Chi2 test result ") << res << gettext(",\nreject adequation if superior to chisquare_icdf(") << k-1 << ",0.95)=" <<  chisquare_icdf(k-1,0.95,contextptr) << " or chisquare_icdf(" << k-1 <<",1-alpha) if alpha!=5%" << "\n";	
 	return res;
       }
     }
@@ -3223,7 +3223,7 @@ namespace giac {
 	  res += (eff[j]-tmp)*(eff[j]-tmp)/tmp;
 	}
       }
-      *logptr(contextptr) << gettext("Sample adequation to a finite discrete probability distribution\nChi2 test result ") << res << gettext(",\nreject adequation if superior to chisquare_icdf(") << J-1 << ",0.95)=" <<  chisquare_icdf(J-1,0.95,contextptr) << " or chisquare_icdf(" << J-1 <<",1-alpha) if alpha!=5%" << endl;
+      *logptr(contextptr) << gettext("Sample adequation to a finite discrete probability distribution\nChi2 test result ") << res << gettext(",\nreject adequation if superior to chisquare_icdf(") << J-1 << ",0.95)=" <<  chisquare_icdf(J-1,0.95,contextptr) << " or chisquare_icdf(" << J-1 <<",1-alpha) if alpha!=5%" << "\n";
       return res;
     }
     int nd;
@@ -3277,7 +3277,7 @@ namespace giac {
 	case 1:
 	  w.push_back(moyenne);
 	  w.push_back(ecart);
-	  *logptr(contextptr) << gettext("Normal density, estimating mean and stddev from data ") << moyenne << " " << ecart << endl;
+	  *logptr(contextptr) << gettext("Normal density, estimating mean and stddev from data ") << moyenne << " " << ecart << "\n";
 	  break;
 	case 2:{
 	  // moyenne=n*p, ecart^2=n*p*(1-p)
@@ -3288,7 +3288,7 @@ namespace giac {
 	  p=moyenne/n;
 	  if (is_greater(0,p,contextptr) || is_greater(p,1,contextptr))
 	    return gensizeerr(contextptr);
-	  *logptr(contextptr) << gettext("Binomial: estimating n and p from data ") << n << " " << p << endl;
+	  *logptr(contextptr) << gettext("Binomial: estimating n and p from data ") << n << " " << p << "\n";
 	  w.push_back(n);
 	  w.push_back(p);
 	  break;
@@ -3298,7 +3298,7 @@ namespace giac {
 	  if (is_greater(0,p,contextptr) || is_greater(p,1,contextptr))
 	    return gensizeerr(contextptr);
 	  gen n=_round(moyenne*p/(1-p),contextptr);
-	  *logptr(contextptr) << gettext("Negative binomial: estimating n and p from data ") << n << " " << p << endl;
+	  *logptr(contextptr) << gettext("Negative binomial: estimating n and p from data ") << n << " " << p << "\n";
 	  w.push_back(n);
 	  w.push_back(p);
 	  break;
@@ -3313,7 +3313,7 @@ namespace giac {
 	  gen b=moyenne+std::sqrt(3.0)*ecart;
 	  w.push_back(a);
 	  w.push_back(b);
-	  *logptr(contextptr) << gettext("Uniform density, estimating interval boundaries from data ") << a << " " << b << endl;
+	  *logptr(contextptr) << gettext("Uniform density, estimating interval boundaries from data ") << a << " " << b << "\n";
 	  break;
 	}
 	default:
@@ -3328,20 +3328,20 @@ namespace giac {
 	    return gendimerr(contextptr);
 	  if (w[0].is_symb_of_sommet(at_equal)){
 	    if (w[0][1]==at_mean){
-	      *logptr(contextptr) << gettext("Normal density, estimating std deviation from data ") << ecart << endl;
+	      *logptr(contextptr) << gettext("Normal density, estimating std deviation from data ") << ecart << "\n";
 	      w.push_back(ecart);
 	    }
 	    w[0]=w[0][2];
 	  }
 	  if (w.size()==1){
-	    *logptr(contextptr) << gettext("Normal density, estimating mean from data ") << moyenne << endl;
+	    *logptr(contextptr) << gettext("Normal density, estimating mean from data ") << moyenne << "\n";
 	    w.insert(w.begin(),moyenne);
 	  }
 	  break;
 	}
 	case 4:
 	  w.push_back(moyenne);
-	  *logptr(contextptr) << gettext("Poisson distribution, estimating parameter from data mean ") << moyenne << endl;
+	  *logptr(contextptr) << gettext("Poisson distribution, estimating parameter from data mean ") << moyenne << "\n";
 	  break;
 	default:
 	  return gensizeerr(contextptr);
@@ -3365,7 +3365,7 @@ namespace giac {
       if (is_integer_vecteur(*xorig._VECTptr)){
 	if (classdef){
 	  // not yet supported...
-	  *logptr(contextptr) << "Warning, using default class minimum=0 and class_size=1 for discrete distribution" << endl;
+	  *logptr(contextptr) << "Warning, using default class minimum=0 and class_size=1 for discrete distribution" << "\n";
 	}
 	dof=Xclasses-1-dof;
 	gen res=0;
@@ -3383,7 +3383,7 @@ namespace giac {
 	  res += tmp2*tmp2/tmp1;
 	}
 	loi._SYMBptr->feuille._VECTptr->back()=identificateur(".");
-	*logptr(contextptr) << gettext("Sample adequation to ")<< loi <<gettext(", Chi2 test result ") << res << gettext(",\nreject adequation if superior to chisquare_icdf(") << dof << ",0.95)=" <<  chisquare_icdf(dof,0.95,contextptr) << gettext(" or chisquare_icdf(") << dof <<gettext(",1-alpha) if alpha!=5%") << endl;	
+	*logptr(contextptr) << gettext("Sample adequation to ")<< loi <<gettext(", Chi2 test result ") << res << gettext(",\nreject adequation if superior to chisquare_icdf(") << dof << ",0.95)=" <<  chisquare_icdf(dof,0.95,contextptr) << gettext(" or chisquare_icdf(") << dof <<gettext(",1-alpha) if alpha!=5%") << "\n";	
 	return res;
       } // end if is_integer_vecteur(x)
       if (discret)
@@ -3422,7 +3422,7 @@ namespace giac {
 	res += (tmp2-theoric)*(tmp2-theoric)/theoric;
       }
       loi._SYMBptr->feuille._VECTptr->back()=identificateur(".");
-      *logptr(contextptr) << gettext("Sample adequation to ") << loi <<gettext(", Chi2 test result ") << res << gettext(",\nreject adequation if superior to chisquare_icdf(") << dof << ",0.95)=" <<  chisquare_icdf(dof,0.95,contextptr) << " or chisquare_icdf(" << dof <<",1-alpha) if alpha!=5%" << endl;	
+      *logptr(contextptr) << gettext("Sample adequation to ") << loi <<gettext(", Chi2 test result ") << res << gettext(",\nreject adequation if superior to chisquare_icdf(") << dof << ",0.95)=" <<  chisquare_icdf(dof,0.95,contextptr) << " or chisquare_icdf(" << dof <<",1-alpha) if alpha!=5%" << "\n";	
       return res;
     }
     return undef;
@@ -3461,7 +3461,7 @@ namespace giac {
       if (tmp.type!=_DOUBLE_)
 	return gensizeerr(contextptr);
       mu1=tmp._DOUBLE_val;
-      *logptr(contextptr) << gettext("Estimated mean from sample(s)") << mu1 << endl;
+      *logptr(contextptr) << gettext("Estimated mean from sample(s)") << mu1 << "\n";
     }
     else {
       if (MU1.type!=_DOUBLE_)
@@ -3501,7 +3501,7 @@ namespace giac {
       if (S.type!=_DOUBLE_ || S._DOUBLE_val<=0)
 	return gensizeerr(gettext("Unable to guess sigma using data"));
       sigma=std::sqrt(S._DOUBLE_val);
-      *logptr(contextptr) << gettext("Estimated sigma from sample(s)") << sigma << endl;
+      *logptr(contextptr) << gettext("Estimated sigma from sample(s)") << sigma << "\n";
       if (v.size()>4)
 	return gendimerr(contextptr);
       if (v.size()==4){
@@ -3557,14 +3557,14 @@ namespace giac {
       if (mu0>mu1+sigma*falpha/sqrtn0)
 	ok=false;
     }
-    *logptr(contextptr) << gettext("*** TEST RESULT ") << (ok?"1 ***":"0 ***") << endl << "Summary " << (ztest?"Z-Test":"T-Test") << " null hypothesis H0 " << (proportion?"p1=p2":"mu1=mu2") << ", alt. hyp. H1 mu1" << (test==-1? "<":(test==0?"!=":">")) <<  "mu2." << endl;
-    *logptr(contextptr) << gettext("Test returns 0 if probability to observe data is less than ") << alpha << endl;
-    *logptr(contextptr) << gettext("(null hyp. mu1=mu2 rejected with less than alpha probability error)") << endl;
-    *logptr(contextptr) << gettext("Test returns 1 otherwise (can not reject null hypothesis)") << endl;
+    *logptr(contextptr) << gettext("*** TEST RESULT ") << (ok?"1 ***":"0 ***") << "\n" << "Summary " << (ztest?"Z-Test":"T-Test") << " null hypothesis H0 " << (proportion?"p1=p2":"mu1=mu2") << ", alt. hyp. H1 mu1" << (test==-1? "<":(test==0?"!=":">")) <<  "mu2." << "\n";
+    *logptr(contextptr) << gettext("Test returns 0 if probability to observe data is less than ") << alpha << "\n";
+    *logptr(contextptr) << gettext("(null hyp. mu1=mu2 rejected with less than alpha probability error)") << "\n";
+    *logptr(contextptr) << gettext("Test returns 1 otherwise (can not reject null hypothesis)") << "\n";
     *logptr(contextptr) << gettext("Data mean mu1=") << mu0 << gettext(", population mean mu2=") << mu1 ;
     if (!ztest)
       *logptr(contextptr) << gettext(", degrees of freedom ") << dof;
-    *logptr(contextptr) << endl << "alpha level " << alpha << ", multiplier*stddev/sqrt(sample size)= " << falpha << "*" << sigma << "/" << sqrtn0 << endl;
+    *logptr(contextptr) << "\n" << "alpha level " << alpha << ", multiplier*stddev/sqrt(sample size)= " << falpha << "*" << sigma << "/" << sqrtn0 << "\n";
     return (ok?1:0);
   }
   gen _normalt(const gen & g,GIAC_CONTEXT){

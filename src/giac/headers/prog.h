@@ -626,6 +626,7 @@ namespace giac {
   vecteur mksa_convert(const gen & g,GIAC_CONTEXT);
   gen _ufactor(const gen & g,GIAC_CONTEXT);
   gen _usimplify(const gen & g,GIAC_CONTEXT);
+  extern const unary_function_ptr * const  at_regrouper;  
 
   extern const mksa_unit __m_unit;
   extern const mksa_unit __kg_unit;

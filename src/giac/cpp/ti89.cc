@@ -748,7 +748,7 @@ namespace giac {
       // more than one arc?
       if (!v.front()._VECTptr->empty() && v.front()._VECTptr->back().is_symb_of_sommet(at_pnt)){
 	v.front()=v.front()._VECTptr->back();
-	*logptr(contextptr) << gettext("Selecting last arc") << endl;
+	*logptr(contextptr) << gettext("Selecting last arc") << '\n';
       }
     }
     if (!v.empty() && v.front().is_symb_of_sommet(at_pnt)){
@@ -2189,7 +2189,7 @@ namespace giac {
     return PRGM_GetKey();
 #else
     char ch;
-    CERR << "Waiting for a keystroke in konsole screen" << endl;
+    CERR << "Waiting for a keystroke in konsole screen" << '\n';
     CIN >> ch;
     return int(ch);
 #endif
@@ -2841,18 +2841,18 @@ namespace giac {
     ofstream of(s.c_str());
     sym_string_tab::const_iterator it=m.begin(),itend=m.end();
     if (it==itend){
-      of << "[ ]" << endl;
+      of << "[ ]" << '\n';
       return;
     }
     of << "[" << string2gen(it->first,false) ;
     of << "," << it->second ;
     ++it;
     for (;it!=itend;++it){
-      of << "," << endl ;
+      of << "," << '\n' ;
       of << string2gen(it->first,false) ;
       of << "," << it->second ;
     }
-    of << "]" << endl;
+    of << "]" << '\n';
 #endif
   }
   gen _Archive(const gen & g,GIAC_CONTEXT){
@@ -4303,7 +4303,7 @@ namespace giac {
       --ptr;
       return p__IDNT_e;
     case _VAR_Q_TAG:
-      CERR << "_var_q_tag" << endl;
+      CERR << "_var_q_tag" << '\n';
     case VAR_Q_TAG:
       --ptr;
       return q__IDNT_e;
@@ -4717,7 +4717,7 @@ namespace giac {
     case PN1_TAG:
       return ti_decode_unary(ptr,at_neg,contextptr);
     case PN2_TAG: 
-      CERR << "pn2_tag" << endl;
+      CERR << "pn2_tag" << '\n';
       return ti_decode_binary(ptr,at_neg,true,contextptr);
     case ERROR_MSG_TAG:
       return ti_decode_not_implemented(ptr,"ErrorMsg",1,contextptr);
@@ -4794,7 +4794,7 @@ namespace giac {
 	}
       }
       s=tiasc_translate(s);
-      CERR << s << endl;
+      CERR << s << '\n';
       int save_maple_mode=xcas_mode(contextptr);
       xcas_mode(contextptr)=3;
       gen res(s,contextptr);
@@ -4852,7 +4852,7 @@ namespace giac {
 	gen res(undef);
 	// single program
 	gen gname(decode_name(&buf[0x40],contextptr));
-	CERR << "Fonction " << gname << endl;
+	CERR << "Fonction " << gname << '\n';
 	parser_filename(gname.print(contextptr),contextptr);
 	unsigned int tt=buf[0x3e]*65536+buf[0x3d]*256+buf[0x3c]+4;
 	if (tt>s)
@@ -4886,14 +4886,14 @@ namespace giac {
       gen gfoldername(decode_name(&buf[0x40],contextptr));
       vecteur res;
       if (gfoldername.print(contextptr)!="main"){
-	CERR << "Degrouping in folder " << gfoldername << endl;
+	CERR << "Degrouping in folder " << gfoldername << '\n';
 	res.push_back(symbolic(at_NewFold,gfoldername));
 	res.push_back(symbolic(at_SetFold,gfoldername));
       }
       // decode each prog
       for (unsigned int i=0;i<nprogs;++i){
 	gen gname(decode_name(&buf[0x50+0x10*i],contextptr));
-	CERR << "Fonction " << gname << endl;
+	CERR << "Fonction " << gname << '\n';
 	parser_filename(gname.print(contextptr),contextptr);
 	unsigned int tt=buf[0x4e +0x10*i]*65536+buf[0x4d+0x10*i]*256+buf[0x4c+0x10*i]+4;
 	if (tt>s)

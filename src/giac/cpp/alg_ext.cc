@@ -387,7 +387,7 @@ namespace giac {
     for (;it!=itend;++it){
       i=it->index.front();
       j=it->index.back();
-      // cerr << nb*(na-i-1)+nb-j-1 << " " << na*nb << endl;
+      // cerr << nb*(na-i-1)+nb-j-1 << " " << na*nb << '\n';
       v[nb*(na-i-1)+nb-j-1]=it->value;
     }
     return true;
@@ -871,7 +871,7 @@ namespace giac {
       if (innerdim){
 	gen params;
 	polynome pb(1),px(unsplitmultivarpoly(p,innerdim));
-	*logptr(contextptr) << gettext("Warning, need to choose a branch for the root of a polynomial with parameters. This might be wrong.") << endl;
+	*logptr(contextptr) << gettext("Warning, need to choose a branch for the root of a polynomial with parameters. This might be wrong.") << '\n';
 	if (l && l->size()>=2){
 	  for (int i=1;i<l->size();++i){
 	    params=(*l)[i];
@@ -931,9 +931,9 @@ namespace giac {
 	vecteur vb0=vb;
 	find_good_eval(px,pb,vb); // find_good_eval does not take care of assumptions, but vb should be ok (loop above)
 	if (vb==vb0)
-	  *logptr(contextptr) << gettext("The choice was done assuming ") << params << "=" << vb << endl;       
+	  *logptr(contextptr) << gettext("The choice was done assuming ") << params << "=" << vb << '\n';       
 	else 
-	  *logptr(contextptr) << gettext("Non regular value ") << vb0 << gettext(" was discarded and replaced randomly by ") << params << "=" << vb << endl;
+	  *logptr(contextptr) << gettext("Non regular value ") << vb0 << gettext(" was discarded and replaced randomly by ") << params << "=" << vb << '\n';
 	// checking for embedded polynomial coefficients
 	vector< monomial<gen> >::const_iterator it=pb.coord.begin(),itend=pb.coord.end();
 	for (;0 && it!=itend;++it){ // disabled, computations would be too complex
@@ -1162,7 +1162,7 @@ namespace giac {
       return gentypeerr(gettext("rootof"));
     }
     if (e.type==_VECT && *e._VECTptr==makevecteur(1,0,1)){
-      *logptr(contextptr) << "rootof([1,0,1]) was converted to i" << endl;
+      *logptr(contextptr) << "rootof([1,0,1]) was converted to i" << '\n';
       return cst_i;
     }
     if (e._VECTptr->size()==2 && e._VECTptr->front().type!=_VECT){
@@ -1176,7 +1176,7 @@ namespace giac {
     if (has_num_coeff(e))
       return approx_rootof(e,contextptr);
     if (!lop(lvar(e),at_pow).empty()){
-      *logptr(contextptr) << gettext("Algebraic extensions not allowed in a rootof")<<endl;
+      *logptr(contextptr) << gettext("Algebraic extensions not allowed in a rootof")<<'\n';
       return approx_rootof(e,contextptr);
     }
     // should call factor before returning unevaluated rootof
@@ -1378,7 +1378,7 @@ namespace giac {
     else { 
       x=v[1]; a=v[2]; b=v[3]; 
       if (P.type==_VECT)
-	*logptr(contextptr) << gettext("Warning: variable name ignored: ") << x << endl;
+	*logptr(contextptr) << gettext("Warning: variable name ignored: ") << x << '\n';
     }
     gen ai=im(a,contextptr);
     gen bi=im(b,contextptr);
@@ -1620,7 +1620,7 @@ namespace giac {
 	sto(savevar,var,contextptr);
     }
     if (w.empty() && debug_infolevel)
-      *logptr(contextptr) << gettext("Warning: ") << df << gettext("=0: no solution found") << endl;
+      *logptr(contextptr) << gettext("Warning: ") << df << gettext("=0: no solution found") << '\n';
     vecteur wvar=makevecteur(cst_pi);
     lidnt(w,wvar,false);
     if (wvar.size()>1)

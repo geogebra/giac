@@ -513,7 +513,7 @@ namespace giac {
     if (is_one(d2)){
       num=n2*d1+n1;
       den=d1;
-      // COUT << num << "/" << den << endl;
+      // COUT << num << "/" << den << "\n";
       return;
     }
     // n1/d1+n2/d2 with g=gcd(d1,d2), d1=d1g*g, d2=d2g*g is
@@ -549,7 +549,7 @@ namespace giac {
       den=d2;
       simplify3(num,den);
       num=num*n2;
-      // COUT << num << "/" << den << endl;
+      // COUT << num << "/" << den << "\n";
       return;
     }
     if (is_one(d2)){
@@ -557,7 +557,7 @@ namespace giac {
       den=d1;
       simplify3(num,den);
       num=num*n1;
-      // COUT << num << "/" << den << endl;
+      // COUT << num << "/" << den << "\n";
       return;
     }
     num=n1;
@@ -570,7 +570,7 @@ namespace giac {
     // Further simplifications may occur with _EXT multiplications
     if (has_EXT(ntemp))
       simplify3(num,den);
-    // COUT << num << "/" << den << endl;
+    // COUT << num << "/" << den << "\n";
   }
 
   //**********************************
@@ -809,10 +809,10 @@ namespace giac {
 	v=polynome2poly1(irr_p);
 	lowest_degree=1;
 	num=rdiv(-v.back(),v.front(),contextptr);
-	// cerr << "xroot" << num << endl;
+	// cerr << "xroot" << num << "\n";
 	gen numlv=r2sym(num,lv,contextptr);
 	if (!lvar(evalf(numlv,1,contextptr)).empty())
-	  *logptr(contextptr) << gettext("Warning, checking for positivity of a root depending of parameters might return wrong sign: ")<< numlv << endl;
+	  *logptr(contextptr) << gettext("Warning, checking for positivity of a root depending of parameters might return wrong sign: ")<< numlv << "\n";
 	if (is_positive(numlv,contextptr))
 	  break;
       }
@@ -993,7 +993,7 @@ namespace giac {
 	for (int j=0;j<embeddings;++it,++j){ 
 	  if (it->type!=_VECT){
 	    string s("sym2rxroot error num="+num.print(contextptr)+" den="+den.print(contextptr)+" l="+gen(l).print(contextptr));
-	    CERR << s << endl;
+	    CERR << s << "\n";
 #ifndef NO_STDEXCEPT
 	    setsizeerr(s);
 #endif
@@ -2344,7 +2344,7 @@ namespace giac {
 	      tmp2=accurate_evalf_until(tmp2,contextptr);// tmp2.evalf_double(1,contextptr); 
 	      if (tmp3.type<=_CPLX && tmp2.type<=_CPLX && tmp2!=tmp3){
 		if (!vzero.empty() && !tst)
-		  *logptr(contextptr) << gettext("Warning, choosing root of ") << f << gettext(" at parameters values ") << vzero << endl;
+		  *logptr(contextptr) << gettext("Warning, choosing root of ") << f << gettext(" at parameters values ") << vzero << "\n";
 		if (is_greater(abs(tmp3-tmp00,contextptr),abs(tmp2-tmp00,contextptr),contextptr))
 		  return w.back();
 		else
@@ -2359,7 +2359,7 @@ namespace giac {
 	}
 	catch (std::runtime_error & e){
 	  last_evaled_argptr(contextptr)=NULL;
-	  CERR << "sym2poly exception caught " << e.what() << endl;
+	  CERR << "sym2poly exception caught " << e.what() << "\n";
 	}
 #endif
 	return w.front();
@@ -2793,7 +2793,7 @@ namespace giac {
   gen normal(const gen & e,bool distribute_div,GIAC_CONTEXT){
     if (has_num_coeff(e))
       return ratnormal(e,contextptr);
-    // COUT << e << endl;
+    // COUT << e << "\n";
     if (e.type==_VECT){
       vecteur res;
       for (const_iterateur it=e._VECTptr->begin();it!=e._VECTptr->end();++it)
@@ -2854,7 +2854,7 @@ namespace giac {
       l=alg_lvar(ee);
       sort0(l);
       if (!L.empty() && debug_infolevel)
-	*logptr(contextptr) << gettext("Making implicit assumption for sqrt argument ") << L << endl;
+	*logptr(contextptr) << gettext("Making implicit assumption for sqrt argument ") << L << "\n";
       if (contextptr && contextptr->previous)
 	L.clear(); // otherwise ggbsort(x):=sort(x); r:=[sqrt(a)/a,1]; ggbsort(r); VARS(); keeps implicit assumption a>=0 globally
       for (unsigned k=0;k<L.size();++k)
@@ -2867,7 +2867,7 @@ namespace giac {
 #endif
 	if (calc_mode(contextptr)==1)
 	  return undef;
-	*logptr(contextptr) << gettext("Unable to build a single algebraic extension for simplifying.\nTrying rational simplification only. This might return a wrong answer if simplifying 0/0!") << endl;
+	*logptr(contextptr) << gettext("Unable to build a single algebraic extension for simplifying.\nTrying rational simplification only. This might return a wrong answer if simplifying 0/0!") << "\n";
 	l=lvar(ee);
 	tmp=e2r(ee,l,contextptr);	
 	gen tmpf=evalf_double(ee-tmp,1,contextptr);
@@ -2878,7 +2878,7 @@ namespace giac {
     }
     catch (std::runtime_error & err){
       last_evaled_argptr(contextptr)=NULL;
-      CERR << err.what() << endl;
+      CERR << err.what() << "\n";
       purgeassumelist(L,contextptr);
       return e;
     }
@@ -3147,7 +3147,7 @@ namespace giac {
   }
 
   gen ratnormal(const gen & e,GIAC_CONTEXT){
-    // COUT << e << endl;
+    // COUT << e << "\n";
     if (e.type==_VECT)
       return apply(e,ratnormal,contextptr);
     if (e.type==_FRAC){
@@ -3188,7 +3188,7 @@ namespace giac {
     return r2sym(fg,l,contextptr);
   }
   gen recursive_ratnormal(const gen & e,GIAC_CONTEXT){
-    // COUT << e << endl;
+    // COUT << e << "\n";
     if (e.type==_VECT)
       return apply(e,recursive_ratnormal,contextptr);
     if (e.type==_FRAC){
@@ -3244,7 +3244,7 @@ namespace giac {
     alg_lvar(b,l);
     fraction fa(e2r(a,l,contextptr)),fb(e2r(b,l,contextptr)); // ok
     if (debug_infolevel)
-      CERR << "rational gcd begin " << CLOCK() << endl;
+      CERR << "rational gcd begin " << CLOCK() << "\n";
     if (!is_one(fa.den) || !is_one(fb.den))
       CERR << "Warning gcd of fractions " << fa << " " << fb ;
     if (fa.num.type==_FRAC)
@@ -3335,7 +3335,7 @@ namespace giac {
 
   static gen factor(const polynome & p,const vecteur &l,bool fixed_order,bool with_sqrt,gen divide_an_by,gen & extra_div,GIAC_CONTEXT){
     // find main var, make permutation on f.num, f.den and l
-    //    COUT << "Factor " << p << " " << l << endl;
+    //    COUT << "Factor " << p << " " << l << "\n";
     if (is_one(p))
       return 1;
     if (l.empty() )
@@ -3374,7 +3374,7 @@ namespace giac {
       }
       else
 	ll=cdr_VECT(l);
-      tmp=factor(pp,ll,false,with_sqrt,1,extra_div,contextptr); //cerr << v << endl;
+      tmp=factor(pp,ll,false,with_sqrt,1,extra_div,contextptr); //cerr << v << "\n";
       return tmp*r2sym(v,l,contextptr)/r2sym(extra_div,l,contextptr);
       // return r2sym(tmp,l,contextptr)*r2sym(v,l,contextptr)/r2sym(extra_div,l,contextptr);
     }
@@ -3773,7 +3773,7 @@ namespace giac {
   gen _factor(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (is_integer(args))
-      *logptr(contextptr) << "Run ifactor(" << args << ") for integer factorization." << endl;
+      *logptr(contextptr) << "Run ifactor(" << args << ") for integer factorization." << "\n";
     if (is_equal(args))
       return apply_to_equal(args,_factor,contextptr);
     if (args.type==_VECT && args._VECTptr->size()==2 && is_equal(args._VECTptr->front())){
@@ -3867,7 +3867,7 @@ namespace giac {
       return _det(_sylvester(gen(vecteur(args._VECTptr->begin(),args._VECTptr->begin()+s-1),_SEQ__VECT),contextptr),contextptr);
     if (v.back()==at_lagrange && s>=3){
       if (debug_infolevel)
-	CERR << CLOCK()*1e-6 << " interp resultant begin " << endl;
+	CERR << CLOCK()*1e-6 << " interp resultant begin " << "\n";
       gen p=v[0];
       gen q=v[1];
       gen x=vx_var;
@@ -3918,7 +3918,7 @@ namespace giac {
 	int d2=a*n+b*m;
 	int d=giacmin(d1,d2);
 	if (debug_infolevel)
-	  CERR << CLOCK()*1e-6 << " interp degree " << d << endl;	
+	  CERR << CLOCK()*1e-6 << " interp degree " << d << "\n";	
 	vecteur X(d+1),Y(d+1);
 	int j=-d/2;
 	gen pl=_lcoeff(makesequence(p,x),contextptr);
@@ -3960,12 +3960,12 @@ namespace giac {
 	    vecteur tmpv1,tmpv2,S;
 	    for (int i=0;i<=d;++i,++j){
 	      if (debug_infolevel)
-		CERR << CLOCK()*1e-6 << " interp horner " << i << endl;
+		CERR << CLOCK()*1e-6 << " interp horner " << i << "\n";
 	      gen xi;
 	      for (;;++j){
 		// find evaluation preserving degree in x
 		if (0 && j==0)
-		  CERR << "j" << endl;
+		  CERR << "j" << "\n";
 		xi=interpolate_xi(j,coeff);
 		gen hp=horner(vp0,xi);
 		gen hq=horner(vq0,xi);
@@ -3977,7 +3977,7 @@ namespace giac {
 	      gen gp=horner(vp,xi);
 	      gen gq=horner(vq,xi);
 	      if (debug_infolevel)
-		CERR << CLOCK()*1e-6 << " interp resultant " << j << ", " << 100*double(i)/(d+1) << "% done" << endl;
+		CERR << CLOCK()*1e-6 << " interp resultant " << j << ", " << 100*double(i)/(d+1) << "% done" << "\n";
 	      if (gp.type==_POLY && gq.type==_POLY){
 		if (0 &&
 		    m>=GIAC_PADIC/2 && n>=GIAC_PADIC/2
@@ -3998,10 +3998,10 @@ namespace giac {
 	      Y[i]=1;
 	    }
 	    if (debug_infolevel)
-	      CERR << CLOCK()*1e-6 << " interp dd " << endl;
+	      CERR << CLOCK()*1e-6 << " interp dd " << "\n";
 	    vecteur R=divided_differences(X,Y);
 	    if (debug_infolevel)
-	      CERR << CLOCK()*1e-6 << " interp build " << endl;
+	      CERR << CLOCK()*1e-6 << " interp build " << "\n";
 	    modpoly resp(1,R[d]),tmp; // cst in y
 	    for (int i=d-1;i>=0;--i){
 	      operator_times(resp,makevecteur(1,-X[i]),0,tmp);
@@ -4015,7 +4015,7 @@ namespace giac {
 	    vecteur & lf=*l.front()._VECTptr;
 	    lf.erase(lf.begin()); // remove y
 	    if (debug_infolevel)
-	      CERR << CLOCK()*1e-6 << " interp convert " << endl;
+	      CERR << CLOCK()*1e-6 << " interp convert " << "\n";
 	    gen resg=r2sym(resp,l,contextptr);
 	    if (resg.type==_VECT)
 	      resg=symb_horner(*resg._VECTptr,y);
@@ -4024,7 +4024,7 @@ namespace giac {
 	}
 	for (int i=0;i<=d;++i,++j){
 	  if (debug_infolevel)
-	    CERR << CLOCK()*1e-6 << " interp resultant " << i << endl;
+	    CERR << CLOCK()*1e-6 << " interp resultant " << i << "\n";
 	  for (;;++j){
 	    // find evaluation preserving degree in x
 	    if (!is_zero(subst(pl,y,j,false,contextptr))&& !is_zero(subst(ql,y,j,false,contextptr)))
@@ -4039,14 +4039,14 @@ namespace giac {
 	  if (0){
 	    gen dbgtst=subst(dbg,y,j,false,contextptr);
 	    if (!is_zero(ratnormal(dbgtst-Y[i],contextptr)))
-	      CERR << "err" << endl;
+	      CERR << "err" << "\n";
 	  }
 	}
 	if (debug_infolevel)
-	  CERR << CLOCK()*1e-6 << " interp interpolation begin " << endl;
+	  CERR << CLOCK()*1e-6 << " interp interpolation begin " << "\n";
 	gen r=_lagrange(makesequence(X,Y,y),contextptr);
 	if (debug_infolevel)
-	  CERR << CLOCK()*1e-6 << " interp interpolation end " << endl;
+	  CERR << CLOCK()*1e-6 << " interp interpolation end " << "\n";
 	return r;
       }
     }

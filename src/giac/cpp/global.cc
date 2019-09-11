@@ -172,7 +172,7 @@ namespace giac {
 	if (caseval_current>caseval_maxtime+caseval_begin)
 #endif
 	  { 
-	    CERR << "Timeout" << endl; ctrl_c=true; interrupted=true; 
+	    CERR << "Timeout" << '\n'; ctrl_c=true; interrupted=true; 
 	    caseval_begin=caseval_current;
 	  } 
       } 
@@ -593,7 +593,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   void python_compat(int b,GIAC_CONTEXT){
-    python_color=b; //cout << "python_color " << b << endl;
+    python_color=b; //cout << "python_color " << b << '\n';
     if (contextptr && contextptr->globalptr )
       contextptr->globalptr->_python_compat_=b;
     else
@@ -1138,10 +1138,15 @@ extern "C" void Sleep(unsigned int miliSecond);
 #ifdef FXCG
   static ostream * _logptr_=0;
 #else
-  static ostream * _logptr_=&CERR;
+#ifdef NUMWORKS
+  stdostream numworks_cerr;
+  static my_ostream * _logptr_=&numworks_cerr;
+#else
+  static my_ostream * _logptr_=&CERR;
 #endif
-  ostream * logptr(GIAC_CONTEXT){
-    ostream * res;
+#endif
+  my_ostream * logptr(GIAC_CONTEXT){
+    my_ostream * res;
     if (contextptr && contextptr->globalptr )
       res=contextptr->globalptr->_logptr_;
     else
@@ -1152,7 +1157,11 @@ extern "C" void Sleep(unsigned int miliSecond);
 #ifdef FXCG
     return 0;
 #else
+#ifdef NUMWORKS
+    return res?res:&numworks_cerr;
+#else
     return res?res:&CERR;
+#endif
 #endif
 #endif
   }
@@ -1647,7 +1656,7 @@ extern "C" void Sleep(unsigned int miliSecond);
     if (!first_error_line(contextptr))
       alert(b,contextptr);
     else
-      *logptr(contextptr) << b << endl;
+      *logptr(contextptr) << b << '\n';
 #endif
     if (contextptr && contextptr->globalptr )
       contextptr->globalptr->_pl._parser_error_=b;
@@ -1908,12 +1917,12 @@ extern "C" void Sleep(unsigned int miliSecond);
       kill(child_id,SIGINT);
 #endif
 #if defined HAVE_SIGNAL_H && !defined HAVE_NO_SIGNAL_H
-    cerr << "Ctrl-C pressed (pid " << getpid() << ")" << endl;
+    cerr << "Ctrl-C pressed (pid " << getpid() << ")" << '\n';
 #endif
   }
 #if !defined NSPIRE && !defined FXCG
   gen catch_err(const std::runtime_error & error){
-    cerr << error.what() << endl;
+    cerr << error.what() << '\n';
     debug_ptr(0)->sst_at_stack.clear();
     debug_ptr(0)->current_instruction_stack.clear();
     debug_ptr(0)->args_stack.clear();
@@ -1962,7 +1971,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   volatile bool child_busy=false,data_ready=false;
   // child sends a SIGUSR1
   void data_signal_handler(int signum){
-          // cerr << "Parent called" << endl;
+          // cerr << "Parent called" << '\n';
     signal_plot_parent=false;
     child_busy=false;
     data_ready=true;
@@ -1973,7 +1982,7 @@ extern "C" void Sleep(unsigned int miliSecond);
     if (ctrl_c){
       ctrl_c=false;
       interrupted=true;
-      cerr << "Throwing exception" << endl;
+      cerr << "Throwing exception" << '\n';
       throw(std::runtime_error("Stopped by Ctrl-C"));
     }
   }
@@ -1981,14 +1990,14 @@ extern "C" void Sleep(unsigned int miliSecond);
 
   // child sends a SIGUSR2 (intermediate data)
   void plot_signal_handler(int signum){
-          // cerr << "Plot_signal_handler Parent called" << endl;
+          // cerr << "Plot_signal_handler Parent called" << '\n';
     signal_plot_parent=true;
     child_busy=false;
     data_ready=true;
   }
 
   void child_signal_handler(int signum){
-    // cerr << "Child called" << endl;
+    // cerr << "Child called" << '\n';
     signal_child=true;
   }
   
@@ -2006,7 +2015,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 #ifndef WIN32
     kill(parent_id,SIGUSR2);
 #endif
-    // cerr << "Child ready" << endl;
+    // cerr << "Child ready" << '\n';
 #ifndef WIN32
     while (!signal_plot_child)
       sigsuspend (&oldmask);
@@ -2059,7 +2068,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       sigprocmask (SIG_BLOCK, &mask, &oldmask);
       signal_child=false;
       for (;;){
-	// cerr << "Child ready" << endl;
+	// cerr << "Child ready" << '\n';
 #ifndef WIN32
 	while (!signal_child)
 	  sigsuspend (&oldmask);
@@ -2074,17 +2083,17 @@ extern "C" void Sleep(unsigned int miliSecond);
 	// Unarchive step
 	try {
 	  child_in >> rpn_mode(context0) >> global_window_ymin >> history_begin_level ;
-	  // cerr << args << endl;
+	  // cerr << args << '\n';
 	  if (history_begin_level<0){
 	    child_in >> synchronize_history;
 	    args=unarchive(child_in,context0);
 	    if (!synchronize_history){
-	      // cerr << "No sync " << endl;
+	      // cerr << "No sync " << '\n';
 	      history_in(0)[-history_begin_level-1]=args;
 	      history_out(0)=subvect(history_out(0),-history_begin_level-1);
 	    }
 	    else {
-	      // cerr << " Sync " << endl;
+	      // cerr << " Sync " << '\n';
 	      history_in(0)=*args._VECTptr;
 	      args=unarchive(child_in,context0);
 	      history_out(0)=*args._VECTptr;
@@ -2092,15 +2101,15 @@ extern "C" void Sleep(unsigned int miliSecond);
 	  }
 	  else {
 	    args=unarchive(child_in,context0);
-	    // cerr << "Lu1 " << args << endl;
+	    // cerr << "Lu1 " << args << '\n';
 	    if (history_begin_level>signed(history_in(context0).size()))
 	      history_begin_level=history_in(context0).size();
 	    history_in(0)=mergevecteur(subvect(history_in(context0),history_begin_level),*args._VECTptr);
 	    args=unarchive(child_in,context0);
-	    // cerr << "Lu2 " << args << endl;
+	    // cerr << "Lu2 " << args << '\n';
 	    history_out(0)=mergevecteur(subvect(history_out(context0),history_begin_level),*args._VECTptr);
 	    args=unarchive(child_in,context0);
-	    // cerr << "Lu3 " << args << endl;
+	    // cerr << "Lu3 " << args << '\n';
 	    history_in(0).push_back(args);
 	  }
 	}
@@ -2109,7 +2118,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	  args = string2gen("Child unarchive error:"+string(error.what()),false);
 	}
 	child_in.close();
-	// cerr << args << endl;
+	// cerr << args << '\n';
 	// output result of evaluation to child_out
 	gen args_evaled;
 	{ // BEGIN of old try block
@@ -2135,7 +2144,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	  else {
 	    if ( (args.type!=_VECT) || (args.subtype!=_RUNFILE__VECT) ){
 	      if (debug_infolevel>10)
-		cerr << "Child eval " << args << endl;
+		cerr << "Child eval " << args << '\n';
 	      try {
 		args_evaled=args.eval(1,context0);
 	      }
@@ -2145,7 +2154,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	      }
 	      history_out(context0).push_back(args_evaled);
 	      if (debug_infolevel>10)
-		cerr << "Child result " << args_evaled << endl;
+		cerr << "Child result " << args_evaled << '\n';
 	    }
 	    else {
 	      vecteur v;
@@ -2165,7 +2174,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 		  last_evaled_argptr(contextptr)=NULL;
 		  args_evaled=catch_err(error);
 		}
-		// cerr << args_evaled << endl;
+		// cerr << args_evaled << '\n';
 		history_out(context0).push_back(args_evaled);
 		v.push_back(args_evaled);
 		ofstream child_out(cas_sortie_name().c_str());
@@ -2173,7 +2182,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 		archive(child_out,args_evaled,context0);
 		child_out << messages_to_print << "ÿ" ;
 		child_out.close();
-		// cerr << "Signal reads " << res << endl;
+		// cerr << "Signal reads " << res << '\n';
 		kill_and_wait_sigusr2();
 	      }
 	      // args_evaled=gen(v,args.subtype);
@@ -2191,10 +2200,10 @@ extern "C" void Sleep(unsigned int miliSecond);
 	child_out << messages_to_print ;
 	int mm=messages_to_print.size();
 	if (mm && (messages_to_print[mm-1]!='\n'))
-	  child_out << endl;
+	  child_out << '\n';
 	child_out << "Time: " << elapsed << "ÿ" ;
 	child_out.close();
-	// cerr << "Child sending signal to " << parent_id << endl;
+	// cerr << "Child sending signal to " << parent_id << '\n';
 	/* Wait for a signal to arrive. */
 	sigprocmask (SIG_BLOCK, &mask, &oldmask);
 	signal_child=false;
@@ -2203,13 +2212,13 @@ extern "C" void Sleep(unsigned int miliSecond);
 #endif
       }
     }
-    // cerr << "Forking " << parent_id << " " << child_id << endl;
+    // cerr << "Forking " << parent_id << " " << child_id << '\n';
     return child_id;
 #endif // HAVE_NO_SIGNAL_H
   }
 
   static void archive_write_error(){
-    cerr << "Archive error on " << cas_entree_name() << endl;
+    cerr << "Archive error on " << cas_entree_name() << '\n';
   }
   
   // return true if entree has been sent to evalation by child process
@@ -2232,7 +2241,7 @@ extern "C" void Sleep(unsigned int miliSecond);
     try {
       ofstream parent_out(cas_entree_name().c_str());
       if (!signal_plot_parent){
-	parent_out << rpn_mode(context0) << " " << global_window_ymin << " " << history_begin_level << endl;
+	parent_out << rpn_mode(context0) << " " << global_window_ymin << " " << history_begin_level << '\n';
 	archive(parent_out,vecteur(history_in(context0).begin()+history_begin_level,history_in(context0).end()),context0);
 	archive(parent_out,vecteur(history_out(context0).begin()+history_begin_level,history_out(context0).end()),context0);
       }
@@ -2268,20 +2277,20 @@ extern "C" void Sleep(unsigned int miliSecond);
     }
     child_busy=true;
     if (signal_plot_parent){
-      // cerr << "child_eval: Sending SIGUSR2 to child" << endl;
+      // cerr << "child_eval: Sending SIGUSR2 to child" << '\n';
       signal_plot_parent=false;
 #ifndef WIN32
       kill(child_id,SIGUSR2);
 #endif
       return true;
     }
-    // cerr << "Sending SIGUSR1 to " << child_id << endl;
+    // cerr << "Sending SIGUSR1 to " << child_id << '\n';
 #ifndef WIN32
     kill(child_id,SIGUSR1);
 #endif
     running_file=is_run_file;
     end = CLOCK();
-    // cerr << "# Save time" << double(end-start)/CLOCKS_PER_SEC << endl;
+    // cerr << "# Save time" << double(end-start)/CLOCKS_PER_SEC << '\n';
     return true;
 #endif /// HAVE_NO_SIGNAL_H
   }
@@ -2299,7 +2308,7 @@ extern "C" void Sleep(unsigned int miliSecond);
     messages_to_print="";
     try {
       ofstream parent_out(cas_entree_name().c_str());
-      parent_out << rpn_mode(context0) << " " << global_window_ymin << " " << -1-history_begin_level << " " << synchronize_history << endl;
+      parent_out << rpn_mode(context0) << " " << global_window_ymin << " " << -1-history_begin_level << " " << synchronize_history << '\n';
       if (synchronize_history){
 	archive(parent_out,history_in(context0),context0);
 	archive(parent_out,vecteur(history_out(context0).begin(),history_out(context0).begin()+history_begin_level),context0);
@@ -2337,7 +2346,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       sortie=*it;
       if (sortie.type==_POINTER_ && sortie.subtype==_FL_WIDGET_POINTER && fl_widget_updatepict_function){
 	sortie = fl_widget_updatepict_function(sortie);
-	// cerr << "updatepict" << sortie << endl;
+	// cerr << "updatepict" << sortie << '\n';
       }
       if ( (sortie.type==_SYMB) && equalposcomp(plot_sommets,sortie._SYMBptr->sommet)){
 #ifdef WITH_GNUPLOT
@@ -2404,29 +2413,29 @@ extern "C" void Sleep(unsigned int miliSecond);
     // are overwritten
     debug_ptr(contextptr)->debug_mode=false;
     if (signal_plot_parent){
-      // cerr << "Child signaled " << entree << " " << sortie << endl;
+      // cerr << "Child signaled " << entree << " " << sortie << '\n';
       if ( entree.type==_SYMB ){
 	if ( (entree._SYMBptr->sommet==at_click && entree._SYMBptr->feuille.type==_VECT && entree._SYMBptr->feuille._VECTptr->empty() ) 
 	     || (entree._SYMBptr->sommet==at_debug) 
 	     ) {
 	  debug_ptr(contextptr)->debug_mode=(entree._SYMBptr->sommet==at_debug);
-	  // cerr << "Child waiting" << endl;
+	  // cerr << "Child waiting" << '\n';
 	  data_ready=false;
 	  *debug_ptr(contextptr)->debug_info_ptr=entree._SYMBptr->feuille;
 	  debug_ptr(contextptr)->debug_refresh=true;
 	  return true;
 	}
 	if ( entree._SYMBptr->sommet==at_click || entree._SYMBptr->sommet==at_inputform || entree._SYMBptr->sommet==at_interactive ){
-	  // cerr << entree << endl;
+	  // cerr << entree << '\n';
 	  gen res=entree.eval(1,contextptr);
-	  // cerr << res << endl;
+	  // cerr << res << '\n';
 	  ofstream parent_out(cas_entree_name().c_str());
 	  archive(parent_out,res,contextptr);
 	  parent_out.close();
 	  signal_child_ok();
 	  return true;
 	}
-	// cerr << "Child signaled " << entree << " " << sortie << endl;
+	// cerr << "Child signaled " << entree << " " << sortie << '\n';
       }
       if (sortie.type==_SYMB){
 	if (sortie._SYMBptr->sommet==at_SetFold){
@@ -2436,7 +2445,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	}
 	if (sortie._SYMBptr->sommet==at_sto && sortie._SYMBptr->feuille.type==_VECT){
 	  vecteur & v=*sortie._SYMBptr->feuille._VECTptr;
-	  // cerr << v << endl;
+	  // cerr << v << '\n';
 	  if ((v.size()==2) && (v[1].type==_IDNT)){
 	    if (v[1]._IDNTptr->value)
 	      delete v[1]._IDNTptr->value;
@@ -2493,7 +2502,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	return false;
       }
     } // end signal_plot_parent
-    // cerr << "# Parse time" << double(end-start)/CLOCKS_PER_SEC << endl;
+    // cerr << "# Parse time" << double(end-start)/CLOCKS_PER_SEC << '\n';
     // see if it's a PICT update
     vecteur args;
     // update history
@@ -2559,7 +2568,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	// for PICT update
 	int i=erase_pos(contextptr);
 	args=vecteur(history_out(contextptr).begin()+i,history_out(contextptr).end());
-	// CERR << "PICT clear" << endl;
+	// CERR << "PICT clear" << '\n';
 #ifdef WITH_GNUPLOT
 	plot_instructions.clear();
 #endif
@@ -2575,7 +2584,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   static void archive_read_error(){
-    CERR << "Read error on " << cas_sortie_name() << endl;
+    CERR << "Read error on " << cas_sortie_name() << '\n';
     data_ready=false;
 #ifndef WIN32
     if (child_id)
@@ -2668,7 +2677,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 #if !defined __MINGW_H 
     if (access(name.c_str(),R_OK)) {
       if (verbose)
-	CERR << "// Unable to find config file " << name << endl;
+	CERR << "// Unable to find config file " << name << '\n';
       return;
     }
 #endif
@@ -2677,23 +2686,23 @@ extern "C" void Sleep(unsigned int miliSecond);
       return;
     vecteur args;
     if (verbose)
-      CERR << "// Reading config file " << name << endl;
+      CERR << "// Reading config file " << name << '\n';
     readargs_from_stream(inf,args,contextptr);
     gen g(args);
     if (debug_infolevel || verbose)    
-      CERR << g << endl;
+      CERR << g << '\n';
     g.eval(1,contextptr);
     if (verbose){
-      CERR << "// User configuration done" << endl;
-      CERR << "// Maximum number of parallel threads " << threads << endl;
-      CERR << "Threads allowed " << threads_allowed << endl;
+      CERR << "// User configuration done" << '\n';
+      CERR << "// Maximum number of parallel threads " << threads << '\n';
+      CERR << "Threads allowed " << threads_allowed << '\n';
     }
     if (debug_infolevel){
 #ifdef HASH_MAP_NAMESPACE
-      CERR << "Using hash_map_namespace"<< endl;
+      CERR << "Using hash_map_namespace"<< '\n';
 #endif
-      CERR << "Mpz_class allowed " << mpzclass_allowed << endl;
-      // CERR << "Heap multiplication " << heap_mult << endl;
+      CERR << "Mpz_class allowed " << mpzclass_allowed << '\n';
+      // CERR << "Heap multiplication " << heap_mult << '\n';
     }
 #endif
   }
@@ -2715,7 +2724,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       if (s.size()<2 && getenv("XCAS_ROOT")){
 	s=getenv("XCAS_ROOT");
 	if (debug_infolevel || verbose)
-	  CERR << "Found XCAS_ROOT " << s << endl;
+	  CERR << "Found XCAS_ROOT " << s << '\n';
       }
 #endif // GNUWINCE
 #else
@@ -2732,7 +2741,7 @@ extern "C" void Sleep(unsigned int miliSecond);
     }
     catch (std::runtime_error & e){
       last_evaled_argptr(contextptr)=NULL;
-      CERR << "Error in config file " << xcasrc() << " " << e.what() << endl;
+      CERR << "Error in config file " << xcasrc() << " " << e.what() << '\n';
     }
 #endif
   }
@@ -2767,7 +2776,7 @@ extern "C" void Sleep(unsigned int miliSecond);
     // test if aide_cas is there, if not test at xcasroot() return ""
     if (!access(s.c_str(),R_OK)){
       s=s.substr(0,s.size()-8);
-      CERR << "// Giac share root-directory:" << s << endl;
+      CERR << "// Giac share root-directory:" << s << '\n';
       return s;
     }
     return "";
@@ -2927,7 +2936,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       s="file:"+s+file;
     }
     if (debug_infolevel)
-      CERR << s << endl;
+      CERR << s << '\n';
 #ifdef WIN32
     bool with_firefox=false;
     /*
@@ -2955,7 +2964,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	  s1="c:/xcas/";
 	s1 += s.substr(5,s.size()-5);
       }
-      CERR << "s1=" << s1 << endl;
+      CERR << "s1=" << s1 << '\n';
       string s2;
       if (with_firefox)
 	s2=s1;
@@ -2968,7 +2977,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	    s2+=s1[i];
 	}
       }
-      CERR << "s2=" << s2 << endl;
+      CERR << "s2=" << s2 << '\n';
       s=s2;
       // s="file:"+s2;
       // s = s.substr(0,5)+"C:\\\\xcas\\\\"+s2;
@@ -3037,7 +3046,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       s=browser+" "+s+" &";
 #endif
     //if (debug_infolevel)
-      CERR << "// Running command:"+ s<<endl;
+      CERR << "// Running command:"+ s<<'\n';
     return s;
 #endif // __MINGW_H
   }
@@ -3059,7 +3068,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       }
       if (ss && res[ss]!='.')
 	res=res.substr(0,ss);
-      CERR << res << endl;
+      CERR << res << '\n';
 #if !defined VISUALC && !defined __MINGW_H && !defined NSPIRE && !defined FXCG
       /* If we have a POSIX path list, convert to win32 path list */
       const char *_epath;
@@ -3079,7 +3088,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       }
 #endif
     }
-    CERR << res << endl;
+    CERR << res << '\n';
 #if !defined VISUALC && !defined __MINGW_H && !defined NSPIRE && !defined FXCG
     // FIXME: works under visualc but not using /UNICODE flag
     // find correct flag
@@ -3207,7 +3216,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       int n=int(vector_aide_ptr()->size());
       for (int k=0;k<n;++k){
 	if (debug_infolevel>10)
-	  CERR << "+ " << (*vector_aide_ptr())[k].cmd_name  << endl;
+	  CERR << "+ " << (*vector_aide_ptr())[k].cmd_name  << '\n';
 	vector_completions_ptr()->push_back((*vector_aide_ptr())[k].cmd_name);
       }
     }
@@ -3254,7 +3263,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	    }
 	  }
 	}
-	CERR << "Added " << vector_aide_ptr()->size()-s << " synonyms" << endl;
+	CERR << "Added " << vector_aide_ptr()->size()-s << " synonyms" << '\n';
 	sort(vector_aide_ptr()->begin(),vector_aide_ptr()->end(),alpha_order);
 	update_completions();
       }
@@ -3336,63 +3345,63 @@ extern "C" void Sleep(unsigned int miliSecond);
     if (getenv("GIAC_LAPACK")){
       CALL_LAPACK=atoi(getenv("GIAC_LAPACK"));
       if (verbose)
-	CERR << "// Will call lapack if dimension is >=" << CALL_LAPACK << endl;
+	CERR << "// Will call lapack if dimension is >=" << CALL_LAPACK << '\n';
     }
     if (getenv("GIAC_PADIC")){
       GIAC_PADIC=atoi(getenv("GIAC_PADIC"));
       if (verbose)
-	CERR << "// Will use p-adic algorithm if dimension is >=" << GIAC_PADIC << endl;
+	CERR << "// Will use p-adic algorithm if dimension is >=" << GIAC_PADIC << '\n';
     }
 #endif
 #endif
     if (getenv("XCAS_RPN")){
       if (verbose)
-	CERR << "// Setting RPN mode" << endl;
+	CERR << "// Setting RPN mode" << '\n';
       rpn_mode(contextptr)=true;
     }
     if (getenv("GIAC_XCAS_MODE")){
       xcas_mode(contextptr)=atoi(getenv("GIAC_XCAS_MODE"));
       if (verbose)
-	CERR << "// Setting maple mode " << xcas_mode(contextptr) << endl;
+	CERR << "// Setting maple mode " << xcas_mode(contextptr) << '\n';
     }
     if (getenv("GIAC_C")){
       xcas_mode(contextptr)=0;
       if (verbose)
-	CERR << "// Setting giac C mode" << endl;
+	CERR << "// Setting giac C mode" << '\n';
     }
     if (getenv("GIAC_MAPLE")){
       xcas_mode(contextptr)=1;
       if (verbose)
-	CERR << "// Setting giac maple mode" << endl;
+	CERR << "// Setting giac maple mode" << '\n';
     }
     if (getenv("GIAC_MUPAD")){
       xcas_mode(contextptr)=2;
       if (verbose)
-	CERR << "// Setting giac mupad mode" << endl;
+	CERR << "// Setting giac mupad mode" << '\n';
     }
     if (getenv("GIAC_TI")){
       xcas_mode(contextptr)=3;
       if (verbose)
-	CERR << "// Setting giac TI mode" << endl;
+	CERR << "// Setting giac TI mode" << '\n';
     }
     if (getenv("GIAC_MONO")){
       if (verbose)
-	CERR << "// Threads polynomial * disabled" << endl;
+	CERR << "// Threads polynomial * disabled" << '\n';
       threads_allowed=false;
     }
     if (getenv("GIAC_MPZCLASS")){
       if (verbose)
-	CERR << "// mpz_class enabled" << endl;
+	CERR << "// mpz_class enabled" << '\n';
       mpzclass_allowed=true;
     }
     if (getenv("GIAC_DEBUG")){
       debug_infolevel=atoi(getenv("GIAC_DEBUG"));
-      CERR << "// Setting debug_infolevel to " << debug_infolevel << endl;
+      CERR << "// Setting debug_infolevel to " << debug_infolevel << '\n';
     }
     if (getenv("GIAC_PRINTPROG")){ 
       // force print of prog at parse, 256 for python compat mode print
       printprog=atoi(getenv("GIAC_PRINTPROG"));
-      CERR << "// Setting printprog to " << printprog << endl;
+      CERR << "// Setting printprog to " << printprog << '\n';
     }
     string s;
     if (getenv("LANG"))
@@ -3464,7 +3473,7 @@ extern "C" void Sleep(unsigned int miliSecond);
     return *ans;
   }
   context::context() { 
-    // CERR << "new context " << this << endl;
+    // CERR << "new context " << this << '\n';
     parent=0;
     tabptr=new sym_tab; 
     globalcontextptr=this; previous=0; globalptr=new global; 
@@ -3487,7 +3496,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   std::map<std::string,context *> * context_names = new std::map<std::string,context *> ;
 
   context::context(const string & name) { 
-    // CERR << "new context " << this << endl;
+    // CERR << "new context " << this << '\n';
     parent=0;
     tabptr=new sym_tab; 
     globalcontextptr=this; previous=0; globalptr=new global; 
@@ -3521,7 +3530,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 
   void init_context(context * ptr){
     if (!ptr){
-      CERR << "init_context on null context" << endl;
+      CERR << "init_context on null context" << '\n';
       return;
     }
      ptr->globalptr->_xcas_mode_=_xcas_mode_;
@@ -3607,7 +3616,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   context::~context(){
-    // CERR << "delete context " << this << endl;
+    // CERR << "delete context " << this << '\n';
     if (!previous){
       if (history_in_ptr)
 	delete history_in_ptr;
@@ -3772,11 +3781,11 @@ extern "C" void Sleep(unsigned int miliSecond);
 	pthread_mutex_unlock(mutexptr(contextptr));
 	// double tt=double(tp.v[4].val)/CLOCKS_PER_SEC;
 	if (tt>0.4)
-	  (*logptr(contextptr)) << gettext("\nEvaluation time: ") << tt << endl;
+	  (*logptr(contextptr)) << gettext("\nEvaluation time: ") << tt << '\n';
 	if (f)
 	  f(arg_callback,param_callback);
 	else
-	  (*logptr(contextptr)) << arg_callback << endl;
+	  (*logptr(contextptr)) << arg_callback << '\n';
 	return 0;
       }
     }
@@ -3787,8 +3796,8 @@ extern "C" void Sleep(unsigned int miliSecond);
       cleanup_context(contextptr);
       if (tp.f)
 	tp.f(string2gen("Aborted",false),tp.f_param);
-#ifndef __MINGW_H
-      *logptr(contextptr) << gettext("Thread ") << tp.eval_thread << " has been cancelled" << endl;
+#if !defined __MINGW_H && !defined NUMWORKS
+      *logptr(contextptr) << gettext("Thread ") << tp.eval_thread << " has been cancelled" << '\n';
 #endif
 #ifdef NO_STDEXCEPT
       pthread_cancel(tp.eval_thread) ;
@@ -3857,8 +3866,8 @@ extern "C" void Sleep(unsigned int miliSecond);
 	  kill_thread(false,contextptr);
 	  clear_prog_status(contextptr);
 	  cleanup_context(contextptr);
-#ifndef __MINGW_H
-	  *logptr(contextptr) << gettext("Cancel thread ") << eval_thread << endl;
+#if !defined __MINGW_H && !defined NUMWORKS
+	  *logptr(contextptr) << gettext("Cancel thread ") << eval_thread << '\n';
 #endif
 #ifdef NO_STDEXCEPT
 	  pthread_cancel(eval_thread) ;
@@ -3880,7 +3889,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       // double tt=double(v[4].val)/CLOCKS_PER_SEC;
       double tt=v[4]._DOUBLE_val;
       if (tt>0.1)
-	(*logptr(contextptr)) << gettext("Evaluation time: ") << tt << endl;
+	(*logptr(contextptr)) << gettext("Evaluation time: ") << tt << '\n';
       return v[5];
     }
     pthread_mutex_unlock(mutexptr(contextptr));
@@ -4002,7 +4011,11 @@ extern "C" void Sleep(unsigned int miliSecond);
 #ifdef FXCG
 		     _logptr_(0),
 #else
+#ifdef NUMWORKS
+		     _logptr_(&numworks_cerr),
+#else
 		     _logptr_(&CERR),
+#endif
 #endif
 #endif
 		     _prog_eval_level_val(1), _eval_level(DEFAULT_EVAL_LEVEL), _rand_seed(123457),_last_evaled_function_name_(0),_currently_scanned_(""),_last_evaled_argptr_(0),_max_sum_sqrt_(3),
@@ -4723,7 +4736,7 @@ unsigned int ConvertUTF8toUTF16 (
 #if DBG_ARCHIVE
       std::ofstream ofs;
       ofs.open ("e:\\tmp\\logsave", std::ofstream::out | std::ofstream::app);
-      ofs << "IDNT " << g << endl;
+      ofs << "IDNT " << g << '\n';
       ofs.close();
 #endif
       // fprintf(f,"%s",g._IDNTptr->id_name);
@@ -4736,7 +4749,7 @@ unsigned int ConvertUTF8toUTF16 (
 #if DBG_ARCHIVE
       std::ofstream ofs;
       ofs.open ("e:\\tmp\\logsave", std::ofstream::out | std::ofstream::app);
-      ofs << "SYMB " << g << endl;
+      ofs << "SYMB " << g << '\n';
       ofs.close();
 #endif
       short i=archive_function_index(g._SYMBptr->sommet); // equalposcomp(archive_function_tab(),g._SYMBptr->sommet);
@@ -4878,7 +4891,7 @@ unsigned int ConvertUTF8toUTF16 (
 #if DBG_ARCHIVE
       std::ofstream ofs;
       ofs.open ("e:\\tmp\\logrestore", std::ofstream::out | std::ofstream::app);
-      ofs << "IDNT " << res << endl;
+      ofs << "IDNT " << res << '\n';
       ofs.close();
 #endif
       return res;
@@ -4897,7 +4910,7 @@ unsigned int ConvertUTF8toUTF16 (
 #if DBG_ARCHIVE
 	  std::ofstream ofs;
 	  ofs.open ("e:\\tmp\\logrestore", std::ofstream::out | std::ofstream::app);
-	  ofs << "archive_restore error _SYMB index " << index << endl;
+	  ofs << "archive_restore error _SYMB index " << index << '\n';
 	  ofs.close();
 #endif
 	  g=fe; // ERROR
@@ -4939,7 +4952,7 @@ unsigned int ConvertUTF8toUTF16 (
 #if DBG_ARCHIVE
 	      std::ofstream ofs;
 	      ofs.open ("e:\\tmp\\logrestore", std::ofstream::out | std::ofstream::app);
-	      ofs << "archive_restore error _SYMB " << ch << endl;
+	      ofs << "archive_restore error _SYMB " << ch << '\n';
 	      ofs.close();
 #endif
 	      res=0;
@@ -4960,7 +4973,7 @@ unsigned int ConvertUTF8toUTF16 (
 #if DBG_ARCHIVE
 	  std::ofstream ofs;
 	  ofs.open ("e:\\tmp\\logrestore", std::ofstream::out | std::ofstream::app);
-	  ofs << "archive_restore error _SYMB 0 " << ch << endl;
+	  ofs << "archive_restore error _SYMB 0 " << ch << '\n';
 	  ofs.close();
 #endif
 	  res=gen(ch,contextptr);
@@ -4975,7 +4988,7 @@ unsigned int ConvertUTF8toUTF16 (
 #if DBG_ARCHIVE
       std::ofstream ofs;
       ofs.open ("e:\\tmp\\logrestore", std::ofstream::out | std::ofstream::app);
-      ofs << "SYMB " << g << endl;
+      ofs << "SYMB " << g << '\n';
       ofs.close();
 #endif
       return g;
@@ -5326,7 +5339,7 @@ unsigned int ConvertUTF8toUTF16 (
     string s;
     int pos=0;
 #ifdef EMCC
-    *logptr(contextptr) << char(2) << endl; // start mixed text/mathml
+    *logptr(contextptr) << char(2) << '\n'; // start mixed text/mathml
 #endif
     for (unsigned i=0;i<v.size();++i){
       int p=int(format.find("%gen",pos));
@@ -5346,10 +5359,10 @@ unsigned int ConvertUTF8toUTF16 (
       pos=p+4;
     }
     newlinestobr(s,format.substr(pos,format.size()-pos));
-    *logptr(contextptr) << s << endl;
+    *logptr(contextptr) << s << '\n';
 #ifdef EMCC
-    *logptr(contextptr) << char(3) << endl; // end mixed text/mathml
-    *logptr(contextptr) << endl;
+    *logptr(contextptr) << char(3) << '\n'; // end mixed text/mathml
+    *logptr(contextptr) << '\n';
 #endif
   }
 
@@ -5437,11 +5450,11 @@ unsigned int ConvertUTF8toUTF16 (
       if (lang>=1 && lang<=4){
 	std::string doc=find_doc_prefix(lang);
 	std::string file=giac_aide_dir()+doc+"keywords";
-	//COUT << "keywords " << file << endl;
+	//COUT << "keywords " << file << '\n';
 	ifstream f(file.c_str());
 	if (f.good()){
 	  in_update_lexer_localization(f,lang,v,lexer_map,back_lexer_map,contextptr);
-	  // COUT << "// Using keyword file " << file << endl;
+	  // COUT << "// Using keyword file " << file << '\n';
 	} // if (f)
 	else {
 	  if (lang==1){
@@ -5454,7 +5467,7 @@ unsigned int ConvertUTF8toUTF16 (
 	    in_update_lexer_localization(f,1,v,lexer_map,back_lexer_map,contextptr);
 	  }
 	  else
-	    CERR << "// Unable to find keyword file " << file << endl;
+	    CERR << "// Unable to find keyword file " << file << '\n';
 	}
       }
     }
@@ -5490,7 +5503,7 @@ unsigned int ConvertUTF8toUTF16 (
       if (i!=lexer_functions().end())
 	return false;
       if (doing_insmod){
-	if (debug_infolevel) CERR << "insmod register " << s << endl;
+	if (debug_infolevel) CERR << "insmod register " << s << '\n';
 	registered_lexer_functions().push_back(user_function(s,parser_token));
       }
       if (!builtin_lexer_functions_sorted){
@@ -5508,7 +5521,7 @@ unsigned int ConvertUTF8toUTF16 (
 	  builtin_lexer_functions_begin()[builtin_lexer_functions_number].second.subtype=parser_token-256;
 	builtin_lexer_functions_number++;
 #endif
-	if (debug_infolevel) CERR << "insmod register builtin " << s << endl;
+	if (debug_infolevel) CERR << "insmod register builtin " << s << '\n';
       }
       else {
 	lexer_functions()[s] = gen(u);
@@ -5516,7 +5529,7 @@ unsigned int ConvertUTF8toUTF16 (
 	  lexer_functions()[s].subtype=T_UNARY_OP-256;
 	else
 	  lexer_functions()[s].subtype=parser_token-256;
-	if (debug_infolevel) CERR << "insmod register lexer_functions " << s << endl;	
+	if (debug_infolevel) CERR << "insmod register lexer_functions " << s << '\n';	
       }
       // If s is a library function name (with ::), update the library
       int ss=int(strlen(s)),j=0;
@@ -5665,10 +5678,10 @@ unsigned int ConvertUTF8toUTF16 (
 	res.subtype=pp.first->subtype;
 	return pp.first->return_value;
       }
-      // CERR << "lexer_functions search " << ts << endl;
+      // CERR << "lexer_functions search " << ts << '\n';
       map_charptr_gen::const_iterator i = lexer_functions().find(ts.c_str());
       if (i!=lexer_functions().end()){
-	// CERR << "lexer_functions found " << ts << endl;
+	// CERR << "lexer_functions found " << ts << '\n';
 	if (i->second.subtype==T_TO-256)
 	  res=plus_one;
 	else
@@ -5682,7 +5695,7 @@ unsigned int ConvertUTF8toUTF16 (
       if (i2 == i2end) {
 	unlock_syms_mutex();  
 	const char * S = s.c_str();
-	// std::CERR << "lexer new" << s << endl;
+	// std::CERR << "lexer new" << s << '\n';
 	if (check38 && calc_mode(contextptr)==38 && strcmp(S,string_pi) && strcmp(S,string_euler_gamma) && strcmp(S,string_infinity) && strcmp(S,string_undef) && S[0]!='G'&& (!is_known_name_38 || !is_known_name_38(0,S))){
 	  // detect invalid names and implicit multiplication 
 	  size_t ss=strlen(S);
@@ -6350,7 +6363,7 @@ unsigned int ConvertUTF8toUTF16 (
 	}
       }
       if (instring){
-	*logptr(contextptr) << "Warning: multi-line strings can not be converted from Python like syntax"<<endl;
+	*logptr(contextptr) << "Warning: multi-line strings can not be converted from Python like syntax"<<'\n';
 	return s_orig;
       }
       // detect : at end of line
@@ -6641,7 +6654,7 @@ unsigned int ConvertUTF8toUTF16 (
 	  s += ";";
       }
       if (debug_infolevel)
-	*logptr(contextptr) << "Translated to Xcas as:\n" << s << endl;
+	*logptr(contextptr) << "Translated to Xcas as:\n" << s << '\n';
     }
     return s;
   }
@@ -6786,11 +6799,11 @@ unsigned int ConvertUTF8toUTF16 (
 #endif
 #ifndef STATIC_BUILTIN_LEXER_FUNCTIONS
     if (debug_infolevel)
-      CERR << "releasing " << builtin_lexer_functions_number << " functions" << endl;
+      CERR << "releasing " << builtin_lexer_functions_number << " functions" << '\n';
     for (int i=0;i<builtin_lexer_functions_number;++i){
 #ifdef SMARTPTR64
       if (debug_infolevel)
-	CERR << builtin_lexer_functions_begin()[i].first << endl; 
+	CERR << builtin_lexer_functions_begin()[i].first << '\n'; 
       builtin_lexer_functions_begin()[i].second=0;
       //delete (ref_unary_function_ptr *) (* ((ulonglong * ) &builtin_lexer_functions_begin()[i].second) >> 16);
 #endif

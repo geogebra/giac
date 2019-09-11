@@ -1339,7 +1339,7 @@ namespace giac {
       v1.swap(tmp1);
       if (is_undef(v1))
 	return v1;
-      // cerr << v0 << " " << v1 << endl;
+      // cerr << v0 << " " << v1 << '\n';
     }
     return v1;
   }

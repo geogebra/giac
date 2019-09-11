@@ -607,7 +607,7 @@ mpz_class smod(const mpz_class & a,int reduce){
       }
     }
     if (pcont.empty())
-      CERR << "empty" << endl;
+      CERR << "empty" << '\n';
     std::vector<hashgcd_U> varsn(vars);
     varsn.pop_back();
     vector< T_unsigned<T,hashgcd_U> > pcof,qcof; // not used (false in mod_gcd)
@@ -2050,7 +2050,7 @@ mpz_class smod(const mpz_class & a,int reduce){
       smalladd(res,tmp,tmp2,modulo);
       swap(tmp2,res);
     }
-    if (0) CERR << res.size() << " " << res.capacity() << endl;
+    if (0) CERR << res.size() << " " << res.capacity() << '\n';
     /*
     res=diff[s-1];
     vector< T_unsigned<int,hashgcd_U> > res_shift,res_times;
@@ -2091,7 +2091,7 @@ mpz_class smod(const mpz_class & a,int reduce){
   static void interpolate_dim2(const vector<int> & x,vector< vector<int> > & diff,vector< vector<int> > & res,int modulo){
     assert(x.size()<=diff.size());
     divided_differences_dim2(x,diff,modulo);
-    // CERR << "end diff div " << CLOCK() << endl;
+    // CERR << "end diff div " << CLOCK() << '\n';
     int s=int(x.size()),alpha;
     int ysize=0,cur;
     for (int i=0;i<s;++i){
@@ -2130,7 +2130,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	if (!j)
 	  break;
       }
-      if (0) CERR << curx.size() << " " << curx.capacity() << endl;
+      if (0) CERR << curx.size() << " " << curx.capacity() << '\n';
     }
     /*
     vector<int> interp(1,1);
@@ -2423,7 +2423,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     // Make p and q primitive as polynomials in x1,...,xn-1
     // with coeff polynomial in xn
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod threads " << nthreads << " content begin " << "dim " << dim << " " << CLOCK() << endl;
+      CERR << "gcdmod threads " << nthreads << " content begin " << "dim " << dim << " " << CLOCK() << '\n';
     vector< T_unsigned<int,hashgcd_U> > p_pp,q_pp;
     int rp=pp_mod_last(p_orig,0,modulo,varxn,var2,pcontxn,p_pp);
     int rq=pp_mod_last(q_orig,0,modulo,varxn,var2,qcontxn,q_pp);
@@ -2431,7 +2431,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     const vector< T_unsigned<int,hashgcd_U> > * q_ptr=rq==2?&q_pp:&q_orig; 
     gcdsmallmodpoly(pcontxn,qcontxn,modulo,dcontxn,compute_pcofactor?&pcofcontxn:0,compute_qcofactor?&qcofcontxn:0);
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod content in " << "dim " << dim << " " << CLOCK() << endl;
+      CERR << "gcdmod content in " << "dim " << dim << " " << CLOCK() << '\n';
     // Make p and q primitive as polynomial in xn with coeff in x1...xn-1
     if (dim==2){
       convert(*p_ptr,varxn,var2,pv,modulo);
@@ -2490,7 +2490,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     mod_gcd(pcont,qcont,modulo,dcont,pcofactor,qcofactor,vars_truncated,compute_pcofactor,compute_qcofactor,nthreads); // don't use pv and qv here!
     // multiply pcofactor and qcofactor by the initial contents dep. on xn
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod content end " << "dim " << dim << " " << CLOCK() << endl;
+      CERR << "gcdmod content end " << "dim " << dim << " " << CLOCK() << '\n';
     if (compute_pcofactor){
       convert_back(pcofcontxn,vars.back(),tmp);
       smallmult(pcofactor,tmp,pcofactor,modulo,0);
@@ -2504,7 +2504,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     // first find degree of gcd with respect to xn
     for (int essai=0;essai<2;){
       if (debug_infolevel>20-dim)
-	CERR << "gcdmod degree? " << essai << " dim " << dim << " " << CLOCK() << endl;
+	CERR << "gcdmod degree? " << essai << " dim " << dim << " " << CLOCK() << '\n';
       if (dim==2){
 	horner_front(pv,b.front(),pb,modulo);
 	horner_front(qv,b.front(),qb,modulo);
@@ -2564,13 +2564,13 @@ mpz_class smod(const mpz_class & a,int reduce){
     } // end for (essai)
     hashgcd_U lcoeffpu,lcoeffqu;
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod lcoeff begin " << "dim " << dim << " " << CLOCK() << endl;
+      CERR << "gcdmod lcoeff begin " << "dim " << dim << " " << CLOCK() << '\n';
     lcoeffpu=lcoeff(p,varxn,var2,lcoeffp);
     lcoeffqu=lcoeff(q,varxn,var2,lcoeffq);
     gcdsmallmodpoly(lcoeffp,lcoeffq,modulo,Delta);
     if (debug_infolevel>20-dim){
-      CERR << "lcoeff p, q, gcd" << lcoeffp << "," << lcoeffq << "," << Delta << endl;
-      CERR << "gcdmod lcoeff end " << "dim " << dim << " " << CLOCK() << endl;
+      CERR << "lcoeff p, q, gcd" << lcoeffp << "," << lcoeffq << "," << Delta << '\n';
+      CERR << "gcdmod lcoeff end " << "dim " << dim << " " << CLOCK() << '\n';
     }
     // estimate time for full lift or division try
     // size=p.size()+q.size()
@@ -2595,16 +2595,16 @@ mpz_class smod(const mpz_class & a,int reduce){
     // we are now interpolating G=gcd(p,q)*a poly/xn
     // such that the leading coeff of G is Delta
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod degree begin " << "dim " << dim << " " << CLOCK() << " compute_cof " << compute_cof << "(" << sumdeg/gcdlift << ")" << endl;
+      CERR << "gcdmod degree begin " << "dim " << dim << " " << CLOCK() << " compute_cof " << compute_cof << "(" << sumdeg/gcdlift << ")" << '\n';
     int ptotaldeg=degree(p,shift_vars,pdeg);
     int qtotaldeg=degree(q,shift_vars,qdeg);
     shift_vars.pop_back();
     if (debug_infolevel>20-dim){
-      CERR << "pdeg " << pdeg << " " << ptotaldeg << endl;
-      CERR << "qdeg " << qdeg << " " << qtotaldeg << endl;
+      CERR << "pdeg " << pdeg << " " << ptotaldeg << '\n';
+      CERR << "qdeg " << qdeg << " " << qtotaldeg << '\n';
     }
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod degree end " << "dim " << dim << " " << CLOCK() << endl;
+      CERR << "gcdmod degree end " << "dim " << dim << " " << CLOCK() << '\n';
     int spdeg=0,sqdeg=0;
     for (int i=0;i<dim-1;++i){
       spdeg += pdeg[i];
@@ -2615,9 +2615,9 @@ mpz_class smod(const mpz_class & a,int reduce){
     int e=0; // number of evaluations
     int alpha,alpha1;
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod find alpha dim " << dim << " " << CLOCK() << endl;
+      CERR << "gcdmod find alpha dim " << dim << " " << CLOCK() << '\n';
     if (debug_infolevel>25-dim)
-      CERR << " p " << p << " q " << q << endl;
+      CERR << " p " << p << " q " << q << '\n';
     vector< T_unsigned<int,hashgcd_U> > palpha,qalpha,dp,dq,tmp1interp,tmp2interp; // d, dp and dq are the current interpolated values of gcd and cofactors
     vector< vector< T_unsigned<int,hashgcd_U> > > gcdv,pcofactorv,qcofactorv;
     // for dim 2
@@ -2675,7 +2675,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     else
       gcd_par.nthreads=1;
     if (debug_infolevel>20-dim && nthreads>1)
-      CERR << "nthreads " << nthreads << " dim " << dim << " " << sumsize << " " << sumsize*ptotaldeg << endl;
+      CERR << "nthreads " << nthreads << " dim " << dim << " " << sumsize << " " << sumsize*ptotaldeg << '\n';
     if (nthreads>gcddeg_plus_delta)
       nthreads=gcddeg_plus_delta+1;
     if (nthreads>1){
@@ -2685,7 +2685,7 @@ mpz_class smod(const mpz_class & a,int reduce){
       nth=std::ceil(nth);
       nthreads=int(std::ceil(todo/nth));
       if (debug_infolevel>20-dim)
-	CERR << "Using " << nthreads << " threads " << nth << " " << todo/nth << endl;
+	CERR << "Using " << nthreads << " threads " << nth << " " << todo/nth << '\n';
     }
     for (alpha=-1;;){
       // Possible improvement: if gcddeg is high, cofactors will stabilize
@@ -2697,13 +2697,13 @@ mpz_class smod(const mpz_class & a,int reduce){
 	else
 	  interpolate(alphav,gcdv,d,var2,modulo,tmp1interp,tmp2interp);
 	if (debug_infolevel>20-dim)
-	  CERR << "gcdmod pp1mod dim " << dim << " " << CLOCK() << " d " << d << endl;
+	  CERR << "gcdmod pp1mod dim " << dim << " " << CLOCK() << " d " << d << '\n';
 	vector< T_unsigned<int,hashgcd_U> > pquo,qquo,tmprem,pD(d);
 	pp_mod_last(pD,0,modulo,varxn,var2,tmpcont);
 	// This removes the polynomial in xn that we multiplied by
 	// (it was necessary to know the lcoeff of the interpolated poly)
 	if (debug_infolevel>20-dim)
-	  CERR << "gcdmod check dim " << dim << " " << CLOCK() << endl;
+	  CERR << "gcdmod check dim " << dim << " " << CLOCK() << '\n';
 	// Now, gcd divides pD for gcddeg+1 values of x1
 	// degree(pD)<=degree(gcd)
 	// gcd_mutex_lock();
@@ -2742,7 +2742,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	      smallmult(smod(longlong(q_orig.front().g)*invmod(qcofactor.front().g,modulo),modulo),qcofactor,qcofactor,modulo);
 	    }
 	    if (debug_infolevel>20-dim)
-	      CERR << "gcdmod found dim " << dim << " " << CLOCK() << endl;
+	      CERR << "gcdmod found dim " << dim << " " << CLOCK() << '\n';
 	    if (pqswap)
 	      swap(pcofactor,qcofactor);
 	    return true;
@@ -2750,7 +2750,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	} // end if hashdivrem(p,...)
 	//gcd_mutex_unlock();
 	if (debug_infolevel>20-dim)
-	  CERR << "Gcdmod bad guess " << endl;
+	  CERR << "Gcdmod bad guess " << '\n';
 	// restart
 	gcdv.clear(); alphav.clear(); 
 	pcofactorv.clear(); qcofactorv.clear(); 
@@ -2762,20 +2762,20 @@ mpz_class smod(const mpz_class & a,int reduce){
 	if (dim2){
 	  interpolate_dim2(alphav,dim2gcdv,dv,modulo);
 	  if (debug_infolevel>20-dim)
-	    CERR << "end interpolate gcd " << CLOCK() << endl;
+	    CERR << "end interpolate gcd " << CLOCK() << '\n';
 	  convert_back(dv,varxn,var2,d);
 	  interpolate_dim2(alphav,dim2pcofactorv,dpv,modulo);
 	  convert_back(dpv,varxn,var2,dp);
 	  if (debug_infolevel>20-dim)
-	    CERR << "end interpolate p cof " << CLOCK() << endl;
+	    CERR << "end interpolate p cof " << CLOCK() << '\n';
 	}
 	else {
 	  interpolate(alphav,gcdv,d,var2,modulo,tmp1interp,tmp2interp);
 	  if (debug_infolevel>20-dim)
-	    CERR << "end interpolate gcd " << CLOCK() << endl;
+	    CERR << "end interpolate gcd " << CLOCK() << '\n';
 	  interpolate(alphav,pcofactorv,dp,var2,modulo,tmp1interp,tmp2interp);
 	  if (debug_infolevel>20-dim)
-	    CERR << "end interpolate p cof " << CLOCK() << endl;
+	    CERR << "end interpolate p cof " << CLOCK() << '\n';
 	}
 	// check that d(alpha)*dp(alpha)=palpha with lcoeff adjusted
 	// for e<=liftdeg
@@ -2797,9 +2797,9 @@ mpz_class smod(const mpz_class & a,int reduce){
 	    horner_back(dv,alpha1,dv1,modulo,maxtotaldeg,true);
 	    horner_back(dpv,alpha1,dpv1,modulo,maxtotaldeg,true);
 	    if (debug_infolevel>20){
-	      CERR << "palpha " << dim2palpha << endl;
-	      CERR << "gcd alpha " << dv1 << endl;
-	      CERR << "p-cof alpha " << dpv1 << endl;
+	      CERR << "palpha " << dim2palpha << '\n';
+	      CERR << "gcd alpha " << dv1 << '\n';
+	      CERR << "p-cof alpha " << dpv1 << '\n';
 	    }
 	    mulmod(dpv1,smod(longlong(hornermod(pv.front(),alpha1,modulo))*invmod((hornermod(dv.front(),alpha1,modulo)*longlong(hornermod(dpv.front(),alpha1,modulo)))%modulo,modulo),modulo),modulo);
 	    if (!is_p_a_times_b(dim2palpha,dpv1,dv1,modulo,maxtotaldeg)){
@@ -2825,11 +2825,11 @@ mpz_class smod(const mpz_class & a,int reduce){
 	    if (!horner(p,alpha1,vars,palpha,modulo,maxtotaldeg))
 	      return false;
 	    if (debug_infolevel>20-dim)
-	      CERR << "gcdmod horner d " << alpha << " dim " << dim << " " << CLOCK() << endl;
+	      CERR << "gcdmod horner d " << alpha << " dim " << dim << " " << CLOCK() << '\n';
 	    if (!horner(d,alpha1,vars,g,modulo,maxtotaldeg))
 	      return false;
 	    if (debug_infolevel>20-dim)
-	      CERR << "gcdmod horner dp " << alpha << " dim " << dim << " " << CLOCK() << endl;
+	      CERR << "gcdmod horner dp " << alpha << " dim " << dim << " " << CLOCK() << '\n';
 	    if (!horner(dp,alpha1,vars,gp,modulo,maxtotaldeg))
 	      return false;
 	    smallmult(smod(longlong(palpha.back().g)*invmod((gp.back().g*longlong(g.back().g))%modulo,modulo),modulo),gp,gp,modulo);
@@ -2865,7 +2865,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	      smallmult(smod(longlong(q_orig.front().g)*invmod(qcofactor.front().g,modulo),modulo),qcofactor,qcofactor,modulo);
 	    }
 	    if (debug_infolevel>20-dim)
-	      CERR << "gcdmod end dim " << dim << " " << CLOCK() << endl;
+	      CERR << "gcdmod end dim " << dim << " " << CLOCK() << '\n';
 	    if (pqswap){
 	      swap(pcofactor,qcofactor);
 	      swap(dim2pcofactorv,dim2qcofactorv);
@@ -2893,21 +2893,21 @@ mpz_class smod(const mpz_class & a,int reduce){
 	  control_c();
 #endif
 	  if (ctrl_c || interrupted || alpha==modulo){
-	    CERR << "Modgcd: no suitable evaluation point" << endl;
+	    CERR << "Modgcd: no suitable evaluation point" << '\n';
 	    return false;
 	  }
 	  alpha1=alpha%2?-(alpha+1)/2:alpha/2;
 	  if (hornermod(lcoeffp,alpha1,modulo)==0 || hornermod(lcoeffq,alpha1,modulo)==0)
 	    continue;
 	  if (debug_infolevel>20-dim)
-	    CERR << "gcdmod eval alpha1=" << alpha1 << " dim " << dim << " " << CLOCK() << endl;
+	    CERR << "gcdmod eval alpha1=" << alpha1 << " dim " << dim << " " << CLOCK() << '\n';
 	  break;
 	} // end for (;;)
 	// alpha is probably admissible 
 	// (we will test later if degree of palpha/qalpha wrt x1...xn-1 is max)
 	// prepare room for gcd and cofactors
 	if (debug_infolevel>25-dim)
-	  CERR << "dim " << dim << " palpha " << palpha << " qalpha " << qalpha << endl ;
+	  CERR << "dim " << dim << " palpha " << palpha << " qalpha " << qalpha << '\n' ;
 	alphav.push_back(alpha1);
 	if (dim2){
 	  if (alphav.size()>dim2gcdv.size()){
@@ -2990,7 +2990,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	    // Add alpha,g 
 	    if (dim>2 && gcddeg-nzero==e){
 	      if (debug_infolevel>20-dim)
-		CERR << CLOCK()*1e-6 << " SPMOD begin" << endl;
+		CERR << CLOCK()*1e-6 << " SPMOD begin" << '\n';
 	      // We have enough evaluations, let's try SPMOD
 	      // memory allocations
 	      // estimate memory required
@@ -3043,7 +3043,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 		      smalladdmult(tmpadd,minverse[j][k],gcdv[k],minversegcd[j],modulo);
 		    }
 #endif
-		    // CERR << minversegcd[j] << endl;
+		    // CERR << minversegcd[j] << '\n';
 		  }
 		  taille2 += minversegcd[j].size(); 
 		}
@@ -3065,13 +3065,13 @@ mpz_class smod(const mpz_class & a,int reduce){
 		  ++j;
 		}
 		if (0){
-		  CERR << "trygcd " << trygcd.size() << " " << trygcd.capacity() << endl;
+		  CERR << "trygcd " << trygcd.size() << " " << trygcd.capacity() << '\n';
 		  for (int j=0;j<=e;++j)
-		    CERR << "minversegcd[" << j << "] " << minversegcd[j].size()<< " " << minversegcd[j].capacity() << endl; 
+		    CERR << "minversegcd[" << j << "] " << minversegcd[j].size()<< " " << minversegcd[j].capacity() << '\n'; 
 		}
 		// Check if trygcd is the gcd!
 		if (debug_infolevel>20-dim)
-		  CERR << CLOCK()*1e-6 << " SPMOD trygcd" << endl;
+		  CERR << CLOCK()*1e-6 << " SPMOD trygcd" << '\n';
 		pp_mod_last(trygcd,0,modulo,varxn,var2,tmpcont);
 		if (hashdivrem(p,trygcd,pquo,tmprem,vars,modulo,0,false)==1 && tmprem.empty()){
 		  if (hashdivrem(q,trygcd,qquo,tmprem,vars,modulo,0,false)==1 && tmprem.empty()){
@@ -3089,7 +3089,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 		      smallmult(smod(longlong(q_orig.front().g)*invmod(qcofactor.front().g,modulo),modulo),qcofactor,qcofactor);
 		    }
 		    if (debug_infolevel>20-dim)
-		      CERR << "gcdmod found dim " << dim << " " << CLOCK() << endl;
+		      CERR << "gcdmod found dim " << dim << " " << CLOCK() << '\n';
 		    if (pqswap){
 		      swap(pcofactor,qcofactor);
 		      swap(dim2pcofactorv,dim2qcofactorv);
@@ -3101,13 +3101,13 @@ mpz_class smod(const mpz_class & a,int reduce){
 	    } // end if (dim>2 && gcddeg-nzero==e)
 	  } // end if (!compute_cof && nzero)
 	  if (debug_infolevel>20-dim)
-	    CERR << "gcdmod interp dim " << dim << " " << CLOCK() << endl;
+	    CERR << "gcdmod interp dim " << dim << " " << CLOCK() << '\n';
 	  ++e;
 	  continue;
 	} // end gdeg==delta
 	if (comp==0 || comp==-1){ 
 	  if (debug_infolevel>20-dim)
-	    CERR << "Bad reduction " << alphav[vpos] << endl;
+	    CERR << "Bad reduction " << alphav[vpos] << '\n';
 	  // bad reduction: all indices of gdeg are >= to delta and gdeg!=delta
 	  alphav.erase(alphav.begin()+vpos);
 	  if (dim2){
@@ -3125,7 +3125,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	}
 	// previous alpha where bad reduction
 	if (debug_infolevel>20-dim && vpos)
-	  CERR << "Bads reductions " << alphav[vpos-1] << endl;
+	  CERR << "Bads reductions " << alphav[vpos-1] << '\n';
 	alphav.erase(alphav.begin(),alphav.begin()+vpos);
 	if (dim2){
 	  dim2gcdv[0].swap(dim2gcdv[vpos]);// dim2gcdv.erase(dim2gcdv.begin(),dim2gcdv.begin()+vpos); 
@@ -3680,7 +3680,7 @@ mpz_class smod(const mpz_class & a,int reduce){
       smallmult(smod(longlong(lg)*invmod(g.front().g,modulo),modulo),g,g,modulo);
       smallmult(smod(longlong(lp)*invmod(pcof.front().g,modulo),modulo),pcof,pcof,modulo);
       smallmult(smod(longlong(lq)*invmod(qcof.front().g,modulo),modulo),qcof,qcof,modulo);
-      // CERR << " g " << g << " pcof " << pcof << "qcof " << qcof << endl;
+      // CERR << " g " << g << " pcof " << pcof << "qcof " << qcof << '\n';
       int cmp=compare(gdegmod,gdeg);
       if (cmp==0){ // bad reduction
 	continue;
@@ -3932,7 +3932,7 @@ mpz_class smod(const mpz_class & a,int reduce){
       return true;
     }
     if (debug_infolevel>10)
-      CERR << a_ << " inv " << pmin << " mod " << modulo << endl;
+      CERR << a_ << " inv " << pmin << " mod " << modulo << '\n';
     a=pmin;
     b=a_;
     vector<int>::iterator it,itend;
@@ -3952,7 +3952,7 @@ mpz_class smod(const mpz_class & a,int reduce){
       swap(u0,u1);
       swap(u1,u2);
       if (debug_infolevel>10)
-	CERR << a << "  " << b << " " << u0 << " " << u1 << endl;
+	CERR << a << "  " << b << " " << u0 << " " << u1 << '\n';
     }
     if (gcd(modulo,a.front())!=1 || u0.empty())
       return false;
@@ -4763,18 +4763,18 @@ mpz_class smod(const mpz_class & a,int reduce){
 	// trial division, if success return 1 else continue
 	// ?FIXME? use pseudo-division test 
 	if (debug_infolevel)
-	  CERR << CLOCK() << " algmodgcd hashdivrem " << test.size() <<endl;// << " " << test << endl;
+	  CERR << CLOCK() << " algmodgcd hashdivrem " << test.size() <<'\n';// << " " << test << '\n';
 	if (test==prevtest && hashdivrem(p0,test,Pcof,tmprem,vars,pminmodulo,0,true)==1 && tmprem.empty()){
 	  if (hashdivrem(q0,test,Qcof,tmprem,vars,pminmodulo,0,true)==1 && tmprem.empty()){
 	    if (debug_infolevel)
-	      CERR << CLOCK() << " algmodgcd hashdivrem sucess" << endl;
+	      CERR << CLOCK() << " algmodgcd hashdivrem sucess" << '\n';
 	    D=test;
 	    return 1;
 	  }
 	}
 	prevtest=test;
 	if (debug_infolevel)
-	  CERR << CLOCK() << " algmodgcd hashdivrem failure" << endl;
+	  CERR << CLOCK() << " algmodgcd hashdivrem failure" << '\n';
       }
     } // end extension.type==_POLY
     // int dim=vars.size();
@@ -5158,7 +5158,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     vector< T_unsigned<vector<int>,hashgcd_U> > p(p_orig),q(q_orig),pcont,qcont,dcont,tmp,pcofactor,qcofactor;
     vector< vector<int> > pcontxn,qcontxn,dcontxn,pcofcontxn,qcofcontxn;
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod_ext threads " << nthreads << " content begin " << "dim " << dim << " " << CLOCK() << endl;
+      CERR << "gcdmod_ext threads " << nthreads << " content begin " << "dim " << dim << " " << CLOCK() << '\n';
     if (!pp_mod_last(p,&pmin,modulo,varxn,var2,pcontxn))
       return 0;
     if (!pp_mod_last(q,&pmin,modulo,varxn,var2,qcontxn))
@@ -5166,7 +5166,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     if (!gcdsmallmodpoly_ext(pcontxn,qcontxn,pmin,modulo,dcontxn))
       return 0;
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod content in " << "dim " << dim << " " << CLOCK() << endl;
+      CERR << "gcdmod content in " << "dim " << dim << " " << CLOCK() << '\n';
     // Make p and q primitive as polynomial in xn with coeff in x1...xn-1
     if (!pp_mod(p,&pmin,modulo,vars,pcont,nthreads))
       return 0;
@@ -5175,7 +5175,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     mod_gcd_ext(pcont,qcont,vars_truncated,pmin,modulo,dcont,pcofactor,qcofactor,false,false,nthreads); // don't use pv and qv here!
     // multiply pcofactor and qcofactor by the initial contents dep. on xn
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod content end " << "dim " << dim << " " << CLOCK() << endl;
+      CERR << "gcdmod content end " << "dim " << dim << " " << CLOCK() << '\n';
     distmult_ext(dcont,dcontxn,dcont,var2,pmin,modulo);
     // ready for gcd computation by interpolation with respect to xn
     // first find degree of gcd with respect to xn
@@ -5186,7 +5186,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     int nzero=1; // Number of zero coeffs
     for (int essai=0;essai<2;){
       if (debug_infolevel>20-dim)
-	CERR << "gcdmod degree? " << essai << " dim " << dim << " " << CLOCK() << endl;
+	CERR << "gcdmod degree? " << essai << " dim " << dim << " " << CLOCK() << '\n';
       if (!horner(p,b,vars,pb,modulo) ||
 	  !horner(q,b,vars,qb,modulo))
 	return false;
@@ -5264,14 +5264,14 @@ mpz_class smod(const mpz_class & a,int reduce){
     vector< vector<int> > lcoeffp,lcoeffq,Delta,tmpcont;
     hashgcd_U lcoeffpu,lcoeffqu;
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod lcoeff begin " << "dim " << dim << " " << CLOCK() << endl;
+      CERR << "gcdmod lcoeff begin " << "dim " << dim << " " << CLOCK() << '\n';
     lcoeffpu=lcoeff(p,varxn,var2,lcoeffp);
     lcoeffqu=lcoeff(q,varxn,var2,lcoeffq);
     if (!gcdsmallmodpoly_ext(lcoeffp,lcoeffq,pmin,modulo,Delta))
       return 0;
     if (debug_infolevel>20-dim){
-      CERR << "lcoeff p, q, gcd" << lcoeffp << "," << lcoeffq << "," << Delta << endl;
-      CERR << "gcdmod lcoeff end " << "dim " << dim << " " << CLOCK() << endl;
+      CERR << "lcoeff p, q, gcd" << lcoeffp << "," << lcoeffq << "," << Delta << '\n';
+      CERR << "gcdmod lcoeff end " << "dim " << dim << " " << CLOCK() << '\n';
     }
     // estimate time for full lift or division try
     // size=p.size()+q.size()
@@ -5297,15 +5297,15 @@ mpz_class smod(const mpz_class & a,int reduce){
     // such that the leading coeff of G is Delta
     index_t pdeg(dim),qdeg(dim),pdegalpha(dim),qdegalpha(dim);
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod ext degree begin " << "dim " << dim << " " << CLOCK() << " compute_cof " << compute_cof << "(" << sumdeg/gcdlift << ")" << endl;
+      CERR << "gcdmod ext degree begin " << "dim " << dim << " " << CLOCK() << " compute_cof " << compute_cof << "(" << sumdeg/gcdlift << ")" << '\n';
     int ptotaldeg=degree(p,shift_vars,pdeg);
     int qtotaldeg=degree(q,shift_vars,qdeg);
     if (debug_infolevel>20-dim){
-      CERR << "pdeg " << pdeg << " " << ptotaldeg << endl;
-      CERR << "qdeg " << qdeg << " " << qtotaldeg << endl;
+      CERR << "pdeg " << pdeg << " " << ptotaldeg << '\n';
+      CERR << "qdeg " << qdeg << " " << qtotaldeg << '\n';
     }
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod degree end " << "dim " << dim << " " << CLOCK() << endl;
+      CERR << "gcdmod degree end " << "dim " << dim << " " << CLOCK() << '\n';
     int spdeg=0,sqdeg=0;
     for (int i=0;i<dim-1;++i){
       spdeg += pdeg[i];
@@ -5316,9 +5316,9 @@ mpz_class smod(const mpz_class & a,int reduce){
     int e=0; // number of evaluations
     int alpha,alpha1;
     if (debug_infolevel>20-dim)
-      CERR << "gcdmod find alpha dim " << dim << " " << CLOCK() << endl;
+      CERR << "gcdmod find alpha dim " << dim << " " << CLOCK() << '\n';
     if (debug_infolevel>20-dim)
-      CERR << " p " << p << " q " << q << endl;
+      CERR << " p " << p << " q " << q << '\n';
     vector< T_unsigned<vector<int>,hashgcd_U> > palpha,qalpha,dp,dq; // d, dp and dq are the current interpolated values of gcd and cofactors
     vector<int> alphav;
     vector< vector< T_unsigned<vector<int>,hashgcd_U> > > gcdv,pcofactorv,qcofactorv;
@@ -5365,7 +5365,7 @@ mpz_class smod(const mpz_class & a,int reduce){
       nth=std::ceil(nth);
       nthreads=int(std::ceil(todo/nth));
       if (debug_infolevel>20-dim)
-	CERR << "Using " << nthreads << " threads " << nth << " " << todo/nth << endl;
+	CERR << "Using " << nthreads << " threads " << nth << " " << todo/nth << '\n';
     }
     // return -1; // avoid inf loop while not implemented
     /* ******************************* 
@@ -5378,20 +5378,20 @@ mpz_class smod(const mpz_class & a,int reduce){
       // First check if we are ready to interpolate
       if (!compute_cof && e>gcddeg_plus_delta){
 	if (debug_infolevel>20-dim){
-	  CERR << "gcdmod before interp " << dim << " clock= " << CLOCK() << gcdv << endl;
+	  CERR << "gcdmod before interp " << dim << " clock= " << CLOCK() << gcdv << '\n';
 	}
 	interpolate(alphav,gcdv,d,var2,modulo);
 	vector< T_unsigned<vector<int>,hashgcd_U> > pquo,qquo,tmprem,pD(d);
 	pp_mod_last(pD,&pmin,modulo,varxn,var2,tmpcont);
 	if (debug_infolevel>20-dim){
-	  CERR << "gcdmod pp1mod dim " << dim << " clock= " << CLOCK() << " d " << d << endl;
-	  CERR << "gcdmod alphav " << alphav << endl << "gcdv " << gcdv << endl
-	       << "gcdmod content " << tmpcont << endl;
+	  CERR << "gcdmod pp1mod dim " << dim << " clock= " << CLOCK() << " d " << d << '\n';
+	  CERR << "gcdmod alphav " << alphav << '\n' << "gcdv " << gcdv << '\n'
+	       << "gcdmod content " << tmpcont << '\n';
 	}
 	// This removes the polynomial in xn that we multiplied by
 	// (it was necessary to know the lcoeff of the interpolated poly)
 	if (debug_infolevel>20-dim)
-	  CERR << "gcdmod check dim " << dim << " " << CLOCK() << endl;
+	  CERR << "gcdmod check dim " << dim << " " << CLOCK() << '\n';
 	// Now, gcd divides pD for gcddeg+1 values of x1
 	// degree(pD)<=degree(gcd)
 	// ?CHECK? should we pseudo-divide?
@@ -5412,14 +5412,14 @@ mpz_class smod(const mpz_class & a,int reduce){
 	      smallmult(tmp,qcofactor,qcofactor,pminmodulo);
 	    }
 	    if (debug_infolevel>20-dim)
-	      CERR << "gcdmod found dim " << dim << " " << CLOCK() << endl;
+	      CERR << "gcdmod found dim " << dim << " " << CLOCK() << '\n';
 	    if (pqswap)
 	      swap(pcofactor,qcofactor);
 	    return true;
 	  } // end if hashdivrem(q,...)
 	} // end if hashdivrem(p,...)
 	if (debug_infolevel>20-dim)
-	  CERR << "Gcdmod bad guess " << endl;
+	  CERR << "Gcdmod bad guess " << '\n';
 	// restart
 	gcdv.clear(); alphav.clear(); 
 	pcofactorv.clear(); qcofactorv.clear(); 
@@ -5430,10 +5430,10 @@ mpz_class smod(const mpz_class & a,int reduce){
 	// interpolate d and dp
 	interpolate(alphav,gcdv,d,var2,modulo);
 	if (debug_infolevel>20-dim)
-	  CERR << "end interpolate gcd " << CLOCK() << endl;
+	  CERR << "end interpolate gcd " << CLOCK() << '\n';
 	interpolate(alphav,pcofactorv,dp,var2,modulo);
 	if (debug_infolevel>20-dim)
-	  CERR << "end interpolate p cof " << CLOCK() << endl;
+	  CERR << "end interpolate p cof " << CLOCK() << '\n';
 	// check that d(alpha)*dp(alpha)=palpha with lcoeff adjusted
 	// for e<=liftdeg
 	vector< T_unsigned<vector<int>,hashgcd_U> > g,gp;
@@ -5452,11 +5452,11 @@ mpz_class smod(const mpz_class & a,int reduce){
 	  if (!horner(p,alpha1,vars,palpha,modulo,maxtotaldeg))
 	    return false;
 	  if (debug_infolevel>20-dim)
-	    CERR << "gcdmod horner d " << alpha << " dim " << dim << " " << CLOCK() << endl;
+	    CERR << "gcdmod horner d " << alpha << " dim " << dim << " " << CLOCK() << '\n';
 	  if (!horner(d,alpha1,vars,g,modulo,maxtotaldeg))
 	    return false;
 	  if (debug_infolevel>20-dim)
-	    CERR << "gcdmod horner dp " << alpha << " dim " << dim << " " << CLOCK() << endl;
+	    CERR << "gcdmod horner dp " << alpha << " dim " << dim << " " << CLOCK() << '\n';
 	  if (!horner(dp,alpha1,vars,gp,modulo,maxtotaldeg))
 	    return false;
 	  vector<int> tmp;
@@ -5498,7 +5498,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	      smallmult(tmp,qcofactor,qcofactor,pminmodulo);
 	    }
 	    if (debug_infolevel>20-dim)
-	      CERR << "gcdmod end dim " << dim << " " << CLOCK() << endl;
+	      CERR << "gcdmod end dim " << dim << " " << CLOCK() << '\n';
 	    if (pqswap)
 	      swap(pcofactor,qcofactor);
 	    // divtest=false;
@@ -5523,21 +5523,21 @@ mpz_class smod(const mpz_class & a,int reduce){
 	  control_c();
 #endif
 	  if (ctrl_c || interrupted || alpha==modulo){
-	    CERR << "Modgcd: no suitable evaluation point" << endl;
+	    CERR << "Modgcd: no suitable evaluation point" << '\n';
 	    return false;
 	  }
 	  alpha1=alpha%2?-(alpha+1)/2:alpha/2;
 	  if (is_zero(hornermod_ext(lcoeffp,alpha1,modulo)) || is_zero(hornermod_ext(lcoeffq,alpha1,modulo)))
 	    continue;
 	  if (debug_infolevel>20-dim)
-	    CERR << "gcdmod eval alpha1=" << alpha1 << " dim " << dim << " " << CLOCK() << endl;
+	    CERR << "gcdmod eval alpha1=" << alpha1 << " dim " << dim << " " << CLOCK() << '\n';
 	  break;
 	} // end for (;;)
 	// alpha is probably admissible 
 	// (we will test later if degree of palpha/qalpha wrt x1...xn-1 is max)
 	// prepare room for gcd and cofactors
 	if (debug_infolevel>20-dim)
-	  CERR << "dim " << dim << " palpha " << palpha << " qalpha " << qalpha << endl ;
+	  CERR << "dim " << dim << " palpha " << palpha << " qalpha " << qalpha << '\n' ;
 	alphav.push_back(alpha1);
 	gcdv.push_back(vector< T_unsigned< vector<int>,hashgcd_U> >(0));
 	pcofactorv.push_back(vector< T_unsigned< vector<int>,hashgcd_U> >(0));
@@ -5640,7 +5640,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 		    vector< T_unsigned<int,hashgcd_U> > tmp(gcdv[k]);
 		    smallmult(minverse[j][k],tmp,tmp,modulo);
 		    smalladd(minversegcd[j],tmp,minversegcd[j],modulo);
-		    // CERR << minversegcd[j] << endl;
+		    // CERR << minversegcd[j] << '\n';
 		  }
 		}
 		vector< T_unsigned<int,hashgcd_U> > trygcd,pquo,qquo,tmprem;
@@ -5668,7 +5668,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 		      smallmult(smod(longlong(q_orig.front().g)*invmod(qcofactor.front().g,modulo),modulo),qcofactor,qcofactor);
 		    }
 		    if (debug_infolevel>20-dim)
-		      CERR << "gcdmod found dim " << dim << " " << CLOCK() << endl;
+		      CERR << "gcdmod found dim " << dim << " " << CLOCK() << '\n';
 		    if (pqswap)
 		      swap(pcofactor,qcofactor);
 		    return true;
@@ -5679,13 +5679,13 @@ mpz_class smod(const mpz_class & a,int reduce){
 	  } // end SPMOD
 	  */
 	  if (debug_infolevel>20-dim)
-	    CERR << "gcdmod interp dim " << dim << " " << CLOCK() << endl;
+	    CERR << "gcdmod interp dim " << dim << " " << CLOCK() << '\n';
 	  ++e;
 	  continue;
 	} // end gdeg==delta
 	if (comp==0 || comp==-1){ 
 	  if (debug_infolevel>20-dim)
-	    CERR << "Bad reduction " << alphav[vpos] << endl;
+	    CERR << "Bad reduction " << alphav[vpos] << '\n';
 	  // bad reduction: all indices of gdeg are >= to delta and gdeg!=delta
 	  alphav.erase(alphav.begin()+vpos);
 	  gcdv.erase(gcdv.begin()+vpos);
@@ -5696,7 +5696,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	}
 	// previous alpha where bad reduction
 	if (debug_infolevel>20-dim && vpos)
-	  CERR << "Bads reductions " << alphav[vpos-1] << endl;
+	  CERR << "Bads reductions " << alphav[vpos-1] << '\n';
 	alphav.erase(alphav.begin(),alphav.begin()+vpos);
 	gcdv.erase(gcdv.begin(),gcdv.begin()+vpos); 
 	pcofactorv.erase(pcofactorv.begin(),pcofactorv.begin()+vpos);
@@ -5849,7 +5849,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	if (is_zero(smod(pmin0,modulo)))
 	  continue;
 	if (debug_infolevel>(int)shift_vars.size())
-	  CERR << "Modular algebraic extension gcd " << modulo << endl;
+	  CERR << "Modular algebraic extension gcd " << modulo << '\n';
 	vecteur pmin;
 	pmin.reserve(pminv.size());
 	const_iterateur it=pminv.begin(),itend=pminv.end();
@@ -5899,7 +5899,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	  return false;
 	if (!res)
 	  continue;
-	// CERR << p1 << " " << q1 << " " << g1 << endl << p2 << " " << q2 << " " << g2 << endl ;
+	// CERR << p1 << " " << q1 << " " << g1 << '\n' << p2 << " " << q2 << " " << g2 << '\n' ;
 	// IMPROVE? use a map for modulo -> g1,g2,etc. 
 	// and do chinese remaindering for poly having the same lcoeff
 	degree(g1,shift_vars,gdegmod);
@@ -5994,7 +5994,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	return false;
       int modulo=m.val;
       if (debug_infolevel>(int)shift_vars.size())
-	CERR << "Modular algebraic extension gcd " << modulo << endl;
+	CERR << "Modular algebraic extension gcd " << modulo << '\n';
       // min poly mod modulo
       if (is_zero(smod(pmin0,modulo)))
 	continue;
@@ -6018,10 +6018,10 @@ mpz_class smod(const mpz_class & a,int reduce){
       // then it won't be when variables of p or q are evaluated
       // hence checking in dim 1 is sufficient
       if (debug_infolevel>0)
-	CERR << CLOCK()*1e-6 << " begin gcd_ext mod " << modulo <<"," << pmin << endl;
+	CERR << CLOCK()*1e-6 << " begin gcd_ext mod " << modulo <<"," << pmin << '\n';
       int res=gcd_ext(p,q,vars,pmin,modulo,g,pcof,qcof,compute_cofactors,compute_cofactors,nthreads);
       if (debug_infolevel>0)
-	CERR << CLOCK()*1e-6 << " end gcd_ext mod " << modulo <<"," << pmin << endl;
+	CERR << CLOCK()*1e-6 << " end gcd_ext mod " << modulo <<"," << pmin << '\n';
 #ifdef TIMEOUT
       control_c();
 #endif
@@ -6063,9 +6063,9 @@ mpz_class smod(const mpz_class & a,int reduce){
       if (compute_cofactors){
 	ichinrem_ext(pcof,modulo,pcofactor,pimod);
 	ichinrem_ext(qcof,modulo,qcofactor,pimod);
-	CERR << "g " << d << endl;
-	CERR << "pcof " << pcofactor << endl;
-	CERR << "qcof " << qcofactor << endl;
+	CERR << "g " << d << '\n';
+	CERR << "pcof " << pcofactor << '\n';
+	CERR << "qcof " << qcofactor << '\n';
       }
       pimod = modulo * pimod;
       // rational reconstruction and division test
@@ -6119,15 +6119,15 @@ mpz_class smod(const mpz_class & a,int reduce){
       // Make it only when we are sure (might be improved)
       if (dtest==dtestold){
 	if (debug_infolevel>0)
-	  CERR << CLOCK()*1e-6 << " gcd_ext checking gcd" << endl;
+	  CERR << CLOCK()*1e-6 << " gcd_ext checking gcd" << '\n';
 	if (hashdivrem(p_orig,dtest,pquo,rem,vars,0 /* reduce */,0/*qmax*/,true)==1 && rem.empty()){
-	  // CERR << "p " << p_orig << endl << "dtest " << dtest << endl << "quo" << pquo << endl;
+	  // CERR << "p " << p_orig << '\n' << "dtest " << dtest << '\n' << "quo" << pquo << '\n';
 	  if (debug_infolevel>0)
-	    CERR << CLOCK()*1e-6 << " gcd_ext checking gcd 1st test ok" << endl;
+	    CERR << CLOCK()*1e-6 << " gcd_ext checking gcd 1st test ok" << '\n';
 	  if (hashdivrem(q_orig,dtest,qquo,rem,vars,0 /* reduce */,0/*qmax*/,true)==1 && rem.empty()){
-	    // CERR << "q " << q_orig << endl << "dtest " << dtest << endl << "quo" << qquo << endl;
+	    // CERR << "q " << q_orig << '\n' << "dtest " << dtest << '\n' << "quo" << qquo << '\n';
 	    if (debug_infolevel>0)
-	      CERR << CLOCK()*1e-6 << " gcd_ext checking gcd 2nd test ok" << endl;
+	      CERR << CLOCK()*1e-6 << " gcd_ext checking gcd 2nd test ok" << '\n';
 	    swap(pcofactor,pquo);
 	    swap(qcofactor,qquo);
 	    swap(d,dtest);

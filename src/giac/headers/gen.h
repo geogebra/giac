@@ -239,7 +239,7 @@ namespace giac {
       static std::string s; 
       s=this->print(0);
 #if 0 // ndef NSPIRE
-      CERR << s << std::endl;
+      CERR << s << '\n';
 #endif
       return s.c_str(); 
     }
@@ -698,7 +698,7 @@ namespace giac {
 
     bool in_eval(int level,gen & evaled,const context * contextptr) const;
     inline gen eval(int level,const context * contextptr) const{
-      // CERR << "eval " << *this << " " << level << endl;
+      // CERR << "eval " << *this << " " << level << '\n';
       gen res;
       // return in_eval(level,res,contextptr)?res:*this;
       if (in_eval(level,res,contextptr))
@@ -860,7 +860,7 @@ namespace giac {
     vectpoly(size_t i,const polynome & p):std::vector<polynome>::vector(i,p) {};
     const char * dbgprint(){  
 #if !defined(NSPIRE) && !defined(FXCG)
-      CERR << *this << std::endl; 
+      CERR << *this << '\n'; 
 #endif
       return "Done";
     }
@@ -1247,7 +1247,7 @@ namespace giac {
       static std::string s;
       s=this->print(0);
 #if !defined( NSPIRE) && !defined(FXCG)
-      CERR << s << std::endl;
+      CERR << s << '\n';
 #endif
       return s.c_str();
     }
@@ -1268,6 +1268,9 @@ namespace giac {
   std::string print_the_type(int val,GIAC_CONTEXT);
 
   // I/O
+#ifdef NUMWORKS
+  stdostream & operator << (stdostream & os,const gen & a);
+#endif
 #ifdef NSPIRE
   template<class T> nio::ios_base<T> & operator<<(nio::ios_base<T> & os,const gen & a){
     return os << a.print(context0); 
@@ -1294,6 +1297,9 @@ namespace giac {
     std::string print(GIAC_CONTEXT) const ;
     const char * dbgprint() const ;
   };
+#if 0 // def NUMWORKS
+  stdostream & operator<<(stdostream & os,const monome & m){    return os << m.print() ;}
+#endif
 #ifdef NSPIRE
   template<class T> nio::ios_base<T> & operator<<(nio::ios_base<T> & os,const monome & m){    return os << m.print() ;}
 #else
@@ -1375,7 +1381,7 @@ namespace giac {
     eqwdata(int dxx,int dyy,int xx, int yy,const attributs & a,const gen& gg,int mybaseline):g(gg),eqw_attributs(a),x(xx),y(yy),dx(dxx),dy(dyy),selected(false),active(false),hasbaseline(true),modifiable(true),baseline(mybaseline) {};
     const char * dbgprint(){ 
 #if !defined( NSPIRE) && !defined(FXCG)
-      CERR << g << ":" << dx<< ","<< dy<< "+"<<x <<","<< y<< "," << baseline << "," << eqw_attributs.fontsize << "," << eqw_attributs.background << "," << eqw_attributs.text_color << std::endl; 
+      CERR << g << ":" << dx<< ","<< dy<< "+"<<x <<","<< y<< "," << baseline << "," << eqw_attributs.fontsize << "," << eqw_attributs.background << "," << eqw_attributs.text_color << '\n'; 
 #endif
       return "Done";
     }
@@ -1478,7 +1484,7 @@ namespace giac {
       static std::string s;
       s=this->print(context0);
 #if 0 // ndef NSPIRE
-      COUT << s << std::endl; 
+      COUT << s << '\n'; 
 #endif
       return s.c_str();
     }

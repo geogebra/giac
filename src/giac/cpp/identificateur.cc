@@ -816,7 +816,7 @@ namespace giac {
 #ifndef NO_STDEXCEPT
     }
     catch (std::runtime_error & e){
-      cerr << e.what() << endl;
+      cerr << e.what() << '\n';
       // eval_level(level,contextptr);
     }
 #endif
@@ -845,7 +845,7 @@ namespace giac {
 #ifndef NO_STDEXCEPT
     }
     catch (std::runtime_error & e){
-      cerr << e.what() << endl;
+      cerr << e.what() << '\n';
       // eval_level(level,contextptr);
     }
 #endif
@@ -999,7 +999,7 @@ namespace giac {
     if (!ref_count)
       return orig;
     gen evaled;
-    // cerr << "idnt::eval " << *this << " " << level << endl;
+    // cerr << "idnt::eval " << *this << " " << level << '\n';
     if (level<=0){
       if (level==0) 
 	return orig;
@@ -1068,7 +1068,7 @@ namespace giac {
   void printsymtab(sym_tab * ptr){
     sym_tab::const_iterator it=ptr->begin(),itend=ptr->end();
     for (;it!=itend;++it)
-      CERR << it->first << ":" << it->second << endl;
+      CERR << it->first << ":" << it->second << '\n';
   }
 
   bool identificateur::in_eval(int level,const gen & orig,gen & evaled,const context * contextptr, bool No38Lookup) {

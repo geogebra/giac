@@ -725,7 +725,7 @@ namespace giac {
     typename std::vector< monomial<T> >::const_iterator ita_end = coord.end();
     typename std::vector< monomial<T> >::const_iterator itb = other.coord.begin();
     typename std::vector< monomial<T> >::const_iterator itb_end = other.coord.end();
-    //  COUT << coord.size() << " " << (int) ita_end - (int) ita << " " << sizeof(monomial<T>) << std::endl ;
+    //  COUT << coord.size() << " " << (int) ita_end - (int) ita << " " << sizeof(monomial<T>) << '\n' ;
     // first some trivial cases
     if (ita==ita_end)
     return(*this);
@@ -1556,7 +1556,7 @@ namespace giac {
       prim=tensor<T>(T(1),0);
       return ;
     }
-    // COUT << "Cont" << cont << std::endl; 
+    // COUT << "Cont" << cont << '\n'; 
     tensor<T> a(p.dim),b(p.dim),quo(p.dim),r(p.dim),tmp(p.dim);
     // a and b are the primitive part of p and q
     p.TDivRem1(dp,a,r,true);
@@ -1603,7 +1603,7 @@ namespace giac {
 	g=b0;
       }
     }
-    // COUT << "Prim" << b << std::endl;
+    // COUT << "Prim" << b << '\n';
     b.TDivRem1(Tlgcd(b),prim,r,true);
   }
 
@@ -1621,7 +1621,7 @@ namespace giac {
     cont=Tlgcd(p);
     if (!p.dim)
       return ;
-    // COUT << "Cont" << cont << std::endl; 
+    // COUT << "Cont" << cont << '\n'; 
     tensor<T> a(p.dim),b(p.dim),quo(p.dim),r(p.dim),tmp(p.dim);
     tensor<T> b0(g);
     std::vector< tensor<T> > sign_error(2,g);
@@ -1675,7 +1675,7 @@ namespace giac {
   tensor<T> Tgcdpsr(const tensor<T> & p, const tensor<T> & q,int gcddeg=0){
     tensor<T> prim(p.dim),cont(p.dim);
     Tcontentgcd(p,q,prim,cont,gcddeg);
-    // COUT << "Prim" << prim << "Cont" << cont << std::endl;
+    // COUT << "Prim" << prim << "Cont" << cont << '\n';
     return prim*cont;
   }
 
@@ -1712,7 +1712,7 @@ namespace giac {
 	sign=-sign;
       ddeg=m-n;
       if (debug_infolevel)
-	CERR << CLOCK() << "Tresultant n,m,ddeg: " << n << " ," << m << " ," << ddeg << std::endl;
+	CERR << CLOCK() << "Tresultant n,m,ddeg: " << n << " ," << m << " ," << ddeg << '\n';
       tensor<T> tmp1(Tfirstcoeff(qtmp)),tmp2(p.dim),tmp3(pow(h,ddeg)),rem(p.dim),a(p.dim);
       ptmp.TPseudoDivRem(qtmp,tmp2,rem,a); // (ptmp*pow(tmp1,ddeg+1)).TDivRem1(qtmp,tmp2,rem,false);
       rem.high_order_degree_truncate(n);
@@ -1782,9 +1782,9 @@ namespace giac {
       // if r is 0 then b is the gcd and ub the coeff
       if (r.coord.empty())
 	break;
-      // COUT << ua*b0pow << std::endl << q*ub << std::endl ;
+      // COUT << ua*b0pow << '\n' << q*ub << '\n' ;
       (ua*b0pow).TSub(q*ub,ur); // ur=ua*b0pow-q*ub;
-      // COUT << ur << std::endl;
+      // COUT << ur << '\n';
 #if defined RTOS_THREADX || defined BESTA_OS || defined USTL
       a=b; 
 #else
@@ -1799,7 +1799,7 @@ namespace giac {
       swap(ua,ub); // ua=ub
 #endif
       ur.TDivRem1(g*temp,ub,q);
-      // COUT << (b-ub*p1) << "/" << p2 << std::endl;
+      // COUT << (b-ub*p1) << "/" << p2 << '\n';
       // new g=b0 and new h=b0^(m-n)*h/temp
       if (ddeg==1) // the normal case, remainder deg. decreases by 1 each time
 	h=b0;
@@ -1809,7 +1809,7 @@ namespace giac {
     }
     // ub is valid and b is the gcd, vb=(b-ub*p1)/p2 if not Tswapped
     // vb is stored in ua
-    // COUT << ub << std::endl;
+    // COUT << ub << '\n';
     if (Tswapped){
       (b-ub*pp2).TDivRem1(pp1,ua,r);
       ua *= cp2; // ua=ua*cp2;
@@ -1892,7 +1892,7 @@ namespace giac {
     }
     // ub is valid and b is the gcd, vb=(b-ub*p1)/p2 if not Tswapped
     // vb is stored in ua
-    // COUT << ub << std::endl;
+    // COUT << ub << '\n';
     if (Tswapped){
       q=b-ub*pp2;
       tensor<T> b0(Tfirstcoeff(pp1));
@@ -2019,13 +2019,13 @@ namespace giac {
     if (Tis_one(d1)){
       n2.TAdd(n1*d2,num);  //  num=n1*d2+n2;
       den=d2;
-      // COUT << num << "/" << den << std::endl;
+      // COUT << num << "/" << den << '\n';
       return;
     }
     if (Tis_one(d2)){
       n1.TAdd(n2*d1,num); // num=n2*d1+n1;
       den=d1;
-      // COUT << num << "/" << den << std::endl;
+      // COUT << num << "/" << den << '\n';
       return;
     }
     // n1/d1+n2/d2 with g=gcd(d1,d2), d1=d1g*g, d2=d2g*g is
@@ -2051,7 +2051,7 @@ namespace giac {
       den=d2;
       simplify(num,den);
       num=num*n2;
-      // COUT << num << "/" << den << std::endl;
+      // COUT << num << "/" << den << '\n';
       return;
     }
     if (Tis_one(d2)){
@@ -2059,7 +2059,7 @@ namespace giac {
       den=d1;
       simplify(num,den);
       num=num*n1;
-      // COUT << num << "/" << den << std::endl;
+      // COUT << num << "/" << den << '\n';
       return;
     }
     num=n1;
@@ -2069,7 +2069,7 @@ namespace giac {
     simplify(ntemp,dtemp);
     num=num*ntemp;
     den=den*dtemp;
-    // COUT << num << "/" << den << std::endl;
+    // COUT << num << "/" << den << '\n';
   }
 
   /*

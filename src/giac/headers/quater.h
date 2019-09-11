@@ -59,7 +59,7 @@ namespace giac {
     gen a; // value as a vector polynomial or undef (whole field)
     virtual gen_user * memory_alloc() const { 
       galois_field * ptr= new galois_field(*this,false);
-      // if (a != smod(a,p) && smod(a,p))  CERR << "not reduced" << endl;
+      // if (a != smod(a,p) && smod(a,p))  CERR << "not reduced" << '\n';
       return ptr; 
     }
     galois_field(const galois_field & q,bool doreduce=true);

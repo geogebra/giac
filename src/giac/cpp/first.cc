@@ -93,7 +93,7 @@ init_gmp_memory::~init_gmp_memory() { }
 size_t giac_allocated = 0;
 void* operator new(std::size_t size)
 {
-  std::cerr << giac_allocated << " + " << size << std::endl;
+  std::cerr << giac_allocated << " + " << size << '\n';
   giac_allocated += size;
   void * p =  std::malloc(size);  
   if(!p) {
@@ -105,7 +105,7 @@ void* operator new(std::size_t size)
   
 void* operator new[](std::size_t size)
 {
-  std::cerr << giac_allocated << " + [] " << size << std::endl;
+  std::cerr << giac_allocated << " + [] " << size << '\n';
   giac_allocated += size;
   void * p =  std::malloc(size);  
   if(!p) {

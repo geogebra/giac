@@ -607,13 +607,13 @@ namespace giac {
       }
       // exchange rows
       if (pivotline!=r){
-	//CERR << "pivotline,r " << pivotline << "," << r << " col " << c << endl;
-	//CERR << "avant " << l << endl << u << endl;
+	//CERR << "pivotline,r " << pivotline << "," << r << " col " << c << '\n';
+	//CERR << "avant " << l << '\n' << u << '\n';
 	sparse_swaprows(u,B,r,pivotline);
 	find_line_begin(l.begin(),l.end(),B);
 	sparse_swaprows(l,B,r,pivotline,c);
 	find_line_begin(u.begin(),u.end(),B);
-	//CERR << "apres " << l << endl << u << endl;
+	//CERR << "apres " << l << '\n' << u << '\n';
 	swapint(p[r],p[pivotline]);
       }
       // reduce rows and fill l
@@ -721,7 +721,7 @@ namespace giac {
 
   void smatrix::dbgprint() const  { 
     gen_map d; convert(*this,d); 
-    CERR << d << endl; 
+    CERR << d << '\n'; 
   }
 
   void fmatrix::dbgprint() const  { 
@@ -732,7 +732,7 @@ namespace giac {
       for (int j=0;j<posi.size();++j){
 	CERR << posi[j]<<"="<<mi[j] <<", ";
       }
-      CERR << endl;
+      CERR << '\n';
     }
   }
 
@@ -967,7 +967,7 @@ namespace giac {
       addvecteur(rk,tmp,pk);
       rk2=newrk2;
     }
-    *logptr(contextptr) << gettext("Warning! Leaving conjugate gradient algorithm after dimension of matrix iterations. Check that your matrix is hermitian/symmetric definite.") << endl;
+    *logptr(contextptr) << gettext("Warning! Leaving conjugate gradient algorithm after dimension of matrix iterations. Check that your matrix is hermitian/symmetric definite.") << '\n';
     return xk;
   }
 
@@ -995,7 +995,7 @@ namespace giac {
       addvecteur(rk,tmp,pk);
       rk2=newrk2;
     }
-    *logptr(contextptr) << gettext("Warning! Leaving conjugate gradient algorithm after dimension of matrix iterations. Check that your matrix is hermitian/symmetric definite.") << endl;
+    *logptr(contextptr) << gettext("Warning! Leaving conjugate gradient algorithm after dimension of matrix iterations. Check that your matrix is hermitian/symmetric definite.") << '\n';
     return xk;
   }
 
@@ -1050,7 +1050,7 @@ namespace giac {
       if (is_greater(eps,g,contextptr))
 	return xn;
     }
-    *logptr(contextptr) << gettext("Warning! Leaving Jacobi iterative algorithm after maximal number of iterations. Check that your matrix is diagonal dominant.") << endl;
+    *logptr(contextptr) << gettext("Warning! Leaving Jacobi iterative algorithm after maximal number of iterations. Check that your matrix is diagonal dominant.") << '\n';
     return xn;    
   }
 
@@ -1193,7 +1193,7 @@ namespace giac {
       if (eps>g)
 	return xn;
     }
-    *logptr(contextptr) << gettext("Warning! Leaving Jacobi iterative algorithm after maximal number of iterations. Check that your matrix is diagonal dominant.") << endl;
+    *logptr(contextptr) << gettext("Warning! Leaving Jacobi iterative algorithm after maximal number of iterations. Check that your matrix is diagonal dominant.") << '\n';
     return xn;    
   }
   
@@ -1259,7 +1259,7 @@ namespace giac {
       if (is_greater(eps,g,contextptr))
 	return xn;
     }
-    *logptr(contextptr) << gettext("Warning! Leaving Gauss-Seidel iterative algorithm after maximal number of iterations. Check that your matrix is diagonal dominant.") << endl;
+    *logptr(contextptr) << gettext("Warning! Leaving Gauss-Seidel iterative algorithm after maximal number of iterations. Check that your matrix is diagonal dominant.") << '\n';
     return xn;    
   }
   
@@ -1293,12 +1293,12 @@ namespace giac {
       subvecteur(phik,phiknew,tmp);
       if (l2norm(tmp)<eps*bn){
 	if (debug_infolevel)
-	  *logptr(contextptr) << "Convergence criterium reached after " << iter << " iterations, omega=" << omega << endl;
+	  *logptr(contextptr) << "Convergence criterium reached after " << iter << " iterations, omega=" << omega << '\n';
 	return phiknew;
       }
       phik.swap(phiknew);
     }
-    *logptr(contextptr) << gettext("Warning! Leaving Gauss-Seidel iterative algorithm after maximal number of iterations. Check that your matrix is symetric definite.") << endl;
+    *logptr(contextptr) << gettext("Warning! Leaving Gauss-Seidel iterative algorithm after maximal number of iterations. Check that your matrix is symetric definite.") << '\n';
     return phik;   
 #else
     std::vector<giac_double> b=b_orig;
@@ -1338,16 +1338,16 @@ namespace giac {
       subvecteur(b,tmp,tmp);
       if (!sparse_linsolve_l(L,tmp,xn))
 	return std::vector<giac_double>(0);
-      // CERR << xn << endl;
+      // CERR << xn << '\n';
       subvecteur(xn,prev,tmp);
       double g=l2norm(tmp)/bn;
       if (eps>=g){
 	if (debug_infolevel)
-	  *logptr(contextptr) << "Convergence criterium reached after " << i << " iterations, omega=" << omega << endl;
+	  *logptr(contextptr) << "Convergence criterium reached after " << i << " iterations, omega=" << omega << '\n';
 	return xn;
       }
     }
-    *logptr(contextptr) << gettext("Warning! Leaving Gauss-Seidel iterative algorithm after maximal number of iterations. Check that your matrix is symetric definite.") << endl;
+    *logptr(contextptr) << gettext("Warning! Leaving Gauss-Seidel iterative algorithm after maximal number of iterations. Check that your matrix is symetric definite.") << '\n';
     return xn;   
 #endif 
   }

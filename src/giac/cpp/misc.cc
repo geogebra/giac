@@ -181,7 +181,7 @@ namespace giac {
       for (int j=s-1;j>=k;--j){
 	res[j]=(res[j]-res[j-1])/(x[j]-x[j-k]);
       }
-      //CERR << k << res << endl;
+      //CERR << k << res << '\n';
     }
     return res;
   }
@@ -2041,7 +2041,7 @@ namespace giac {
     matrice m;
     vecteur d;
     if (!egv(*g._VECTptr,m,d,contextptr,false,false,true))
-      *logptr(contextptr) << gettext("Low accuracy") << endl;
+      *logptr(contextptr) << gettext("Low accuracy") << '\n';
     complex_mode(b,contextptr);
     return gen(d,_SEQ__VECT);
   }
@@ -3071,7 +3071,7 @@ namespace giac {
     if (withstddev){
       m2=m2-apply(s,apply(m,m,prod),prod);
       if (s.type!=_VECT && is_greater(1,s,contextptr) && withstddev==2)
-	*logptr(contextptr) << "stddevp called with N<=1, perhaps you are misusing this command with frequencies" << endl;
+	*logptr(contextptr) << "stddevp called with N<=1, perhaps you are misusing this command with frequencies" << '\n';
       m2=apply(m2,s-(withstddev==2),contextptr,rdiv);
       if (withstddev==3)
 	return m2;
@@ -3532,7 +3532,7 @@ static define_unary_function_eval (__correlation,&_correlation,_correlation_s);
     b=(sigmay-a*sigmax)/n;
     correl2=(tmp*tmp)/(n*sigmax2-sigmax*sigmax)/(n*sigmay2-sigmay*sigmay);
     return makevecteur(sigmax,sigmay,n,sigmax2,sigmay2);
-    // cerr << sigmax << " "<< sigmay << " " << sigmaxy << " " << n << " " << sigmax2 << " " << sigmay2 << endl;
+    // cerr << sigmax << " "<< sigmay << " " << sigmaxy << " " << n << " " << sigmax2 << " " << sigmay2 << '\n';
   }
 
   static gen function_regression(const gen & g,const gen & u1,const gen & u2,GIAC_CONTEXT){
@@ -3632,7 +3632,7 @@ static define_unary_function_eval (__power_regression,&_power_regression,_power_
     if (ad.type==_DOUBLE_ && bd.type==_DOUBLE_ && cd.type==_DOUBLE_){
       string eqs="y="+print_DOUBLE_(ad._DOUBLE_val,3)+"*x+"+print_DOUBLE_(bd._DOUBLE_val,3);
       string R2s=" , R2="+print_DOUBLE_(cd._DOUBLE_val,3);
-      *logptr(contextptr) << eqs << R2s << endl;
+      *logptr(contextptr) << eqs << R2s << '\n';
       string s;
       if (eq)
 	s += eqs;
@@ -3659,7 +3659,7 @@ static define_unary_function_eval (__linear_regression_plot,&_linear_regression_
     if (ad.type==_DOUBLE_ && bd.type==_DOUBLE_ && cd.type==_DOUBLE_){
       string eqs="y="+print_DOUBLE_(std::exp(ad._DOUBLE_val),3)+"^x*"+print_DOUBLE_(std::exp(bd._DOUBLE_val),3);
       string R2s=" , R2="+print_DOUBLE_(cd._DOUBLE_val,3);
-      *logptr(contextptr) << eqs << R2s << endl;
+      *logptr(contextptr) << eqs << R2s << '\n';
       string s;
       if (eq)
 	s += eqs;
@@ -3687,7 +3687,7 @@ static define_unary_function_eval (__exponential_regression_plot,&_exponential_r
     if (ad.type==_DOUBLE_ && bd.type==_DOUBLE_ && cd.type==_DOUBLE_){
       string eqs="y="+print_DOUBLE_(ad._DOUBLE_val,3)+"*ln(x)+"+print_DOUBLE_(bd._DOUBLE_val,3);
       string R2s=" , R2="+print_DOUBLE_(cd._DOUBLE_val,3);
-      *logptr(contextptr) << eqs << R2s << endl;
+      *logptr(contextptr) << eqs << R2s << '\n';
       string s;
       if (eq)
 	s += eqs;
@@ -3715,7 +3715,7 @@ static define_unary_function_eval (__logarithmic_regression_plot,&_logarithmic_r
     if (ad.type==_DOUBLE_ && bd.type==_DOUBLE_ && cd.type==_DOUBLE_){
       string eqs="y="+print_DOUBLE_(exp(bd,contextptr)._DOUBLE_val,3)+"*x^"+print_DOUBLE_(ad._DOUBLE_val,3);
       string R2s=" , R2="+print_DOUBLE_(cd._DOUBLE_val,3);
-      *logptr(contextptr) << eqs << R2s << endl;
+      *logptr(contextptr) << eqs << R2s << '\n';
       string s;
       if (eq)
 	s += eqs;
@@ -3842,7 +3842,7 @@ static define_unary_function_eval (__polynomial_regression_plot,&_polynomial_reg
       gen tmp=_correlation(evalf_double(args,1,contextptr),contextptr);
       if (tmp.type==_STRNG && tmp.subtype==-1) return  tmp;
       Pinit=w[0]/(exp(res._VECTptr->front(),contextptr)-1);
-      *logptr(contextptr) << gettext("Initial cumulative estimated to ") << Pinit << endl << gettext("Correlation for 5 first years to estimate initial cumulative : ") << tmp << endl;
+      *logptr(contextptr) << gettext("Initial cumulative estimated to ") << Pinit << '\n' << gettext("Correlation for 5 first years to estimate initial cumulative : ") << tmp << '\n';
     }
     else
       Pinit=v[2];
@@ -3881,7 +3881,7 @@ static define_unary_function_eval (__polynomial_regression_plot,&_polynomial_reg
     if (res.type!=_VECT || res._VECTptr->size()!=2)
       return gendimerr(contextptr);
     gen a=res._VECTptr->front(),b=res._VECTptr->back(),urr=-b/a;
-    *logptr(contextptr) << gettext("Pinstant=") << a << gettext("*Pcumul+") << b << endl << gettext("Correlation ") << r << gettext(", Estimated total P=") << urr << endl << gettext("Returning estimated Pcumul, Pinstant, Ptotal, Pinstantmax, tmax, R")<< endl;
+    *logptr(contextptr) << gettext("Pinstant=") << a << gettext("*Pcumul+") << b << '\n' << gettext("Correlation ") << r << gettext(", Estimated total P=") << urr << '\n' << gettext("Returning estimated Pcumul, Pinstant, Ptotal, Pinstantmax, tmax, R")<< '\n';
     // y'/y=a*y+b -> y=urr/[1+exp(-b*(t-t0))]
     // urr/y-1=exp(-b*(t-t0))
     // -> -b*(t-t0) = ln(urr/y-1)
@@ -4061,7 +4061,7 @@ static define_unary_function_eval (__parabolic_interpolate,&_parabolic_interpola
     if (data.empty())
       return data;
     if (class_size<=0){
-      *logptr(contextptr) << gettext("Invalid class size (replaced by 1) ") << class_size << endl;
+      *logptr(contextptr) << gettext("Invalid class size (replaced by 1) ") << class_size << '\n';
       class_size=1;
     }
     vector<double>  w1;
@@ -5739,7 +5739,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       ms=m.size();
       g=_sum(m,contextptr);
       if (!is_zero(g-vecteur(ms,1)))
-	*logptr(contextptr) << gettext("Warning: not a graph matrix!") << endl;
+	*logptr(contextptr) << gettext("Warning: not a graph matrix!") << '\n';
     }
     // first make points, 
     double xmin(0),xmax(0),ymin(0),ymax(0);
@@ -6020,7 +6020,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       addvecteur(rk,tmp,pk);
       rk2=newrk2;
     }
-    *logptr(contextptr) << gettext("Warning! Leaving conjugate gradient algorithm after dimension of matrix iterations. Check that your matrix is hermitian/symmetric definite.") << endl;
+    *logptr(contextptr) << gettext("Warning! Leaving conjugate gradient algorithm after dimension of matrix iterations. Check that your matrix is hermitian/symmetric definite.") << '\n';
     return xk;
   }
 
@@ -6050,7 +6050,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       if (is_greater(eps,g,contextptr))
 	return xn;
     }
-    *logptr(contextptr) << gettext("Warning! Leaving Jacobi iterative algorithm after maximal number of iterations. Check that your matrix is diagonal dominant.") << endl;
+    *logptr(contextptr) << gettext("Warning! Leaving Jacobi iterative algorithm after maximal number of iterations. Check that your matrix is diagonal dominant.") << '\n';
     return xn;    
   }
   
@@ -6082,7 +6082,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       if (is_greater(eps,g,contextptr))
 	return xn;
     }
-    *logptr(contextptr) << gettext("Warning! Leaving Gauss-Seidel iterative algorithm after maximal number of iterations. Check that your matrix is diagonal dominant.") << endl;
+    *logptr(contextptr) << gettext("Warning! Leaving Gauss-Seidel iterative algorithm after maximal number of iterations. Check that your matrix is diagonal dominant.") << '\n';
     return xn;    
   }
   
@@ -6717,7 +6717,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       string as=*a._STRNGptr;
       if (s.size()>as.size()){
 	s.swap(as);
-	*logptr(contextptr) << "Exchanging arguments" << endl;
+	*logptr(contextptr) << "Exchanging arguments" << '\n';
       }
       vecteur res;
       for (;;++pos){
@@ -6732,7 +6732,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     }
     if (v[1].type!=_VECT){
       if (a.type==_VECT){
-	*logptr(contextptr) << "Exchanging arguments" << endl;
+	*logptr(contextptr) << "Exchanging arguments" << '\n';
 	v[0]=v[1];
 	v[1]=a;
 	a=v[0];
@@ -7034,7 +7034,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 
   gen try_limit_undef(const gen & f,const identificateur & x,const gen & x0,int direction,GIAC_CONTEXT){
     gen res;
-    //COUT << "try_limit_undef " << f << " " << x << "=" << x0 << endl;
+    //COUT << "try_limit_undef " << f << " " << x << "=" << x0 << '\n';
 #ifdef NO_STDEXCEPT
     res=limit(f,x,x0,direction,contextptr);
     if (res.type==_STRNG)
@@ -7118,7 +7118,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       sto(tval,t,contextptr);
     step_infolevel(st,contextptr);
     if (cx.type!=_VECT || cy.type!=_VECT){
-      *logptr(contextptr) << gettext("Unable to find critical points") << endl;
+      *logptr(contextptr) << gettext("Unable to find critical points") << '\n';
       purgenoassume(t,contextptr);
       return 0;
     }
@@ -7128,14 +7128,14 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       c=mergevecteur(c,infl);
     }
     else
-      *logptr(contextptr) << gettext("Unable to find inflection points") << endl;
+      *logptr(contextptr) << gettext("Unable to find inflection points") << '\n';
     for (int i=0;i<int(infl.size());++i)
       infl[i]=ratnormal(infl[i],contextptr);
     for (int i=0;i<int(c.size());++i)
       c[i]=ratnormal(c[i],contextptr);
     comprim(c);
     if (!lidnt(evalf(c,1,contextptr)).empty()){
-      *logptr(contextptr) << gettext("Infinite number of critical points. Try with optional argument ") << t << "=tmin..tmax" << endl;
+      *logptr(contextptr) << gettext("Infinite number of critical points. Try with optional argument ") << t << "=tmin..tmax" << '\n';
       purgenoassume(t,contextptr);
       return 0;
     }
@@ -7555,7 +7555,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     gprintf(gettext("Variations (%gen,%gen)\n%gen"),makevecteur(f,g,tvi),1,contextptr);
 #ifndef EMCC
     if (printtvi && step_infolevel(contextptr)==0)
-      *logptr(contextptr) << tvi << endl;
+      *logptr(contextptr) << tvi << '\n';
 #endif
     // finished!
     purgenoassume(t,contextptr);
@@ -7565,7 +7565,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   int step_param(const gen & f,const gen & g,const gen & t,gen & tmin,gen&tmax,vecteur & poi,vecteur & tvi,bool printtvi,bool exactlegende,GIAC_CONTEXT){
     bool c=complex_mode(contextptr); int st=step_infolevel(contextptr),s=0;
     if (t==x__IDNT_e || t==y__IDNT_e)
-      *logptr(contextptr) << gettext("Warning, using x or y as variable in parametric plot may lead to confusion!") << endl;
+      *logptr(contextptr) << gettext("Warning, using x or y as variable in parametric plot may lead to confusion!") << '\n';
     step_infolevel(0,contextptr);
 #ifdef NO_STDEXCEPT
     s=step_param_(f,g,t,tmin,tmax,poi,tvi,printtvi,exactlegende,contextptr);
@@ -7667,7 +7667,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     if (x!=xval)
       sto(xval,x,contextptr);
     if (c1.type!=_VECT){
-      *logptr(contextptr) << gettext("Unable to find critical points") << endl;
+      *logptr(contextptr) << gettext("Unable to find critical points") << '\n';
       return 0;
     }
     if (c2.type==_VECT){
@@ -7675,19 +7675,19 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       c=gen(mergevecteur(gen2vecteur(c1),infl));
     }
     else
-      *logptr(contextptr) << gettext("Unable to find convexity") << endl;
+      *logptr(contextptr) << gettext("Unable to find convexity") << '\n';
     // if (c.type==_VECT && c._VECTptr->empty()) c=_fsolve(makesequence(f,x),contextptr);
 #else
     gen c=critical(makesequence(f,x),false,contextptr);
     step_infolevel(st,contextptr);
     if (c.type!=_VECT){
-      *logptr(contextptr) << gettext("Unable to find critical points") << endl;
+      *logptr(contextptr) << gettext("Unable to find critical points") << '\n';
       purgenoassume(x,contextptr);
       return 0;
     }
 #endif
     if (!lidnt(evalf(c,1,contextptr)).empty()){
-      *logptr(contextptr) << gettext("Infinite number of critical points. Try with optional argument ") << x << "=xmin..xmax" << endl;
+      *logptr(contextptr) << gettext("Infinite number of critical points. Try with optional argument ") << x << "=xmin..xmax" << '\n';
       purgenoassume(x,contextptr);
       return 0;
     }
@@ -8034,7 +8034,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     gprintf(gettext(do_inflex_tabsign==2?"Sign %gen\n%gen":"Variations %gen\n%gen"),makevecteur(f,tvi),1,contextptr);
 #ifndef EMCC
     if (printtvi && step_infolevel(contextptr)==0)
-      *logptr(contextptr) << tvi << endl;
+      *logptr(contextptr) << tvi << '\n';
 #endif
     // finished!
     purgenoassume(x,contextptr);
@@ -8219,7 +8219,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	return tvi; // gprintf("%gen",makevecteur(gen(poi,_SEQ__VECT)),1,contextptr);
     }
     if (abs_calc_mode(contextptr)!=38)
-      *logptr(contextptr) << (param?"plotparam(":"plotfunc(") << gen(w,_SEQ__VECT) << ')' <<"\nInside Xcas you can see the function with Cfg>Show>DispG." <<  endl;
+      *logptr(contextptr) << (param?"plotparam(":"plotfunc(") << gen(w,_SEQ__VECT) << ')' <<"\nInside Xcas you can see the function with Cfg>Show>DispG." <<  '\n';
     return tvi;
   }
   static const char _tabvar_s []="tabvar";
@@ -8882,7 +8882,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   void draw_arc(int xc,int yc,int rx,int ry,int color,double t1, double t2,bool q1,bool q2,bool q3,bool q4,GIAC_CONTEXT){
     double x=0,y=rx,delta=0;
     double ryx=double(ry)/rx;
-    // *logptr(contextptr) << "t1,t2:" << t1 << "," << t2 << ",q1234" << q1 << "," << q2 << "," << q3 << "," << q4 << endl;
+    // *logptr(contextptr) << "t1,t2:" << t1 << "," << t2 << ",q1234" << q1 << "," << q2 << "," << q3 << "," << q4 << '\n';
     while (x<=y){
       double xeff=x*ryx,yeff=y*ryx;
       if (q4){
@@ -8924,7 +8924,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     // if theta1 is almost pi/2 mod pi, t1 might be wrong because of rounding
     if (std::fabs(theta1-(theta-M_PI))<1e-6 && t1>0) 
 	t1=-1e307;
-    //*logptr(contextptr) << "thetas:" << theta1 << "," << theta << "," << theta2 << ", n " << n << ", t:" << t1 << "," << t2 << endl;
+    //*logptr(contextptr) << "thetas:" << theta1 << "," << theta << "," << theta2 << ", n " << n << ", t:" << t1 << "," << t2 << '\n';
     if (theta2>theta){
       if (theta2>=theta+M_PI){
 	if (n%2==0){ // -pi/2<theta1<pi/2<3*pi/2<theta2
@@ -9227,13 +9227,13 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 #include <emscripten/fetch.h>
 
   string fetch(const string & url){
-    COUT << "fetch " << url << endl;
+    COUT << "fetch " << url << '\n';
     emscripten_fetch_attr_t attr;
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
     attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_SYNCHRONOUS;
     emscripten_fetch_t *fetch = emscripten_fetch(&attr, url.c_str()); // Blocks here until the operation is complete.
-    COUT << "status, bytes: " << fetch->status << "," << fetch->numBytes << endl;
+    COUT << "status, bytes: " << fetch->status << "," << fetch->numBytes << '\n';
     if (fetch->status == 200) {
       string fetch_string="";
       for (int i=0;i< fetch->numBytes;++i)
@@ -9246,7 +9246,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 #include <emscripten/emscripten.h>
 
   string fetch(const string & url){
-    COUT << "wget_data " << url << endl;
+    COUT << "wget_data " << url << '\n';
     char * buf;
 #if 0 // does not work emscripten 1.34/37
     int data_size,data_error;
@@ -9254,7 +9254,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     if (data_size>0){
       buf[data_size-1]=0;
       string s(buf);
-      COUT << "buffer " << s << endl;
+      COUT << "buffer " << s << '\n';
       free(buf);
       return s;
     }
@@ -9297,7 +9297,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   //#include <curl/curlbuild.h>
   size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) {
     string data((const char*) ptr, (size_t) size * nmemb);
-    *((stringstream*) stream) << data << endl;
+    *((stringstream*) stream) << data << '\n';
     return size * nmemb;
   }
   string fetch(const string & url){

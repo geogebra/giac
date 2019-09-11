@@ -137,7 +137,12 @@ int my_sprintf(char * s, const char * format, ...);
 #ifdef WITH_MYOSTREAM
 #include "myostream.h"
 #else
+#if defined NUMWORKS //&& defined STATIC_BUILTIN_LEXER_FUNCTION
+#include "stdstream"
+#define my_ostream stdostream
+#else
 #define my_ostream std::ostream
+#endif
 #endif
 
 #ifdef x86_64
@@ -157,7 +162,7 @@ int my_sprintf(char * s, const char * format, ...);
 #define CLOCK_T int
 #endif
 
-#if !defined HAVE_ALLOCA_H && !defined GIAC_HAS_STO_38
+#if !defined HAVE_ALLOCA_H && !defined GIAC_HAS_STO_38 && !defined NUMWORKS
 #define alloca _alloca
 #endif
 

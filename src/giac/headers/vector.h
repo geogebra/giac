@@ -64,7 +64,7 @@ namespace std {
     void _destroy(){
       if (_taille>0){ 
 	if (_begin_immediate_vect) {
-	  // std::cerr << "delete " << _taille << endl;
+	  // std::cerr << "delete " << _taille << '\n';
 	  delete [] _begin_immediate_vect; 
 	}
       }

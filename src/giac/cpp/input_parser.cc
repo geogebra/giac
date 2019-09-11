@@ -5399,7 +5399,7 @@ yyreduce:
 
 /* Line 1806 of yacc.c  */
 #line 291 "input_parser.yy"
-    {if ((yyvsp[(1) - (3)]).type==_FUNC) *logptr(giac_yyget_extra(scanner))<< ("Warning: "+(yyvsp[(1) - (3)]).print(context0)+" is a reserved word")<<endl; if ((yyvsp[(1) - (3)]).type==_INT_) (yyval)=symb_equal((yyvsp[(1) - (3)]),(yyvsp[(3) - (3)])); else {(yyval) = symb_sto((yyvsp[(3) - (3)]),(yyvsp[(1) - (3)]),(yyvsp[(2) - (3)])==at_array_sto); if ((yyvsp[(3) - (3)]).is_symb_of_sommet(at_program)) *logptr(giac_yyget_extra(scanner))<<"// End defining "<<(yyvsp[(1) - (3)])<<endl;}}
+    {if ((yyvsp[(1) - (3)]).type==_FUNC) *logptr(giac_yyget_extra(scanner))<< ("Warning: "+(yyvsp[(1) - (3)]).print(context0)+" is a reserved word")<<'\n'; if ((yyvsp[(1) - (3)]).type==_INT_) (yyval)=symb_equal((yyvsp[(1) - (3)]),(yyvsp[(3) - (3)])); else {(yyval) = symb_sto((yyvsp[(3) - (3)]),(yyvsp[(1) - (3)]),(yyvsp[(2) - (3)])==at_array_sto); if ((yyvsp[(3) - (3)]).is_symb_of_sommet(at_program)) *logptr(giac_yyget_extra(scanner))<<"// End defining "<<(yyvsp[(1) - (3)])<<'\n';}}
     break;
 
   case 59:
@@ -5436,7 +5436,7 @@ yyreduce:
 #line 296 "input_parser.yy"
     {
 	gen tmp=python_compat(giac_yyget_extra(scanner))?denest_sto(numworks_nary_workaround((yyvsp[(3) - (4)]))):numworks_nary_workaround((yyvsp[(3) - (4)]));
-	// CERR << python_compat(giac_yyget_extra(scanner)) << tmp << endl;
+	// CERR << python_compat(giac_yyget_extra(scanner)) << tmp << '\n';
 	(yyval) = symbolic(*(yyvsp[(1) - (4)])._FUNCptr,tmp);
         const giac::context * contextptr = giac_yyget_extra(scanner);
 	if (*(yyvsp[(1) - (4)])._FUNCptr==at_maple_mode ||*(yyvsp[(1) - (4)])._FUNCptr==at_xcas_mode ){
@@ -5680,7 +5680,7 @@ yyreduce:
        if (st==1 && (yyvsp[(4) - (9)])!=1) st=(yyvsp[(4) - (9)]);
           const giac::context * contextptr = giac_yyget_extra(scanner);
 	  if (!lidnt(st).empty())
-            *logptr(contextptr) << "Warning, step is not numeric " << st << std::endl;
+            *logptr(contextptr) << "Warning, step is not numeric " << st << '\n';
           bool b=has_evalf(st,tmp,1,context0);
           if (!b || is_positive(tmp,context0)) 
              (yyval)=symbolic(*(yyvsp[(1) - (9)])._FUNCptr,makevecteur(symb_sto((yyvsp[(3) - (9)]),(yyvsp[(2) - (9)])),symb_inferieur_egal((yyvsp[(2) - (9)]),(yyvsp[(5) - (9)])),symb_sto(symb_plus((yyvsp[(2) - (9)]),b?abs(st,context0):symb_abs(st)),(yyvsp[(2) - (9)])),symb_bloc((yyvsp[(8) - (9)])))); 
@@ -5699,7 +5699,7 @@ yyreduce:
         if (st==1 && (yyvsp[(5) - (9)])!=1) st=(yyvsp[(5) - (9)]);
          const giac::context * contextptr = giac_yyget_extra(scanner);
 	 if (!lidnt(st).empty())
-            *logptr(contextptr) << "Warning, step is not numeric " << st << std::endl;
+            *logptr(contextptr) << "Warning, step is not numeric " << st << '\n';
          bool b=has_evalf(st,tmp,1,context0);
          if (!b || is_positive(tmp,context0)) 
            (yyval)=symbolic(*(yyvsp[(1) - (9)])._FUNCptr,makevecteur(symb_sto((yyvsp[(3) - (9)]),(yyvsp[(2) - (9)])),symb_inferieur_egal((yyvsp[(2) - (9)]),(yyvsp[(6) - (9)])),symb_sto(symb_plus((yyvsp[(2) - (9)]),b?abs(st,context0):symb_abs(st)),(yyvsp[(2) - (9)])),symb_bloc((yyvsp[(8) - (9)])))); 
@@ -5841,7 +5841,7 @@ yyreduce:
 
 /* Line 1806 of yacc.c  */
 #line 459 "input_parser.yy"
-    {  //CERR << $1 << " compose " << $2 << $3 << endl;
+    {  //CERR << $1 << " compose " << $2 << $3 << '\n';
 (yyval) = symbolic(*(yyvsp[(2) - (3)])._FUNCptr,gen(makevecteur((yyvsp[(1) - (3)]),python_compat(giac_yyget_extra(scanner))?denest_sto((yyvsp[(3) - (3)])):(yyvsp[(3) - (3)])) ,_SEQ__VECT)); }
     break;
 
@@ -5967,12 +5967,12 @@ yyreduce:
 /* Line 1806 of yacc.c  */
 #line 506 "input_parser.yy"
     { 
-        //cerr << $1 << " " << $2 << endl;
+        //cerr << $1 << " " << $2 << '\n';
         (yyval) = gen(*((yyvsp[(2) - (3)])._VECTptr),(yyvsp[(1) - (3)]).val);
 	if ((yyvsp[(2) - (3)])._VECTptr->size()==1 && (yyvsp[(2) - (3)])._VECTptr->front().is_symb_of_sommet(at_ti_semi) ) {
 	  (yyval)=(yyvsp[(2) - (3)])._VECTptr->front();
         }
-        // cerr << $$ << endl;
+        // cerr << $$ << '\n';
 
         }
     break;
@@ -6113,7 +6113,7 @@ yyreduce:
 #line 555 "input_parser.yy"
     {
         vecteur v=makevecteur(equaltosame((yyvsp[(3) - (7)])),(yyvsp[(5) - (7)]),(yyvsp[(7) - (7)]));
-	// *logptr(giac_yyget_extra(scanner)) << v << endl;
+	// *logptr(giac_yyget_extra(scanner)) << v << '\n';
 	(yyval) = symbolic(*(yyvsp[(1) - (7)])._FUNCptr,v);
 	}
     break;
@@ -6507,7 +6507,7 @@ yyreduce:
     {
            vecteur & v=*(yyvsp[(2) - (5)])._VECTptr;
            if ( (v.size()<3) || v[0].type!=_IDNT){
-             *logptr(giac_yyget_extra(scanner)) << "Syntax For name,begin,end[,step]" << endl;
+             *logptr(giac_yyget_extra(scanner)) << "Syntax For name,begin,end[,step]" << '\n';
              (yyval)=undef;
            }
            else {
@@ -6756,14 +6756,14 @@ yyreduce:
 
 /* Line 1806 of yacc.c  */
 #line 758 "input_parser.yy"
-    { (yyval)=(yyvsp[(1) - (1)]); *logptr(giac_yyget_extra(scanner)) << "Error: reserved word "<< (yyvsp[(1) - (1)]) <<endl;}
+    { (yyval)=(yyvsp[(1) - (1)]); *logptr(giac_yyget_extra(scanner)) << "Error: reserved word "<< (yyvsp[(1) - (1)]) <<'\n';}
     break;
 
   case 214:
 
 /* Line 1806 of yacc.c  */
 #line 759 "input_parser.yy"
-    { (yyval)=symb_double_deux_points(makevecteur((yyvsp[(1) - (3)]),(yyvsp[(3) - (3)]))); *logptr(giac_yyget_extra(scanner)) << "Error: reserved word "<< (yyvsp[(1) - (3)]) <<endl; }
+    { (yyval)=symb_double_deux_points(makevecteur((yyvsp[(1) - (3)]),(yyvsp[(3) - (3)]))); *logptr(giac_yyget_extra(scanner)) << "Error: reserved word "<< (yyvsp[(1) - (3)]) <<'\n'; }
     break;
 
   case 215:
