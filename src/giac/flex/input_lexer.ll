@@ -45,6 +45,11 @@
  */
 
 %{
+#ifdef NUMWORKS
+#define at_log at_logb
+#else
+#define at_log at_ln
+#endif
 #include "giacPCH.h"
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -644,7 +649,7 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 "'intersect'"                  index_status(yyextra)=0; (*yylval)=gen(at_intersect,2); return T_QUOTED_BINARY;
 "_intersect"                  index_status(yyextra)=0; (*yylval)=gen(at_intersect,2); return T_QUOTED_BINARY;
 "KILL"		        (*yylval) = gen(at_kill,1); index_status(yyextra)=0; return T_UNARY_OP;
-"log"			(*yylval) = gen(at_ln,1); index_status(yyextra)=1; return T_UNARY_OP; /* index_status(yyextra)=1 to accept log[] for a basis log */
+"log"			(*yylval) = gen(at_log,1); index_status(yyextra)=1; return T_UNARY_OP; /* index_status(yyextra)=1 to accept log[] for a basis log */
 "sin"                  (*yylval) = gen(at_asin,1); index_status(yyextra)=1; return T_UNARY_OP;
 "cos"                  (*yylval) = gen(at_acos,1); index_status(yyextra)=1; return T_UNARY_OP;
 "tan"                  (*yylval) = gen(at_atan,1); index_status(yyextra)=1; return T_UNARY_OP;
@@ -1000,6 +1005,11 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 	  s[i]='(';
 	if (s[i]==19)
 	  s[i]=')';
+	if (i<s.size()-2 && (unsigned char)s[i]==226 && (unsigned char)s[i+1]==134 && (unsigned char)s[i+2]==146){
+	  s[i]=' ';
+	  s[i+1]='=';
+	  s[i+2]='>';
+	}
 	if (i<s.size()-1){ 
 	  if ( ((unsigned char)s[i]==195) && ((unsigned char)s[i+1]==151) ){
 	    s[i]='*';

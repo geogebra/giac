@@ -90,6 +90,10 @@ extern "C" uint32_t mainThreadStack[];
 #include <emscripten.h>
 #endif
 
+#ifdef NUMWORKS
+const char * giac_read_file(const char * filename);
+#endif
+
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
@@ -2133,7 +2137,7 @@ namespace giac {
 	      res += printasinnerbloc(it->_SYMBptr->feuille,contextptr);
 	    else
 	      res += it->print(contextptr) +";";
-	    return res+indent(contextptr)+"'\N'oop";
+	    return res+indent(contextptr)+"'EndLoop";
 	  }
 	  if (maplemode==3)
 	    res = "While "+ sametoequal(*it).print(contextptr) +indent(contextptr);
@@ -7834,6 +7838,13 @@ namespace giac {
     if (args.type!=_STRNG)
       return symbolic(at_read,args);
     string fichier=*args._STRNGptr;
+#ifdef NUMWORKS
+    const char * s=giac_read_file(fichier.c_str());
+    if (!s)
+      return undef;
+    gen g(s,contextptr);
+    return g;
+#else // NUMWORKS
 #ifdef EMCC
     string s=fetch(fichier);
     return gen(s,contextptr);
@@ -7901,6 +7912,7 @@ namespace giac {
     vecteur v;
     readargs_from_stream(inf2,v,contextptr);
     return v.size()==1?v.front():gen(v,_SEQ__VECT);
+#endif // NUMWORKS
   }
   gen _read(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
@@ -10722,7 +10734,11 @@ namespace giac {
     if (g.type!=_VECT || g._VECTptr->size()!=2)
       return symbolic(at_maple_root,g);
     vecteur & v=*g._VECTptr;
+#ifdef NUMWORKS
+    return pow(v[0],inv(v[1],contextptr),contextptr);
+#else
     return pow(v[1],inv(v[0],contextptr),contextptr);
+#endif
   }
   static const char _maple_root_s []="root";
 #if defined RTOS_THREADX || defined NSPIRE

@@ -49,9 +49,6 @@ namespace giac {
   gen _mathml_error(const gen & g,GIAC_CONTEXT){
     return gensizeerr(gettext("No mathml support"));
   }
-  gen _mathml_error(const gen & g,GIAC_CONTEXT){
-    return gensizeerr(gettext("No mathml support"));
-  }
   static const char _mathml_s []="mathml";
   static define_unary_function_eval (__mathml,&_mathml_error,_mathml_s);
   define_unary_function_ptr5( at_mathml ,alias_at_mathml,&__mathml,0,true);

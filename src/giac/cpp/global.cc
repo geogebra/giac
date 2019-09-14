@@ -97,6 +97,14 @@ extern "C" int firvsprintf(char*,const char*, va_list);
 extern "C" int KeyPressed( void );
 #endif
 
+#ifdef NUMWORKS
+bool back_key_pressed();
+#endif
+
+#ifdef NUMWORKS
+const char * giac_read_file(const char * filename);
+#endif
+
 int my_sprintf(char * s, const char * format, ...){
     int z;
     va_list ap;
@@ -152,8 +160,14 @@ namespace giac {
   int caseval_n=0,caseval_mod=0,caseval_unitialized=-123454321;
 #if !defined POCKETCAS
   void control_c(){
+#if defined NSPIRE || defined NUMWORKS
+    if (
 #ifdef NSPIRE
-    if (on_key_pressed()){ ctrl_c=true; interrupted=true; }
+	on_key_pressed()
+#else
+	back_key_pressed()
+#endif
+	){ ctrl_c=true; interrupted=true; }
 #else
     if (caseval_unitialized!=-123454321){
       caseval_unitialized=-123454321;
@@ -6312,9 +6326,28 @@ unsigned int ConvertUTF8toUTF16 (
 	    if (posmatplotlib<0 || posmatplotlib>=cur.size())
 	      posmatplotlib=cur.find("pylab");
 	    int cs=int(cur.size());
-	    cur=cur.substr(0,pos);
-	    python_import(cur,cs,posturtle,poscmath,posmath,posnumpy,posmatplotlib,contextptr);
 	    pythonmode=true;
+#ifdef NUMWORKS
+	    if (
+		(posturtle<0 || posturtle>=cs) && 
+		(poscmath<0 || poscmath>=cs) && 
+		(posmath<0 || posmath>=cs) && 
+		(posnumpy<0 || posnumpy>=cs) && 
+		(posmatplotlib<0 || posmatplotlib>=cs) 
+		){
+	      string filename=cur.substr(pos+5,posi-pos-5)+".py";
+	      // CERR << "import " << filename << endl;
+	      s += python2xcas(giac_read_file(filename.c_str()),contextptr); // recursive call
+	      cur ="";
+	      // CERR << s << endl;
+	      continue;
+	    }
+	    else
+#endif
+	      {
+		cur=cur.substr(0,pos);
+		python_import(cur,cs,posturtle,poscmath,posmath,posnumpy,posmatplotlib,contextptr);
+	      }
 	    break;
 	  }
 	}
@@ -6656,6 +6689,7 @@ unsigned int ConvertUTF8toUTF16 (
       if (debug_infolevel)
 	*logptr(contextptr) << "Translated to Xcas as:\n" << s << '\n';
     }
+    // CERR << s << endl;
     return s;
   }
   

@@ -52,6 +52,10 @@ inline giac::gen _graph_charpoly(const giac::gen &g,const giac::context *){ retu
 #include "graphtheory.h"
 #endif
 
+#ifdef NUMWORKS
+const char * mp_hal_input(const char * prompt) ;
+#endif
+
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
@@ -2459,10 +2463,15 @@ namespace giac {
   define_unary_function_ptr5( at_BlockDiagonal ,alias_at_BlockDiagonal,&__BlockDiagonal,0,true);
 
   gen _input(const gen & args,GIAC_CONTEXT){
+#ifdef NUMWORKS
+    const char * s=mp_hal_input("?") ;
+    return string2gen(s,false);
+#else
     if (interactive_op_tab && interactive_op_tab[0])
       return interactive_op_tab[0](args,contextptr);
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     return _input(args,false,contextptr);
+#endif
   }
   static const char _input_s []="input";
 #ifdef RTOS_THREADX

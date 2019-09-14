@@ -73,6 +73,21 @@ using namespace std;
   TMillisecs PrimeGetNow();
 #endif
 
+#ifdef NUMWORKS
+namespace Ion {
+  namespace Timing {
+    
+    void usleep(uint32_t us);
+    void msleep(uint32_t ms);
+    
+    /* millis is the number of milliseconds ellapsed since a random epoch.
+     * On the device, epoch is the boot time. */
+    volatile uint64_t millis();
+    
+  }
+}
+#endif
+
 
 #if defined(EMCC) && !defined(PNACL)
 extern "C" double emcctime();
@@ -353,6 +368,42 @@ namespace giac {
   static define_unary_function_eval (__restart_modes,&_restart_modes,_restart_modes_s);
   define_unary_function_ptr5( at_restart_modes ,alias_at_restart_modes,&__restart_modes,0,T_RETURN);
 
+#ifdef NUMWORKS
+  gen _time(const gen & a,GIAC_CONTEXT){
+    if ( a.type==_STRNG && a.subtype==-1) return  a;
+    if (a.type==_VECT && a.subtype==_SEQ__VECT){
+#if 0
+      if (a._VECTptr->size()==2 && a._VECTptr->front().type==_INT_ && a._VECTptr->back().type==_INT_){
+	int h=a._VECTptr->front().val;
+	h=h%24;
+	if (h<0)
+	  h+=24;
+	int m=a._VECTptr->back().val;
+	m=m%60;
+	if (m<0)
+	  m+=60;
+	set_time(h,m);
+	return 1;
+      }
+#endif
+      return double(Ion::Timing::millis()); // RTC_GetTicks();
+    }
+    double delta;
+    int ntimes=1,i=0;
+    int level=eval_level(contextptr);
+    double t1= Ion::Timing::millis(); // RTC_GetTicks(); // 1 tick=1/128 s
+    // CERR << t1 << endl;
+    for (unsigned i=1;i<=100;++i){
+      eval(a,level,contextptr);
+      double t2= Ion::Timing::millis(); // RTC_GetTicks();
+      if (t2>=t1+32)
+	return double(t2-t1)/double(i)/1000;
+    }
+    return 0.0;
+  }
+
+#else // NUMWORKS
+  
   gen _time(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
     if (a.type==_VECT && a.subtype==_SEQ__VECT){
@@ -487,6 +538,8 @@ namespace giac {
     return (delta/ntimes);
 #endif
   }
+  
+#endif // NUMWORKS
   static const char _time_s []="time";
   static define_unary_function_eval_quoted (__time,&_time,_time_s);
   define_unary_function_ptr5( at_time ,alias_at_time,&__time,_QUOTE_ARGUMENTS,true);

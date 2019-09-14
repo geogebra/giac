@@ -7892,7 +7892,7 @@ namespace giac {
     }
     gen fcv=makevecteur(f,con,variables);
     gen_context gc={fcv,contextptr};
-    int n=variables.size(),m=con.size(),message(3),maxfun(1000);
+    int n=variables.size(),m=con.size(),message(debug_infolevel),maxfun(1000);
     gen maxiter(maxiter0);
     gen eps0d=evalf_double(eps0,1,contextptr);
     if (is_greater(1,maxiter,contextptr) || is_greater(eps0d,1,contextptr))

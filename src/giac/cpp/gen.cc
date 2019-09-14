@@ -13789,6 +13789,9 @@ void sprint_double(char * s,double d){
       }
       if (is_inf(_SYMBptr->feuille)){
 	if (_SYMBptr->sommet==at_plus){
+#ifdef NUMWORKS
+	  return "oo";
+#else
 	  if (
 	      // calc_mode(contextptr)!=1
 	      abs_calc_mode(contextptr)==38
@@ -13796,8 +13799,12 @@ void sprint_double(char * s,double d){
 	    return "∞";
 	  else
 	    return "+infinity";
+#endif
 	}
 	if (_SYMBptr->sommet==at_neg){
+#ifdef NUMWORKS
+	  return "-oo"; 
+#else
 	  if (
 	      // calc_mode(contextptr)!=1
 	      abs_calc_mode(contextptr)==38
@@ -13805,6 +13812,7 @@ void sprint_double(char * s,double d){
 	    return "-∞"; 
 	  else
 	    return "-infinity";
+#endif
 	}
       }
       if (subtype==_SPREAD__SYMB){
