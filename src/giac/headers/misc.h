@@ -292,6 +292,9 @@ namespace giac {
   extern const unary_function_ptr * const  at_draw_string ;
   extern const unary_function_ptr * const  at_dtype ;
   extern const unary_function_ptr * const  at_rgb ;
+  extern const unary_function_ptr * const  at_prediction;
+  extern const unary_function_ptr * const  at_prediction95;
+  extern const unary_function_ptr * const  at_confidence;
   gen _rgb(const gen & args,GIAC_CONTEXT);
   gen _charpoly(const gen & args,GIAC_CONTEXT);
 

@@ -9230,6 +9230,45 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   static define_unary_function_eval (__rgb,&_rgb,_rgb_s);
   define_unary_function_ptr5( at_rgb ,alias_at_rgb,&__rgb,0,true);
 
+  gen prediction(const gen & args,int type,GIAC_CONTEXT){
+    if (args.type!=_VECT || args._VECTptr->size()!=2)
+      return gensizeerr(contextptr);
+    const vecteur & v=*args._VECTptr;
+    gen p=v[0],n=v[1],b=inv(sqrt(n,contextptr),contextptr);
+    if (type==0 || type==2){
+      if (type==0 &&(is_strictly_greater(25,n,contextptr) || is_strictly_greater(.2,p,contextptr) || is_strictly_greater(p,.8,contextptr)))
+	return gensizeerr("Unable to predict");
+      return makevecteur(max(p-b,0,contextptr),min(p+b,1,contextptr));
+    }
+    if (type==1){
+      b=1.96*sqrt(p*(1-p),contextptr)*b;
+      if (is_strictly_greater(30,n,contextptr) || is_greater(5,n*p,contextptr) || is_greater(5,n*(1-p),contextptr))
+	return gensizeerr("Unable to predict");
+      return makevecteur(max(p-b,0,contextptr),min(p+b,1,contextptr));
+    }
+    return undef;
+  }
+  gen _prediction(const gen & args,GIAC_CONTEXT){
+    return prediction(args,0,contextptr);
+  }
+  static const char _prediction_s []="prediction";
+  static define_unary_function_eval (__prediction,&_prediction,_prediction_s);
+  define_unary_function_ptr5( at_prediction ,alias_at_prediction,&__prediction,0,true);
+
+  gen _confidence(const gen & args,GIAC_CONTEXT){
+    return prediction(args,2,contextptr);
+  }
+  static const char _confidence_s []="confidence";
+  static define_unary_function_eval (__confidence,&_confidence,_confidence_s);
+  define_unary_function_ptr5( at_confidence ,alias_at_confidence,&__confidence,0,true);
+
+  gen _prediction95(const gen & args,GIAC_CONTEXT){
+    return prediction(args,1,contextptr);
+  }
+  static const char _prediction95_s []="prediction95";
+  static define_unary_function_eval (__prediction95,&_prediction95,_prediction95_s);
+  define_unary_function_ptr5( at_prediction95 ,alias_at_prediction95,&__prediction95,0,true);
+
 #ifdef EMCC
 #ifdef EMCC_FETCH
   // with emscripten 1.37.28, it does not work

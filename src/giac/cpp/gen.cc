@@ -12154,8 +12154,19 @@ void sprint_double(char * s,double d){
     }
   }
   if (i!=0){
+#ifdef NUMWORKS
+    *buf='*';
+    ++buf;
+    *buf='1';
+    ++buf;
+    *buf='0';
+    ++buf;
+    *buf='^';
+    ++buf;
+#else
     *buf='e';
     ++buf;
+#endif
     sprint_int(buf,i);
   }
 }

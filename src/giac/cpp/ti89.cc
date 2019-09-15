@@ -113,7 +113,7 @@ namespace giac {
 
   gen _logb(const gen & g,GIAC_CONTEXT){
     if (g.type!=_VECT || g._VECTptr->size()!=2)
-      return gensizeerr(contextptr);
+      return ln(g,contextptr);
     int n=0; gen e1(g._VECTptr->front()),b(g._VECTptr->back()),q;
     if (is_integer(e1) && is_integer(b) && is_strictly_greater(b,1,contextptr) && !is_zero(e1)){
       while (is_zero(irem(e1,b,q))){

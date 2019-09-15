@@ -2758,6 +2758,10 @@ namespace giac {
       if (vars[i].is_symb_of_sommet(at_equal))
 	vars[i]=vars[i]._SYMBptr->feuille[0];
     }
+#ifdef NUMWORKS
+    if (vals.size()==1 && vars.size()!=1 && vals.front().type==_VECT)
+      vals=*vals.front()._VECTptr;
+#endif
     if (vals.size()!=vars.size()){
 #ifdef DEBUG_SUPPORT
       setsizeerr(gen(vals).print(contextptr)+ " size() != " + gen(vars).print(contextptr));
