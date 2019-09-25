@@ -54,6 +54,10 @@ inline giac::gen _graph_charpoly(const giac::gen &g,const giac::context *){ retu
 
 #ifdef NUMWORKS
 const char * mp_hal_input(const char * prompt) ;
+void numworks_giac_set_pixel(int x,int y,int c);
+void numworks_giac_fill_rect(int x,int y,int w,int h,int c);
+int numworks_giac_get_pixel(int x,int y);
+void numworks_giac_draw_string(int x,int y,int c,int bg,const char * s);
 #endif
 
 #ifndef NO_NAMESPACE_GIAC
@@ -568,9 +572,18 @@ namespace giac {
   const int pixel_lines=1; // 320; // calculator screen 307K
   const int pixel_cols=1; // 240;
 #else
+#ifdef NUMWORKS
+  const int pixel_lines=320;
+  const int pixel_cols=240;
+#else
   const int pixel_lines=1024;
   const int pixel_cols=768;
 #endif
+#endif
+#ifdef NUMWORKS
+  void clear_pixel_buffer(){
+  }
+#else
   int pixel_buffer[pixel_lines][pixel_cols]; 
   void clear_pixel_buffer(){
     for (int i=0;i<pixel_lines;++i){
@@ -589,17 +602,21 @@ namespace giac {
     }
     return *ptr;
   }
+#endif
   gen _clear(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type==_VECT && args._VECTptr->empty()){
+#ifdef NUMWORKS
+#else // NUMWORKS
 #ifdef GIAC_HAS_STO_38
       static gen RECT_P(identificateur("RECT_P"));
       _of(makesequence(RECT_P,args),contextptr);
 #else
       clear_pixel_buffer();
-#endif
+#endif // else HP
       pixel_v()._VECTptr->clear();
       history_plot(contextptr).clear();
+#endif // else NUMWORKS
       return 1;
     }
     gen g=eval(args,1,contextptr);
@@ -618,6 +635,7 @@ namespace giac {
   static define_unary_function_eval (__clear,&_clear,_clear_s);
   define_unary_function_ptr5( at_clear ,alias_at_clear,&__clear,_QUOTE_ARGUMENTS,true);
 
+#ifndef NUMWORKS
   gen _show_pixels(const gen & args,GIAC_CONTEXT){
 #ifdef GIAC_HAS_STO_38
     static gen FREEZE(identificateur("FREEZE"));
@@ -633,6 +651,7 @@ namespace giac {
   static const char _show_pixels_s []="show_pixels";
   static define_unary_function_eval (__show_pixels,&_show_pixels,_show_pixels_s);
   define_unary_function_ptr5( at_show_pixels ,alias_at_show_pixels,&__show_pixels,0,true);
+#endif
 
   gen _show(const gen & args,GIAC_CONTEXT){
     return history_plot(contextptr);
@@ -8553,7 +8572,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   gen _set_pixel(const gen & a_,GIAC_CONTEXT){
     gen a(a_);
     if (a.type==_STRNG && a.subtype==-1) return  a;
-#ifdef GIAC_HAS_STO_38
+#if defined GIAC_HAS_STO_38 || defined NUMWORKS
     if (a.type!=_VECT || a._VECTptr->size()<2)
       return gentypeerr(contextptr);
     const vecteur & v=*a._VECTptr;
@@ -8566,14 +8585,18 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       if (y.type==_DOUBLE_)
 	y=int(y._DOUBLE_val+.5);
       if (x.type==_INT_ &&  y.type==_INT_ ){
+#ifdef NUMWORKS
+	numworks_giac_set_pixel(x.val,y.val,vs==2?0:v[2].val);
+#else
 	aspen_set_pixel(x.val,y.val,vs==2?0:v[2].val);
+#endif // NUMWORKS
 	return 1;
       }
     }
     return gensizeerr(contextptr);
     //static gen PIXEL(identificateur("PIXON_P"));
     //return _of(makesequence(PIXEL,a_),contextptr);
-#else
+#else // HP && NUMWORKS
     if (a.type==_VECT && a._VECTptr->empty())
       return pixel_v();
     if (is_integral(a)){
@@ -8596,14 +8619,23 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       }
     }
     return pixel_v();
-#endif
+#endif // else HP && NUMWORKS
   }
+#ifdef NUMWORKS
+  void set_pixel(int x,int y,int c,GIAC_CONTEXT){
+    numworks_giac_set_pixel(x,y,c);
+  }
+  void set_pixel(double x,double y,int c,GIAC_CONTEXT){
+    numworks_giac_set_pixel(int(x+.5),int(y+.5),c);
+  }
+#else  
   void set_pixel(int x,int y,int c,GIAC_CONTEXT){
     _set_pixel(makesequence(x,y,c),contextptr);
   }
   void set_pixel(double x,double y,int c,GIAC_CONTEXT){
     _set_pixel(makesequence(int(x+.5),int(y+.5),c),contextptr);
   }
+#endif
   static const char _set_pixel_s []="set_pixel";
   static define_unary_function_eval (__set_pixel,&_set_pixel,_set_pixel_s);
   define_unary_function_ptr5( at_set_pixel ,alias_at_set_pixel,&__set_pixel,0,true);
@@ -8814,10 +8846,14 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     if (x<0){ width+=x; x=0;}
     if (y<0){ height+=y; y=0;}
     if (width<0 || height<0) return;
+#ifdef NUMWORKS
+    numworks_giac_fill_rect(x,y,width,height,color);
+#else
     for (int j=0;j<=height;++j){
       for (int i=0;i<width;++i)
 	set_pixel(x+i,y+j,color,contextptr);
     }
+#endif
   }
 
   void draw_circle(int xc,int yc,int r,int color,bool q1,bool q2,bool q3,bool q4,GIAC_CONTEXT){
@@ -9123,22 +9159,27 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 #ifdef GIAC_HAS_STO_38
     static gen PIXEL(identificateur("TEXTOUT_P"));
     return _of(makesequence(PIXEL,a_),contextptr);
-#else
+#else // HP
     gen a(a_);
     if (a.type==_STRNG && a.subtype==-1) return  a;
     if (a.type!=_VECT)
       return gensizeerr(contextptr);
     vecteur v(*a._VECTptr);
-    if (v.size()!=3 && v.size()!=4)
+    if (v.size()<3 || v.size()>4)
       return gendimerr(contextptr);
     if (v[0].type!=_STRNG || !is_integral(v[1]) || !is_integral(v[2]))
       return gensizeerr(contextptr);
     gen s=v[0];
+#ifdef NUMWORKS
+    numworks_giac_draw_string(v[1].val,v[2].val,v.size()>3?v[3].val:_BLACK,v.size()>4?v[4].val:_WHITE,s._STRNGptr->c_str());
+    return 1;
+#else
     v.erase(v.begin());
     v.push_back(s);
     pixel_v()._VECTptr->push_back(_pixon(gen(v,_SEQ__VECT),contextptr));
     return pixel_v();
-#endif
+#endif // NUMWORKS
+#endif // HP
   }
   static const char _draw_string_s []="draw_string";
   static define_unary_function_eval (__draw_string,&_draw_string,_draw_string_s);
@@ -9148,14 +9189,22 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 #ifdef GIAC_HAS_STO_38
     static gen PIXEL(identificateur("GETPIX_P"));
     return _of(makesequence(PIXEL,a_),contextptr);
-#else
+#else // GIAC_HAS_STO_38
     gen a(a_);
     if (a.type==_STRNG && a.subtype==-1) return  a;
     if (a.type!=_VECT || a._VECTptr->size()!=2)
       return gensizeerr(contextptr);
     gen x=a._VECTptr->front(),y=a._VECTptr->back();
-    if (x.type==_INT_ && x.val>=0 && x.val<pixel_cols && y.type==_INT_ && y.val>=0 && y.val<pixel_lines)
+    if (x.type==_INT_ && x.val>=0 && x.val<pixel_cols && y.type==_INT_ && y.val>=0 && y.val<pixel_lines){
+#ifdef NUMWORKS
+      return numworks_giac_get_pixel(x.val,y.val);
+#else      
       return pixel_buffer[y.val][x.val];
+#endif
+    }
+#ifdef NUMWORKS
+    return undef;
+#else // NUMWORKS
     const vecteur v= *pixel_v()._VECTptr;
     for (size_t i=0;i<v.size();++i){
       const gen & vi_=v[i];
@@ -9181,7 +9230,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       }
     }
     return int(FL_WHITE);
-#endif
+#endif // NUMWORKS
+#endif // GIAC_HAS_STO_38
   }
   static const char _get_pixel_s []="get_pixel";
   static define_unary_function_eval (__get_pixel,&_get_pixel,_get_pixel_s);

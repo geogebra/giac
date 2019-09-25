@@ -161,7 +161,7 @@ namespace giac {
   double global_window_xmin(gnuplot_xmin),global_window_xmax(gnuplot_xmax),global_window_ymin(gnuplot_ymin),global_window_ymax(gnuplot_ymax);
   double x_tick(1.0),y_tick(1.0);
   double class_minimum(0.0),class_size(1.0);
-#if defined RTOS_THREADX || defined EMCC
+#if defined RTOS_THREADX || defined EMCC || defined NUMWORKS
   int gnuplot_pixels_per_eval=128;
 #else
   int gnuplot_pixels_per_eval=401;
@@ -8256,7 +8256,7 @@ namespace giac {
   define_unary_function_ptr5( at_curve ,alias_at_curve,&__curve,0,true);
 
   gen plotparam(const gen & f,const gen & vars,const vecteur & attributs,bool densityplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_tmin, double function_tmax,double function_tstep,const gen & equation,const gen & parameq,const gen & vparam,const context * contextptr){
-    if (function_tstep<=0 || (function_tmax-function_tmin)/function_tstep>max_nstep)
+    if (function_tstep<=0 || (function_tmax-function_tmin)/function_tstep>max_nstep || function_tmax==function_tmin)
       return gensizeerr(gettext("Plotparam: unable to discretize: tmin, tmax, tstep=")+print_DOUBLE_(function_tmin,12)+","+print_DOUBLE_(function_tmax,12)+","+print_DOUBLE_(function_tstep,12)+gettext("\nTry a larger value for tstep"));
     gen fC(f);
     if (f.type==_VECT && f._VECTptr->size()==2)
@@ -10707,7 +10707,7 @@ namespace giac {
     gen c=a._VECTptr->back(),b;
     if (a._VECTptr->size()==3 && c.type==_INT_ && (b=a._VECTptr->front()).type==_INT_ && (*a._VECTptr)[1].type==_INT_){
       // 565 color
-      int d=(((a.val*32)/256)<<11) | (((b.val*64)/256)<<5) | ((c.val*32)/256);
+      int d=(((b.val*32)/256)<<11) | ((((*a._VECTptr)[1].val*64)/256)<<5) | ((c.val*32)/256);
       if (d>0 && d<512){
 	d += (1<<11);
       }
@@ -10813,7 +10813,11 @@ namespace giac {
     read_tmintmaxtstep(v,t,3,tmin,tmax,tstep,tminmax_defined,tstep_defined,contextptr);
     if (tmin>tmax || tstep<=0)
       return gensizeerr(gettext("Time"));
+#ifdef NUMWORKS
+    int maxstep=80;
+#else
     int maxstep=500;
+#endif
     if (tminmax_defined && tstep_defined)
       maxstep=giacmax(maxstep,2*int((tmax-tmin)/tstep));
     int vs=int(v.size());
@@ -10969,6 +10973,11 @@ namespace giac {
 	v.erase(v.begin()+i);
 	--s;
       }
+      if (v[i].type==_VECT && v[i]._VECTptr->size()==1 && v[i]._VECTptr->front().type==_VECT){
+	initcondv.push_back(v[i]._VECTptr->front());
+	v.erase(v.begin()+i);
+	--s;
+      }
       if (v[i].is_symb_of_sommet(at_equal) && v[i]._SYMBptr->feuille.type==_VECT && v[i]._SYMBptr->feuille._VECTptr->size()==2 && v[i]._SYMBptr->feuille._VECTptr->front()==at_plotode){
 	gen add=v[i]._SYMBptr->feuille._VECTptr->back();
 	if (add.type==_VECT && !add._VECTptr->empty()){
@@ -10988,7 +10997,10 @@ namespace giac {
     v=vecteur(args._VECTptr->begin(),args._VECTptr->begin()+s);
     if (s>=2){
       initcondv.insert(initcondv.begin(),v[0]);
-      initcondv.insert(initcondv.begin()+1,v[1]);
+      if (v[1].type==_VECT || s==2)
+	initcondv.insert(initcondv.begin()+1,v[1]);
+      else
+	initcondv.insert(initcondv.begin()+1,makevecteur(v[1],v[2]));
     }
     switch (s){
     case 0: case 1:
@@ -13662,6 +13674,7 @@ namespace giac {
       return g.print(context0);
   }
 
+#ifndef NUMWORKS // in kdisplay.cc
 #if defined RTOS_THREADX || defined NSPIRE || defined FXCG
   logo_turtle vecteur2turtle(const vecteur & v){
     return logo_turtle();
@@ -14671,6 +14684,7 @@ gen _vers(const gen & g,GIAC_CONTEXT){
   define_unary_function_ptr5( at_turtle_stack ,alias_at_turtle_stack,&__turtle_stack,0,T_LOGO);
 
 #endif
+#endif  // NUMWORKS
 
   static const char _ramene_s []="ramene";
   static define_unary_function_eval2 (__ramene,&_read,_ramene_s,&printastifunction);

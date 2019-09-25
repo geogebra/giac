@@ -5836,7 +5836,11 @@ namespace giac {
        if (err<=hoptimal) then time += h; y_init=RK5_final; h=min(hoptimal,t_final-t_current)
        else h=hoptimal
      */
+#ifdef NUMWORKS
+    gen tolerance=epsilon(contextptr)>1e-9?epsilon(contextptr):1e-9;
+#else
     gen tolerance=epsilon(contextptr)>1e-12?epsilon(contextptr):1e-12;
+#endif
     vecteur yt(dim+1),ytvar(yv);
     for (int i=0;i<dim;++i)
       yt[i]=y0v[i];

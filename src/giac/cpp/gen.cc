@@ -1,5 +1,8 @@
 // -*- mode:C++ ; compile-command: "g++ -I.. -I../include -DHAVE_CONFIG_H -DIN_GIAC -DGIAC_GENERIC_CONSTANTS -fno-strict-aliasing -g -c gen.cc -Wall" -*-
 #include "giacPCH.h"
+#ifdef NUMWORKS
+#include "kdisplay.h"
+#endif
 
 /*
  *  Copyright (C) 2001,14 B. Parisse, Institut Fourier, 38402 St Martin d'Heres
@@ -6038,7 +6041,7 @@ namespace giac {
     }
 #endif
     case _VECT__INT_: 
-      if (b.val>=0 && python_compat(contextptr)){
+      if (b.val>=0 && python_compat(contextptr)==2){
 	vecteur res;
 	res.reserve(a._VECTptr->size()*b.val);
 	const_iterateur it,itend=a._VECTptr->end();
@@ -7094,16 +7097,16 @@ namespace giac {
     if ((b.type<=_REAL || b.type==_FLOAT_) && is_strictly_positive(-b,contextptr))
       return -sym_mult(a,-b,contextptr);
     if (a.type==_EXT){
-        if (a.is_constant() && (b.type==_POLY))
-            return a*(*b._POLYptr);
-        else
-            return algebraic_EXTension(*a._EXTptr*b,*(a._EXTptr+1));
+      if (a.is_constant() && (b.type==_POLY))
+	return a*(*b._POLYptr);
+      else
+	return algebraic_EXTension(b*(*a._EXTptr),*(a._EXTptr+1));
     }
     if (b.type==_EXT){
-        if (b.is_constant() && (a.type==_POLY))
-            return (*a._POLYptr)*b;
-        else
-            return algebraic_EXTension(a*(*b._EXTptr),*(b._EXTptr+1));
+      if (b.is_constant() && (a.type==_POLY))
+	return (*a._POLYptr)*b;
+      else
+	return algebraic_EXTension(a*(*b._EXTptr),*(b._EXTptr+1));
     }
     if ( (a.type==_INT_) && (a.val<0) && (a.val!=1<<31)){
       if (b.is_symb_of_sommet(at_inv) && (b._SYMBptr->feuille.type<_POLY || b._SYMBptr->feuille.is_symb_of_sommet(at_neg)))
@@ -12154,19 +12157,19 @@ void sprint_double(char * s,double d){
     }
   }
   if (i!=0){
-#ifdef NUMWORKS
-    *buf='*';
-    ++buf;
-    *buf='1';
-    ++buf;
-    *buf='0';
-    ++buf;
-    *buf='^';
-    ++buf;
-#else
-    *buf='e';
-    ++buf;
-#endif
+    if (!numworks_shell){
+      *buf='*';
+      ++buf;
+      *buf='1';
+      ++buf;
+      *buf='0';
+      ++buf;
+      *buf='^';
+      ++buf;
+    } else {
+      *buf='e';
+      ++buf;
+    }
     sprint_int(buf,i);
   }
 }
@@ -12590,20 +12593,19 @@ void sprint_double(char * s,double d){
     case _MATRIX__VECT:
       if (calc_mode(contextptr)==1)
 	s="{";
-      else
+      else {
 	// s="matrix[";
-#ifdef NUMWORKS
-	s="[";
-#else
-	s=abs_calc_mode(contextptr)==38?"[":"matrix[";
-#endif
+	if (!numworks_shell)
+	  s="[";
+	else
+	  s=abs_calc_mode(contextptr)==38?"[":"matrix[";
+      }
       break;
     case _POLY1__VECT:
-#ifdef NUMWORKS
-      s="[";
-#else
-      s="poly1[";
-#endif
+      if (!numworks_shell)
+	s="[";
+      else
+	s="poly1[";
       break;
     case _ASSUME__VECT:
       s = "assume[";
@@ -12618,14 +12620,14 @@ void sprint_double(char * s,double d){
       s= "rgba[";
       break;
     case _LIST__VECT:
-#ifdef NUMWORKS
-      s="[";
-#else
-      if (tex)
-	s="\\{";
-      else
-	s=abs_calc_mode(contextptr)==38?"{":"list[";
-#endif
+      if (!numworks_shell)
+	s="[";
+      else {
+	if (tex)
+	  s="\\{";
+	else
+	  s=abs_calc_mode(contextptr)==38?"{":"list[";
+      }
       break;
     case _GGB__VECT:
       if (calc_mode(contextptr)==1)
@@ -15894,6 +15896,21 @@ void sprint_double(char * s,double d){
 #endif
   }
 
+  gen iprotecteval(const gen & g,int level,GIAC_CONTEXT){
+#ifdef NUMWORKS
+    enable_back_interrupt();
+    gen res=protecteval(g,level,contextptr);
+    disable_back_interrupt();
+    return res;
+#else
+    return protecteval(g,level,contextptr);
+#endif
+  }
+
+#if 0 // def NUMWORKS
+#undef HAVE_LIBPTHREAD
+#endif
+
 #ifdef HAVE_LIBPTHREAD
   struct caseval_param{
     const char * s;
@@ -15908,19 +15925,68 @@ void sprint_double(char * s,double d){
     pthread_mutex_lock(&ptr->mutex);
     gen g(ptr->s,ptr->contextptr);
     g=equaltosto(g,ptr->contextptr);
-    ptr->ans=protecteval(g,1,ptr->contextptr);
+    ptr->ans=iprotecteval(g,1,ptr->contextptr);
     pthread_mutex_unlock(&ptr->mutex);
     return ptr;
   }
 #endif
 
+  bool islogo(const gen & g){
+    if (g.type!=_VECT || g._VECTptr->empty()) return false;
+    if (g.subtype==_LOGO__VECT) return true;
+    const vecteur & v=*g._VECTptr;
+    if (islogo(v.back()))
+      return true;
+    for (size_t i=0;i<v.size();++i){
+      if (v[i].type==_VECT && v[i].subtype==_LOGO__VECT)
+	return true;
+    }
+    return false;
+  }
+#ifdef NUMWORKS
+  extern logo_turtle * turtleptr;
+  gen _efface_logo(const gen & g,GIAC_CONTEXT);
+#endif
+      
   const char * caseval(const char *s){
+    ctrl_c=interrupted=false;
     static string * sptr=0;
     if (!sptr) sptr=new string;
     string & S=*sptr;
     static context * contextptr=0;
     if (!contextptr) contextptr=new context;
     context & C=*contextptr;
+    if (!strcmp(s,"shell off")){
+      numworks_shell=false;
+      return "shell off";
+    }
+    if (!strcmp(s,"warn off")){
+      warn_symb_program_sto=false;
+      return "warn off";
+    }
+    if (!strcmp(s,"shell on")){
+      numworks_shell=true;
+      return "shell on";
+    }
+    if (!strcmp(s,"warn on")){
+      warn_symb_program_sto=true;
+      return "warn on";
+    }
+#ifdef NUMWORKS
+    if (!turtleptr){
+      turtle();
+      _efface_logo(vecteur(0),contextptr);
+    }
+    if (!strcmp(s,".")){
+      xcas::displaylogo();
+      S=turtle_state(contextptr).print(&C);
+      return S.c_str();
+    }
+    if (!strcmp(s,"..")){
+      _efface_logo(vecteur(0),contextptr);
+      return "turtle cleared";
+    }
+#endif
     const char init[]="init geogebra";
     const char close[]="close geogebra";
     if (!strcmp(s,init)){
@@ -15967,7 +16033,7 @@ void sprint_double(char * s,double d){
     if (cres){
       g=gen(s,&C);
       g=equaltosto(g,&C);
-      g=protecteval(g,1,&C);
+      g=iprotecteval(g,1,&C);
     }
     else {
       // void * ptr;
@@ -16015,7 +16081,7 @@ void sprint_double(char * s,double d){
     g=equaltosto(g,&C);
     if (g.type==_VECT && !g._VECTptr->empty() && g._VECTptr->front().is_symb_of_sommet(at_set_language)){
       vecteur v=*g._VECTptr;
-      protecteval(v.front(),1,&C);
+      iprotecteval(v.front(),1,&C);
       v.erase(v.begin());
       if (g.subtype==_SEQ__VECT && v.size()==1)
 	g=v.front();
@@ -16025,13 +16091,17 @@ void sprint_double(char * s,double d){
     gen gp=g;
     if (gp.is_symb_of_sommet(at_add_autosimplify))
       gp=gp._SYMBptr->feuille;
+#ifdef NUMWORKS
+    bool push=false;
+#else
     bool push=!gp.is_symb_of_sommet(at_mathml) && !gp.is_symb_of_sommet(at_set_language);
+#endif
     //bool push=!g.is_symb_of_sommet(at_mathml);
     if (push){
       history_in(&C).push_back(g);
       // COUT << "hin " << g << '\n';
     }
-    g=protecteval(g,1,&C);
+    g=iprotecteval(g,1,&C);
     if (push){
       history_out(&C).push_back(g);
       // COUT << "hout " << g << '\n';
@@ -16077,25 +16147,54 @@ void sprint_double(char * s,double d){
 #endif // EMCC
     if (calc_mode(&C)==1 && !lop(g,at_rootof).empty())
       g=evalf(g,1,&C);
-    if (has_undef_stringerr(g,S))
+    if (has_undef_stringerr(g,S)){
       S="GIAC_ERROR: "+S;
+    }
     else {
-      S=g.print(&C);
 #ifdef NUMWORKS // replace ],[ by ][
-      string S_;
-      S_ += S[0];
-      for (size_t i=1;i+1<S.size();++i){
-	if (S[i-1]==']' && S[i]==',' && S[i+1]=='[')
-	  ;
+      gen last=g;
+      while (last.type==_VECT && last.subtype!=_LOGO__VECT && !last._VECTptr->empty()){
+	gen tmp=last._VECTptr->back();
+	if (tmp.is_symb_of_sommet(at_equal))
+	  last=vecteur(last._VECTptr->begin(),last._VECTptr->end()-1);
 	else
-	  S_ += S[i];
+	  last=tmp;
       }
-      if (S.size()>1)
-	S_ +=S[S.size()-1];
-      S=S_;
-      if (S.size()>=3 && S[0]=='[' && S[1]!='[' && S[S.size()-1]==']')
-	S='['+S+']'; // vector/list not allowed in Numworks calc app
+      if (last.is_symb_of_sommet(at_pnt)){
+	xcas::displaygraph(g,&C);
+	S="Graphic_object";
+      }
+      else {
+	if (numworks_shell){
+	  if (islogo(g))
+	    xcas::displaylogo();
+	  else {
+	    if ( (g.type==_SYMB || (warn_symb_program_sto && g.type==_VECT)) && taille(g,256)<=256)
+	      xcas::eqw(g,false,&C);
+	  }
+	}
+	if (taille(g,100)>=100)
+	  S="Large_object";
+	else
+	  S=g.print(&C);
+      }
+      if (!numworks_shell){
+	string S_;
+	S_ += S[0];
+	for (size_t i=1;i+1<S.size();++i){
+	  if (S[i-1]==']' && S[i]==',' && S[i+1]=='[')
+	    ;
+	  else
+	    S_ += S[i];
+	}
+	if (S.size()>1)
+	  S_ +=S[S.size()-1];
+	S=S_;
+	if (S.size()>=3 && S[0]=='[' && S[1]!='[' && S[S.size()-1]==']')
+	  S='['+S+']'; // vector/list not allowed in Numworks calc app
+      }
 #else
+      S=g.print(&C);
 #if !defined GIAC_GGB 
       if (g.type==_FRAC || g.type==_ZINT){
 	S += "=";	  

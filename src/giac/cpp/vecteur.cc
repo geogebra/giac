@@ -1983,9 +1983,11 @@ namespace giac {
       return true;
     }
 #else
+#ifdef HAVE_LIBPARI
     if (eps<1e-14 && pari_polroots(w,res,rprec,contextptr)){
       return true;
     }
+#endif
 #endif
     if (eps<1e-14 && isolaterealroot){
       // first try to isolate real roots
@@ -15433,8 +15435,10 @@ namespace giac {
     }
 #ifdef HAVE_LIBLAPACK
     if (!CAN_USE_LAPACK
+#ifndef POCKETCAS
 	|| dgeqrf_ == NULL
 	|| dorgqr_ == NULL
+#endif
 	|| &dgeqrf_ == NULL
 	|| &dorgqr_ == NULL)
       return gensizeerr(gettext("LAPACK not available"));
@@ -15682,8 +15686,10 @@ namespace giac {
     if (real && method>=0 && is_fully_numeric( (argsf=evalf_double(args,1,contextptr)) )){
 #ifdef HAVE_LIBLAPACK
       if (!CAN_USE_LAPACK
+#ifndef POCKETCAS
 	  || dgeqrf_ == NULL
 	  || dorgqr_ == NULL
+#endif
 	  || &dgeqrf_ == NULL
 	  || &dorgqr_ == NULL)
 	return gensizeerr(gettext("LAPACK not available"));

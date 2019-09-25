@@ -1166,7 +1166,9 @@ namespace giac {
 
   const char * identificateur::print(GIAC_CONTEXT) const{
     if (!strcmp(id_name,string_pi)){
+#ifndef NUMWORKS
       if (abs_calc_mode(contextptr)==38)
+#endif
 	return "π";
       switch (xcas_mode(contextptr)){
       case 1:

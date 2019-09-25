@@ -92,6 +92,7 @@ extern "C" uint32_t mainThreadStack[];
 
 #ifdef NUMWORKS
 const char * giac_read_file(const char * filename);
+#include "kdisplay.h"
 #endif
 
 #ifndef NO_NAMESPACE_GIAC
@@ -551,7 +552,7 @@ namespace giac {
     return g==cst_pi || g==cst_euler_gamma || is_inf(g) || is_undef(g) || (g.type==_IDNT && (strcmp(g._IDNTptr->id_name,"i")==0 || strcmp(g._IDNTptr->id_name,"None")==0 || strcmp(g._IDNTptr->id_name,"cmath")==0 || strcmp(g._IDNTptr->id_name,"math")==0 || strcmp(g._IDNTptr->id_name,"kandinsky")==0 || strcmp(g._IDNTptr->id_name,"pass")==0));
   }
 
-  bool warn_equal_in_prog=true;
+  bool warn_equal_in_prog=true,warn_symb_program_sto=true;
   gen _warn_equal_in_prog(const gen & g,GIAC_CONTEXT){
     if (is_zero(g) && g.type!=_VECT){
       warn_equal_in_prog=false;
@@ -1176,7 +1177,7 @@ namespace giac {
     bool warn=false;
 #ifndef GIAC_HAS_STO_38
     if (logptr(contextptr) && calc_mode(contextptr)!=1)
-      warn=true;
+      warn=warn_symb_program_sto; // true;
 #endif
     if (warn){
       *logptr(contextptr) << gettext("// Parsing ") << d << '\n';
@@ -5372,6 +5373,203 @@ namespace giac {
   static define_unary_function_eval_quoted (__rmbreakpoint,&_rmbreakpoint,_rmbreakpoint_s);
   define_unary_function_ptr5( at_rmbreakpoint ,alias_at_rmbreakpoint,&__rmbreakpoint,_QUOTE_ARGUMENTS,true);
 
+#ifdef NUMWORKS
+  void debug_loop(gen &res,GIAC_CONTEXT){
+    if (!debug_ptr(contextptr)->debug_allowed || (!debug_ptr(contextptr)->sst_mode && !equalposcomp(debug_ptr(contextptr)->sst_at,debug_ptr(contextptr)->current_instruction)) )
+      return;
+    // Fill dbgptr->debug_info_ptr and fast_debug_info_ptr 
+    // with debugging infos to be displayed
+    debug_struct * dbgptr=debug_ptr(contextptr);
+    vecteur w;
+    string progs;
+    // w[0]=function, args,
+    // w[1]=breakpoints
+    // w[2] = instruction to eval or program if debugging a prog
+    // w[3]= evaluation result
+    // w[4]= current instruction number 
+    // w[5] = watch vector, w[6] = watch values
+    if (!debug_ptr(contextptr)->args_stack.empty()){
+      w.push_back(debug_ptr(contextptr)->args_stack.back());
+      w.push_back(vector_int_2_vecteur(debug_ptr(contextptr)->sst_at,contextptr));
+    }
+    else {
+      w.push_back(undef);
+      w.push_back(undef);
+    }
+    gen w2=(*debug_ptr(contextptr)->fast_debug_info_ptr);
+    if (w2.type==_VECT && w2._VECTptr->size()>3)
+      w2=w2[2];
+    //*logptr(contextptr) << w2 << endl;
+    w.push_back(w2);
+    w.push_back(res);
+    w.push_back(debug_ptr(contextptr)->current_instruction);
+    vecteur dw=debug_ptr(contextptr)->debug_watch;
+    if (contextptr && dw.empty()){
+      // put the last 2 environments
+      const context * cur=contextptr;
+      sym_tab::const_iterator it=cur->tabptr->begin(),itend=cur->tabptr->end();
+      for (;it!=itend;++it){
+	dw.push_back(identificateur(it->first));
+      }
+      if (cur->previous && cur->previous!=cur->globalcontextptr){
+	cur=cur->previous;
+	sym_tab::const_iterator it=cur->tabptr->begin(),itend=cur->tabptr->end();
+	for (;it!=itend;++it){
+	  dw.push_back(identificateur(it->first));
+	}
+      }
+    }
+    w.push_back(dw);
+    numworks_giac_fill_rect(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
+    int dispx=0,dispy=12;
+    // print debugged program instructions from current-2 to current+3
+    progs="debug "+w[0].print(contextptr)+'\n';
+    if (w[4].type==_INT_){
+      vector<string> ws;
+#if 1
+      ws.push_back("");
+      debug_print(w[2],ws,contextptr);
+#else
+      int l=s.size();
+      string cur;
+      for (int i=0;i<l;++i){
+	if (s[i]=='\n'){
+	  ws.push_back(cur);
+	  cur="";
+	}
+	else cur+=s[i];
+      }
+      ws.push_back(cur);
+#endif
+      int m=giacmax(0,w[4].val-2),M=giacmin(w[4].val+3,ws.size()-1);
+      if (M-m<5)
+	M=giacmin(m+5,ws.size()-1);
+      if (M-m<5)
+	m=giacmax(0,M-5);
+      for (int i=m;i<=M;++i){
+	numworks_giac_draw_string_small(dispx,dispy,(i==w[4].val?_WHITE:_BLACK),(i==w[4].val?_BLACK:_WHITE),(print_INT_(i)+":"+ws[i]).c_str());
+	//mPrintXY(dispx,dispy,(print_INT_(i)+":"+ws[i]).c_str(),(i==w[4].val?TEXT_MODE_INVERT:TEXT_MODE_TRANSPARENT_BACKGROUND),TEXT_COLOR_BLACK);
+	dispy+=12;
+	dispx=0;
+	// progs += print_INT_(i)+((i==w[4].val)?" => ":"    ")+ws[i]+'\n';
+      }
+    }
+    else {
+      string s=w[2].print(contextptr);
+      progs += "\nprg: "+s+" # "+w[4].print(contextptr);
+    }
+    numworks_draw_string_small(dispx,dispy,"----------------");
+    dispx=0;
+    dispy += 8;
+    // progs += "======\n";
+    // evaluate watch with debug_ptr(contextptr)->debug_allowed=false
+    debug_ptr(contextptr)->debug_allowed=false;
+    string evals,breaks;
+    iterateur it=dw.begin(),itend=dw.end();
+    int nvars=itend-it;
+    bool fewvars=nvars<7;
+    for (int nv=0;it!=itend;++nv,++it){
+      evals += it->print(contextptr)+"=";
+      gen tmp=protecteval(*it,1,contextptr);
+      string s=tmp.print(contextptr);
+      if (!fewvars && s.size()>37)
+	s=s.substr(0,35)+"...";
+      evals += s+",";
+      if (fewvars || (nv % 2)==1 || nv==nvars-1){
+	numworks_draw_string_small(dispx,dispy,evals.c_str());
+	dispy+=12;
+	evals="";
+	// evals += '\n';
+      }
+      else
+	evals += "    ";
+    }
+    if (evals.size()!=0)
+      numworks_draw_string_small(dispx,dispy,evals.c_str());
+    dispx=0;
+    dispy=LCD_HEIGHT_PX-18;
+    numworks_draw_string_small(dispx,dispy,"down: next, right: in, EXE: cont. EXIT: kill");
+    w.push_back(dw);
+    debug_ptr(contextptr)->debug_allowed=true;
+    *dbgptr->debug_info_ptr=w;
+    while (1){
+      clear_abort();
+      int key;
+      GetKey(&key);
+      set_abort();
+      // convert key to i
+      int i=0;
+      if (key==KEY_CTRL_DOWN || key==KEY_CTRL_OK){
+	i=-1;
+      }
+      if (key==KEY_CTRL_RIGHT){
+	i=-2;
+      }
+      if (key==KEY_CTRL_EXE){
+	i=-3;
+      }
+      if (key==KEY_CTRL_EXIT){
+	i=-4;
+      }
+      if (key==KEY_CTRL_F5){
+	i=-5;
+      }
+      if (key==KEY_CTRL_F6){
+	i=-6;
+      }
+      if (i>0){
+	gen tmp=i;
+	if (tmp.is_symb_of_sommet(at_equal))
+	  tmp=equaltosto(tmp,contextptr);
+	evals=string("eval: ")+tmp.print(contextptr)+" => "+protecteval(tmp,1,contextptr).print(contextptr)+'\n';
+	cout << evals ;
+	iterateur it=dw.begin(),itend=dw.end();
+	for (;it!=itend;++it){
+	  evals += it->print(contextptr)+"=";
+	  gen tmp=protecteval(*it,1,contextptr);
+	  evals += tmp.print(contextptr)+",";
+	}
+      }
+      // CERR << i << endl;
+      if (i==-1){
+	dbgptr->sst_in_mode=false;
+	dbgptr->sst_mode=true;
+	numworks_giac_hide_graph();
+	return;
+      }
+      if (i==-2){
+	dbgptr->sst_in_mode=true;
+	dbgptr->sst_mode=true;
+	numworks_giac_hide_graph();
+	return;
+      }
+      if (i==-3){
+	dbgptr->sst_in_mode=false;
+	dbgptr->sst_mode=false;
+	numworks_giac_hide_graph();
+	return;
+      }
+      if (i==-4){
+	dbgptr->sst_in_mode=false;
+	dbgptr->sst_mode=false;
+	//debug_ptr(contextptr)->current_instruction_stack.clear();
+	//debug_ptr(contextptr)->sst_at_stack.clear();
+	//debug_ptr(contextptr)->args_stack.clear();
+	ctrl_c=interrupted=true;
+	numworks_giac_hide_graph();
+	return;
+      }
+      if (i==-5){
+	breaks="break line "+print_INT_(w[4].val)+'\n';
+	_breakpoint(makesequence(w[0][0],w[4]),contextptr);
+      }
+      if (i==-6){
+	breaks="remove break line "+print_INT_(w[4].val)+'\n';
+	_rmbreakpoint(makesequence(w[0][0],w[4]),contextptr);
+      }
+    } // end while(1)
+  }
+#else // NUMWORKS
 #if defined EMCC && !defined GIAC_GGB
   void debug_loop(gen &res,GIAC_CONTEXT){
     if (!debug_ptr(contextptr)->debug_allowed || (!debug_ptr(contextptr)->sst_mode && !equalposcomp(debug_ptr(contextptr)->sst_at,debug_ptr(contextptr)->current_instruction)) )
@@ -5741,7 +5939,7 @@ namespace giac {
   }
 #endif // GIAC_HAS_STO_38
 #endif // EMCC
-
+#endif // NUMWORKS
   static string printasbackquote(const gen & feuille,const char * sommetstr,GIAC_CONTEXT){
     return "`"+feuille.print(contextptr)+"`";
   }

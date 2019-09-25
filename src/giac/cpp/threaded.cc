@@ -2296,7 +2296,13 @@ mpz_class smod(const mpz_class & a,int reduce){
       vector< T_unsigned<int,hashgcd_U> > & gp=pcofactorv[vpos];
       vector< T_unsigned<int,hashgcd_U> > & gq=qcofactorv[vpos];
       bool tmptestdiv;
-      if (&pv && &qv){
+      if (
+#ifdef POCKETCAS
+	  true
+#else
+	  &pv && &qv
+#endif
+	  ){
 	if (!mod_gcd(palpha,qalpha,modulo,g,gp,gq,vars_truncated,compute_cof,compute_qcofactor,tmptestdiv,pv,qv,dv,dpv,dim2gcdv,dim2pcofactorv,dim2qcofactorv,nthreads)){
 	  g.clear();
 	  return 0;

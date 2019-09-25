@@ -474,6 +474,16 @@ namespace giac {
   };
 
   enum color_values {
+#ifdef NUMWORKS
+    _BLACK=0,
+    _RED=0xf800,
+    _GREEN=0x0400,
+    _YELLOW=0xffe0,
+    _BLUE=0x001f,
+    _MAGENTA=0xf81f,
+    _CYAN=0x07ff,
+    _WHITE=0xffff,
+#else // NUMWORKS
 #ifdef GIAC_HAS_STO_38
     _WHITE=0,
 #else
@@ -490,6 +500,7 @@ namespace giac {
 #else
     _WHITE=7,
 #endif
+#endif // NUMWORKS
     _POINT_LOSANGE= 1 << 25,
     _POINT_PLUS = 1 << 26,
     _POINT_INVISIBLE = 1 << 27,

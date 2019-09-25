@@ -1451,6 +1451,7 @@ namespace giac {
     else
       fprintf(file,"\\begin{pspicture}(%.4f,%.4f)(%.4f,%.4f)\n\\psset{unit=%.4fcm}\n\\psset{linewidth=.5pt}\n\\psset{arrowsize=2pt 4}\n", X1*xunit, Y1*xunit, X2*xunit, Y2*xunit,xunit);
     fprintf(file,"\\psset{linecolor=black}\n");
+#ifndef NUMWORKS
     if (logo){
       // fprintf(file,"\\psframe[fillstyle=solid,fillcolor=gray](%.4f,%.4f)(%.4f,%.4f)\n",X1,Y1,X2,Y2);
       vector<logo_turtle> w=vecteur2turtlevect(v);
@@ -1555,7 +1556,9 @@ namespace giac {
 	} // end if t.visible
       } // end if l>0
     } // end if logo
-    else {
+    else 
+#endif
+      {
       if (show_axes(contextptr) && (Y2>=0) && (Y1<=0) ) 
 	fprintf(file,"\\psline[linestyle=dashed]{->}(%.4f,%.4f)(%.4f,%.4f)\n",X1,z,X2,z);
       if (show_axes(contextptr) && (X2>=0) && (X1<=0) ) 

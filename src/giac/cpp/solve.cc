@@ -7071,6 +7071,10 @@ namespace giac {
     vecteur l0;
     if (s>2 && v[2].type==_VECT)
       lidnt(v[2],l0,true); // ordering for remaining variables
+    for (int i=0;i<s;++i){
+      if (v[i]==_RUR_REVLEX)
+	lidnt(v[1],l0,true); // insure all variables are here for rur
+    }
     lidnt(v[0],l0,true);
     // remove variables not in args0
     vecteur l;

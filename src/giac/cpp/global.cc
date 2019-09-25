@@ -167,7 +167,9 @@ namespace giac {
 #else
 	back_key_pressed()
 #endif
-	){ ctrl_c=true; interrupted=true; }
+	){ 
+      ctrl_c=true; interrupted=true; 
+    }
 #else
     if (caseval_unitialized!=-123454321){
       caseval_unitialized=-123454321;
@@ -598,7 +600,12 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   bool python_color=false;
+  bool numworks_shell=true;
+#ifdef NUMWORKS
+  static int _python_compat_=true;
+#else
   static int _python_compat_=false;
+#endif
   int & python_compat(GIAC_CONTEXT){
     if (contextptr && contextptr->globalptr )
       return contextptr->globalptr->_python_compat_;
@@ -1739,6 +1746,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       return _turtle_();
   }
 
+#ifndef NUMWORKS
   // protect turtle access by a lock
   // turtle changes are mutually exclusive even in different contexts
 #ifdef HAVE_LIBPTHREAD
@@ -1767,6 +1775,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 #endif
     return *ans;
   }
+#endif
 
   // Other global variables
 #ifdef NSPIRE
@@ -4009,7 +4018,13 @@ extern "C" void Sleep(unsigned int miliSecond);
 		     _all_trig_sol_(false),
 #ifdef WITH_MYOSTREAM
 		     _ntl_on_(true),
-		     _lexer_close_parenthesis_(true),_rpn_mode_(false),_try_parse_i_(true),_specialtexprint_double_(false),_atan_tan_no_floor_(false),_keep_acosh_asinh_(false),_keep_algext_(false),_python_compat_(false),_angle_mode_(0), _bounded_function_no_(0), _series_flags_(0x3),_step_infolevel_(0),_default_color_(FL_BLACK), _epsilon_(1e-12), _proba_epsilon_(1e-15),  _show_axes_(1),_spread_Row_ (-1), _spread_Col_ (-1),_logptr_(&my_CERR),_prog_eval_level_val(1), _eval_level(DEFAULT_EVAL_LEVEL), _rand_seed(123457),_last_evaled_function_name_(0),_currently_scanned_(""),_last_evaled_argptr_(0),_max_sum_sqrt_(3),
+		     _lexer_close_parenthesis_(true),_rpn_mode_(false),_try_parse_i_(true),_specialtexprint_double_(false),_atan_tan_no_floor_(false),_keep_acosh_asinh_(false),_keep_algext_(false),
+#ifdef NUMWORKS
+		     _python_compat_(true),
+#else
+		     _python_compat_(false),
+#endif
+		     _angle_mode_(0), _bounded_function_no_(0), _series_flags_(0x3),_step_infolevel_(0),_default_color_(FL_BLACK), _epsilon_(1e-12), _proba_epsilon_(1e-15),  _show_axes_(1),_spread_Row_ (-1), _spread_Col_ (-1),_logptr_(&my_CERR),_prog_eval_level_val(1), _eval_level(DEFAULT_EVAL_LEVEL), _rand_seed(123457),_last_evaled_function_name_(0),_currently_scanned_(""),_last_evaled_argptr_(0),_max_sum_sqrt_(3),
 #ifdef GIAC_HAS_STO_38 // Prime sum(x^2,x,0,100000) crash on hardware	
 		     _max_sum_add_(10000),
 #else
@@ -4018,7 +4033,13 @@ extern "C" void Sleep(unsigned int miliSecond);
 		     _total_time_(0),_evaled_table_(0),_extra_ptr_(0),_series_variable_name_('h'),_series_default_order_(5),
 #else
 		     _ntl_on_(true),
-		     _lexer_close_parenthesis_(true),_rpn_mode_(false),_try_parse_i_(true),_specialtexprint_double_(false),_atan_tan_no_floor_(false),_keep_acosh_asinh_(false),_keep_algext_(false),_python_compat_(false),_angle_mode_(0), _bounded_function_no_(0), _series_flags_(0x3),_step_infolevel_(0),_default_color_(FL_BLACK), _epsilon_(1e-12), _proba_epsilon_(1e-15),  _show_axes_(1),_spread_Row_ (-1), _spread_Col_ (-1), 
+		     _lexer_close_parenthesis_(true),_rpn_mode_(false),_try_parse_i_(true),_specialtexprint_double_(false),_atan_tan_no_floor_(false),_keep_acosh_asinh_(false),_keep_algext_(false),
+#ifdef NUMWORKS
+		     _python_compat_(true),
+#else
+		     _python_compat_(false),
+#endif
+		     _angle_mode_(0), _bounded_function_no_(0), _series_flags_(0x3),_step_infolevel_(0),_default_color_(FL_BLACK), _epsilon_(1e-12), _proba_epsilon_(1e-15),  _show_axes_(1),_spread_Row_ (-1), _spread_Col_ (-1), 
 #ifdef EMCC
 		     _logptr_(&COUT), 
 #else
@@ -4042,7 +4063,9 @@ extern "C" void Sleep(unsigned int miliSecond);
 #endif
   { 
     _pl._i_sqrt_minus1_=1;
+#ifndef NUMWORKS
     _turtle_stack_.push_back(_turtle_);
+#endif
     _debug_ptr=new debug_struct;
     _thread_param_ptr=new thread_param;
     _parsed_genptr_=new gen;
@@ -4121,7 +4144,9 @@ extern "C" void Sleep(unsigned int miliSecond);
      _max_sum_sqrt_=g._max_sum_sqrt_;
      _max_sum_add_=g._max_sum_add_;
      _turtle_=g._turtle_;
+#ifndef NUMWORKS
      _turtle_stack_=g._turtle_stack_;
+#endif
      _autoname_=g._autoname_;
      _format_double_=g._format_double_;
      _extra_ptr_=g._extra_ptr_;
@@ -5980,8 +6005,12 @@ unsigned int ConvertUTF8toUTF16 (
     }
     if (posturtle>=0 && posturtle<cs){
       // add python turtle shortcuts
-      static bool alertturtle=true;      
+      static bool alertturtle=true;
+#ifdef NUMWORKS
+      cur += "pu:=penup:;up:=penup:; pd:=pendown:;down:=pendown:; fd:=forward:;bk:=backward:; rt:=right:; lt:=left:; pos:=position:; seth:=heading:;setheading:=heading:; ";
+#else
       cur += "pu:=penup:;up:=penup:; pd:=pendown:;down:=pendown:; fd:=forward:;bk:=backward:; rt:=right:; lt:=left:; pos:=position:; seth:=heading:;setheading:=heading:; reset:=efface:;";
+#endif
       if (alertturtle){
 	alertturtle=false;
 	alert("pu:=penup;up:=penup; pd:=pendown;down:=pendown; fd:=forward;bk:=backward; rt:=right; lt:=left; pos:=position; seth:=heading;setheading:=heading; reset:=efface",contextptr);
@@ -6337,7 +6366,9 @@ unsigned int ConvertUTF8toUTF16 (
 		){
 	      string filename=cur.substr(pos+5,posi-pos-5)+".py";
 	      // CERR << "import " << filename << endl;
-	      s += python2xcas(giac_read_file(filename.c_str()),contextptr); // recursive call
+	      const char * ptr=giac_read_file(filename.c_str());
+	      if (ptr)
+		s += python2xcas(ptr,contextptr); // recursive call
 	      cur ="";
 	      // CERR << s << endl;
 	      continue;
@@ -6801,7 +6832,7 @@ unsigned int ConvertUTF8toUTF16 (
     charptr_gen * builtin_lexer_functions(){
       static charptr_gen * ans=0;
       if (!ans){
-	ans = new charptr_gen[1800];
+	ans = new charptr_gen[1999];
 	builtin_lexer_functions_number=0;
       }
       return ans;
