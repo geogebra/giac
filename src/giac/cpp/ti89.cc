@@ -55,6 +55,9 @@ extern "C" {
 #include <keyboard.h>
 }
 #endif
+#ifdef NUMWORKS
+#include "kdisplay.h"
+#endif
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
@@ -2182,6 +2185,11 @@ namespace giac {
   define_unary_function_ptr5( at_Output ,alias_at_Output,&__Output,0,T_RETURN);
 
   gen _getKey(const gen & g,GIAC_CONTEXT){
+#ifdef NUMWORKS
+    control_c();
+    int key=getkey(false);
+    return key;
+#else
     if (interactive_op_tab && interactive_op_tab[4])
       return interactive_op_tab[4](g,contextptr);
     if ( g.type==_STRNG && g.subtype==-1) return  g;
@@ -2193,6 +2201,7 @@ namespace giac {
     CIN >> ch;
     return int(ch);
 #endif
+#endif
   }
   static const char _getKey_s[]="getKey";
 #if defined RTOS_THREADX || defined BESTA_OS
@@ -2201,6 +2210,10 @@ namespace giac {
   unary_function_eval __getKey(0,&_getKey,_getKey_s);
 #endif
   define_unary_function_ptr5( at_getKey ,alias_at_getKey,&__getKey,0,true);
+
+  static const char _get_key_s[]="get_key";
+  static define_unary_function_eval(__get_key,&_getKey,_get_key_s);
+  define_unary_function_ptr5( at_get_key ,alias_at_get_key,&__get_key,0,true);
 
   gen _CopyVar(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;

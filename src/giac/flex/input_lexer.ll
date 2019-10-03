@@ -998,271 +998,289 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 	}
       }
 #endif // RTOS_THREADX
-      string s(s_orig),lexer_string;
-      // change for Numworks built-in calculation app replacement
-      for (size_t i=0;i<s_orig.size();++i){
-	if (s[i]==18) 
-	  s[i]='(';
-	if (s[i]==19)
-	  s[i]=')';
-	if (i<s.size()-2 && (unsigned char)s[i]==226 && (unsigned char)s[i+1]==134 && (unsigned char)s[i+2]==146){
-	  s[i]=' ';
-	  s[i+1]='=';
-	  s[i+2]='>';
-	}
-	if (i<s.size()-1){ 
-	  if ( ((unsigned char)s[i]==195) && ((unsigned char)s[i+1]==151) ){
-	    s[i]='*';
-	    s[i+1]=' ';
-	  }
 #ifdef NUMWORKS
-	  if (s[i]==']' && s[i+1]=='[')
-	    s.insert(s.begin()+i+1,',');
+      char lexer_string[4096];
+#else
+      string lexer_string;
 #endif
-	}
-      }
-#if defined NSPIRE || defined FXCG
-      for (unsigned i=0;i<s.size()-1;++i){
-	if (s[i]==']' && s[i+1]=='['){
-	  string tmp=s.substr(0,i+1)+string(",");
-	  s=tmp+s.substr(i+1,s.size()-i-1);
-	}
-      }
+      {
+	string s(s_orig);
+#ifdef NUMWORKS
+	if (s.size()>=sizeof(lexer_string)-100)
+	  s="Parse_string_too_large";
 #endif
-      bool instring=false;
-      // stupid match of bracket then parenthesis
-      int l=s.size(),nb=0,np=0;
-      int i=0;
-      if (lexer_close_parenthesis(contextptr)){
-	for (;i<l;++i){
-	  if (!instring && i && s[i]=='/' && s[i-1]=='/'){
-	    // skip comment until end of line
-	    for (;i<l;++i){
-	      if (s[i]==13)
+	// change for Numworks built-in calculation app replacement
+	for (size_t i=0;i<s_orig.size();++i){
+	  if (s[i]==18) 
+	    s[i]='(';
+	  if (s[i]==19)
+	    s[i]=')';
+	  if (i<s.size()-2 && (unsigned char)s[i]==226 && (unsigned char)s[i+1]==134 && (unsigned char)s[i+2]==146){
+	    s[i]=' ';
+	    s[i+1]='=';
+	    s[i+2]='>';
+	  }
+	  if (i<s.size()-1){ 
+	    if ( ((unsigned char)s[i]==195) && ((unsigned char)s[i+1]==151) ){
+	      s[i]='*';
+	      s[i+1]=' ';
+	    }
+#if defined NUMWORKS || defined NSPIRE || defined FXCG
+	    if (s[i]==']' && s[i+1]=='[')
+	      s.insert(s.begin()+i+1,',');
+#endif
+	  }
+	}
+	bool instring=false;
+	// stupid match of bracket then parenthesis
+	int l=s.size(),nb=0,np=0;
+	int i=0;
+	if (lexer_close_parenthesis(contextptr)){
+	  for (;i<l;++i){
+	    if (!instring && i && s[i]=='/' && s[i-1]=='/'){
+	      // skip comment until end of line
+	      for (;i<l;++i){
+		if (s[i]==13)
+		  break;
+	      }
+	      continue;
+	    }
+	    if (!instring && i>=2 && ( (s[i-2]=='-' && s[i-1]=='-') || (s[i-2]=='+' && s[i-1]=='+') ) && (s[i]=='.'|| (s[i]>='0' && s[i]<='9')) ){
+	      s[i-2]='+';
+	      s[i-1]=' ';
+	    }
+	    if (!instring && i && s[i]=='*' && s[i-1]=='/'){
+	      // skip comment 
+	      for (;i<l;++i){
+		if (s[i]=='/' && s[i-1]=='*')
+		  break;
+	      }
+	      if (i==l){
+		s = s.substr(0,l-1)+"*/"+s[l-1];
+		CERR << "unfinished comment, adding */" << '\n' << s << '\n';
+	      }
+	      continue;
+	    }
+	    if (!instring && s[i]==92){
+	      i += 2;
+	      if (i>=l)
 		break;
 	    }
-	    continue;
-	  }
-	  if (!instring && i>=2 && ( (s[i-2]=='-' && s[i-1]=='-') || (s[i-2]=='+' && s[i-1]=='+') ) && (s[i]=='.'|| (s[i]>='0' && s[i]<='9')) ){
-	    s[i-2]='+';
-	    s[i-1]=' ';
-	  }
-	  if (!instring && i && s[i]=='*' && s[i-1]=='/'){
-	    // skip comment 
-	    for (;i<l;++i){
-	      if (s[i]=='/' && s[i-1]=='*')
+	    if (instring){
+	      if (s[i]=='"'&& (i==0 || s[i-1]!='\\'))
+		instring=false;
+	    }
+	    else {
+	      switch (s[i]){
+	      case '"':
+		instring=i==0 || s[i-1]!='\\';
 		break;
-	    }
-	    if (i==l){
-	      s = s.substr(0,l-1)+"*/"+s[l-1];
-	      CERR << "unfinished comment, adding */" << '\n' << s << '\n';
-	    }
-	    continue;
-	  }
-	  if (!instring && s[i]==92){
-	    i += 2;
-	    if (i>=l)
-	      break;
-	  }
-	  if (instring){
-	    if (s[i]=='"'&& (i==0 || s[i-1]!='\\'))
-	      instring=false;
-	  }
-	  else {
-	    switch (s[i]){
-	    case '"':
-	      instring=i==0 || s[i-1]!='\\';
-	      break;
-	    case '(':
-	      ++np;
-	      break;
-	    case ')':
-	      --np;
-	      break;
-	    case '[':
-	      ++nb;
-	      break;
-	    case ']':
-	      --nb;
-	      break;
+	      case '(':
+		++np;
+		break;
+	      case ')':
+		--np;
+		break;
+	      case '[':
+		++nb;
+		break;
+	      case ']':
+		--nb;
+		break;
+	      }
 	    }
 	  }
+	  if (nb<0)
+	    *logptr(contextptr) << "Too many ]" << '\n';
+	  if (np<0)
+	    *logptr(contextptr) << "Too many )" << '\n';
+	  while (np<0 && i>=0 && s[i-1]==')'){
+	    --i;
+	    ++np;
+	  }
+	  while (nb<0 && i>=0 && s[i-1]==']'){
+	    --i;
+	    ++nb;
+	  }
+	  s=s.substr(0,i);
+	  if (nb>0){
+	    *logptr(contextptr) << "Warning adding " << nb << " ] at end of input" << '\n';
+	    s += string(nb,']');
+	  }
+	  if (np>0){
+	    *logptr(contextptr) << "Warning adding " << np << " ) at end of input" << '\n';
+	    s += string(np,')');
+	  }
 	}
-	if (nb<0)
-	  *logptr(contextptr) << "Too many ]" << '\n';
-	if (np<0)
-	  *logptr(contextptr) << "Too many )" << '\n';
-	while (np<0 && i>=0 && s[i-1]==')'){
-	  --i;
-	  ++np;
-	}
-	while (nb<0 && i>=0 && s[i-1]==']'){
-	  --i;
-	  ++nb;
-	}
-	s=s.substr(0,i);
-	if (nb>0){
-	  *logptr(contextptr) << "Warning adding " << nb << " ] at end of input" << '\n';
-	  s=s+string(nb,']');
-	}
-	if (np>0){
-	  *logptr(contextptr) << "Warning adding " << np << " ) at end of input" << '\n';
-	  s=s+string(np,')');
-	}
-      }
-      index_status(contextptr)=0;
-      opened_quote(contextptr)=0;
-      in_rpn(contextptr)=0;
-      lexer_line_number(contextptr)=1;
-      first_error_line(contextptr)=0;
-      spread_formula(contextptr)=0;
-      l=s.size();
-      for (;l;l--){
-	if (s[l-1]!=' ')
-	  break;
-      }
-      // strings ending with :;
-      while (l>=4 && s[l-1]==';' && s[l-2]==':'){
-	// skip spaces before :;
-	int m;
-	for (m=l-3;m>0;--m){
-	  if (s[m]!=' ')
+	index_status(contextptr)=0;
+	opened_quote(contextptr)=0;
+	in_rpn(contextptr)=0;
+	lexer_line_number(contextptr)=1;
+	first_error_line(contextptr)=0;
+	spread_formula(contextptr)=0;
+	l=s.size();
+	for (;l;l--){
+	  if (s[l-1]!=' ')
 	    break;
 	}
-	if (m<=1 || s[m]!=';')
-	  break;
-	if (s[m-1]==':')
-	  l = m+1;
-	else {
-	  s[m]=':';
-	  s[m+1]=';';
-	  l=m+2;
-	}
-      }
-      s=s.substr(0,l);
-      /* if (l && ( (s[l-1]==';') || (s[l-1]==':')))
-	 l--; */
-      string ss;
-      for (int i=0;i<l;++i){
-	if (s[i]=='\\' && s[i+1]=='\n'){
-	  ++i;
-	  continue;
-	}
-	if (i && (unsigned char)s[i]==0xc2 && (unsigned char)s[i+1]!=0xb0)
-	  ss += ' ';
-	if ( (unsigned char)s[i]==0xef && i<l-3 ){
-          if ((unsigned char)s[i+1]==0x80 && (unsigned char)s[i+2]==0x80 ){  
-	    ss+='e';
-	    i+=2;
-	    continue;
+	// strings ending with :;
+	while (l>=4 && s[l-1]==';' && s[l-2]==':'){
+	  // skip spaces before :;
+	  int m;
+	  for (m=l-3;m>0;--m){
+	    if (s[m]!=' ')
+	      break;
+	  }
+	  if (m<=1 || s[m]!=';')
+	    break;
+	  if (s[m-1]==':')
+	    l = m+1;
+	  else {
+	    s[m]=':';
+	    s[m+1]=';';
+	    l=m+2;
 	  }
 	}
-	if ( (unsigned char)s[i]==0xe2 && i<l-3 ){
-	  if ((unsigned char)s[i+1]==134 && (unsigned char)s[i+2]==146){
-	    // 0xe2 0x86 0x92
-	    ss += ' ';
-	    ss += s[i];
+	s=s.substr(0,l);
+	/* if (l && ( (s[l-1]==';') || (s[l-1]==':')))
+	   l--; */
+	string ss;
+	ss.reserve(s.size()*1.1);
+	for (int i=0;i<l;++i){
+	  if (s[i]=='\\' && s[i+1]=='\n'){
 	    ++i;
-	    ss += s[i];
-	    ++i;
-	    ss += s[i];
-	    ss += ' ';
 	    continue;
 	  }
-          if ((unsigned char)s[i+1]==0x89){ 
+	  if (i && (unsigned char)s[i]==0xc2 && (unsigned char)s[i+1]!=0xb0)
 	    ss += ' ';
-	    ss += s[i];
-	    ++i;
-	    ss += s[i];
-	    ++i;
-	    ss += s[i];
-	    ss += ' ';
-	    continue;
-	  } // 0xe2 0x89	  
-          if ((unsigned char)s[i+1]==0x88){ 
-	    // mathop, add blank before and after except following an e/E 
-	    if ((unsigned char) s[i+2]==0x91){ // sigma
-	      ss += " SIGMA";
-	      i +=2;
+	  if ( (unsigned char)s[i]==0xef && i<l-3 ){
+	    if ((unsigned char)s[i+1]==0x80 && (unsigned char)s[i+2]==0x80 ){  
+	      ss+='e';
+	      i+=2;
 	      continue;
 	    }
-	    if ((unsigned char) s[i+2]==0x86){ // delta
-	      ss += " DELTA";
-	      i +=2;
-	      continue;
-	    }
-	    if ((unsigned char) s[i+2]==0x8f){ // pi
-	      ss += " PI";
-	      i +=2;
-	      continue;
-	    }
-	    if ( i>1 && (s[i-1]=='e' || s[i-1]=='E')){
-	      ss +='-';
-	      i +=2;
-	      continue;
-	    }
-	    if (i>2  && (s[i-1]==' ' && (s[i-2]=='e' || s[i-2]=='E')) ){
-	      ss[ss.size()-1] = '-';
-	      i += 3;
-	      continue;
-	    }
-	    ss += ' ';
-	    ss += s[i];
-	    ++i;
-	    ss += s[i];
-	    ++i;
-	    ss += s[i];
-	    ss += ' ';
-	    continue;
-	  } // 0xe2 0x88
-          if ((unsigned char)s[i+1]==0x96 && ((unsigned char)s[i+2]==0xba || (unsigned char)s[i+2]==182 )){  
-	    // sto 
-	    ss += s[i];
-	    ++i;
-	    ss += s[i];
-	    ++i;
-	    ss += s[i];
-	    ss += ' ';
-	    continue;
-	  } // 0xe2 0x96
-          if ((unsigned char)s[i+1]==0x86 && (unsigned char)s[i+2]==0x92){  
-	    // sto 
-	    ss += s[i];
-	    ++i;
-	    ss += s[i];
-	    ++i;
-	    ss += s[i];
-	    ss += ' ';
-	    continue;
-	  } // 0xe2 0x96
-	} //end if s[i]=0xe2
-	if (s[i]=='.'){
-	  if ( i && (i<l-1) && (s[i-1]!=' ') && (s[i+1]=='.') ){
-	    ss+= " ..";
-	    ++i;
 	  }
-	  else
-	    ss+='.';
-	}
-	else {
-	  if (xcas_mode(contextptr) > 0 && xcas_mode(contextptr) !=3){
-	    if (s[i]=='#')
-	      ss += "//";
-	    else
+	  if ( (unsigned char)s[i]==0xe2 && i<l-3 ){
+	    if ((unsigned char)s[i+1]==134 && (unsigned char)s[i+2]==146){
+	      // 0xe2 0x86 0x92
+	      ss += ' ';
 	      ss += s[i];
+	      ++i;
+	      ss += s[i];
+	      ++i;
+	      ss += s[i];
+	      ss += ' ';
+	      continue;
+	    }
+	    if ((unsigned char)s[i+1]==0x89){ 
+	      ss += ' ';
+	      ss += s[i];
+	      ++i;
+	      ss += s[i];
+	      ++i;
+	      ss += s[i];
+	      ss += ' ';
+	      continue;
+	    } // 0xe2 0x89	  
+	    if ((unsigned char)s[i+1]==0x88){ 
+	      // mathop, add blank before and after except following an e/E 
+	      if ((unsigned char) s[i+2]==0x91){ // sigma
+		ss += " SIGMA";
+		i +=2;
+		continue;
+	      }
+	      if ((unsigned char) s[i+2]==0x86){ // delta
+		ss += " DELTA";
+		i +=2;
+		continue;
+	      }
+	      if ((unsigned char) s[i+2]==0x8f){ // pi
+		ss += " PI";
+		i +=2;
+		continue;
+	      }
+	      if ( i>1 && (s[i-1]=='e' || s[i-1]=='E')){
+		ss +='-';
+		i +=2;
+		continue;
+	      }
+	      if (i>2  && (s[i-1]==' ' && (s[i-2]=='e' || s[i-2]=='E')) ){
+		ss[ss.size()-1] = '-';
+		i += 3;
+		continue;
+	      }
+	      ss += ' ';
+	      ss += s[i];
+	      ++i;
+	      ss += s[i];
+	      ++i;
+	      ss += s[i];
+	      ss += ' ';
+	      continue;
+	    } // 0xe2 0x88
+	    if ((unsigned char)s[i+1]==0x96 && ((unsigned char)s[i+2]==0xba || (unsigned char)s[i+2]==182 )){  
+	      // sto 
+	      ss += s[i];
+	      ++i;
+	      ss += s[i];
+	      ++i;
+	      ss += s[i];
+	      ss += ' ';
+	      continue;
+	    } // 0xe2 0x96
+	    if ((unsigned char)s[i+1]==0x86 && (unsigned char)s[i+2]==0x92){  
+	      // sto 
+	      ss += s[i];
+	      ++i;
+	      ss += s[i];
+	      ++i;
+	      ss += s[i];
+	      ss += ' ';
+	      continue;
+	    } // 0xe2 0x96
+	  } //end if s[i]=0xe2
+	  if (s[i]=='.'){
+	    if ( i && (i<l-1) && (s[i-1]!=' ') && (s[i+1]=='.') ){
+	      ss+= " ..";
+	      ++i;
+	    }
+	    else
+	      ss+='.';
 	  }
-	  else
-	    ss+=s[i];
+	  else {
+	    if (xcas_mode(contextptr) > 0 && xcas_mode(contextptr) !=3){
+	      if (s[i]=='#')
+		ss += "//";
+	      else
+		ss += s[i];
+	    }
+	    else
+	      ss+=s[i];
+	  }
 	}
+	// ofstream of("log"); of << s << '\n' << ss << '\n'; of.close();
+	if (debug_infolevel>2)
+	  CERR << "lexer " << ss << '\n';
+	s.clear();
+#ifdef NUMWORKS
+	ss += " \n ÿ";
+	if (ss.size()>sizeof(lexer_string)-1)
+	  ss = "Parse_string_too_large";
+	strcpy(lexer_string,ss.c_str());
+#else
+	lexer_string = ss;
+	lexer_string += " \n ÿ";
+#endif
       }
-      // ofstream of("log"); of << s << '\n' << ss << '\n'; of.close();
-      if (debug_infolevel>2)
-	CERR << "lexer " << ss << '\n';
-      lexer_string = ss+" \n ÿ";
       yylex_init(&scanner);
       yyset_extra(contextptr, scanner);
+#ifdef NUMWORKS
       currently_scanned(contextptr)=lexer_string;
+      YY_BUFFER_STATE state=yy_scan_string(lexer_string,scanner);
+#else
+      currently_scanned(contextptr)=lexer_string.c_str();
       YY_BUFFER_STATE state=yy_scan_string(lexer_string.c_str(),scanner);
+#endif
       return state;
     }
 

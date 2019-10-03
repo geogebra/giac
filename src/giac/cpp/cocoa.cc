@@ -14448,7 +14448,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	      // recon_n2==recon_n1 && recon_n1==recon_n0 &&
 	      zdata && augmentgbasis && t==th && i==0){
 	    double reconpart=recon_n2/double(V[i].size());
-	    if (recon_n0/double(V[i].size())<0.95 && 
+	    if (!rur && recon_n0/double(V[i].size())<0.95 && 
 		(reconpart-prevreconpart>augmentgbasis 
 		 // || (reconpart>prevreconpart && recon_count>=giacmax(128,th*4))
 		 )

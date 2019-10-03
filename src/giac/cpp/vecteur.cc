@@ -8800,7 +8800,8 @@ namespace giac {
 #endif // GIAC_DETBLOCK
       // normal Gauss reduction
       if (
-	  (carac>0 || (lmax-l>=32 && cmax-c>=32) ) && (lmax-l)*double(modulo)*double(modulo)<(1ULL<<63) &&
+	  // FIXME: if fullreduction, upper reduction should be done!
+	  !fullreduction && (carac>0 || (lmax-l>=32 && cmax-c>=32) ) && (lmax-l)*double(modulo)*double(modulo)<(1ULL<<63) &&
 	  //double(lmax-l)*(cmax-c)*sizeof(longlong)<128e3 &&
 	  LLsmallmodrref(N,l,lmax,c,cmax,pivots,permutation,maxrankcols,idet,fullreduction,dont_swap_below,modulo,carac,rref_or_det_or_lu)){
 	break;
@@ -15024,7 +15025,17 @@ namespace giac {
       return int(args._POLYptr->coord.size());
     if (args.type!=_VECT)
       return 1;
-    return (int) args._VECTptr->size();
+    int s=(int) args._VECTptr->size();
+    if (args.subtype==_SEQ__VECT){
+      if (s==2){
+	if (args._VECTptr->back()==-1)
+	  return tailles(args._VECTptr->front());
+	return int(taille(args._VECTptr->front(),0));
+      }
+      if (s==0)
+	return tailles(*_VARS(-2,contextptr)._VECTptr);
+    }
+    return s;
   }
   static const char _size_s []="size";
   static define_unary_function_eval2 (__size,&_size,_size_s,&printassize);

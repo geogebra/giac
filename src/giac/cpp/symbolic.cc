@@ -1655,7 +1655,7 @@ namespace giac {
     if (g.type==_FRAC)
       return 1+taille(g._FRACptr->num,max)+taille(g._FRACptr->den,max);
     if (g.type==_SYMB){
-      if (g.is_symb_of_sommet(at_curve))
+      if (max && g.is_symb_of_sommet(at_curve))
 	return 10;
       return 1+taille(g._SYMBptr->feuille,max);
     }
@@ -1670,6 +1670,64 @@ namespace giac {
       return res;
     }
     return 2;
+  }
+
+  void tailles(const gen & g,vector<int> & v){
+    switch (g.type){
+    case _INT_: case _DOUBLE_: case _FLOAT_: case _FUNC:
+      ++v[0];
+      return;
+    case _CPLX:
+      tailles(*g._CPLXptr);
+      tailles(*(g._CPLXptr+1));
+      ++v[1];
+      v[8] += sizeof(ref_complex);
+      return;
+    case _IDNT:
+      ++v[2];
+      v[8] += sizeof(ref_identificateur);
+      return;
+    case _FRAC:
+      tailles(g._FRACptr->num);
+      tailles(g._FRACptr->den);
+      ++v[3];
+      v[8] += sizeof(ref_fraction);
+      return;
+    case _VECT: {
+      const_iterateur it=g._VECTptr->begin(),itend=g._VECTptr->end();
+      ++v[4];
+      //CERR << g._VECTptr->capacity() << " "  << itend-it  << " " << g << endl;
+      v[8] += sizeof(ref_vecteur)+g._VECTptr->capacity()*sizeof(gen);
+      for (;it!=itend;++it){
+	tailles(*it,v);
+      }
+      return;
+    }
+    case _SYMB:
+      tailles(g._SYMBptr->feuille,v);
+      ++v[5];
+      v[8] += sizeof(ref_symbolic);
+      return;
+    case _STRNG:
+      v[8] += g._STRNGptr->capacity() + sizeof(ref_string);;
+      ++v[6] ;
+      return;
+    default:
+      ++v[7];
+    }
+  }
+
+  vecteur tailles(const gen & g){
+    vector<int> v(9); // atomic, idnt, frac, vector, symb, string, other, all
+    tailles(g,v);
+    vecteur w;
+    vector_int2vecteur(v,w);
+    return makevecteur(makevecteur(string2gen("atom",false),string2gen("cplx",false),
+				   string2gen("idnt",false),string2gen("frac",false),
+				   string2gen("vector",false),string2gen("symb",false),
+				   string2gen("strng",false),string2gen("other",false),
+				   string2gen("total",false))
+		       ,w);
   }
 
   int print_max_depth=100;

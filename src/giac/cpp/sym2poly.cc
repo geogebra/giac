@@ -3849,6 +3849,13 @@ namespace giac {
     int s=int(v.size());
     if (s<2)
       toofewargs(_resultant_s);
+    if (has_num_coeff(v)){
+      gen g=exact(args,contextptr);
+      if (!has_num_coeff(g)){
+	g=_resultant(g,contextptr);
+	return evalf(g,1,contextptr);
+      }
+    }
     if (v[0].type==_VECT && v[1].type==_VECT){ // not very efficient...
       gen g(identificateur("tresultant"));
       v[0]=_poly2symb(makesequence(v[0],g),contextptr);

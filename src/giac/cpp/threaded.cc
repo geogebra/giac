@@ -29,6 +29,9 @@ extern "C" {
 #include <system.h>
 }
 #endif
+#ifdef NUMWORKS
+void numworks_wait_1ms(int ms);
+#endif
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
@@ -156,6 +159,11 @@ mpz_class smod(const mpz_class & a,int reduce){
   }
 
 
+#ifdef NUMWORKS
+  void wait_1ms(int ms){
+    numworks_wait_1ms(ms);
+  }
+#else
 #ifdef FXCG
   void wait_1ms(int ms){
     OS_InnerWait_ms(ms);
@@ -169,7 +177,8 @@ mpz_class smod(const mpz_class & a,int reduce){
 #endif
   }
 #endif
-  
+#endif  
+
   void background_callback(const gen & g,void * newcontextptr){
     if (g.type==_VECT && g._VECTptr->size()==2){
       context * cptr=(context *)newcontextptr;

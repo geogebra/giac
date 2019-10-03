@@ -754,6 +754,7 @@ namespace giac {
   gen _VARS(const gen & args,const context * contextptr) {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     bool val=is_one(args);
+    bool valonly=args==-2;
     bool valsto=is_minus_one(args);
     bool strng=args==2;
     bool strngeq=args==3;
@@ -782,11 +783,15 @@ namespace giac {
 #endif
 		g=string2gen(it->second.print(contextptr),false);
 	    }
-	    if (val)
-	      g=symbolic(at_equal,makesequence(g,it->second));
-	    if (valsto)
-	      g=symb_sto(it->second,g);
-	    res.push_back(g);
+	    if (valonly)
+	      res.push_back(it->second);
+	    else {
+	      if (val)
+		g=symbolic(at_equal,makesequence(g,it->second));
+	      if (valsto)
+		g=symb_sto(it->second,g);
+	      res.push_back(g);
+	    }
 	  }
 	}
       }

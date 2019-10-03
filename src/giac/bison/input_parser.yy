@@ -83,6 +83,10 @@ namespace giac {
 #endif // GNUWINCE
 #endif // RTOS_THREADX
 
+#if 0
+#define YYSTACK_USE_ALLOCA 1
+#endif
+
 
 gen polynome_or_sparse_poly1(const gen & coeff, const gen & index){
   if (index.type==_VECT){
@@ -957,7 +961,7 @@ int giac_yyerror(yyscan_t scanner,const char *s) {
  const giac::context * contextptr = giac_yyget_extra(scanner);
  int col = giac_yyget_column(scanner);
  int line = giac::lexer_line_number(contextptr);
- const char * scanb=giac::currently_scanned(contextptr).c_str();
+ const char * scanb=giac::currently_scanned(contextptr);
  std::string curline;
  if (scanb){
   for (int i=1;i<line;++i){

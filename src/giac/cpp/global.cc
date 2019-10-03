@@ -269,17 +269,12 @@ extern "C" void Sleep(unsigned int miliSecond);
       return _last_evaled_function_name_;
   }
 
-  string & _currently_scanned(){
-    static string * ans=0;
-    if (!ans) ans=new string;
-    return *ans;
-  }
-
-  string & currently_scanned(GIAC_CONTEXT){
+  const char * _currently_scanned=0;
+  const char * & currently_scanned(GIAC_CONTEXT){
     if (contextptr && contextptr->globalptr )
       return contextptr->globalptr->_currently_scanned_;
     else
-      return _currently_scanned();
+      return _currently_scanned;
   }
 
   const gen * _last_evaled_argptr_=0;
