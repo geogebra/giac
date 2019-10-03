@@ -2677,13 +2677,24 @@ namespace giac {
 	      gen res2=derive(eq1,var1,contextptr);
 	      if (!is_zero(res2))
 		res2=_simplify(subst(eq1,var2,v2val,false,contextptr),contextptr);
-	      if (!is_zero(res2))
-		res2=_simplify(_solve(makesequence(symb_equal(res2,0),var1),contextptr),contextptr);
+	      if (!is_zero(res2)){
+		if (taille(res2,RAND_MAX)>taille(v2val,RAND_MAX)*10){
+		  res2=subst(eq1,var2,v2val,false,contextptr);
+		  res2=ratnormal(_solve(makesequence(symb_equal(res2,0),var1),contextptr),contextptr);
+		}
+		else
+		  res2=_simplify(_solve(makesequence(symb_equal(res2,0),var1),contextptr),contextptr);
+	      }
 	      gen res3=derive(eq2,var1,contextptr);
 	      if (!is_zero(res3))
 		res3=_simplify(subst(eq2,var2,v2val,false,contextptr),contextptr);
 	      if (!is_zero(res3)){
-		res3=_simplify(_solve(makesequence(symb_equal(res3,0),var1),contextptr),contextptr);
+		if (taille(res3,RAND_MAX)>taille(v2val,RAND_MAX)*10){
+		  res3=subst(eq2,var2,v2val,false,contextptr);
+		  res3=ratnormal(_solve(makesequence(symb_equal(res3,0),var1),contextptr),contextptr);
+		}
+		else
+		  res3=_simplify(_solve(makesequence(symb_equal(res3,0),var1),contextptr),contextptr);
 		if (is_zero(res2))
 		  res2=res3;
 		else

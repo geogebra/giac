@@ -8479,7 +8479,7 @@ namespace giac {
 	  target[c_+j]=smod(source[j],modulo);
       }
     }
-    return true;
+    return rref_or_det_or_lu!=0 || l_==0;//true; // we can not return true for fullreduction, because the upper lines are not reduced
   }
     
   // if dont_swap_below !=0, for line numers < dont_swap_below
@@ -8801,7 +8801,7 @@ namespace giac {
       // normal Gauss reduction
       if (
 	  // FIXME: if fullreduction, upper reduction should be done!
-	  !fullreduction && (carac>0 || (lmax-l>=32 && cmax-c>=32) ) && (lmax-l)*double(modulo)*double(modulo)<(1ULL<<63) &&
+	  (carac>0 || (lmax-l>=32 && cmax-c>=32) ) && (lmax-l)*double(modulo)*double(modulo)<(1ULL<<63) &&
 	  //double(lmax-l)*(cmax-c)*sizeof(longlong)<128e3 &&
 	  LLsmallmodrref(N,l,lmax,c,cmax,pivots,permutation,maxrankcols,idet,fullreduction,dont_swap_below,modulo,carac,rref_or_det_or_lu)){
 	break;

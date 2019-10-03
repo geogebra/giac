@@ -2219,6 +2219,8 @@ namespace giac {
 	    vecteur vr(r+1);
 	    vr[0]=1;
 	    vecteur vc(cyclotomic(2*d));
+	    if (vc.size()>MAX_ALG_EXT_ORDER_SIZE)
+	      return e;
 	    vr = vr % vc;
 	    if (!is_undef(vc)){
 	      l1.push_back(l[i]);
