@@ -226,6 +226,7 @@ namespace giac {
 	return zero;
       if (a._VECTptr->size()==1)
 	return a._VECTptr->front();
+      // a.subtype=_POLY1__VECT;
     }
     gen res;
 #ifdef SMARTPTR64
@@ -235,6 +236,7 @@ namespace giac {
 #endif
     res.type=_EXT;
     *(res._EXTptr+1) = v;
+    // if (v.type==_VECT) (res._EXTptr+1)->subtype=_POLY1__VECT;
     if (a.type==_FRAC){
       *res._EXTptr = a._FRACptr->num;
       return fraction(res,a._FRACptr->den);

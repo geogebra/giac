@@ -7161,6 +7161,10 @@ namespace giac {
     string s;
     if (is_graphe(args,s,contextptr))
       return _graph_vertices(args,contextptr);
+    if (args.type==_VECT && args.subtype==_SEQ__VECT && args._VECTptr->size()==2){
+      gen g=_sommets(args._VECTptr->front(),contextptr);
+      return g[args._VECTptr->back()];//+array_start(contextptr)];
+    }
     gen g=sommet(args,true);
     if (is_undef(g))
       return g;

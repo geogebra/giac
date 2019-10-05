@@ -193,7 +193,15 @@ namespace giac {
     add_print(s, v.front(),contextptr);
     for (int i=1;i<l;++i){
       s += '+';
+      bool par=false;
+      if (v[i].type==_SYMB){
+	const unary_function_ptr & u=v[i]._SYMBptr->sommet;
+	if (u==at_superieur_egal || u==at_superieur_strict || u==at_inferieur_strict || u==at_inferieur_egal)
+	  par=true;
+      }
+      if (par) s+='(';
       add_print(s,v[i],contextptr);
+      if (par) s+=')';
     }
     return s;
   }
@@ -1672,32 +1680,36 @@ namespace giac {
     return 2;
   }
 
+  int malloc_size(int s,int nalloc=2){
+    return nextpow2(s/4)*4+nalloc*16;
+  }
+
   void tailles(const gen & g,vector<int> & v){
     switch (g.type){
     case _INT_: case _DOUBLE_: case _FLOAT_: case _FUNC:
       ++v[0];
       return;
     case _CPLX:
-      tailles(*g._CPLXptr);
-      tailles(*(g._CPLXptr+1));
+      tailles(*g._CPLXptr,v);
+      tailles(*(g._CPLXptr+1),v);
       ++v[1];
-      v[8] += sizeof(ref_complex);
+      v[8] += malloc_size(sizeof(ref_complex));
       return;
     case _IDNT:
       ++v[2];
-      v[8] += sizeof(ref_identificateur);
+      // v[8] += malloc_size(sizeof(ref_identificateur)); // shared in syms()
       return;
     case _FRAC:
-      tailles(g._FRACptr->num);
-      tailles(g._FRACptr->den);
+      tailles(g._FRACptr->num,v);
+      tailles(g._FRACptr->den,v);
       ++v[3];
-      v[8] += sizeof(ref_fraction);
+      v[8] += malloc_size(sizeof(ref_fraction));
       return;
     case _VECT: {
       const_iterateur it=g._VECTptr->begin(),itend=g._VECTptr->end();
       ++v[4];
       //CERR << g._VECTptr->capacity() << " "  << itend-it  << " " << g << endl;
-      v[8] += sizeof(ref_vecteur)+g._VECTptr->capacity()*sizeof(gen);
+      v[8] += malloc_size(sizeof(ref_vecteur))+g._VECTptr->capacity()*sizeof(gen);
       for (;it!=itend;++it){
 	tailles(*it,v);
       }
@@ -1706,10 +1718,10 @@ namespace giac {
     case _SYMB:
       tailles(g._SYMBptr->feuille,v);
       ++v[5];
-      v[8] += sizeof(ref_symbolic);
+      v[8] += malloc_size(sizeof(ref_symbolic));
       return;
     case _STRNG:
-      v[8] += g._STRNGptr->capacity() + sizeof(ref_string);;
+      v[8] += g._STRNGptr->capacity() + malloc_size(sizeof(ref_string));
       ++v[6] ;
       return;
     default:
@@ -1717,6 +1729,12 @@ namespace giac {
     }
   }
 
+  int bytesize(const gen & g){
+    vector<int> v(9);
+    tailles(g,v);
+    return v[8];
+  }
+  
   vecteur tailles(const gen & g){
     vector<int> v(9); // atomic, idnt, frac, vector, symb, string, other, all
     tailles(g,v);

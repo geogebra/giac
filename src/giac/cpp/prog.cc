@@ -915,9 +915,15 @@ namespace giac {
 	vect=*feuille._VECTptr->back()._VECTptr;
     }
     if (test){
+      gen & fb=feuille._VECTptr->back();
       if (xcas_mode(contextptr)==3)
-	return res+":Func "+feuille._VECTptr->back().print(contextptr)+"\n:EndFunc\n";
-      return res+feuille._VECTptr->back().print(contextptr);
+	return res+":Func "+fb.print(contextptr)+"\n:EndFunc\n";
+      if (fb.is_symb_of_sommet(at_local)){
+	gen fb0=fb._SYMBptr->feuille[0][0];
+	if (fb0.type==_VECT && fb0._VECTptr->empty())
+	  return res+'{'+fb.print(contextptr)+'}';
+      }
+      return res+fb.print(contextptr);
     }
     if (xcas_mode(contextptr)>0){
       if (xcas_mode(contextptr)==3)

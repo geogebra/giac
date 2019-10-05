@@ -6190,7 +6190,9 @@ unsigned int ConvertUTF8toUTF16 (
 	break;
     }
     // probably Python-like
-    string res(s_orig);
+    string res;
+    res.reserve(6*s_orig.size()/5);
+    res=s_orig;
     if (res.size()>18 && res.substr(0,17)=="add_autosimplify(" 
 	&& res[res.size()-1]==')'
 	)
@@ -6202,6 +6204,7 @@ unsigned int ConvertUTF8toUTF16 (
     res=glue_lines_backslash(res);
     vector<int_string> stack;
     string s,cur; 
+    s.reserve(res.capacity());
     if (pythoncompat) pythonmode=true;
     for (;res.size();){
       int pos=-1;
@@ -6715,8 +6718,9 @@ unsigned int ConvertUTF8toUTF16 (
       if (debug_infolevel)
 	*logptr(contextptr) << "Translated to Xcas as:\n" << s << '\n';
     }
+    res.clear(); cur.clear();
     // CERR << s << endl;
-    return s;
+    return string(s.begin(),s.end());
   }
   
     std::string translate_at(const char * ch){
