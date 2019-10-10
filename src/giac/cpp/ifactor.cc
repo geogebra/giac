@@ -3152,7 +3152,7 @@ namespace giac {
 	  swapgen(x,xm); swapgen(y,ym); // x=xm;y=ym;
 	}
       }
-      B=_floor(B*1.001,contextptr)+1; // to be adjusted
+      B=_floor(1.001*B,contextptr)+1; // to be adjusted
     } // end maxiter loop
     return undef;
 #endif

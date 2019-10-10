@@ -4468,9 +4468,29 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd) {
 
 /* --------------------------------------------------------------------- */
 
-unsigned int ConvertUTF8toUTF16 (
+unsigned int ConvertUTF8toUTF16 (const UTF8* sourceStart, const UTF8* sourceEnd, UTF16* targetStart, UTF16* targetEnd, ConversionFlags flags)
+#ifdef GIAC_HAS_STO_38
+{
+    wchar_t *d= targetStart;
+#define read(a) if (sourceStart>=sourceEnd) break; a= *sourceStart++
+    while (sourceStart<sourceEnd && d!=targetEnd)
+    {
+        read(uint8_t c);
+        if ((c&0x80)==0) { *d++= c; continue; }
+        if ((c&0xe0)==0xc0) { read(uint8_t c2); if ((c2&0xc0)!=0x80) continue; *d++= ((c&0x1f)<<6)+(c2&0x3f); continue; }
+        if ((c&0xf0)==0xe0) { read(uint8_t c2); if ((c2&0xc0)!=0x80) continue; read(uint8_t c3); if ((c3&0xc0)!=0x80) continue; *d++= ((((c&0xf)<<6)+(c2&0x3f))<<6)+(c3&0x3f); continue; }
+        if ((c&0xf8)==0xf0) { read(uint8_t c2); if ((c2&0xc0)!=0x80) continue; read(uint8_t c3); if ((c3&0xc0)!=0x80) continue; read(uint8_t c4); if ((c4&0xc0)!=0x80) continue; *d++= ((((((c&0xf)<<6)+(c2&0x3f))<<6)+(c3&0x3f))<<6)+(c4&0x3f); continue; }
+        while (sourceStart<sourceEnd) { c= *sourceEnd; if ((c&0x80)==0 || (c&0xc0)!=0x80) break; sourceEnd++; }
+    }
+#undef read
+    return d-targetStart;
+}
+
+unsigned int ConvertUTF8toUTF162 (
     const UTF8* sourceStart, const UTF8* sourceEnd, 
-    UTF16* targetStart, UTF16* targetEnd, ConversionFlags flags) {
+    UTF16* targetStart, UTF16* targetEnd, ConversionFlags flags) 
+#endif
+{
     ConversionResult result = conversionOK;
     const UTF8* source = sourceStart;
     UTF16* target = targetStart;

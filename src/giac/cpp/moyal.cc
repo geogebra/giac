@@ -2009,7 +2009,7 @@ namespace giac {
     lambda=evalf_double(lambda,1,contextptr);
     if (is_positive(-k,contextptr) || is_positive(-lambda,contextptr) || k.type!=_DOUBLE_ || lambda.type!=_DOUBLE_)
       return gensizeerr(contextptr);
-    return lambda*std::pow(exp_rand(contextptr),1.0/k._DOUBLE_val);
+    return std::pow(exp_rand(contextptr),1.0/k._DOUBLE_val)*lambda;
   }
   static const char _randweibulld_s []="randweibulld";
   static define_unary_function_eval (__randweibulld,&_randweibulld,_randweibulld_s);
@@ -2233,7 +2233,7 @@ namespace giac {
   double rgamma(double a, double scale,GIAC_CONTEXT){
     int n=a;
     if (a!=n)
-      return 0.0/0.0;
+      return 0.0/(n-n); // 0.0/0.0 chokes on visualc
     double res=0;
     for (int i=0;i<n;++i)
       res -= std::log(unif_rand(contextptr));

@@ -573,7 +573,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     hashgcd_U u,u0,var=vars[vars.size()-2],var2=vars.back();
     short int shiftvar=find_shift(var),shiftvar2=find_shift(var2);
     hashgcd_U degxn = degree_xn(p,shiftvar,shiftvar2);
-#if 1
+#ifndef VISUALC
     int nterms[degxn+1];
     bool nonzero[degxn+1];
     for (int i=0;i<=degxn;++i){

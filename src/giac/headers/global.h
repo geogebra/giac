@@ -797,6 +797,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
 
 #ifdef NUMWORKS
   logo_turtle & turtle();
+  std::vector<logo_turtle> & turtle_stack();
 #else
   logo_turtle & turtle(GIAC_CONTEXT);
   std::vector<logo_turtle> & turtle_stack(GIAC_CONTEXT);

@@ -20,7 +20,7 @@
 #include "first.h"
 #include "gausspol.h"
 #include "gen.h"
-
+#include "solve.h"
 // GIAC_64VARS is currently compatible with GROEBNER_VARS 15 only
 // special code for polynomial up to 11 variables (max deg<32768) 
 //#define GROEBNER_VARS 11
