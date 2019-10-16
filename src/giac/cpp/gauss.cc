@@ -19,7 +19,7 @@
  */
 
 using namespace std;
-#include <fstream>
+//#include <fstream>
 #include "gauss.h"
 #include "vecteur.h"
 #include "derive.h"

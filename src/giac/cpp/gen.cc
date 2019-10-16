@@ -15977,9 +15977,26 @@ void sprint_double(char * s,double d){
       turtle();
       _efface_logo(vecteur(0),contextptr);
     }
+    if (!strcmp(s,"*")){
+      int res=xcas::console_main(contextptr);
+      S=printint(res);
+      return S.c_str();
+    }
+    if (!strcmp(s,"+")){
+      char buf[4096]="def f(x):\n  return x*x\n";
+      if (file_exists("temp.py")){
+	S=giac_read_file("temp.py");
+	if (S.size()>sizeof(buf))
+	  S=S.substr(0,sizeof(buf)-1);
+	strcpy(buf,S.c_str());
+      }
+      xcas::textedit(buf,sizeof(buf),contextptr);
+      S=buf;
+      return S.c_str();
+    }
     if (!strcmp(s,"toolbox menu")){
       char buf[1024]="";
-      showCatalog(buf,0,0);
+      showCatalog(buf,0,0,&C);
       drawRectangle(0,0,320,222,_WHITE);
       S=buf;
       return S.c_str();

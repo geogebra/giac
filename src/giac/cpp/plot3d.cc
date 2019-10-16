@@ -41,7 +41,6 @@ using namespace std;
 #endif
 #include <iomanip>
 #endif
-#include <fstream>
 #include "vector.h"
 #include <algorithm>
 #include <cmath>

@@ -21,6 +21,9 @@ using namespace std;
 #include <cmath>
 #include <cstdlib>
 #include <string.h>
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
+#include <fstream>
+#endif
 // #include <numeric_limits>
 #include "misc.h"
 #include "usual.h"
@@ -2826,7 +2829,7 @@ namespace giac {
   // archive is made of couples name/value
   static sym_string_tab read_ti_archive(const string & s,GIAC_CONTEXT){
     vecteur v;
-#if !defined NSPIRE && !defined FXCG
+#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
     ifstream inf(s.c_str());
     readargs_from_stream(inf,v,contextptr);
 #endif
@@ -2846,7 +2849,7 @@ namespace giac {
   }
   
   static void print_ti_archive(const string & s,const sym_string_tab & m){
-#if defined NSPIRE || defined FXCG
+#if defined NSPIRE || defined FXCG || defined GIAC_HAS_STO_38
     return;
 #else
     if (is_undef(check_secure()))
@@ -4835,7 +4838,7 @@ namespace giac {
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     if (g.type!=_STRNG)
       return gensizeerr(contextptr);
-#if defined NSPIRE || defined FXCG
+#if defined NSPIRE || defined FXCG || defined GIAC_HAS_STO_38
       return gensizeerr(contextptr);
 #else
     if (access(g._STRNGptr->c_str(),R_OK))

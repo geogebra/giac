@@ -26,6 +26,9 @@ using namespace std;
 #else
 #include <strstream>
 #endif
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
+#include <fstream>
+#endif
 #include "gen.h"
 #include "vecteur.h"
 #include "modpoly.h"
@@ -16653,7 +16656,7 @@ namespace giac {
 
   // Read a CSV file (comma separated) with separator, newline, end of file
   // decsep = decimal separator (, -> .)
-#if !defined NSPIRE && !defined FXCG
+#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
   matrice csv2gen(istream & i,char sep,char nl,char decsep,char eof,GIAC_CONTEXT){
     // return vecteur(1,gensizeerr(contextptr));
     vecteur res,line;

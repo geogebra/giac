@@ -84,7 +84,7 @@ inline double giac_log(double d){
 #include <cstring>
 #endif
 #include <iostream>
-#include <fstream>
+//#include <fstream>
 #include <map>
 
 #ifdef GNUWINCE

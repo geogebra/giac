@@ -19,7 +19,7 @@
 #define _GIAC_MONOMIAL_H_
 #include "first.h"
 #include <iostream>
-#include <fstream>
+//#include <fstream>
 #include <functional>
 #include <algorithm>
 #include <cmath>

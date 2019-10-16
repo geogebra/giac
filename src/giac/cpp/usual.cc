@@ -21,6 +21,9 @@ using namespace std;
 #include <stdexcept>
 #include <cmath>
 #include <cstdlib>
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
+#include <fstream>
+#endif
 #include "gen.h"
 #include "identificateur.h"
 #include "symbolic.h"
@@ -3588,7 +3591,7 @@ namespace giac {
 	  if (!child_id && signal_store)
 	    _signal(symb_quote(symbolic(at_sto,gen(makevecteur(aa,b),_SEQ__VECT))),contextptr);
 #endif
-#if !defined NSPIRE && !defined FXCG
+#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
 	  if (!secure_run && variables_are_files(contextptr)){
 	    ofstream a_out((b._IDNTptr->name()+string(cas_suffixe)).c_str());
 	    a_out << aa << '\n';
@@ -10974,7 +10977,7 @@ namespace giac {
 #endif
 
   void fonction_bidon(){
-#if !defined GIAC_GENERIC_CONSTANTS && !defined NSPIRE && !defined FXCG
+#if !defined GIAC_GENERIC_CONSTANTS && !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
     ofstream of("log");
     of << gen_inv_2 << '\n';
     of <<  alias_cst_two_pi_tab << " " <<  cst_two_pi_refv << '\n';

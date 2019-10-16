@@ -32,6 +32,9 @@ extern "C" {
 #include <cmath>
 #include <cstdlib>
 #include <algorithm>
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
+#include <fstream>
+#endif
 #include "prog.h"
 #include "identificateur.h"
 #include "symbolic.h"
@@ -6098,7 +6101,7 @@ namespace giac {
   }
 
   static bool maple2mupad(const gen & args,int in_maple_mode,int out_maple_mode,GIAC_CONTEXT){
-#if defined NSPIRE || defined FXCG
+#if defined NSPIRE || defined FXCG || defined GIAC_HAS_STO_38
     return false;
 #else
     if (is_undef(check_secure()))
@@ -7904,7 +7907,7 @@ namespace giac {
   static define_unary_function_eval4 (__deuxpoints,&_deuxpoints,_deuxpoints_s,&printsommetasoperator,&texprintsommetasoperator);
   define_unary_function_ptr( at_deuxpoints ,alias_at_deuxpoints ,&__deuxpoints);
 
-#ifdef FXCG
+#if defined FXCG || defined GIAC_HAS_STO_38
   gen _read(const gen & args,GIAC_CONTEXT){ return 0;}   
   gen _write(const gen & args,GIAC_CONTEXT){ return 0;}    
   static const char _read_s []="read";

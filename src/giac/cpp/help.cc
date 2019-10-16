@@ -24,6 +24,9 @@ using namespace std;
 #include "gen.h"
 #include "help.h"
 #include <iostream>
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
+#include <fstream>
+#endif
 #include "global.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -189,7 +192,7 @@ namespace giac {
   // Run ./icas with export GIAC_DEBUG=-2 to print static_help.h and static_help_w.h, then sort in emacs
   // cascmd_fr -> longhelp.js: 
   static bool output_static_help(vector<aide> & v,const vector<int> & langv){
-#if !defined NSPIRE && !defined FXCG
+#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
     add_language(5,context0); // add german help de/aide_cas
     cout << "Generating xcascmds, for UI.xcascmds in xcas.js, sort and esc-x replace-string ctrl-Q ctrl-j ret ret" << endl;
     cout << "Copy in python.js. For xcasmod.js, replace \",\" by | " << endl;
@@ -458,7 +461,7 @@ namespace giac {
   // FIXME: aide_cas may end with synonyms (# cmd synonym1 ...)
   void readhelp(vector<aide> & v,const char * f_name,int & count,bool warn){
     count=0;
-#if !defined NSPIRE && !defined FXCG
+#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
     if (access(f_name,R_OK)){
       if (warn)
 	std::cerr << "Help file " << f_name << " not found" << endl;
@@ -684,7 +687,7 @@ namespace giac {
     return result;
   }
 
-#if !defined(NSPIRE_NEWLIB) && !defined(RTOS_THREADX) && !defined(EMCC) &&!defined(NSPIRE) && !defined FXCG && !defined(NUMWORKS)
+#if !defined(NSPIRE_NEWLIB) && !defined(RTOS_THREADX) && !defined(EMCC) &&!defined(NSPIRE) && !defined FXCG && !defined(NUMWORKS) && !defined GIAC_HAS_STO_38
   multimap<string,string> html_mtt,html_mall;
   std::vector<std::string> html_vtt,html_vall;
 

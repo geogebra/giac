@@ -56,6 +56,9 @@
 #endif
 #include <iostream>
 #include <stdexcept>
+#if !defined RTOS_THREADX && !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
+#include <fstream>
+#endif
 
 #include "gen.h"
 #include "input_lexer.h"
@@ -929,7 +932,7 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 #endif
       if (abs_calc_mode(contextptr)==38 && s_orig==string(s_orig.size(),' '))
 	giac_yyerror(scanner,"Void string");
-#if !defined RTOS_THREADX && !defined NSPIRE && !defined FXCG
+#if !defined RTOS_THREADX && !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
       if (!builtin_lexer_functions_sorted){
 #ifndef STATIC_BUILTIN_LEXER_FUNCTIONS
 	sort(builtin_lexer_functions_begin(),builtin_lexer_functions_end(),tri);

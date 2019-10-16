@@ -25,6 +25,9 @@ using namespace std;
 #else
 #include <strstream>
 #endif
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
+#include <fstream>
+#endif
 #include "global.h"
 // #include <time.h>
 #if !defined BESTA_OS && !defined FXCG
@@ -2691,7 +2694,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 #endif
   
   void read_config(const string & name,GIAC_CONTEXT,bool verbose){
-#if !defined NSPIRE && !defined FXCG
+#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
 #if !defined __MINGW_H 
     if (access(name.c_str(),R_OK)) {
       if (verbose)
@@ -4469,7 +4472,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd) {
 /* --------------------------------------------------------------------- */
 
 unsigned int ConvertUTF8toUTF16 (const UTF8* sourceStart, const UTF8* sourceEnd, UTF16* targetStart, UTF16* targetEnd, ConversionFlags flags)
-#ifdef GIAC_HAS_STO_38
+#if 0 //def GIAC_HAS_STO_38
 {
     wchar_t *d= targetStart;
 #define read(a) if (sourceStart>=sourceEnd) break; a= *sourceStart++
@@ -5431,8 +5434,10 @@ unsigned int ConvertUTF8toUTF162 (
   // moved from input_lexer.ll for easier debug
   const char invalid_name[]="Invalid name";
 
-#ifdef USTL    
-  // void update_lexer_localization(const std::vector<int> & v,ustl::map<std::string,std::string> &lexer_map,ustl::multimap<std::string,localized_string> &back_lexer_map){}
+#if defined USTL || defined GIAC_HAS_STO_38
+#if defined GIAC_HAS_STO_38
+void update_lexer_localization(const std::vector<int> & v,std::map<std::string,std::string> &lexer_map,std::multimap<std::string,localized_string> &back_lexer_map,GIAC_CONTEXT){}
+#endif
 #else
   vecteur * keywords_vecteur_ptr(){
     static vecteur v;
@@ -6022,7 +6027,7 @@ unsigned int ConvertUTF8toUTF162 (
       // add python turtle shortcuts
       static bool alertturtle=true;
 #ifdef NUMWORKS
-      cur += "pu:=penup:;up:=penup:; pd:=pendown:;down:=pendown:; fd:=forward:;bk:=backward:; rt:=right:; lt:=left:; pos:=position:; seth:=heading:;setheading:=heading:; ";
+      cur += "fd:=forward:;bk:=backward:; rt:=right:; lt:=left:; pos:=position:; seth:=heading:;setheading:=heading:; ";
 #else
       cur += "pu:=penup:;up:=penup:; pd:=pendown:;down:=pendown:; fd:=forward:;bk:=backward:; rt:=right:; lt:=left:; pos:=position:; seth:=heading:;setheading:=heading:; reset:=efface:;";
 #endif
@@ -6047,9 +6052,9 @@ unsigned int ConvertUTF8toUTF162 (
       static bool alertmath=true;      
       if (alertmath){
 	alertmath=false;
-	alert(gettext("Assigning log2, gamma, fabs, modf, radians and degrees. Not supported: copysign."),contextptr);
+	alert(gettext("Assigning gamma, fabs. Not supported: copysign."),contextptr);
       }
-      cur += "log2(x):=logb(x,2):;gamma:=Gamma:;fabs:=abs:;function modf(x) local y; y:=floor(x); return x-y,y; ffunction:;radians(x):=x/180*pi:;degrees(x):=x/pi*180";
+      cur += "gamma:=Gamma:;fabs:=abs:;";
     }
   }
 

@@ -6139,14 +6139,22 @@ namespace giac {
       an=2*an;
     return has_num_coeff(an)?an:recursive_normal(an,contextptr);
   }
+  bool get_fourier(vecteur & v){
+    if (v.size()==2) 
+      v=makevecteur(v[0],vx_var,cst_two_pi,v[1],-cst_pi);
+    if (v.size()==3) 
+      v=makevecteur(v[0],v[1],cst_two_pi,v[2],-cst_pi);
+    if (v.size()==4) v.push_back(0);
+    return v.size()==5;
+  }
   gen _fourier_an(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_VECT) return gensizeerr(contextptr);
     vecteur v(*args._VECTptr);
-    if (v.size()==4) v.push_back(0);
-    if (v.size()!=5) return gensizeerr(contextptr);
-    gen f=v[0],x=v[1],T=v[2],n=v[3],a=v[4];
-    return fourier_an(f,x,T,n,a,contextptr);
+    if (!get_fourier(v)) return gensizeerr(contextptr);
+    return fourier_an(v[0],v[1],v[2],v[3],v[4],contextptr);
+    //gen f=v[0],x=v[1],T=v[2],n=v[3],a=v[4];
+    //return fourier_an(f,x,T,n,a,contextptr);
   }
   static const char _fourier_an_s []="fourier_an";
   static define_unary_function_eval (__fourier_an,&_fourier_an,_fourier_an_s);
@@ -6165,10 +6173,10 @@ namespace giac {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_VECT) return gensizeerr(contextptr);
     vecteur v(*args._VECTptr);
-    if (v.size()==4) v.push_back(0);
-    if (v.size()!=5) return gensizeerr(contextptr);
-    gen f=v[0],x=v[1],T=v[2],n=v[3],a=v[4];
-    return fourier_bn(f,x,T,n,a,contextptr);
+    if (!get_fourier(v)) return gensizeerr(contextptr);
+    return fourier_bn(v[0],v[1],v[2],v[3],v[4],contextptr);
+    // gen f=v[0],x=v[1],T=v[2],n=v[3],a=v[4];
+    // return fourier_bn(f,x,T,n,a,contextptr);
   } 
   static const char _fourier_bn_s []="fourier_bn";
   static define_unary_function_eval (__fourier_bn,&_fourier_bn,_fourier_bn_s);
@@ -6186,10 +6194,10 @@ namespace giac {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_VECT) return gensizeerr(contextptr);
     vecteur v(*args._VECTptr);
-    if (v.size()==4) v.push_back(0);
-    if (v.size()!=5) return gensizeerr(contextptr);
-    gen f=v[0],x=v[1],T=v[2],n=v[3],a=v[4];
-    return fourier_cn(f,x,T,n,a,contextptr);
+    if (!get_fourier(v)) return gensizeerr(contextptr);
+    return fourier_cn(v[0],v[1],v[2],v[3],v[4],contextptr);
+    // gen f=v[0],x=v[1],T=v[2],n=v[3],a=v[4];
+    // return fourier_cn(f,x,T,n,a,contextptr);
   } 
 
   static const char _fourier_cn_s []="fourier_cn";

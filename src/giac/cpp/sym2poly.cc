@@ -23,7 +23,9 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 using namespace std;
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
 #include <fstream>
+#endif
 #include <string>
 #include "gen.h"
 #include "sym2poly.h"
@@ -4171,7 +4173,7 @@ namespace giac {
 	    && access(ARGV[1],R_OK)==0
 #endif
 	    ){
-#ifndef NSPIRE
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
 	  ifstream inf(ARGV[1]);
 	  readargs_from_stream(inf,args,contextptr);
 #endif

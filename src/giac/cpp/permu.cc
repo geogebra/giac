@@ -18,7 +18,6 @@
  */
 
 using namespace std;
-#include <fstream>
 #include "permu.h"
 #include "usual.h"
 #include "sym2poly.h"

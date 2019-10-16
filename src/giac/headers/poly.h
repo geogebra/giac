@@ -18,7 +18,7 @@
 #ifndef _GIAC_POLY_H_
 #define _GIAC_POLY_H_
 #include "first.h"
-#include <fstream>
+//#include <fstream>
 #include "vector.h"
 #include <string>
 #include "fraction.h"

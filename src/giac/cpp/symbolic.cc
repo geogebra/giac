@@ -1708,8 +1708,13 @@ namespace giac {
     case _VECT: {
       const_iterateur it=g._VECTptr->begin(),itend=g._VECTptr->end();
       ++v[4];
-      //CERR << g._VECTptr->capacity() << " "  << itend-it  << " " << g << endl;
-      v[8] += malloc_size(sizeof(ref_vecteur))+g._VECTptr->capacity()*sizeof(gen);
+      // CERR << g._VECTptr->capacity() << " "  << itend-it  << " " << g << endl;
+#if defined IMMEDIATE_VECTOR
+      if (g._VECTptr->capacity()<=(IMMEDIATE_VECTOR*sizeof(int))/sizeof(gen))
+	v[8] += malloc_size(sizeof(ref_vecteur),1);
+      else
+#endif
+	v[8] += malloc_size(sizeof(ref_vecteur))+g._VECTptr->capacity()*sizeof(gen);
       for (;it!=itend;++it){
 	tailles(*it,v);
       }

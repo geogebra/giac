@@ -24,6 +24,9 @@ using namespace std;
 #include <cmath>
 #include <cstdlib>
 #include <stdio.h>
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
+#include <fstream>
+#endif
 #if !defined HAVE_NO_SYS_TIMES_H && defined HAVE_SYS_TIME_H
 #include <fcntl.h>
 #include <sys/time.h>

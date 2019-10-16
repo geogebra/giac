@@ -19,7 +19,9 @@
  */
 using namespace std;
 #include <cmath>
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
 #include <fstream>
+#endif
 #include <string>
 //#include <unistd.h> // For reading arguments from file
 #include "identificateur.h"
@@ -1145,7 +1147,7 @@ namespace giac {
 	evaled.subtype=_GLOBAL__EVAL;
       return true;
     }
-#if !defined NSPIRE && !defined FXCG
+#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
     // set current value
     ifstream inf((name()+string(cas_suffixe)).c_str());
     evaled=read1arg_from_stream(inf,contextptr);

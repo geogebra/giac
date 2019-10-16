@@ -53,11 +53,8 @@ inline giac::gen _graph_charpoly(const giac::gen &g,const giac::context *){ retu
 #endif
 
 #ifdef NUMWORKS
+#include "kdisplay.h"
 const char * mp_hal_input(const char * prompt) ;
-void numworks_giac_set_pixel(int x,int y,int c);
-void numworks_giac_fill_rect(int x,int y,int w,int h,int c);
-int numworks_giac_get_pixel(int x,int y);
-void numworks_giac_draw_string(int x,int y,int c,int bg,const char * s);
 #endif
 
 #ifndef NO_NAMESPACE_GIAC
@@ -8569,7 +8566,9 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   static define_unary_function_eval (__python_list,&_python_list,_python_list_s);
   define_unary_function_ptr5( at_python_list ,alias_at_python_list,&__python_list,0,true);
 
+  bool freeze=false;
   gen _set_pixel(const gen & a_,GIAC_CONTEXT){
+    freeze=true;
     gen a(a_);
     if (a.type==_STRNG && a.subtype==-1) return  a;
 #if defined GIAC_HAS_STO_38 || defined NUMWORKS
@@ -8817,6 +8816,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   }
   
   gen _draw_polygon(const gen & a,GIAC_CONTEXT){
+    freeze=true;
     if (a.type==_STRNG && a.subtype==-1) return  a;
     if (a.type!=_VECT || a._VECTptr->size()<2)
       return gentypeerr(contextptr);
@@ -9036,6 +9036,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   }
 
   gen _draw_arc(const gen & a_,bool arc,GIAC_CONTEXT){
+    freeze=true;
     gen a(a_);
     if (a.type==_STRNG && a.subtype==-1) return  a;
     if (a.type!=_VECT || a._VECTptr->size()<2)
@@ -9135,6 +9136,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     //return _of(makesequence(PIXEL,a_),contextptr);
   }
   gen _draw_line(const gen & a_,GIAC_CONTEXT){
+    freeze=true;
     return draw_line_or_rectangle(a_,contextptr,0);
   }
   static const char _draw_line_s []="draw_line";
@@ -9142,6 +9144,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   define_unary_function_ptr5( at_draw_line ,alias_at_draw_line,&__draw_line,0,true);
 
   gen _draw_rectangle(const gen & a_,GIAC_CONTEXT){
+    freeze=true;
     return draw_line_or_rectangle(a_,contextptr,1);
   }
   static const char _draw_rectangle_s []="draw_rectangle";
@@ -9156,6 +9159,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   define_unary_function_ptr5( at_fill_rect ,alias_at_fill_rect,&__fill_rect,0,true);
 
   gen _draw_string(const gen & a_,GIAC_CONTEXT){
+    freeze=true;
 #ifdef GIAC_HAS_STO_38
     static gen PIXEL(identificateur("TEXTOUT_P"));
     return _of(makesequence(PIXEL,a_),contextptr);
@@ -9318,6 +9322,42 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   static const char _prediction95_s []="prediction95";
   static define_unary_function_eval (__prediction95,&_prediction95,_prediction95_s);
   define_unary_function_ptr5( at_prediction95 ,alias_at_prediction95,&__prediction95,0,true);
+
+  gen _log2(const gen & args,GIAC_CONTEXT){
+    return _logb(makesequence(args,2),contextptr);
+  }
+  static const char _log2_s []="log2";
+  static define_unary_function_eval (__log2,&_log2,_log2_s);
+  define_unary_function_ptr5( at_log2 ,alias_at_log2,&__log2,0,true);
+
+  gen _radians(const gen & args,GIAC_CONTEXT){
+    return M_PI/180*args;
+  }
+  static const char _radians_s []="radians";
+  static define_unary_function_eval (__radians,&_radians,_radians_s);
+  define_unary_function_ptr5( at_radians ,alias_at_radians,&__radians,0,true);
+
+  gen _degrees(const gen & args,GIAC_CONTEXT){
+    return 180/M_PI*args;
+  }
+  static const char _degrees_s []="degrees";
+  static define_unary_function_eval (__degrees,&_degrees,_degrees_s);
+  define_unary_function_ptr5( at_degrees ,alias_at_degrees,&__degrees,0,true);
+
+  gen _modf(const gen & args,GIAC_CONTEXT){
+    gen g=evalf_double(args,1,contextptr);
+    if (g.type!=_DOUBLE_)
+      return gensizeerr(contextptr);
+    double d=g._DOUBLE_val;
+    bool neg=d<0;
+    if (neg) d=-d;
+    double d1=std::floor(d),d2=d-d1;
+    if (neg){ d1=-d1; d2=-d2; }
+    return makesequence(d2,d1);
+  }
+  static const char _modf_s []="modf";
+  static define_unary_function_eval (__modf,&_modf,_modf_s);
+  define_unary_function_ptr5( at_modf ,alias_at_modf,&__modf,0,true);
 
 #ifdef EMCC
 #ifdef EMCC_FETCH

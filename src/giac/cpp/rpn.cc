@@ -762,7 +762,7 @@ namespace giac {
     if (contextptr){
       if (contextptr->globalcontextptr && contextptr->globalcontextptr->tabptr){
 	sym_tab::const_iterator it=contextptr->globalcontextptr->tabptr->begin(),itend=contextptr->globalcontextptr->tabptr->end();
-#ifdef FXCG
+#if defined FXCG || defined GIAC_HAS_STO_38
 	vecteur * keywordsptr=0;
 #else
 	vecteur * keywordsptr=keywords_vecteur_ptr();
@@ -3371,7 +3371,7 @@ namespace giac {
     qualify(parsed,unexported,prog,contextptr);
     qualify(parsed,unexported_declared_global_vars,prog,contextptr);
     qualify(parsed,exported_variable_names,prog,contextptr);
-#if !defined RTOS_THREADX && !defined NSPIRE && !defined FXCG
+#if !defined RTOS_THREADX && !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
     ofstream of("c:\\log"); of << "=" << assignation_by_equal << '\n' << "undecl vars:" << undeclared_global_vars << '\n' << "decl vars:" << declared_global_vars << '\n' << "decl func.:" << declared_functions << '\n' << "exported func:" << exported_function_names << '\n' << "exported vars:"<<exported_variable_names << '\n' << "unknown exported:"<<unknown_exported << '\n' << "unexported:" << unexported << '\n' << "unexported declared global vars:"<<unexported_declared_global_vars << '\n' << "views:" << views << '\n' << "errors:" << errors << '\n' << "prog:"<<prog << '\n' << "parsed:" << parsed; of.close();   
 #endif
     return int(errors.size());
