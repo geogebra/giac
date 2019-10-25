@@ -2195,7 +2195,7 @@ namespace giac {
     return g;
   }
 
-  gen cossinexp2rootof(const gen & e,GIAC_CONTEXT){
+  gen cossinexp2rootof(const gen & e,GIAC_CONTEXT,int maxalg){
     gen f=trig2exp(e,contextptr);
     vecteur l(lvar(f)),l1,l2;
     int n,d,q,r;
@@ -2219,7 +2219,7 @@ namespace giac {
 	    vecteur vr(r+1);
 	    vr[0]=1;
 	    vecteur vc(cyclotomic(2*d));
-	    if (vc.size()>MAX_ALG_EXT_ORDER_SIZE)
+	    if (vc.size()>(maxalg?maxalg:MAX_ALG_EXT_ORDER_SIZE))
 	      return e;
 	    vr = vr % vc;
 	    if (!is_undef(vc)){

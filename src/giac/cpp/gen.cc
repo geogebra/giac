@@ -15985,7 +15985,7 @@ void sprint_double(char * s,double d){
     if (!strcmp(s,"+")){
       char buf[4096]="def f(x):\n  return x*x\n";
       if (file_exists("temp.py")){
-	S=giac_read_file("temp.py");
+	S=read_file("temp.py");
 	if (S.size()>sizeof(buf))
 	  S=S.substr(0,sizeof(buf)-1);
 	strcpy(buf,S.c_str());

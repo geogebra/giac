@@ -94,7 +94,7 @@ extern "C" uint32_t mainThreadStack[];
 #endif
 
 #ifdef NUMWORKS
-const char * giac_read_file(const char * filename);
+const char * read_file(const char * filename);
 #include "kdisplay.h"
 #endif
 
@@ -5429,7 +5429,7 @@ namespace giac {
       }
     }
     w.push_back(dw);
-    numworks_giac_fill_rect(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
+    numworks_fill_rect(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
     int dispx=0,dispy=12;
     // print debugged program instructions from current-2 to current+3
     progs="debug "+w[0].print(contextptr)+'\n';
@@ -5456,7 +5456,7 @@ namespace giac {
       if (M-m<5)
 	m=giacmax(0,M-5);
       for (int i=m;i<=M;++i){
-	numworks_giac_draw_string_small(dispx,dispy,(i==w[4].val?_WHITE:_BLACK),(i==w[4].val?_BLACK:_WHITE),(print_INT_(i)+":"+ws[i]).c_str());
+	numworks_draw_string_small(dispx,dispy,(i==w[4].val?_WHITE:_BLACK),(i==w[4].val?_BLACK:_WHITE),(print_INT_(i)+":"+ws[i]).c_str());
 	//mPrintXY(dispx,dispy,(print_INT_(i)+":"+ws[i]).c_str(),(i==w[4].val?TEXT_MODE_INVERT:TEXT_MODE_TRANSPARENT_BACKGROUND),TEXT_COLOR_BLACK);
 	dispy+=12;
 	dispx=0;
@@ -5543,19 +5543,19 @@ namespace giac {
       if (i==-1){
 	dbgptr->sst_in_mode=false;
 	dbgptr->sst_mode=true;
-	numworks_giac_hide_graph();
+	numworks_hide_graph();
 	return;
       }
       if (i==-2){
 	dbgptr->sst_in_mode=true;
 	dbgptr->sst_mode=true;
-	numworks_giac_hide_graph();
+	numworks_hide_graph();
 	return;
       }
       if (i==-3){
 	dbgptr->sst_in_mode=false;
 	dbgptr->sst_mode=false;
-	numworks_giac_hide_graph();
+	numworks_hide_graph();
 	return;
       }
       if (i==-4){
@@ -5565,7 +5565,7 @@ namespace giac {
 	//debug_ptr(contextptr)->sst_at_stack.clear();
 	//debug_ptr(contextptr)->args_stack.clear();
 	ctrl_c=interrupted=true;
-	numworks_giac_hide_graph();
+	numworks_hide_graph();
 	return;
       }
       if (i==-5){
@@ -8050,7 +8050,7 @@ namespace giac {
       return symbolic(at_read,args);
     string fichier=*args._STRNGptr;
 #ifdef NUMWORKS
-    const char * s=giac_read_file(fichier.c_str());
+    const char * s=read_file(fichier.c_str());
     if (!s)
       return undef;
     gen g(s,contextptr);

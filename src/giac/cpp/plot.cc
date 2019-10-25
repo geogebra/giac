@@ -1051,9 +1051,13 @@ namespace giac {
 
   string print_DOUBLE_(double d,unsigned ndigits){
     char s[256];
+#ifdef NUMWORKS
+    sprint_double(s,d);
+#else
     ndigits=ndigits<2?2:ndigits;
     ndigits=ndigits>15?15:ndigits;
     sprintfdouble(s,("%."+print_INT_(ndigits)+"g").c_str(),d);
+#endif
     return s;
   }
 

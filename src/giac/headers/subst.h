@@ -25,7 +25,7 @@
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
-  gen cossinexp2rootof(const gen & e,GIAC_CONTEXT);
+  gen cossinexp2rootof(const gen & e,GIAC_CONTEXT,int maxalg=0);
   gen checkanglemode(GIAC_CONTEXT);
 
   polynome gen2poly(const gen & g,int s); 

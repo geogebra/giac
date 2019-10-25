@@ -295,6 +295,8 @@ namespace giac {
   extern const unary_function_ptr * const  at_prediction;
   extern const unary_function_ptr * const  at_prediction95;
   extern const unary_function_ptr * const  at_confidence;
+  extern const unary_function_ptr * const  at_sin_regression;
+  extern const unary_function_ptr * const  at_sin_regression_plot;
   gen _rgb(const gen & args,GIAC_CONTEXT);
   gen _charpoly(const gen & args,GIAC_CONTEXT);
   extern bool freeze;

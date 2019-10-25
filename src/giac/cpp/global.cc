@@ -105,7 +105,7 @@ bool back_key_pressed();
 #endif
 
 #ifdef NUMWORKS
-const char * giac_read_file(const char * filename);
+const char * read_file(const char * filename);
 #endif
 
 int my_sprintf(char * s, const char * format, ...){
@@ -6389,7 +6389,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 		){
 	      string filename=cur.substr(pos+5,posi-pos-5)+".py";
 	      // CERR << "import " << filename << endl;
-	      const char * ptr=giac_read_file(filename.c_str());
+	      const char * ptr=read_file(filename.c_str());
 	      if (ptr)
 		s += python2xcas(ptr,contextptr); // recursive call
 	      cur ="";

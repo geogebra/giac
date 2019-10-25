@@ -73,6 +73,8 @@
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
+  int sprint_int(char * s,int r);
+  void sprint_double(char * s,double d);
 
 #ifdef USE_GMP_REPLACEMENTS
 #undef HAVE_GMPXX_H

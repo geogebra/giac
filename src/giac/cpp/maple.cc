@@ -77,6 +77,7 @@ using namespace std;
 #endif
 
 #ifdef NUMWORKS
+extern int time_shift;
 namespace Ion {
   namespace Timing {
     
@@ -375,7 +376,6 @@ namespace giac {
   gen _time(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
     if (a.type==_VECT && a.subtype==_SEQ__VECT){
-#if 0
       if (a._VECTptr->size()==2 && a._VECTptr->front().type==_INT_ && a._VECTptr->back().type==_INT_){
 	int h=a._VECTptr->front().val;
 	h=h%24;
@@ -385,10 +385,9 @@ namespace giac {
 	m=m%60;
 	if (m<0)
 	  m+=60;
-	set_time(h,m);
+	time_shift=h*60+m;
 	return 1;
       }
-#endif
       return double(Ion::Timing::millis()); // RTC_GetTicks();
     }
     double delta;

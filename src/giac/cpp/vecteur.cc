@@ -15030,7 +15030,7 @@ namespace giac {
       return 1;
     int s=(int) args._VECTptr->size();
     if (args.subtype==_SEQ__VECT){
-      if (s==2){
+      if (0 && s==2){
 	if (args._VECTptr->back()==-1)
 	  return tailles(args._VECTptr->front());
 	return int(taille(args._VECTptr->front(),0));

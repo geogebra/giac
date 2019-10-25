@@ -1694,7 +1694,7 @@ namespace giac {
     if (g.type!=_VECT){
       gen g_(g);
       //if (!lop(g_,at_exp).empty())
-      g_=cossinexp2rootof(g_,contextptr);
+      g_=cossinexp2rootof(g_,contextptr,32767);
       vecteur v=alg_lvar(g_);
       if (v.size()==1 && v.front().type==_VECT && v.front()._VECTptr->empty()){
 	gen tmp=e2r(g_,v,contextptr);
@@ -2481,7 +2481,13 @@ namespace giac {
   gen _input(const gen & args,GIAC_CONTEXT){
 #ifdef NUMWORKS
     const char * s=mp_hal_input("?") ;
-    return string2gen(s,false);
+    if (s)
+      return string2gen(s,false);
+    std::string S;
+    const char * prompt = args.type==_STRNG?args._STRNGptr->c_str():"?";
+    inputline(prompt,0,S,false,194,contextptr);
+    *logptr(contextptr) << prompt << S << '\n';
+    return string2gen(S,false);
 #else
     if (interactive_op_tab && interactive_op_tab[0])
       return interactive_op_tab[0](args,contextptr);
@@ -3464,17 +3470,72 @@ static define_unary_function_eval (__correlation,&_correlation,_correlation_s);
   static define_unary_function_eval (__interval2center,&_interval2center,_interval2center_s);
   define_unary_function_ptr5( at_interval2center ,alias_at_interval2center,&__interval2center,0,true);
 
+  vector<double> vector3(const gen & x,const gen &y,const gen & f,GIAC_CONTEXT){
+    vector<double> res;
+    res.push_back(evalf_double(x,1,contextptr)._DOUBLE_val);
+    res.push_back(evalf_double(y,1,contextptr)._DOUBLE_val);
+    res.push_back(evalf_double(f,1,contextptr)._DOUBLE_val);
+    return res;
+  }
+
+  void tran4(double * colmat){
+    giac::swapdouble(colmat[1],colmat[4]);
+    giac::swapdouble(colmat[2],colmat[8]);
+    giac::swapdouble(colmat[3],colmat[12]);
+    giac::swapdouble(colmat[6],colmat[9]);
+    giac::swapdouble(colmat[7],colmat[13]);
+    giac::swapdouble(colmat[11],colmat[14]);    
+  }
+
+  void mult4(double * colmat,double * vect,double * res){
+    res[0]=colmat[0]*vect[0]+colmat[4]*vect[1]+colmat[8]*vect[2]+colmat[12]*vect[3];
+    res[1]=colmat[1]*vect[0]+colmat[5]*vect[1]+colmat[9]*vect[2]+colmat[13]*vect[3];
+    res[2]=colmat[2]*vect[0]+colmat[6]*vect[1]+colmat[10]*vect[2]+colmat[14]*vect[3];
+    res[3]=colmat[3]*vect[0]+colmat[7]*vect[1]+colmat[11]*vect[2]+colmat[15]*vect[3];
+  }
+
+  void mult4(double * c,double k,double * res){
+    for (int i=0;i<16;i++)
+      res[i]=k*c[i];
+  }
+  
+  double det4(double * c){
+    return c[0]*c[5]*c[10]*c[15]-c[0]*c[5]*c[14]*c[11]-c[0]*c[9]*c[6]*c[15]+c[0]*c[9]*c[14]*c[7]+c[0]*c[13]*c[6]*c[11]-c[0]*c[13]*c[10]*c[7]-c[4]*c[1]*c[10]*c[15]+c[4]*c[1]*c[14]*c[11]+c[4]*c[9]*c[2]*c[15]-c[4]*c[9]*c[14]*c[3]-c[4]*c[13]*c[2]*c[11]+c[4]*c[13]*c[10]*c[3]+c[8]*c[1]*c[6]*c[15]-c[8]*c[1]*c[14]*c[7]-c[8]*c[5]*c[2]*c[15]+c[8]*c[5]*c[14]*c[3]+c[8]*c[13]*c[2]*c[7]-c[8]*c[13]*c[6]*c[3]-c[12]*c[1]*c[6]*c[11]+c[12]*c[1]*c[10]*c[7]+c[12]*c[5]*c[2]*c[11]-c[12]*c[5]*c[10]*c[3]-c[12]*c[9]*c[2]*c[7]+c[12]*c[9]*c[6]*c[3];
+  }
+
+  void inv4(double * c,double * res){
+    res[0]=c[5]*c[10]*c[15]-c[5]*c[14]*c[11]-c[10]*c[7]*c[13]-c[15]*c[9]*c[6]+c[14]*c[9]*c[7]+c[11]*c[6]*c[13];
+    res[1]=-c[1]*c[10]*c[15]+c[1]*c[14]*c[11]+c[10]*c[3]*c[13]+c[15]*c[9]*c[2]-c[14]*c[9]*c[3]-c[11]*c[2]*c[13];
+    res[2]=c[1]*c[6]*c[15]-c[1]*c[14]*c[7]-c[6]*c[3]*c[13]-c[15]*c[5]*c[2]+c[14]*c[5]*c[3]+c[7]*c[2]*c[13];
+    res[3]=-c[1]*c[6]*c[11]+c[1]*c[10]*c[7]+c[6]*c[3]*c[9]+c[11]*c[5]*c[2]-c[10]*c[5]*c[3]-c[7]*c[2]*c[9];
+    res[4]=-c[4]*c[10]*c[15]+c[4]*c[14]*c[11]+c[10]*c[7]*c[12]+c[15]*c[8]*c[6]-c[14]*c[8]*c[7]-c[11]*c[6]*c[12];
+    res[5]=c[0]*c[10]*c[15]-c[0]*c[14]*c[11]-c[10]*c[3]*c[12]-c[15]*c[8]*c[2]+c[14]*c[8]*c[3]+c[11]*c[2]*c[12];
+    res[6]=-c[0]*c[6]*c[15]+c[0]*c[14]*c[7]+c[6]*c[3]*c[12]+c[15]*c[4]*c[2]-c[14]*c[4]*c[3]-c[7]*c[2]*c[12];
+    res[7]=c[0]*c[6]*c[11]-c[0]*c[10]*c[7]-c[6]*c[3]*c[8]-c[11]*c[4]*c[2]+c[10]*c[4]*c[3]+c[7]*c[2]*c[8];
+    res[8]=c[4]*c[9]*c[15]-c[4]*c[13]*c[11]-c[9]*c[7]*c[12]-c[15]*c[8]*c[5]+c[13]*c[8]*c[7]+c[11]*c[5]*c[12];
+    res[9]=-c[0]*c[9]*c[15]+c[0]*c[13]*c[11]+c[9]*c[3]*c[12]+c[15]*c[8]*c[1]-c[13]*c[8]*c[3]-c[11]*c[1]*c[12];
+    res[10]=c[0]*c[5]*c[15]-c[0]*c[13]*c[7]-c[5]*c[3]*c[12]-c[15]*c[4]*c[1]+c[13]*c[4]*c[3]+c[7]*c[1]*c[12];
+    res[11]=-c[0]*c[5]*c[11]+c[0]*c[9]*c[7]+c[5]*c[3]*c[8]+c[11]*c[4]*c[1]-c[9]*c[4]*c[3]-c[7]*c[1]*c[8];
+    res[12]=-c[4]*c[9]*c[14]+c[4]*c[13]*c[10]+c[9]*c[6]*c[12]+c[14]*c[8]*c[5]-c[13]*c[8]*c[6]-c[10]*c[5]*c[12];
+    res[13]=c[0]*c[9]*c[14]-c[0]*c[13]*c[10]-c[9]*c[2]*c[12]-c[14]*c[8]*c[1]+c[13]*c[8]*c[2]+c[10]*c[1]*c[12];
+    res[14]=-c[0]*c[5]*c[14]+c[0]*c[13]*c[6]+c[5]*c[2]*c[12]+c[14]*c[4]*c[1]-c[13]*c[4]*c[2]-c[6]*c[1]*c[12];
+    res[15]=c[0]*c[5]*c[10]-c[0]*c[9]*c[6]-c[5]*c[2]*c[8]-c[10]*c[4]*c[1]+c[9]*c[4]*c[2]+c[6]*c[1]*c[8];
+    double det=det4(c);
+    mult4(res,1/det,res);
+  }
   gen function_regression(const gen & g,const gen & u1,const gen & u2,gen & a,gen &b,double & xmin,double & xmax,gen & correl2,GIAC_CONTEXT){
     gen gv,freq;
     int xcol,ycol,freqcol;
     xmin=1e300;
     xmax=-xmin;
+    double ymin=1e300,ymax=-ymin; // for trig regressions initial guess
     find_xyfreq(g,gv,xcol,ycol,freqcol,contextptr);
     if (!ckmatrix(gv))
       return gensizeerr(contextptr);
     vecteur & v = *gv._VECTptr;
     gen n;
     gen sigmax,sigmay,sigmaxy,sigmax2,sigmay2,tmpx,tmpy;
+    vector< vector<double> > trig;
     if (freqcol<-1){
       int r,c;
       mdims(v,r,c);
@@ -3492,8 +3553,9 @@ static define_unary_function_eval (__correlation,&_correlation,_correlation_s);
 	  if (tmp>xmax)
 	    xmax=tmp;
 	}
-	if (u1.type==_FUNC)
+	if (u1.type==_FUNC && u1!=at_sin){
 	  currentx=u1(w[0],contextptr);
+	}
 	else
 	  currentx=w[0];
 	for (int j=1;j<c;++j){
@@ -3504,7 +3566,17 @@ static define_unary_function_eval (__correlation,&_correlation,_correlation_s);
 	  currenty=_interval2center(currenty,contextptr);
 	  if (is_undef(currenty))
 	    return currenty;
+	  tmpg=evalf_double(currenty,1,contextptr);
+	  if (tmpg.type==_DOUBLE_){
+	    double tmp=tmpg._DOUBLE_val;
+	    if (tmp<ymin)
+	      ymin=tmp;
+	    if (tmp>ymax)
+	      ymax=tmp;
+	  }
 	  freq=w[j];
+	  if (u1==at_sin)
+	    trig.push_back(vector3(currentx,currenty,freq,contextptr));
 	  n=n+freq;
 	  sigmax=sigmax+currentx*freq;
 	  sigmax2=sigmax2+currentx*currentx*freq;
@@ -3526,8 +3598,9 @@ static define_unary_function_eval (__correlation,&_correlation,_correlation_s);
 	  if (tmp>xmax)
 	    xmax=tmp;
 	}
-	if (u1.type==_FUNC)
+	if (u1.type==_FUNC && u1!=at_sin){
 	  tmpx=u1(w[xcol],contextptr);
+	}
 	else
 	  tmpx=w[xcol];
 	tmpx=_interval2center(tmpx,contextptr);
@@ -3540,10 +3613,20 @@ static define_unary_function_eval (__correlation,&_correlation,_correlation_s);
 	tmpy=_interval2center(tmpy,contextptr);
 	if (is_undef(tmpy))
 	  return tmpy;
+	tmpg=evalf_double(tmpy,1,contextptr);
+	if (tmpg.type==_DOUBLE_){
+	  double tmp=tmpg._DOUBLE_val;
+	  if (tmp<ymin)
+	    ymin=tmp;
+	  if (tmp>ymax)
+	    ymax=tmp;
+	}	
 	if (freqcol<0)
 	  freq=plus_one;
 	else
 	  freq=w[freqcol];
+	if (u1==at_sin)
+	  trig.push_back(vector3(tmpx,tmpy,freq,contextptr));
 	sigmax = sigmax + freq*tmpx;
 	sigmax2 = sigmax2 + freq*tmpx*tmpx;
 	sigmay = sigmay + freq*tmpy;
@@ -3556,6 +3639,105 @@ static define_unary_function_eval (__correlation,&_correlation,_correlation_s);
     a=tmp/(n*sigmax2-sigmax*sigmax);
     b=(sigmay-a*sigmax)/n;
     correl2=(tmp*tmp)/(n*sigmax2-sigmax*sigmax)/(n*sigmay2-sigmay*sigmay);
+    if (u1==at_sin){ // trig regression a*sin(omega*x+phi)+b
+      // initial guess b=(ymax+ymin)/2, a=(ymax-ymin)
+      // estimate period with crossings of y=b
+      double b_=(ymax+ymin)/2,a_=(ymax-ymin)/2,omega,phi;
+      int n=trig.size();
+      vector<double> crossup,crossdown,cross;
+      for (int i=1;i<n;++i){
+	double x0=trig[i-1][0],x1=trig[i][0];
+	double y0=trig[i-1][1],y1=trig[i][1];
+	double m=(y1-y0)/(x1-x0);
+	double xb=x0+(b_-y0)/m;
+	if ( (y1-b_)>0 && (y0-b_)<=0 ){
+	  crossup.push_back(xb);
+	  cross.push_back(xb);
+	}
+	if ( (y1-b_)<0 && (y0-b_)>=0 ){
+	  crossdown.push_back(xb);
+	  cross.push_back(xb);
+	}
+      }
+      if (cross.size()<2)
+	return gensizeerr(contextptr);
+      double half_period=(cross.back()-cross.front())/(cross.size()-1);
+      double period=2*half_period;
+      omega=2*M_PI/period;
+      phi=0;
+      for (int i=0;i<crossup.size();++i){
+	phi -= crossup[i]-i*period;
+      }
+      phi /= crossup.size();
+      phi -= std::floor(phi/2/M_PI+.5)*2*M_PI;
+#if 1
+      while (1){
+	// E = 1/2*sum( f*(a*sin(x*o+phi)+b-y)^2)
+	// Newton iteration compute first and second derivatives 
+	// E:=1/2*f*(a*sin(x*o+phi)+b-y)^2
+	// subst(factor(diff(E,[a,b,o,phi])),[sin(x*o+phi),cos(x*o+phi)],[s,c])
+	// subst(factor(diff(diff(E,[a,b,o,phi]),[a,b,o,phi])),[sin(x*o+phi),cos(x*o+phi)],[s,c])
+	double dE[4]={0,0,0,0},delta[4];
+	double d2E[16]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},invd2E[16];
+	for (int i=0;i<n;++i){
+	  double x=trig[i][0];
+	  double y=trig[i][1];
+	  double f=trig[i][2];
+	  double s=std::sin(x*omega+phi);
+	  double c=std::cos(x*omega+phi);
+	  double asby=(a_*s+b_-y);
+	  // [f*s*(a*s+b-y),f*(a*s+b-y),a*c*f*x*(a*s+b-y),a*c*f*(a*s+b-y)]
+	  dE[0] += f*s*asby;
+	  dE[1] += f*asby;
+	  dE[2] += a_*f*x*c*asby;
+	  dE[3] += a_*f*c*asby;
+	  double as2by=(2*a_*s+b_-y);
+	  // f*s^2,f*s,c*f*x*(2*a*s+b-y),c*f*(2*a*s+b-y)
+	  d2E[0] += f*s*s;
+	  d2E[1] += f*s;
+	  d2E[2] += c*f*x*as2by;
+	  d2E[3] += c*f*as2by;
+	  // f*s,f,a*c*f*x,a*c*f
+	  d2E[4] += f*s;
+	  d2E[5] += f;
+	  d2E[6] += a_*c*f*x;
+	  d2E[7] += a_*c*f;
+	  double ac2s2=a_*(s*s-c*c)+s*(b_-y);
+	  // c*f*x*(2*a*s+b-y),a*c*f*x,-a*f*x^2*(-a*c^2+a*s^2+b*s-s*y),-a*f*x*(-a*c^2+a*s^2+b*s-s*y)
+	  d2E[8] += c*f*x*as2by;
+	  d2E[9] += a_*c*f*x;
+	  d2E[10] += -a_*f*x*x*ac2s2;
+	  d2E[11] += -a_*f*x*ac2s2;
+	  // c*f*(2*a*s+b-y),a*c*f,-a*f*x*(-a*c^2+a*s^2+b*s-s*y),-a*f*(-a*c^2+a*s^2+b*s-s*y)
+	  d2E[12] += c*f*as2by;
+	  d2E[13] += a_*c*f;
+	  d2E[14] += -a_*f*x*ac2s2;
+	  d2E[15] += -a_*f*ac2s2;
+	}
+	tran4(d2E);
+	inv4(d2E,invd2E);
+	mult4(invd2E,dE,delta);
+	a_ -= delta[0];
+	b_ -= delta[1];
+	omega -= delta[2];
+	phi -= delta[3];
+	if (fabs(a_?delta[0]/a_:delta[0])+fabs(b_?delta[1]/b_:delta[1])+fabs(omega?delta[2]/omega:delta[2])+fabs(phi?delta[3]/phi:delta[3])<1e-7)
+	  break;	
+      }
+      a=makesequence(a_,b_,omega,phi);
+#else
+      gen E,A(identificateur("A")),B(identificateur("B")),O(identificateur("omega")),P(identificateur("phi"));
+      for (int i=0;i<n;++i){
+	double x=trig[i][0];
+	double y=trig[i][1];
+	E += trig[i][2]*symb_pow(A*sin(x*O+P,contextptr)+B-y,2);
+      }
+      // now solve E'=0
+      gen vars(makevecteur(A,B,O,P));
+      a=_fsolve(makesequence(symb_equal(derive(E,vars,contextptr),0),vars,makevecteur(a_,b_,omega,phi)),contextptr);
+#endif
+      b=undef;
+    }
     return makevecteur(sigmax,sigmay,n,sigmax2,sigmay2);
     // cerr << sigmax << " "<< sigmay << " " << sigmaxy << " " << n << " " << sigmax2 << " " << sigmay2 << '\n';
   }
@@ -3576,6 +3758,16 @@ static define_unary_function_eval (__correlation,&_correlation,_correlation_s);
 static define_unary_function_eval (__linear_regression,&_linear_regression,_linear_regression_s);
   define_unary_function_ptr5( at_linear_regression ,alias_at_linear_regression,&__linear_regression,0,true);
 
+  gen _sin_regression(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG && g.subtype==-1) return  g;
+    gen res=function_regression(g,at_sin,zero,contextptr);
+    if (res.type!=_VECT || res._VECTptr->size()!=2) return gensizeerr(contextptr);
+    res=res._VECTptr->front();
+    return makesequence(res,res[0]*symb_sin(res[2]*vx_var+res[3])+res[1]);
+  }
+  static const char _sin_regression_s []="sin_regression";
+static define_unary_function_eval (__sin_regression,&_sin_regression,_sin_regression_s);
+  define_unary_function_ptr5( at_sin_regression ,alias_at_sin_regression,&__sin_regression,0,true);
 
   gen _exponential_regression(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
@@ -3665,7 +3857,7 @@ static define_unary_function_eval (__power_regression,&_power_regression,_power_
 	s += R2s;
       attributs.push_back(string2gen(s,false));
     }
-    return put_attributs(_droite(makesequence(b*cst_i,1+(b+a)*cst_i),contextptr),attributs,contextptr);
+    return makesequence(_scatterplot(g,contextptr),put_attributs(_droite(makesequence(b*cst_i,1+(b+a)*cst_i),contextptr),attributs,contextptr));
   }
   static const char _linear_regression_plot_s []="linear_regression_plot";
 static define_unary_function_eval (__linear_regression_plot,&_linear_regression_plot,_linear_regression_plot_s);
@@ -3692,7 +3884,7 @@ static define_unary_function_eval (__linear_regression_plot,&_linear_regression_
 	s += R2s;
       attributs.push_back(string2gen(s,false));
     }
-    return put_attributs(_plotfunc(gen(makevecteur(evalf(exp(b,contextptr),1,contextptr)*exp(a*vx_var,contextptr),symb_equal(vx_var,symb_interval(xmin,xmax))),_SEQ__VECT),contextptr),attributs,contextptr);
+    return makesequence(_scatterplot(g,contextptr),put_attributs(_plotfunc(gen(makevecteur(evalf(exp(b,contextptr),1,contextptr)*exp(a*vx_var,contextptr),symb_equal(vx_var,symb_interval(xmin,xmax))),_SEQ__VECT),contextptr),attributs,contextptr));
   }
   static const char _exponential_regression_plot_s []="exponential_regression_plot";
 static define_unary_function_eval (__exponential_regression_plot,&_exponential_regression_plot,_exponential_regression_plot_s);
@@ -3720,11 +3912,30 @@ static define_unary_function_eval (__exponential_regression_plot,&_exponential_r
 	s += R2s;
       attributs.push_back(string2gen(s,false));
     }
-    return put_attributs(_plotfunc(gen(makevecteur(a*ln(vx_var,contextptr)+b,symb_equal(vx_var,symb_interval(xmin,xmax))),_SEQ__VECT),contextptr),attributs,contextptr);
+    return makesequence(_scatterplot(g,contextptr),put_attributs(_plotfunc(gen(makevecteur(a*ln(vx_var,contextptr)+b,symb_equal(vx_var,symb_interval(xmin,xmax))),_SEQ__VECT),contextptr),attributs,contextptr));
   }
   static const char _logarithmic_regression_plot_s []="logarithmic_regression_plot";
 static define_unary_function_eval (__logarithmic_regression_plot,&_logarithmic_regression_plot,_logarithmic_regression_plot_s);
   define_unary_function_ptr5( at_logarithmic_regression_plot ,alias_at_logarithmic_regression_plot,&__logarithmic_regression_plot,0,true);
+
+  gen _sin_regression_plot(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG && g.subtype==-1) return  g;
+    gen a,b,correl2;
+    double xmin,xmax;
+    vecteur attributs;
+    bool eq,r;
+    gen G=regression_plot_attributs(g,attributs,eq,r,contextptr);
+    gen res=function_regression(G,at_sin,zero,a,b,xmin,xmax,correl2,contextptr);
+    res=a;
+    if (is_undef(res) || res.type!=_VECT || res._VECTptr->size()!=4) return res;
+    res = res[0]*symb_sin(res[2]*vx_var+res[3])+res[1];
+    string eqs="y="+res.print(contextptr);
+    *logptr(contextptr) << eqs << '\n';
+    return makesequence(_scatterplot(g,contextptr),put_attributs(_plot(makesequence(res,vx_var,xmin,xmax),contextptr),attributs,contextptr));
+  }
+  static const char _sin_regression_plot_s []="sin_regression_plot";
+static define_unary_function_eval (__sin_regression_plot,&_sin_regression_plot,_sin_regression_plot_s);
+  define_unary_function_ptr5( at_sin_regression_plot ,alias_at_sin_regression_plot,&__sin_regression_plot,0,true);
 
   gen _power_regression_plot(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
@@ -3748,7 +3959,7 @@ static define_unary_function_eval (__logarithmic_regression_plot,&_logarithmic_r
 	s += R2s;
       attributs.push_back(string2gen(s,false));
     }
-    return put_attributs(_plotfunc(gen(makevecteur(exp(b,contextptr)*pow(vx_var,a,contextptr),symb_equal(vx_var,symb_interval(xmin,xmax))),_SEQ__VECT),contextptr),attributs,contextptr);
+    return makesequence(_scatterplot(g,contextptr),put_attributs(_plotfunc(gen(makevecteur(exp(b,contextptr)*pow(vx_var,a,contextptr),symb_equal(vx_var,symb_interval(xmin,xmax))),_SEQ__VECT),contextptr),attributs,contextptr));
   }
   static const char _power_regression_plot_s []="power_regression_plot";
 static define_unary_function_eval (__power_regression_plot,&_power_regression_plot,_power_regression_plot_s);
@@ -8585,7 +8796,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	y=int(y._DOUBLE_val+.5);
       if (x.type==_INT_ &&  y.type==_INT_ ){
 #ifdef NUMWORKS
-	numworks_giac_set_pixel(x.val,y.val,vs==2?0:v[2].val);
+	numworks_set_pixel(x.val,y.val,vs==2?0:v[2].val);
 #else
 	aspen_set_pixel(x.val,y.val,vs==2?0:v[2].val);
 #endif // NUMWORKS
@@ -8622,10 +8833,10 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   }
 #ifdef NUMWORKS
   void set_pixel(int x,int y,int c,GIAC_CONTEXT){
-    numworks_giac_set_pixel(x,y,c);
+    numworks_set_pixel(x,y,c);
   }
   void set_pixel(double x,double y,int c,GIAC_CONTEXT){
-    numworks_giac_set_pixel(int(x+.5),int(y+.5),c);
+    numworks_set_pixel(int(x+.5),int(y+.5),c);
   }
 #else  
   void set_pixel(int x,int y,int c,GIAC_CONTEXT){
@@ -8847,7 +9058,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     if (y<0){ height+=y; y=0;}
     if (width<0 || height<0) return;
 #ifdef NUMWORKS
-    numworks_giac_fill_rect(x,y,width,height,color);
+    numworks_fill_rect(x,y,width,height,color);
 #else
     for (int j=0;j<=height;++j){
       for (int i=0;i<width;++i)
@@ -9152,6 +9363,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   define_unary_function_ptr5( at_draw_rectangle ,alias_at_draw_rectangle,&__draw_rectangle,0,true);
 
   gen _fill_rect(const gen & a_,GIAC_CONTEXT){
+    freeze=true;
     return draw_line_or_rectangle(a_,contextptr,2);
   }
   static const char _fill_rect_s []="fill_rect";
@@ -9175,7 +9387,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       return gensizeerr(contextptr);
     gen s=v[0];
 #ifdef NUMWORKS
-    numworks_giac_draw_string(v[1].val,v[2].val,v.size()>3?v[3].val:_BLACK,v.size()>4?v[4].val:_WHITE,s._STRNGptr->c_str());
+    numworks_draw_string(v[1].val,v[2].val,v.size()>3?v[3].val:_BLACK,v.size()>4?v[4].val:_WHITE,s._STRNGptr->c_str());
     return 1;
 #else
     v.erase(v.begin());
@@ -9201,7 +9413,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     gen x=a._VECTptr->front(),y=a._VECTptr->back();
     if (x.type==_INT_ && x.val>=0 && x.val<pixel_cols && y.type==_INT_ && y.val>=0 && y.val<pixel_lines){
 #ifdef NUMWORKS
-      return numworks_giac_get_pixel(x.val,y.val);
+      return numworks_get_pixel(x.val,y.val);
 #else      
       return pixel_buffer[y.val][x.val];
 #endif

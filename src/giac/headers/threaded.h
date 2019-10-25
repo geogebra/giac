@@ -3214,8 +3214,9 @@ namespace giac {
     std::vector< T_unsigned<T,U> > maincoeff,quo,tmp;
 #if 1
     // memory estimations
-#ifdef VISUALC
-    size_t * produit_s=(size_t *) alloca((adeg+1)*sizeof(size_t));
+#if 1 // def VISUALC
+    size_t * produit_s=(size_t *) malloc((adeg+1)*sizeof(size_t));
+    // size_t * produit_s=(size_t *) alloca((adeg+1)*sizeof(size_t));
 #else
     size_t produit_s[adeg+1]; 
 #endif
@@ -3231,12 +3232,15 @@ namespace giac {
       if (i>=bdeg && curcoeffsize<produit_s[i])
 	curcoeffsize=produit_s[i];
     }
+#if 1 // def VISUALC
+    free(produit_s);
+#endif
     curcoeffsize = int(1.1*curcoeffsize);
     maincoeff.reserve(curcoeffsize);
     quo.reserve(curcoeffsize);
     q.reserve(curcoeffsize*2);
     tmp.reserve(curcoeffsize);
-#endif
+#endif // memory estimates
     std::vector<U> vars2(vars.begin()+1,vars.end());
     // do it
     for (cit=a.begin(),citend=a.end();cit!=citend;++cit){ 

@@ -1284,12 +1284,12 @@ namespace giac {
     // recherche de l'??quation de la droite
     if (is_zero(eval(re(A,contextptr)-re(B,contextptr),eval_level(contextptr),contextptr))){
       gen x=re(A,contextptr);
-      C=x+i*ymin; D=x+i*ymax;
+      C=x+ymin*i; D=x+ymax*i;
     } else {
       gen a=eval((im(A,contextptr)-im(B,contextptr))/(re(A,contextptr)-re(B,contextptr)),eval_level(contextptr),contextptr);
       gen b=eval(im(A,contextptr)-a*re(A,contextptr),eval_level(contextptr),contextptr);
-      C=xmin+i*(a*xmin+b);
-      D=xmax+i*(a*xmax+b);
+      C=xmin+i*(xmin*a+b);
+      D=xmax+i*(xmax*a+b);
     }
     return svg_segment(C,D,attr,legende,xmin,xmax,ymin,ymax,contextptr);
   }
@@ -1304,17 +1304,17 @@ namespace giac {
     if (is_zero(reA-reB)){
       gen x=reA;
       if (is_positive(imB-imA,contextptr))
-	C=x+i*ymax;
+	C=x+ymax*i;
       else
-	C=x+i*ymin;
+	C=x+ymin*i;
     } 
     else {
       gen a=(imB-imA)/(reB-reA);
       gen b=imA-a*reA;
       if (is_positive(reB-reA,contextptr))
-	C=xmax+i*(a*xmax+b);
+	C=xmax+i*(xmax*a+b);
       else
-	C=xmin+i*(a*xmin+b); 
+	C=xmin+i*(xmin*a+b); 
     }
     return svg_segment(A,C,attr,legende,xmin,xmax,ymin,ymax,contextptr);
   }

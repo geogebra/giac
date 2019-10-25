@@ -1186,6 +1186,10 @@ namespace giac {
       vecteur v2=*e._VECTptr->back()._VECTptr;
       gen g(1);
       lcmdeno(v2,g,contextptr);
+      if (is_minus_one(v2[0]))
+	v2=-v2;
+      if (!is_one(v2[0]))
+	return gensizeerr("rootof minimal polynomial must be unitary");
       return symbolic(at_rootof,gen(makevecteur(e._VECTptr->front(),gen(v2,e._VECTptr->back().subtype)),e.subtype));
     }
     return symbolic(at_rootof,e);
