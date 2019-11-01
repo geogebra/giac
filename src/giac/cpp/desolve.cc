@@ -597,14 +597,16 @@ namespace giac {
   static gen desolve_with_conditions(const vecteur & v,const gen & x,const gen & y,gen & f,int step_info,GIAC_CONTEXT){
     if (v.empty())
       return gensizeerr(contextptr);
-    int ordre;
+    int ordre; bool num=false;
     vecteur parameters;
-    gen solution_generale(desolve_f(v.front(),x,y,ordre,parameters,f,step_info,contextptr));
-    if (solution_generale.type!=_VECT) 
-      return in_desolve_with_conditions(v,x,y,solution_generale,parameters,f,step_info,contextptr);
+    gen solution_generale(desolve_f(v.front(),x,y,ordre,parameters,f,step_info,num,contextptr));
+    if (solution_generale.type!=_VECT) {
+      gen res= in_desolve_with_conditions(v,x,y,solution_generale,parameters,f,step_info,contextptr);
+      return num?evalf(res,1,contextptr):res;
+    }
     solution_generale.subtype=0; // otherwise desolve([y'=[[1,2],[2,1]]*y+[x,x+1],y(0)=[1,2]]) fails on the Prime (?)
     if (parameters.empty())
-      return solution_generale;
+      return num?evalf(solution_generale,1,contextptr):solution_generale;
     iterateur it=solution_generale._VECTptr->begin(),itend=solution_generale._VECTptr->end();
     vecteur res;
     res.reserve(itend-it);
@@ -618,7 +620,7 @@ namespace giac {
       else
 	res.push_back(tmp);
     }
-    return res;
+    return num?evalf(res,1,contextptr):res;
   }
 
   static gen desolve_with_conditions(const vecteur & v,const gen & x,const gen & y,gen & f,GIAC_CONTEXT){
@@ -1054,7 +1056,8 @@ namespace giac {
     return false;
   }
 
-  gen desolve_f(const gen & f_orig,const gen & x_orig,const gen & y_orig,int & ordre,vecteur & parameters,gen & fres,int step_info,GIAC_CONTEXT){
+  gen desolve_f(const gen & f_orig,const gen & x_orig,const gen & y_orig,int & ordre,vecteur & parameters,gen & fres,int step_info,bool & num,GIAC_CONTEXT){
+    num=false;
     // if x_orig.type==_VECT || y_orig.type==_VECT, they should be evaled
     if (x_orig.type!=_VECT && eval(x_orig,1,contextptr)!=x_orig)
       return gensizeerr("Independant variable assigned. Run purge("+x_orig.print(contextptr)+")\n");
@@ -1110,6 +1113,9 @@ namespace giac {
     }
 #endif
     f=remove_equal(eval(f,eval_level(contextptr),contextptr));
+    num=has_num_coeff(f);
+    if (num) 
+      f=exact(f,contextptr);
     if (ckmatrix(f)){
       vecteur v = *f._VECTptr;
       for (int i=0;i<v.size();++i){
@@ -1528,6 +1534,7 @@ namespace giac {
   // "unary" version
   gen _desolve(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
+    //if (has_num_coeff(args)) return evalf(_desolve(exact(args,contextptr),contextptr),1,contextptr);
     int ordre;
     vecteur parameters;
     if (args.type!=_VECT || args.subtype!=_SEQ__VECT || (!args._VECTptr->empty() && is_equal(args._VECTptr->back()) && args._VECTptr->back()._SYMBptr->feuille[0].type!=_IDNT)){
@@ -1620,7 +1627,10 @@ namespace giac {
       y=eval(y,1,contextptr);
     int st=step_infolevel(contextptr);
     step_infolevel(0,contextptr);
-    gen res=desolve_f(f_orig,x,y,ordre,parameters,f,st,contextptr);
+    bool num=false;
+    gen res=desolve_f(f_orig,x,y,ordre,parameters,f,st,num,contextptr);
+    if (num)
+      res=evalf(res,1,contextptr);
     step_infolevel(st,contextptr);
     return res;
   }

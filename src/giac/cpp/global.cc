@@ -171,7 +171,7 @@ namespace giac {
 	back_key_pressed()
 #endif
 	){ 
-      ctrl_c=true; interrupted=true; 
+      kbd_interrupted=ctrl_c=interrupted=true; 
     }
 #else
     if (caseval_unitialized!=-123454321){
@@ -1891,7 +1891,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   // int GBASISF4_BUCHBERGER=5;
   const int BUFFER_SIZE=16384;
 #endif
-  volatile bool ctrl_c=false,interrupted=false;
+  volatile bool ctrl_c=false,interrupted=false,kbd_interrupted=false;
 #ifdef GIAC_HAS_STO_38
   double powlog2float=1e4;
   int MPZ_MAXLOG2=8600; // max 2^8600 about 1K

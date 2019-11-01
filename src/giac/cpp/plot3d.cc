@@ -34,7 +34,7 @@ diff plot.c plot.c~
 #include "giacPCH.h"
 
 using namespace std;
-#if !defined NSPIRE && !defined FXCG
+#if !defined NSPIRE && !defined FXCG && !defined NUMWORKS
 #if defined VISUALC13 && !defined BESTA_OS
 #undef clock
 #undef clock_t

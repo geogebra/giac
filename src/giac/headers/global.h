@@ -275,7 +275,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   extern int gbasis_logz_age_sort,gbasis_stop;
   extern int PROOT_FACTOR_MAXDEG;
   extern int ABS_NBITS_EVALF;
-  extern volatile bool ctrl_c,interrupted;
+  extern volatile bool ctrl_c,interrupted,kbd_interrupted;
   void ctrl_c_signal_handler(int signum);
 #ifdef TIMEOUT
 #ifndef EMCC

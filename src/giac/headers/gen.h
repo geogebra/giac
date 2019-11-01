@@ -1362,9 +1362,9 @@ namespace giac {
   // extern environment * env; 
 
   struct attributs {
-    int fontsize;
-    int background;
-    int text_color;
+    short int fontsize;
+    unsigned short int background;
+    unsigned short int text_color;
     attributs(int f,int b,int t): fontsize(f),background(b),text_color(t) {};
     attributs():fontsize(0),background(0),text_color(0) {};
   };
@@ -1372,13 +1372,18 @@ namespace giac {
   // Terminal data for EQW display
   struct eqwdata {
     gen g; 
-    attributs eqw_attributs;
+#if defined NUMWORKS || defined FXCG
+    short int x,y,dx,dy;
+    short int baseline;
+#else
     int x,y,dx,dy;
+    int baseline;
+#endif
     bool selected;
     bool active;
     bool hasbaseline;
     bool modifiable;
-    int baseline;
+    attributs eqw_attributs;
     eqwdata(int dxx,int dyy,int xx, int yy,const attributs & a,const gen& gg):g(gg),eqw_attributs(a),x(xx),y(yy),dx(dxx),dy(dyy),selected(false),active(false),hasbaseline(false),modifiable(true),baseline(0) {};
     eqwdata(int dxx,int dyy,int xx, int yy,const attributs & a,const gen& gg,int mybaseline):g(gg),eqw_attributs(a),x(xx),y(yy),dx(dxx),dy(dyy),selected(false),active(false),hasbaseline(true),modifiable(true),baseline(mybaseline) {};
     const char * dbgprint(){ 

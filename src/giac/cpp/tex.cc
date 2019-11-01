@@ -1373,7 +1373,7 @@ namespace giac {
     }
     return 0;
   }
-#if defined USE_GMP_REPLACEMENTS || defined GIAC_GGB || defined EMCC
+#if defined USE_GMP_REPLACEMENTS || defined GIAC_GGB || defined EMCC || defined NUMWORKS
   bool has_improved_latex_export(const gen &g,string &s,bool override_texmacs,GIAC_CONTEXT){
     return false;
   }
@@ -1382,7 +1382,7 @@ namespace giac {
 #endif
   gen _latex(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
-#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
+#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38 && !defined NUMWORKS
     if (!secure_run && g.type==_VECT && g.subtype==_SEQ__VECT && g._VECTptr->size()==2 && (*g._VECTptr)[1].type==_STRNG){
       ofstream of((*g._VECTptr)[1]._STRNGptr->c_str());
       of << gen2tex(g._VECTptr->front(),contextptr) << '\n';

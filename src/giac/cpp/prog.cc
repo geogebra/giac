@@ -4489,7 +4489,13 @@ namespace giac {
 	vecteur tmp;
 	bool finished=true;
 	for (int j=1;j<=n;++j){
-	  gen & g=v[j];
+	  gen g=v[j];
+	  if (g.type==_STRNG){
+	    vecteur w(g._STRNGptr->size());
+	    for (size_t i=0;i<g._STRNGptr->size();++i)
+	      w[i]=string2gen(g._STRNGptr->substr(i,1),false);
+	    g=w;
+	  }
 	  if (g.type!=_VECT)
 	    tmp.push_back(g);
 	  else {

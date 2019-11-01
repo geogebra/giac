@@ -48,7 +48,7 @@
 using namespace std;
 
 #include <iostream>
-#ifndef FXCG
+#if !defined FXCG && !defined NUMWORKS
 #include <iomanip>
 #endif
 #include "cocoa.h"
@@ -14082,8 +14082,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       current=current_gbasis;
       G.clear();
       double t_0=CLOCK()*1e-6;
+#ifndef NUMWORKS
       if (debug_infolevel)
 	CERR << std::setprecision(15) << t_0 << " begin computing basis modulo " << p << " batch/threads " << th+1 << "/" << parallel << '\n';
+#endif
       // CERR << "write " << th << " " << p << '\n';
 #ifdef GBASISF4_BUCHBERGER 
       if (zdata){

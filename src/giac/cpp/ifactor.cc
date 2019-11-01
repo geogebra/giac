@@ -3795,6 +3795,9 @@ namespace giac {
     if (b==-1 && !ctrl_c && !interrupted){ 
       do_pollard=false;
       if (msieve(a,b,contextptr)) return b; else return -1; }
+#else
+    if (b==-1)
+      *logptr(contextptr) << "Integer too large for factorization algorithm\n";
 #endif
     if (b==-1)
       b=a;

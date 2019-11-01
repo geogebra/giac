@@ -34,7 +34,7 @@
 #include "giacPCH.h"
 
 using namespace std;
-#if !defined NSPIRE && !defined FXCG
+#if !defined NSPIRE && !defined FXCG && !defined NUMWORKS
 #ifdef VISUALC13
 #undef clock
 #undef clock_t
