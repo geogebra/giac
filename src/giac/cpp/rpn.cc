@@ -29,7 +29,7 @@ using namespace std;
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#if !defined(NSPIRE) && !defined FXCG && !defined(__VISUALC__) && !defined(NUMWORKS)// #ifndef NSPIRE
+#if !defined(NSPIRE) && !defined FXCG && !defined(__VISUALC__) && !defined(KHICAS)// #ifndef NSPIRE
 #include <dirent.h>
 #if !defined(__MINGW_H) && !defined(HAVE_NO_PWD_H)
 #include <pwd.h>
@@ -776,7 +776,7 @@ namespace giac {
 	    if (strngeq){
 	      res.push_back(string2gen(it->first,false));
 	      int t=it->second.type;
-#if !defined GIAC_HAS_STO_38 && !defined FXCG && !defined NUMWORKS
+#if !defined GIAC_HAS_STO_38 && !defined FXCG && !defined KHICAS
 	      if ( (t==_SYMB && it->second._SYMBptr->sommet!=at_program) || t==_FRAC || t<=_REAL || t==_VECT)
 		g=_mathml(makesequence(it->second,1),contextptr);
 	      else

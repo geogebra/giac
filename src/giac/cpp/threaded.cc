@@ -24,13 +24,11 @@ using namespace std;
 #include "modpoly.h"
 #include "giacintl.h"
 #include "input_parser.h"
+#include "kdisplay.h"
 #ifdef FXCG
 extern "C" {
 #include <system.h>
 }
-#endif
-#ifdef NUMWORKS
-void numworks_wait_1ms(int ms);
 #endif
 
 #ifndef NO_NAMESPACE_GIAC
@@ -159,9 +157,9 @@ mpz_class smod(const mpz_class & a,int reduce){
   }
 
 
-#ifdef NUMWORKS
+#ifdef KHICAS
   void wait_1ms(int ms){
-    numworks_wait_1ms(ms);
+    os_wait_1ms(ms);
   }
 #else
 #ifdef FXCG

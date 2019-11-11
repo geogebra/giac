@@ -493,7 +493,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     int _i_sqrt_minus1_;
   };
   std::string gen2string(const gen & g);
-#ifdef NUMWORKS
+#ifdef KHICAS
   struct logo_turtle {
     double x,y;
     double theta; // theta is given in degrees or radians dep. on angle_mode
@@ -508,7 +508,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     int s;//std::string s;
     logo_turtle(): x(100),y(100),theta(0),visible(true),mark(true),direct(true),color(0),turtle_length(10),radius(0) {}
   };
-#else // NUMWORKS
+#else // KHICAS
   struct logo_turtle {
     double x,y;
     double theta; // theta is given in degrees or radians dep. on angle_mode
@@ -528,7 +528,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     logo_turtle(): x(100),y(100),theta(0),visible(true),mark(true),direct(true),color(0),turtle_length(10),radius(0),widget(0) {}
 #endif
   };
-#endif // NUMWORKS
+#endif // KHICAS
     
   // a structure that should contain all global variables
   class global {
@@ -616,7 +616,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     std::string _autosimplify_;
     std::string _lastprog_name_;
     const char * _currently_scanned_;
-#ifndef NUMWORKS
+#ifndef KHICAS
     std::vector<logo_turtle> _turtle_stack_; 
 #endif
     double _total_time_;
@@ -665,7 +665,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
   extern pthread_mutex_t context_list_mutex;
 #endif
   
-#if !defined(RTOS_THREADX) && !defined(BESTA_OS) && !defined(NSPIRE) && !defined(FXCG) && !defined NUMWORKS
+#if !defined(RTOS_THREADX) && !defined(BESTA_OS) && !defined(NSPIRE) && !defined(FXCG) && !defined KHICAS
   extern std::map<std::string,context *> * context_names ;
 #endif
 
@@ -697,7 +697,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
   void python_compat(int b,GIAC_CONTEXT);
   int array_start(GIAC_CONTEXT);
   extern bool python_color; // global variable for syntax highlighting
-  extern bool numworks_shell; // true if Numworks called from shell
+  extern bool os_shell; // true if Numworks called from shell
 
   int & calc_mode(GIAC_CONTEXT);
   int abs_calc_mode(GIAC_CONTEXT);
@@ -795,7 +795,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
   std::string lastprog_name(GIAC_CONTEXT);
   std::string lastprog_name(const std::string & b,GIAC_CONTEXT);
 
-#ifdef NUMWORKS
+#ifdef KHICAS
   logo_turtle & turtle();
   std::vector<logo_turtle> & turtle_stack();
 #else

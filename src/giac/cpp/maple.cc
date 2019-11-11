@@ -76,8 +76,8 @@ using namespace std;
   TMillisecs PrimeGetNow();
 #endif
 
-#ifdef NUMWORKS
-extern int time_shift;
+#ifdef KHICAS
+int time_shift;
 namespace Ion {
   namespace Timing {
     
@@ -372,7 +372,7 @@ namespace giac {
   static define_unary_function_eval (__restart_modes,&_restart_modes,_restart_modes_s);
   define_unary_function_ptr5( at_restart_modes ,alias_at_restart_modes,&__restart_modes,0,T_RETURN);
 
-#ifdef NUMWORKS
+#ifdef KHICAS
   gen _time(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
     if (a.type==_VECT && a.subtype==_SEQ__VECT){
@@ -404,7 +404,7 @@ namespace giac {
     return 0.0;
   }
 
-#else // NUMWORKS
+#else // KHICAS
   
   gen _time(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
@@ -541,7 +541,7 @@ namespace giac {
 #endif
   }
   
-#endif // NUMWORKS
+#endif // KHICAS
   static const char _time_s []="time";
   static define_unary_function_eval_quoted (__time,&_time,_time_s);
   define_unary_function_ptr5( at_time ,alias_at_time,&__time,_QUOTE_ARGUMENTS,true);

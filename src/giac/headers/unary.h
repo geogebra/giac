@@ -163,7 +163,7 @@ namespace giac {
     virtual ~unary_function_abstract() {};
   };
 
-#ifdef NUMWORKS
+#ifdef KHICAS
   stdostream & operator<<(stdostream & os,const unary_function_abstract & a);
 #endif
 #ifdef NSPIRE

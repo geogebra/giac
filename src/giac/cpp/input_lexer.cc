@@ -5486,7 +5486,7 @@ void giac_yyfree (void * ptr , yyscan_t yyscanner)
 #endif
       if (abs_calc_mode(contextptr)==38 && s_orig==string(s_orig.size(),' '))
 	giac_yyerror(scanner,"Void string");
-#if !defined RTOS_THREADX && !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
+#if !defined RTOS_THREADX && !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38 && !defined NSPIRE_NEWLIB
       if (!builtin_lexer_functions_sorted){
 #ifndef STATIC_BUILTIN_LEXER_FUNCTIONS
 	sort(builtin_lexer_functions_begin(),builtin_lexer_functions_end(),tri);

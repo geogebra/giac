@@ -122,7 +122,7 @@ void operator delete[](void* obj)
 }
 #else
 
-#if 0 // defined NUMWORKS && defined DEVICE
+#if 0 // defined KHICAS && defined DEVICE
 // #include <unistd.h>
 extern const void * _stack_end;
 
@@ -152,7 +152,7 @@ void operator delete(void* obj){
 void operator delete[](void* obj){
   free(obj);
 }
-#endif // NUMWORKS
+#endif // KHICAS
 #endif // GIAC_CHECK_NEW
 
 #endif

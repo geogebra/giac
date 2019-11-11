@@ -3352,7 +3352,7 @@ namespace giac {
 	  return ret;
 	}
 #ifndef RTOS_THREADX
-#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined NUMWORKS
+#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined KHICAS
 #ifdef HAVE_LIBPTHREAD
 	pthread_mutex_lock(&context_list_mutex);
 #endif
@@ -6778,7 +6778,7 @@ namespace giac {
 	      v.erase(v.begin()+i);
 	      --i;
 	    }
-	    if (strcmp("'\n'",a._IDNTptr->id_name)==0){
+	    if (strcmp("endl",a._IDNTptr->id_name)==0){
 	      nl=*b._STRNGptr;
 	      hasnl=true;
 	      v.erase(v.begin()+i);
@@ -7844,7 +7844,7 @@ namespace giac {
       return x;
     if (is_inf(x))
       return undef;
-#ifndef NUMWORKS
+#ifndef KHICAS
     if (x.type==_FLOAT_)
       return fgamma(x._FLOAT_val);
 #endif

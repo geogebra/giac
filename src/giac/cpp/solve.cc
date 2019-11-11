@@ -1297,7 +1297,10 @@ namespace giac {
       else
 	test=eval(subst(e0,x,l,false,contextptr),eval_level(contextptr),contextptr);
       gen testeq=abs(evalf(subst(e,x,l,false,contextptr),eval_level(contextptr),contextptr),contextptr);
-      double eps=epsilon(contextptr); gen lf=evalf_double(l,1,contextptr);
+      double eps=epsilon(contextptr); gen lf=_epsilon2zero(evalf_double(l,1,contextptr),contextptr);
+      gen lsymb=l; 
+      if (has_op(lsymb,*at_rootof) && abs_calc_mode(contextptr)==38) 
+	lsymb=lf;
       if (lf.type==_DOUBLE_){
 	double lfd=fabs(lf._DOUBLE_val);
 	if (lfd>1)
@@ -1308,12 +1311,12 @@ namespace giac {
 	  (equalposcomp(excluded_not_singu,l) || equalposcomp(singu,l) ||
 	   ( !(direction %2) && equalposcomp(veq_not_singu,l))) 
 	  )
-	symb_inf=symb_superieur_strict(x,l);
+	symb_inf=symb_superieur_strict(x,lsymb);
       else {
 	if (equalposcomp(excluded_not_singu,l) || (test!=1 && equalposcomp(singu,l)))
-	  symb_inf=symb_superieur_strict(x,l);
+	  symb_inf=symb_superieur_strict(x,lsymb);
 	else
-	  symb_inf=symb_superieur_egal(x,l);
+	  symb_inf=symb_superieur_egal(x,lsymb);
       }
       if (equalposcomp(singu,m) && e0.type==_SYMB && e0._SYMBptr->feuille.type==_VECT && e0._SYMBptr->feuille._VECTptr->size()==2){
 	gen a=e0._SYMBptr->feuille[0];
@@ -1326,7 +1329,10 @@ namespace giac {
       }
       else
 	test=eval(subst(e0,x,m,false,contextptr),eval_level(contextptr),contextptr);
-      lf=evalf_double(m,1,contextptr);
+      lf=_epsilon2zero(evalf_double(m,1,contextptr),contextptr);
+      gen msymb=m;
+      if (has_op(m,*at_rootof) && abs_calc_mode(contextptr)==38)
+	msymb=lf;
       testeq=abs(evalf(subst(e,x,m,false,contextptr),eval_level(contextptr),contextptr),contextptr);
       eps=epsilon(contextptr);
       // if ( (lf.type!=_DOUBLE_ && lf.type!=_CPLX) || (testeq.type!=_DOUBLE_ || testeq.type != _CPLX && !is_undef(testeq) && !is_inf(testeq)) ) return vecteur(1,gensizeerr("Unable to solve inequation"));
@@ -1339,12 +1345,12 @@ namespace giac {
 	  (equalposcomp(excluded_not_singu,m) || equalposcomp(singu,m) ||
 	   ( !(direction %2) && equalposcomp(veq_not_singu,m)) )
 	  )
-	symb_sup=symb_inferieur_strict(x,m);
+	symb_sup=symb_inferieur_strict(x,msymb);
       else {
 	if (equalposcomp(excluded_not_singu,m) || (test!=1 && equalposcomp(singu,m)))
-	  symb_sup=symb_inferieur_strict(x,m);
+	  symb_sup=symb_inferieur_strict(x,msymb);
 	else
-	  symb_sup=symb_inferieur_egal(x,m);
+	  symb_sup=symb_inferieur_egal(x,msymb);
       }
       if (l==minus_inf)
 	res.push_back(symb_sup);
@@ -6472,7 +6478,8 @@ namespace giac {
 	      }	    
 	    }
 	    else {
-	      vecteur T=solve(gcd(subst(eq[0],var[1],y,false,contextptr),subst(eq[1],var[1],y,false,contextptr)),var[0],complexmode,contextptr);
+	      gen G=gcd(subst(eq[0],var[1],y,false,contextptr),subst(eq[1],var[1],y,false,contextptr));
+	      vecteur T=solve(G,var[0],complexmode,contextptr);
 	      for (int j=0;j<int(T.size());++j){
 		res.push_back(makevecteur(T[j],y));
 	      }

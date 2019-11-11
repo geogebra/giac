@@ -312,7 +312,7 @@ namespace giac {
     size_t size() const { return riptr->i.size(); }
     bool is_zero() const ; 
     size_t total_degree() const ;
-#ifdef NUMWORKS
+#ifdef KHICAS
     friend stdostream & operator << (stdostream & os,const index_m & m ){
       os << ":index_m:[ " ;
       for (index_t::const_iterator it=m.begin();it!=m.end();++it)
@@ -516,7 +516,7 @@ namespace giac {
     size_t size() const ;
     bool is_zero() const ;
     size_t total_degree() const ;
-#ifdef NUMWORKS
+#ifdef KHICAS
     friend stdostream & operator << (stdostream & os,const index_m & m ){
       os << ":index_m:[ " ;
       for (index_t::const_iterator it=m.begin();it!=m.end();++it)

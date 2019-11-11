@@ -1,9 +1,9 @@
 // -*- mode:C++ ; compile-command: "g++ -I.. -I../include -DHAVE_CONFIG_H -DIN_GIAC -DGIAC_GENERIC_CONSTANTS -fno-strict-aliasing -g -c gen.cc -Wall" -*-
 #include "giacPCH.h"
-#ifdef NUMWORKS
+#ifdef KHICAS
 #include "kdisplay.h"
 #ifdef DEVICE
-const size_t stackptr=0x20038000;
+const size_t stackptr=0x20036000;
 #else
 const size_t stackptr=0xffffffffffffffff;
 #endif
@@ -26,7 +26,7 @@ const size_t stackptr=0xffffffffffffffff;
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 using namespace std;
-#if !defined NSPIRE && !defined FXCG && !defined NUMWORKS
+#if !defined NSPIRE && !defined FXCG && !defined KHICAS
 #include <cstdlib>
 #include <iomanip>
 #endif
@@ -785,7 +785,7 @@ namespace giac {
 #else
     __ZINTptr= new ref_mpz_t(m);
 #endif
-#ifdef NUMWORKS
+#ifdef KHICAS
       if ((size_t) _ZINTptr > stackptr)
 	ctrl_c=interrupted=true;
 #endif
@@ -807,7 +807,7 @@ namespace giac {
       * ((ulonglong * ) this) = ulonglong(ptr) << 16;
 #else
       __ZINTptr= new ref_mpz_t();
-#ifdef NUMWORKS
+#ifdef KHICAS
       if ((size_t) _ZINTptr > stackptr)
 	ctrl_c=interrupted=true;
 #endif
@@ -859,7 +859,7 @@ namespace giac {
 #else
     __VECTptr= new_ref_vecteur(v);
 #endif
-#ifdef NUMWORKS
+#ifdef KHICAS
     if (v.size()>1 &&
 	( (size_t) _VECTptr > stackptr ||
 	  (size_t) _VECTptr->begin() > stackptr)
@@ -878,7 +878,7 @@ namespace giac {
 #endif
     type=_VECT;
     subtype=(signed char)s;
-#ifdef NUMWORKS
+#ifdef KHICAS
     if (_VECTptr->size()>1 &&
 	( (size_t) _VECTptr > stackptr ||
 	  (size_t) _VECTptr->begin() > stackptr)
@@ -913,7 +913,7 @@ namespace giac {
 #endif
     type = _SYMB;
     subtype = 0;
-#ifdef NUMWORKS
+#ifdef KHICAS
     if (_SYMBptr->sommet!=at_restart && _SYMBptr->sommet!=at_purge && (size_t) _SYMBptr > stackptr)
       ctrl_c=interrupted=true;
 #endif
@@ -927,7 +927,7 @@ namespace giac {
 #endif
     type = _SYMB;
     subtype = 0;
-#ifdef NUMWORKS
+#ifdef KHICAS
     if (_SYMBptr->sommet!=at_restart && _SYMBptr->sommet!=at_purge && (size_t) _SYMBptr > stackptr)
       ctrl_c=interrupted=true;
 #endif
@@ -1026,7 +1026,7 @@ namespace giac {
 #else
 	__POLYptr = new Tref_tensor<gen>(p) ;
 #endif
-#ifdef NUMWORKS
+#ifdef KHICAS
 	if ((size_t) _POLYptr > stackptr)
 	  ctrl_c=interrupted=true;
 #endif
@@ -1079,7 +1079,7 @@ namespace giac {
 #else
     __POLYptr = pptr ;
 #endif
-#ifdef NUMWORKS
+#ifdef KHICAS
     if ((size_t) _POLYptr > stackptr)
       ctrl_c=interrupted=true;
 #endif
@@ -1114,7 +1114,7 @@ namespace giac {
 #else
       __ZINTptr = mptr;
 #endif
-#ifdef NUMWORKS
+#ifdef KHICAS
       if ((size_t) _ZINTptr > stackptr)
 	ctrl_c=interrupted=true;
 #endif
@@ -1182,7 +1182,7 @@ namespace giac {
 #else
       __ZINTptr = new ref_mpz_t(z.ptr);
 #endif
-#ifdef NUMWORKS
+#ifdef KHICAS
       if ((size_t) _ZINTptr > stackptr)
 	ctrl_c=interrupted=true;
 #endif
@@ -1443,7 +1443,7 @@ namespace giac {
 #else
 	__SPOL1ptr= new ref_sparse_poly1(p);
 #endif
-#ifdef NUMWORKS
+#ifdef KHICAS
 	if ((size_t) _SPOL1ptr > stackptr)
 	  ctrl_c=interrupted=true;
 #endif
@@ -2685,6 +2685,8 @@ namespace giac {
       return double(g0.val);
     if (g0.type==_DOUBLE_)
       return g0;
+    if (g0.is_symb_of_sommet(at_program))
+      return g0;
     if (g0.type==_FLOAT_ || g0.type==_FRAC || g0.type==_ZINT || g0.type==_REAL)
       return evalf_double(g0,1,contextptr);
     if (storcl_38 && level && g0.type==_IDNT){
@@ -3284,6 +3286,17 @@ namespace giac {
 	r=_surd(makesequence(r,f._VECTptr->back()),contextptr);
 	return;
       }
+    }
+    if (u==at_derive && f.type==_VECT && !f._VECTptr->empty()){
+      vecteur v=*f._VECTptr;
+      reim(v.front(),r,i,contextptr);
+      v.front()=r;
+      r=symbolic(at_derive,gen(v,f.subtype));
+      if (is_zero(i))
+	return;
+      v.front()=i;
+      i=symbolic(at_derive,gen(v,f.subtype));
+      return;
     }
     if (u==at_pow){
       gen e=f._VECTptr->front(),expo=f._VECTptr->back();
@@ -9379,7 +9392,7 @@ namespace giac {
 	}
 	return res;
       }
-      if (_SYMBptr->sommet==at_function_diff || _SYMBptr->sommet==at_of || _SYMBptr->sommet==at_at)
+      if (_SYMBptr->sommet==at_derive || _SYMBptr->sommet==at_function_diff || _SYMBptr->sommet==at_of || _SYMBptr->sommet==at_at)
 	return new_ref_symbolic(symbolic(at_of,makesequence(*this,i)));
       gen & f=_SYMBptr->feuille;
       // distributions laws: add arguments and reeval
@@ -12084,7 +12097,7 @@ namespace giac {
 #if !defined HAVE_SSTREAM || defined NSPIRE 
     logptr(&COUT,contextptr);
 #else
-#ifndef NUMWORKS
+#ifndef KHICAS
     logptr(&warnstream,contextptr);
 #endif
 #endif // HAVE_SSTREAM
@@ -12212,7 +12225,7 @@ void sprint_double(char * s,double d){
     }
   }
   if (i!=0){
-    if (!numworks_shell){
+    if (!os_shell){
       *buf='*';
       ++buf;
       *buf='1';
@@ -12230,7 +12243,7 @@ void sprint_double(char * s,double d){
 }
 
   string print_DOUBLE_(double d,GIAC_CONTEXT){
-#ifdef NUMWORKS
+#ifdef KHICAS
     {
       char s[256];
       sprint_double(s,d);
@@ -12429,7 +12442,7 @@ void sprint_double(char * s,double d){
     else
       return res;
 #else // USE_GMP_REPLACEMENTS
-#if defined NSPIRE || defined FXCG
+#if defined NSPIRE || defined FXCG || defined KHICAS
     return "mpf_t not implemented";
 #else
     std::ostringstream out;
@@ -12650,14 +12663,14 @@ void sprint_double(char * s,double d){
 	s="{";
       else {
 	// s="matrix[";
-	if (!numworks_shell)
+	if (!os_shell)
 	  s="[";
 	else
 	  s=abs_calc_mode(contextptr)==38?"[":"matrix[";
       }
       break;
     case _POLY1__VECT:
-      if (!numworks_shell)
+      if (!os_shell)
 	s="[";
       else
 	s="poly1[";
@@ -12675,7 +12688,7 @@ void sprint_double(char * s,double d){
       s= "rgba[";
       break;
     case _LIST__VECT:
-      if (!numworks_shell)
+      if (!os_shell)
 	s="[";
       else {
 	if (tex)
@@ -13021,8 +13034,8 @@ void sprint_double(char * s,double d){
   }
 
   const char * printi(GIAC_CONTEXT){
-#ifdef NUMWORKS
-    return numworks_shell?"i":"𝐢";
+#ifdef KHICAS
+    return os_shell?"i":"𝐢";
 #endif
     if (calc_mode(contextptr)==1)
       return "ί";
@@ -13857,7 +13870,7 @@ void sprint_double(char * s,double d){
       }
       if (is_inf(_SYMBptr->feuille)){
 	if (_SYMBptr->sommet==at_plus){
-#ifdef NUMWORKS
+#ifdef KHICAS
 	  return "oo";
 #else
 	  if (
@@ -13870,7 +13883,7 @@ void sprint_double(char * s,double d){
 #endif
 	}
 	if (_SYMBptr->sommet==at_neg){
-#ifdef NUMWORKS
+#ifdef KHICAS
 	  return "-oo"; 
 #else
 	  if (
@@ -13984,7 +13997,7 @@ void sprint_double(char * s,double d){
 #endif
 #endif
 
-#ifdef NUMWORKS
+#ifdef KHICAS
  stdostream & operator << (stdostream & os,const gen & a){
    return os << a.print(context0); 
  }
@@ -14783,7 +14796,7 @@ void sprint_double(char * s,double d){
 #else
     mpf_set(_REALptr->inf,g.inf);
 #endif
-#ifdef NUMWORKS
+#ifdef KHICAS
     if ((size_t) _REALptr > stackptr)
       ctrl_c=interrupted=true;
 #endif
@@ -14795,7 +14808,7 @@ void sprint_double(char * s,double d){
 #else
       __REALptr = (ref_real_object *) new ref_real_interval;
 #endif
-#ifdef NUMWORKS
+#ifdef KHICAS
     if ((size_t) _REALptr > stackptr)
       ctrl_c=interrupted=true;
 #endif
@@ -15960,7 +15973,7 @@ void sprint_double(char * s,double d){
   }
 
   gen iprotecteval(const gen & g,int level,GIAC_CONTEXT){
-#ifdef NUMWORKS
+#ifdef KHICAS
     enable_back_interrupt();
     gen res=protecteval(g,level,contextptr);
     disable_back_interrupt();
@@ -15970,7 +15983,7 @@ void sprint_double(char * s,double d){
 #endif
   }
 
-#if 0 // def NUMWORKS
+#if 0 // def KHICAS
 #undef HAVE_LIBPTHREAD
 #endif
 
@@ -16006,7 +16019,7 @@ void sprint_double(char * s,double d){
     }
     return false;
   }
-#ifdef NUMWORKS
+#ifdef KHICAS
   extern logo_turtle * turtleptr;
   gen _efface_logo(const gen & g,GIAC_CONTEXT);
 #endif
@@ -16020,7 +16033,7 @@ void sprint_double(char * s,double d){
     if (!contextptr) contextptr=new context;
     context & C=*contextptr;
     if (!strcmp(s,"shell off")){
-      numworks_shell=false;
+      os_shell=false;
       return "shell off";
     }
     if (!strcmp(s,"warn off")){
@@ -16028,14 +16041,14 @@ void sprint_double(char * s,double d){
       return "warn off";
     }
     if (!strcmp(s,"shell on")){
-      numworks_shell=true;
+      os_shell=true;
       return "shell on";
     }
     if (!strcmp(s,"warn on")){
       warn_symb_program_sto=true;
       return "warn on";
     }
-#ifdef NUMWORKS
+#ifdef KHICAS
     if (!turtleptr){
       turtle();
       _efface_logo(vecteur(0),contextptr);
@@ -16186,7 +16199,7 @@ void sprint_double(char * s,double d){
     gen gp=g;
     if (gp.is_symb_of_sommet(at_add_autosimplify))
       gp=gp._SYMBptr->feuille;
-#ifdef NUMWORKS
+#ifdef KHICAS
     bool push=false;
 #else
     bool push=!gp.is_symb_of_sommet(at_mathml) && !gp.is_symb_of_sommet(at_set_language);
@@ -16246,7 +16259,7 @@ void sprint_double(char * s,double d){
       S="GIAC_ERROR: "+S;
     }
     else {
-#ifdef NUMWORKS // replace ],[ by ][
+#ifdef KHICAS // replace ],[ by ][
       gen last=g;
       while (last.type==_VECT && last.subtype!=_LOGO__VECT && !last._VECTptr->empty()){
 	gen tmp=last._VECTptr->back();
@@ -16260,7 +16273,7 @@ void sprint_double(char * s,double d){
 	S="Graphic_object";
       }
       else {
-	if (numworks_shell){
+	if (os_shell){
 	  if (islogo(g))
 	    xcas::displaylogo();
 	  else {
@@ -16273,7 +16286,7 @@ void sprint_double(char * s,double d){
 	else
 	  S=g.print(&C);
       }
-      if (!numworks_shell){
+      if (!os_shell){
 	string S_;
 	S_ += S[0];
 	for (size_t i=1;i+1<S.size();++i){

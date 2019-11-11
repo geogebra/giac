@@ -332,6 +332,10 @@ namespace giac {
     }
   }
 
+  gen alg_lvar_f(const gen & g,GIAC_CONTEXT){
+    vecteur w=lvar(g);
+    return _product(w,contextptr);
+  }
   vecteur alg_lvar(const gen & e){
     vecteur l;
     l.push_back(l); // insure a null line inside the matrix of alg_lvar
@@ -344,7 +348,7 @@ namespace giac {
       vector<const unary_function_ptr *> vu;
       vu.push_back(at_rootof); 
       vector <gen_op_context> vv;
-      vv.push_back(_nop); 
+      vv.push_back(alg_lvar_f); // was _nop
       // FIXME: arg of e is two vectors, if rootof is ^, this raises a warning
       gen er=subst(w,vu,vv,false,context0);
       if (er.type==_VECT)

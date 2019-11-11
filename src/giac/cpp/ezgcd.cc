@@ -1259,7 +1259,7 @@ namespace giac {
   }
 
   polynome peval_1(const polynome & p,const vecteur &v,const gen & mod){
-#if defined(NO_STDEXCEPT) && !defined(RTOS_THREADX) && !defined(VISUALC) && !defined(NUMWORKS)
+#if defined(NO_STDEXCEPT) && !defined(RTOS_THREADX) && !defined(VISUALC) && !defined(KHICAS)
     assert(p.dim==signed(v.size()+1));
 #else
     if (p.dim!=signed(v.size()+1))

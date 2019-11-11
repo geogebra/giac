@@ -1270,7 +1270,7 @@ namespace giac {
   std::string print_the_type(int val,GIAC_CONTEXT);
 
   // I/O
-#ifdef NUMWORKS
+#ifdef KHICAS
   stdostream & operator << (stdostream & os,const gen & a);
 #endif
 #ifdef NSPIRE
@@ -1299,7 +1299,7 @@ namespace giac {
     std::string print(GIAC_CONTEXT) const ;
     const char * dbgprint() const ;
   };
-#if 0 // def NUMWORKS
+#if 0 // def KHICAS
   stdostream & operator<<(stdostream & os,const monome & m){    return os << m.print() ;}
 #endif
 #ifdef NSPIRE
@@ -1372,7 +1372,7 @@ namespace giac {
   // Terminal data for EQW display
   struct eqwdata {
     gen g; 
-#if defined NUMWORKS || defined FXCG
+#if defined KHICAS || defined FXCG
     short int x,y,dx,dy;
     short int baseline;
 #else

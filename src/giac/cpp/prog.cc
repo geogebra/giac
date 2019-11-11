@@ -93,8 +93,7 @@ extern "C" uint32_t mainThreadStack[];
 #include <emscripten.h>
 #endif
 
-#ifdef NUMWORKS
-const char * read_file(const char * filename);
+#ifdef KHICAS
 #include "kdisplay.h"
 #endif
 
@@ -2768,7 +2767,7 @@ namespace giac {
       if (vars[i].is_symb_of_sommet(at_equal))
 	vars[i]=vars[i]._SYMBptr->feuille[0];
     }
-#ifdef NUMWORKS
+#ifdef KHICAS
     if (vals.size()==1 && vars.size()!=1 && vals.front().type==_VECT)
       vals=*vals.front()._VECTptr;
 #endif
@@ -5388,7 +5387,7 @@ namespace giac {
   static define_unary_function_eval_quoted (__rmbreakpoint,&_rmbreakpoint,_rmbreakpoint_s);
   define_unary_function_ptr5( at_rmbreakpoint ,alias_at_rmbreakpoint,&__rmbreakpoint,_QUOTE_ARGUMENTS,true);
 
-#ifdef NUMWORKS
+#ifdef KHICAS
   void debug_loop(gen &res,GIAC_CONTEXT){
     if (!debug_ptr(contextptr)->debug_allowed || (!debug_ptr(contextptr)->sst_mode && !equalposcomp(debug_ptr(contextptr)->sst_at,debug_ptr(contextptr)->current_instruction)) )
       return;
@@ -5435,7 +5434,7 @@ namespace giac {
       }
     }
     w.push_back(dw);
-    numworks_fill_rect(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
+    os_fill_rect(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
     int dispx=0,dispy=12;
     // print debugged program instructions from current-2 to current+3
     progs="debug "+w[0].print(contextptr)+'\n';
@@ -5462,7 +5461,7 @@ namespace giac {
       if (M-m<5)
 	m=giacmax(0,M-5);
       for (int i=m;i<=M;++i){
-	numworks_draw_string_small(dispx,dispy,(i==w[4].val?_WHITE:_BLACK),(i==w[4].val?_BLACK:_WHITE),(print_INT_(i)+":"+ws[i]).c_str());
+	os_draw_string_small(dispx,dispy,(i==w[4].val?_WHITE:_BLACK),(i==w[4].val?_BLACK:_WHITE),(print_INT_(i)+":"+ws[i]).c_str());
 	//mPrintXY(dispx,dispy,(print_INT_(i)+":"+ws[i]).c_str(),(i==w[4].val?TEXT_MODE_INVERT:TEXT_MODE_TRANSPARENT_BACKGROUND),TEXT_COLOR_BLACK);
 	dispy+=12;
 	dispx=0;
@@ -5473,7 +5472,7 @@ namespace giac {
       string s=w[2].print(contextptr);
       progs += "\nprg: "+s+" # "+w[4].print(contextptr);
     }
-    numworks_draw_string_small(dispx,dispy,"----------------");
+    os_draw_string_small_(dispx,dispy,"----------------");
     dispx=0;
     dispy += 8;
     // progs += "======\n";
@@ -5491,7 +5490,7 @@ namespace giac {
 	s=s.substr(0,35)+"...";
       evals += s+",";
       if (fewvars || (nv % 2)==1 || nv==nvars-1){
-	numworks_draw_string_small(dispx,dispy,evals.c_str());
+	os_draw_string_small_(dispx,dispy,evals.c_str());
 	dispy+=12;
 	evals="";
 	// evals += '\n';
@@ -5500,10 +5499,10 @@ namespace giac {
 	evals += "    ";
     }
     if (evals.size()!=0)
-      numworks_draw_string_small(dispx,dispy,evals.c_str());
+      os_draw_string_small_(dispx,dispy,evals.c_str());
     dispx=0;
     dispy=LCD_HEIGHT_PX-18;
-    numworks_draw_string_small(dispx,dispy,"down: next, right: in, EXE: cont. EXIT: kill");
+    os_draw_string_small_(dispx,dispy,"down: next, right: in, EXE: cont. EXIT: kill");
     w.push_back(dw);
     debug_ptr(contextptr)->debug_allowed=true;
     *dbgptr->debug_info_ptr=w;
@@ -5549,19 +5548,19 @@ namespace giac {
       if (i==-1){
 	dbgptr->sst_in_mode=false;
 	dbgptr->sst_mode=true;
-	numworks_hide_graph();
+	os_hide_graph();
 	return;
       }
       if (i==-2){
 	dbgptr->sst_in_mode=true;
 	dbgptr->sst_mode=true;
-	numworks_hide_graph();
+	os_hide_graph();
 	return;
       }
       if (i==-3){
 	dbgptr->sst_in_mode=false;
 	dbgptr->sst_mode=false;
-	numworks_hide_graph();
+	os_hide_graph();
 	return;
       }
       if (i==-4){
@@ -5571,7 +5570,7 @@ namespace giac {
 	//debug_ptr(contextptr)->sst_at_stack.clear();
 	//debug_ptr(contextptr)->args_stack.clear();
 	ctrl_c=interrupted=true;
-	numworks_hide_graph();
+	os_hide_graph();
 	return;
       }
       if (i==-5){
@@ -5584,7 +5583,7 @@ namespace giac {
       }
     } // end while(1)
   }
-#else // NUMWORKS
+#else // KHICAS
 #if defined EMCC && !defined GIAC_GGB
   void debug_loop(gen &res,GIAC_CONTEXT){
     if (!debug_ptr(contextptr)->debug_allowed || (!debug_ptr(contextptr)->sst_mode && !equalposcomp(debug_ptr(contextptr)->sst_at,debug_ptr(contextptr)->current_instruction)) )
@@ -5954,7 +5953,7 @@ namespace giac {
   }
 #endif // GIAC_HAS_STO_38
 #endif // EMCC
-#endif // NUMWORKS
+#endif // KHICAS
   static string printasbackquote(const gen & feuille,const char * sommetstr,GIAC_CONTEXT){
     return "`"+feuille.print(contextptr)+"`";
   }
@@ -6022,7 +6021,7 @@ namespace giac {
       }
     }
 #ifndef RTOS_THREADX
-#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined NUMWORKS
+#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined KHICAS
 #ifdef HAVE_LIBPTHREAD
     pthread_mutex_lock(&context_list_mutex);
 #endif
@@ -7465,8 +7464,8 @@ namespace giac {
     return gensizeerr("Interval arithmetic support not compiled. Please install MPFI and recompile");
   }
 
-  gen numworks_nary_workaround(const gen & g){
-#ifdef NUMWORKS
+  gen os_nary_workaround(const gen & g){
+#ifdef KHICAS
     if (g.type==_VECT && g._VECTptr->size()==1 && g._VECTptr->front().type==_VECT)
       return change_subtype(g._VECTptr->front(),_SEQ__VECT);
 #endif
@@ -8055,13 +8054,13 @@ namespace giac {
     if (args.type!=_STRNG)
       return symbolic(at_read,args);
     string fichier=*args._STRNGptr;
-#ifdef NUMWORKS
+#ifdef KHICAS
     const char * s=read_file(fichier.c_str());
     if (!s)
       return undef;
     gen g(s,contextptr);
     return g;
-#else // NUMWORKS
+#else // KHICAS
 #ifdef EMCC
     string s=fetch(fichier);
     return gen(s,contextptr);
@@ -8129,7 +8128,7 @@ namespace giac {
     vecteur v;
     readargs_from_stream(inf2,v,contextptr);
     return v.size()==1?v.front():gen(v,_SEQ__VECT);
-#endif // NUMWORKS
+#endif // KHICAS
   }
   gen _read(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
@@ -9690,6 +9689,1733 @@ namespace giac {
   }
 #endif
 
+#ifdef STATIC_BUILTIN_LEXER_FUNCTIONS
+  static const alias_identificateur alias_identificateur_A_unit_rom={0,0,"_A",0,0};
+  const identificateur & _IDNT_id_A_unit_rom=* (const identificateur *) &alias_identificateur_A_unit_rom;
+  const alias_ref_identificateur ref_A_unit_rom={-1,0,0,"_A",0,0};
+  const define_alias_gen(alias_A_unit_rom,_IDNT,0,&ref_A_unit_rom);
+  const gen & A_unit_rom_IDNT_e = * (gen *) & alias_A_unit_rom;
+
+  static const alias_identificateur alias_identificateur_Angstrom_unit_rom={0,0,"_Angstrom",0,0};
+  const identificateur & _IDNT_id_Angstrom_unit_rom=* (const identificateur *) &alias_identificateur_Angstrom_unit_rom;
+  const alias_ref_identificateur ref_Angstrom_unit_rom={-1,0,0,"_Angstrom",0,0};
+  const define_alias_gen(alias_Angstrom_unit_rom,_IDNT,0,&ref_Angstrom_unit_rom);
+  const gen & Angstrom_unit_rom_IDNT_e = * (gen *) & alias_Angstrom_unit_rom;
+
+  static const alias_identificateur alias_identificateur_Bq_unit_rom={0,0,"_Bq",0,0};
+  const identificateur & _IDNT_id_Bq_unit_rom=* (const identificateur *) &alias_identificateur_Bq_unit_rom;
+  const alias_ref_identificateur ref_Bq_unit_rom={-1,0,0,"_Bq",0,0};
+  const define_alias_gen(alias_Bq_unit_rom,_IDNT,0,&ref_Bq_unit_rom);
+  const gen & Bq_unit_rom_IDNT_e = * (gen *) & alias_Bq_unit_rom;
+
+  static const alias_identificateur alias_identificateur_yd_unit_rom={0,0,"_yd",0,0};
+  const identificateur & _IDNT_id_yd_unit_rom=* (const identificateur *) &alias_identificateur_yd_unit_rom;
+  const alias_ref_identificateur ref_yd_unit_rom={-1,0,0,"_yd",0,0};
+  const define_alias_gen(alias_yd_unit_rom,_IDNT,0,&ref_yd_unit_rom);
+  const gen & yd_unit_rom_IDNT_e = * (gen *) & alias_yd_unit_rom;
+
+  static const alias_identificateur alias_identificateur_yr_unit_rom={0,0,"_yr",0,0};
+  const identificateur & _IDNT_id_yr_unit_rom=* (const identificateur *) &alias_identificateur_yr_unit_rom;
+  const alias_ref_identificateur ref_yr_unit_rom={-1,0,0,"_yr",0,0};
+  const define_alias_gen(alias_yr_unit_rom,_IDNT,0,&ref_yr_unit_rom);
+  const gen & yr_unit_rom_IDNT_e = * (gen *) & alias_yr_unit_rom;
+
+  static const alias_identificateur alias_identificateur_Btu_unit_rom={0,0,"_Btu",0,0};
+  const identificateur & _IDNT_id_Btu_unit_rom=* (const identificateur *) &alias_identificateur_Btu_unit_rom;
+  const alias_ref_identificateur ref_Btu_unit_rom={-1,0,0,"_Btu",0,0};
+  const define_alias_gen(alias_Btu_unit_rom,_IDNT,0,&ref_Btu_unit_rom);
+  const gen & Btu_unit_rom_IDNT_e = * (gen *) & alias_Btu_unit_rom;
+
+  static const alias_identificateur alias_identificateur_R__unit_rom={0,0,"_R_",0,0};
+  const identificateur & _IDNT_id_R__unit_rom=* (const identificateur *) &alias_identificateur_R__unit_rom;
+  const alias_ref_identificateur ref_R__unit_rom={-1,0,0,"_R_",0,0};
+  const define_alias_gen(alias_R__unit_rom,_IDNT,0,&ref_R__unit_rom);
+  const gen & R__unit_rom_IDNT_e = * (gen *) & alias_R__unit_rom;
+
+  static const alias_identificateur alias_identificateur_epsilon0__unit_rom={0,0,"_epsilon0_",0,0};
+  const identificateur & _IDNT_id_epsilon0__unit_rom=* (const identificateur *) &alias_identificateur_epsilon0__unit_rom;
+  const alias_ref_identificateur ref_epsilon0__unit_rom={-1,0,0,"_epsilon0_",0,0};
+  const define_alias_gen(alias_epsilon0__unit_rom,_IDNT,0,&ref_epsilon0__unit_rom);
+  const gen & epsilon0__unit_rom_IDNT_e = * (gen *) & alias_epsilon0__unit_rom;
+
+  static const alias_identificateur alias_identificateur_a0__unit_rom={0,0,"_a0_",0,0};
+  const identificateur & _IDNT_id_a0__unit_rom=* (const identificateur *) &alias_identificateur_a0__unit_rom;
+  const alias_ref_identificateur ref_a0__unit_rom={-1,0,0,"_a0_",0,0};
+  const define_alias_gen(alias_a0__unit_rom,_IDNT,0,&ref_a0__unit_rom);
+  const gen & a0__unit_rom_IDNT_e = * (gen *) & alias_a0__unit_rom;
+
+  static const alias_identificateur alias_identificateur_RSun__unit_rom={0,0,"_RSun_",0,0};
+  const identificateur & _IDNT_id_RSun__unit_rom=* (const identificateur *) &alias_identificateur_RSun__unit_rom;
+  const alias_ref_identificateur ref_RSun__unit_rom={-1,0,0,"_RSun_",0,0};
+  const define_alias_gen(alias_RSun__unit_rom,_IDNT,0,&ref_RSun__unit_rom);
+  const gen & RSun__unit_rom_IDNT_e = * (gen *) & alias_RSun__unit_rom;
+
+  static const alias_identificateur alias_identificateur_REarth__unit_rom={0,0,"_REarth_",0,0};
+  const identificateur & _IDNT_id_REarth__unit_rom=* (const identificateur *) &alias_identificateur_REarth__unit_rom;
+  const alias_ref_identificateur ref_REarth__unit_rom={-1,0,0,"_REarth_",0,0};
+  const define_alias_gen(alias_REarth__unit_rom,_IDNT,0,&ref_REarth__unit_rom);
+  const gen & REarth__unit_rom_IDNT_e = * (gen *) & alias_REarth__unit_rom;
+
+  static const alias_identificateur alias_identificateur_Fdy_unit_rom={0,0,"_Fdy",0,0};
+  const identificateur & _IDNT_id_Fdy_unit_rom=* (const identificateur *) &alias_identificateur_Fdy_unit_rom;
+  const alias_ref_identificateur ref_Fdy_unit_rom={-1,0,0,"_Fdy",0,0};
+  const define_alias_gen(alias_Fdy_unit_rom,_IDNT,0,&ref_Fdy_unit_rom);
+  const gen & Fdy_unit_rom_IDNT_e = * (gen *) & alias_Fdy_unit_rom;
+
+  static const alias_identificateur alias_identificateur_F_unit_rom={0,0,"_F",0,0};
+  const identificateur & _IDNT_id_F_unit_rom=* (const identificateur *) &alias_identificateur_F_unit_rom;
+  const alias_ref_identificateur ref_F_unit_rom={-1,0,0,"_F",0,0};
+  const define_alias_gen(alias_F_unit_rom,_IDNT,0,&ref_F_unit_rom);
+  const gen & F_unit_rom_IDNT_e = * (gen *) & alias_F_unit_rom;
+
+  static const alias_identificateur alias_identificateur_FF_unit_rom={0,0,"_FF",0,0};
+  const identificateur & _IDNT_id_FF_unit_rom=* (const identificateur *) &alias_identificateur_FF_unit_rom;
+  const alias_ref_identificateur ref_FF_unit_rom={-1,0,0,"_FF",0,0};
+  const define_alias_gen(alias_FF_unit_rom,_IDNT,0,&ref_FF_unit_rom);
+  const gen & FF_unit_rom_IDNT_e = * (gen *) & alias_FF_unit_rom;
+
+  static const alias_identificateur alias_identificateur_Faraday__unit_rom={0,0,"_Faraday_",0,0};
+  const identificateur & _IDNT_id_Faraday__unit_rom=* (const identificateur *) &alias_identificateur_Faraday__unit_rom;
+  const alias_ref_identificateur ref_Faraday__unit_rom={-1,0,0,"_Faraday_",0,0};
+  const define_alias_gen(alias_Faraday__unit_rom,_IDNT,0,&ref_Faraday__unit_rom);
+  const gen & Faraday__unit_rom_IDNT_e = * (gen *) & alias_Faraday__unit_rom;
+
+  static const alias_identificateur alias_identificateur_G__unit_rom={0,0,"_G_",0,0};
+  const identificateur & _IDNT_id_G__unit_rom=* (const identificateur *) &alias_identificateur_G__unit_rom;
+  const alias_ref_identificateur ref_G__unit_rom={-1,0,0,"_G_",0,0};
+  const define_alias_gen(alias_G__unit_rom,_IDNT,0,&ref_G__unit_rom);
+  const gen & G__unit_rom_IDNT_e = * (gen *) & alias_G__unit_rom;
+
+  static const alias_identificateur alias_identificateur_Gal_unit_rom={0,0,"_Gal",0,0};
+  const identificateur & _IDNT_id_Gal_unit_rom=* (const identificateur *) &alias_identificateur_Gal_unit_rom;
+  const alias_ref_identificateur ref_Gal_unit_rom={-1,0,0,"_Gal",0,0};
+  const define_alias_gen(alias_Gal_unit_rom,_IDNT,0,&ref_Gal_unit_rom);
+  const gen & Gal_unit_rom_IDNT_e = * (gen *) & alias_Gal_unit_rom;
+
+  static const alias_identificateur alias_identificateur_Gy_unit_rom={0,0,"_Gy",0,0};
+  const identificateur & _IDNT_id_Gy_unit_rom=* (const identificateur *) &alias_identificateur_Gy_unit_rom;
+  const alias_ref_identificateur ref_Gy_unit_rom={-1,0,0,"_Gy",0,0};
+  const define_alias_gen(alias_Gy_unit_rom,_IDNT,0,&ref_Gy_unit_rom);
+  const gen & Gy_unit_rom_IDNT_e = * (gen *) & alias_Gy_unit_rom;
+
+  static const alias_identificateur alias_identificateur_H_unit_rom={0,0,"_H",0,0};
+  const identificateur & _IDNT_id_H_unit_rom=* (const identificateur *) &alias_identificateur_H_unit_rom;
+  const alias_ref_identificateur ref_H_unit_rom={-1,0,0,"_H",0,0};
+  const define_alias_gen(alias_H_unit_rom,_IDNT,0,&ref_H_unit_rom);
+  const gen & H_unit_rom_IDNT_e = * (gen *) & alias_H_unit_rom;
+
+  static const alias_identificateur alias_identificateur_HFCC_unit_rom={0,0,"_HFCC",0,0};
+  const identificateur & _IDNT_id_HFCC_unit_rom=* (const identificateur *) &alias_identificateur_HFCC_unit_rom;
+  const alias_ref_identificateur ref_HFCC_unit_rom={-1,0,0,"_HFCC",0,0};
+  const define_alias_gen(alias_HFCC_unit_rom,_IDNT,0,&ref_HFCC_unit_rom);
+  const gen & HFCC_unit_rom_IDNT_e = * (gen *) & alias_HFCC_unit_rom;
+
+  static const alias_identificateur alias_identificateur_Hz_unit_rom={0,0,"_Hz",0,0};
+  const identificateur & _IDNT_id_Hz_unit_rom=* (const identificateur *) &alias_identificateur_Hz_unit_rom;
+  const alias_ref_identificateur ref_Hz_unit_rom={-1,0,0,"_Hz",0,0};
+  const define_alias_gen(alias_Hz_unit_rom,_IDNT,0,&ref_Hz_unit_rom);
+  const gen & Hz_unit_rom_IDNT_e = * (gen *) & alias_Hz_unit_rom;
+
+  static const alias_identificateur alias_identificateur_IO__unit_rom={0,0,"_IO_",0,0};
+  const identificateur & _IDNT_id_IO__unit_rom=* (const identificateur *) &alias_identificateur_IO__unit_rom;
+  const alias_ref_identificateur ref_IO__unit_rom={-1,0,0,"_IO_",0,0};
+  const define_alias_gen(alias_IO__unit_rom,_IDNT,0,&ref_IO__unit_rom);
+  const gen & IO__unit_rom_IDNT_e = * (gen *) & alias_IO__unit_rom;
+
+  static const alias_identificateur alias_identificateur_J_unit_rom={0,0,"_J",0,0};
+  const identificateur & _IDNT_id_J_unit_rom=* (const identificateur *) &alias_identificateur_J_unit_rom;
+  const alias_ref_identificateur ref_J_unit_rom={-1,0,0,"_J",0,0};
+  const define_alias_gen(alias_J_unit_rom,_IDNT,0,&ref_J_unit_rom);
+  const gen & J_unit_rom_IDNT_e = * (gen *) & alias_J_unit_rom;
+
+  static const alias_identificateur alias_identificateur_K_unit_rom={0,0,"_K",0,0};
+  const identificateur & _IDNT_id_K_unit_rom=* (const identificateur *) &alias_identificateur_K_unit_rom;
+  const alias_ref_identificateur ref_K_unit_rom={-1,0,0,"_K",0,0};
+  const define_alias_gen(alias_K_unit_rom,_IDNT,0,&ref_K_unit_rom);
+  const gen & K_unit_rom_IDNT_e = * (gen *) & alias_K_unit_rom;
+
+  static const alias_identificateur alias_identificateur_L_unit_rom={0,0,"_L",0,0};
+  const identificateur & _IDNT_id_L_unit_rom=* (const identificateur *) &alias_identificateur_L_unit_rom;
+  const alias_ref_identificateur ref_L_unit_rom={-1,0,0,"_L",0,0};
+  const define_alias_gen(alias_L_unit_rom,_IDNT,0,&ref_L_unit_rom);
+  const gen & L_unit_rom_IDNT_e = * (gen *) & alias_L_unit_rom;
+
+  static const alias_identificateur alias_identificateur_N_unit_rom={0,0,"_N",0,0};
+  const identificateur & _IDNT_id_N_unit_rom=* (const identificateur *) &alias_identificateur_N_unit_rom;
+  const alias_ref_identificateur ref_N_unit_rom={-1,0,0,"_N",0,0};
+  const define_alias_gen(alias_N_unit_rom,_IDNT,0,&ref_N_unit_rom);
+  const gen & N_unit_rom_IDNT_e = * (gen *) & alias_N_unit_rom;
+
+  static const alias_identificateur alias_identificateur_NA__unit_rom={0,0,"_NA_",0,0};
+  const identificateur & _IDNT_id_NA__unit_rom=* (const identificateur *) &alias_identificateur_NA__unit_rom;
+  const alias_ref_identificateur ref_NA__unit_rom={-1,0,0,"_NA_",0,0};
+  const define_alias_gen(alias_NA__unit_rom,_IDNT,0,&ref_NA__unit_rom);
+  const gen & NA__unit_rom_IDNT_e = * (gen *) & alias_NA__unit_rom;
+
+  static const alias_identificateur alias_identificateur_Ohm_unit_rom={0,0,"_Ohm",0,0};
+  const identificateur & _IDNT_id_Ohm_unit_rom=* (const identificateur *) &alias_identificateur_Ohm_unit_rom;
+  const alias_ref_identificateur ref_Ohm_unit_rom={-1,0,0,"_Ohm",0,0};
+  const define_alias_gen(alias_Ohm_unit_rom,_IDNT,0,&ref_Ohm_unit_rom);
+  const gen & Ohm_unit_rom_IDNT_e = * (gen *) & alias_Ohm_unit_rom;
+
+  static const alias_identificateur alias_identificateur_P_unit_rom={0,0,"_P",0,0};
+  const identificateur & _IDNT_id_P_unit_rom=* (const identificateur *) &alias_identificateur_P_unit_rom;
+  const alias_ref_identificateur ref_P_unit_rom={-1,0,0,"_P",0,0};
+  const define_alias_gen(alias_P_unit_rom,_IDNT,0,&ref_P_unit_rom);
+  const gen & P_unit_rom_IDNT_e = * (gen *) & alias_P_unit_rom;
+
+  static const alias_identificateur alias_identificateur_PSun__unit_rom={0,0,"_PSun_",0,0};
+  const identificateur & _IDNT_id_PSun__unit_rom=* (const identificateur *) &alias_identificateur_PSun__unit_rom;
+  const alias_ref_identificateur ref_PSun__unit_rom={-1,0,0,"_PSun_",0,0};
+  const define_alias_gen(alias_PSun__unit_rom,_IDNT,0,&ref_PSun__unit_rom);
+  const gen & PSun__unit_rom_IDNT_e = * (gen *) & alias_PSun__unit_rom;
+
+  static const alias_identificateur alias_identificateur_Pa_unit_rom={0,0,"_Pa",0,0};
+  const identificateur & _IDNT_id_Pa_unit_rom=* (const identificateur *) &alias_identificateur_Pa_unit_rom;
+  const alias_ref_identificateur ref_Pa_unit_rom={-1,0,0,"_Pa",0,0};
+  const define_alias_gen(alias_Pa_unit_rom,_IDNT,0,&ref_Pa_unit_rom);
+  const gen & Pa_unit_rom_IDNT_e = * (gen *) & alias_Pa_unit_rom;
+
+  static const alias_identificateur alias_identificateur_R_unit_rom={0,0,"_R",0,0};
+  const identificateur & _IDNT_id_R_unit_rom=* (const identificateur *) &alias_identificateur_R_unit_rom;
+  const alias_ref_identificateur ref_R_unit_rom={-1,0,0,"_R",0,0};
+  const define_alias_gen(alias_R_unit_rom,_IDNT,0,&ref_R_unit_rom);
+  const gen & R_unit_rom_IDNT_e = * (gen *) & alias_R_unit_rom;
+
+  static const alias_identificateur alias_identificateur_Rankine_unit_rom={0,0,"_Rankine",0,0};
+  const identificateur & _IDNT_id_Rankine_unit_rom=* (const identificateur *) &alias_identificateur_Rankine_unit_rom;
+  const alias_ref_identificateur ref_Rankine_unit_rom={-1,0,0,"_Rankine",0,0};
+  const define_alias_gen(alias_Rankine_unit_rom,_IDNT,0,&ref_Rankine_unit_rom);
+  const gen & Rankine_unit_rom_IDNT_e = * (gen *) & alias_Rankine_unit_rom;
+
+  static const alias_identificateur alias_identificateur_Rinfinity__unit_rom={0,0,"_Rinfinity_",0,0};
+  const identificateur & _IDNT_id_Rinfinity__unit_rom=* (const identificateur *) &alias_identificateur_Rinfinity__unit_rom;
+  const alias_ref_identificateur ref_Rinfinity__unit_rom={-1,0,0,"_Rinfinity_",0,0};
+  const define_alias_gen(alias_Rinfinity__unit_rom,_IDNT,0,&ref_Rinfinity__unit_rom);
+  const gen & Rinfinity__unit_rom_IDNT_e = * (gen *) & alias_Rinfinity__unit_rom;
+
+  static const alias_identificateur alias_identificateur_S_unit_rom={0,0,"_S",0,0};
+  const identificateur & _IDNT_id_S_unit_rom=* (const identificateur *) &alias_identificateur_S_unit_rom;
+  const alias_ref_identificateur ref_S_unit_rom={-1,0,0,"_S",0,0};
+  const define_alias_gen(alias_S_unit_rom,_IDNT,0,&ref_S_unit_rom);
+  const gen & S_unit_rom_IDNT_e = * (gen *) & alias_S_unit_rom;
+
+  static const alias_identificateur alias_identificateur_St_unit_rom={0,0,"_St",0,0};
+  const identificateur & _IDNT_id_St_unit_rom=* (const identificateur *) &alias_identificateur_St_unit_rom;
+  const alias_ref_identificateur ref_St_unit_rom={-1,0,0,"_St",0,0};
+  const define_alias_gen(alias_St_unit_rom,_IDNT,0,&ref_St_unit_rom);
+  const gen & St_unit_rom_IDNT_e = * (gen *) & alias_St_unit_rom;
+
+  static const alias_identificateur alias_identificateur_StdP__unit_rom={0,0,"_StdP_",0,0};
+  const identificateur & _IDNT_id_StdP__unit_rom=* (const identificateur *) &alias_identificateur_StdP__unit_rom;
+  const alias_ref_identificateur ref_StdP__unit_rom={-1,0,0,"_StdP_",0,0};
+  const define_alias_gen(alias_StdP__unit_rom,_IDNT,0,&ref_StdP__unit_rom);
+  const gen & StdP__unit_rom_IDNT_e = * (gen *) & alias_StdP__unit_rom;
+
+  static const alias_identificateur alias_identificateur_StdT__unit_rom={0,0,"_StdT_",0,0};
+  const identificateur & _IDNT_id_StdT__unit_rom=* (const identificateur *) &alias_identificateur_StdT__unit_rom;
+  const alias_ref_identificateur ref_StdT__unit_rom={-1,0,0,"_StdT_",0,0};
+  const define_alias_gen(alias_StdT__unit_rom,_IDNT,0,&ref_StdT__unit_rom);
+  const gen & StdT__unit_rom_IDNT_e = * (gen *) & alias_StdT__unit_rom;
+
+  static const alias_identificateur alias_identificateur_Sv_unit_rom={0,0,"_Sv",0,0};
+  const identificateur & _IDNT_id_Sv_unit_rom=* (const identificateur *) &alias_identificateur_Sv_unit_rom;
+  const alias_ref_identificateur ref_Sv_unit_rom={-1,0,0,"_Sv",0,0};
+  const define_alias_gen(alias_Sv_unit_rom,_IDNT,0,&ref_Sv_unit_rom);
+  const gen & Sv_unit_rom_IDNT_e = * (gen *) & alias_Sv_unit_rom;
+
+  static const alias_identificateur alias_identificateur_T_unit_rom={0,0,"_T",0,0};
+  const identificateur & _IDNT_id_T_unit_rom=* (const identificateur *) &alias_identificateur_T_unit_rom;
+  const alias_ref_identificateur ref_T_unit_rom={-1,0,0,"_T",0,0};
+  const define_alias_gen(alias_T_unit_rom,_IDNT,0,&ref_T_unit_rom);
+  const gen & T_unit_rom_IDNT_e = * (gen *) & alias_T_unit_rom;
+
+  static const alias_identificateur alias_identificateur_Torr_unit_rom={0,0,"_Torr",0,0};
+  const identificateur & _IDNT_id_Torr_unit_rom=* (const identificateur *) &alias_identificateur_Torr_unit_rom;
+  const alias_ref_identificateur ref_Torr_unit_rom={-1,0,0,"_Torr",0,0};
+  const define_alias_gen(alias_Torr_unit_rom,_IDNT,0,&ref_Torr_unit_rom);
+  const gen & Torr_unit_rom_IDNT_e = * (gen *) & alias_Torr_unit_rom;
+
+  static const alias_identificateur alias_identificateur_V_unit_rom={0,0,"_V",0,0};
+  const identificateur & _IDNT_id_V_unit_rom=* (const identificateur *) &alias_identificateur_V_unit_rom;
+  const alias_ref_identificateur ref_V_unit_rom={-1,0,0,"_V",0,0};
+  const define_alias_gen(alias_V_unit_rom,_IDNT,0,&ref_V_unit_rom);
+  const gen & V_unit_rom_IDNT_e = * (gen *) & alias_V_unit_rom;
+
+  static const alias_identificateur alias_identificateur_Vm__unit_rom={0,0,"_Vm_",0,0};
+  const identificateur & _IDNT_id_Vm__unit_rom=* (const identificateur *) &alias_identificateur_Vm__unit_rom;
+  const alias_ref_identificateur ref_Vm__unit_rom={-1,0,0,"_Vm_",0,0};
+  const define_alias_gen(alias_Vm__unit_rom,_IDNT,0,&ref_Vm__unit_rom);
+  const gen & Vm__unit_rom_IDNT_e = * (gen *) & alias_Vm__unit_rom;
+
+  static const alias_identificateur alias_identificateur_W_unit_rom={0,0,"_W",0,0};
+  const identificateur & _IDNT_id_W_unit_rom=* (const identificateur *) &alias_identificateur_W_unit_rom;
+  const alias_ref_identificateur ref_W_unit_rom={-1,0,0,"_W",0,0};
+  const define_alias_gen(alias_W_unit_rom,_IDNT,0,&ref_W_unit_rom);
+  const gen & W_unit_rom_IDNT_e = * (gen *) & alias_W_unit_rom;
+
+  static const alias_identificateur alias_identificateur_Wb_unit_rom={0,0,"_Wb",0,0};
+  const identificateur & _IDNT_id_Wb_unit_rom=* (const identificateur *) &alias_identificateur_Wb_unit_rom;
+  const alias_ref_identificateur ref_Wb_unit_rom={-1,0,0,"_Wb",0,0};
+  const define_alias_gen(alias_Wb_unit_rom,_IDNT,0,&ref_Wb_unit_rom);
+  const gen & Wb_unit_rom_IDNT_e = * (gen *) & alias_Wb_unit_rom;
+
+  static const alias_identificateur alias_identificateur_Wh_unit_rom={0,0,"_Wh",0,0};
+  const identificateur & _IDNT_id_Wh_unit_rom=* (const identificateur *) &alias_identificateur_Wh_unit_rom;
+  const alias_ref_identificateur ref_Wh_unit_rom={-1,0,0,"_Wh",0,0};
+  const define_alias_gen(alias_Wh_unit_rom,_IDNT,0,&ref_Wh_unit_rom);
+  const gen & Wh_unit_rom_IDNT_e = * (gen *) & alias_Wh_unit_rom;
+
+  static const alias_identificateur alias_identificateur_a_unit_rom={0,0,"_a",0,0};
+  const identificateur & _IDNT_id_a_unit_rom=* (const identificateur *) &alias_identificateur_a_unit_rom;
+  const alias_ref_identificateur ref_a_unit_rom={-1,0,0,"_a",0,0};
+  const define_alias_gen(alias_a_unit_rom,_IDNT,0,&ref_a_unit_rom);
+  const gen & a_unit_rom_IDNT_e = * (gen *) & alias_a_unit_rom;
+
+  static const alias_identificateur alias_identificateur_acre_unit_rom={0,0,"_acre",0,0};
+  const identificateur & _IDNT_id_acre_unit_rom=* (const identificateur *) &alias_identificateur_acre_unit_rom;
+  const alias_ref_identificateur ref_acre_unit_rom={-1,0,0,"_acre",0,0};
+  const define_alias_gen(alias_acre_unit_rom,_IDNT,0,&ref_acre_unit_rom);
+  const gen & acre_unit_rom_IDNT_e = * (gen *) & alias_acre_unit_rom;
+
+  static const alias_identificateur alias_identificateur_alpha__unit_rom={0,0,"_alpha_",0,0};
+  const identificateur & _IDNT_id_alpha__unit_rom=* (const identificateur *) &alias_identificateur_alpha__unit_rom;
+  const alias_ref_identificateur ref_alpha__unit_rom={-1,0,0,"_alpha_",0,0};
+  const define_alias_gen(alias_alpha__unit_rom,_IDNT,0,&ref_alpha__unit_rom);
+  const gen & alpha__unit_rom_IDNT_e = * (gen *) & alias_alpha__unit_rom;
+
+  static const alias_identificateur alias_identificateur_arcmin_unit_rom={0,0,"_arcmin",0,0};
+  const identificateur & _IDNT_id_arcmin_unit_rom=* (const identificateur *) &alias_identificateur_arcmin_unit_rom;
+  const alias_ref_identificateur ref_arcmin_unit_rom={-1,0,0,"_arcmin",0,0};
+  const define_alias_gen(alias_arcmin_unit_rom,_IDNT,0,&ref_arcmin_unit_rom);
+  const gen & arcmin_unit_rom_IDNT_e = * (gen *) & alias_arcmin_unit_rom;
+
+  static const alias_identificateur alias_identificateur_arcs_unit_rom={0,0,"_arcs",0,0};
+  const identificateur & _IDNT_id_arcs_unit_rom=* (const identificateur *) &alias_identificateur_arcs_unit_rom;
+  const alias_ref_identificateur ref_arcs_unit_rom={-1,0,0,"_arcs",0,0};
+  const define_alias_gen(alias_arcs_unit_rom,_IDNT,0,&ref_arcs_unit_rom);
+  const gen & arcs_unit_rom_IDNT_e = * (gen *) & alias_arcs_unit_rom;
+
+  static const alias_identificateur alias_identificateur_atm_unit_rom={0,0,"_atm",0,0};
+  const identificateur & _IDNT_id_atm_unit_rom=* (const identificateur *) &alias_identificateur_atm_unit_rom;
+  const alias_ref_identificateur ref_atm_unit_rom={-1,0,0,"_atm",0,0};
+  const define_alias_gen(alias_atm_unit_rom,_IDNT,0,&ref_atm_unit_rom);
+  const gen & atm_unit_rom_IDNT_e = * (gen *) & alias_atm_unit_rom;
+
+  static const alias_identificateur alias_identificateur_au_unit_rom={0,0,"_au",0,0};
+  const identificateur & _IDNT_id_au_unit_rom=* (const identificateur *) &alias_identificateur_au_unit_rom;
+  const alias_ref_identificateur ref_au_unit_rom={-1,0,0,"_au",0,0};
+  const define_alias_gen(alias_au_unit_rom,_IDNT,0,&ref_au_unit_rom);
+  const gen & au_unit_rom_IDNT_e = * (gen *) & alias_au_unit_rom;
+
+  static const alias_identificateur alias_identificateur_bar_unit_rom={0,0,"_bar",0,0};
+  const identificateur & _IDNT_id_bar_unit_rom=* (const identificateur *) &alias_identificateur_bar_unit_rom;
+  const alias_ref_identificateur ref_bar_unit_rom={-1,0,0,"_bar",0,0};
+  const define_alias_gen(alias_bar_unit_rom,_IDNT,0,&ref_bar_unit_rom);
+  const gen & bar_unit_rom_IDNT_e = * (gen *) & alias_bar_unit_rom;
+
+  static const alias_identificateur alias_identificateur_b_unit_rom={0,0,"_b",0,0};
+  const identificateur & _IDNT_id_b_unit_rom=* (const identificateur *) &alias_identificateur_b_unit_rom;
+  const alias_ref_identificateur ref_b_unit_rom={-1,0,0,"_b",0,0};
+  const define_alias_gen(alias_b_unit_rom,_IDNT,0,&ref_b_unit_rom);
+  const gen & b_unit_rom_IDNT_e = * (gen *) & alias_b_unit_rom;
+
+  static const alias_identificateur alias_identificateur_bbl_unit_rom={0,0,"_bbl",0,0};
+  const identificateur & _IDNT_id_bbl_unit_rom=* (const identificateur *) &alias_identificateur_bbl_unit_rom;
+  const alias_ref_identificateur ref_bbl_unit_rom={-1,0,0,"_bbl",0,0};
+  const define_alias_gen(alias_bbl_unit_rom,_IDNT,0,&ref_bbl_unit_rom);
+  const gen & bbl_unit_rom_IDNT_e = * (gen *) & alias_bbl_unit_rom;
+
+  static const alias_identificateur alias_identificateur_bblep_unit_rom={0,0,"_bblep",0,0};
+  const identificateur & _IDNT_id_bblep_unit_rom=* (const identificateur *) &alias_identificateur_bblep_unit_rom;
+  const alias_ref_identificateur ref_bblep_unit_rom={-1,0,0,"_bblep",0,0};
+  const define_alias_gen(alias_bblep_unit_rom,_IDNT,0,&ref_bblep_unit_rom);
+  const gen & bblep_unit_rom_IDNT_e = * (gen *) & alias_bblep_unit_rom;
+
+  static const alias_identificateur alias_identificateur_boe_unit_rom={0,0,"_boe",0,0};
+  const identificateur & _IDNT_id_boe_unit_rom=* (const identificateur *) &alias_identificateur_boe_unit_rom;
+  const alias_ref_identificateur ref_boe_unit_rom={-1,0,0,"_boe",0,0};
+  const define_alias_gen(alias_boe_unit_rom,_IDNT,0,&ref_boe_unit_rom);
+  const gen & boe_unit_rom_IDNT_e = * (gen *) & alias_boe_unit_rom;
+
+  static const alias_identificateur alias_identificateur_bu_unit_rom={0,0,"_bu",0,0};
+  const identificateur & _IDNT_id_bu_unit_rom=* (const identificateur *) &alias_identificateur_bu_unit_rom;
+  const alias_ref_identificateur ref_bu_unit_rom={-1,0,0,"_bu",0,0};
+  const define_alias_gen(alias_bu_unit_rom,_IDNT,0,&ref_bu_unit_rom);
+  const gen & bu_unit_rom_IDNT_e = * (gen *) & alias_bu_unit_rom;
+
+  static const alias_identificateur alias_identificateur_buUS_unit_rom={0,0,"_buUS",0,0};
+  const identificateur & _IDNT_id_buUS_unit_rom=* (const identificateur *) &alias_identificateur_buUS_unit_rom;
+  const alias_ref_identificateur ref_buUS_unit_rom={-1,0,0,"_buUS",0,0};
+  const define_alias_gen(alias_buUS_unit_rom,_IDNT,0,&ref_buUS_unit_rom);
+  const gen & buUS_unit_rom_IDNT_e = * (gen *) & alias_buUS_unit_rom;
+
+  static const alias_identificateur alias_identificateur_c3__unit_rom={0,0,"_c3_",0,0};
+  const identificateur & _IDNT_id_c3__unit_rom=* (const identificateur *) &alias_identificateur_c3__unit_rom;
+  const alias_ref_identificateur ref_c3__unit_rom={-1,0,0,"_c3_",0,0};
+  const define_alias_gen(alias_c3__unit_rom,_IDNT,0,&ref_c3__unit_rom);
+  const gen & c3__unit_rom_IDNT_e = * (gen *) & alias_c3__unit_rom;
+
+  static const alias_identificateur alias_identificateur_c__unit_rom={0,0,"_c_",0,0};
+  const identificateur & _IDNT_id_c__unit_rom=* (const identificateur *) &alias_identificateur_c__unit_rom;
+  const alias_ref_identificateur ref_c__unit_rom={-1,0,0,"_c_",0,0};
+  const define_alias_gen(alias_c__unit_rom,_IDNT,0,&ref_c__unit_rom);
+  const gen & c__unit_rom_IDNT_e = * (gen *) & alias_c__unit_rom;
+
+  static const alias_identificateur alias_identificateur_cal_unit_rom={0,0,"_cal",0,0};
+  const identificateur & _IDNT_id_cal_unit_rom=* (const identificateur *) &alias_identificateur_cal_unit_rom;
+  const alias_ref_identificateur ref_cal_unit_rom={-1,0,0,"_cal",0,0};
+  const define_alias_gen(alias_cal_unit_rom,_IDNT,0,&ref_cal_unit_rom);
+  const gen & cal_unit_rom_IDNT_e = * (gen *) & alias_cal_unit_rom;
+
+  static const alias_identificateur alias_identificateur_cd_unit_rom={0,0,"_cd",0,0};
+  const identificateur & _IDNT_id_cd_unit_rom=* (const identificateur *) &alias_identificateur_cd_unit_rom;
+  const alias_ref_identificateur ref_cd_unit_rom={-1,0,0,"_cd",0,0};
+  const define_alias_gen(alias_cd_unit_rom,_IDNT,0,&ref_cd_unit_rom);
+  const gen & cd_unit_rom_IDNT_e = * (gen *) & alias_cd_unit_rom;
+
+  static const alias_identificateur alias_identificateur_cf_unit_rom={0,0,"_cf",0,0};
+  const identificateur & _IDNT_id_cf_unit_rom=* (const identificateur *) &alias_identificateur_cf_unit_rom;
+  const alias_ref_identificateur ref_cf_unit_rom={-1,0,0,"_cf",0,0};
+  const define_alias_gen(alias_cf_unit_rom,_IDNT,0,&ref_cf_unit_rom);
+  const gen & cf_unit_rom_IDNT_e = * (gen *) & alias_cf_unit_rom;
+
+  static const alias_identificateur alias_identificateur_chain_unit_rom={0,0,"_chain",0,0};
+  const identificateur & _IDNT_id_chain_unit_rom=* (const identificateur *) &alias_identificateur_chain_unit_rom;
+  const alias_ref_identificateur ref_chain_unit_rom={-1,0,0,"_chain",0,0};
+  const define_alias_gen(alias_chain_unit_rom,_IDNT,0,&ref_chain_unit_rom);
+  const gen & chain_unit_rom_IDNT_e = * (gen *) & alias_chain_unit_rom;
+
+  static const alias_identificateur alias_identificateur_ct_unit_rom={0,0,"_ct",0,0};
+  const identificateur & _IDNT_id_ct_unit_rom=* (const identificateur *) &alias_identificateur_ct_unit_rom;
+  const alias_ref_identificateur ref_ct_unit_rom={-1,0,0,"_ct",0,0};
+  const define_alias_gen(alias_ct_unit_rom,_IDNT,0,&ref_ct_unit_rom);
+  const gen & ct_unit_rom_IDNT_e = * (gen *) & alias_ct_unit_rom;
+
+  static const alias_identificateur alias_identificateur_cu_unit_rom={0,0,"_cu",0,0};
+  const identificateur & _IDNT_id_cu_unit_rom=* (const identificateur *) &alias_identificateur_cu_unit_rom;
+  const alias_ref_identificateur ref_cu_unit_rom={-1,0,0,"_cu",0,0};
+  const define_alias_gen(alias_cu_unit_rom,_IDNT,0,&ref_cu_unit_rom);
+  const gen & cu_unit_rom_IDNT_e = * (gen *) & alias_cu_unit_rom;
+
+  static const alias_identificateur alias_identificateur_d_unit_rom={0,0,"_d",0,0};
+  const identificateur & _IDNT_id_d_unit_rom=* (const identificateur *) &alias_identificateur_d_unit_rom;
+  const alias_ref_identificateur ref_d_unit_rom={-1,0,0,"_d",0,0};
+  const define_alias_gen(alias_d_unit_rom,_IDNT,0,&ref_d_unit_rom);
+  const gen & d_unit_rom_IDNT_e = * (gen *) & alias_d_unit_rom;
+
+  static const alias_identificateur alias_identificateur_dB_unit_rom={0,0,"_dB",0,0};
+  const identificateur & _IDNT_id_dB_unit_rom=* (const identificateur *) &alias_identificateur_dB_unit_rom;
+  const alias_ref_identificateur ref_dB_unit_rom={-1,0,0,"_dB",0,0};
+  const define_alias_gen(alias_dB_unit_rom,_IDNT,0,&ref_dB_unit_rom);
+  const gen & dB_unit_rom_IDNT_e = * (gen *) & alias_dB_unit_rom;
+
+  static const alias_identificateur alias_identificateur_deg_unit_rom={0,0,"_deg",0,0};
+  const identificateur & _IDNT_id_deg_unit_rom=* (const identificateur *) &alias_identificateur_deg_unit_rom;
+  const alias_ref_identificateur ref_deg_unit_rom={-1,0,0,"_deg",0,0};
+  const define_alias_gen(alias_deg_unit_rom,_IDNT,0,&ref_deg_unit_rom);
+  const gen & deg_unit_rom_IDNT_e = * (gen *) & alias_deg_unit_rom;
+
+  static const alias_identificateur alias_identificateur_dyn_unit_rom={0,0,"_dyn",0,0};
+  const identificateur & _IDNT_id_dyn_unit_rom=* (const identificateur *) &alias_identificateur_dyn_unit_rom;
+  const alias_ref_identificateur ref_dyn_unit_rom={-1,0,0,"_dyn",0,0};
+  const define_alias_gen(alias_dyn_unit_rom,_IDNT,0,&ref_dyn_unit_rom);
+  const gen & dyn_unit_rom_IDNT_e = * (gen *) & alias_dyn_unit_rom;
+
+  static const alias_identificateur alias_identificateur_eV_unit_rom={0,0,"_eV",0,0};
+  const identificateur & _IDNT_id_eV_unit_rom=* (const identificateur *) &alias_identificateur_eV_unit_rom;
+  const alias_ref_identificateur ref_eV_unit_rom={-1,0,0,"_eV",0,0};
+  const define_alias_gen(alias_eV_unit_rom,_IDNT,0,&ref_eV_unit_rom);
+  const gen & eV_unit_rom_IDNT_e = * (gen *) & alias_eV_unit_rom;
+
+  static const alias_identificateur alias_identificateur_epsilon0q__unit_rom={0,0,"_epsilon0q_",0,0};
+  const identificateur & _IDNT_id_epsilon0q__unit_rom=* (const identificateur *) &alias_identificateur_epsilon0q__unit_rom;
+  const alias_ref_identificateur ref_epsilon0q__unit_rom={-1,0,0,"_epsilon0q_",0,0};
+  const define_alias_gen(alias_epsilon0q__unit_rom,_IDNT,0,&ref_epsilon0q__unit_rom);
+  const gen & epsilon0q__unit_rom_IDNT_e = * (gen *) & alias_epsilon0q__unit_rom;
+
+  static const alias_identificateur alias_identificateur_epsilonox__unit_rom={0,0,"_epsilonox",0,0};
+  const identificateur & _IDNT_id_epsilonox__unit_rom=* (const identificateur *) &alias_identificateur_epsilonox__unit_rom;
+  const alias_ref_identificateur ref_epsilonox__unit_rom={-1,0,0,"_epsilonox",0,0};
+  const define_alias_gen(alias_epsilonox__unit_rom,_IDNT,0,&ref_epsilonox__unit_rom);
+  const gen & epsilonox__unit_rom_IDNT_e = * (gen *) & alias_epsilonox__unit_rom;
+
+  static const alias_identificateur alias_identificateur_epsilonsi__unit_rom={0,0,"_epsilonsi_",0,0};
+  const identificateur & _IDNT_id_epsilonsi__unit_rom=* (const identificateur *) &alias_identificateur_epsilonsi__unit_rom;
+  const alias_ref_identificateur ref_epsilonsi__unit_rom={-1,0,0,"_epsilonsi_",0,0};
+  const define_alias_gen(alias_epsilonsi__unit_rom,_IDNT,0,&ref_epsilonsi__unit_rom);
+  const gen & epsilonsi__unit_rom_IDNT_e = * (gen *) & alias_epsilonsi__unit_rom;
+
+  static const alias_identificateur alias_identificateur_erg_unit_rom={0,0,"_erg",0,0};
+  const identificateur & _IDNT_id_erg_unit_rom=* (const identificateur *) &alias_identificateur_erg_unit_rom;
+  const alias_ref_identificateur ref_erg_unit_rom={-1,0,0,"_erg",0,0};
+  const define_alias_gen(alias_erg_unit_rom,_IDNT,0,&ref_erg_unit_rom);
+  const gen & erg_unit_rom_IDNT_e = * (gen *) & alias_erg_unit_rom;
+
+  static const alias_identificateur alias_identificateur_f0__unit_rom={0,0,"_f0_",0,0};
+  const identificateur & _IDNT_id_f0__unit_rom=* (const identificateur *) &alias_identificateur_f0__unit_rom;
+  const alias_ref_identificateur ref_f0__unit_rom={-1,0,0,"_f0_",0,0};
+  const define_alias_gen(alias_f0__unit_rom,_IDNT,0,&ref_f0__unit_rom);
+  const gen & f0__unit_rom_IDNT_e = * (gen *) & alias_f0__unit_rom;
+
+  static const alias_identificateur alias_identificateur_fath_unit_rom={0,0,"_fath",0,0};
+  const identificateur & _IDNT_id_fath_unit_rom=* (const identificateur *) &alias_identificateur_fath_unit_rom;
+  const alias_ref_identificateur ref_fath_unit_rom={-1,0,0,"_fath",0,0};
+  const define_alias_gen(alias_fath_unit_rom,_IDNT,0,&ref_fath_unit_rom);
+  const gen & fath_unit_rom_IDNT_e = * (gen *) & alias_fath_unit_rom;
+
+  static const alias_identificateur alias_identificateur_fbm_unit_rom={0,0,"_fbm",0,0};
+  const identificateur & _IDNT_id_fbm_unit_rom=* (const identificateur *) &alias_identificateur_fbm_unit_rom;
+  const alias_ref_identificateur ref_fbm_unit_rom={-1,0,0,"_fbm",0,0};
+  const define_alias_gen(alias_fbm_unit_rom,_IDNT,0,&ref_fbm_unit_rom);
+  const gen & fbm_unit_rom_IDNT_e = * (gen *) & alias_fbm_unit_rom;
+
+  static const alias_identificateur alias_identificateur_fc_unit_rom={0,0,"_fc",0,0};
+  const identificateur & _IDNT_id_fc_unit_rom=* (const identificateur *) &alias_identificateur_fc_unit_rom;
+  const alias_ref_identificateur ref_fc_unit_rom={-1,0,0,"_fc",0,0};
+  const define_alias_gen(alias_fc_unit_rom,_IDNT,0,&ref_fc_unit_rom);
+  const gen & fc_unit_rom_IDNT_e = * (gen *) & alias_fc_unit_rom;
+
+  static const alias_identificateur alias_identificateur_fermi_unit_rom={0,0,"_fermi",0,0};
+  const identificateur & _IDNT_id_fermi_unit_rom=* (const identificateur *) &alias_identificateur_fermi_unit_rom;
+  const alias_ref_identificateur ref_fermi_unit_rom={-1,0,0,"_fermi",0,0};
+  const define_alias_gen(alias_fermi_unit_rom,_IDNT,0,&ref_fermi_unit_rom);
+  const gen & fermi_unit_rom_IDNT_e = * (gen *) & alias_fermi_unit_rom;
+
+  static const alias_identificateur alias_identificateur_flam_unit_rom={0,0,"_flam",0,0};
+  const identificateur & _IDNT_id_flam_unit_rom=* (const identificateur *) &alias_identificateur_flam_unit_rom;
+  const alias_ref_identificateur ref_flam_unit_rom={-1,0,0,"_flam",0,0};
+  const define_alias_gen(alias_flam_unit_rom,_IDNT,0,&ref_flam_unit_rom);
+  const gen & flam_unit_rom_IDNT_e = * (gen *) & alias_flam_unit_rom;
+
+  static const alias_identificateur alias_identificateur_fm_unit_rom={0,0,"_fm",0,0};
+  const identificateur & _IDNT_id_fm_unit_rom=* (const identificateur *) &alias_identificateur_fm_unit_rom;
+  const alias_ref_identificateur ref_fm_unit_rom={-1,0,0,"_fm",0,0};
+  const define_alias_gen(alias_fm_unit_rom,_IDNT,0,&ref_fm_unit_rom);
+  const gen & fm_unit_rom_IDNT_e = * (gen *) & alias_fm_unit_rom;
+
+  static const alias_identificateur alias_identificateur_ft_unit_rom={0,0,"_ft",0,0};
+  const identificateur & _IDNT_id_ft_unit_rom=* (const identificateur *) &alias_identificateur_ft_unit_rom;
+  const alias_ref_identificateur ref_ft_unit_rom={-1,0,0,"_ft",0,0};
+  const define_alias_gen(alias_ft_unit_rom,_IDNT,0,&ref_ft_unit_rom);
+  const gen & ft_unit_rom_IDNT_e = * (gen *) & alias_ft_unit_rom;
+
+  static const alias_identificateur alias_identificateur_ftUS_unit_rom={0,0,"_ftUS",0,0};
+  const identificateur & _IDNT_id_ftUS_unit_rom=* (const identificateur *) &alias_identificateur_ftUS_unit_rom;
+  const alias_ref_identificateur ref_ftUS_unit_rom={-1,0,0,"_ftUS",0,0};
+  const define_alias_gen(alias_ftUS_unit_rom,_IDNT,0,&ref_ftUS_unit_rom);
+  const gen & ftUS_unit_rom_IDNT_e = * (gen *) & alias_ftUS_unit_rom;
+
+  static const alias_identificateur alias_identificateur_g_unit_rom={0,0,"_g",0,0};
+  const identificateur & _IDNT_id_g_unit_rom=* (const identificateur *) &alias_identificateur_g_unit_rom;
+  const alias_ref_identificateur ref_g_unit_rom={-1,0,0,"_g",0,0};
+  const define_alias_gen(alias_g_unit_rom,_IDNT,0,&ref_g_unit_rom);
+  const gen & g_unit_rom_IDNT_e = * (gen *) & alias_g_unit_rom;
+
+  static const alias_identificateur alias_identificateur_g__unit_rom={0,0,"_g_",0,0};
+  const identificateur & _IDNT_id_g__unit_rom=* (const identificateur *) &alias_identificateur_g__unit_rom;
+  const alias_ref_identificateur ref_g__unit_rom={-1,0,0,"_g_",0,0};
+  const define_alias_gen(alias_g__unit_rom,_IDNT,0,&ref_g__unit_rom);
+  const gen & g__unit_rom_IDNT_e = * (gen *) & alias_g__unit_rom;
+
+  static const alias_identificateur alias_identificateur_galC_unit_rom={0,0,"_galC",0,0};
+  const identificateur & _IDNT_id_galC_unit_rom=* (const identificateur *) &alias_identificateur_galC_unit_rom;
+  const alias_ref_identificateur ref_galC_unit_rom={-1,0,0,"_galC",0,0};
+  const define_alias_gen(alias_galC_unit_rom,_IDNT,0,&ref_galC_unit_rom);
+  const gen & galC_unit_rom_IDNT_e = * (gen *) & alias_galC_unit_rom;
+
+  static const alias_identificateur alias_identificateur_galUK_unit_rom={0,0,"_galUK",0,0};
+  const identificateur & _IDNT_id_galUK_unit_rom=* (const identificateur *) &alias_identificateur_galUK_unit_rom;
+  const alias_ref_identificateur ref_galUK_unit_rom={-1,0,0,"_galUK",0,0};
+  const define_alias_gen(alias_galUK_unit_rom,_IDNT,0,&ref_galUK_unit_rom);
+  const gen & galUK_unit_rom_IDNT_e = * (gen *) & alias_galUK_unit_rom;
+
+  static const alias_identificateur alias_identificateur_galUS_unit_rom={0,0,"_galUS",0,0};
+  const identificateur & _IDNT_id_galUS_unit_rom=* (const identificateur *) &alias_identificateur_galUS_unit_rom;
+  const alias_ref_identificateur ref_galUS_unit_rom={-1,0,0,"_galUS",0,0};
+  const define_alias_gen(alias_galUS_unit_rom,_IDNT,0,&ref_galUS_unit_rom);
+  const gen & galUS_unit_rom_IDNT_e = * (gen *) & alias_galUS_unit_rom;
+
+  static const alias_identificateur alias_identificateur_gf_unit_rom={0,0,"_gf",0,0};
+  const identificateur & _IDNT_id_gf_unit_rom=* (const identificateur *) &alias_identificateur_gf_unit_rom;
+  const alias_ref_identificateur ref_gf_unit_rom={-1,0,0,"_gf",0,0};
+  const define_alias_gen(alias_gf_unit_rom,_IDNT,0,&ref_gf_unit_rom);
+  const gen & gf_unit_rom_IDNT_e = * (gen *) & alias_gf_unit_rom;
+
+  static const alias_identificateur alias_identificateur_gmol_unit_rom={0,0,"_gmol",0,0};
+  const identificateur & _IDNT_id_gmol_unit_rom=* (const identificateur *) &alias_identificateur_gmol_unit_rom;
+  const alias_ref_identificateur ref_gmol_unit_rom={-1,0,0,"_gmol",0,0};
+  const define_alias_gen(alias_gmol_unit_rom,_IDNT,0,&ref_gmol_unit_rom);
+  const gen & gmol_unit_rom_IDNT_e = * (gen *) & alias_gmol_unit_rom;
+
+  static const alias_identificateur alias_identificateur_gon_unit_rom={0,0,"_gon",0,0};
+  const identificateur & _IDNT_id_gon_unit_rom=* (const identificateur *) &alias_identificateur_gon_unit_rom;
+  const alias_ref_identificateur ref_gon_unit_rom={-1,0,0,"_gon",0,0};
+  const define_alias_gen(alias_gon_unit_rom,_IDNT,0,&ref_gon_unit_rom);
+  const gen & gon_unit_rom_IDNT_e = * (gen *) & alias_gon_unit_rom;
+
+  static const alias_identificateur alias_identificateur_grad_unit_rom={0,0,"_grad",0,0};
+  const identificateur & _IDNT_id_grad_unit_rom=* (const identificateur *) &alias_identificateur_grad_unit_rom;
+  const alias_ref_identificateur ref_grad_unit_rom={-1,0,0,"_grad",0,0};
+  const define_alias_gen(alias_grad_unit_rom,_IDNT,0,&ref_grad_unit_rom);
+  const gen & grad_unit_rom_IDNT_e = * (gen *) & alias_grad_unit_rom;
+
+  static const alias_identificateur alias_identificateur_grain_unit_rom={0,0,"_grain",0,0};
+  const identificateur & _IDNT_id_grain_unit_rom=* (const identificateur *) &alias_identificateur_grain_unit_rom;
+  const alias_ref_identificateur ref_grain_unit_rom={-1,0,0,"_grain",0,0};
+  const define_alias_gen(alias_grain_unit_rom,_IDNT,0,&ref_grain_unit_rom);
+  const gen & grain_unit_rom_IDNT_e = * (gen *) & alias_grain_unit_rom;
+
+  static const alias_identificateur alias_identificateur_h_unit_rom={0,0,"_h",0,0};
+  const identificateur & _IDNT_id_h_unit_rom=* (const identificateur *) &alias_identificateur_h_unit_rom;
+  const alias_ref_identificateur ref_h_unit_rom={-1,0,0,"_h",0,0};
+  const define_alias_gen(alias_h_unit_rom,_IDNT,0,&ref_h_unit_rom);
+  const gen & h_unit_rom_IDNT_e = * (gen *) & alias_h_unit_rom;
+
+  static const alias_identificateur alias_identificateur_h__unit_rom={0,0,"_h_",0,0};
+  const identificateur & _IDNT_id_h__unit_rom=* (const identificateur *) &alias_identificateur_h__unit_rom;
+  const alias_ref_identificateur ref_h__unit_rom={-1,0,0,"_h_",0,0};
+  const define_alias_gen(alias_h__unit_rom,_IDNT,0,&ref_h__unit_rom);
+  const gen & h__unit_rom_IDNT_e = * (gen *) & alias_h__unit_rom;
+
+  static const alias_identificateur alias_identificateur_ha_unit_rom={0,0,"_ha",0,0};
+  const identificateur & _IDNT_id_ha_unit_rom=* (const identificateur *) &alias_identificateur_ha_unit_rom;
+  const alias_ref_identificateur ref_ha_unit_rom={-1,0,0,"_ha",0,0};
+  const define_alias_gen(alias_ha_unit_rom,_IDNT,0,&ref_ha_unit_rom);
+  const gen & ha_unit_rom_IDNT_e = * (gen *) & alias_ha_unit_rom;
+
+  static const alias_identificateur alias_identificateur_hbar__unit_rom={0,0,"_hbar_",0,0};
+  const identificateur & _IDNT_id_hbar__unit_rom=* (const identificateur *) &alias_identificateur_hbar__unit_rom;
+  const alias_ref_identificateur ref_hbar__unit_rom={-1,0,0,"_hbar_",0,0};
+  const define_alias_gen(alias_hbar__unit_rom,_IDNT,0,&ref_hbar__unit_rom);
+  const gen & hbar__unit_rom_IDNT_e = * (gen *) & alias_hbar__unit_rom;
+
+  static const alias_identificateur alias_identificateur_hp_unit_rom={0,0,"_hp",0,0};
+  const identificateur & _IDNT_id_hp_unit_rom=* (const identificateur *) &alias_identificateur_hp_unit_rom;
+  const alias_ref_identificateur ref_hp_unit_rom={-1,0,0,"_hp",0,0};
+  const define_alias_gen(alias_hp_unit_rom,_IDNT,0,&ref_hp_unit_rom);
+  const gen & hp_unit_rom_IDNT_e = * (gen *) & alias_hp_unit_rom;
+
+  static const alias_identificateur alias_identificateur_inH2O_unit_rom={0,0,"_inH2O",0,0};
+  const identificateur & _IDNT_id_inH2O_unit_rom=* (const identificateur *) &alias_identificateur_inH2O_unit_rom;
+  const alias_ref_identificateur ref_inH2O_unit_rom={-1,0,0,"_inH2O",0,0};
+  const define_alias_gen(alias_inH2O_unit_rom,_IDNT,0,&ref_inH2O_unit_rom);
+  const gen & inH2O_unit_rom_IDNT_e = * (gen *) & alias_inH2O_unit_rom;
+
+  static const alias_identificateur alias_identificateur_inHg_unit_rom={0,0,"_inHg",0,0};
+  const identificateur & _IDNT_id_inHg_unit_rom=* (const identificateur *) &alias_identificateur_inHg_unit_rom;
+  const alias_ref_identificateur ref_inHg_unit_rom={-1,0,0,"_inHg",0,0};
+  const define_alias_gen(alias_inHg_unit_rom,_IDNT,0,&ref_inHg_unit_rom);
+  const gen & inHg_unit_rom_IDNT_e = * (gen *) & alias_inHg_unit_rom;
+
+  static const alias_identificateur alias_identificateur_inch_unit_rom={0,0,"_inch",0,0};
+  const identificateur & _IDNT_id_inch_unit_rom=* (const identificateur *) &alias_identificateur_inch_unit_rom;
+  const alias_ref_identificateur ref_inch_unit_rom={-1,0,0,"_inch",0,0};
+  const define_alias_gen(alias_inch_unit_rom,_IDNT,0,&ref_inch_unit_rom);
+  const gen & inch_unit_rom_IDNT_e = * (gen *) & alias_inch_unit_rom;
+
+  static const alias_identificateur alias_identificateur_j_unit_rom={0,0,"_j",0,0};
+  const identificateur & _IDNT_id_j_unit_rom=* (const identificateur *) &alias_identificateur_j_unit_rom;
+  const alias_ref_identificateur ref_j_unit_rom={-1,0,0,"_j",0,0};
+  const define_alias_gen(alias_j_unit_rom,_IDNT,0,&ref_j_unit_rom);
+  const gen & j_unit_rom_IDNT_e = * (gen *) & alias_j_unit_rom;
+
+  static const alias_identificateur alias_identificateur_k__unit_rom={0,0,"_k_",0,0};
+  const identificateur & _IDNT_id_k__unit_rom=* (const identificateur *) &alias_identificateur_k__unit_rom;
+  const alias_ref_identificateur ref_k__unit_rom={-1,0,0,"_k_",0,0};
+  const define_alias_gen(alias_k__unit_rom,_IDNT,0,&ref_k__unit_rom);
+  const gen & k__unit_rom_IDNT_e = * (gen *) & alias_k__unit_rom;
+
+  static const alias_identificateur alias_identificateur_kip_unit_rom={0,0,"_kip",0,0};
+  const identificateur & _IDNT_id_kip_unit_rom=* (const identificateur *) &alias_identificateur_kip_unit_rom;
+  const alias_ref_identificateur ref_kip_unit_rom={-1,0,0,"_kip",0,0};
+  const define_alias_gen(alias_kip_unit_rom,_IDNT,0,&ref_kip_unit_rom);
+  const gen & kip_unit_rom_IDNT_e = * (gen *) & alias_kip_unit_rom;
+
+  static const alias_identificateur alias_identificateur_knot_unit_rom={0,0,"_knot",0,0};
+  const identificateur & _IDNT_id_knot_unit_rom=* (const identificateur *) &alias_identificateur_knot_unit_rom;
+  const alias_ref_identificateur ref_knot_unit_rom={-1,0,0,"_knot",0,0};
+  const define_alias_gen(alias_knot_unit_rom,_IDNT,0,&ref_knot_unit_rom);
+  const gen & knot_unit_rom_IDNT_e = * (gen *) & alias_knot_unit_rom;
+
+  static const alias_identificateur alias_identificateur_kph_unit_rom={0,0,"_kph",0,0};
+  const identificateur & _IDNT_id_kph_unit_rom=* (const identificateur *) &alias_identificateur_kph_unit_rom;
+  const alias_ref_identificateur ref_kph_unit_rom={-1,0,0,"_kph",0,0};
+  const define_alias_gen(alias_kph_unit_rom,_IDNT,0,&ref_kph_unit_rom);
+  const gen & kph_unit_rom_IDNT_e = * (gen *) & alias_kph_unit_rom;
+
+  static const alias_identificateur alias_identificateur_kq__unit_rom={0,0,"_kq",0,0};
+  const identificateur & _IDNT_id_kq__unit_rom=* (const identificateur *) &alias_identificateur_kq__unit_rom;
+  const alias_ref_identificateur ref_kq__unit_rom={-1,0,0,"_kq_",0,0};
+  const define_alias_gen(alias_kq__unit_rom,_IDNT,0,&ref_kq__unit_rom);
+  const gen & kq__unit_rom_IDNT_e = * (gen *) & alias_kq__unit_rom;
+
+  static const alias_identificateur alias_identificateur_l_unit_rom={0,0,"_l",0,0};
+  const identificateur & _IDNT_id_l_unit_rom=* (const identificateur *) &alias_identificateur_l_unit_rom;
+  const alias_ref_identificateur ref_l_unit_rom={-1,0,0,"_l",0,0};
+  const define_alias_gen(alias_l_unit_rom,_IDNT,0,&ref_l_unit_rom);
+  const gen & l_unit_rom_IDNT_e = * (gen *) & alias_l_unit_rom;
+
+  static const alias_identificateur alias_identificateur_lam_unit_rom={0,0,"_lam",0,0};
+  const identificateur & _IDNT_id_lam_unit_rom=* (const identificateur *) &alias_identificateur_lam_unit_rom;
+  const alias_ref_identificateur ref_lam_unit_rom={-1,0,0,"_lam",0,0};
+  const define_alias_gen(alias_lam_unit_rom,_IDNT,0,&ref_lam_unit_rom);
+  const gen & lam_unit_rom_IDNT_e = * (gen *) & alias_lam_unit_rom;
+
+  static const alias_identificateur alias_identificateur_lambda0_unit_rom={0,0,"_lambda0",0,0};
+  const identificateur & _IDNT_id_lambda0_unit_rom=* (const identificateur *) &alias_identificateur_lambda0_unit_rom;
+  const alias_ref_identificateur ref_lambda0_unit_rom={-1,0,0,"_lambda0",0,0};
+  const define_alias_gen(alias_lambda0_unit_rom,_IDNT,0,&ref_lambda0_unit_rom);
+  const gen & lambda0_unit_rom_IDNT_e = * (gen *) & alias_lambda0_unit_rom;
+
+  static const alias_identificateur alias_identificateur_lambdac__unit_rom={0,0,"_lambdac_",0,0};
+  const identificateur & _IDNT_id_lambdac__unit_rom=* (const identificateur *) &alias_identificateur_lambdac__unit_rom;
+  const alias_ref_identificateur ref_lambdac__unit_rom={-1,0,0,"_lambdac_",0,0};
+  const define_alias_gen(alias_lambdac__unit_rom,_IDNT,0,&ref_lambdac__unit_rom);
+  const gen & lambdac__unit_rom_IDNT_e = * (gen *) & alias_lambdac__unit_rom;
+
+  static const alias_identificateur alias_identificateur_lb_unit_rom={0,0,"_lb",0,0};
+  const identificateur & _IDNT_id_lb_unit_rom=* (const identificateur *) &alias_identificateur_lb_unit_rom;
+  const alias_ref_identificateur ref_lb_unit_rom={-1,0,0,"_lb",0,0};
+  const define_alias_gen(alias_lb_unit_rom,_IDNT,0,&ref_lb_unit_rom);
+  const gen & lb_unit_rom_IDNT_e = * (gen *) & alias_lb_unit_rom;
+
+  static const alias_identificateur alias_identificateur_lbf_unit_rom={0,0,"_lbf",0,0};
+  const identificateur & _IDNT_id_lbf_unit_rom=* (const identificateur *) &alias_identificateur_lbf_unit_rom;
+  const alias_ref_identificateur ref_lbf_unit_rom={-1,0,0,"_lbf",0,0};
+  const define_alias_gen(alias_lbf_unit_rom,_IDNT,0,&ref_lbf_unit_rom);
+  const gen & lbf_unit_rom_IDNT_e = * (gen *) & alias_lbf_unit_rom;
+
+  static const alias_identificateur alias_identificateur_lbmol_unit_rom={0,0,"_lbmol",0,0};
+  const identificateur & _IDNT_id_lbmol_unit_rom=* (const identificateur *) &alias_identificateur_lbmol_unit_rom;
+  const alias_ref_identificateur ref_lbmol_unit_rom={-1,0,0,"_lbmol",0,0};
+  const define_alias_gen(alias_lbmol_unit_rom,_IDNT,0,&ref_lbmol_unit_rom);
+  const gen & lbmol_unit_rom_IDNT_e = * (gen *) & alias_lbmol_unit_rom;
+
+  static const alias_identificateur alias_identificateur_lbt_unit_rom={0,0,"_lbt",0,0};
+  const identificateur & _IDNT_id_lbt_unit_rom=* (const identificateur *) &alias_identificateur_lbt_unit_rom;
+  const alias_ref_identificateur ref_lbt_unit_rom={-1,0,0,"_lbt",0,0};
+  const define_alias_gen(alias_lbt_unit_rom,_IDNT,0,&ref_lbt_unit_rom);
+  const gen & lbt_unit_rom_IDNT_e = * (gen *) & alias_lbt_unit_rom;
+
+  static const alias_identificateur alias_identificateur_lep_unit_rom={0,0,"_lep",0,0};
+  const identificateur & _IDNT_id_lep_unit_rom=* (const identificateur *) &alias_identificateur_lep_unit_rom;
+  const alias_ref_identificateur ref_lep_unit_rom={-1,0,0,"_lep",0,0};
+  const define_alias_gen(alias_lep_unit_rom,_IDNT,0,&ref_lep_unit_rom);
+  const gen & lep_unit_rom_IDNT_e = * (gen *) & alias_lep_unit_rom;
+
+  static const alias_identificateur alias_identificateur_liqpt_unit_rom={0,0,"_liqpt",0,0};
+  const identificateur & _IDNT_id_liqpt_unit_rom=* (const identificateur *) &alias_identificateur_liqpt_unit_rom;
+  const alias_ref_identificateur ref_liqpt_unit_rom={-1,0,0,"_liqpt",0,0};
+  const define_alias_gen(alias_liqpt_unit_rom,_IDNT,0,&ref_liqpt_unit_rom);
+  const gen & liqpt_unit_rom_IDNT_e = * (gen *) & alias_liqpt_unit_rom;
+
+  static const alias_identificateur alias_identificateur_lyr_unit_rom={0,0,"_lyr",0,0};
+  const identificateur & _IDNT_id_lyr_unit_rom=* (const identificateur *) &alias_identificateur_lyr_unit_rom;
+  const alias_ref_identificateur ref_lyr_unit_rom={-1,0,0,"_lyr",0,0};
+  const define_alias_gen(alias_lyr_unit_rom,_IDNT,0,&ref_lyr_unit_rom);
+  const gen & lyr_unit_rom_IDNT_e = * (gen *) & alias_lyr_unit_rom;
+
+  static const alias_identificateur alias_identificateur_m_unit_rom={0,0,"_m",0,0};
+  const identificateur & _IDNT_id_m_unit_rom=* (const identificateur *) &alias_identificateur_m_unit_rom;
+  const alias_ref_identificateur ref_m_unit_rom={-1,0,0,"_m",0,0};
+  const define_alias_gen(alias_m_unit_rom,_IDNT,0,&ref_m_unit_rom);
+  const gen & m_unit_rom_IDNT_e = * (gen *) & alias_m_unit_rom;
+
+  static const alias_identificateur alias_identificateur_mEarth__unit_rom={0,0,"_mEarth_",0,0};
+  const identificateur & _IDNT_id_mEarth__unit_rom=* (const identificateur *) &alias_identificateur_mEarth__unit_rom;
+  const alias_ref_identificateur ref_mEarth__unit_rom={-1,0,0,"_mEarth_",0,0};
+  const define_alias_gen(alias_mEarth__unit_rom,_IDNT,0,&ref_mEarth__unit_rom);
+  const gen & mEarth__unit_rom_IDNT_e = * (gen *) & alias_mEarth__unit_rom;
+
+  static const alias_identificateur alias_identificateur_mSun__unit_rom={0,0,"_mSun_",0,0};
+  const identificateur & _IDNT_id_mSun__unit_rom=* (const identificateur *) &alias_identificateur_mSun__unit_rom;
+  const alias_ref_identificateur ref_mSun__unit_rom={-1,0,0,"_mSun_",0,0};
+  const define_alias_gen(alias_mSun__unit_rom,_IDNT,0,&ref_mSun__unit_rom);
+  const gen & mSun__unit_rom_IDNT_e = * (gen *) & alias_mSun__unit_rom;
+
+  static const alias_identificateur alias_identificateur_me__unit_rom={0,0,"_me_",0,0};
+  const identificateur & _IDNT_id_me__unit_rom=* (const identificateur *) &alias_identificateur_me__unit_rom;
+  const alias_ref_identificateur ref_me__unit_rom={-1,0,0,"_me_",0,0};
+  const define_alias_gen(alias_me__unit_rom,_IDNT,0,&ref_me__unit_rom);
+  const gen & me__unit_rom_IDNT_e = * (gen *) & alias_me__unit_rom;
+
+  static const alias_identificateur alias_identificateur_mho_unit_rom={0,0,"_mho",0,0};
+  const identificateur & _IDNT_id_mho_unit_rom=* (const identificateur *) &alias_identificateur_mho_unit_rom;
+  const alias_ref_identificateur ref_mho_unit_rom={-1,0,0,"_mho",0,0};
+  const define_alias_gen(alias_mho_unit_rom,_IDNT,0,&ref_mho_unit_rom);
+  const gen & mho_unit_rom_IDNT_e = * (gen *) & alias_mho_unit_rom;
+
+  static const alias_identificateur alias_identificateur_mi_unit_rom={0,0,"_mi",0,0};
+  const identificateur & _IDNT_id_mi_unit_rom=* (const identificateur *) &alias_identificateur_mi_unit_rom;
+  const alias_ref_identificateur ref_mi_unit_rom={-1,0,0,"_mi",0,0};
+  const define_alias_gen(alias_mi_unit_rom,_IDNT,0,&ref_mi_unit_rom);
+  const gen & mi_unit_rom_IDNT_e = * (gen *) & alias_mi_unit_rom;
+
+  static const alias_identificateur alias_identificateur_miUS_unit_rom={0,0,"_miUS",0,0};
+  const identificateur & _IDNT_id_miUS_unit_rom=* (const identificateur *) &alias_identificateur_miUS_unit_rom;
+  const alias_ref_identificateur ref_miUS_unit_rom={-1,0,0,"_miUS",0,0};
+  const define_alias_gen(alias_miUS_unit_rom,_IDNT,0,&ref_miUS_unit_rom);
+  const gen & miUS_unit_rom_IDNT_e = * (gen *) & alias_miUS_unit_rom;
+
+  static const alias_identificateur alias_identificateur_mil_unit_rom={0,0,"_mil",0,0};
+  const identificateur & _IDNT_id_mil_unit_rom=* (const identificateur *) &alias_identificateur_mil_unit_rom;
+  const alias_ref_identificateur ref_mil_unit_rom={-1,0,0,"_mil",0,0};
+  const define_alias_gen(alias_mil_unit_rom,_IDNT,0,&ref_mil_unit_rom);
+  const gen & mil_unit_rom_IDNT_e = * (gen *) & alias_mil_unit_rom;
+
+  static const alias_identificateur alias_identificateur_mile_unit_rom={0,0,"_mile",0,0};
+  const identificateur & _IDNT_id_mile_unit_rom=* (const identificateur *) &alias_identificateur_mile_unit_rom;
+  const alias_ref_identificateur ref_mile_unit_rom={-1,0,0,"_mile",0,0};
+  const define_alias_gen(alias_mile_unit_rom,_IDNT,0,&ref_mile_unit_rom);
+  const gen & mile_unit_rom_IDNT_e = * (gen *) & alias_mile_unit_rom;
+
+  static const alias_identificateur alias_identificateur_mille_unit_rom={0,0,"_mille",0,0};
+  const identificateur & _IDNT_id_mille_unit_rom=* (const identificateur *) &alias_identificateur_mille_unit_rom;
+  const alias_ref_identificateur ref_mille_unit_rom={-1,0,0,"_mille",0,0};
+  const define_alias_gen(alias_mille_unit_rom,_IDNT,0,&ref_mille_unit_rom);
+  const gen & mille_unit_rom_IDNT_e = * (gen *) & alias_mille_unit_rom;
+
+  static const alias_identificateur alias_identificateur_min_unit_rom={0,0,"_min",0,0};
+  const identificateur & _IDNT_id_min_unit_rom=* (const identificateur *) &alias_identificateur_min_unit_rom;
+  const alias_ref_identificateur ref_min_unit_rom={-1,0,0,"_min",0,0};
+  const define_alias_gen(alias_min_unit_rom,_IDNT,0,&ref_min_unit_rom);
+  const gen & min_unit_rom_IDNT_e = * (gen *) & alias_min_unit_rom;
+
+  static const alias_identificateur alias_identificateur_mmHg_unit_rom={0,0,"_mmHg",0,0};
+  const identificateur & _IDNT_id_mmHg_unit_rom=* (const identificateur *) &alias_identificateur_mmHg_unit_rom;
+  const alias_ref_identificateur ref_mmHg_unit_rom={-1,0,0,"_mmHg",0,0};
+  const define_alias_gen(alias_mmHg_unit_rom,_IDNT,0,&ref_mmHg_unit_rom);
+  const gen & mmHg_unit_rom_IDNT_e = * (gen *) & alias_mmHg_unit_rom;
+
+  static const alias_identificateur alias_identificateur_mn_unit_rom={0,0,"_mn",0,0};
+  const identificateur & _IDNT_id_mn_unit_rom=* (const identificateur *) &alias_identificateur_mn_unit_rom;
+  const alias_ref_identificateur ref_mn_unit_rom={-1,0,0,"_mn",0,0};
+  const define_alias_gen(alias_mn_unit_rom,_IDNT,0,&ref_mn_unit_rom);
+  const gen & mn_unit_rom_IDNT_e = * (gen *) & alias_mn_unit_rom;
+
+  static const alias_identificateur alias_identificateur_mol_unit_rom={0,0,"_mol",0,0};
+  const identificateur & _IDNT_id_mol_unit_rom=* (const identificateur *) &alias_identificateur_mol_unit_rom;
+  const alias_ref_identificateur ref_mol_unit_rom={-1,0,0,"_mol",0,0};
+  const define_alias_gen(alias_mol_unit_rom,_IDNT,0,&ref_mol_unit_rom);
+  const gen & mol_unit_rom_IDNT_e = * (gen *) & alias_mol_unit_rom;
+
+  static const alias_identificateur alias_identificateur_molK_unit_rom={0,0,"_molK",0,0};
+  const identificateur & _IDNT_id_molK_unit_rom=* (const identificateur *) &alias_identificateur_molK_unit_rom;
+  const alias_ref_identificateur ref_molK_unit_rom={-1,0,0,"_molK",0,0};
+  const define_alias_gen(alias_molK_unit_rom,_IDNT,0,&ref_molK_unit_rom);
+  const gen & molK_unit_rom_IDNT_e = * (gen *) & alias_molK_unit_rom;
+
+  static const alias_identificateur alias_identificateur_mp__unit_rom={0,0,"_mp_",0,0};
+  const identificateur & _IDNT_id_mp__unit_rom=* (const identificateur *) &alias_identificateur_mp__unit_rom;
+  const alias_ref_identificateur ref_mp__unit_rom={-1,0,0,"_mp_",0,0};
+  const define_alias_gen(alias_mp__unit_rom,_IDNT,0,&ref_mp__unit_rom);
+  const gen & mp__unit_rom_IDNT_e = * (gen *) & alias_mp__unit_rom;
+
+  static const alias_identificateur alias_identificateur_mph_unit_rom={0,0,"_mph",0,0};
+  const identificateur & _IDNT_id_mph_unit_rom=* (const identificateur *) &alias_identificateur_mph_unit_rom;
+  const alias_ref_identificateur ref_mph_unit_rom={-1,0,0,"_mph",0,0};
+  const define_alias_gen(alias_mph_unit_rom,_IDNT,0,&ref_mph_unit_rom);
+  const gen & mph_unit_rom_IDNT_e = * (gen *) & alias_mph_unit_rom;
+
+  static const alias_identificateur alias_identificateur_mpme__unit_rom={0,0,"_mpme_",0,0};
+  const identificateur & _IDNT_id_mpme__unit_rom=* (const identificateur *) &alias_identificateur_mpme__unit_rom;
+  const alias_ref_identificateur ref_mpme__unit_rom={-1,0,0,"_mpme",0,0};
+  const define_alias_gen(alias_mpme__unit_rom,_IDNT,0,&ref_mpme__unit_rom);
+  const gen & mpme__unit_rom_IDNT_e = * (gen *) & alias_mpme__unit_rom;
+
+  static const alias_identificateur alias_identificateur_mu0__unit_rom={0,0,"_mu0_",0,0};
+  const identificateur & _IDNT_id_mu0__unit_rom=* (const identificateur *) &alias_identificateur_mu0__unit_rom;
+  const alias_ref_identificateur ref_mu0__unit_rom={-1,0,0,"_mu0_",0,0};
+  const define_alias_gen(alias_mu0__unit_rom,_IDNT,0,&ref_mu0__unit_rom);
+  const gen & mu0__unit_rom_IDNT_e = * (gen *) & alias_mu0__unit_rom;
+
+  static const alias_identificateur alias_identificateur_muB__unit_rom={0,0,"_muB_",0,0};
+  const identificateur & _IDNT_id_muB__unit_rom=* (const identificateur *) &alias_identificateur_muB__unit_rom;
+  const alias_ref_identificateur ref_muB__unit_rom={-1,0,0,"_muB_",0,0};
+  const define_alias_gen(alias_muB__unit_rom,_IDNT,0,&ref_muB__unit_rom);
+  const gen & muB__unit_rom_IDNT_e = * (gen *) & alias_muB__unit_rom;
+
+  static const alias_identificateur alias_identificateur_muN__unit_rom={0,0,"_muN_",0,0};
+  const identificateur & _IDNT_id_muN__unit_rom=* (const identificateur *) &alias_identificateur_muN__unit_rom;
+  const alias_ref_identificateur ref_muN__unit_rom={-1,0,0,"_muN_",0,0};
+  const define_alias_gen(alias_muN__unit_rom,_IDNT,0,&ref_muN__unit_rom);
+  const gen & muN__unit_rom_IDNT_e = * (gen *) & alias_muN__unit_rom;
+
+  static const alias_identificateur alias_identificateur_nmi_unit_rom={0,0,"_nmi",0,0};
+  const identificateur & _IDNT_id_nmi_unit_rom=* (const identificateur *) &alias_identificateur_nmi_unit_rom;
+  const alias_ref_identificateur ref_nmi_unit_rom={-1,0,0,"_nmi",0,0};
+  const define_alias_gen(alias_nmi_unit_rom,_IDNT,0,&ref_nmi_unit_rom);
+  const gen & nmi_unit_rom_IDNT_e = * (gen *) & alias_nmi_unit_rom;
+
+  static const alias_identificateur alias_identificateur_oz_unit_rom={0,0,"_oz",0,0};
+  const identificateur & _IDNT_id_oz_unit_rom=* (const identificateur *) &alias_identificateur_oz_unit_rom;
+  const alias_ref_identificateur ref_oz_unit_rom={-1,0,0,"_oz",0,0};
+  const define_alias_gen(alias_oz_unit_rom,_IDNT,0,&ref_oz_unit_rom);
+  const gen & oz_unit_rom_IDNT_e = * (gen *) & alias_oz_unit_rom;
+
+  static const alias_identificateur alias_identificateur_ozUK_unit_rom={0,0,"_ozUK",0,0};
+  const identificateur & _IDNT_id_ozUK_unit_rom=* (const identificateur *) &alias_identificateur_ozUK_unit_rom;
+  const alias_ref_identificateur ref_ozUK_unit_rom={-1,0,0,"_ozUK",0,0};
+  const define_alias_gen(alias_ozUK_unit_rom,_IDNT,0,&ref_ozUK_unit_rom);
+  const gen & ozUK_unit_rom_IDNT_e = * (gen *) & alias_ozUK_unit_rom;
+
+  static const alias_identificateur alias_identificateur_ozfl_unit_rom={0,0,"_ozfl",0,0};
+  const identificateur & _IDNT_id_ozfl_unit_rom=* (const identificateur *) &alias_identificateur_ozfl_unit_rom;
+  const alias_ref_identificateur ref_ozfl_unit_rom={-1,0,0,"_ozfl",0,0};
+  const define_alias_gen(alias_ozfl_unit_rom,_IDNT,0,&ref_ozfl_unit_rom);
+  const gen & ozfl_unit_rom_IDNT_e = * (gen *) & alias_ozfl_unit_rom;
+
+  static const alias_identificateur alias_identificateur_ozt_unit_rom={0,0,"_ozt",0,0};
+  const identificateur & _IDNT_id_ozt_unit_rom=* (const identificateur *) &alias_identificateur_ozt_unit_rom;
+  const alias_ref_identificateur ref_ozt_unit_rom={-1,0,0,"_ozt",0,0};
+  const define_alias_gen(alias_ozt_unit_rom,_IDNT,0,&ref_ozt_unit_rom);
+  const gen & ozt_unit_rom_IDNT_e = * (gen *) & alias_ozt_unit_rom;
+
+  static const alias_identificateur alias_identificateur_pc_unit_rom={0,0,"_pc",0,0};
+  const identificateur & _IDNT_id_pc_unit_rom=* (const identificateur *) &alias_identificateur_pc_unit_rom;
+  const alias_ref_identificateur ref_pc_unit_rom={-1,0,0,"_pc",0,0};
+  const define_alias_gen(alias_pc_unit_rom,_IDNT,0,&ref_pc_unit_rom);
+  const gen & pc_unit_rom_IDNT_e = * (gen *) & alias_pc_unit_rom;
+
+  static const alias_identificateur alias_identificateur_pdl_unit_rom={0,0,"_pdl",0,0};
+  const identificateur & _IDNT_id_pdl_unit_rom=* (const identificateur *) &alias_identificateur_pdl_unit_rom;
+  const alias_ref_identificateur ref_pdl_unit_rom={-1,0,0,"_pdl",0,0};
+  const define_alias_gen(alias_pdl_unit_rom,_IDNT,0,&ref_pdl_unit_rom);
+  const gen & pdl_unit_rom_IDNT_e = * (gen *) & alias_pdl_unit_rom;
+
+  static const alias_identificateur alias_identificateur_phi__unit_rom={0,0,"_phi_",0,0};
+  const identificateur & _IDNT_id_phi__unit_rom=* (const identificateur *) &alias_identificateur_phi__unit_rom;
+  const alias_ref_identificateur ref_phi__unit_rom={-1,0,0,"_phi_",0,0};
+  const define_alias_gen(alias_phi__unit_rom,_IDNT,0,&ref_phi__unit_rom);
+  const gen & phi__unit_rom_IDNT_e = * (gen *) & alias_phi__unit_rom;
+
+  static const alias_identificateur alias_identificateur_pk_unit_rom={0,0,"_pk",0,0};
+  const identificateur & _IDNT_id_pk_unit_rom=* (const identificateur *) &alias_identificateur_pk_unit_rom;
+  const alias_ref_identificateur ref_pk_unit_rom={-1,0,0,"_pk",0,0};
+  const define_alias_gen(alias_pk_unit_rom,_IDNT,0,&ref_pk_unit_rom);
+  const gen & pk_unit_rom_IDNT_e = * (gen *) & alias_pk_unit_rom;
+
+  static const alias_identificateur alias_identificateur_psi_unit_rom={0,0,"_psi",0,0};
+  const identificateur & _IDNT_id_psi_unit_rom=* (const identificateur *) &alias_identificateur_psi_unit_rom;
+  const alias_ref_identificateur ref_psi_unit_rom={-1,0,0,"_psi",0,0};
+  const define_alias_gen(alias_psi_unit_rom,_IDNT,0,&ref_psi_unit_rom);
+  const gen & psi_unit_rom_IDNT_e = * (gen *) & alias_psi_unit_rom;
+
+  static const alias_identificateur alias_identificateur_pt_unit_rom={0,0,"_pt",0,0};
+  const identificateur & _IDNT_id_pt_unit_rom=* (const identificateur *) &alias_identificateur_pt_unit_rom;
+  const alias_ref_identificateur ref_pt_unit_rom={-1,0,0,"_pt",0,0};
+  const define_alias_gen(alias_pt_unit_rom,_IDNT,0,&ref_pt_unit_rom);
+  const gen & pt_unit_rom_IDNT_e = * (gen *) & alias_pt_unit_rom;
+
+  static const alias_identificateur alias_identificateur_ptUK_unit_rom={0,0,"_ptUK",0,0};
+  const identificateur & _IDNT_id_ptUK_unit_rom=* (const identificateur *) &alias_identificateur_ptUK_unit_rom;
+  const alias_ref_identificateur ref_ptUK_unit_rom={-1,0,0,"_ptUK",0,0};
+  const define_alias_gen(alias_ptUK_unit_rom,_IDNT,0,&ref_ptUK_unit_rom);
+  const gen & ptUK_unit_rom_IDNT_e = * (gen *) & alias_ptUK_unit_rom;
+
+  static const alias_identificateur alias_identificateur_qe_unit_rom={0,0,"_qe",0,0};
+  const identificateur & _IDNT_id_qe_unit_rom=* (const identificateur *) &alias_identificateur_qe_unit_rom;
+  const alias_ref_identificateur ref_qe_unit_rom={-1,0,0,"_qe",0,0};
+  const define_alias_gen(alias_qe_unit_rom,_IDNT,0,&ref_qe_unit_rom);
+  const gen & qe_unit_rom_IDNT_e = * (gen *) & alias_qe_unit_rom;
+
+  static const alias_identificateur alias_identificateur_qepsilon0__unit_rom={0,0,"_qepsilon0_",0,0};
+  const identificateur & _IDNT_id_qepsilon0__unit_rom=* (const identificateur *) &alias_identificateur_qepsilon0__unit_rom;
+  const alias_ref_identificateur ref_qepsilon0__unit_rom={-1,0,0,"_qepsilon0_",0,0};
+  const define_alias_gen(alias_qepsilon0__unit_rom,_IDNT,0,&ref_qepsilon0__unit_rom);
+  const gen & qepsilon0__unit_rom_IDNT_e = * (gen *) & alias_qepsilon0__unit_rom;
+
+  static const alias_identificateur alias_identificateur_qme__unit_rom={0,0,"_qme_",0,0};
+  const identificateur & _IDNT_id_qme__unit_rom=* (const identificateur *) &alias_identificateur_qme__unit_rom;
+  const alias_ref_identificateur ref_qme__unit_rom={-1,0,0,"_qme_",0,0};
+  const define_alias_gen(alias_qme__unit_rom,_IDNT,0,&ref_qme__unit_rom);
+  const gen & qme__unit_rom_IDNT_e = * (gen *) & alias_qme__unit_rom;
+
+  static const alias_identificateur alias_identificateur_qt_unit_rom={0,0,"_qt",0,0};
+  const identificateur & _IDNT_id_qt_unit_rom=* (const identificateur *) &alias_identificateur_qt_unit_rom;
+  const alias_ref_identificateur ref_qt_unit_rom={-1,0,0,"_qt",0,0};
+  const define_alias_gen(alias_qt_unit_rom,_IDNT,0,&ref_qt_unit_rom);
+  const gen & qt_unit_rom_IDNT_e = * (gen *) & alias_qt_unit_rom;
+
+  static const alias_identificateur alias_identificateur_rad_unit_rom={0,0,"_rad",0,0};
+  const identificateur & _IDNT_id_rad_unit_rom=* (const identificateur *) &alias_identificateur_rad_unit_rom;
+  const alias_ref_identificateur ref_rad_unit_rom={-1,0,0,"_rad",0,0};
+  const define_alias_gen(alias_rad_unit_rom,_IDNT,0,&ref_rad_unit_rom);
+  const gen & rad_unit_rom_IDNT_e = * (gen *) & alias_rad_unit_rom;
+
+  static const alias_identificateur alias_identificateur_rd_unit_rom={0,0,"_rd",0,0};
+  const identificateur & _IDNT_id_rd_unit_rom=* (const identificateur *) &alias_identificateur_rd_unit_rom;
+  const alias_ref_identificateur ref_rd_unit_rom={-1,0,0,"_rd",0,0};
+  const define_alias_gen(alias_rd_unit_rom,_IDNT,0,&ref_rd_unit_rom);
+  const gen & rd_unit_rom_IDNT_e = * (gen *) & alias_rd_unit_rom;
+
+  static const alias_identificateur alias_identificateur_rem_unit_rom={0,0,"_rem",0,0};
+  const identificateur & _IDNT_id_rem_unit_rom=* (const identificateur *) &alias_identificateur_rem_unit_rom;
+  const alias_ref_identificateur ref_rem_unit_rom={-1,0,0,"_rem",0,0};
+  const define_alias_gen(alias_rem_unit_rom,_IDNT,0,&ref_rem_unit_rom);
+  const gen & rem_unit_rom_IDNT_e = * (gen *) & alias_rem_unit_rom;
+
+  static const alias_identificateur alias_identificateur_rev_unit_rom={0,0,"_rev",0,0};
+  const identificateur & _IDNT_id_rev_unit_rom=* (const identificateur *) &alias_identificateur_rev_unit_rom;
+  const alias_ref_identificateur ref_rev_unit_rom={-1,0,0,"_rev",0,0};
+  const define_alias_gen(alias_rev_unit_rom,_IDNT,0,&ref_rev_unit_rom);
+  const gen & rev_unit_rom_IDNT_e = * (gen *) & alias_rev_unit_rom;
+
+  static const alias_identificateur alias_identificateur_rod_unit_rom={0,0,"_rod",0,0};
+  const identificateur & _IDNT_id_rod_unit_rom=* (const identificateur *) &alias_identificateur_rod_unit_rom;
+  const alias_ref_identificateur ref_rod_unit_rom={-1,0,0,"_rod",0,0};
+  const define_alias_gen(alias_rod_unit_rom,_IDNT,0,&ref_rod_unit_rom);
+  const gen & rod_unit_rom_IDNT_e = * (gen *) & alias_rod_unit_rom;
+
+  static const alias_identificateur alias_identificateur_rpm_unit_rom={0,0,"_rpm",0,0};
+  const identificateur & _IDNT_id_rpm_unit_rom=* (const identificateur *) &alias_identificateur_rpm_unit_rom;
+  const alias_ref_identificateur ref_rpm_unit_rom={-1,0,0,"_rpm",0,0};
+  const define_alias_gen(alias_rpm_unit_rom,_IDNT,0,&ref_rpm_unit_rom);
+  const gen & rpm_unit_rom_IDNT_e = * (gen *) & alias_rpm_unit_rom;
+
+  static const alias_identificateur alias_identificateur_s_unit_rom={0,0,"_s",0,0};
+  const identificateur & _IDNT_id_s_unit_rom=* (const identificateur *) &alias_identificateur_s_unit_rom;
+  const alias_ref_identificateur ref_s_unit_rom={-1,0,0,"_s",0,0};
+  const define_alias_gen(alias_s_unit_rom,_IDNT,0,&ref_s_unit_rom);
+  const gen & s_unit_rom_IDNT_e = * (gen *) & alias_s_unit_rom;
+
+  static const alias_identificateur alias_identificateur_sb_unit_rom={0,0,"_sb",0,0};
+  const identificateur & _IDNT_id_sb_unit_rom=* (const identificateur *) &alias_identificateur_sb_unit_rom;
+  const alias_ref_identificateur ref_sb_unit_rom={-1,0,0,"_sb",0,0};
+  const define_alias_gen(alias_sb_unit_rom,_IDNT,0,&ref_sb_unit_rom);
+  const gen & sb_unit_rom_IDNT_e = * (gen *) & alias_sb_unit_rom;
+
+  static const alias_identificateur alias_identificateur_sd_unit_rom={0,0,"_sd",0,0};
+  const identificateur & _IDNT_id_sd_unit_rom=* (const identificateur *) &alias_identificateur_sd_unit_rom;
+  const alias_ref_identificateur ref_sd_unit_rom={-1,0,0,"_sd",0,0};
+  const define_alias_gen(alias_sd_unit_rom,_IDNT,0,&ref_sd_unit_rom);
+  const gen & sd_unit_rom_IDNT_e = * (gen *) & alias_sd_unit_rom;
+
+  static const alias_identificateur alias_identificateur_sigma_unit_rom={0,0,"_sigma",0,0};
+  const identificateur & _IDNT_id_sigma_unit_rom=* (const identificateur *) &alias_identificateur_sigma_unit_rom;
+  const alias_ref_identificateur ref_sigma_unit_rom={-1,0,0,"_sigma",0,0};
+  const define_alias_gen(alias_sigma_unit_rom,_IDNT,0,&ref_sigma_unit_rom);
+  const gen & sigma_unit_rom_IDNT_e = * (gen *) & alias_sigma_unit_rom;
+
+  static const alias_identificateur alias_identificateur_slug_unit_rom={0,0,"_slug",0,0};
+  const identificateur & _IDNT_id_slug_unit_rom=* (const identificateur *) &alias_identificateur_slug_unit_rom;
+  const alias_ref_identificateur ref_slug_unit_rom={-1,0,0,"_slug",0,0};
+  const define_alias_gen(alias_slug_unit_rom,_IDNT,0,&ref_slug_unit_rom);
+  const gen & slug_unit_rom_IDNT_e = * (gen *) & alias_slug_unit_rom;
+
+  static const alias_identificateur alias_identificateur_st_unit_rom={0,0,"_st",0,0};
+  const identificateur & _IDNT_id_st_unit_rom=* (const identificateur *) &alias_identificateur_st_unit_rom;
+  const alias_ref_identificateur ref_st_unit_rom={-1,0,0,"_st",0,0};
+  const define_alias_gen(alias_st_unit_rom,_IDNT,0,&ref_st_unit_rom);
+  const gen & st_unit_rom_IDNT_e = * (gen *) & alias_st_unit_rom;
+
+  static const alias_identificateur alias_identificateur_syr__unit_rom={0,0,"_syr_",0,0};
+  const identificateur & _IDNT_id_syr__unit_rom=* (const identificateur *) &alias_identificateur_syr__unit_rom;
+  const alias_ref_identificateur ref_syr__unit_rom={-1,0,0,"_syr_",0,0};
+  const define_alias_gen(alias_syr__unit_rom,_IDNT,0,&ref_syr__unit_rom);
+  const gen & syr__unit_rom_IDNT_e = * (gen *) & alias_syr__unit_rom;
+
+  static const alias_identificateur alias_identificateur_t_unit_rom={0,0,"_t",0,0};
+  const identificateur & _IDNT_id_t_unit_rom=* (const identificateur *) &alias_identificateur_t_unit_rom;
+  const alias_ref_identificateur ref_t_unit_rom={-1,0,0,"_t",0,0};
+  const define_alias_gen(alias_t_unit_rom,_IDNT,0,&ref_t_unit_rom);
+  const gen & t_unit_rom_IDNT_e = * (gen *) & alias_t_unit_rom;
+
+  static const alias_identificateur alias_identificateur_tbsp_unit_rom={0,0,"_tbsp",0,0};
+  const identificateur & _IDNT_id_tbsp_unit_rom=* (const identificateur *) &alias_identificateur_tbsp_unit_rom;
+  const alias_ref_identificateur ref_tbsp_unit_rom={-1,0,0,"_tbsp",0,0};
+  const define_alias_gen(alias_tbsp_unit_rom,_IDNT,0,&ref_tbsp_unit_rom);
+  const gen & tbsp_unit_rom_IDNT_e = * (gen *) & alias_tbsp_unit_rom;
+
+  static const alias_identificateur alias_identificateur_tec_unit_rom={0,0,"_tec",0,0};
+  const identificateur & _IDNT_id_tec_unit_rom=* (const identificateur *) &alias_identificateur_tec_unit_rom;
+  const alias_ref_identificateur ref_tec_unit_rom={-1,0,0,"_tec",0,0};
+  const define_alias_gen(alias_tec_unit_rom,_IDNT,0,&ref_tec_unit_rom);
+  const gen & tec_unit_rom_IDNT_e = * (gen *) & alias_tec_unit_rom;
+
+  static const alias_identificateur alias_identificateur_tep_unit_rom={0,0,"_tep",0,0};
+  const identificateur & _IDNT_id_tep_unit_rom=* (const identificateur *) &alias_identificateur_tep_unit_rom;
+  const alias_ref_identificateur ref_tep_unit_rom={-1,0,0,"_tep",0,0};
+  const define_alias_gen(alias_tep_unit_rom,_IDNT,0,&ref_tep_unit_rom);
+  const gen & tep_unit_rom_IDNT_e = * (gen *) & alias_tep_unit_rom;
+
+  static const alias_identificateur alias_identificateur_tepC_unit_rom={0,0,"_tepC",0,0};
+  const identificateur & _IDNT_id_tepC_unit_rom=* (const identificateur *) &alias_identificateur_tepC_unit_rom;
+  const alias_ref_identificateur ref_tepC_unit_rom={-1,0,0,"_tepC",0,0};
+  const define_alias_gen(alias_tepC_unit_rom,_IDNT,0,&ref_tepC_unit_rom);
+  const gen & tepC_unit_rom_IDNT_e = * (gen *) & alias_tepC_unit_rom;
+
+  static const alias_identificateur alias_identificateur_tepcC_unit_rom={0,0,"_tepcC",0,0};
+  const identificateur & _IDNT_id_tepcC_unit_rom=* (const identificateur *) &alias_identificateur_tepcC_unit_rom;
+  const alias_ref_identificateur ref_tepcC_unit_rom={-1,0,0,"_tepcC",0,0};
+  const define_alias_gen(alias_tepcC_unit_rom,_IDNT,0,&ref_tepcC_unit_rom);
+  const gen & tepcC_unit_rom_IDNT_e = * (gen *) & alias_tepcC_unit_rom;
+
+  static const alias_identificateur alias_identificateur_tepgC_unit_rom={0,0,"_tepgC",0,0};
+  const identificateur & _IDNT_id_tepgC_unit_rom=* (const identificateur *) &alias_identificateur_tepgC_unit_rom;
+  const alias_ref_identificateur ref_tepgC_unit_rom={-1,0,0,"_tepgC",0,0};
+  const define_alias_gen(alias_tepgC_unit_rom,_IDNT,0,&ref_tepgC_unit_rom);
+  const gen & tepgC_unit_rom_IDNT_e = * (gen *) & alias_tepgC_unit_rom;
+
+  static const alias_identificateur alias_identificateur_tex_unit_rom={0,0,"_tex",0,0};
+  const identificateur & _IDNT_id_tex_unit_rom=* (const identificateur *) &alias_identificateur_tex_unit_rom;
+  const alias_ref_identificateur ref_tex_unit_rom={-1,0,0,"_tex",0,0};
+  const define_alias_gen(alias_tex_unit_rom,_IDNT,0,&ref_tex_unit_rom);
+  const gen & tex_unit_rom_IDNT_e = * (gen *) & alias_tex_unit_rom;
+
+  static const alias_identificateur alias_identificateur_therm_unit_rom={0,0,"_therm",0,0};
+  const identificateur & _IDNT_id_therm_unit_rom=* (const identificateur *) &alias_identificateur_therm_unit_rom;
+  const alias_ref_identificateur ref_therm_unit_rom={-1,0,0,"_therm",0,0};
+  const define_alias_gen(alias_therm_unit_rom,_IDNT,0,&ref_therm_unit_rom);
+  const gen & therm_unit_rom_IDNT_e = * (gen *) & alias_therm_unit_rom;
+
+  static const alias_identificateur alias_identificateur_toe_unit_rom={0,0,"_toe",0,0};
+  const identificateur & _IDNT_id_toe_unit_rom=* (const identificateur *) &alias_identificateur_toe_unit_rom;
+  const alias_ref_identificateur ref_toe_unit_rom={-1,0,0,"_toe",0,0};
+  const define_alias_gen(alias_toe_unit_rom,_IDNT,0,&ref_toe_unit_rom);
+  const gen & toe_unit_rom_IDNT_e = * (gen *) & alias_toe_unit_rom;
+
+  static const alias_identificateur alias_identificateur_ton_unit_rom={0,0,"_ton",0,0};
+  const identificateur & _IDNT_id_ton_unit_rom=* (const identificateur *) &alias_identificateur_ton_unit_rom;
+  const alias_ref_identificateur ref_ton_unit_rom={-1,0,0,"_ton",0,0};
+  const define_alias_gen(alias_ton_unit_rom,_IDNT,0,&ref_ton_unit_rom);
+  const gen & ton_unit_rom_IDNT_e = * (gen *) & alias_ton_unit_rom;
+
+  static const alias_identificateur alias_identificateur_tonUK_unit_rom={0,0,"_tonUK",0,0};
+  const identificateur & _IDNT_id_tonUK_unit_rom=* (const identificateur *) &alias_identificateur_tonUK_unit_rom;
+  const alias_ref_identificateur ref_tonUK_unit_rom={-1,0,0,"_tonUK",0,0};
+  const define_alias_gen(alias_tonUK_unit_rom,_IDNT,0,&ref_tonUK_unit_rom);
+  const gen & tonUK_unit_rom_IDNT_e = * (gen *) & alias_tonUK_unit_rom;
+
+  static const alias_identificateur alias_identificateur_tr_unit_rom={0,0,"_tr",0,0};
+  const identificateur & _IDNT_id_tr_unit_rom=* (const identificateur *) &alias_identificateur_tr_unit_rom;
+  const alias_ref_identificateur ref_tr_unit_rom={-1,0,0,"_tr",0,0};
+  const define_alias_gen(alias_tr_unit_rom,_IDNT,0,&ref_tr_unit_rom);
+  const gen & tr_unit_rom_IDNT_e = * (gen *) & alias_tr_unit_rom;
+
+  static const alias_identificateur alias_identificateur_tsp_unit_rom={0,0,"_tsp",0,0};
+  const identificateur & _IDNT_id_tsp_unit_rom=* (const identificateur *) &alias_identificateur_tsp_unit_rom;
+  const alias_ref_identificateur ref_tsp_unit_rom={-1,0,0,"_tsp",0,0};
+  const define_alias_gen(alias_tsp_unit_rom,_IDNT,0,&ref_tsp_unit_rom);
+  const gen & tsp_unit_rom_IDNT_e = * (gen *) & alias_tsp_unit_rom;
+
+  static const alias_identificateur alias_identificateur_u_unit_rom={0,0,"_u",0,0};
+  const identificateur & _IDNT_id_u_unit_rom=* (const identificateur *) &alias_identificateur_u_unit_rom;
+  const alias_ref_identificateur ref_u_unit_rom={-1,0,0,"_u",0,0};
+  const define_alias_gen(alias_u_unit_rom,_IDNT,0,&ref_u_unit_rom);
+  const gen & u_unit_rom_IDNT_e = * (gen *) & alias_u_unit_rom;
+
+  static const alias_identificateur alias_identificateur_E_unit_rom={0,0,"_E",0,0};
+  const identificateur & _IDNT_id_E_unit_rom=* (const identificateur *) &alias_identificateur_E_unit_rom;
+  const alias_ref_identificateur ref_E_unit_rom={-1,0,0,"_E",0,0};
+  const define_alias_gen(alias_E_unit_rom,_IDNT,0,&ref_E_unit_rom);
+  const gen & E_unit_rom_IDNT_e = * (gen *) & alias_E_unit_rom;
+
+  static const alias_identificateur alias_identificateur_Curie_unit_rom={0,0,"_Curie",0,0};
+  const identificateur & _IDNT_id_Curie_unit_rom=* (const identificateur *) &alias_identificateur_Curie_unit_rom;
+  const alias_ref_identificateur ref_Curie_unit_rom={-1,0,0,"_Curie",0,0};
+  const define_alias_gen(alias_Curie_unit_rom,_IDNT,0,&ref_Curie_unit_rom);
+  const gen & Curie_unit_rom_IDNT_e = * (gen *) & alias_Curie_unit_rom;
+
+  static const alias_identificateur alias_identificateur_C_unit_rom={0,0,"_C",0,0};
+  const identificateur & _IDNT_id_C_unit_rom=* (const identificateur *) &alias_identificateur_C_unit_rom;
+  const alias_ref_identificateur ref_C_unit_rom={-1,0,0,"_C",0,0};
+  const define_alias_gen(alias_C_unit_rom,_IDNT,0,&ref_C_unit_rom);
+  const gen & C_unit_rom_IDNT_e = * (gen *) & alias_C_unit_rom;
+
+  static const alias_identificateur alias_identificateur_kg_unit_rom={0,0,"_kg",0,0};
+  const identificateur & _IDNT_id_kg_unit_rom=* (const identificateur *) &alias_identificateur_kg_unit_rom;
+  const alias_ref_identificateur ref_kg_unit_rom={-1,0,0,"_kg",0,0};
+  const define_alias_gen(alias_kg_unit_rom,_IDNT,0,&ref_kg_unit_rom);
+  const gen & kg_unit_rom_IDNT_e = * (gen *) & alias_kg_unit_rom;
+
+
+#else
+  identificateur m_unit_rom_IDNT("_m");
+  gen m_unit_rom_IDNT_e(m_unit_rom_IDNT);
+  identificateur A_unit_rom_IDNT("_A");
+  gen A_unit_rom_IDNT_e(A_unit_rom_IDNT);
+  identificateur Bq_unit_rom_IDNT("_Bq");
+  gen Bq_unit_rom_IDNT_e(Bq_unit_rom_IDNT);
+  identificateur yd_unit_rom_IDNT("_yd");
+  gen yd_unit_rom_IDNT_e(yd_unit_rom_IDNT);
+  identificateur yr_unit_rom_IDNT("_yr");
+  gen yr_unit_rom_IDNT_e(yr_unit_rom_IDNT);
+  identificateur Btu_unit_rom_IDNT("_Btu");
+  gen Btu_unit_rom_IDNT_e(Btu_unit_rom_IDNT);
+  identificateur R__unit_rom_IDNT("_R_");
+  gen R__unit_rom_IDNT_e(R__unit_rom_IDNT);
+  identificateur epsilon0__unit_rom_IDNT("_epsilon0_");
+  gen epsilon0__unit_rom_IDNT_e(epsilon0__unit_rom_IDNT);
+  identificateur a0__unit_rom_IDNT("_a0_");
+  gen a0__unit_rom_IDNT_e(a0__unit_rom_IDNT);
+  identificateur RSun__unit_rom_IDNT("_RSun_");
+  gen RSun__unit_rom_IDNT_e(RSun__unit_rom_IDNT);
+  identificateur REarth__unit_rom_IDNT("_REarth_");
+  gen REarth__unit_rom_IDNT_e(REarth__unit_rom_IDNT);
+  identificateur Fdy_unit_rom_IDNT("_Fdy");
+  gen Fdy_unit_rom_IDNT_e(Fdy_unit_rom_IDNT);
+  identificateur F_unit_rom_IDNT("_F");
+  gen F_unit_rom_IDNT_e(F_unit_rom_IDNT);
+  identificateur FF_unit_rom_IDNT("_FF");
+  gen FF_unit_rom_IDNT_e(FF_unit_rom_IDNT);
+  identificateur Faraday__unit_rom_IDNT("_Faraday_");
+  gen Faraday__unit_rom_IDNT_e(Faraday__unit_rom_IDNT);
+  identificateur G__unit_rom_IDNT("_G_");
+  gen G__unit_rom_IDNT_e(G__unit_rom_IDNT);
+  identificateur Gal_unit_rom_IDNT("_Gal");
+  gen Gal_unit_rom_IDNT_e(Gal_unit_rom_IDNT);
+  identificateur Gy_unit_rom_IDNT("_Gy");
+  gen Gy_unit_rom_IDNT_e(Gy_unit_rom_IDNT);
+  identificateur H_unit_rom_IDNT("_H");
+  gen H_unit_rom_IDNT_e(H_unit_rom_IDNT);
+  identificateur HFCC_unit_rom_IDNT("_HFCC");
+  gen HFCC_unit_rom_IDNT_e(HFCC_unit_rom_IDNT);
+  identificateur Hz_unit_rom_IDNT("_Hz");
+  gen Hz_unit_rom_IDNT_e(Hz_unit_rom_IDNT);
+  identificateur IO__unit_rom_IDNT("_IO_");
+  gen IO__unit_rom_IDNT_e(IO__unit_rom_IDNT);
+  identificateur J_unit_rom_IDNT("_J");
+  gen J_unit_rom_IDNT_e(J_unit_rom_IDNT);
+  identificateur K_unit_rom_IDNT("_K");
+  gen K_unit_rom_IDNT_e(K_unit_rom_IDNT);
+  identificateur L_unit_rom_IDNT("_L");
+  gen L_unit_rom_IDNT_e(L_unit_rom_IDNT);
+  identificateur N_unit_rom_IDNT("_N");
+  gen N_unit_rom_IDNT_e(N_unit_rom_IDNT);
+  identificateur NA__unit_rom_IDNT("_NA_");
+  gen NA__unit_rom_IDNT_e(NA__unit_rom_IDNT);
+  identificateur Ohm_unit_rom_IDNT("_Ohm");
+  gen Ohm_unit_rom_IDNT_e(Ohm_unit_rom_IDNT);
+  identificateur P_unit_rom_IDNT("_P");
+  gen P_unit_rom_IDNT_e(P_unit_rom_IDNT);
+  identificateur PSun__unit_rom_IDNT("_PSun_");
+  gen PSun__unit_rom_IDNT_e(PSun__unit_rom_IDNT);
+  identificateur Pa_unit_rom_IDNT("_Pa");
+  gen Pa_unit_rom_IDNT_e(Pa_unit_rom_IDNT);
+  identificateur R_unit_rom_IDNT("_R");
+  gen R_unit_rom_IDNT_e(R_unit_rom_IDNT);
+  identificateur Rankine_unit_rom_IDNT("_Rankine");
+  gen Rankine_unit_rom_IDNT_e(Rankine_unit_rom_IDNT);
+  identificateur Rinfinity__unit_rom_IDNT("_Rinfinity_");
+  gen Rinfinity__unit_rom_IDNT_e(Rinfinity__unit_rom_IDNT);
+  identificateur S_unit_rom_IDNT("_S");
+  gen S_unit_rom_IDNT_e(S_unit_rom_IDNT);
+  identificateur St_unit_rom_IDNT("_St");
+  gen St_unit_rom_IDNT_e(St_unit_rom_IDNT);
+  identificateur StdP__unit_rom_IDNT("_StdP_");
+  gen StdP__unit_rom_IDNT_e(StdP__unit_rom_IDNT);
+  identificateur StdT__unit_rom_IDNT("_StdT_");
+  gen StdT__unit_rom_IDNT_e(StdT__unit_rom_IDNT);
+  identificateur Sv_unit_rom_IDNT("_Sv");
+  gen Sv_unit_rom_IDNT_e(Sv_unit_rom_IDNT);
+  identificateur T_unit_rom_IDNT("_T");
+  gen T_unit_rom_IDNT_e(T_unit_rom_IDNT);
+  identificateur Torr_unit_rom_IDNT("_Torr");
+  gen Torr_unit_rom_IDNT_e(Torr_unit_rom_IDNT);
+  identificateur V_unit_rom_IDNT("_V");
+  gen V_unit_rom_IDNT_e(V_unit_rom_IDNT);
+  identificateur Vm__unit_rom_IDNT("_Vm_");
+  gen Vm__unit_rom_IDNT_e(Vm__unit_rom_IDNT);
+  identificateur W_unit_rom_IDNT("_W");
+  gen W_unit_rom_IDNT_e(W_unit_rom_IDNT);
+  identificateur Wb_unit_rom_IDNT("_Wb");
+  gen Wb_unit_rom_IDNT_e(Wb_unit_rom_IDNT);
+  identificateur Wh_unit_rom_IDNT("_Wh");
+  gen Wh_unit_rom_IDNT_e(Wh_unit_rom_IDNT);
+  identificateur a_unit_rom_IDNT("_a");
+  gen a_unit_rom_IDNT_e(a_unit_rom_IDNT);
+  identificateur acre_unit_rom_IDNT("_acre");
+  gen acre_unit_rom_IDNT_e(acre_unit_rom_IDNT);
+  identificateur alpha__unit_rom_IDNT("_alpha_");
+  gen alpha__unit_rom_IDNT_e(alpha__unit_rom_IDNT);
+  identificateur arcmin_unit_rom_IDNT("_arcmin");
+  gen arcmin_unit_rom_IDNT_e(arcmin_unit_rom_IDNT);
+  identificateur arcs_unit_rom_IDNT("_arcs");
+  gen arcs_unit_rom_IDNT_e(arcs_unit_rom_IDNT);
+  identificateur atm_unit_rom_IDNT("_atm");
+  gen atm_unit_rom_IDNT_e(atm_unit_rom_IDNT);
+  identificateur au_unit_rom_IDNT("_au");
+  gen au_unit_rom_IDNT_e(au_unit_rom_IDNT);
+  identificateur bar_unit_rom_IDNT("_bar");
+  gen bar_unit_rom_IDNT_e(bar_unit_rom_IDNT);
+  identificateur b_unit_rom_IDNT("_b");
+  gen b_unit_rom_IDNT_e(b_unit_rom_IDNT);
+  identificateur bbl_unit_rom_IDNT("_bbl");
+  gen bbl_unit_rom_IDNT_e(bbl_unit_rom_IDNT);
+  identificateur bblep_unit_rom_IDNT("_bblep");
+  gen bblep_unit_rom_IDNT_e(bblep_unit_rom_IDNT);
+  identificateur boe_unit_rom_IDNT("_boe");
+  gen boe_unit_rom_IDNT_e(boe_unit_rom_IDNT);
+  identificateur bu_unit_rom_IDNT("_bu");
+  gen bu_unit_rom_IDNT_e(bu_unit_rom_IDNT);
+  identificateur buUS_unit_rom_IDNT("_buUS");
+  gen buUS_unit_rom_IDNT_e(buUS_unit_rom_IDNT);
+  identificateur c3__unit_rom_IDNT("_c3_");
+  gen c3__unit_rom_IDNT_e(c3__unit_rom_IDNT);
+  identificateur c__unit_rom_IDNT("_c_");
+  gen c__unit_rom_IDNT_e(c__unit_rom_IDNT);
+  identificateur cal_unit_rom_IDNT("_cal");
+  gen cal_unit_rom_IDNT_e(cal_unit_rom_IDNT);
+  identificateur cd_unit_rom_IDNT("_cd");
+  gen cd_unit_rom_IDNT_e(cd_unit_rom_IDNT);
+  identificateur cf_unit_rom_IDNT("_cf");
+  gen cf_unit_rom_IDNT_e(cf_unit_rom_IDNT);
+  identificateur chain_unit_rom_IDNT("_chain");
+  gen chain_unit_rom_IDNT_e(chain_unit_rom_IDNT);
+  identificateur ct_unit_rom_IDNT("_ct");
+  gen ct_unit_rom_IDNT_e(ct_unit_rom_IDNT);
+  identificateur cu_unit_rom_IDNT("_cu");
+  gen cu_unit_rom_IDNT_e(cu_unit_rom_IDNT);
+  identificateur d_unit_rom_IDNT("_d");
+  gen d_unit_rom_IDNT_e(d_unit_rom_IDNT);
+  identificateur dB_unit_rom_IDNT("_dB");
+  gen dB_unit_rom_IDNT_e(dB_unit_rom_IDNT);
+  identificateur deg_unit_rom_IDNT("_deg");
+  gen deg_unit_rom_IDNT_e(deg_unit_rom_IDNT);
+  identificateur dyn_unit_rom_IDNT("_dyn");
+  gen dyn_unit_rom_IDNT_e(dyn_unit_rom_IDNT);
+  identificateur eV_unit_rom_IDNT("_eV");
+  gen eV_unit_rom_IDNT_e(eV_unit_rom_IDNT);
+  identificateur epsilon0q__unit_rom_IDNT("_epsilon0q_");
+  gen epsilon0q__unit_rom_IDNT_e(epsilon0q__unit_rom_IDNT);
+  identificateur epsilonox__unit_rom_IDNT("_epsilonox_");
+  gen epsilonox__unit_rom_IDNT_e(epsilonox__unit_rom_IDNT);
+  identificateur epsilonsi__unit_rom_IDNT("_epsilonsi_");
+  gen epsilonsi__unit_rom_IDNT_e(epsilonsi__unit_rom_IDNT);
+  identificateur erg_unit_rom_IDNT("_erg");
+  gen erg_unit_rom_IDNT_e(erg_unit_rom_IDNT);
+  identificateur f0__unit_rom_IDNT("_f0_");
+  gen f0__unit_rom_IDNT_e(f0__unit_rom_IDNT);
+  identificateur fath_unit_rom_IDNT("_fath");
+  gen fath_unit_rom_IDNT_e(fath_unit_rom_IDNT);
+  identificateur fbm_unit_rom_IDNT("_fbm");
+  gen fbm_unit_rom_IDNT_e(fbm_unit_rom_IDNT);
+  identificateur fc_unit_rom_IDNT("_fc");
+  gen fc_unit_rom_IDNT_e(fc_unit_rom_IDNT);
+  identificateur fermi_unit_rom_IDNT("_fermi");
+  gen fermi_unit_rom_IDNT_e(fermi_unit_rom_IDNT);
+  identificateur flam_unit_rom_IDNT("_flam");
+  gen flam_unit_rom_IDNT_e(flam_unit_rom_IDNT);
+  identificateur fm_unit_rom_IDNT("_fm");
+  gen fm_unit_rom_IDNT_e(fm_unit_rom_IDNT);
+  identificateur ft_unit_rom_IDNT("_ft");
+  gen ft_unit_rom_IDNT_e(ft_unit_rom_IDNT);
+  identificateur ftUS_unit_rom_IDNT("_ftUS");
+  gen ftUS_unit_rom_IDNT_e(ftUS_unit_rom_IDNT);
+  identificateur g_unit_rom_IDNT("_g");
+  gen g_unit_rom_IDNT_e(g_unit_rom_IDNT);
+  identificateur g__unit_rom_IDNT("_g_");
+  gen g__unit_rom_IDNT_e(g__unit_rom_IDNT);
+  identificateur galC_unit_rom_IDNT("_galC");
+  gen galC_unit_rom_IDNT_e(galC_unit_rom_IDNT);
+  identificateur galUK_unit_rom_IDNT("_galUK");
+  gen galUK_unit_rom_IDNT_e(galUK_unit_rom_IDNT);
+  identificateur galUS_unit_rom_IDNT("_galUS");
+  gen galUS_unit_rom_IDNT_e(galUS_unit_rom_IDNT);
+  identificateur gf_unit_rom_IDNT("_gf");
+  gen gf_unit_rom_IDNT_e(gf_unit_rom_IDNT);
+  identificateur gmol_unit_rom_IDNT("_gmol");
+  gen gmol_unit_rom_IDNT_e(gmol_unit_rom_IDNT);
+  identificateur gon_unit_rom_IDNT("_gon");
+  gen gon_unit_rom_IDNT_e(gon_unit_rom_IDNT);
+  identificateur grad_unit_rom_IDNT("_grad");
+  gen grad_unit_rom_IDNT_e(grad_unit_rom_IDNT);
+  identificateur grain_unit_rom_IDNT("_grain");
+  gen grain_unit_rom_IDNT_e(grain_unit_rom_IDNT);
+  identificateur h_unit_rom_IDNT("_h");
+  gen h_unit_rom_IDNT_e(h_unit_rom_IDNT);
+  identificateur h__unit_rom_IDNT("_h_");
+  gen h__unit_rom_IDNT_e(h__unit_rom_IDNT);
+  identificateur ha_unit_rom_IDNT("_ha");
+  gen ha_unit_rom_IDNT_e(ha_unit_rom_IDNT);
+  identificateur hbar__unit_rom_IDNT("_hbar_");
+  gen hbar__unit_rom_IDNT_e(hbar__unit_rom_IDNT);
+  identificateur hp_unit_rom_IDNT("_hp");
+  gen hp_unit_rom_IDNT_e(hp_unit_rom_IDNT);
+  identificateur inH2O_unit_rom_IDNT("_inH2O");
+  gen inH2O_unit_rom_IDNT_e(inH2O_unit_rom_IDNT);
+  identificateur inHg_unit_rom_IDNT("_inHg");
+  gen inHg_unit_rom_IDNT_e(inHg_unit_rom_IDNT);
+  identificateur inch_unit_rom_IDNT("_inch");
+  gen inch_unit_rom_IDNT_e(inch_unit_rom_IDNT);
+  identificateur j_unit_rom_IDNT("_j");
+  gen j_unit_rom_IDNT_e(j_unit_rom_IDNT);
+  identificateur k__unit_rom_IDNT("_k_");
+  gen k__unit_rom_IDNT_e(k__unit_rom_IDNT);
+  identificateur kip_unit_rom_IDNT("_kip");
+  gen kip_unit_rom_IDNT_e(kip_unit_rom_IDNT);
+  identificateur knot_unit_rom_IDNT("_knot");
+  gen knot_unit_rom_IDNT_e(knot_unit_rom_IDNT);
+  identificateur kph_unit_rom_IDNT("_kph");
+  gen kph_unit_rom_IDNT_e(kph_unit_rom_IDNT);
+  identificateur kq__unit_rom_IDNT("_kq_");
+  gen kq__unit_rom_IDNT_e(kq__unit_rom_IDNT);
+  identificateur l_unit_rom_IDNT("_l");
+  gen l_unit_rom_IDNT_e(l_unit_rom_IDNT);
+  identificateur lam_unit_rom_IDNT("_lam");
+  gen lam_unit_rom_IDNT_e(lam_unit_rom_IDNT);
+  identificateur lambda0_unit_rom_IDNT("_lambda0");
+  gen lambda0_unit_rom_IDNT_e(lambda0_unit_rom_IDNT);
+  identificateur lambdac__unit_rom_IDNT("_lambdac_");
+  gen lambdac__unit_rom_IDNT_e(lambdac__unit_rom_IDNT);
+  identificateur lb_unit_rom_IDNT("_lb");
+  gen lb_unit_rom_IDNT_e(lb_unit_rom_IDNT);
+  identificateur lbf_unit_rom_IDNT("_lbf");
+  gen lbf_unit_rom_IDNT_e(lbf_unit_rom_IDNT);
+  identificateur lbmol_unit_rom_IDNT("_lbmol");
+  gen lbmol_unit_rom_IDNT_e(lbmol_unit_rom_IDNT);
+  identificateur lbt_unit_rom_IDNT("_lbt");
+  gen lbt_unit_rom_IDNT_e(lbt_unit_rom_IDNT);
+  identificateur lep_unit_rom_IDNT("_lep");
+  gen lep_unit_rom_IDNT_e(lep_unit_rom_IDNT);
+  identificateur liqpt_unit_rom_IDNT("_liqpt");
+  gen liqpt_unit_rom_IDNT_e(liqpt_unit_rom_IDNT);
+  identificateur lyr_unit_rom_IDNT("_lyr");
+  gen lyr_unit_rom_IDNT_e(lyr_unit_rom_IDNT);
+  identificateur mEarth__unit_rom_IDNT("_mEarth_");
+  gen mEarth__unit_rom_IDNT_e(mEarth__unit_rom_IDNT);
+  identificateur mSun__unit_rom_IDNT("_mSun_");
+  gen mSun__unit_rom_IDNT_e(mSun__unit_rom_IDNT);
+  identificateur me__unit_rom_IDNT("_me_");
+  gen me__unit_rom_IDNT_e(me__unit_rom_IDNT);
+  identificateur mho_unit_rom_IDNT("_mho");
+  gen mho_unit_rom_IDNT_e(mho_unit_rom_IDNT);
+  identificateur mi_unit_rom_IDNT("_mi");
+  gen mi_unit_rom_IDNT_e(mi_unit_rom_IDNT);
+  identificateur miUS_unit_rom_IDNT("_miUS");
+  gen miUS_unit_rom_IDNT_e(miUS_unit_rom_IDNT);
+  identificateur mil_unit_rom_IDNT("_mil");
+  gen mil_unit_rom_IDNT_e(mil_unit_rom_IDNT);
+  identificateur mile_unit_rom_IDNT("_mile");
+  gen mile_unit_rom_IDNT_e(mile_unit_rom_IDNT);
+  identificateur mille_unit_rom_IDNT("_mille");
+  gen mille_unit_rom_IDNT_e(mille_unit_rom_IDNT);
+  identificateur min_unit_rom_IDNT("_min");
+  gen min_unit_rom_IDNT_e(min_unit_rom_IDNT);
+  identificateur mmHg_unit_rom_IDNT("_mmHg");
+  gen mmHg_unit_rom_IDNT_e(mmHg_unit_rom_IDNT);
+  identificateur mn_unit_rom_IDNT("_mn");
+  gen mn_unit_rom_IDNT_e(mn_unit_rom_IDNT);
+  identificateur mol_unit_rom_IDNT("_mol");
+  gen mol_unit_rom_IDNT_e(mol_unit_rom_IDNT);
+  identificateur molK_unit_rom_IDNT("_molK");
+  gen molK_unit_rom_IDNT_e(molK_unit_rom_IDNT);
+  identificateur mp__unit_rom_IDNT("_mp_");
+  gen mp__unit_rom_IDNT_e(mp__unit_rom_IDNT);
+  identificateur mph_unit_rom_IDNT("_mph");
+  gen mph_unit_rom_IDNT_e(mph_unit_rom_IDNT);
+  identificateur mpme__unit_rom_IDNT("_mpme_");
+  gen mpme__unit_rom_IDNT_e(mpme__unit_rom_IDNT);
+  identificateur mu0__unit_rom_IDNT("_mu0_");
+  gen mu0__unit_rom_IDNT_e(mu0__unit_rom_IDNT);
+  identificateur muB__unit_rom_IDNT("_muB_");
+  gen muB__unit_rom_IDNT_e(muB__unit_rom_IDNT);
+  identificateur muN__unit_rom_IDNT("_muN_");
+  gen muN__unit_rom_IDNT_e(muN__unit_rom_IDNT);
+  identificateur nmi_unit_rom_IDNT("_nmi");
+  gen nmi_unit_rom_IDNT_e(nmi_unit_rom_IDNT);
+  identificateur oz_unit_rom_IDNT("_oz");
+  gen oz_unit_rom_IDNT_e(oz_unit_rom_IDNT);
+  identificateur ozUK_unit_rom_IDNT("_ozUK");
+  gen ozUK_unit_rom_IDNT_e(ozUK_unit_rom_IDNT);
+  identificateur ozfl_unit_rom_IDNT("_ozfl");
+  gen ozfl_unit_rom_IDNT_e(ozfl_unit_rom_IDNT);
+  identificateur ozt_unit_rom_IDNT("_ozt");
+  gen ozt_unit_rom_IDNT_e(ozt_unit_rom_IDNT);
+  identificateur pc_unit_rom_IDNT("_pc");
+  gen pc_unit_rom_IDNT_e(pc_unit_rom_IDNT);
+  identificateur pdl_unit_rom_IDNT("_pdl");
+  gen pdl_unit_rom_IDNT_e(pdl_unit_rom_IDNT);
+  identificateur phi__unit_rom_IDNT("_phi_");
+  gen phi__unit_rom_IDNT_e(phi__unit_rom_IDNT);
+  identificateur pk_unit_rom_IDNT("_pk");
+  gen pk_unit_rom_IDNT_e(pk_unit_rom_IDNT);
+  identificateur psi_unit_rom_IDNT("_psi");
+  gen psi_unit_rom_IDNT_e(psi_unit_rom_IDNT);
+  identificateur pt_unit_rom_IDNT("_pt");
+  gen pt_unit_rom_IDNT_e(pt_unit_rom_IDNT);
+  identificateur ptUK_unit_rom_IDNT("_ptUK");
+  gen ptUK_unit_rom_IDNT_e(ptUK_unit_rom_IDNT);
+  identificateur qe_unit_rom_IDNT("_qe");
+  gen qe_unit_rom_IDNT_e(qe_unit_rom_IDNT);
+  identificateur qepsilon0__unit_rom_IDNT("_qepsilon0_");
+  gen qepsilon0__unit_rom_IDNT_e(qepsilon0__unit_rom_IDNT);
+  identificateur qme__unit_rom_IDNT("_qme_");
+  gen qme__unit_rom_IDNT_e(qme__unit_rom_IDNT);
+  identificateur qt_unit_rom_IDNT("_qt");
+  gen qt_unit_rom_IDNT_e(qt_unit_rom_IDNT);
+  identificateur rad_unit_rom_IDNT("_rad");
+  gen rad_unit_rom_IDNT_e(rad_unit_rom_IDNT);
+  identificateur rd_unit_rom_IDNT("_rd");
+  gen rd_unit_rom_IDNT_e(rd_unit_rom_IDNT);
+  identificateur rem_unit_rom_IDNT("_rem");
+  gen rem_unit_rom_IDNT_e(rem_unit_rom_IDNT);
+  identificateur rev_unit_rom_IDNT("_rev");
+  gen rev_unit_rom_IDNT_e(rev_unit_rom_IDNT);
+  identificateur rod_unit_rom_IDNT("_rod");
+  gen rod_unit_rom_IDNT_e(rod_unit_rom_IDNT);
+  identificateur rpm_unit_rom_IDNT("_rpm");
+  gen rpm_unit_rom_IDNT_e(rpm_unit_rom_IDNT);
+  identificateur s_unit_rom_IDNT("_s");
+  gen s_unit_rom_IDNT_e(s_unit_rom_IDNT);
+  identificateur sb_unit_rom_IDNT("_sb");
+  gen sb_unit_rom_IDNT_e(sb_unit_rom_IDNT);
+  identificateur sd_unit_rom_IDNT("_sd");
+  gen sd_unit_rom_IDNT_e(sd_unit_rom_IDNT);
+  identificateur sigma_unit_rom_IDNT("_sigma");
+  gen sigma_unit_rom_IDNT_e(sigma_unit_rom_IDNT);
+  identificateur slug_unit_rom_IDNT("_slug");
+  gen slug_unit_rom_IDNT_e(slug_unit_rom_IDNT);
+  identificateur st_unit_rom_IDNT("_st");
+  gen st_unit_rom_IDNT_e(st_unit_rom_IDNT);
+  identificateur syr__unit_rom_IDNT("_syr_");
+  gen syr__unit_rom_IDNT_e(syr__unit_rom_IDNT);
+  identificateur t_unit_rom_IDNT("_t");
+  gen t_unit_rom_IDNT_e(t_unit_rom_IDNT);
+  identificateur tbsp_unit_rom_IDNT("_tbsp");
+  gen tbsp_unit_rom_IDNT_e(tbsp_unit_rom_IDNT);
+  identificateur tec_unit_rom_IDNT("_tec");
+  gen tec_unit_rom_IDNT_e(tec_unit_rom_IDNT);
+  identificateur tep_unit_rom_IDNT("_tep");
+  gen tep_unit_rom_IDNT_e(tep_unit_rom_IDNT);
+  identificateur tepC_unit_rom_IDNT("_tepC");
+  gen tepC_unit_rom_IDNT_e(tepC_unit_rom_IDNT);
+  identificateur tepcC_unit_rom_IDNT("_tepcC");
+  gen tepcC_unit_rom_IDNT_e(tepcC_unit_rom_IDNT);
+  identificateur tepgC_unit_rom_IDNT("_tepgC");
+  gen tepgC_unit_rom_IDNT_e(tepgC_unit_rom_IDNT);
+  identificateur tex_unit_rom_IDNT("_tex");
+  gen tex_unit_rom_IDNT_e(tex_unit_rom_IDNT);
+  identificateur therm_unit_rom_IDNT("_therm");
+  gen therm_unit_rom_IDNT_e(therm_unit_rom_IDNT);
+  identificateur toe_unit_rom_IDNT("_toe");
+  gen toe_unit_rom_IDNT_e(toe_unit_rom_IDNT);
+  identificateur ton_unit_rom_IDNT("_ton");
+  gen ton_unit_rom_IDNT_e(ton_unit_rom_IDNT);
+  identificateur tonUK_unit_rom_IDNT("_tonUK");
+  gen tonUK_unit_rom_IDNT_e(tonUK_unit_rom_IDNT);
+  identificateur tr_unit_rom_IDNT("_tr");
+  gen tr_unit_rom_IDNT_e(tr_unit_rom_IDNT);
+  identificateur tsp_unit_rom_IDNT("_tsp");
+  gen tsp_unit_rom_IDNT_e(tsp_unit_rom_IDNT);
+  identificateur u_unit_rom_IDNT("_u");
+  gen u_unit_rom_IDNT_e(u_unit_rom_IDNT);
+  identificateur E_unit_rom_IDNT("_E");
+  gen E_unit_rom_IDNT_e(E_unit_rom_IDNT);
+  identificateur Curie_unit_rom_IDNT("_Curie");
+  gen Curie_unit_rom_IDNT_e(Curie_unit_rom_IDNT);
+  identificateur C_unit_rom_IDNT("_C");
+  gen C_unit_rom_IDNT_e(C_unit_rom_IDNT);
+  identificateur kg_unit_rom_IDNT("_kg");
+  gen kg_unit_rom_IDNT_e(kg_unit_rom_IDNT);
+  identificateur Angstrom_unit_rom_IDNT("_Angstrom");
+  gen Angstrom_unit_rom_IDNT_e(Angstrom_unit_rom_IDNT);
+#endif
+  const gen * const tab_unit_rom[]={
+    &A_unit_rom_IDNT_e,
+    &Angstrom_unit_rom_IDNT_e,
+    &Bq_unit_rom_IDNT_e,
+    &Btu_unit_rom_IDNT_e,
+    &C_unit_rom_IDNT_e,
+    &Curie_unit_rom_IDNT_e,
+    &E_unit_rom_IDNT_e,
+    &F_unit_rom_IDNT_e,
+    &FF_unit_rom_IDNT_e,
+    &Faraday__unit_rom_IDNT_e,
+    &Fdy_unit_rom_IDNT_e,
+    &G__unit_rom_IDNT_e,
+    &Gal_unit_rom_IDNT_e,
+    &Gy_unit_rom_IDNT_e,
+    &H_unit_rom_IDNT_e,
+    &HFCC_unit_rom_IDNT_e,
+    &Hz_unit_rom_IDNT_e,
+    &IO__unit_rom_IDNT_e,
+    &J_unit_rom_IDNT_e,
+    &K_unit_rom_IDNT_e,
+    &L_unit_rom_IDNT_e,
+    &N_unit_rom_IDNT_e,
+    &NA__unit_rom_IDNT_e,
+    &Ohm_unit_rom_IDNT_e,
+    &P_unit_rom_IDNT_e,
+    &PSun__unit_rom_IDNT_e,
+    &Pa_unit_rom_IDNT_e,
+    &R_unit_rom_IDNT_e,
+    &REarth__unit_rom_IDNT_e,
+    &RSun__unit_rom_IDNT_e,
+    &R__unit_rom_IDNT_e,
+    &Rankine_unit_rom_IDNT_e,
+    &Rinfinity__unit_rom_IDNT_e,
+    &S_unit_rom_IDNT_e,
+    &St_unit_rom_IDNT_e,
+    &StdP__unit_rom_IDNT_e,
+    &StdT__unit_rom_IDNT_e,
+    &Sv_unit_rom_IDNT_e,
+    &T_unit_rom_IDNT_e,
+    &Torr_unit_rom_IDNT_e,
+    &V_unit_rom_IDNT_e,
+    &Vm__unit_rom_IDNT_e,
+    &W_unit_rom_IDNT_e,
+    &Wb_unit_rom_IDNT_e,
+    &Wh_unit_rom_IDNT_e,
+    &a_unit_rom_IDNT_e,
+    &a0__unit_rom_IDNT_e,
+    &acre_unit_rom_IDNT_e,
+    &alpha__unit_rom_IDNT_e,
+    &arcmin_unit_rom_IDNT_e,
+    &arcs_unit_rom_IDNT_e,
+    &atm_unit_rom_IDNT_e,
+    &au_unit_rom_IDNT_e,
+    &b_unit_rom_IDNT_e,
+    &bar_unit_rom_IDNT_e,
+    &bbl_unit_rom_IDNT_e,
+    &bblep_unit_rom_IDNT_e,
+    &boe_unit_rom_IDNT_e,
+    &bu_unit_rom_IDNT_e,
+    &buUS_unit_rom_IDNT_e,
+    &c3__unit_rom_IDNT_e,
+    &c__unit_rom_IDNT_e,
+    &cal_unit_rom_IDNT_e,
+    &cd_unit_rom_IDNT_e,
+    &cf_unit_rom_IDNT_e,
+    &chain_unit_rom_IDNT_e,
+    &ct_unit_rom_IDNT_e,
+    &cu_unit_rom_IDNT_e,
+    &d_unit_rom_IDNT_e,
+    &dB_unit_rom_IDNT_e,
+    &deg_unit_rom_IDNT_e,
+    &dyn_unit_rom_IDNT_e,
+    &eV_unit_rom_IDNT_e,
+    &epsilon0__unit_rom_IDNT_e,
+    &epsilon0q__unit_rom_IDNT_e,
+    &epsilonox__unit_rom_IDNT_e,
+    &epsilonsi__unit_rom_IDNT_e,
+    &erg_unit_rom_IDNT_e,
+    &f0__unit_rom_IDNT_e,
+    &fath_unit_rom_IDNT_e,
+    &fbm_unit_rom_IDNT_e,
+    &fc_unit_rom_IDNT_e,
+    &fermi_unit_rom_IDNT_e,
+    &flam_unit_rom_IDNT_e,
+    &fm_unit_rom_IDNT_e,
+    &ft_unit_rom_IDNT_e,
+    &ftUS_unit_rom_IDNT_e,
+    &g_unit_rom_IDNT_e,
+    &g__unit_rom_IDNT_e,
+    &galC_unit_rom_IDNT_e,
+    &galUK_unit_rom_IDNT_e,
+    &galUS_unit_rom_IDNT_e,
+    &gf_unit_rom_IDNT_e,
+    &gmol_unit_rom_IDNT_e,
+    &gon_unit_rom_IDNT_e,
+    &grad_unit_rom_IDNT_e,
+    &grain_unit_rom_IDNT_e,
+    &h_unit_rom_IDNT_e,
+    &h__unit_rom_IDNT_e,
+    &ha_unit_rom_IDNT_e,
+    &hbar__unit_rom_IDNT_e,
+    &hp_unit_rom_IDNT_e,
+    &inH2O_unit_rom_IDNT_e,
+    &inHg_unit_rom_IDNT_e,
+    &inch_unit_rom_IDNT_e,
+    &j_unit_rom_IDNT_e,
+    &k__unit_rom_IDNT_e,
+    &kg_unit_rom_IDNT_e,
+    &kip_unit_rom_IDNT_e,
+    &knot_unit_rom_IDNT_e,
+    &kph_unit_rom_IDNT_e,
+    &kq__unit_rom_IDNT_e,
+    &l_unit_rom_IDNT_e,
+    &lam_unit_rom_IDNT_e,
+    &lambda0_unit_rom_IDNT_e,
+    &lambdac__unit_rom_IDNT_e,
+    &lb_unit_rom_IDNT_e,
+    &lbf_unit_rom_IDNT_e,
+    &lbmol_unit_rom_IDNT_e,
+    &lbt_unit_rom_IDNT_e,
+    &lep_unit_rom_IDNT_e,
+    &liqpt_unit_rom_IDNT_e,
+    &lyr_unit_rom_IDNT_e,
+    &m_unit_rom_IDNT_e,
+    &mEarth__unit_rom_IDNT_e,
+    &mSun__unit_rom_IDNT_e,
+    &me__unit_rom_IDNT_e,
+    &mho_unit_rom_IDNT_e,
+    &mi_unit_rom_IDNT_e,
+    &miUS_unit_rom_IDNT_e,
+    &mil_unit_rom_IDNT_e,
+    &mile_unit_rom_IDNT_e,
+    &mille_unit_rom_IDNT_e,
+    &min_unit_rom_IDNT_e,
+    &mmHg_unit_rom_IDNT_e,
+    &mn_unit_rom_IDNT_e,
+    &mol_unit_rom_IDNT_e,
+    &molK_unit_rom_IDNT_e,
+    &mp__unit_rom_IDNT_e,
+    &mph_unit_rom_IDNT_e,
+    &mpme__unit_rom_IDNT_e,
+    &mu0__unit_rom_IDNT_e,
+    &muB__unit_rom_IDNT_e,
+    &muN__unit_rom_IDNT_e,
+    &nmi_unit_rom_IDNT_e,
+    &oz_unit_rom_IDNT_e,
+    &ozUK_unit_rom_IDNT_e,
+    &ozfl_unit_rom_IDNT_e,
+    &ozt_unit_rom_IDNT_e,
+    &pc_unit_rom_IDNT_e,
+    &pdl_unit_rom_IDNT_e,
+    &phi__unit_rom_IDNT_e,
+    &pk_unit_rom_IDNT_e,
+    &psi_unit_rom_IDNT_e,
+    &pt_unit_rom_IDNT_e,
+    &ptUK_unit_rom_IDNT_e,
+    &qe_unit_rom_IDNT_e,
+    &qepsilon0__unit_rom_IDNT_e,
+    &qme__unit_rom_IDNT_e,
+    &qt_unit_rom_IDNT_e,
+    &rad_unit_rom_IDNT_e,
+    &rd_unit_rom_IDNT_e,
+    &rem_unit_rom_IDNT_e,
+    &rev_unit_rom_IDNT_e,
+    &rod_unit_rom_IDNT_e,
+    &rpm_unit_rom_IDNT_e,
+    &s_unit_rom_IDNT_e,
+    &sb_unit_rom_IDNT_e,
+    &sd_unit_rom_IDNT_e,
+    &sigma_unit_rom_IDNT_e,
+    &slug_unit_rom_IDNT_e,
+    &st_unit_rom_IDNT_e,
+    &syr__unit_rom_IDNT_e,
+    &t_unit_rom_IDNT_e,
+    &tbsp_unit_rom_IDNT_e,
+    &tec_unit_rom_IDNT_e,
+    &tep_unit_rom_IDNT_e,
+    &tepC_unit_rom_IDNT_e,
+    &tepcC_unit_rom_IDNT_e,
+    &tepgC_unit_rom_IDNT_e,
+    &tex_unit_rom_IDNT_e,
+    &therm_unit_rom_IDNT_e,
+    &toe_unit_rom_IDNT_e,
+    &ton_unit_rom_IDNT_e,
+    &tonUK_unit_rom_IDNT_e,
+    &tr_unit_rom_IDNT_e,
+    &tsp_unit_rom_IDNT_e,
+    &u_unit_rom_IDNT_e,
+    &yd_unit_rom_IDNT_e,
+    &yr_unit_rom_IDNT_e,
+  };
+  bool is_unit_rom(const char * s,gen & res){
+    for (int i=0;i<sizeof(tab_unit_rom)/sizeof(gen *);++i){
+      if (!strcmp(s,tab_unit_rom[i]->_IDNTptr->id_name)){
+	res=*tab_unit_rom[i];
+	return true;
+      }
+    }
+    return false;
+  }
+
+
   gen mksa_register(const char * s,const mksa_unit * equiv){
 #ifdef USTL
     ustl::map<const char *, const mksa_unit *,ltstr>::const_iterator it=unit_conversion_map().find(s+1),itend=unit_conversion_map().end();
@@ -9702,7 +11428,10 @@ namespace giac {
       res=syms()[s];
     else {
       unit_conversion_map()[s+1]=equiv;
-      res = (syms()[s] = new ref_identificateur(s));
+      if (is_unit_rom(s,res))
+	syms()[s]=res;
+      else
+	res = (syms()[s] = new ref_identificateur(s));
     }
     unlock_syms_mutex();  
     return res;
@@ -10313,15 +12042,15 @@ namespace giac {
 
   const char * const * const unitname_tab_end=unitname_tab+unitptr_tab_length;
 #ifndef NO_PHYSICAL_CONSTANTS
-  gen _m_unit(mksa_register("_m",&__m_unit));
   gen _kg_unit(mksa_register("_kg",&__kg_unit));
+  gen _m_unit(mksa_register("_m",&__m_unit));
   gen _s_unit(mksa_register("_s",&__s_unit));
   gen _A_unit(mksa_register("_A",&__A_unit));
   gen _K_unit(mksa_register("_K",&__K_unit)); // Kelvin
   gen _mol_unit(mksa_register("_mol",&__mol_unit)); // mol
   gen _cd_unit(mksa_register("_cd",&__cd_unit)); // candela
   gen _E_unit(mksa_register("_E",&__E_unit)); // euro
-  gen _Bq_unit(mksa_register("_Bq",&__Bq_unit));
+
   gen _C_unit(mksa_register("_C",&__C_unit));
   gen _F_unit(mksa_register("_F",&__F_unit));
   gen _Gy_unit(mksa_register("_Gy",&__Gy_unit));
@@ -10341,6 +12070,8 @@ namespace giac {
   gen _Wb_unit(mksa_register("_Wb",&__Wb_unit));
   gen _l_unit(mksa_register("_l",&__l_unit));
   gen _molK_unit(mksa_register("_molK",&__molK_unit));
+#ifndef STATIC_BUILTIN_LEXER_FUNCTIONS
+  gen _Bq_unit(mksa_register("_Bq",&__Bq_unit));
   gen _L_unit(mksa_register("_L",&__L_unit));
   // other metric units in m,kg,s,A
   gen _st_unit(mksa_register("_st",&__st_unit));
@@ -10468,6 +12199,7 @@ namespace giac {
   gen _tepcC_unit(mksa_register("_tepcC",&__tepcC_unit));
   // mean PRG for HFC in kg C unit
   gen _HFCC_unit(mksa_register("_HFCC",&__HFCC_unit));
+#endif // ndef STATIC_BUILTIN_LEXER_FUNCTIONS
 #endif
 
   static vecteur mksa_unit2vecteur(const mksa_unit * tmp){
@@ -10951,7 +12683,7 @@ namespace giac {
     if (g.type!=_VECT || g._VECTptr->size()!=2)
       return symbolic(at_maple_root,g);
     vecteur & v=*g._VECTptr;
-#ifdef NUMWORKS
+#ifdef KHICAS
     return pow(v[0],inv(v[1],contextptr),contextptr);
 #else
     return pow(v[1],inv(v[0],contextptr),contextptr);

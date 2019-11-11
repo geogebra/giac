@@ -336,7 +336,7 @@ namespace giac {
   }
   typedef T_unsigned<int,unsigned> int_unsigned;
 
-#ifdef NUMWORKS
+#ifdef KHICAS
   template<class T,class U>
   stdostream & operator << (stdostream & os, const std::vector< T_unsigned<T,U> > & v){  
     typename std::vector< T_unsigned<T,U> >::const_iterator it=v.begin(),itend=v.end();

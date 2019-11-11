@@ -5836,7 +5836,7 @@ namespace giac {
        if (err<=hoptimal) then time += h; y_init=RK5_final; h=min(hoptimal,t_final-t_current)
        else h=hoptimal
      */
-#ifdef NUMWORKS
+#ifdef KHICAS
     gen tolerance=epsilon(contextptr)>1e-9?epsilon(contextptr):1e-9;
 #else
     gen tolerance=epsilon(contextptr)>1e-12?epsilon(contextptr):1e-12;

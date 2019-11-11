@@ -100,12 +100,8 @@ extern "C" int firvsprintf(char*,const char*, va_list);
 extern "C" int KeyPressed( void );
 #endif
 
-#ifdef NUMWORKS
-bool back_key_pressed();
-#endif
-
-#ifdef NUMWORKS
-const char * read_file(const char * filename);
+#ifdef KHICAS
+#include "kdisplay.h"
 #endif
 
 int my_sprintf(char * s, const char * format, ...){
@@ -163,7 +159,7 @@ namespace giac {
   int caseval_n=0,caseval_mod=0,caseval_unitialized=-123454321;
 #if !defined POCKETCAS
   void control_c(){
-#if defined NSPIRE || defined NUMWORKS
+#if defined NSPIRE || defined KHICAS
     if (
 #ifdef NSPIRE
 	on_key_pressed()
@@ -598,8 +594,8 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   bool python_color=false;
-  bool numworks_shell=true;
-#ifdef NUMWORKS
+  bool os_shell=true;
+#ifdef KHICAS
   static int _python_compat_=true;
 #else
   static int _python_compat_=false;
@@ -1157,9 +1153,9 @@ extern "C" void Sleep(unsigned int miliSecond);
 #ifdef FXCG
   static ostream * _logptr_=0;
 #else
-#ifdef NUMWORKS
-  stdostream numworks_cerr;
-  static my_ostream * _logptr_=&numworks_cerr;
+#ifdef KHICAS
+  stdostream os_cerr;
+  static my_ostream * _logptr_=&os_cerr;
 #else
   static my_ostream * _logptr_=&CERR;
 #endif
@@ -1176,8 +1172,8 @@ extern "C" void Sleep(unsigned int miliSecond);
 #ifdef FXCG
     return 0;
 #else
-#ifdef NUMWORKS
-    return res?res:&numworks_cerr;
+#ifdef KHICAS
+    return res?res:&os_cerr;
 #else
     return res?res:&CERR;
 #endif
@@ -1744,7 +1740,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       return _turtle_();
   }
 
-#ifndef NUMWORKS
+#ifndef KHICAS
   // protect turtle access by a lock
   // turtle changes are mutually exclusive even in different contexts
 #ifdef HAVE_LIBPTHREAD
@@ -1812,7 +1808,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int gbasis_logz_age_sort=0,gbasis_stop=0;
   unsigned short int GIAC_PADIC=50;
   const char cas_suffixe[]=".cas";
-#if defined RTOS_THREADX || defined BESTA_OS || defined(NUMWORKS)
+#if defined RTOS_THREADX || defined BESTA_OS || defined(KHICAS)
 #ifdef BESTA_OS
   int LIST_SIZE_LIMIT = 100000 ;
   int FACTORIAL_SIZE_LIMIT = 1000 ;
@@ -3513,7 +3509,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
 #ifndef RTOS_THREADX
-#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined(NUMWORKS)
+#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined(KHICAS)
   std::map<std::string,context *> * context_names = new std::map<std::string,context *> ;
 
   context::context(const string & name) { 
@@ -3664,7 +3660,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	}
       }
 #ifndef RTOS_THREADX
-#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined(NUMWORKS)
+#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined(KHICAS)
       if (context_names){
 	map<string,context *>::iterator it=context_names->begin(),itend=context_names->end();
 	for (;it!=itend;++it){
@@ -3817,7 +3813,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       cleanup_context(contextptr);
       if (tp.f)
 	tp.f(string2gen("Aborted",false),tp.f_param);
-#if !defined __MINGW_H && !defined NUMWORKS
+#if !defined __MINGW_H && !defined KHICAS
       *logptr(contextptr) << gettext("Thread ") << tp.eval_thread << " has been cancelled" << '\n';
 #endif
 #ifdef NO_STDEXCEPT
@@ -3887,7 +3883,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	  kill_thread(false,contextptr);
 	  clear_prog_status(contextptr);
 	  cleanup_context(contextptr);
-#if !defined __MINGW_H && !defined NUMWORKS
+#if !defined __MINGW_H && !defined KHICAS
 	  *logptr(contextptr) << gettext("Cancel thread ") << eval_thread << '\n';
 #endif
 #ifdef NO_STDEXCEPT
@@ -4017,7 +4013,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 #ifdef WITH_MYOSTREAM
 		     _ntl_on_(true),
 		     _lexer_close_parenthesis_(true),_rpn_mode_(false),_try_parse_i_(true),_specialtexprint_double_(false),_atan_tan_no_floor_(false),_keep_acosh_asinh_(false),_keep_algext_(false),
-#ifdef NUMWORKS
+#ifdef KHICAS
 		     _python_compat_(true),
 #else
 		     _python_compat_(false),
@@ -4032,7 +4028,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 #else
 		     _ntl_on_(true),
 		     _lexer_close_parenthesis_(true),_rpn_mode_(false),_try_parse_i_(true),_specialtexprint_double_(false),_atan_tan_no_floor_(false),_keep_acosh_asinh_(false),_keep_algext_(false),
-#ifdef NUMWORKS
+#ifdef KHICAS
 		     _python_compat_(true),
 #else
 		     _python_compat_(false),
@@ -4044,8 +4040,8 @@ extern "C" void Sleep(unsigned int miliSecond);
 #ifdef FXCG
 		     _logptr_(0),
 #else
-#ifdef NUMWORKS
-		     _logptr_(&numworks_cerr),
+#ifdef KHICAS
+		     _logptr_(&os_cerr),
 #else
 		     _logptr_(&CERR),
 #endif
@@ -4061,7 +4057,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 #endif
   { 
     _pl._i_sqrt_minus1_=1;
-#ifndef NUMWORKS
+#ifndef KHICAS
     _turtle_stack_.push_back(_turtle_);
 #endif
     _debug_ptr=new debug_struct;
@@ -4142,7 +4138,7 @@ extern "C" void Sleep(unsigned int miliSecond);
      _max_sum_sqrt_=g._max_sum_sqrt_;
      _max_sum_add_=g._max_sum_add_;
      _turtle_=g._turtle_;
-#ifndef NUMWORKS
+#ifndef KHICAS
      _turtle_stack_=g._turtle_stack_;
 #endif
      _autoname_=g._autoname_;
@@ -6026,7 +6022,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
     if (posturtle>=0 && posturtle<cs){
       // add python turtle shortcuts
       static bool alertturtle=true;
-#ifdef NUMWORKS
+#ifdef KHICAS
       cur += "fd:=forward:;bk:=backward:; rt:=right:; lt:=left:; pos:=position:; seth:=heading:;setheading:=heading:; ";
 #else
       cur += "pu:=penup:;up:=penup:; pd:=pendown:;down:=pendown:; fd:=forward:;bk:=backward:; rt:=right:; lt:=left:; pos:=position:; seth:=heading:;setheading:=heading:; reset:=efface:;";
@@ -6379,7 +6375,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	      posmatplotlib=cur.find("pylab");
 	    int cs=int(cur.size());
 	    pythonmode=true;
-#ifdef NUMWORKS
+#ifdef KHICAS
 	    if (
 		(posturtle<0 || posturtle>=cs) && 
 		(poscmath<0 || poscmath>=cs) && 

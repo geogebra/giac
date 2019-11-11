@@ -36,7 +36,7 @@ using namespace std;
 #include "rpn.h"
 #include "plot.h"
 #include "giacintl.h"
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined NUMWORKS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
 inline bool is_graphe(const giac::gen &g,std::string &disp_out,const giac::context *){ return false; }
 #else
 #include "graphtheory.h"
@@ -1373,7 +1373,7 @@ namespace giac {
     }
     return 0;
   }
-#if defined USE_GMP_REPLACEMENTS || defined GIAC_GGB || defined EMCC || defined NUMWORKS
+#if defined USE_GMP_REPLACEMENTS || defined GIAC_GGB || defined EMCC || defined KHICAS || defined NSPIRE_NEWLIB
   bool has_improved_latex_export(const gen &g,string &s,bool override_texmacs,GIAC_CONTEXT){
     return false;
   }
@@ -1382,7 +1382,7 @@ namespace giac {
 #endif
   gen _latex(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
-#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38 && !defined NUMWORKS
+#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38 && !defined KHICAS && !defined NSPIRE_NEWLIB
     if (!secure_run && g.type==_VECT && g.subtype==_SEQ__VECT && g._VECTptr->size()==2 && (*g._VECTptr)[1].type==_STRNG){
       ofstream of((*g._VECTptr)[1]._STRNGptr->c_str());
       of << gen2tex(g._VECTptr->front(),contextptr) << '\n';
@@ -1451,7 +1451,7 @@ namespace giac {
     else
       fprintf(file,"\\begin{pspicture}(%.4f,%.4f)(%.4f,%.4f)\n\\psset{unit=%.4fcm}\n\\psset{linewidth=.5pt}\n\\psset{arrowsize=2pt 4}\n", X1*xunit, Y1*xunit, X2*xunit, Y2*xunit,xunit);
     fprintf(file,"\\psset{linecolor=black}\n");
-#ifndef NUMWORKS
+#ifndef KHICAS
     if (logo){
       // fprintf(file,"\\psframe[fillstyle=solid,fillcolor=gray](%.4f,%.4f)(%.4f,%.4f)\n",X1,Y1,X2,Y2);
       vector<logo_turtle> w=vecteur2turtlevect(v);

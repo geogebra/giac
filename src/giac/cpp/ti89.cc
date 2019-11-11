@@ -58,7 +58,7 @@ extern "C" {
 #include <keyboard.h>
 }
 #endif
-#ifdef NUMWORKS
+#ifdef KHICAS
 #include "kdisplay.h"
 #endif
 
@@ -2188,7 +2188,7 @@ namespace giac {
   define_unary_function_ptr5( at_Output ,alias_at_Output,&__Output,0,T_RETURN);
 
   gen _getKey(const gen & g,GIAC_CONTEXT){
-#ifdef NUMWORKS
+#ifdef KHICAS
     control_c();
     int key=getkey(false);
     return key;
@@ -3151,7 +3151,7 @@ namespace giac {
   static define_unary_function_eval_quoted (__fonction,&_for,_fonction_s);
   define_unary_function_ptr5( at_fonction ,alias_at_fonction,&__fonction,_QUOTE_ARGUMENTS,T_PROC);
 
-#if defined RTOS_THREADX || defined BESTA_OS || defined EMCC || defined __MINGW_H || defined NUMWORKS
+#if defined RTOS_THREADX || defined BESTA_OS || defined EMCC || defined __MINGW_H || defined KHICAS
 
   gen _unarchive_ti(const gen & g,GIAC_CONTEXT){
     return undef;

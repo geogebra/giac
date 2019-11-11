@@ -25,7 +25,13 @@
 #include <CoCoA/GlobalManager.H>
 #include <CoCoA/SparsePolyRing.H>
 #include <CoCoA/TmpF5.H>
-#include <CoCoA/io.H>
+//#include <CoCoA/io.H>
+#include <CoCoA/VectorOps.H>
+#include <CoCoA/obsolescent.H>
+#include <CoCoA/SparsePolyOps-RingElem.H>
+#include <CoCoA/SparsePolyIter.H>
+#include <CoCoA/BigInt.H>
+//
 #include <CoCoA/symbol.H>
 #include "TmpFGLM.H"
 #endif
@@ -48,7 +54,7 @@
 using namespace std;
 
 #include <iostream>
-#if !defined FXCG && !defined NUMWORKS
+#if !defined FXCG && !defined KHICAS
 #include <iomanip>
 #endif
 #include "cocoa.h"
@@ -117,7 +123,8 @@ namespace giac {
       return CoCoA::BigInt(g.val);
     case _ZINT:
 #ifdef COCOA9950
-      return CoCoA::BigInt(*g._ZINTptr);
+      return CoCoA::BigIntFromMPZ(*g._ZINTptr);
+      //return CoCoA::BigInt(*g._ZINTptr);
 #else
       return CoCoA::BigInt(CoCoA::CopyFromMPZ,*g._ZINTptr);
 #endif
@@ -14082,7 +14089,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       current=current_gbasis;
       G.clear();
       double t_0=CLOCK()*1e-6;
-#ifndef NUMWORKS
+#ifndef KHICAS
       if (debug_infolevel)
 	CERR << std::setprecision(15) << t_0 << " begin computing basis modulo " << p << " batch/threads " << th+1 << "/" << parallel << '\n';
 #endif

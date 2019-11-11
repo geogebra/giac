@@ -34,7 +34,7 @@
 #include "giacPCH.h"
 
 using namespace std;
-#if !defined NSPIRE && !defined FXCG && !defined NUMWORKS
+#if !defined NSPIRE && !defined FXCG && !defined KHICAS
 #ifdef VISUALC13
 #undef clock
 #undef clock_t
@@ -163,7 +163,7 @@ namespace giac {
   double global_window_xmin(gnuplot_xmin),global_window_xmax(gnuplot_xmax),global_window_ymin(gnuplot_ymin),global_window_ymax(gnuplot_ymax);
   double x_tick(1.0),y_tick(1.0);
   double class_minimum(0.0),class_size(1.0);
-#if defined RTOS_THREADX || defined EMCC || defined NUMWORKS
+#if defined RTOS_THREADX || defined EMCC || defined KHICAS
   int gnuplot_pixels_per_eval=128;
 #else
   int gnuplot_pixels_per_eval=401;
@@ -1051,7 +1051,7 @@ namespace giac {
 
   string print_DOUBLE_(double d,unsigned ndigits){
     char s[256];
-#ifdef NUMWORKS
+#ifdef KHICAS
     sprint_double(s,d);
 #else
     ndigits=ndigits<2?2:ndigits;
@@ -10823,7 +10823,7 @@ namespace giac {
     read_tmintmaxtstep(v,t,3,tmin,tmax,tstep,tminmax_defined,tstep_defined,contextptr);
     if (tmin>tmax || tstep<=0)
       return gensizeerr(gettext("Time"));
-#ifdef NUMWORKS
+#ifdef KHICAS
     int maxstep=80;
 #else
     int maxstep=500;
@@ -13688,7 +13688,7 @@ namespace giac {
       return g.print(context0);
   }
 
-#ifndef NUMWORKS // in kdisplay.cc
+#ifndef KHICAS // in kdisplay.cc
 #if defined RTOS_THREADX || defined NSPIRE || defined FXCG
   logo_turtle vecteur2turtle(const vecteur & v){
     return logo_turtle();
@@ -14700,7 +14700,7 @@ gen _vers(const gen & g,GIAC_CONTEXT){
   define_unary_function_ptr5( at_turtle_stack ,alias_at_turtle_stack,&__turtle_stack,0,T_LOGO);
 
 #endif
-#endif  // NUMWORKS
+#endif  // KHICAS
 
   static const char _ramene_s []="ramene";
   static define_unary_function_eval2 (__ramene,&_read,_ramene_s,&printastifunction);

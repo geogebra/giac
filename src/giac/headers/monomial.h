@@ -38,7 +38,7 @@ namespace giac {
 
   int powmod(int a,unsigned long n,int m);
 
-#ifdef NUMWORKS
+#ifdef KHICAS
   template<class T,class U>
   stdostream & operator << (stdostream & os,const std::pair<T,U> & p){
     return os << "<" << p.first << "," << p.second << ">";
@@ -344,7 +344,7 @@ namespace giac {
     bool operator () (const monomial<T> & a, const monomial<T> & b){ return strictly_greater(a,b);}
   };
 
-#ifdef NUMWORKS
+#ifdef KHICAS
   template <class T>
   stdostream & operator << (stdostream & os, const monomial<T> & m ){
     return os << m.print();

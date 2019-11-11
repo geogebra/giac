@@ -47,7 +47,7 @@ using namespace std;
 #include <sys/param.h>
 #endif
 
-#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined NUMWORKS // test should always return true
+#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined KHICAS // test should always return true
 #include <dirent.h>
 #endif
 
@@ -70,7 +70,7 @@ namespace giac {
   };
 
   const static_help_t static_help[]={
-#if !defined RTOS_THREADX && !defined BESTA_OS && !defined GIAC_HAS_STO_38 && !defined(NUMWORKS) && !defined POCKETCAS
+#if !defined RTOS_THREADX && !defined BESTA_OS && !defined GIAC_HAS_STO_38 && !defined(KHICAS) && !defined POCKETCAS
 #include "static_help.h"
 #else
     { "", { "", "", "", "",""}, "", "", "" },
@@ -687,7 +687,7 @@ namespace giac {
     return result;
   }
 
-#if !defined(NSPIRE_NEWLIB) && !defined(RTOS_THREADX) && !defined(EMCC) &&!defined(NSPIRE) && !defined FXCG && !defined(NUMWORKS) && !defined GIAC_HAS_STO_38
+#if !defined(NSPIRE_NEWLIB) && !defined(RTOS_THREADX) && !defined(EMCC) &&!defined(NSPIRE) && !defined FXCG && !defined(KHICAS) && !defined GIAC_HAS_STO_38
   multimap<string,string> html_mtt,html_mall;
   std::vector<std::string> html_vtt,html_vall;
 
@@ -921,7 +921,7 @@ namespace giac {
     return 0;
   }
 
-#if ! (defined VISUALC || defined BESTA_OS || defined FREERTOS || defined NSPIRE || defined FXCG || defined NSPIRE_NEWLIB || defined(NUMWORKS)) 
+#if ! (defined VISUALC || defined BESTA_OS || defined FREERTOS || defined NSPIRE || defined FXCG || defined NSPIRE_NEWLIB || defined(KHICAS)) 
 #if defined WIN32 || !defined DT_DIR
   static int dir_select (const struct dirent *d){
     string s(d->d_name);

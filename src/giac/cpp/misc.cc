@@ -52,7 +52,7 @@ inline giac::gen _graph_charpoly(const giac::gen &g,const giac::context *){ retu
 #include "graphtheory.h"
 #endif
 
-#ifdef NUMWORKS
+#ifdef KHICAS
 #include "kdisplay.h"
 const char * mp_hal_input(const char * prompt) ;
 #endif
@@ -569,7 +569,7 @@ namespace giac {
   const int pixel_lines=1; // 320; // calculator screen 307K
   const int pixel_cols=1; // 240;
 #else
-#ifdef NUMWORKS
+#ifdef KHICAS
   const int pixel_lines=320;
   const int pixel_cols=240;
 #else
@@ -577,7 +577,7 @@ namespace giac {
   const int pixel_cols=768;
 #endif
 #endif
-#ifdef NUMWORKS
+#ifdef KHICAS
   void clear_pixel_buffer(){
   }
 #else
@@ -603,8 +603,8 @@ namespace giac {
   gen _clear(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type==_VECT && args._VECTptr->empty()){
-#ifdef NUMWORKS
-#else // NUMWORKS
+#ifdef KHICAS
+#else // KHICAS
 #ifdef GIAC_HAS_STO_38
       static gen RECT_P(identificateur("RECT_P"));
       _of(makesequence(RECT_P,args),contextptr);
@@ -613,7 +613,7 @@ namespace giac {
 #endif // else HP
       pixel_v()._VECTptr->clear();
       history_plot(contextptr).clear();
-#endif // else NUMWORKS
+#endif // else KHICAS
       return 1;
     }
     gen g=eval(args,1,contextptr);
@@ -632,7 +632,7 @@ namespace giac {
   static define_unary_function_eval (__clear,&_clear,_clear_s);
   define_unary_function_ptr5( at_clear ,alias_at_clear,&__clear,_QUOTE_ARGUMENTS,true);
 
-#ifndef NUMWORKS
+#ifndef KHICAS
   gen _show_pixels(const gen & args,GIAC_CONTEXT){
 #ifdef GIAC_HAS_STO_38
     static gen FREEZE(identificateur("FREEZE"));
@@ -2479,7 +2479,7 @@ namespace giac {
   define_unary_function_ptr5( at_BlockDiagonal ,alias_at_BlockDiagonal,&__BlockDiagonal,0,true);
 
   gen _input(const gen & args,GIAC_CONTEXT){
-#ifdef NUMWORKS
+#ifdef KHICAS
     const char * s=mp_hal_input("?") ;
     if (s)
       return string2gen(s,false);
@@ -7377,6 +7377,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     }
     it=c.begin();itend=c.end();
     for (;it!=itend;++it){
+      if (ctrl_c || interrupted)
+	return 0;
       if (!lop(*it,at_rootof).empty())
 	*it=re(evalf(*it,1,contextptr),contextptr);
       *it=recursive_normal(*it,contextptr);
@@ -7398,6 +7400,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	  vecteur vx,vy;
 	  int ox=0,oy=0,o1=0,o2=0;
 	  while (ordre<=20 && o1==0){
+	    if (ctrl_c || interrupted)
+	      return 0;
 	    // series expansion
 	    if (!convert_polynom(series(f,xid,*it,ordre,contextptr),xid,*it,vx,ax,ox,contextptr))
 	      break;
@@ -7484,6 +7488,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     gen xmin(plus_inf),xmax(minus_inf),ymin(plus_inf),ymax(minus_inf);
     it=sing.begin();itend=sing.end();
     for (;it!=itend;++it){
+      if (ctrl_c || interrupted)
+	return 0;
       if (!is_inf(*it)){
 	if (is_greater(tmin,*it,contextptr))
 	  tmin=*it;
@@ -7603,6 +7609,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     vecteur tviconv=makevecteur(symbolic(at_derive,x__IDNT_e)*symbolic(at_derive,symbolic(at_derive,y__IDNT_e))-symbolic(at_derive,y__IDNT_e)*symbolic(at_derive,symbolic(at_derive,x__IDNT_e)),try_limit_undef(conv,xid,nextt,1,contextptr));
     int tvs=int(tvx.size());
     for (int i=1;i<tvs;++i){
+      if (ctrl_c || interrupted)
+	return 0;
       gen curt=nextt,dfx,dgx,convt;
       nextt=tvx[i];
       tvit.push_back(nothing);
@@ -7644,18 +7652,26 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	return 0;
       }
       if (is_strictly_positive(dfx,contextptr)){
-#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T
-	tvif.push_back(string2gen("↑",false));
+#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T 
+#ifdef KHICAS
+	  tvif.push_back(string2gen("inc",false));
 #else
-	tvif.push_back(string2gen("↗",false));
+	  tvif.push_back(string2gen("↑",false));
+#endif
+#else
+	  tvif.push_back(string2gen("↗",false));
 #endif
 	tvidf.push_back(string2gen("+",false));
       }
       else {
-#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T
-	tvif.push_back(string2gen("↓",false));
+#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T 
+#ifdef KHICAS
+	  tvif.push_back(string2gen("dec",false));
 #else
-	tvif.push_back(string2gen("↘",false));
+	  tvif.push_back(string2gen("↓",false));
+#endif
+#else
+	  tvif.push_back(string2gen("↘",false));
 #endif
 	tvidf.push_back(string2gen("-",false));
       }
@@ -7664,18 +7680,26 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       else
 	tviconv.push_back(string2gen(abs_calc_mode(contextptr)==38?"∩":"concav",false));
       if (is_strictly_positive(dgx,contextptr)){
-#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T
-	tvig.push_back(string2gen("↑",false));
+#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T 
+#ifdef KHICAS
+	  tvig.push_back(string2gen("inc",false));
 #else
-	tvig.push_back(string2gen("↗",false));
+	  tvig.push_back(string2gen("↑",false));
+#endif
+#else
+	  tvig.push_back(string2gen("↗",false));
 #endif
 	tvidg.push_back(string2gen("+",false));
       }
       else {
-#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T
-	tvig.push_back(string2gen("↓",false));
+#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T 
+#ifdef KHICAS
+	  tvig.push_back(string2gen("dec",false));
 #else
-	tvig.push_back(string2gen("↘",false));
+	  tvig.push_back(string2gen("↓",false));
+#endif
+#else
+	  tvig.push_back(string2gen("↘",false));
 #endif
 	tvidg.push_back(string2gen("-",false));
       }
@@ -7922,6 +7946,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       return 0;
     }
 #endif
+    if (ctrl_c || interrupted)
+      return 0;
     if (!lidnt(evalf(c,1,contextptr)).empty()){
       *logptr(contextptr) << gettext("Infinite number of critical points. Try with optional argument ") << x << "=xmin..xmax" << '\n';
       purgenoassume(x,contextptr);
@@ -7929,6 +7955,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     }
     it=c._VECTptr->begin();itend=c._VECTptr->end();
     for (;it!=itend;++it){
+      if (ctrl_c || interrupted)
+	return 0;
       if (!lop(*it,at_rootof).empty())
 	*it=re(evalf(*it,1,contextptr),contextptr);
       if (in_domain(df,x,*it,contextptr) && is_greater(*it,xmin,contextptr) && is_greater(xmax,*it,contextptr)){
@@ -7959,6 +7987,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     }
     it=crit.begin();itend=crit.end();
     for (;it!=itend;++it){
+      if (ctrl_c || interrupted)
+	return 0;
       if (!has_inf_or_undef(*it)){ 
 	if (is_greater(xmin,*it,contextptr))
 	  xmin=*it;
@@ -7968,6 +7998,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     }
     it=sing.begin();itend=sing.end();
     for (;do_inflex_tabsign!=2 && it!=itend;++it){
+      if (ctrl_c || interrupted)
+	return 0;
       gen equ;
       if (!has_inf_or_undef(*it)){ // vertical
 	if (is_greater(xmin,*it,contextptr))
@@ -8114,6 +8146,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       tvidf2=makevecteur(symbolic(at_derive,symbolic(at_derive,yof)),try_limit_undef(f2,xid,nextx,1,contextptr));
     int tvs=int(tvx.size());
     for (int i=1;i<tvs;++i){
+      if (ctrl_c || interrupted)
+	return 0;
       gen curx=nextx,dfx,df2;
       nextx=tvx[i];
       if (!lop(nextx,at_rootof).empty())
@@ -8161,16 +8195,24 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       }
       else {
 	if (is_strictly_positive(dfx,contextptr)){
-#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T
+#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T 
+#ifdef KHICAS
+	  tvif.push_back(string2gen("inc",false));
+#else
 	  tvif.push_back(string2gen("↑",false));
+#endif
 #else
 	  tvif.push_back(string2gen("↗",false));
 #endif
 	  tvidf.push_back(string2gen("+",false));
 	}
 	else {
-#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T
+#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T 
+#ifdef KHICAS
+	  tvif.push_back(string2gen("dec",false));
+#else
 	  tvif.push_back(string2gen("↓",false));
+#endif
 #else
 	  tvif.push_back(string2gen("↘",false));
 #endif
@@ -8182,10 +8224,18 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	  tvidf2.push_back(string2gen("X",false));
 	else {
 	  if (is_strictly_positive(df2,contextptr)){
+#ifdef KHICAS
+	    tvidf2.push_back(string2gen("+ (U)",false));
+#else
 	    tvidf2.push_back(string2gen(abs_calc_mode(contextptr)==38?"∪":"+ (∪)",false));
+#endif
 	  }
 	  else {
-	    tvidf2.push_back(string2gen(abs_calc_mode(contextptr)==38?"∩":"- (∩)",false)); 
+#ifdef KHICAS
+	    tvidf2.push_back(string2gen("- (^)",false));
+#else
+	    tvidf2.push_back(string2gen(abs_calc_mode(contextptr)==38?"∩":"- (∩)",false));
+#endif
 	  }
 	}
       }
@@ -8454,8 +8504,13 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       if (plot==1)
 	return tvi; // gprintf("%gen",makevecteur(gen(poi,_SEQ__VECT)),1,contextptr);
     }
-    if (abs_calc_mode(contextptr)!=38)
-      *logptr(contextptr) << (param?"plotparam(":"plotfunc(") << gen(w,_SEQ__VECT) << ')' <<"\nInside Xcas you can see the function with Cfg>Show>DispG." <<  '\n';
+    if (abs_calc_mode(contextptr)!=38){
+      *logptr(contextptr) << (param?"plotparam(":"plotfunc(") << gen(w,_SEQ__VECT) << ')'
+#ifdef HAVE_LIBFLTK
+			  <<"\nInside Xcas you can see the function with Cfg>Show>DispG."
+#endif
+			  <<  '\n';
+    }
     return tvi;
   }
   static const char _tabvar_s []="tabvar";
@@ -8782,7 +8837,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     freeze=true;
     gen a(a_);
     if (a.type==_STRNG && a.subtype==-1) return  a;
-#if defined GIAC_HAS_STO_38 || defined NUMWORKS
+#if defined GIAC_HAS_STO_38 || defined KHICAS
     if (a.type!=_VECT || a._VECTptr->size()<2)
       return gentypeerr(contextptr);
     const vecteur & v=*a._VECTptr;
@@ -8795,18 +8850,18 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       if (y.type==_DOUBLE_)
 	y=int(y._DOUBLE_val+.5);
       if (x.type==_INT_ &&  y.type==_INT_ ){
-#ifdef NUMWORKS
-	numworks_set_pixel(x.val,y.val,vs==2?0:v[2].val);
+#ifdef KHICAS
+	os_set_pixel(x.val,y.val,vs==2?0:v[2].val);
 #else
 	aspen_set_pixel(x.val,y.val,vs==2?0:v[2].val);
-#endif // NUMWORKS
+#endif // KHICAS
 	return 1;
       }
     }
     return gensizeerr(contextptr);
     //static gen PIXEL(identificateur("PIXON_P"));
     //return _of(makesequence(PIXEL,a_),contextptr);
-#else // HP && NUMWORKS
+#else // HP && KHICAS
     if (a.type==_VECT && a._VECTptr->empty())
       return pixel_v();
     if (is_integral(a)){
@@ -8829,14 +8884,14 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       }
     }
     return pixel_v();
-#endif // else HP && NUMWORKS
+#endif // else HP && KHICAS
   }
-#ifdef NUMWORKS
+#ifdef KHICAS
   void set_pixel(int x,int y,int c,GIAC_CONTEXT){
-    numworks_set_pixel(x,y,c);
+    os_set_pixel(x,y,c);
   }
   void set_pixel(double x,double y,int c,GIAC_CONTEXT){
-    numworks_set_pixel(int(x+.5),int(y+.5),c);
+    os_set_pixel(int(x+.5),int(y+.5),c);
   }
 #else  
   void set_pixel(int x,int y,int c,GIAC_CONTEXT){
@@ -9057,8 +9112,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     if (x<0){ width+=x; x=0;}
     if (y<0){ height+=y; y=0;}
     if (width<0 || height<0) return;
-#ifdef NUMWORKS
-    numworks_fill_rect(x,y,width,height,color);
+#ifdef KHICAS
+    os_fill_rect(x,y,width,height,color);
 #else
     for (int j=0;j<=height;++j){
       for (int i=0;i<width;++i)
@@ -9386,15 +9441,15 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     if (v[0].type!=_STRNG || !is_integral(v[1]) || !is_integral(v[2]))
       return gensizeerr(contextptr);
     gen s=v[0];
-#ifdef NUMWORKS
-    numworks_draw_string(v[1].val,v[2].val,v.size()>3?v[3].val:_BLACK,v.size()>4?v[4].val:_WHITE,s._STRNGptr->c_str());
+#ifdef KHICAS
+    os_draw_string(v[1].val,v[2].val,v.size()>3?v[3].val:_BLACK,v.size()>4?v[4].val:_WHITE,s._STRNGptr->c_str());
     return 1;
 #else
     v.erase(v.begin());
     v.push_back(s);
     pixel_v()._VECTptr->push_back(_pixon(gen(v,_SEQ__VECT),contextptr));
     return pixel_v();
-#endif // NUMWORKS
+#endif // KHICAS
 #endif // HP
   }
   static const char _draw_string_s []="draw_string";
@@ -9412,15 +9467,15 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       return gensizeerr(contextptr);
     gen x=a._VECTptr->front(),y=a._VECTptr->back();
     if (x.type==_INT_ && x.val>=0 && x.val<pixel_cols && y.type==_INT_ && y.val>=0 && y.val<pixel_lines){
-#ifdef NUMWORKS
-      return numworks_get_pixel(x.val,y.val);
+#ifdef KHICAS
+      return os_get_pixel(x.val,y.val);
 #else      
       return pixel_buffer[y.val][x.val];
 #endif
     }
-#ifdef NUMWORKS
+#ifdef KHICAS
     return undef;
-#else // NUMWORKS
+#else // KHICAS
     const vecteur v= *pixel_v()._VECTptr;
     for (size_t i=0;i<v.size();++i){
       const gen & vi_=v[i];
@@ -9446,7 +9501,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       }
     }
     return int(FL_WHITE);
-#endif // NUMWORKS
+#endif // KHICAS
 #endif // GIAC_HAS_STO_38
   }
   static const char _get_pixel_s []="get_pixel";
