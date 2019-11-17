@@ -762,7 +762,7 @@ namespace giac {
     if (contextptr){
       if (contextptr->globalcontextptr && contextptr->globalcontextptr->tabptr){
 	sym_tab::const_iterator it=contextptr->globalcontextptr->tabptr->begin(),itend=contextptr->globalcontextptr->tabptr->end();
-#if defined FXCG || defined GIAC_HAS_STO_38
+#if defined FXCG || defined GIAC_HAS_STO_38 || defined KHICAS
 	vecteur * keywordsptr=0;
 #else
 	vecteur * keywordsptr=keywords_vecteur_ptr();

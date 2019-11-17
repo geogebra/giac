@@ -3,9 +3,9 @@
 #ifdef KHICAS
 #include "kdisplay.h"
 #ifdef DEVICE
-const size_t stackptr=0x20036000;
+size_t stackptr=0x20036000;
 #else
-const size_t stackptr=0xffffffffffffffff;
+size_t stackptr=0xffffffffffffffff;
 #endif
 #endif
 
@@ -59,7 +59,7 @@ using namespace std;
 #include "solve.h"
 #include "csturm.h"
 #include "sparse.h"
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
 inline bool is_graphe(const giac::gen &g,std::string &disp_out,const giac::context *){ return false; }
 #else
 #include "graphtheory.h"

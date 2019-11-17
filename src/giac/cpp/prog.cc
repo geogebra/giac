@@ -9493,9 +9493,9 @@ namespace giac {
       return g;
     return gen(*g._STRNGptr,contextptr);
   }
-  static const char _hash_s []="#";
+  static const char _hash_s []="make_symbol";
   static define_unary_function_eval_index (98,__hash,&_hash,_hash_s);
-  define_unary_function_ptr( at_hash ,alias_at_hash ,&__hash);
+  define_unary_function_ptr5( at_hash ,alias_at_hash ,&__hash,0,true);
 
   bool user_screen=false;
   int user_screen_io_x=0,user_screen_io_y=0;
@@ -9665,6 +9665,34 @@ namespace giac {
     return tmp;
   }
 
+  // fundemental metric units
+  const mksa_unit __m_unit={1,1,0,0,0,0,0,0,0};
+  const mksa_unit __kg_unit={1,0,1,0,0,0,0,0,0};
+  const mksa_unit __s_unit={1,0,0,1,0,0,0,0,0};
+  const mksa_unit __A_unit={1,0,0,0,1,0,0,0,0};
+  const mksa_unit __K_unit={1,0,0,0,0,1,0,0,0};
+  const mksa_unit __mol_unit={1,0,0,0,0,0,1,0,0};
+  const mksa_unit __cd_unit={1,0,0,0,0,0,0,1,0};
+  const mksa_unit __E_unit={1,0,0,0,0,0,0,0,1};
+  const mksa_unit __Bq_unit={1,0,0,-1,0,0,0,0,0};
+  const mksa_unit __C_unit={1,0,0,1,1,0,0,0,0};
+  const mksa_unit __F_unit={1,-2,-1,4,2,0,0,0,0};
+  const mksa_unit __Gy_unit={1,2,0,-2,0,0,0,0,0};
+  const mksa_unit __H_unit={1,2,1,-2,-2,0,0,0,0};
+  const mksa_unit __Hz_unit={1,0,0,-1,0,0,0,0,0};
+  const mksa_unit __J_unit={1,2,1,-2,0,0,0,0,0};
+  const mksa_unit __mho_unit={1,-2,-1,3,2,0,0,0,0};
+  const mksa_unit __N_unit={1,1,1,-2,0,0,0,0,0};
+  const mksa_unit __Ohm_unit={1,2,1,-3,-2,0,0,0,0};
+  const mksa_unit __Pa_unit={1,-1,1,-2,0,0,0,0,0};
+  const mksa_unit __rad_unit={1,0,0,0,0,0,0,0,0};
+  const mksa_unit __S_unit={1,-2,-1,3,2,0,0,0,0};
+  const mksa_unit __Sv_unit={1,2,0,-2,0,0,0,0,0};
+  const mksa_unit __T_unit={1,0,1,-2,-1,0,0,0,0};
+  const mksa_unit __V_unit={1,2,1,-3,-1,0,0,0,0};
+  const mksa_unit __W_unit={1,2,1,-3,0,0,0,0,0};
+  const mksa_unit __Wb_unit={1,2,1,-2,-1,0,0,0,0};
+  const mksa_unit __Js_unit={1,2,1,-1,0,0,0,0,0};
   // To each unit we associate a number and a vector of powers of kg, m, s
   /*
   map_charptr_gen unit_conversion_map;
@@ -10829,6 +10857,7 @@ namespace giac {
   const alias_ref_identificateur ref_kg_unit_rom={-1,0,0,"_kg",0,0};
   const define_alias_gen(alias_kg_unit_rom,_IDNT,0,&ref_kg_unit_rom);
   const gen & kg_unit_rom_IDNT_e = * (gen *) & alias_kg_unit_rom;
+  // const gen & _kg_unit = * (gen *) & alias_kg_unit_rom;
 
 
 #else
@@ -11210,6 +11239,7 @@ namespace giac {
   gen C_unit_rom_IDNT_e(C_unit_rom_IDNT);
   identificateur kg_unit_rom_IDNT("_kg");
   gen kg_unit_rom_IDNT_e(kg_unit_rom_IDNT);
+  // gen _kg_unit(kg_unit_rom_IDNT);
   identificateur Angstrom_unit_rom_IDNT("_Angstrom");
   gen Angstrom_unit_rom_IDNT_e(Angstrom_unit_rom_IDNT);
 #endif
@@ -11439,45 +11469,7 @@ namespace giac {
   gen mksa_register_unit(const char * s,const mksa_unit * equiv){
     return symbolic(at_unit,makevecteur(1,mksa_register(s,equiv)));
   }
-  // fundemental metric units
-  const mksa_unit __m_unit={1,1,0,0,0,0,0,0,0};
-  const mksa_unit __kg_unit={1,0,1,0,0,0,0,0,0};
-  const mksa_unit __s_unit={1,0,0,1,0,0,0,0,0};
-  const mksa_unit __A_unit={1,0,0,0,1,0,0,0,0};
-  const mksa_unit __K_unit={1,0,0,0,0,1,0,0,0};
-  const mksa_unit __mol_unit={1,0,0,0,0,0,1,0,0};
-  const mksa_unit __cd_unit={1,0,0,0,0,0,0,1,0};
-  const mksa_unit __E_unit={1,0,0,0,0,0,0,0,1};
-  const mksa_unit __Bq_unit={1,0,0,-1,0,0,0,0,0};
-  const mksa_unit __C_unit={1,0,0,1,1,0,0,0,0};
-  const mksa_unit __F_unit={1,-2,-1,4,2,0,0,0,0};
-  const mksa_unit __Gy_unit={1,2,0,-2,0,0,0,0,0};
-  const mksa_unit __H_unit={1,2,1,-2,-2,0,0,0,0};
-  const mksa_unit __Hz_unit={1,0,0,-1,0,0,0,0,0};
-  const mksa_unit __J_unit={1,2,1,-2,0,0,0,0,0};
-  const mksa_unit __mho_unit={1,-2,-1,3,2,0,0,0,0};
-  const mksa_unit __N_unit={1,1,1,-2,0,0,0,0,0};
-  const mksa_unit __Ohm_unit={1,2,1,-3,-2,0,0,0,0};
-  const mksa_unit __Pa_unit={1,-1,1,-2,0,0,0,0,0};
-  const mksa_unit __rad_unit={1,0,0,0,0,0,0,0,0};
-  const mksa_unit __S_unit={1,-2,-1,3,2,0,0,0,0};
-  const mksa_unit __Sv_unit={1,2,0,-2,0,0,0,0,0};
-  const mksa_unit __T_unit={1,0,1,-2,-1,0,0,0,0};
-  const mksa_unit __V_unit={1,2,1,-3,-1,0,0,0,0};
-  const mksa_unit __W_unit={1,2,1,-3,0,0,0,0,0};
-  const mksa_unit __Wb_unit={1,2,1,-2,-1,0,0,0,0};
-  vecteur & usual_units(){
-    static vecteur * usual_units_ptr=0;
-    if (!usual_units_ptr){
-      usual_units_ptr=new vecteur;
-      *usual_units_ptr=mergevecteur(
-				   mergevecteur(makevecteur(_C_unit,_F_unit,_Gy_unit,_H_unit,_Hz_unit,_J_unit,_mho_unit),
-						makevecteur(_N_unit,_Ohm_unit,_Pa_unit,_rad_unit,_S_unit,_Sv_unit,_T_unit)),
-				   makevecteur(_V_unit,_W_unit,_Wb_unit)
-				   );
-    }
-    return *usual_units_ptr;
-  }
+  const gen * tab_usual_units[]={&C_unit_rom_IDNT_e,&F_unit_rom_IDNT_e,&Gy_unit_rom_IDNT_e,&H_unit_rom_IDNT_e,&Hz_unit_rom_IDNT_e,&J_unit_rom_IDNT_e,&mho_unit_rom_IDNT_e,&N_unit_rom_IDNT_e,&Ohm_unit_rom_IDNT_e,&Pa_unit_rom_IDNT_e,&rad_unit_rom_IDNT_e,&S_unit_rom_IDNT_e,&Sv_unit_rom_IDNT_e,&T_unit_rom_IDNT_e,&V_unit_rom_IDNT_e,&W_unit_rom_IDNT_e,&Wb_unit_rom_IDNT_e};
   const mksa_unit __Angstrom_unit={1e-10,1,0,0,0,0,0,0,0};
   const mksa_unit __Btu_unit={1055.05585262,2,1,-2,0,0,0,0,0};
   const mksa_unit __Curie_unit={3.7e10,0,0,-1,0,0,0,0,0};
@@ -12051,6 +12043,7 @@ namespace giac {
   gen _cd_unit(mksa_register("_cd",&__cd_unit)); // candela
   gen _E_unit(mksa_register("_E",&__E_unit)); // euro
 
+#ifndef STATIC_BUILTIN_LEXER_FUNCTIONS
   gen _C_unit(mksa_register("_C",&__C_unit));
   gen _F_unit(mksa_register("_F",&__F_unit));
   gen _Gy_unit(mksa_register("_Gy",&__Gy_unit));
@@ -12070,7 +12063,7 @@ namespace giac {
   gen _Wb_unit(mksa_register("_Wb",&__Wb_unit));
   gen _l_unit(mksa_register("_l",&__l_unit));
   gen _molK_unit(mksa_register("_molK",&__molK_unit));
-#ifndef STATIC_BUILTIN_LEXER_FUNCTIONS
+
   gen _Bq_unit(mksa_register("_Bq",&__Bq_unit));
   gen _L_unit(mksa_register("_L",&__L_unit));
   // other metric units in m,kg,s,A
@@ -12230,6 +12223,14 @@ namespace giac {
       v.push_back(tmp->E);
     }
     return v;
+  }
+
+  static vecteur mksa_unit2vecteur(const string & s){
+    for (int i=0;i<sizeof(tab_unit_rom)/sizeof(gen *);++i){
+      if (!strcmp(s.c_str(),tab_unit_rom[i]->_IDNTptr->id_name))
+	return mksa_unit2vecteur(unitptr_tab[i]);
+    }
+    return mksa_unit2vecteur(unit_conversion_map()[s.substr(1,s.size()-1).c_str()]);
   }
 
   struct mksa_tri3 {
@@ -12492,25 +12493,28 @@ namespace giac {
     if (pos)
       return mksa_reduce(g,contextptr);
     v[0]=plus_one;
-    const_iterateur it=usual_units().begin(),itend=usual_units().end();
+    const gen ** it=tab_usual_units,**itend=it+sizeof(tab_usual_units)/sizeof(const gen *);
+    // const_iterateur it=usual_units().begin(),itend=usual_units().end();
     for (;it!=itend;++it){
-      string s=it->print(contextptr);
-      gen tmp=mksa_unit2vecteur(unit_conversion_map()[s.substr(1,s.size()-1).c_str()]);
+      string s=(*it)->print(contextptr);
+      gen tmp=mksa_unit2vecteur(s);
       if (tmp==v)
-	return _ufactor(gen(makevecteur(g,symbolic(at_unit,makevecteur(1,*it))),_SEQ__VECT),contextptr);
+	return _ufactor(gen(makevecteur(g,symbolic(at_unit,makevecteur(1,**it))),_SEQ__VECT),contextptr);
     }
     // count non-zero in v, if ==2 return mksa
     int count=0;
-    for (it=v.begin()+1,itend=v.end();it!=itend;++it){
-      if (!is_zero(*it))
+    const_iterateur jt=v.begin()+1,jtend=v.end();
+    for (;jt!=jtend;++jt){
+      if (!is_zero(*jt))
 	++count;
     }
     if (count<=2) 
       return mksa_reduce(g,contextptr);
-    it=usual_units().begin(); itend=usual_units().end();
+    // it=usual_units().begin(); itend=usual_units().end();
+    it=tab_usual_units;
     for (;it!=itend;++it){
-      string s=it->print(contextptr);
-      gen tmp=mksa_unit2vecteur(unit_conversion_map()[s.substr(1,s.size()-1).c_str()]);
+      string s=(*it)->print(contextptr);
+      gen tmp=mksa_unit2vecteur(s);
       vecteur w(*tmp._VECTptr);
       for (int j=0;j<2;j++){
 	vecteur vw;
@@ -12529,9 +12533,9 @@ namespace giac {
 	}
 	if (pos){
 	  if (j)
-	    return _ufactor(gen(makevecteur(g,symbolic(at_unit,makevecteur(1,unitpow(*it,-1)))),_SEQ__VECT),contextptr);
+	    return _ufactor(gen(makevecteur(g,symbolic(at_unit,makevecteur(1,unitpow(**it,-1)))),_SEQ__VECT),contextptr);
 	  else
-	    return _ufactor(gen(makevecteur(g,symbolic(at_unit,makevecteur(1,*it))),_SEQ__VECT),contextptr);
+	    return _ufactor(gen(makevecteur(g,symbolic(at_unit,makevecteur(1,**it))),_SEQ__VECT),contextptr);
 	}
       }
     }
@@ -12603,7 +12607,7 @@ namespace giac {
 #endif
   
   // Physical constants -> in input_lexer.ll
-#ifndef NO_PHYSICAL_CONSTANTS
+#if 0 //ndef NO_PHYSICAL_CONSTANTS
   identificateur _cst_hbar("_hbar_",symbolic(at_unit,makevecteur(1.05457266e-34,_J_unit*_s_unit)));
   gen cst_hbar(_cst_hbar);
   identificateur _cst_clightspeed("_c_",symbolic(at_unit,makevecteur(299792458,_m_unit/_s_unit)));

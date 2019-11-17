@@ -2040,6 +2040,7 @@ namespace giac {
     return i;
   }
 
+  /*
   void tran4(double * colmat){
     giac::swapdouble(colmat[1],colmat[4]);
     giac::swapdouble(colmat[2],colmat[8]);
@@ -2048,6 +2049,7 @@ namespace giac {
     giac::swapdouble(colmat[7],colmat[13]);
     giac::swapdouble(colmat[11],colmat[14]);    
   }
+  */
 
   void get_texture(const gen & attrv1,void * & texture){
 #if 0
@@ -2893,12 +2895,14 @@ namespace giac {
       indraw(*it);
   }
 
+  /*
   void mult4(double * colmat,double * vect,double * res){
     res[0]=colmat[0]*vect[0]+colmat[4]*vect[1]+colmat[8]*vect[2]+colmat[12]*vect[3];
     res[1]=colmat[1]*vect[0]+colmat[5]*vect[1]+colmat[9]*vect[2]+colmat[13]*vect[3];
     res[2]=colmat[2]*vect[0]+colmat[6]*vect[1]+colmat[10]*vect[2]+colmat[14]*vect[3];
     res[3]=colmat[3]*vect[0]+colmat[7]*vect[1]+colmat[11]*vect[2]+colmat[15]*vect[3];
   }
+  */
 
   void mult4(double * colmat,float * vect,double * res){
     res[0]=colmat[0]*vect[0]+colmat[4]*vect[1]+colmat[8]*vect[2]+colmat[12]*vect[3];
@@ -2907,6 +2911,7 @@ namespace giac {
     res[3]=colmat[3]*vect[0]+colmat[7]*vect[1]+colmat[11]*vect[2]+colmat[15]*vect[3];
   }
 
+  /*
   void mult4(double * c,double k,double * res){
     for (int i=0;i<16;i++)
       res[i]=k*c[i];
@@ -2936,6 +2941,7 @@ namespace giac {
     double det=det4(c);
     mult4(res,1/det,res);
   }
+  */
 
   void dim32dim2(double * view,double * proj,double * model,double x0,double y0,double z0,double & i,double & j,double & dept){
     double vect[4]={x0,y0,z0,1},res1[4],res2[4];

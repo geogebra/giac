@@ -361,10 +361,10 @@ namespace giac {
     }
 #endif
     bool argpar = ( (arg.type>_CPLX && arg.type!=_FLOAT_) || !is_positive(arg,contextptr)) && arg.type!=_IDNT ;
-#if defined EMCC || defined GIAC_GGB || defined KHICAS
+#if defined EMCC || defined GIAC_GGB 
     bool need=need_parenthesis(arg) || arg.type==_SYMB;
     if (pui==plus_one_half){
-#ifdef KHICAS
+#ifdef KHICAS // inactive code
       need=true;
       s += char(226);
       s += char(136);

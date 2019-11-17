@@ -1056,14 +1056,16 @@ namespace giac {
     string s= "<path ";
     if (attr.ie){
       double thickness=geo_thickness(xmin,xmax,ymin,ymax)/svg_epaisseur1*attr.width;
-      s = s+"stroke-width=\""+print_DOUBLE_(thickness,5);
+      s = s+"stroke-width=\""+print_DOUBLE_(thickness,5)+"\"";
     }
     else
-      s = s+"vector-effect=\"non-scaling-stroke\"  stroke-width=\""+print_INT_(attr.width);
+      s = s+"vector-effect=\"non-scaling-stroke\"  stroke-width=\""+print_INT_(attr.width)+"\"";
+    if (attr.type_line)
+      s += " stroke-dasharray=\""+print_INT_(attr.type_line)+"\"";
     if (attr.fill_polygon)
-      s = s+"\" fill=\""+color_string(attr)+"\" d=\"M";
+      s = s+" fill=\""+color_string(attr)+"\" d=\"M";
     else
-      s = s+"\" stroke=\""+color_string(attr)+"\" fill=\"none\" d=\"M";
+      s = s+" stroke=\""+color_string(attr)+"\" fill=\"none\" d=\"M";
     g=evalf(g,1,contextptr);
     vecteur v=*(g._VECTptr);
     for (i=0;i<int(v.size());++i){
@@ -1108,13 +1110,15 @@ namespace giac {
     A=evalf(A,1,contextptr); B=evalf(B,1,contextptr);
     if (attr.ie){
       double thickness=geo_thickness(xmin,xmax,ymin,ymax)/svg_epaisseur1*attr.width;
-      s= "<line stroke-width=\""+print_DOUBLE_(thickness,5);
+      s+= "<line stroke-width=\""+print_DOUBLE_(thickness,5)+"\"";
     }
     else
-      s= "<line vector-effect=\"non-scaling-stroke\" stroke-width=\""+print_INT_(attr.width);
+      s+= "<line vector-effect=\"non-scaling-stroke\" stroke-width=\""+print_INT_(attr.width)+"\"";
+    if (attr.type_line)
+      s += " stroke-dasharray=\""+print_INT_(attr.type_line)+"\"";
     gen reB,imB;
     reim(B,reB,imB,contextptr);
-    s = s+"\" stroke=\""+color_string(attr)+"\" x1=\""
+    s = s+" stroke=\""+color_string(attr)+"\" x1=\""
       + re(A,contextptr).print(contextptr)+"\" y1=\""
       + im(A,contextptr).print(contextptr)+"\" x2=\""
       + reB.print(contextptr)+"\" y2=\""
@@ -1218,11 +1222,14 @@ namespace giac {
     }
     else
       s = s+"vector-effect=\"non-scaling-stroke\" stroke=\""+color_string(attr)+"\"  stroke-width=\""+print_INT_(attr.width);
+    s += "\"";
+    if (attr.type_line)
+      s += " stroke-dasharray=\""+print_INT_(attr.type_line)+"\"";
     // COUT << s << '\n';
     if (attr.fill_polygon)
-      s = s+"\" fill=\""+color_string(attr)+"\" ";
+      s = s+" fill=\""+color_string(attr)+"\" ";
     else
-      s = s+"\" fill=\"none\" ";
+      s = s+" fill=\"none\" ";
     if (arc){
       // arc of circle: compute start.x, start.y, end.x end.y
       // from polar coord (radius,a1) and (radius,a2)
@@ -1331,14 +1338,16 @@ namespace giac {
       s= "<polyline ";
     if (attr.ie){
       double thickness=geo_thickness(xmin,xmax,ymin,ymax)/svg_epaisseur1*attr.width;
-      s = s+"stroke-width=\""+print_DOUBLE_(thickness,5);
+      s = s+"stroke-width=\""+print_DOUBLE_(thickness,5)+"\"";
     }
     else
-      s = s+"vector-effect=\"non-scaling-stroke\"  stroke-width=\""+print_INT_(attr.width);
+      s = s+"vector-effect=\"non-scaling-stroke\"  stroke-width=\""+print_INT_(attr.width)+"\"";
+    if (attr.type_line)
+      s += " stroke-dasharray=\""+print_INT_(attr.type_line)+"\"";
     if (attr.fill_polygon)
-      s = s+"\" fill=\""+color_string(attr)+"\" points=\"";
+      s = s+" fill=\""+color_string(attr)+"\" points=\"";
     else
-      s = s+"\" stroke=\""+color_string(attr)+"\" fill=\"none\" points=\"";
+      s = s+" stroke=\""+color_string(attr)+"\" fill=\"none\" points=\"";
     for (i=0 ; i<signed(v.size())-1 ; i++){
       s = s+re(evalf(v[i],1,contextptr),contextptr).print(contextptr)+" "+im(evalf(v[i],1,contextptr),contextptr).print(contextptr)+", ";
     }

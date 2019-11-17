@@ -45,7 +45,7 @@ using namespace std;
 #include "quater.h"
 #include "sparse.h"
 #include "giacintl.h"
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
 inline bool is_graphe(const giac::gen &g,std::string &disp_out,const giac::context *){ return false; }
 inline giac::gen _graph_charpoly(const giac::gen &g,const giac::context *){ return g;}
 #else
@@ -7321,6 +7321,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       return 0;
     gen fg=symbolic(at_nop,makesequence(f,g));
     gen df=domain(fg,t,0,contextptr);
+    if (ctrl_c || interrupted)
+      return 0;
     gprintf(gettext("Domain %gen"),vecteur(1,df),1,contextptr);
     gen df1=domain(fg,t,1,contextptr); // singular values only
     if (df1.type!=_VECT){
@@ -7347,8 +7349,14 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     int cm=calc_mode(contextptr);
     calc_mode(-38,contextptr); // avoid rootof
     gen cx=recursive_normal(solve(f1,t,periode==0?2:0,contextptr),contextptr);
+    if (ctrl_c || interrupted)
+      return 0;
     gen cy=recursive_normal(solve(g1,t,periode==0?2:0,contextptr),contextptr);
+    if (ctrl_c || interrupted)
+      return 0;
     gen cc=recursive_normal(solve(conv,t,periode==0?2:0,contextptr),contextptr);
+    if (ctrl_c || interrupted)
+      return 0;
     calc_mode(cm,contextptr); // avoid rootof
     if (t!=tval)
       sto(tval,t,contextptr);
@@ -7675,7 +7683,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 #endif
 	tvidf.push_back(string2gen("-",false));
       }
-      if (is_strictly_positive(convt,contextptr))
+      bool convtpos=is_strictly_positive(convt,contextptr);
+      if (convtpos)
 	tviconv.push_back(string2gen(abs_calc_mode(contextptr)==38?"∪":"convex",false));
       else
 	tviconv.push_back(string2gen(abs_calc_mode(contextptr)==38?"∩":"concav",false));
@@ -7712,6 +7721,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	  xmax=x;
 	y=try_limit_undef(g,xid,nextt,-1,contextptr);
 	y=recursive_normal(y,contextptr);
+	if (ctrl_c || interrupted)
+	  return 0;
 	if (!has_inf_or_undef(y) && is_greater(ymin,y,contextptr))
 	  ymin=y;
 	if (!has_inf_or_undef(y) && is_greater(y,ymax,contextptr))
@@ -7730,6 +7741,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	  xmax=x;
 	y=try_limit_undef(g,xid,nextt,1,contextptr);
 	y=recursive_normal(y,contextptr);
+	if (ctrl_c || interrupted)
+	  return 0;
 	if (!has_inf_or_undef(y) && is_greater(ymin,y,contextptr))
 	  ymin=y;
 	if (!has_inf_or_undef(y) && is_greater(y,ymax,contextptr))
@@ -7750,6 +7763,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	  xmax=x;
 	y=try_limit_undef(g,xid,nextt,-1,contextptr);
 	y=recursive_normal(y,contextptr);
+	if (ctrl_c || interrupted)
+	  return 0;
 	if (!has_inf_or_undef(y) && is_greater(ymin,y,contextptr))
 	  ymin=y;
 	if (!has_inf_or_undef(y) && is_greater(y,ymax,contextptr))
@@ -7762,6 +7777,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	tvidf.push_back(crunch_rootof(y,contextptr));
 	y=try_limit_undef(g1,xid,nextt,-1,contextptr);
 	y=recursive_normal(y,contextptr);
+	if (ctrl_c || interrupted)
+	  return 0;
 	tvidg.push_back(crunch_rootof(y,contextptr));
 	if (equalposcomp(infl,nextt)) y=0;
 	else {

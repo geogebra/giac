@@ -88,7 +88,6 @@ namespace giac {
     };
   extern const charptr_gen_unary builtin_lexer_functions[] ;
   extern const unsigned builtin_lexer_functions_number;
-  extern const size_t builtin_lexer_functions_[];
 #else
   extern unsigned builtin_lexer_functions_number;
 #endif
@@ -118,7 +117,11 @@ namespace giac {
 #if defined NSPIRE || defined FXCG
   std::vector<size_t> * builtin_lexer_functions_();
 #else
+#ifdef KHICAS
+  extern const unary_function_ptr * const * const builtin_lexer_functions_[];
+#else
   extern const size_t builtin_lexer_functions_[];
+#endif
 #endif
 #else
   extern const size_t * const builtin_lexer_functions_;

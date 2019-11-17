@@ -124,7 +124,7 @@ extern "C" {
 #include <sys/wait.h>
 #endif
 
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
 inline bool is_graphe(const giac::gen &g,std::string &disp_out,const giac::context *){ return false; }
 inline giac::gen _graph_vertices(const giac::gen &g,const giac::context *){ return g;}
 inline giac::gen _is_planar(const giac::gen &g,const giac::context *){ return g;}
@@ -1061,8 +1061,52 @@ namespace giac {
     return s;
   }
 
-  static const int arc_en_ciel_colors=105;
+#ifdef KHICAS
+  void arc_en_ciel(int k,int & r,int & g,int & b){
+    k += 21;
+    k %= 126;
+    if (k<0)
+      k += 126;
+    if (k<21){
+      r=251; g=0; b=12*k;
+    }
+    if (k>=21 && k<42){
+      r=251-(12*(k-21)); g=0; b=251;
+    } 
+    if (k>=42 && k<63){
+      r=0; g=(k-42)*12; b=251;
+    } 
+    if (k>=63 && k<84){
+      r=0; g=251; b=251-(k-63)*12;
+    } 
+    if (k>=84 && k<105){
+      r=(k-84)*12; g=251; b=0;
+    } 
+    if (k>=105 && k<126){
+      r=251; g=251-(k-105)*12; b=0;
+    } 
+  }
 
+  int rgb888to565(int c){
+    int r=(c>>16)&0xff,g=(c>>8)&0xff,b=c&0xff;
+    return (((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
+  }
+
+  static const int arc_en_ciel_colors=15;
+  int density(double z,double fmin,double fmax){
+    // z -> 256+arc_en_ciel_colors*(z-fmin)/(fmax-fmin)
+    if (z<fmin)
+      return 0;
+    if (z>fmax)
+      return 0;
+    double d=(z-fmin)/(fmax-fmin);
+    int r,g,b;
+    arc_en_ciel(126.0/d,r,g,b);
+    return (((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
+  }
+
+#else
+  static const int arc_en_ciel_colors=105;
   inline int density(double z,double fmin,double fmax){
     // z -> 256+arc_en_ciel_colors*(z-fmin)/(fmax-fmin)
     if (z<fmin)
@@ -1071,6 +1115,8 @@ namespace giac {
       return 256+arc_en_ciel_colors;
     return 256+int(arc_en_ciel_colors*(z-fmin)/(fmax-fmin));
   }
+
+#endif
 
   // horizontal scale for colors
   static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,double fmin, double fmax,int n,GIAC_CONTEXT){
@@ -1087,11 +1133,27 @@ namespace giac {
       x+=dx;
       gen C(x,ymax);
       gen D(x,ymin);
-      vecteur attrib(1,256+int(i*double(arc_en_ciel_colors)/n)+_FILL_POLYGON+(i?_QUADRANT4:_QUADRANT2));
+      int rgb;
+#ifdef KHICAS
+      int r,g,b;
+      arc_en_ciel(i*double(126.0)/n,r,g,b);
+      rgb=(((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
+      vecteur attrib(1,rgb+_FILL_POLYGON+(i?_QUADRANT4:_QUADRANT3));
+#else
+      rgb=256+int(i*double(arc_en_ciel_colors)/n);
+      vecteur attrib(1,rgb+_FILL_POLYGON+(i?_QUADRANT4:_QUADRANT2));
+#endif
+#ifdef KHICAS
+      if (!i)
+	attrib.push_back(string2gen(print_DOUBLE_(fmin,contextptr),false));
+      if (i==n-1)
+	attrib.push_back(string2gen(print_DOUBLE_(fmax,contextptr),false));
+#else
       if (!i)
 	attrib.push_back(string2gen(print_DOUBLE_(fmin,4),false));
       if (i==n-1)
 	attrib.push_back(string2gen(print_DOUBLE_(fmax,4),false));
+#endif
       res.push_back(pnt_attrib(gen((i?makevecteur(D,A,B,C,D):makevecteur(B,C,D,A,B)),_GROUP__VECT),attrib,contextptr));
     }
     return res;
@@ -1193,8 +1255,15 @@ namespace giac {
       for (int i=0;i<arc_en_ciel_colors;++i)
 	lz[i]=fmin+i*df;
       vecteur attr(arc_en_ciel_colors);
-      for (int i=0;i<arc_en_ciel_colors;++i)
+      for (int i=0;i<arc_en_ciel_colors;++i){
+#ifdef KHICAS
+	int r,g,b;
+	arc_en_ciel(126.0/(arc_en_ciel_colors-1)*i,r,g,b);
+	attr[i]=_FILL_POLYGON + (((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
+#else
 	attr[i]=_FILL_POLYGON+257+i;
+#endif
+      }
       gen rect=pnt_attrib(gen(makevecteur(gen(xmin,ymin),gen(xmax,ymin),gen(xmax,ymax),gen(xmin,ymax),gen(xmin,ymin)),_GROUP__VECT),vecteur(1,_FILL_POLYGON+256),contextptr);
       vecteur niveaux=ticks(fmin,fmax,false);
       lz=mergevecteur(lz,niveaux);
@@ -1527,6 +1596,11 @@ namespace giac {
 	nu=int(std::sqrt(double(nstep)));
 	nv=int(std::sqrt(double(nstep)));
       }
+#ifdef KHICAS
+      if (nu*nv>25){
+	nu=nv=5;
+      }
+#endif
       double dx=(function_xmax-function_xmin)/nu;
       double dy=(function_ymax-function_ymin)/nv;
       double fmin=1e300,fmax=-fmin;
@@ -2177,8 +2251,6 @@ namespace giac {
 
   gen _plotmatrix(const gen & args,const context * contextptr){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    if (!ckmatrix(args))
-      return gensizeerr(contextptr);
     return funcplotfunc(args,true,contextptr);
   }
   static const char _plotmatrix_s []="plotmatrix"; 
@@ -3215,9 +3287,11 @@ namespace giac {
     symbolic e=symbolic(at_pnt,gen(makevecteur(x,c,nom),_PNT__VECT));
     gen ee(e);
     ee.subtype=gnuplot_show_pnt(e,contextptr);
+#ifndef KHICAS
     history_plot(contextptr).push_back(ee);
     if (io_graph(contextptr))
       __interactive.op(ee,contextptr);
+#endif
     return ee;
   }
   gen symb_segment(const gen & x,const gen & y,const vecteur & c,int type,GIAC_CONTEXT){
@@ -3230,9 +3304,11 @@ namespace giac {
       e=symbolic(at_pnt,gen(makevecteur(gen(makevecteur(x,y),type),c[0],c[1]),_PNT__VECT));
     gen ee(e);
     ee.subtype=gnuplot_show_pnt(*e._SYMBptr,contextptr);
+#ifndef KHICAS
     history_plot(contextptr).push_back(ee);
     if (io_graph(contextptr))
       __interactive.op(ee,contextptr);
+#endif
     return ee;
   }
   gen symb_pnt(const gen & x,const gen & c,GIAC_CONTEXT){
@@ -3243,9 +3319,11 @@ namespace giac {
 #else
     ee.subtype=-1;
 #endif
+#ifndef KHICAS
     history_plot(contextptr).push_back(ee);
     if (io_graph(contextptr))
       __interactive.op(ee,contextptr);
+#endif
     return ee;
   }
   gen symb_pnt(const gen & x,GIAC_CONTEXT){
@@ -10740,9 +10818,11 @@ namespace giac {
     vecteur v(*b._SYMBptr->feuille._VECTptr);
     v[1]=c;
     gen e=symbolic(at_pnt,gen(v,_PNT__VECT));
+#ifndef KHICAS
     history_plot(contextptr).push_back(e);
     if (io_graph(contextptr))
       __interactive.op(e,contextptr);    
+#endif
     return e;
   }
   static const char _display_s []="display";

@@ -812,6 +812,7 @@ namespace giac {
   extern gen _mol_unit;
   extern gen _cd_unit;
   extern gen _E_unit;
+#ifndef STATIC_BUILTIN_LEXER_FUNCTIONS
   // other metric units in m,kg,s,A
   extern gen _Bq_unit;
   extern gen _C_unit;
@@ -961,6 +962,7 @@ namespace giac {
   extern gen cst_Vm;
   extern gen cst_kBoltzmann;
   extern gen cst_NA;
+#endif // STATIC_BUILTIN_LEXER_FUNCTIONS
 #endif // NO_PHYSICAL_CONSTANTS
 #ifndef FXCG
   const unary_function_ptr * binary_op_tab();

@@ -3203,6 +3203,9 @@ namespace giac {
 	  return false;
 	if (s && (it->_VECTptr->front().type==_VECT && it->_VECTptr->front().subtype!=_POLY1__VECT) && !allow_embedded_vect)
 	  return false;
+	for (int i=0;i<s;++i)
+	  if (is_undef((*it->_VECTptr)[i]))
+	    return false;
       }
     }
     return true;
