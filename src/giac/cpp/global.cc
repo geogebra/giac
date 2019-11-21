@@ -197,7 +197,7 @@ namespace giac {
 #endif // POCKETCAS
 #endif // TIMEOUT
 
-#ifdef NSPIRE_NEWLIB
+#if defined NSPIRE_NEWLIB || defined KHICAS
   void usleep(int t){
   }
 #endif
@@ -1790,7 +1790,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int debug_infolevel=0;
 #endif
   int printprog=0;
-#if defined __APPLE__ || defined VISUALC || defined __MINGW_H || defined BESTA_OS || defined NSPIRE || defined FXCG || defined NSPIRE_NEWLIB
+#if defined __APPLE__ || defined VISUALC || defined __MINGW_H || defined BESTA_OS || defined NSPIRE || defined FXCG || defined NSPIRE_NEWLIB || defined KHICAS
   int threads=1;
 #else
   int threads=sysconf (_SC_NPROCESSORS_ONLN);
@@ -1929,7 +1929,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 
   void ctrl_c_signal_handler(int signum){
     ctrl_c=true;
-#if !defined NSPIRE_NEWLIB && !defined WIN32 && !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
+#if !defined KHICAS && !defined NSPIRE_NEWLIB && !defined WIN32 && !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
     if (child_id)
       kill(child_id,SIGINT);
 #endif
@@ -5563,7 +5563,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
       }
       if (!builtin_lexer_functions_sorted){
 #ifndef STATIC_BUILTIN_LEXER_FUNCTIONS
-#ifdef NSPIRE_NEWLIB
+#if defined NSPIRE_NEWLIB || defined KHICAS || defined NUMWORKS
 	builtin_lexer_functions_begin()[builtin_lexer_functions_number]=std::pair<const char *,gen>(s,gen(u));
 #else
 	builtin_lexer_functions_begin()[builtin_lexer_functions_number].first=s;

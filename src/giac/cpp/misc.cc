@@ -1649,6 +1649,8 @@ namespace giac {
       // z=(a+i*b), (z-a)^2=-b^2
       return gen(makevecteur(1,-2*a,a*a+b*b),_POLY1__VECT);
     }
+    if (g.type==_FRAC)
+      return gen(makevecteur(g._FRACptr->den,-g._FRACptr->num),_POLY1__VECT);
     if (g.type==_USER){
 #ifndef NO_RTTI
       if (galois_field * gf=dynamic_cast<galois_field *>(g._USERptr)){
@@ -7660,7 +7662,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	return 0;
       }
       if (is_strictly_positive(dfx,contextptr)){
-#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T 
+#if defined NSPIRE || defined NSPIRE_NEWLIB || defined KHICAS || defined HAVE_WINT_T 
 #ifdef KHICAS
 	  tvif.push_back(string2gen("inc",false));
 #else
@@ -7672,7 +7674,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	tvidf.push_back(string2gen("+",false));
       }
       else {
-#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T 
+#if defined NSPIRE || defined NSPIRE_NEWLIB || defined KHICAS || defined HAVE_WINT_T 
 #ifdef KHICAS
 	  tvif.push_back(string2gen("dec",false));
 #else
@@ -7689,7 +7691,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       else
 	tviconv.push_back(string2gen(abs_calc_mode(contextptr)==38?"∩":"concav",false));
       if (is_strictly_positive(dgx,contextptr)){
-#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T 
+#if defined NSPIRE || defined NSPIRE_NEWLIB || defined KHICAS || defined HAVE_WINT_T 
 #ifdef KHICAS
 	  tvig.push_back(string2gen("inc",false));
 #else
@@ -7701,7 +7703,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	tvidg.push_back(string2gen("+",false));
       }
       else {
-#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T 
+#if defined NSPIRE || defined NSPIRE_NEWLIB || defined KHICAS || defined HAVE_WINT_T 
 #ifdef KHICAS
 	  tvig.push_back(string2gen("dec",false));
 #else
@@ -8212,7 +8214,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       }
       else {
 	if (is_strictly_positive(dfx,contextptr)){
-#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T 
+#if defined NSPIRE || defined NSPIRE_NEWLIB || defined KHICAS || defined HAVE_WINT_T 
 #ifdef KHICAS
 	  tvif.push_back(string2gen("inc",false));
 #else
@@ -8224,7 +8226,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	  tvidf.push_back(string2gen("+",false));
 	}
 	else {
-#if defined NSPIRE || defined NSPIRE_NEWLIB || defined HAVE_WINT_T 
+#if defined NSPIRE || defined NSPIRE_NEWLIB || defined KHICAS || defined HAVE_WINT_T 
 #ifdef KHICAS
 	  tvif.push_back(string2gen("dec",false));
 #else

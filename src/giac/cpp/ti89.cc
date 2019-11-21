@@ -2645,7 +2645,7 @@ namespace giac {
 #ifndef FXCG
   gen _RandSeed(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
-#if defined(NSPIRE_NEWLIB) || defined(VISUALC) || defined(__MINGW_H) || defined BESTA_OS || defined EMCC || defined NSPIRE 
+#if defined(NSPIRE_NEWLIB) || defined KHICAS || defined(VISUALC) || defined(__MINGW_H) || defined BESTA_OS || defined EMCC || defined NSPIRE 
     srand(g.val);
 #else
 #ifndef GNUWINCE

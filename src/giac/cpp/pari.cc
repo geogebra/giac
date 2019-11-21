@@ -237,9 +237,10 @@ namespace giac {
     gen n(tmp),d(1);
     if (tmp.type==_VECT && tmp._VECTptr->size()==2){
       n=tmp._VECTptr->front();
+      if (n.type==_VECT) n.subtype=_POLY1__VECT;
       d=tmp._VECTptr->back();
     }
-    return eval(symbolic(at_rootof,makesequence(n,GEN2gen((GEN) G[1],vars))),1,context0)/d;
+    return eval(symbolic(at_rootof,makesequence(n,change_subtype(GEN2gen((GEN) G[1],vars),_POLY1__VECT))),1,context0)/d;
     find_or_make_symbol("Mod",tmp,0,false,context0);
     return symbolic(at_of,makesequence(tmp,gen(makevecteur(GEN2gen((GEN) G[2],vars),GEN2gen((GEN) G[1],vars)),_SEQ__VECT)));
   }

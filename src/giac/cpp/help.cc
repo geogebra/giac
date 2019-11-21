@@ -967,7 +967,7 @@ namespace giac {
 #endif // visualc
 
   void find_all_index(const std::string & subdir,multimap<std::string,std::string> & mtt,multimap<std::string,std::string> & mall){
-#if defined GNUWINCE || defined __MINGW_H || defined __ANDROID__ || defined EMCC || defined NSPIRE_NEWLIB || defined FXCG
+#if defined GNUWINCE || defined __MINGW_H || defined __ANDROID__ || defined EMCC || defined NSPIRE_NEWLIB || defined FXCG || defined KHICAS
     return;
 #else
     // cerr << "HTML help Scanning " << subdir << endl;

@@ -667,7 +667,7 @@ namespace giac {
   */
 
 
-  static bool sym2rmul (vecteur::const_iterator debut,vecteur::const_iterator fin,const gen & iext,const vecteur &l, const vecteur & lv, const vecteur & lvnum,const vecteur & lvden,int l_size, gen & num, gen & den,GIAC_CONTEXT){
+  static bool sym2rmul(vecteur::const_iterator debut,vecteur::const_iterator fin,const gen & iext,const vecteur &l, const vecteur & lv, const vecteur & lvnum,const vecteur & lvden,int l_size, gen & num, gen & den,GIAC_CONTEXT){
     bool totally_converted=true;
     // First check for a "normal" monomial
     gen coeffnum=plus_one,coeffden=plus_one,coeffn=plus_one,coeffd=plus_one;
@@ -1365,6 +1365,26 @@ namespace giac {
       num=*e._CPLXptr*den+iext._FRACptr->num*num;
       return true;
     case _IDNT: case _SYMB:
+      if (e.is_symb_of_sommet(at_rootof) && e._SYMBptr->feuille.type==_VECT && e._SYMBptr->feuille._VECTptr->size()==2){
+	gen r=e._SYMBptr->feuille._VECTptr->back();
+	for (int i=0;i<lv.size();++i){
+	  if (lv[i].is_symb_of_sommet(at_rootof) && lv[i]._SYMBptr->feuille.type==_VECT && lv[i]._SYMBptr->feuille._VECTptr->size()==2){
+	    gen l=lv[i]._SYMBptr->feuille._VECTptr->front();
+	    if (l.type==_VECT && l._VECTptr->size()==2 && l._VECTptr->front()==1 && l._VECTptr->back()==0){
+	      l=lv[i]._SYMBptr->feuille._VECTptr->back();
+	      if (r.type==_VECT && l.type==_VECT && *l._VECTptr==*r._VECTptr && lidnt(l).empty()){
+		n=i+1; break;
+	      }
+	    }
+	  }
+	}
+	if (n && n<=lvnum.size() && e._SYMBptr->feuille._VECTptr->front().type==_VECT){
+	  gen N=lvnum[n-1];
+	  gen D=lvden[n-1];
+	  hornerfrac(*e._SYMBptr->feuille._VECTptr->front()._VECTptr,N,D,num,den);
+	  return true;
+	}
+      }
       n=equalposcomp(lv,e);
       if (n && (unsigned(n)<=lvnum.size())){
 	num=lvnum[n-1];

@@ -189,7 +189,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   int access(const char * ch,int mode);
   void usleep(int );
 #endif
-#ifdef NSPIRE_NEWLIB
+#if defined NSPIRE_NEWLIB || defined KHICAS
   void usleep(int );
 #endif
 

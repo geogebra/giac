@@ -6298,7 +6298,7 @@ namespace giac {
 	      }
 	      else { // other user directory
 		current=current.substr(1,current.size()-1);
-#if !defined HAVE_NO_PWD_H && !defined NSPIRE_NEWLIB
+#if !defined HAVE_NO_PWD_H && !defined NSPIRE_NEWLIB && !defined KHICAS
 		passwd * p=getpwnam(current.c_str());
 		if (!p)
 		  return gensizeerr(gettext("No such user ")+current);
