@@ -1501,7 +1501,7 @@ namespace giac {
 	    continue;
 	  } // end x-incomplete
 	  gen res(string2gen(gettext("Unable to solve differential equation"),false));
-	  res.subtype=1;
+	  res.subtype=-1;
 	  sol.push_back(res);
 	} 
 	ordre=2;
