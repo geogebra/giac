@@ -1184,7 +1184,8 @@ namespace giac {
     // COUT << r << '\n';
     double a1=evalf_double(angle1,1,contextptr)._DOUBLE_val+rot;
     double a2=evalf_double(angle2,1,contextptr)._DOUBLE_val+rot;
-    if (a2<a1) std::swap(a1,a2);
+    bool echange=a2<a1;
+    if (echange) std::swap(a1,a2);
     bool arc=std::abs(a2-a1-2*M_PI)>1e-4;
     if (arc){ // bezier curve is safer...
       int n=100;
@@ -1208,7 +1209,10 @@ namespace giac {
       }
       if (attr.type_line>4){
 	//reverse(v.begin(),v.end());
-	s=svg_vecteur(v[v.size()/2],v[v.size()/2+1],attr,"",xmin,xmax,ymin,ymax,contextptr);
+	if (echange)
+	  s=svg_vecteur(v[v.size()/2+1],v[v.size()/2],attr,"",xmin,xmax,ymin,ymax,contextptr);
+	else
+	  s=svg_vecteur(v[v.size()/2],v[v.size()/2+1],attr,"",xmin,xmax,ymin,ymax,contextptr);
       }
       return s=s+svg_bezier_curve(v,attr,legende,xmin,xmax,ymin,ymax,contextptr);
       // return svg_bezier_curve(v,attr,legende,xmin,xmax,ymin,ymax,contextptr);

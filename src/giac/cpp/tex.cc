@@ -42,6 +42,10 @@ inline bool is_graphe(const giac::gen &g,std::string &disp_out,const giac::conte
 #include "graphtheory.h"
 #endif
 
+#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38 && !defined KHICAS && !defined NSPIRE_NEWLIB
+#include <fstream>
+#endif
+
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
