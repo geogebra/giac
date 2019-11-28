@@ -572,6 +572,7 @@ namespace std {
 	for (;_end!=_endalloc;++_end){
 	  *_end=value;
 	}
+	_end=_begin+n;
       }
     }
     void erase(_Tp * b,_Tp * e){

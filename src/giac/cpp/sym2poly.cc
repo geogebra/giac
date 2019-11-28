@@ -741,6 +741,11 @@ namespace giac {
     }
     if (iext!=0){
       gen numr,numi;
+      reim(coeffden,numr,numi,contextptr);
+      if (!is_zero(numi)){
+	coeffnum=coeffnum*(numr-cst_i*numi);
+	coeffden=numr*numr+numi*numi;
+      }
       reim(coeffnum,numr,numi,contextptr);
       if (!is_zero(numi)){
 	coeffnum=numr+iext*numi;
@@ -1342,7 +1347,7 @@ namespace giac {
   // value is 0 if i=sqrt(-1) is not in the algebraic number field from lvnum
   // otherwise it is an extension or fraction extension/integer.
   bool sym2r (const gen &e,const gen & iext,const vecteur &l, const vecteur & lv, const vecteur & lvnum,const vecteur & lvden, int l_size,gen & num,gen & den,GIAC_CONTEXT){
-    int n;
+    int n=0;
     switch (e.type ) {
     case _INT_: case _DOUBLE_: case _ZINT: case _REAL: case _FLOAT_:
       num=e;

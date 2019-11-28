@@ -8748,6 +8748,7 @@ namespace xcas {
   int giac_filebrowser(char * filename,const char * extension,const char * title){
     const char * filenames[MAX_NUMBER_OF_FILENAMES+1];
     int n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,extension);
+    if (n==0) return 0;
     int choix=select_item(filenames,"Scripts");
     if (choix<0 || choix>=n) return 0;
     strcpy(filename,filenames[choix]);

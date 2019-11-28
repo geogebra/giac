@@ -6070,7 +6070,7 @@ namespace giac {
     if (args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type==_VECT && args._VECTptr->size()==2 && args._VECTptr->front().type==_INT_ && args._VECTptr->back().type==_INT_){
       int a=args._VECTptr->front().val,b=args._VECTptr->back().val;
-      a %= b ;
+      if (b) a %= b ;
       a -= (a>>31)*b;
       return a;
     }

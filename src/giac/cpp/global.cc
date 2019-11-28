@@ -5703,7 +5703,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	  unary_function_ptr * at_val=(unary_function_ptr *)val;
 #endif
 	  res=at_val;
-#ifdef GIAC_HAS_STO_38
+#if defined GIAC_HAS_STO_38 || defined KHICAS
 	  if (builtin_lexer_functions[pos]._FUNC_%2){
 #ifdef SMARTPTR64
 	    unary_function_ptr tmp=*at_val;
