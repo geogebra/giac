@@ -2040,7 +2040,6 @@ namespace giac {
     return i;
   }
 
-  /*
   void tran4(double * colmat){
     giac::swapdouble(colmat[1],colmat[4]);
     giac::swapdouble(colmat[2],colmat[8]);
@@ -2049,7 +2048,6 @@ namespace giac {
     giac::swapdouble(colmat[7],colmat[13]);
     giac::swapdouble(colmat[11],colmat[14]);    
   }
-  */
 
   void get_texture(const gen & attrv1,void * & texture){
 #if 0
@@ -2804,7 +2802,7 @@ namespace giac {
 	    glvertex(B,0,0,contextptr);
 	}
 	glEnd();
-	if (v0.subtype==_VECTOR__VECT){
+	if (v0.subtype==_VECTOR__VECT){ // FIXME
 	  double xB=evalf_double(B[0],1,contextptr)._DOUBLE_val;
 	  double yB=evalf_double(B[1],1,contextptr)._DOUBLE_val;
 	  double zB=evalf_double(B[2],1,contextptr)._DOUBLE_val;
@@ -2815,8 +2813,10 @@ namespace giac {
 	  double iA,jA,depthA,iB,jB,depthB,di,dj,dij;
 	  find_ij(xB,yB,zB,iB,jB,depthB);
 	  find_ij(xA,yA,zA,iA,jA,depthA);
+	  //COUT << iA << " " << iB << " " << jA << " " << jB << endl;
 	  di=iA-iB; dj=jA-jB;
 	  dij=std::sqrt(di*di+dj*dj);
+	  //COUT << dij << endl;
 	  if (dij){
 	    dij /= giacmin(5,int(dij/10))+width;
 	    di/=dij;
@@ -2826,11 +2826,14 @@ namespace giac {
 	    dj*=std::sqrt(3.0);
 	    double iC=iB+di+dip,jC=jB+dj+djp;
 	    double iD=iB+di-dip,jD=jB+dj-djp;
+	    //COUT << iC << " " << iD << " " << jC << " " << jD << endl;
 	    double xC,yC,zC,xD,yD,zD;
 	    find_xyz(iC,jC,depthB,xC,yC,zC);
 	    find_xyz(iD,jD,depthB,xD,yD,zD);
-	    glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-	    glBegin(GL_POLYGON);
+	    //COUT << "vect 1" << xC << " " << yC << " " << zC << ", " << xB << " " << yB << " " << zB << ", " << xD << " " << yD << " " << zD << endl;
+	    //glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+	    //glBegin(GL_POLYGON);
+	    glBegin(GL_LINE_LOOP);
 	    glVertex3d(xB,yB,zB);
 	    glVertex3d(xC,yC,zC);
 	    glVertex3d(xD,yD,zD);
@@ -2895,14 +2898,12 @@ namespace giac {
       indraw(*it);
   }
 
-  /*
   void mult4(double * colmat,double * vect,double * res){
     res[0]=colmat[0]*vect[0]+colmat[4]*vect[1]+colmat[8]*vect[2]+colmat[12]*vect[3];
     res[1]=colmat[1]*vect[0]+colmat[5]*vect[1]+colmat[9]*vect[2]+colmat[13]*vect[3];
     res[2]=colmat[2]*vect[0]+colmat[6]*vect[1]+colmat[10]*vect[2]+colmat[14]*vect[3];
     res[3]=colmat[3]*vect[0]+colmat[7]*vect[1]+colmat[11]*vect[2]+colmat[15]*vect[3];
   }
-  */
 
   void mult4(double * colmat,float * vect,double * res){
     res[0]=colmat[0]*vect[0]+colmat[4]*vect[1]+colmat[8]*vect[2]+colmat[12]*vect[3];
@@ -2911,7 +2912,6 @@ namespace giac {
     res[3]=colmat[3]*vect[0]+colmat[7]*vect[1]+colmat[11]*vect[2]+colmat[15]*vect[3];
   }
 
-  /*
   void mult4(double * c,double k,double * res){
     for (int i=0;i<16;i++)
       res[i]=k*c[i];
@@ -2941,7 +2941,6 @@ namespace giac {
     double det=det4(c);
     mult4(res,1/det,res);
   }
-  */
 
   void dim32dim2(double * view,double * proj,double * model,double x0,double y0,double z0,double & i,double & j,double & dept){
     double vect[4]={x0,y0,z0,1},res1[4],res2[4];

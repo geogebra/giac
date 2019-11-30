@@ -8471,8 +8471,8 @@ namespace giac {
     return tmp;
   }
   bool giac_gcd_modular_algo1(polynome &p,polynome &q,polynome &d){
-    environment * env=new environment;
-    dense_POLY1 pp(modularize(p,0,env)),qq(modularize(q,0,env));
+    environment env,envtmp;
+    dense_POLY1 pp(modularize(p,0,&env)),qq(modularize(q,0,&env));
     if (is_undef(pp) || is_undef(qq))
       return false;
     // COUT << "modular gcd 1 " << pp << " " << qq << '\n';
@@ -8483,63 +8483,61 @@ namespace giac {
       bound=bound * min(norm(pp,context0), norm(qq,context0),context0);
     else 
       bound = bound * min(fastnorm(pp,context0),fastnorm(qq,context0),context0);
-    env->moduloon = true;
-    // env->modulo=nextprime(max(gcdfirstcoeff+1,gen(30011),context0)); 
-    env->modulo=30011;
-    env->pn=env->modulo;
+    env.moduloon = true;
+    // env.modulo=nextprime(max(gcdfirstcoeff+1,gen(30011),context0)); 
+    env.modulo=30009;
+    env.pn=env.modulo;
     if (poly_is_real(p) && poly_is_real(q))
-      env->complexe=false;
+      env.complexe=false;
     else
-      env->complexe=true;
+      env.complexe=true;
     gen productmodulo(1);
     dense_POLY1 currentgcd(p.dim),p_simp(p.dim),q_simp(p.dim),rem(p.dim);
     // 30011 leaves 267 primes below the 2^15 bound 
     for (;;){
-      if (env->complexe){
-	while (smod(env->modulo,4)==1)
-	  env->modulo=nextprime(env->modulo+2);
-      }
-      // IMPROVE test on gcdfirstcoeff should be sufficient
-      if (is_zero(smod(qq.front(),env->modulo)) || is_zero(smod(pp.front(),env->modulo)) ){
-	env->modulo=nextprime(env->modulo+1);
-	continue;
+      env.modulo=nextprime(env.modulo+2); 
+      while (is_zero(gcdfirstcoeff % env.modulo)){
+	env.modulo=nextprime(env.modulo+2); 
+	if (env.complexe){
+	  while (smod(env.modulo,4)==1)
+	    env.modulo=nextprime(env.modulo+2);
+	}
       }
       modpoly gcdmod;
-      gcdmodpoly(pp,qq,env,gcdmod);
+      gcdmodpoly(pp,qq,&env,gcdmod);
       if (is_undef(gcdmod))
 	return false;
       // COUT << "Modulo:" << modulo << " " << gcdmod << '\n';
-      gen adjustcoeff=gcdfirstcoeff*invmod(gcdmod.front(),env->modulo);
-      mulmodpoly(gcdmod,adjustcoeff,env,gcdmod);
+      gen adjustcoeff=gcdfirstcoeff*invmod(gcdmod.front(),env.modulo);
+      mulmodpoly(gcdmod,adjustcoeff,&env,gcdmod);
       int m=int(gcdmod.size())-1;
       if (!m){
 	d=polynome(gen(1),1);
-	delete env;
 	return true;
       }
+      if (m>gcddeg) // this prime is bad, just ignore
+	continue;
       // combine step
       if (m<gcddeg){ // previous prime was bad
 	gcddeg=m;
 	currentgcd=gcdmod;
-	productmodulo=env->modulo;
+	productmodulo=env.modulo;
       }
       else {
-	if (m==gcddeg){ // start combine
-	  if (productmodulo==gen(1)){ // no need to combine primes
-	    currentgcd=gcdmod;
-	    productmodulo=env->modulo;
-	  }
-	  else {
-	    // COUT << "Old gcd:" << productmodulo << " " << currentgcd << '\n' ;
-	    currentgcd=ichinrem(gcdmod,currentgcd,env->modulo,productmodulo);
-	    // COUT << "Combined to " << currentgcd << '\n';
-	    productmodulo=productmodulo*env->modulo;
-	  }
+	// m==gcddeg, start combine
+	if (productmodulo==gen(1)){ // no need to combine primes
+	  currentgcd=gcdmod;
+	  productmodulo=env.modulo;
 	}
-	// m>gcddeg this prime is bad, just ignore
+	else {
+	  // COUT << "Old gcd:" << productmodulo << " " << currentgcd << '\n' ;
+	  currentgcd=ichinrem(gcdmod,currentgcd,env.modulo,productmodulo);
+	  // COUT << "Combined to " << currentgcd << '\n';
+	  productmodulo=productmodulo*env.modulo;
+	}
       }
-      //      if (productmodulo>bound){
-      modpoly dmod(modularize(currentgcd,productmodulo,env));
+      // check candidate gcd
+      modpoly dmod(modularize(currentgcd,productmodulo,&envtmp));
       if (is_undef(dmod))
 	return false;
       ppz(dmod);
@@ -8547,20 +8545,9 @@ namespace giac {
 	p=unmodularize(p_simp);
 	q=unmodularize(q_simp);
 	d=unmodularize(dmod);
-	delete env;
 	return true;
       }
-      // }
-      // increment modulo
-      // env->modulo=nextprime(env->modulo+2);
-      
-      do 
-	env->modulo=nextprime(env->modulo+2);
-      while (is_zero(gcdfirstcoeff % env->modulo)); 
-      
-      // since env->modulo > gcdfirstcoeff the loop breaks immediately
     }
-    delete env;
     return false;
   }
 

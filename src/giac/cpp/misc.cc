@@ -3480,7 +3480,7 @@ static define_unary_function_eval (__correlation,&_correlation,_correlation_s);
     return res;
   }
 
-  void tran4(double * colmat){
+  void Tran4(double * colmat){
     giac::swapdouble(colmat[1],colmat[4]);
     giac::swapdouble(colmat[2],colmat[8]);
     giac::swapdouble(colmat[3],colmat[12]);
@@ -3489,23 +3489,23 @@ static define_unary_function_eval (__correlation,&_correlation,_correlation_s);
     giac::swapdouble(colmat[11],colmat[14]);    
   }
 
-  void mult4(double * colmat,double * vect,double * res){
+  void Mult4(double * colmat,double * vect,double * res){
     res[0]=colmat[0]*vect[0]+colmat[4]*vect[1]+colmat[8]*vect[2]+colmat[12]*vect[3];
     res[1]=colmat[1]*vect[0]+colmat[5]*vect[1]+colmat[9]*vect[2]+colmat[13]*vect[3];
     res[2]=colmat[2]*vect[0]+colmat[6]*vect[1]+colmat[10]*vect[2]+colmat[14]*vect[3];
     res[3]=colmat[3]*vect[0]+colmat[7]*vect[1]+colmat[11]*vect[2]+colmat[15]*vect[3];
   }
 
-  void mult4(double * c,double k,double * res){
+  void Mult4(double * c,double k,double * res){
     for (int i=0;i<16;i++)
       res[i]=k*c[i];
   }
   
-  double det4(double * c){
+  double Det4(double * c){
     return c[0]*c[5]*c[10]*c[15]-c[0]*c[5]*c[14]*c[11]-c[0]*c[9]*c[6]*c[15]+c[0]*c[9]*c[14]*c[7]+c[0]*c[13]*c[6]*c[11]-c[0]*c[13]*c[10]*c[7]-c[4]*c[1]*c[10]*c[15]+c[4]*c[1]*c[14]*c[11]+c[4]*c[9]*c[2]*c[15]-c[4]*c[9]*c[14]*c[3]-c[4]*c[13]*c[2]*c[11]+c[4]*c[13]*c[10]*c[3]+c[8]*c[1]*c[6]*c[15]-c[8]*c[1]*c[14]*c[7]-c[8]*c[5]*c[2]*c[15]+c[8]*c[5]*c[14]*c[3]+c[8]*c[13]*c[2]*c[7]-c[8]*c[13]*c[6]*c[3]-c[12]*c[1]*c[6]*c[11]+c[12]*c[1]*c[10]*c[7]+c[12]*c[5]*c[2]*c[11]-c[12]*c[5]*c[10]*c[3]-c[12]*c[9]*c[2]*c[7]+c[12]*c[9]*c[6]*c[3];
   }
 
-  void inv4(double * c,double * res){
+  void Inv4(double * c,double * res){
     res[0]=c[5]*c[10]*c[15]-c[5]*c[14]*c[11]-c[10]*c[7]*c[13]-c[15]*c[9]*c[6]+c[14]*c[9]*c[7]+c[11]*c[6]*c[13];
     res[1]=-c[1]*c[10]*c[15]+c[1]*c[14]*c[11]+c[10]*c[3]*c[13]+c[15]*c[9]*c[2]-c[14]*c[9]*c[3]-c[11]*c[2]*c[13];
     res[2]=c[1]*c[6]*c[15]-c[1]*c[14]*c[7]-c[6]*c[3]*c[13]-c[15]*c[5]*c[2]+c[14]*c[5]*c[3]+c[7]*c[2]*c[13];
@@ -3522,8 +3522,8 @@ static define_unary_function_eval (__correlation,&_correlation,_correlation_s);
     res[13]=c[0]*c[9]*c[14]-c[0]*c[13]*c[10]-c[9]*c[2]*c[12]-c[14]*c[8]*c[1]+c[13]*c[8]*c[2]+c[10]*c[1]*c[12];
     res[14]=-c[0]*c[5]*c[14]+c[0]*c[13]*c[6]+c[5]*c[2]*c[12]+c[14]*c[4]*c[1]-c[13]*c[4]*c[2]-c[6]*c[1]*c[12];
     res[15]=c[0]*c[5]*c[10]-c[0]*c[9]*c[6]-c[5]*c[2]*c[8]-c[10]*c[4]*c[1]+c[9]*c[4]*c[2]+c[6]*c[1]*c[8];
-    double det=det4(c);
-    mult4(res,1/det,res);
+    double det=Det4(c);
+    Mult4(res,1/det,res);
   }
   gen function_regression(const gen & g,const gen & u1,const gen & u2,gen & a,gen &b,double & xmin,double & xmax,gen & correl2,GIAC_CONTEXT){
     gen gv,freq;
@@ -3716,9 +3716,9 @@ static define_unary_function_eval (__correlation,&_correlation,_correlation_s);
 	  d2E[14] += -a_*f*x*ac2s2;
 	  d2E[15] += -a_*f*ac2s2;
 	}
-	tran4(d2E);
-	inv4(d2E,invd2E);
-	mult4(invd2E,dE,delta);
+	Tran4(d2E);
+	Inv4(d2E,invd2E);
+	Mult4(invd2E,dE,delta);
 	a_ -= delta[0];
 	b_ -= delta[1];
 	omega -= delta[2];

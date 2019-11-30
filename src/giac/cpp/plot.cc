@@ -11717,7 +11717,7 @@ namespace giac {
   }
 
   gen unarchive_session(const string & s,int level, const gen & replace,GIAC_CONTEXT){
-    FILE * f = fopen(s.c_str(),"r");
+    ::FILE * f = fopen(s.c_str(),"r");
     char * buf = new char[101];
     fread(buf,sizeof(char),12,f);
     buf[12]=0;
@@ -11777,7 +11777,7 @@ namespace giac {
     if (a.type!=_STRNG)
       return gensizeerr(contextptr);
     if (s==3){ // new binary archive format
-      FILE * f=fopen(a._STRNGptr->c_str(),"w");
+      ::FILE * f=fopen(a._STRNGptr->c_str(),"w");
       if (!f)
 	return gensizeerr(gettext("Unable to open file ")+a.print(contextptr));
       fprintf(f,"%s","-1  "); // header: type would be -1
@@ -11802,7 +11802,7 @@ namespace giac {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_STRNG)
       return gensizeerr(contextptr);
-    FILE * f = fopen(args._STRNGptr->c_str(),"r");
+    ::FILE * f = fopen(args._STRNGptr->c_str(),"r");
     if (!f)
       return gensizeerr(gettext("Unable to read file"));
     char * buf = new char[101];

@@ -314,11 +314,11 @@ namespace giac {
   std::string fetch(const std::string & url);
 
   // 4x4 matrix utilities on double, for trig regression
-  void tran4(double * colmat);
-  void mult4(double * colmat,double * vect,double * res);
-  void mult4(double * c,double k,double * res);
-  double det4(double * c);
-  void inv4(double * c,double * res);
+  void Tran4(double * colmat);
+  void Mult4(double * colmat,double * vect,double * res);
+  void Mult4(double * c,double k,double * res);
+  double Det4(double * c);
+  void Inv4(double * c,double * res);
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac
