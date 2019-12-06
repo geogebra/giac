@@ -89,6 +89,7 @@ namespace giac {
     tensor<T> multiplydegrees(int d) const ;
     tensor<T> dividedegrees(int d) const ;
     tensor<T> dividealldegrees(int d) const ;
+    tensor<T> homogeneize() const;
     void reorder(const std::vector<int> & permutation) ;
     // shift and multiply, shift and divide, shift only
     tensor<T> shift (const index_m & ishift,const T & fois) const ;
@@ -307,6 +308,19 @@ namespace giac {
       int temp=sum_degree(it->index);
       if (res<temp)
 	res=temp;
+    }
+    return res;
+  }
+
+  template <class T>
+  tensor<T> tensor<T>::homogeneize() const {
+    int d=total_degree();
+    tensor<T> res(*this);
+    typename std::vector< monomial<T> >::iterator it=res.coord.begin(),itend=res.coord.end();
+    for (;it!=itend;++it){
+      index_t i=it->index.iref();
+      i.push_back(d-sum_degree(i));
+      it->index=i;
     }
     return res;
   }
@@ -1078,7 +1092,7 @@ namespace giac {
 	  return true;
 	}
 	else
-	  ans=1e200; // don't make another unsuccessfull division!
+	  ans=1e200; // don't make another unsuccessful division!
       }
       if (ans/RAND_MAX<RAND_MAX){
 	std::vector< T_unsigned<T,ulonglong> > p1,p2,quot,remain;

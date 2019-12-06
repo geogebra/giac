@@ -1371,7 +1371,7 @@ namespace giac {
 
   // It is probably required that 0 is a good evaluation point to
   // have an efficient algorithm
-  // max_gcddeg is used when ezgcd was not successfull to find
+  // max_gcddeg is used when ezgcd was not successful to find
   // the gcd even with 2 evaluations leading to the same gcd degree
   // in this case ezgcd calls itself with a bound on the gcd degree
   // is_sqff is true if we know that F_orig or G_orig is squarefree

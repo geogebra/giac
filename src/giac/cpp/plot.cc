@@ -11693,7 +11693,7 @@ namespace giac {
 
   // Unarchive a session from archive named s
   // Replace one level of history by replace
-  // Return 0 if not successfull, or a vector of remaining gen in the archive
+  // Return 0 if not successful, or a vector of remaining gen in the archive
   gen unarchive_session(istream & is,int level, const gen & replace,GIAC_CONTEXT){
 #if defined BESTA_OS || defined VISUALC
     ALLOCA(char, buf, BUFFER_SIZE ); //char * buf = ( char * )alloca( BUFFER_SIZE );

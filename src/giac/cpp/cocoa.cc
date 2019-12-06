@@ -13393,7 +13393,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       }
     }
     if (debug_infolevel)
-      CERR << '\n' << "Successfull check of " << tocheckpairs.size() << " critical pairs" << '\n';
+      CERR << '\n' << "Successful check of " << tocheckpairs.size() << " critical pairs" << '\n';
     return true;
   }
 
@@ -14590,7 +14590,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  // recheck by computing gbasis modulo another prime
 	  if (eps2>0 && eps2<1){
 	    if (debug_infolevel)
-	      CERR << CLOCK()*1e-6 << " Final check successfull, running another prime to increase confidence." << '\n';
+	      CERR << CLOCK()*1e-6 << " Final check successful, running another prime to increase confidence." << '\n';
 	    continue;
 	  }
 	  if (eps>0){
@@ -14625,7 +14625,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 		return 0;
 	    }
 	    if (debug_infolevel)
-	      CERR << CLOCK()*1e-6 << " Check successfull mod " << p << '\n';
+	      CERR << CLOCK()*1e-6 << " Check successful mod " << p << '\n';
 	  }
 	  if (eps2<1 && !is_gbasis(W[i],eps2,modularcheck)){
 	    ok=false;

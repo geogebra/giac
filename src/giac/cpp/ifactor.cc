@@ -4121,6 +4121,13 @@ namespace giac {
 
   gen _ifactors(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
+    if (args.type==_VECT && args.subtype==_SEQ__VECT && args._VECTptr->size()==2 && args._VECTptr->back()==at_matrix){
+      gen g=args._VECTptr->front();
+      g=_ifactors(g,contextptr);
+      if (g.type!=_VECT || g._VECTptr->size()%2)
+	return g;
+      return _matrix(makesequence(g._VECTptr->size()/2,2,g),contextptr);
+    }
     if (args.type==_VECT)
       return apply(args,_ifactors,contextptr);
     gen g(args);
@@ -4220,6 +4227,17 @@ namespace giac {
   static const char _factors_s []="factors";
   gen _factors(const gen & args,GIAC_CONTEXT){ 
     if ( args.type==_STRNG && args.subtype==-1) return  args;
+    if (args.type==_VECT && args.subtype==_SEQ__VECT && args._VECTptr->size()>=2 && args._VECTptr->back()==at_matrix){
+      gen g;
+      if (args._VECTptr->size()==2)
+	g=args._VECTptr->front();
+      else 
+	g=gen(vecteur(args._VECTptr->begin(),args._VECTptr->end()-1),_SEQ__VECT);
+      g=_factors(g,contextptr);
+      if (g.type!=_VECT || g._VECTptr->size()%2)
+	return g;
+      return _matrix(makesequence(g._VECTptr->size()/2,2,g),contextptr);
+    }
     if (args.type==_VECT && args.subtype==_POLY1__VECT){
       gen x(identificateur("xfactors"));
       gen res=_poly2symb(makesequence(args,x),contextptr);

@@ -1563,7 +1563,7 @@ namespace giac {
 	}
 	continue;
       }
-      // Taylor not successfull: find series_expansion of arg, 
+      // Taylor not successful: find series_expansion of arg, 
       // compose with sommet expansion
       // fixme: multiargs disabled, should return a vecteur of series_exp
       if (temp__SYMB.sommet != at_of && temp__SYMB.feuille.type==_VECT){

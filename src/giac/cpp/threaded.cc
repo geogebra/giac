@@ -6128,7 +6128,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	  return true;
 	}
       }
-      // This division might take a very long time if not successfull
+      // This division might take a very long time if not successful
       // Make it only when we are sure (might be improved)
       if (dtest==dtestold){
 	if (debug_infolevel>0)

@@ -3834,7 +3834,7 @@ namespace giac {
 		}
 	      }
 	    }
-	    // SPMOD not successfull :-(
+	    // SPMOD not successful :-(
 	    nzero=0;
 	  } // end if gcddeg-nzero==e
 	} // end if (nzero)

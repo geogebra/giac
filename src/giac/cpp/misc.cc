@@ -948,6 +948,45 @@ namespace giac {
   static define_unary_function_eval (__tcoeff,&_tcoeff,_tcoeff_s);
   define_unary_function_ptr5( at_tcoeff ,alias_at_tcoeff,&__tcoeff,0,true);
 
+  gen _homogeneize(const gen & args,GIAC_CONTEXT){
+    if (args.type==_STRNG && args.subtype==-1) return  args;
+    gen t,p;
+    int s=2;
+    if (args.type!=_VECT){
+      t=t__IDNT_e;
+      p=args;
+    }
+    else {
+      vecteur & v=*args._VECTptr;
+      s=int(v.size());
+      if (!s)
+	return args;
+      if ( (args.subtype!=_SEQ__VECT) || (s<2) )
+	return v.front();
+      t=v[1];
+      p=v[0];
+    }
+    vecteur lv(lidnt(p));
+    vecteur lt(lv);
+    lt.push_back(t);
+    gen g=_e2r(makesequence(p,lv),contextptr),n,d;
+    fxnd(g,n,d);
+    if (n.type!=_POLY)
+      return p;
+    polynome nlcoeff(*n._POLYptr);
+    nlcoeff=nlcoeff.homogeneize();
+    if (d.type==_POLY){
+      polynome dlcoeff=d._POLYptr->homogeneize();
+      g=r2e(dlcoeff,lt,contextptr);
+    }
+    else
+      g=r2e(d,lv,contextptr);
+    return r2e(nlcoeff,lt,contextptr)/g;
+  }
+  static const char _homogeneize_s []="homogeneize";
+  static define_unary_function_eval (__homogeneize,&_homogeneize,_homogeneize_s);
+  define_unary_function_ptr5( at_homogeneize ,alias_at_homogeneize,&__homogeneize,0,true);
+
   static gen sqrfree(const gen & g,const vecteur & l,GIAC_CONTEXT){
     if (g.type!=_POLY)
       return r2sym(g,l,contextptr);
@@ -7940,6 +7979,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     int cm=calc_mode(contextptr);
     calc_mode(-38,contextptr); // avoid rootof
     gen c1=solve(f1,x,periode==0?2:0,contextptr);
+    if (is_undef(c1))
+      return 0;
     gen c2=(!(do_inflex_tabsign & 1) || is_zero(f2))?gen(vecteur(0)):solve(_numer(f2,contextptr),x,periode==0?2:0,contextptr),c(c1);
     calc_mode(cm,contextptr);
     step_infolevel(st,contextptr);

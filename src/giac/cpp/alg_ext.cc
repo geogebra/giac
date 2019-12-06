@@ -953,42 +953,62 @@ namespace giac {
       // racines= list of approx roots if b__VECT is numeric
       // empty if not numeric
       racine_max=in_select_root(racines,is_real(b__VECT,contextptr),contextptr);
-    }
+    } // if (!trouve)
     if (!deep_emb && !trouve && !is_undef(racine_max)){ // select root for b
       // now eval each factor over racine_max and choose the one with
       // minimal absolute value
-      double min_abs=0;
-      for (;f_it!=f_itend;++f_it){
-	vecteur vtmp(polynome2poly1(f_it->fact));
-	gen tmp;
-	lcmdeno_converted(vtmp,tmp,contextptr);
-	int maxsave=max_sum_sqrt(contextptr);
-	max_sum_sqrt(0,contextptr);
-	if (innerdim)
-	  tmp=r2sym(vtmp,vecteur(1,vb),contextptr);
-	else
-	  tmp=r2sym(vtmp,vecteur(1,vecteur(0)),contextptr);
-	max_sum_sqrt(maxsave,contextptr);
-	tmp=evalf(tmp,1,contextptr);
-	if (tmp.type==_VECT && !tmp._VECTptr->empty())
-	  tmp=tmp/tmp._VECTptr->front();
-	gen f_racine_max(evalf_double(abs(horner(tmp,racine_max),contextptr),1,contextptr));
-	if (f_racine_max.type!=_DOUBLE_)
-	  continue;
-	double current_evaluation=fabs(f_racine_max._DOUBLE_val);
-	if (!trouve){
-	  trouve=true;
-	  min_abs=current_evaluation;
-	  p=f_it->fact;
-	}
-	else {
-	  if (min_abs>current_evaluation){
+      double min_abs=0,racine_max_d=evalf_double(abs(racine_max,contextptr),1,contextptr)._DOUBLE_val;
+      int ndig=14;
+      while (!trouve){
+	for (;f_it!=f_itend;++f_it){
+	  vecteur vtmp(polynome2poly1(f_it->fact));
+	  gen tmp;
+	  lcmdeno_converted(vtmp,tmp,contextptr);
+	  int maxsave=max_sum_sqrt(contextptr);
+	  max_sum_sqrt(0,contextptr);
+	  if (innerdim)
+	    tmp=r2sym(vtmp,vecteur(1,vb),contextptr);
+	  else
+	    tmp=r2sym(vtmp,vecteur(1,vecteur(0)),contextptr);
+	  max_sum_sqrt(maxsave,contextptr);
+#if defined HAVE_LIBMPFR && defined HAVE_LIBPARI // change for Martin Deraux big extensions
+	  if (ndig<15) 
+	    tmp=evalf(tmp,1,contextptr);
+	  else
+	    tmp=_evalf(makesequence(tmp,ndig),contextptr);
+#else 
+	  tmp=evalf(tmp,1,contextptr);
+#endif
+	  if (tmp.type==_VECT && !tmp._VECTptr->empty())
+	    tmp=tmp/tmp._VECTptr->front();
+	  gen f_racine_max(evalf_double(abs(horner(tmp,racine_max),contextptr),1,contextptr));
+	  if (f_racine_max.type!=_DOUBLE_)
+	    continue;
+	  double current_evaluation=fabs(f_racine_max._DOUBLE_val);
+	  if (!trouve){
+	    trouve=true;
 	    min_abs=current_evaluation;
 	    p=f_it->fact;
 	  }
+	  else {
+	    if (min_abs>current_evaluation){
+	      min_abs=current_evaluation;
+	      p=f_it->fact;
+	    }
+	  }
+	} // end for on f_it
+	if (min_abs>1e-4*racine_max_d){
+	  *logptr(contextptr) << "Precision problem choosing root in common_EXT, current precision " << ndig << endl;
+	  trouve=false;
+	  ndig=2*ndig;
+	  f_it=f.begin();
+#if defined HAVE_LIBMPFR && defined HAVE_LIBPARI
+	  if (ndig>1000)
+#endif
+	    break;
 	}
-      }
-    }
+      } // end while !trouve
+    } // end racine_max defined
     if (!trouve) {
       for (;f_it!=f_itend;++f_it){
 	if ( (b.type==_EXT) && is_zero(horner(polynome2poly1(f_it->fact,1),*b._EXTptr)) ){

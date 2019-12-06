@@ -3554,7 +3554,7 @@ namespace giac {
 		}
 	      }
 	    }
-	    // SPMOD not successfull :-(
+	    // SPMOD not successful :-(
 	    nzero=0;
 	  } // end if gcddeg-nzero==e
 	} // end if (nzero)
@@ -6416,7 +6416,7 @@ namespace giac {
   }
 
   /* Factorization of sqff unitary polynomial with variables in reverse order
-     Return number of factors, -1 if not successfull
+     Return number of factors, -1 if not successful
      Might be called if polynomial is not unitary, but there is no
      proof that unlimited tries succeed in this case */
   static int unitaryfactor(polynome & unitaryp, vectpoly & f,bool with_sqrt,bool complexmode){

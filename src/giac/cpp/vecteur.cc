@@ -7003,14 +7003,20 @@ namespace giac {
     }
     int linit=l;//,previous_l=l;
     vecteur lv;
-    bool num_mat=has_num_coeff(a);
+    bool num_mat=has_num_coeff(a),num_mat_=num_mat;
     if (num_mat){
       if (is_fully_numeric(a))
 	res=a;
       else {
 	res=*evalf_VECT(a,0,1,contextptr)._VECTptr;
 	num_mat=is_fully_numeric(res);
+	if (!num_mat){
+	  *logptr(contextptr) << "Converting to exact approx symbolic matrix\n" ;
+	  res=*exact(a,contextptr)._VECTptr;
+	}
       }
+    }
+    if (num_mat){
       if (algorithm==RREF_GUESS)
 	algorithm=RREF_LAGRANGE;
 #if 1 // ndef BCD
@@ -7039,8 +7045,10 @@ namespace giac {
       }
 #endif
     }
-    else
-      res=a;
+    else {
+      if (!num_mat_)
+	res=a;
+    }
     //if (debug_infolevel) CERR << CLOCK()*1e-6 << " convert internal" << '\n';
     if (convert_internal){
       // convert a to internal form
