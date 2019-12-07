@@ -231,9 +231,9 @@
 116>> caseval(regroup(ggbsort(normal([op(solve(((3)*(tan(x)))+(3)=0))]))))
 116<< {x=(n_0*pi-1/4*pi)}
 117>> caseval(regroup(ggbsort(normal([op(solve((surd(ggbtmpvare,4)^(-(x)))*((sin(x))+((4)*(cos(x))))))]))))
-117<< {x=(-atan(4)+n_1*pi)}
+117<< {x=(2*atan(1/4*(√17+1))+2*n_1*pi),x=(2*atan(1/4*(-√17+1))+2*n_2*pi),x=(2*n_3*pi+pi)}
 118>> caseval(regroup(when ( type((((2)*((cos(x))^(2)))+((sqrt(2))*(cos(x))))-(2)) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve((((2)*((cos(x))^(2)))+((sqrt(2))*(cos(x))))-(2),x))[size(assume(x),solve((((2)*((cos(x))^(2)))+((sqrt(2))*(cos(x))))-(2),x))-1] , when ( type((((2)*((cos(x))^(2)))+((sqrt(2))*(cos(x))))-(2)) == DOM_IDENT && type(x) == DOM_SYMBOLIC && (((2)*((cos(x))^(2)))+((sqrt(2))*(cos(x))))-(2) == 'x', (assume(x),solve((((2)*((cos(x))^(2)))+((sqrt(2))*(cos(x))))-(2)=0,x))[size(assume(x),solve((((2)*((cos(x))^(2)))+((sqrt(2))*(cos(x))))-(2)=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve((((2)*((cos(x))^(2)))+((sqrt(2))*(cos(x))))-(2),x))]))),ggbsort(normal([op(solve((((2)*((cos(x))^(2)))+((sqrt(2))*(cos(x))))-(2),x))])) ) ) )))
-118<< {x=(2*n_2*pi-1/4*pi),x=(2*n_2*pi+1/4*pi)}
+118<< {x=(2*n_4*pi-1/4*pi),x=(2*n_4*pi+1/4*pi)}
 119>> caseval(regroup([[[ggbevalarg:=ggbtmpvartestvar],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 119<< ggbtmpvartestvar
 120>> caseval(regroup([[[ggbevalarg:=1],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
