@@ -8496,7 +8496,7 @@ namespace giac {
     // 30011 leaves 267 primes below the 2^15 bound 
     for (;;){
       env.modulo=nextprime(env.modulo+2); 
-      while (is_zero(gcdfirstcoeff % env.modulo)){
+      while (is_zero(pp.front() % env.modulo) || is_zero(qq.front() % env.modulo)){
 	env.modulo=nextprime(env.modulo+2); 
 	if (env.complexe){
 	  while (smod(env.modulo,4)==1)

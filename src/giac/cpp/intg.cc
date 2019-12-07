@@ -3727,7 +3727,20 @@ namespace giac {
       res=subst(primitive,*x._IDNTptr,borne_sup,false,contextptr)-subst(primitive,*x._IDNTptr,borne_inf,false,contextptr);
     }
     vecteur sp;
-    sp=lidnt(evalf(makevecteur(primitive,borne_inf,borne_sup),1,contextptr));
+    gen prim2(primitive);
+    // remove multiplicative constants to compute sp
+    if (prim2.is_symb_of_sommet(at_prod)){
+      gen primf=prim2._SYMBptr->feuille;
+      if (primf.type==_VECT){
+	vecteur primv=*primf._VECTptr,primv2;
+	for (int i=0;i<primv.size();++i){
+	  if (contains(lidnt(primv[i]),x))
+	    primv2.push_back(primv[i]);
+	}
+	prim2=symbolic(at_prod,gen(primv2,_SEQ__VECT));
+      }
+    }
+    sp=lidnt(evalf(makevecteur(prim2,borne_inf,borne_sup),1,contextptr));
     if (sp.size()>1){
       *logptr(contextptr) << gettext("No checks were made for singular points of antiderivative ")+primitive.print(contextptr)+gettext(" for definite integration in [")+borne_inf.print(contextptr)+","+borne_sup.print(contextptr)+"]" << '\n' ;
       sp.clear();
