@@ -580,7 +580,7 @@ namespace giac {
 	gen c2=(-b+sqrtdelta)/2/a;
 	gen N=r2e(num,l,contextptr)*X/d/sqrtdelta;
 	if (is_zero(im(a,contextptr)) && is_zero(im(b,contextptr)) && is_zero(im(c,contextptr))){
-	  if (is_positive(delta,contextptr)){
+	  if (!is_positive(-delta,contextptr)){
 	    res += makelnatan(N/c2,X,c2,d,residue_only,contextptr);
 	    res -= makelnatan(N/c1,X,c1,d,residue_only,contextptr);
 	    return true;

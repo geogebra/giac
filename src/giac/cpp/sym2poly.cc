@@ -313,8 +313,9 @@ namespace giac {
 	ext_mat.push_back(v);
 	vt=alg_lvar(algebraic_argument(*it));
 	int s=int(vt.size());
-	if (s>1 || (s==1 && !vt.front()._VECTptr->empty()) )
-	  ext_mat=mergevecteur(ext_mat,vt);
+	if (s>1 || (s==1 && !vt.front()._VECTptr->empty()) ){ 
+	    ext_mat=mergevecteur(ext_mat,vt);
+	}
 	m=ext_glue_matrices(ext_mat,m);
 #else
 	vecteur vt;
@@ -334,7 +335,7 @@ namespace giac {
 
   gen alg_lvar_f(const gen & g,GIAC_CONTEXT){
     vecteur w=lvar(g);
-    return _product(w,contextptr);
+    return symbolic(at_pow,makesequence(_product(w,contextptr),plus_one_half));
   }
   vecteur alg_lvar(const gen & e){
     vecteur l;
@@ -1372,13 +1373,24 @@ namespace giac {
     case _IDNT: case _SYMB:
       if (e.is_symb_of_sommet(at_rootof) && e._SYMBptr->feuille.type==_VECT && e._SYMBptr->feuille._VECTptr->size()==2){
 	gen r=e._SYMBptr->feuille._VECTptr->back();
-	for (int i=0;i<lv.size();++i){
+	for (int i=0;i<lv.size() && i<lvnum.size();++i){
 	  if (lv[i].is_symb_of_sommet(at_rootof) && lv[i]._SYMBptr->feuille.type==_VECT && lv[i]._SYMBptr->feuille._VECTptr->size()==2){
-	    gen l=lv[i]._SYMBptr->feuille._VECTptr->front();
-	    if (l.type==_VECT && l._VECTptr->size()==2 && l._VECTptr->front()==1 && l._VECTptr->back()==0){
-	      l=lv[i]._SYMBptr->feuille._VECTptr->back();
-	      if (r.type==_VECT && l.type==_VECT && *l._VECTptr==*r._VECTptr && lidnt(l).empty()){
-		n=i+1; break;
+	    gen gl=lv[i]._SYMBptr->feuille._VECTptr->front();
+	    if (gl.type==_VECT && gl._VECTptr->size()==2 && gl._VECTptr->front()==1 && gl._VECTptr->back()==0){
+	      gl=lv[i]._SYMBptr->feuille._VECTptr->back();
+	      if (r.type==_VECT && gl.type==_VECT && *gl._VECTptr==*r._VECTptr 
+		  //&& lidnt(gl).empty()
+		  ){
+		n=i+1; // break;
+		r=e._SYMBptr->feuille._VECTptr->front();
+		sym2r(r,iext,l,lv,lvnum,lvden,l_size,num,den,contextptr);
+		r=num;
+		if (is_one(den) && r.type==_VECT){
+		  gen N=lvnum[n-1];
+		  gen D=lvden[n-1];
+		  hornerfrac(*r._VECTptr,N,D,num,den);
+		  return true;
+		}
 	      }
 	    }
 	  }
@@ -2795,6 +2807,13 @@ namespace giac {
     return res;
   }
   static void sort0(vecteur & l){
+    // changed 9 dec 2019 for b:=rootof([[-1,-2,-4*a+3,16*a],[1,0,8*a-6,-32*a+8,16*a^2+24*a-3]])/(32*a^2-8*a)*atan(x/sqrt(-(-1+sqrt(1-4*a))/2))-rootof([[1,-2,4*a-3,16*a],[1,0,8*a-6,32*a-8,16*a^2+24*a-3]])/(32*a^2-8*a)*atan(x/sqrt(-(-1-sqrt(1-4*a))/2));normal(diff(b));
+    for (int i=1;i<l.size()-1;++i){
+      if (l[i].type==_VECT && l[i]._VECTptr->empty()){
+	l.erase(l.begin()+i);
+	--i;
+      }
+    }
     iterateur it=l.begin(),itend=l.end();
     for (;it!=itend;++it){
       if (it->type==_VECT)

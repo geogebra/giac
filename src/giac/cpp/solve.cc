@@ -2615,9 +2615,9 @@ namespace giac {
 	w.erase(w.begin());
 	return _solve(makesequence(args,w),contextptr);
       }
-      if (args.type!=_VECT)
-	return _solve(makesequence(args,ggb_var(args)),contextptr);
     }
+    if (args.type!=_VECT) // change 9 dec 2019: x no more default var
+      return _solve(makesequence(args,ggb_var(args)),contextptr);
     if (has_op(args,*at_irem)){
       vector<const unary_function_ptr *> v(1,at_irem);
       vector<gen_op_context> w(1,_normalmod);

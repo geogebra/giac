@@ -10452,7 +10452,7 @@ namespace giac {
 	return symgcd(ext_reduce(a),b,contextptr);
       gen aa(lgcd(*a._EXTptr->_VECTptr));
       gen res=gcd(aa,b,contextptr),b2(rdiv(b,res,contextptr));
-      if (is_one(b2) || is_minus_one(b2))
+      if (is_one(b2) || is_minus_one(b2))// || b2.type==_POLY)
 	return res;
       vecteur ua,u,v,dd;
       divvecteur(*(a._EXTptr->_VECTptr),aa,ua);
