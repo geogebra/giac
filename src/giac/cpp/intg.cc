@@ -324,6 +324,13 @@ namespace giac {
     }
   }
 
+  static gen normal_norootof(const gen & g,GIAC_CONTEXT){
+    gen res=normal(g,contextptr);
+    if (!lop(res,at_rootof).empty())
+      res=ratnormal(normalize_sqrt(g,contextptr),contextptr);
+    return res;
+  }
+
   // eval N at X=e with e=x*exp(i*dephasage*pi/n)/(X-e)+conj and integrate
   static gen substconj_(const gen & N,const gen & X,const gen & x,const gen & dephasage_,bool residue_only,GIAC_CONTEXT){
     int mode=angle_mode(contextptr);
@@ -342,10 +349,10 @@ namespace giac {
     gen e=x*(c+cst_i*s);
     gen b=subst(N,X,e,false,contextptr),rb,ib;
     reim(b,rb,ib,contextptr);
-    gen N2=normal(-2*ib,contextptr); // same
+    gen N2=normal_norootof(-2*ib,contextptr); // same
     if (residue_only)
       return N2*sign(s*x,contextptr);
-    gen res=normal(rb,contextptr)*symbolic(at_ln,pow(X,2)+ratnormal(-2*c*x,contextptr)*X+x.squarenorm(contextptr)); 
+    gen res=normal_norootof(rb,contextptr)*symbolic(at_ln,pow(X,2)+ratnormal(-2*c*x,contextptr)*X+x.squarenorm(contextptr)); 
     gen atanterm=pi/cst_pi*symbolic(at_atan,(X-c*x)/(s*x));
     if (X.is_symb_of_sommet(at_tan))
       atanterm += pi*sign(s*x,contextptr)*symbolic(at_floor,X._SYMBptr->feuille/pi+plus_one_half);
@@ -433,7 +440,7 @@ namespace giac {
       else
 	c=pow(c,inv(n,contextptr),contextptr);
       if (!residue_only)
-	res += normal(subst(N,X,c,false,contextptr),contextptr)*lnabs2(X-c,X,contextptr)+normal(subst(N,X,-c,false,contextptr),contextptr)*lnabs2(X+c,X,contextptr);
+	res += normal_norootof(subst(N,X,c,false,contextptr),contextptr)*lnabs2(X-c,X,contextptr)+normal_norootof(subst(N,X,-c,false,contextptr),contextptr)*lnabs2(X+c,X,contextptr);
       for (int i=1;i<n/2;++i)
 	res += substconj(N,X,c,gen(2*i)/n*cst_pi,residue_only,contextptr);
     }
@@ -4988,7 +4995,7 @@ namespace giac {
 	gen f=v[1]._SYMBptr->feuille;
 	gen v1=f[0];
 	gen v2=f[1]._SYMBptr->feuille[0],v3=f[1]._SYMBptr->feuille[1];
-	return seqprod(makevecteur(v[0],v1,v2,v3,v[2]),type,contextptr);
+	return change_subtype(seqprod(makevecteur(v[0],v1,v2,v3,v[2]),type,contextptr),_SEQ__VECT);
       }
       if (v.size()==3 && !v[1].is_symb_of_sommet(at_equal) && g.subtype==_SEQ__VECT)
 	return change_subtype(seqprod(gen(makevecteur(symb_interval(v[0],v[1]),v[2]),_SEQ__VECT),type,contextptr),0);

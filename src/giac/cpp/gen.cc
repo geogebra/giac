@@ -7607,6 +7607,14 @@ namespace giac {
     return res;
   }
 
+  static polynome iquopoly(const polynome & a,const gen & b){
+    polynome res(a);
+    vector< monomial<gen> >::iterator it=res.coord.begin(),itend=res.coord.end();
+    for (;it!=itend;++it)
+      it->value=iquo(it->value,b);
+    return res;
+  }
+
   // integer quotient, use rdiv for symbolic division 
   gen iquo(const gen & a,const gen & b){
     if ((b.type==_INT_)){
@@ -7619,6 +7627,8 @@ namespace giac {
 	return gensizeerr(gettext("Division by 0"));
       }
     }
+    if (a.type==_POLY) // may be called by resulant interpolation
+      return iquopoly(*a._POLYptr,b);
     ref_mpz_t * quo;
     switch ( (a.type<< _DECALAGE) | b.type ) {
     case _INT___INT_: 

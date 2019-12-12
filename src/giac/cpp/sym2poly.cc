@@ -1901,6 +1901,7 @@ namespace giac {
 	  aconj=polynome(aconj,int(den._POLYptr->coord.front().index.size()));
 	  num=aconj*num;
 	  den=aconj*den;
+	  simplify3(num,den);
 	}
       }
     }
@@ -2659,6 +2660,45 @@ namespace giac {
     return true;
   }
 
+  static gen inner_sqrt(const gen & g){
+    //return g; // disabled
+    if (g.type==_VECT){
+      vecteur v(*g._VECTptr);
+      for (int i=0;i<v.size();++i)
+	v[i]=inner_sqrt(v[i]);
+      return gen(v,g.subtype);
+    }
+    if (g.type!=_SYMB)
+      return g;
+    gen f(inner_sqrt(g._SYMBptr->feuille));
+    if (g._SYMBptr->sommet!=at_prod || f.type!=_VECT)
+      return symbolic(g._SYMBptr->sommet,f);
+    const vecteur & v=*f._VECTptr;
+    gen G=1;
+    vecteur res;
+    for (int i=0;i<v.size();++i){
+      if (v[i].is_symb_of_sommet(at_pow) && v[i]._SYMBptr->feuille[1]==plus_one_half){
+	gen vi=v[i]._SYMBptr->feuille[0];
+	if (vi.type<=_CPLX){
+	  G=G*vi;
+	  continue;
+	}
+	vi=G*vi;
+	G=1;
+	res.push_back(symbolic(at_pow,makesequence(vi,plus_one_half)));
+      }	
+      else
+	res.push_back(v[i]);
+    }
+    if (!is_one(G))
+      res.push_back(symbolic(at_pow,makesequence(G,plus_one_half)));
+    if (res.empty())
+      return 1;
+    if (res.size()==1)
+      return res.front();
+    return symbolic(at_prod,gen(res,_SEQ__VECT));
+  }
+
   static gen in_normalize_sqrt(const gen & e,vecteur & L,bool keep_abs,GIAC_CONTEXT){
     if (complex_mode(contextptr) || has_i(e)) 
       return e;
@@ -2901,6 +2941,13 @@ namespace giac {
     try {
 #endif
       ee=in_normalize_sqrt(e,L,true,contextptr);
+      // put back integer content in sqrt, this may decrease the number
+      // of extensions required, like for 
+      // assume(0<a<1/4);b:=regroup(int(1/(x^4+x^2+a)));normal(diff(b));
+      vecteur LL; gen EE=in_normalize_sqrt(inner_sqrt(e),LL,true,contextptr);
+      if (lvar(EE).size()<lvar(ee).size()){
+	ee=EE; L=LL;
+      }
       l=alg_lvar(ee);
       sort0(l);
       if (!L.empty() && debug_infolevel)

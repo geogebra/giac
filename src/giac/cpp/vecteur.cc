@@ -11177,6 +11177,8 @@ namespace giac {
 	    return gensizeerr(contextptr);
 	}
 	gen loi=(*e._VECTptr)[1];
+	if (loi==at_uniform)
+	  loi=at_uniformd;
 	gen res(vecteur(0));
 	if (e._VECTptr->size()==3){
 	  if (loi.type==_INT_ && e._VECTptr->back().type==_INT_){
