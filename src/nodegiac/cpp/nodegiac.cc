@@ -27,8 +27,8 @@ void Evaluate(const v8::FunctionCallbackInfo<Value>& args) {
     line_out = std::string("ERROR: ") + err.what();
   }
 
-  Local<Value> line_out_v8 = String::NewFromUtf8( isolate, line_out.c_str() );
-  args.GetReturnValue().Set(String::NewFromUtf8(isolate,line_out.c_str()));
+  Local<Value> line_out_v8 = String::NewFromUtf8(isolate, line_out.c_str()).ToLocalChecked();
+  args.GetReturnValue().Set(line_out_v8);
 }
 
 void Initialize(Local<Object> exports) {
