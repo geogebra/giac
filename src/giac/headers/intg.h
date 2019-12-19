@@ -141,6 +141,8 @@ namespace giac {
   extern const unary_function_ptr * const  at_fourier_cn ;
 
   void comprim(vecteur & v);
+  extern const gen_op_context invpowtan2_tab[];
+  gen remove_nop(const gen & g,const gen & x,GIAC_CONTEXT);
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac

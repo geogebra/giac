@@ -114,7 +114,13 @@ namespace giac {
   gfmap & gf_list();
   int gfsize(const gen & P);
   bool has_gf_coeff(const gen & e,gen & p, gen & pmin);
-
+  // convert v in char 2, returns minimal polynomial or 0 (unknown) or -1 (unable to convert)
+  int char2_vecteur2vectorint(const vecteur & v,vector<int> & V);
+  // convert m in char 2, returns minimal polynomial or 0 (unknown) or -1 (unable to convert)
+  int char2_matrice2vectorvectorint(const matrice & m,vector< vector<int> > & M);
+#else // NO_RTTI
+  inline int char2_vecteur2vectorint(const vecteur & v,vector<int> & V){ return -1; }
+  inline int char2_matrice2vectorvectorint(const matrice & m,vector< vector<int> > & M){ return -1;}
 #endif // NO_RTTI
 
 #ifndef NO_NAMESPACE_GIAC

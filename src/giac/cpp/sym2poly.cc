@@ -2881,6 +2881,32 @@ namespace giac {
   }
 
   gen normal(const gen & e,bool distribute_div,GIAC_CONTEXT){
+    if (is_inequation(e) && e._SYMBptr->feuille.type==_VECT){
+      vecteur & v=*e._SYMBptr->feuille._VECTptr;
+      gen e2= v[0]-v[1];
+      e2=normal(e2,distribute_div,contextptr);
+      gen c=_content(e2,contextptr);
+      if (is_integer(c) || c.type==_FRAC){
+	e2=ratnormal(e2/c,contextptr);
+	if (is_positive(-c,contextptr))
+	  e2=-e2;
+      }
+      gen l=_lcoeff(e2,contextptr);
+      if ( (is_integer(l) || l.type==_FRAC) && is_positive(-l,contextptr)){
+	e2=ratnormal(-e2,contextptr);
+	e2=makesequence(e2,0);
+	if (e._SYMBptr->sommet==at_superieur_strict)
+	  return symbolic(at_inferieur_strict,e2);
+	if (e._SYMBptr->sommet==at_superieur_egal)
+	  return symbolic(at_inferieur_egal,e2);
+	if (e._SYMBptr->sommet==at_inferieur_strict)
+	  return symbolic(at_superieur_strict,e2);
+	if (e._SYMBptr->sommet==at_inferieur_egal)
+	  return symbolic(at_superieur_egal,e2);
+	return symbolic(e._SYMBptr->sommet,makesequence(0,e2)); // should not happen
+      }
+      return symbolic(e._SYMBptr->sommet,makesequence(e2,0));
+    }
     if (has_num_coeff(e))
       return ratnormal(e,contextptr);
     // COUT << e << "\n";

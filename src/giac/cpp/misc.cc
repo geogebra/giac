@@ -6951,6 +6951,17 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   static define_unary_function_eval (__randmarkov,&_randmarkov,_randmarkov_s);
   define_unary_function_ptr5( at_randmarkov ,alias_at_randmarkov,&__randmarkov,0,true);
 
+  vecteur lvarxwithinvsqrt(const gen &e,const gen & x,GIAC_CONTEXT){
+    gen ee=subst(e,invpowtan_tab,invpowtan2_tab,false,contextptr);
+    ee=remove_nop(ee,x,contextptr);
+    vecteur w(lvar(ee)),v;
+    for (int i=0;i<w.size();++i){
+      if (!is_constant_wrt(w[i],x,contextptr))
+	v.push_back(w[i]);
+    }
+    return v; // to remove nop do a return *(eval(v)._VECTptr);
+  }
+  
   gen _is_polynomial(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     vecteur v;
@@ -6963,7 +6974,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     if (v.size()==1)
       v.push_back(ggb_var(args));
     gen tmp=apply(v,equal2diff);
-    vecteur lv=lvarxwithinv(tmp,v[1],contextptr);
+    vecteur lv=lvarxwithinvsqrt(tmp,v[1],contextptr);
     gen res=lv.size()<2?1:0;
     res.subtype=_INT_BOOLEAN;
     return res;

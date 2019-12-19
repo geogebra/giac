@@ -47,10 +47,22 @@ namespace giac {
   static bool risch_poly_part(const vecteur & e,int shift,const identificateur & x,const vecteur & v,const gen & allowed_lnarg,gen & prim,gen & lncoeff,gen & remains_to_integrate,GIAC_CONTEXT);
   static bool risch_desolve(const gen & f,const gen & g,const identificateur & x,const vecteur & v,gen & y,bool f_is_derivative,GIAC_CONTEXT);
 
+  static gen ln_exp(const gen & g,GIAC_CONTEXT){
+    if (g.is_symb_of_sommet(at_exp))
+      return g._SYMBptr->feuille;
+    return symbolic(at_ln,g);
+  }
+
   // returns true & the tower of extension if g is elementary 
   // false otherwise
   static bool risch_tower(const identificateur & x,gen &g, vecteur & v,GIAC_CONTEXT){
     g=tsimplify(pow2expln(g,x,contextptr),contextptr);
+    // ln(exp(...))-> ...
+    vector<const unary_function_ptr *> vu;
+    vu.push_back(at_ln); 
+    vector <gen_op_context> vv;
+    vv.push_back(ln_exp);
+    g=ratnormal(subst(g,vu,vv,true,contextptr));
     v=rlvarx(g,x);
     const_iterateur it=v.begin(),itend=v.end();
     for (;it!=itend;++it){
@@ -813,7 +825,6 @@ namespace giac {
       return false;
     return true;
   }
-
 
   static gen risch_lin(const gen & e_orig,const identificateur & x,gen & remains_to_integrate,GIAC_CONTEXT){
     vecteur v;

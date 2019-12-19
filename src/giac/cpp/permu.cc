@@ -1155,7 +1155,7 @@ namespace giac {
       n=args.val;
       x=vx_var;
       a=a__IDNT_e;
-      return true;
+      return n>=0;
     }
     if (args.type==_DOUBLE_){
       n=int(args._DOUBLE_val);
@@ -1163,7 +1163,7 @@ namespace giac {
 	return false;
       x=vx_var;
       a=a__IDNT_e;
-      return true;
+      return n>=0;
     }
     if (args.type!=_VECT || args._VECTptr->size()<2)
       return false;
@@ -1180,7 +1180,7 @@ namespace giac {
       a=v[2];
     else
       a=a__IDNT_e;
-    return true;
+    return n>=0;
   }
 
   vecteur hermite(int n){
@@ -1383,12 +1383,56 @@ namespace giac {
     }
     return v;
   }
+  gen tchebyshev_eval(const gen & n,const gen &x,const vecteur & v,GIAC_CONTEXT){
+    if (is_zero(n))
+      return 1;
+    if (!is_positive(n,contextptr))
+      return gensizeerr(contextptr);
+#if 1
+    vecteur w(v);
+    modpoly X(makevecteur(1,0));
+    modpoly B(makevecteur(1,-2*x,1));
+    environment env;
+    if (x.type==_MOD){
+      env.moduloon=true;
+      env.modulo=*(x._MODptr+1);
+      B[1]=*B[1]._MODptr;
+      if (v[1].type==_MOD)
+	w[1]=*v[1]._MODptr;
+    }
+    else
+      env.moduloon=false;
+    modpoly res=powmod(X,n,B,&env);
+    if (res.empty())
+      return gensizeerr(contextptr);
+    if (res.size()==1)
+      res[0]=res[0]*w[0];
+    else {
+      matrice A(makevecteur(makevecteur(res[1],res[0]),makevecteur(-res[0],2*res[0]*x+res[1])));
+      multmatvecteur(A,w,res);
+    }
+    if (env.moduloon && res[0].type!=_MOD)
+      res[0]=makemod(res[0],env.modulo);
+    return res[0];
+#else
+    matrice A(makevecteur(makevecteur(0,1),makevecteur(-1,2*x)));
+    gen An=pow(A,n,contextptr);
+    if (An.type!=_VECT)
+      return undef;
+    An=ckmultmatvecteur(*An._VECTptr,v,context0);
+    return An[0];
+#endif
+  }
   gen _tchebyshev1(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     int n;
     gen a,x;
+    if (args.type==_VECT && args._VECTptr->size()==2 && is_integer(args._VECTptr->front()))
+      return tchebyshev_eval(args._VECTptr->front(),args._VECTptr->back(),makevecteur(1,args._VECTptr->back()),contextptr);
     if (!find_n_x(args,n,x,a))
       return gensizeerr(contextptr);
+    if (n==0)
+      return 1;
     return r2e(tchebyshev1(n),x,contextptr);
   }
   static const char _tchebyshev1_s[]="tchebyshev1";
@@ -1408,7 +1452,8 @@ namespace giac {
   }
   gen _tchebyshev2(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    gen p0,p1,p2;
+    if (args.type==_VECT && args._VECTptr->size()==2 && is_integer(args._VECTptr->front()))
+      return tchebyshev_eval(args._VECTptr->front(),args._VECTptr->back(),makevecteur(0,1),contextptr);
     int n;
     gen a,x;
     if (!find_n_x(args,n,x,a))

@@ -44,6 +44,7 @@ using namespace std;
 #include "moyal.h"
 #include "maple.h"
 #include "rpn.h"
+#include "modpoly.h"
 #include "giacintl.h"
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -143,7 +144,7 @@ namespace giac {
   }
   const gen_op_context invpowtan2_tab[]={nop_inv,nop_pow,sin_over_cos,0};
   // remove nop if nop() does not contain x
-  static gen remove_nop(const gen & g,const gen & x,GIAC_CONTEXT){
+  gen remove_nop(const gen & g,const gen & x,GIAC_CONTEXT){
     if (g.type==_VECT){
       vecteur res(*g._VECTptr);
       iterateur it=res.begin(),itend=res.end();
@@ -2198,6 +2199,31 @@ namespace giac {
       if (u._SYMBptr->sommet==at_plus){
 	if (u._SYMBptr->feuille.type!=_VECT)
 	  return is_rewritable_as_f_of(fu,u._SYMBptr->feuille,fx,gen_x,contextptr);
+	if (_is_polynomial(makesequence(fu,gen_x),contextptr)==1 && _is_polynomial(makesequence(u,gen_x),contextptr)==1){
+	  gen FU=_symb2poly(makesequence(fu,gen_x),contextptr);
+	  gen U=_symb2poly(makesequence(u,gen_x),contextptr);
+	  if (FU.type==_VECT && U.type==_VECT){
+	    vecteur vfu=*FU._VECTptr;
+	    vecteur vu=*U._VECTptr;
+	    int N=vfu.size()-1,M=vu.size()-1;
+	    vecteur vfx(N/M+1);
+	    for (;!vfu.empty();){
+	      int n=vfu.size()-1,m=vu.size()-1;
+	      if (n % m)
+		break;
+	      gen c=vfu[0]/pow(vu[0],n/m,contextptr);
+	      vfx[N/M-n/m]=c;
+	      vecteur vtmp;
+	      submodpoly(vfu,*_symb2poly(makesequence(c*pow(u,n/m),gen_x),contextptr)._VECTptr,vtmp);
+	      vfu=*normal(vtmp,contextptr)._VECTptr;
+	      trim(vfu,0);
+	    }
+	    if (vfu.empty()){
+	      fx=_poly2symb(makesequence(vfx,gen_x),contextptr);
+	      return true;
+	    }
+	  }
+	}
 	decompose_plus(*u._SYMBptr->feuille._VECTptr,gen_x,non_constant,alpha,contextptr);
 	if (non_constant.empty()) return false; // setsizeerr(gettext("in is_rewritable_as_f_of_f 2"));
 	if (!is_zero(alpha)){
@@ -3128,6 +3154,14 @@ namespace giac {
     gen ee=rewrite_hyper(e,contextptr),tmprem;
     ee=rewrite_minmax(ee,true,contextptr);
     gen res=linear_integrate(ee,x,tmprem,contextptr);
+    if (!is_zero(tmprem)){
+      ee = tmprem;
+      gen k=extract_cst(ee,x,contextptr);
+      if (ee.is_symb_of_sommet(at_plus)){
+	res += k*integrate_gen_rem(ee,x,tmprem,contextptr);
+	tmprem = k*tmprem;
+      }
+    }
     remains_to_integrate=remains_to_integrate+tmprem;
     if (step_infolevel(contextptr) && is_zero(remains_to_integrate))
       gprintf(gettext("Hence primitive of %gen with respect to %gen is %gen"),makevecteur(e,x,res),contextptr);
