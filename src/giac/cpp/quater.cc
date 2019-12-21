@@ -871,11 +871,39 @@ namespace giac {
     return U0;
   }
 
+  int dotgf_char2(const vector<int> & v,const vector<int> & w,int M){
+    vector<int>::const_iterator it=v.begin(),itend=v.end(),jt=w.begin(),jtend=w.end();
+    int res=0;
+    for (;it!=itend && jt!=jtend;++it,++jt)
+      res ^= char2_mult(*it,*jt,M);
+    return res;
+  }
+
   // convert v in char 2, returns minimal polynomial or 0 (unknown) or -1 (unable to convert)
-  int char2_vecteur2vectorint(const vecteur & v,vector<int> & V){
+  int char2_vecteur2vectorint(const vecteur & v,vector<int> & V,gen & x){
+    // quick check
+    int i=0;
+    for (;i<v.size();++i){
+      if (v[i].type==_INT_ || v[i].type==_ZINT)
+	continue;
+      if (v[i].type==_MOD && (*(v[i]._MODptr+1)!=plus_two))
+	return -1;
+      if (v[i].type!=_USER)
+	return -1;
+      if (galois_field * gf=dynamic_cast<galois_field *>(v[i]._USERptr)){
+	if (gf->p!=plus_two || gf->P.type!=_INT_ || gf->a.type!=_INT_)
+	  return -1;
+	x=gf->x;
+	break;
+      }
+      else
+	return -1;
+    }
+    if (i==v.size())
+      return 0;
     V.resize(v.size());
     int a=0;
-    for (int i=0;i<v.size();++i){
+    for (i=0;i<v.size();++i){
       if (v[i].type==_INT_){
 	V[i]=v[i].val % 2;
 	continue;
@@ -885,16 +913,12 @@ namespace giac {
 	continue;
       }
       if (v[i].type==_MOD){
-	if (*(v[i]._MODptr+1)!=plus_two)
-	  return -1;
 	V[i]=v[i]._MODptr->val % 2;
 	continue;
       }
       if (v[i].type!=_USER)
 	return -1;
       if (galois_field * gf=dynamic_cast<galois_field *>(v[i]._USERptr)){
-	if (gf->p!=plus_two || gf->P.type!=_INT_ || gf->a.type!=_INT_)
-	  return -1;
 	if (a==0)
 	  a=gf->P.val;
 	else {
@@ -903,20 +927,18 @@ namespace giac {
 	}
 	V[i]=gf->a.val;
       }
-      else
-	return -1;
     }
     return a;
   }
 
   // convert m in char 2, returns minimal polynomial or 0 (unknown) or -1 (unable to convert)
-  int char2_matrice2vectorvectorint(const matrice & m,vector< vector<int> > & M){
+  int char2_matrice2vectorvectorint(const matrice & m,vector< vector<int> > & M,gen & x){
     M.resize(m.size());
     int a=0,b;
     for (int i=0;i<m.size();++i){
-      if (m[i].type!=_VECT || (b=char2_vecteur2vectorint(*m[i]._VECTptr,M[i]))<0 )
+      if (m[i].type!=_VECT || (b=char2_vecteur2vectorint(*m[i]._VECTptr,M[i],x))<0 )
 	return 0;
-      if (a=0)
+      if (a==0)
 	a=b;
       else {
 	if (b>0 && a!=b)
@@ -924,6 +946,39 @@ namespace giac {
       }
     }
     return a;
+  }
+
+  void char2_vectorint2vecteur(const std::vector<int> & source,vecteur & target,int M,const gen & x){
+    target.resize(source.size());
+    for (int i=0;i<source.size();++i){
+      target[i]=galois_field(plus_two,M,x,source[i]);
+    }
+  }
+
+  void char2_vectorvectorint2mat(const std::vector< std::vector<int> > & source,matrice & target,int M,const gen & x){
+    target.resize(source.size());
+    for (int i=0;i<source.size();++i){
+      vecteur T;
+      char2_vectorint2vecteur(source[i],T,M,x);
+      target[i]=T;
+    }    
+  }
+
+  bool gf_char2_mmult_atranb(const std::vector< std::vector<int> > & A,const std::vector< std::vector<int> > & tranB,std::vector< std::vector<int> > & C,int M){
+    int r=A.size();
+    if (r==0)
+      return false;
+    int c=tranB.size();
+    if (c==0 || A[0].size()!=tranB[0].size())
+      return false;
+    C.resize(r);
+    for (int i=0;i<r;++i){
+      C[i].resize(c);
+      for (int j=0;j<c;j++){
+	C[i][j]=dotgf_char2(A[i],tranB[j],M);
+      }
+    }
+    return true;
   }
 
   gen galois_field::operator * (const gen & g) const { 

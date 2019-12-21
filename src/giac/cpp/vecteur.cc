@@ -3126,6 +3126,19 @@ namespace giac {
   }
 
   void multmatvecteur(const matrice & a,const vecteur & b,vecteur & res){
+    vector<int> B; gen x;
+    int btype=char2_vecteur2vectorint(b,B,x);
+    if (btype>0){
+      vector< vector<int> > A;
+      int atype=char2_matrice2vectorvectorint(a,A,x);
+      if (atype==0 || atype==btype){
+	vector< vector<int> >::const_iterator ita=A.begin(), itaend=A.end();
+	res.clear();
+	res.reserve(itaend-ita);
+	for (;ita!=itaend;++ita)
+	  res.push_back(galois_field(plus_two,btype,x,dotgf_char2(*ita,B,btype)));
+      }
+    }
     vecteur::const_iterator ita=a.begin(), itaend=a.end();
     res.clear();
     res.reserve(itaend-ita);
@@ -4725,7 +4738,20 @@ namespace giac {
 #ifndef GIAC_HAS_STO_38
     if (is_integer_matrice(a_) && is_integer_matrice(btran) && mmult_int(a_,btran,res))
       return;
-    vector< vector<int> > A,Btran; int p=0;
+    vector< vector<int> > A,Btran; 
+    gen x;
+    int Atype=char2_matrice2vectorvectorint(a_,A,x);
+    int Btype=char2_matrice2vectorvectorint(btran,Btran,x);
+    if ( (Atype>0 && Btype>0 && Atype==Btype) ||
+	 (Atype>0 && Btype==0) ||
+	 (Btype>0 && Atype==0) ){
+      int M=Atype?Atype:Btype;
+      vector< vector<int> > C;
+      gf_char2_mmult_atranb(A,Btran,C,M);
+      char2_vectorvectorint2mat(C,res,M,x);
+      return ;
+    }
+    int p=0;
     if (is_mod_matrice(a_,A,p) && is_mod_matrice(btran,Btran,p)){
       vector< vector<int> > C;
       mmult_mod(A,Btran,C,p);
