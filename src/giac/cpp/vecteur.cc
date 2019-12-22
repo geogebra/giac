@@ -6712,7 +6712,16 @@ namespace giac {
     }
   }
 
-  int rref_reduce(std_matrix<gen> &M,vecteur & pivots,vector<int> & permutation,gen & det,gen &detnum,int algorithm,int l,int lmax,int c,int cmax,int dont_swap_below,int rref_or_det_or_lu,int fullreduction,double eps,bool step_rref,const vecteur &lv,bool convert_internal,GIAC_CONTEXT){
+  bool betterpivot(const gen & a,const gen &b,bool num_mat,GIAC_CONTEXT){
+    if (num_mat && a.type<=_CPLX && b.type<=_CPLX){
+      gen A=evalf_double(a,1,contextptr),B=evalf_double(b,1,contextptr);
+      if ( (A.type==_DOUBLE_ || A.type==_CPLX) && (B.type==_DOUBLE_ || B.type==_CPLX))
+	return is_strictly_greater(abs(A),abs(B),contextptr);
+    }
+    return a.islesscomplexthan(b);
+  }
+
+  int rref_reduce(std_matrix<gen> &M,vecteur & pivots,vector<int> & permutation,gen & det,gen &detnum,int algorithm,int l,int lmax,int c,int cmax,int dont_swap_below,int rref_or_det_or_lu,int fullreduction,double eps,bool step_rref,const vecteur &lv,bool convert_internal,bool num_mat,GIAC_CONTEXT){
     int linit=l;
     gen bareiss (1),invbareiss(1),pivot,temp;
     int pivotline,pivotcol;
@@ -6740,7 +6749,7 @@ namespace giac {
 	  temp=M[l][ctemp];
 	  if (debug_infolevel>2)
 	    print_debug_info(temp);
-	  if (!is_zero(temp,contextptr) && temp.islesscomplexthan(pivot)){
+	  if (!is_exactly_zero(temp) && betterpivot(temp,pivot,num_mat,contextptr)){
 	    pivot=temp;
 	    pivotcol=ctemp;
 	  }
@@ -6761,7 +6770,7 @@ namespace giac {
 	    temp=M[ltemp][c];
 	    if (debug_infolevel>2)
 	      print_debug_info(temp);
-	    if (!is_zero(temp,contextptr) && (is_zero(pivot) || temp.islesscomplexthan(pivot))){
+	    if (!is_exactly_zero(temp) && (is_exactly_zero(pivot) || betterpivot(temp,pivot,num_mat,contextptr)) ){
 	      pivot=temp;
 	      pivotline=ltemp;
 	    }
@@ -6770,8 +6779,11 @@ namespace giac {
       }
       if (debug_infolevel>2)
 	CERR << '\n';
-      //COUT << M << '\n' << pivot << '\n';
-      if (!is_zero(pivot,contextptr)){
+      //COUT << "line " << l << " pivot " << pivot << '\n';
+      // check changed here and in remove_identity for m:=[[0.0005,0,0,-0.0005,0,0,0,1],[0,9.69696969697E-4+0.00125*i,0,-0.00125*i,-6.66666666667E-4,-3.0303030303E-4,0,0],[0,0,3.57142857143E-4-0.0025*i,0,0.0025*i,0,-3.57142857143E-4,0],[-0.0005,-0.00125*i,0,0.0005+0.00125*i,0,0,0,0],[0,-6.66666666667E-4,0.0025*i,0,6.66666666667E-4-0.0025*i,0,0,0],[0,-3.0303030303E-4,0,0,0,3.0303030303E-4-1.66666666667E-3*i,0,0],[0,0,-3.57142857143E-4,0,0,0,3.57142857143E-4+0.005*i,0],[1,0,0,0,0,0,0,0]] ; inv(m);
+      if (!is_exactly_zero(pivot)
+	  //!is_zero(pivot,contextptr)
+	  ){
 	if (step_rref){
 	  std_matrix_gen2matrice(M,res);
 	  gen pivot1=pivot;
@@ -6902,7 +6914,10 @@ namespace giac {
     // "shrink" res
     for (int i=0;i<s;++i){
       vecteur v = *res[i]._VECTptr;
-      if (is_zero(v[i],context0))
+      if (
+	  is_exactly_zero(v[i])
+	  //is_zero(v[i],context0)
+	  )
 	return false;
       gen tmp=new ref_vecteur(v.begin()+s,v.end());
       divvecteur(*tmp._VECTptr,v[i],*tmp._VECTptr);
@@ -7394,7 +7409,7 @@ namespace giac {
     pivots.reserve(cmax-c);
     bool fullreductionafter=rref_or_det_or_lu==0 && dont_swap_below==0 && cmax-c>=lmax-linit && step_infolevel(contextptr)==0 && fullreduction && algorithm!=RREF_GAUSS_JORDAN;
     gen detnumsave=detnum;
-    int status=rref_reduce(M,pivots,permutation,det,detnum,algorithm,l,lmax,c,cmax,dont_swap_below,rref_or_det_or_lu,(fullreductionafter?0:fullreduction),eps,step_rref,lv,convert_internal,contextptr);
+    int status=rref_reduce(M,pivots,permutation,det,detnum,algorithm,l,lmax,c,cmax,dont_swap_below,rref_or_det_or_lu,(fullreductionafter?0:fullreduction),eps,step_rref,lv,convert_internal,num_mat,contextptr);
     if (status!=2 && status!=3)
       return status;
     if (fullreductionafter){ 
@@ -7404,7 +7419,7 @@ namespace giac {
 	// not Cramer like, re-reduce, 
 	pivots.clear();
 	matrice2std_matrix_gen(res,M); det=detnum=detnumsave;// this should be commented but some outputs are more complicated
-	rref_reduce(M,pivots,permutation,det,detnum,algorithm,l,lmax,c,cmax,dont_swap_below,rref_or_det_or_lu,fullreduction,eps,step_rref,lv,convert_internal,contextptr);
+	rref_reduce(M,pivots,permutation,det,detnum,algorithm,l,lmax,c,cmax,dont_swap_below,rref_or_det_or_lu,fullreduction,eps,step_rref,lv,convert_internal,num_mat,contextptr);
       }
       else {
 	// back row reduction to echelon form for Cramer like system
