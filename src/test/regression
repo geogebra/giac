@@ -177,7 +177,16 @@ find $FOLDER -name '*.in' | while read IN; do
       BAD=$((BAD+1))
       echo $BAD > $SAVEDIR/.bad
       log "Regression found in $OUT:"
-      cat $SAVEDIR/$OUT-2.diff
+      # cat $SAVEDIR/$OUT-2.diff
+      cat $SAVEDIR/$OUT-2.diff | grep ^\< | cut -f2 -d" " | sed s/\<//g | while read REGRLINE; do
+       echo -n "Input: "
+       cat $OUT | grep "^${REGRLINE}>>"
+       echo "Outputs: "
+       echo -n "Old: "
+       cat $SAVEDIR/$OUT-2.diff | grep "^< ${REGRLINE}<<"
+       echo -n "New: "
+       cat $SAVEDIR/$OUT-2.diff | grep "^> ${REGRLINE}<<"
+       done
       TESTOK=0
       fi # regression found
      fi # intelligent diff
