@@ -3127,10 +3127,10 @@ namespace giac {
 
   void multmatvecteur(const matrice & a,const vecteur & b,vecteur & res){
     vector<int> B; gen x;
-    int btype=char2_vecteur2vectorint(b,B,x);
+    int btype=gf_char2_vecteur2vectorint(b,B,x);
     if (btype>0){
       vector< vector<int> > A;
-      int atype=char2_matrice2vectorvectorint(a,A,x);
+      int atype=gf_char2_matrice2vectorvectorint(a,A,x);
       if (atype==0 || atype==btype){
 	vector< vector<int> >::const_iterator ita=A.begin(), itaend=A.end();
 	res.clear();
@@ -4740,15 +4740,15 @@ namespace giac {
       return;
     vector< vector<int> > A,Btran; 
     gen x;
-    int Atype=char2_matrice2vectorvectorint(a_,A,x);
-    int Btype=char2_matrice2vectorvectorint(btran,Btran,x);
+    int Atype=gf_char2_matrice2vectorvectorint(a_,A,x);
+    int Btype=gf_char2_matrice2vectorvectorint(btran,Btran,x);
     if ( (Atype>0 && Btype>0 && Atype==Btype) ||
 	 (Atype>0 && Btype==0) ||
 	 (Btype>0 && Atype==0) ){
       int M=Atype?Atype:Btype;
       vector< vector<int> > C;
       gf_char2_mmult_atranb(A,Btran,C,M);
-      char2_vectorvectorint2mat(C,res,M,x);
+      gf_char2_vectorvectorint2mat(C,res,M,x);
       return ;
     }
     int p=0;
@@ -7056,6 +7056,16 @@ namespace giac {
 	  res=*exact(a,contextptr)._VECTptr;
 	}
       }
+    }
+    else {
+#if 1
+      std::vector< std::vector<int> > M; gen x; std::vector<int> maxrankcols;
+      int minpoly=gf_char2_matrice2vectorvectorint(a,M,x);
+      if (minpoly>0 && gf_char2_rref(M,x,minpoly,pivots,permutation,maxrankcols,det,l,lmax,c,cmax,fullreduction,dont_swap_below,rref_or_det_or_lu)){
+	gf_char2_vectorvectorint2mat(M,res,minpoly,x);
+	return 1;
+      }
+#endif
     }
     if (num_mat){
       if (algorithm==RREF_GUESS)

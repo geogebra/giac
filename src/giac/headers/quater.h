@@ -115,21 +115,26 @@ namespace giac {
   int gfsize(const gen & P);
   bool has_gf_coeff(const gen & e,gen & p, gen & pmin);
   // convert v in char 2, returns minimal polynomial or 0 (unknown) or -1 (unable to convert), set x to the generator of the field
-  int char2_vecteur2vectorint(const vecteur & v,std::vector<int> & V,gen & x);
+  int gf_char2_vecteur2vectorint(const vecteur & v,std::vector<int> & V,gen & x);
   // convert m in char 2, returns minimal polynomial or 0 (unknown) or -1 (unable to convert), set x to the generator of the field
-  int char2_matrice2vectorvectorint(const matrice & m,std::vector< std::vector<int> > & M,gen & x);
-  void char2_vectorint2vecteur(const std::vector<int> & source,vecteur & target,int M,const gen & x);
-  void char2_vectorvectorint2mat(const std::vector< std::vector<int> > & source,matrice & target,int M,const gen & x);
+  int gf_char2_matrice2vectorvectorint(const matrice & m,std::vector< std::vector<int> > & M,gen & x);
+  void gf_char2_vectorint2vecteur(const std::vector<int> & source,vecteur & target,int M,const gen & x);
+  void gf_char2_vectorvectorint2mat(const std::vector< std::vector<int> > & source,matrice & target,int M,const gen & x);
   int dotgf_char2(const std::vector<int> & v,const std::vector<int> & w,int M);
   bool gf_char2_mmult_atranb(const std::vector< std::vector<int> > & A,const std::vector< std::vector<int> > & tranB,std::vector< std::vector<int> > & C,int M);
+  bool gf_char2_rref(std::vector< std::vector<int> > & N,const gen & x,int M,vecteur & pivots,std::vector<int> & permutation,std::vector<int> & maxrankcols,gen & det,int l, int lmax, int c,int cmax,int fullreduction,int dont_swap_below,int rref_or_det_or_lu);
+  bool gf_char2_multpoly(const std::vector<int> & a,const std::vector<int> & b,std::vector<int> & res,int M);
+  bool gf_multpoly(const std::vector< std::vector<int> > & a,const std::vector< std::vector<int> > & b,std::vector< std::vector<int> > & res,const std::vector<int> & pmin,int modulo);
 
 #else // NO_RTTI
-  inline int char2_vecteur2vectorint(const vecteur & v,std::vector<int> & V,gen & x){ return -1; }
-  inline int char2_matrice2vectorvectorint(const matrice & m,std::vector< std::vector<int> > & M,gen & x){ return -1;}
+  inline int gf_char2_vecteur2vectorint(const vecteur & v,std::vector<int> & V,gen & x){ return -1; }
+  inline int gf_char2_matrice2vectorvectorint(const matrice & m,std::vector< std::vector<int> > & M,gen & x){ return -1;}
   inline int dotgf_char2(const std::vector<int> & v,const std::vector<int> & w,int M){ return 0; }
-  inline void char2_vectorint2vecteur(const std::vector<int> & source,vecteur & target,int M,const gen & x){};
-  inline void char2_vectorvectorint2mat(const std::vector< std::vector<int> > & source,matrice & target,int M,const gen & x){};
-  inline   bool gf_char2_mmult_atranb(const std::vector< std::vector<int> > & A,const std::vector< std::vector<int> > & tranB,std::vector< std::vector<int> > & C,int M){};
+  inline void gf_char2_vectorint2vecteur(const std::vector<int> & source,vecteur & target,int M,const gen & x){};
+  inline void gf_char2_vectorvectorint2mat(const std::vector< std::vector<int> > & source,matrice & target,int M,const gen & x){};
+  inline   bool gf_char2_mmult_atranb(const std::vector< std::vector<int> > & A,const std::vector< std::vector<int> > & tranB,std::vector< std::vector<int> > & C,int M){ return false;};
+  inline bool gf_char2_rref(std::vector< std::vector<int> > & N,const gen & x,int M,vecteur & pivots,std::vector<int> & permutation,std::vector<int> & maxrankcols,gen & det,int l, int lmax, int c,int cmax,int fullreduction,int dont_swap_below,int rref_or_det_or_lu){ return false; };
+  inline bool gf_char2_multpoly(const std::vector<int> & a,const std::vector<int> & b,std::vector<int> & res,int M){ return false; }
 
 #endif // NO_RTTI
 

@@ -4725,6 +4725,12 @@ namespace giac {
     if (is_exactly_zero(num))
       return Tfraction<gen>(num,1);
     simplify3(num,den);
+    if (den.type==_CPLX){ // 3 jan 2020, avoid complex denominator
+      gen & a=*den._CPLXptr;
+      gen & b=*(den._CPLXptr+1);
+      num=num*gen(a,-b);
+      den=a*a+b*b;
+    }
     den=den*da*db;
     return Tfraction<gen> (num,den);
   }

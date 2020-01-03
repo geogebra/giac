@@ -86,6 +86,7 @@ namespace giac {
   std::vector<int> operator % (const std::vector<int> & v,const std::vector<int> & b);
   bool operator > (const std::vector<int> & v,double q);
 
+
   class gen;
   class context;
   gen _heap_mult(const gen & g0,const context *);
@@ -173,8 +174,29 @@ namespace giac {
 
 
   bool is_zero(const std::vector<int> & v);
+  int hornermod(const std::vector<int> & v,int alpha,int modulo,bool unsig=false);
+  // v <- v+w % m
+  void addmod(std::vector<int> & v,const std::vector<int> & w,int m);
+  // v <- v+w % m
+  void addmod(std::vector< std::vector<int> > & v,const std::vector< std::vector<int> > & w,int m);
+  // v <- v-w % m
+  void submod(std::vector<int> & v,const std::vector<int> & w,int m);
+  // v <- v*k % m
+  void mulmod(std::vector<int> & v,int k,int m);
+  // v <- v*k % m
+  void mulmod(std::vector< std::vector<int> > & v,int k,int m);
+  inline void mulmod(int k,std::vector<int> & v,int m){    mulmod(v,k,m);  }
+  void mulmod(const std::vector<int> & v,int m,std::vector<int> & w,int modulo);
+  // Note that smallmult may fail if the degree of a and b * modulo^2 
+  // overflows in a longlong, so keep modulo not too large
+  void smallmult(const std::vector<int>::const_iterator & ita0,const std::vector<int>::const_iterator & ita_end,const std::vector<int>::const_iterator & itb0,const std::vector<int>::const_iterator & itb_end,std::vector<int> & new_coord,int modulo);
   void mulsmall(const std::vector<int>::const_iterator & ita0,const std::vector<int>::const_iterator & ita_end,const std::vector<int>::const_iterator & itb0,const std::vector<int>::const_iterator & itb_end,int modulo,std::vector<int> & new_coord);
+  // res=a*b mod pmin,modulo
   void mulext(const std::vector<int> & a,const std::vector<int> & b,const std::vector<int> & pmin,int modulo,std::vector<int> & res);
+  // a *=b mod pmin, modulo
+  void mulext(std::vector<int> & a,const std::vector<int> & b,const std::vector<int> & pmin,int modulo);
+  bool DivRem(const std::vector< std::vector<int> > & a,const std::vector< std::vector<int> > & b,const std::vector<int> * pminptr,int modulo,std::vector< std::vector<int> > & q,std::vector< std::vector<int> > & r);
+  bool invmodext(const std::vector<int> & a_,const std::vector<int> & pmin,int modulo,std::vector<int> & u0);
 
   // FIXME: put a #define in index.h if index_t=vector<int> and skip defs here
   // or make them as template

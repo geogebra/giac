@@ -28,6 +28,7 @@ using namespace std;
 #include "derive.h"
 #include "ezgcd.h"
 #include "cocoa.h" // for memory_usage
+#include "quater.h"
 #include "giacintl.h"
 #include <stdlib.h>
 #include <cmath>
@@ -1610,6 +1611,25 @@ namespace giac {
       mulmodpoly(a,b,env,new_coord);
       return ;
     }
+#if 1
+    vector<int> A,B; int M=-1; gen x;
+    int agf=gf_char2_vecteur2vectorint(a,A,x),bgf=gf_char2_vecteur2vectorint(b,B,x);
+    if (agf>0){
+      if (bgf==0 || agf==bgf)
+	M=agf;
+    }
+    else {
+      if (agf==0 && bgf>0)
+	M=bgf;
+    }
+    if (M>0){
+      vector<int> R;
+      if (gf_char2_multpoly(A,B,R,M)){
+	gf_char2_vectorint2vecteur(R,new_coord,M,x);
+	return;
+      }
+    }
+#endif
     modpoly::const_iterator ita=a.begin(),ita_end=a.end(),itb=b.begin(),itb_end=b.end();
 #if 1
     if (ita->type==_DOUBLE_ || (ita->type==_CPLX && (ita->subtype==3 || ita->_CPLXptr->type==_DOUBLE_ || (ita->_CPLXptr+1)->type==_DOUBLE_) ) ) {
@@ -7364,7 +7384,8 @@ namespace giac {
   bool fft2mult(int ablinfnorm,const vector<int> & a,const vector<int> & b,vector<int> & res,int modulo,vector<int> & W,vector<int> & fftmult_p,vector<int> & fftmult_q,bool reverseatend,bool dividebyn,bool makeplus){
     int as=int(a.size()),bs=int(b.size()),rs=as+bs-1;
     int logrs=sizeinbase2(rs);
-    if (logrs>25) return false;
+    const int p1=2013265921; 
+    if (logrs>(modulo==p1?27:25)) return false;
     int n=(1u<<logrs);
     W.reserve(n);
     res.resize(n);
@@ -7388,7 +7409,7 @@ namespace giac {
     }
     // r:=1227303670; w:=powmod(r,2^(27-logrs),p1); 
     // fft(p,w,p1);fft(q,w,p1); res=p.*q; ifft(res,w,p1);
-    const int p1=2013265921; int r=1227303670;
+    int r=1227303670;
     if (modulo==p1){
       if (debug_infolevel>3)
 	CERR << CLOCK()*1e-6 << " + begin" << '\n';

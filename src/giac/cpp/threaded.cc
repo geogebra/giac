@@ -268,7 +268,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 
   static bool divrem_(vector< vector<int> > & a,vector< vector<int> > & b,const vector<int> & pmin, int modulo, vector< vector<int> > * qptr,bool set_q_orig_b,vector<int> & b0,vector<int> & b0inv,vector<int> & tmp,vector<int> & tmp1,vector<int> & tmp2,vector<int> & tmp3,vector<int> & tmp4,vector<int> & tmp5);
 
-  static bool DivRem(const vector< vector<int> > & a,const vector< vector<int> > & b,const vector<int> * pminptr,int modulo,vector< vector<int> > & q,vector< vector<int> > & r){
+  bool DivRem(const vector< vector<int> > & a,const vector< vector<int> > & b,const vector<int> * pminptr,int modulo,vector< vector<int> > & q,vector< vector<int> > & r){
     r=a;
     vector< vector<int> > b0(b);
     vector<int> B0,B0inv,tmp,tmp1,tmp2,tmp3,tmp4,tmp5;
@@ -968,7 +968,7 @@ mpz_class smod(const mpz_class & a,int reduce){
   }
 
   // v <- v*k % m
-  static void mulmod(vector< vector<int> > & v,int k,int m){
+  void mulmod(vector< vector<int> > & v,int k,int m){
     if (k==1)
       return;
     vector< vector<int> >::iterator it=v.begin(),itend=v.end();
@@ -977,12 +977,9 @@ mpz_class smod(const mpz_class & a,int reduce){
     }
   }
 
-  inline void mulmod(int k,vector<int> & v,int m){
-    mulmod(v,k,m);
-  }
 
   // v <- v+w % m
-  static void addmod(vector<int> & v,const vector<int> & w,int m){
+  void addmod(vector<int> & v,const vector<int> & w,int m){
     vector<int>::const_iterator jt=w.begin(),jtend=w.end();
     vector<int>::iterator it=v.begin(),itend=v.end();
     int ws=int(jtend-jt),vs=int(v.size());
@@ -1011,7 +1008,7 @@ mpz_class smod(const mpz_class & a,int reduce){
   }
 
   // v <- v+w % m
-  static void addmod(vector< vector<int> > & v,const vector< vector<int> > & w,int m){
+  void addmod(vector< vector<int> > & v,const vector< vector<int> > & w,int m){
     vector< vector<int> >::iterator it=v.begin(),itend=v.end();
     vector< vector<int> >::const_iterator jt=w.begin(),jtend=w.end();
     int addv=int(jtend-jt)-int(itend-it);
@@ -1055,7 +1052,7 @@ mpz_class smod(const mpz_class & a,int reduce){
   }
 
   // v <- v-w % m
-  static void submod(vector<int> & v,const vector<int> & w,int m){
+  void submod(vector<int> & v,const vector<int> & w,int m){
     vector<int>::iterator it=v.begin(),itend=v.end();
     vector<int>::const_iterator jt=w.begin(),jtend=w.end();
     int addv=int(jtend-jt)-int(itend-it);
@@ -1337,7 +1334,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     return std::vector<int>(it,itend);
   }
 
-  static int hornermod(const vector<int> & v,int alpha,int modulo,bool unsig=false){
+  int hornermod(const vector<int> & v,int alpha,int modulo,bool unsig){
     vector<int>::const_iterator it=v.begin(),itend=v.end(),it0;
     if (!alpha)
       return it==itend?0:v.back();
@@ -1612,7 +1609,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     }
   }
 
-  static void mulmod(const vector<int> & v,int m,vector<int> & w,int modulo){
+  void mulmod(const vector<int> & v,int m,vector<int> & w,int modulo){
     if (&v==&w){
       mulmod(w,m,modulo);
       return;
@@ -1700,7 +1697,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 
   // Note that smallmult may fail if the degree of a and b * modulo^2 
   // overflows in a longlong, so keep modulo not too large
-  static void smallmult(const vector<int>::const_iterator & ita0,const vector<int>::const_iterator & ita_end,const vector<int>::const_iterator & itb0,const vector<int>::const_iterator & itb_end,vector<int> & new_coord,int modulo){
+  void smallmult(const vector<int>::const_iterator & ita0,const vector<int>::const_iterator & ita_end,const vector<int>::const_iterator & itb0,const vector<int>::const_iterator & itb_end,vector<int> & new_coord,int modulo){
     longlong test=longlong(modulo)*std::min(ita_end-ita0,itb_end-itb0);
     bool large=test/RAND_MAX>RAND_MAX/modulo;
     new_coord.clear();
@@ -3903,7 +3900,7 @@ mpz_class smod(const mpz_class & a,int reduce){
   }
 
   // a *=b mod pmin, modulo
-  static void mulext(vector<int> & a,const vector<int> & b,const vector<int> & pmin,int modulo){
+  void mulext(vector<int> & a,const vector<int> & b,const vector<int> & pmin,int modulo){
     if (b.empty()){
       a.clear();
       return;
@@ -3972,7 +3969,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     mulmod(u0,invmod(a.front(),modulo),modulo);
     return true;
   }
-  static bool invmodext(const vector<int> & a_,const vector<int> & pmin,int modulo,vector<int> & u0){
+  bool invmodext(const vector<int> & a_,const vector<int> & pmin,int modulo,vector<int> & u0){
     vector<int> a,b,q,r,u1,u2; // u0=ainv
     return invmodext_(a_,pmin,modulo,u0,a,b,q,r,u1,u2);
   }
