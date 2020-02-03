@@ -2275,7 +2275,7 @@ namespace giac {
 	      }
 	      if (is_positive(g2g1,contextptr))
 		return solve_subst(res,x,lvarxexpr.front(),isolate_mode,contextptr);
-	      gen g=pow(-g2g1,inv(n,contextptr),contextptr);
+	      gen g=simplifier(pow(-g2g1,inv(n,contextptr),contextptr),contextptr);
 	      res.push_back(-g); res.push_back(g);
 	      return solve_subst(res,x,lvarxexpr.front(),isolate_mode,contextptr);
 	    }
