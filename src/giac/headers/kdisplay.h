@@ -15,9 +15,9 @@ extern   const int LCD_HEIGHT_PX;
 extern "C" {
 #include "k_csdk.h"
 }
-
-  int select_item(const char ** ptr,const char * title);
-  const char * gettext(const char * s) ;
+extern int lang;
+int select_item(const char ** ptr,const char * title);
+const char * gettext(const char * s) ;
 
 #ifndef NO_NAMESPACE_XCAS
 namespace xcas {
@@ -288,14 +288,14 @@ namespace giac {
   typedef struct
   {
     char* text; // text to be shown on screen. mandatory, must be a valid pointer to a string.
-    int type=MENUITEM_NORMAL; // type of the menu item. use MENUITEM_* to set this
-    int value=MENUITEM_VALUE_NONE; // value of the menu item. For example, if type is MENUITEM_CHECKBOX and the checkbox is checked, the value of this var will be MENUITEM_VALUE_CHECKED
-    int color=giac::_BLACK; // color of the menu item (use TEXT_COLOR_* to define)
-    // The following two settings require the menu type to be set to MENUTYPE_MULTISELECT
-    int isfolder=0; // for file browsers, this will signal the item is a folder
-    int isselected=0; // for file browsers and other multi-select screens, this will show an arrow before the item
-    int icon=-1; //for file browsers, to show a file icon. -1 shows no icon (default)
     int token; // for syntax help on keywords not in the catalog
+    short int isfolder=0; // for file browsers, this will signal the item is a folder
+    signed char color=giac::_BLACK; // color of the menu item (use TEXT_COLOR_* to define)
+    signed char type=MENUITEM_NORMAL; // type of the menu item. use MENUITEM_* to set this
+    signed char value=MENUITEM_VALUE_NONE; // value of the menu item. For example, if type is MENUITEM_CHECKBOX and the checkbox is checked, the value of this var will be MENUITEM_VALUE_CHECKED
+    // The following two settings require the menu type to be set to MENUTYPE_MULTISELECT
+    signed char isselected=0; // for file browsers and other multi-select screens, this will show an arrow before the item
+    signed char icon=-1; //for file browsers, to show a file icon. -1 shows no icon (default)
   } MenuItem;
 
   typedef struct
@@ -354,8 +354,10 @@ namespace giac {
   // category=0 for CATALOG, 1 for OPTN
   // returns 0 on exit, 1 on success
   int doCatalogMenu(char* insertText, const char* title, int category,const giac::context * contextptr);
-  extern const char shortcuts_string[];
-  extern const char apropos_string[];
+  extern const char shortcuts_fr_string[];
+  extern const char shortcuts_en_string[];
+  extern const char apropos_fr_string[];
+  extern const char apropos_en_string[];
   void init_locale();
 
   gen turtle_state(const giac::context * contextptr);

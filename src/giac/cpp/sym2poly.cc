@@ -3152,23 +3152,26 @@ namespace giac {
 	  e2=-e2;
       }
       gen l=_lcoeff(e2,contextptr);
-      e2=normal(e2/l,true,contextptr);
-      if (e2.is_symb_of_sommet(at_plus) && e2._SYMBptr->feuille.type==_VECT && e2._SYMBptr->feuille._VECTptr->size()==2)
-	e2=makesequence(e2._SYMBptr->feuille._VECTptr->front(),-e2._SYMBptr->feuille._VECTptr->back());
-      else
-	e2=makesequence(e2,0);
-      if ( (is_integer(l) || l.type==_FRAC) && is_positive(-l,contextptr)){
-	if (u==at_superieur_strict)
-	  return symbolic(at_inferieur_strict,e2);
-	if (u==at_superieur_egal)
-	  return symbolic(at_inferieur_egal,e2);
-	if (u==at_inferieur_strict)
-	  return symbolic(at_superieur_strict,e2);
-	if (u==at_inferieur_egal)
-	  return symbolic(at_superieur_egal,e2);
-	return symbolic(u,e2); // should not happen
+      if ( is_integer(l) || l.type==_FRAC){
+	e2=normal(e2/l,true,contextptr);
+	if (e2.is_symb_of_sommet(at_plus) && e2._SYMBptr->feuille.type==_VECT && e2._SYMBptr->feuille._VECTptr->size()==2)
+	  e2=makesequence(e2._SYMBptr->feuille._VECTptr->front(),-e2._SYMBptr->feuille._VECTptr->back());
+	else
+	  e2=makesequence(e2,0);
+	if (is_positive(-l,contextptr)){
+	  if (u==at_superieur_strict)
+	    return symbolic(at_inferieur_strict,e2);
+	  if (u==at_superieur_egal)
+	    return symbolic(at_inferieur_egal,e2);
+	  if (u==at_inferieur_strict)
+	    return symbolic(at_superieur_strict,e2);
+	  if (u==at_inferieur_egal)
+	    return symbolic(at_superieur_egal,e2);
+	  return symbolic(u,e2); // should not happen
+	}
+	return symbolic(u,e2);
       }
-      return symbolic(u,e2);
+      return symbolic(u,makesequence(e2,0));
     }
     if (ctrl_c || interrupted) { 
       gen res;
@@ -3264,6 +3267,8 @@ namespace giac {
   }
 
   gen _recursive_normal(const gen & e,GIAC_CONTEXT){
+    if (e.is_symb_of_sommet(at_unit))
+      return _usimplify(e,contextptr);
     gen var,res;
     if (is_equal(e))
       return apply_to_equal(e,recursive_normal,contextptr); // symb_equal(_recursive_normal(equal2diff(e),contextptr),0);
@@ -3899,8 +3904,16 @@ namespace giac {
   }
   gen _factor(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    if (is_integer(args))
+    if (is_integer(args)){
+#ifdef KHICAS
+      return _ifactor(args,contextptr);
+#else
       *logptr(contextptr) << "Run ifactor(" << args << ") for integer factorization." << "\n";
+      return args;
+#endif
+    }
+    if (args.is_symb_of_sommet(at_unit))
+      return mksa_reduce(args,contextptr);
     if (is_equal(args))
       return apply_to_equal(args,_factor,contextptr);
     if (args.type==_VECT && args._VECTptr->size()==2 && is_equal(args._VECTptr->front())){

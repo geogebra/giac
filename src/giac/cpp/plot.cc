@@ -1484,9 +1484,13 @@ namespace giac {
 	local_sto_double(i,*vars._IDNTptr,newcontextptr);
 	// vars._IDNTptr->localvalue->back()._DOUBLE_val =i;
 	yy=y.evalf2double(eval_level(contextptr),newcontextptr);
+#ifdef EMCC
+	if (yy.is_symb_of_sommet(at_neg))
+	  yy=-yy._SYMBptr->feuille.evalf2double(eval_level(contextptr),newcontextptr);
+#endif
 	if (yy.type!=_DOUBLE_){
 	  if (debug_infolevel)
-	    CERR << y << " not real at " << i << " " << yy << '\n';
+	    CERR << y << " not real at " << i << " value " << yy << " type " << int(yy.type) << '\n';
 	  if (!chemin.empty())
 	    res.push_back(pnt_attrib(symb_curve(gen(makevecteur(vars+cst_i*f,vars,xmin,i,showeq),_PNT__VECT),gen(chemin,_GROUP__VECT)),attributs.empty()?color:attributs,contextptr));
 	  xmin=i;
@@ -2921,6 +2925,11 @@ namespace giac {
     if (s==1){
       v=makevecteur(0*v[0],v[0]);
       ++s;
+    }
+    if (s==4){
+      v[0]=makevecteur(v[0],v[1]);
+      v[1]=makevecteur(v[2],v[3]);
+      s=2;
     }
     if (s>=2 && s<=3 && v[0].type!=_VECT && v[1].type!=_VECT && !v[0].is_symb_of_sommet(at_pnt) && !v[1].is_symb_of_sommet(at_pnt) && is_zero(im(v[0],contextptr),contextptr) && is_zero(im(v[1],contextptr),contextptr)){
       if (s==2){
@@ -8788,7 +8797,14 @@ namespace giac {
     }
     int jstep,kstep;
     read_option(v,xmin,xmax,ymin,ymax,zmin,zmax,attributs,nstep,jstep,kstep,contextptr);
-    bool v0cst=lidnt(evalf(v0,1,contextptr)).empty(),v1cst=lidnt(evalf(v1,1,contextptr)).empty();
+    bool v0cst=false,v1cst=false;
+#ifndef NO_STDEXCEPT
+    try {
+      v0cst=lidnt(evalf(v0,1,contextptr)).empty();
+      v1cst=lidnt(evalf(v1,1,contextptr)).empty();
+    } catch(std::exception & e) {
+    }
+#endif
     if (v0cst && v1cst){
       if (s==2 || v[2].is_symb_of_sommet(at_equal))
 	return _point(eval(g,1,contextptr),contextptr);

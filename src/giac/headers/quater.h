@@ -114,6 +114,9 @@ namespace giac {
   gfmap & gf_list();
   int gfsize(const gen & P);
   bool has_gf_coeff(const gen & e,gen & p, gen & pmin);
+  bool has_gf_coeff(const vecteur & v,gen & p, gen & pmin);
+  bool has_gf_coeff(const gen & e);
+  bool has_gf_coeff(const vecteur & v);
   // convert v in char 2, returns minimal polynomial or 0 (unknown) or -1 (unable to convert), set x to the generator of the field
   int gf_char2_vecteur2vectorint(const vecteur & v,std::vector<int> & V,gen & x);
   // convert m in char 2, returns minimal polynomial or 0 (unknown) or -1 (unable to convert), set x to the generator of the field
@@ -125,8 +128,16 @@ namespace giac {
   bool gf_char2_rref(std::vector< std::vector<int> > & N,const gen & x,int M,vecteur & pivots,std::vector<int> & permutation,std::vector<int> & maxrankcols,gen & det,int l, int lmax, int c,int cmax,int fullreduction,int dont_swap_below,int rref_or_det_or_lu);
   bool gf_char2_multpoly(const std::vector<int> & a,const std::vector<int> & b,std::vector<int> & res,int M);
   bool gf_multpoly(const std::vector< std::vector<int> > & a,const std::vector< std::vector<int> > & b,std::vector< std::vector<int> > & res,const std::vector<int> & pmin,int modulo);
+  int gf_vecteur2vectorvectorint(const vecteur & v,std::vector< std::vector<int> > & V,gen & x,std::vector<int> & pmin);
+  bool gf_multpoly(const std::vector< std::vector<int> > & a,const std::vector< std::vector<int> > & b,std::vector< std::vector<int> > & res,const std::vector<int> & pmin,int modulo);
+  void gf_vectorvectorint2vecteur(const std::vector< std::vector<int> > & source,vecteur & target,const gen & carac,const vecteur & pmin,const gen & x);
+  void gf_vectorvectorint2vecteur(const std::vector< std::vector<int> > & source,vecteur & target,int carac,const std::vector<int> & pmin,const gen & x);
 
 #else // NO_RTTI
+  inline bool has_gf_coeff(const gen & e,gen & p, gen & pmin){ return false; }
+  inline bool has_gf_coeff(const vecteur & v,gen & p, gen & pmin){ return false; }
+  inline bool has_gf_coeff(const gen & e){ return false; }
+  inline bool has_gf_coeff(const vecteur & v){ return false; }
   inline int gf_char2_vecteur2vectorint(const vecteur & v,std::vector<int> & V,gen & x){ return -1; }
   inline int gf_char2_matrice2vectorvectorint(const matrice & m,std::vector< std::vector<int> > & M,gen & x){ return -1;}
   inline int dotgf_char2(const std::vector<int> & v,const std::vector<int> & w,int M){ return 0; }
@@ -135,6 +146,10 @@ namespace giac {
   inline   bool gf_char2_mmult_atranb(const std::vector< std::vector<int> > & A,const std::vector< std::vector<int> > & tranB,std::vector< std::vector<int> > & C,int M){ return false;};
   inline bool gf_char2_rref(std::vector< std::vector<int> > & N,const gen & x,int M,vecteur & pivots,std::vector<int> & permutation,std::vector<int> & maxrankcols,gen & det,int l, int lmax, int c,int cmax,int fullreduction,int dont_swap_below,int rref_or_det_or_lu){ return false; };
   inline bool gf_char2_multpoly(const std::vector<int> & a,const std::vector<int> & b,std::vector<int> & res,int M){ return false; }
+  inline int gf_vecteur2vectorvectorint(const vecteur & v,std::vector< std::vector<int> > & V,gen & x,std::vector<int> & pmin){ return 0; }
+  inline bool gf_multpoly(const std::vector< std::vector<int> > & a,const std::vector< std::vector<int> > & b,std::vector< std::vector<int> > & res,const std::vector<int> & pmin,int modulo){ return false; }
+  inline void gf_vectorvectorint2vecteur(const std::vector< std::vector<int> > & source,vecteur & target,const gen & carac,const vecteur & pmin,const gen & x){}
+  inline void gf_vectorvectorint2vecteur(const std::vector< std::vector<int> > & source,vecteur & target,int carac,const std::vector<int> & pmin,const gen & x){};
 
 #endif // NO_RTTI
 

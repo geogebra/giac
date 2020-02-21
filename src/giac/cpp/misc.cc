@@ -5118,6 +5118,15 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
     double largeur=.8;
     if (g.type==_VECT && g.subtype==_SEQ__VECT){
       vecteur v=*g._VECTptr;
+      if (v.size()>1 && v.front().type==_VECT && v.back().type!=_VECT){
+	gen l=evalf_double(v.back(),1,contextptr);
+	if (l.type==_DOUBLE_){
+	  largeur=v.back()._DOUBLE_val;
+	  v.pop_back();
+	  if (v.size()==1)
+	    v=*v.front()._VECTptr;
+	}
+      }
       for (unsigned i=0;i<v.size();++i){
 	if (v[i].is_symb_of_sommet(at_equal) && v[i]._SYMBptr->feuille.type==_VECT){
 	  gen f=v[i]._SYMBptr->feuille._VECTptr->front();
@@ -5226,6 +5235,21 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
   static const char _camembert_s []="camembert";
 static define_unary_function_eval (__camembert,&_camembert,_camembert_s);
   define_unary_function_ptr5( at_camembert ,alias_at_camembert,&__camembert,0,true);
+
+  gen _axis(const gen & g,GIAC_CONTEXT){
+    if (g.type!=_VECT || g._VECTptr->size()<4)
+      return gensizeerr(contextptr);
+    const vecteur & v=*g._VECTptr;
+    gen X(symb_equal(change_subtype(_GL_X,_INT_PLOT),symb_interval(v[0],v[1])));
+    gen Y(symb_equal(change_subtype(_GL_Y,_INT_PLOT),symb_interval(v[2],v[3])));
+    if (v.size()<6)
+      return makesequence(X,Y);
+    gen Z(symb_equal(change_subtype(_GL_Z,_INT_PLOT),symb_interval(v[4],v[5])));
+    return makesequence(X,Y,Z);
+  }
+  static const char _axis_s []="axis";
+  static define_unary_function_eval (__axis,&_axis,_axis_s);
+  define_unary_function_ptr5( at_axis ,alias_at_axis,&__axis,0,true);
 
   // Graham scan convex hull
  static bool graham_sort_function(const gen & a,const gen & b){

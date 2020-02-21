@@ -103,10 +103,10 @@ namespace giac {
   // make a modpoly of size the int and multiply
   modpoly operator_times (const gen & fact,const modpoly & th,environment * env);
   modpoly operator * (const gen & fact,const modpoly & th);
-  void mulmodpoly(const modpoly & a, const modpoly & b, environment * env,modpoly & new_coord);
+  void mulmodpoly(const modpoly & a, const modpoly & b, environment * env,modpoly & new_coord,int maxdeg=RAND_MAX);
   modpoly operator * (const modpoly & th, const modpoly & other) ;
   modpoly operator_times (const modpoly & th, const modpoly & other,environment * env) ;
-  void operator_times (const modpoly & a, const modpoly & b,environment * env,modpoly & new_coord);
+  void operator_times (const modpoly & a, const modpoly & b,environment * env,modpoly & new_coord,int maxdeg=RAND_MAX);
   // res=(*it) * ... (*(it_end-1))
   void mulmodpoly(std::vector<modpoly>::const_iterator it,std::vector<modpoly>::const_iterator it_end,environment * env,modpoly & new_coord);
   void mulmodpoly(std::vector<modpoly>::const_iterator * it,int debut,int fin,environment * env,modpoly & pi);
@@ -171,6 +171,12 @@ namespace giac {
   void modpoly2smallmodpoly(const modpoly & p,std::vector<int> & v,int m);
 
   bool gcdmodpoly(const modpoly &p,const modpoly & q,environment * env,modpoly &a); 
+  // half-gcd: a0.size() must be > a1.size(), returns [[A,B],[C,D]]
+  bool hgcd(const modpoly & a0,const modpoly & a1,const gen & modulo,modpoly &A,modpoly &B,modpoly &C,modpoly &D); // a0 is A in Yap, a1 is B
+  // fast modular inverse: f*g=1 mod x^l, f must be invertible (f.back()!=0)
+  bool invmod(const modpoly & f,int l,environment * env,modpoly & g);
+  // euclidean quotient using modular inverse
+  bool DivQuo(const modpoly & a, const modpoly & b, environment * env,modpoly & q);
   // 1-d modular for small modulus<sqrt(RAND_MAX)
   bool gcdsmallmodpoly(const polynome &p,const polynome & q,int m,polynome & d,polynome & dp,polynome & dq,bool compute_cof); 
   void smallmodpoly2modpoly(const std::vector<int> & v,modpoly & p,int m);
@@ -230,6 +236,7 @@ namespace giac {
   bool poly_pcar_interp(const matrice & a,vecteur & p,bool compute_pmin,GIAC_CONTEXT);
   void polymat2matpoly(const vecteur & R,vecteur & res);
 
+  void makepositive(int * p,int n,int modulo);
   // Fast Fourier Transform, f the poly sum_{j<n} f_j x^j, 
   // and w=[1,omega,...,omega^[m-1]] with m a multiple of n
   // return [f(1),f(omega),...,f(omega^[n-1])
@@ -240,6 +247,15 @@ namespace giac {
   void fft(const std::vector<int> & f,const std::vector<int> & w ,std::vector<int> & res,int modulo);
   // res=a*b mod p
   bool fft2mult(int ablinfnorm,const std::vector<int> & a,const std::vector<int> & b,std::vector<int> & res,int modulo,std::vector<int> & W,std::vector<int> & fftmult_p,std::vector<int> & fftmult_q,bool reverseatend,bool dividebyn,bool makeplus);
+  bool fftmult(const modpoly & p,const modpoly & q,const gen &P,const gen &Q,modpoly & pq,int modulo, std::vector<int> & a,std::vector<int>&b,std::vector<int> &resp1,std::vector<int>&resp2,std::vector<int> & resp3, std::vector<int> & W,std::vector<int> &tmp_p,std::vector<int> &tmp_q,bool compute_pq);
+  // FFT mod 2^{r*2^l}+1, tmp1, tmp2 temporary gen must be _ZINT
+  void fft2rl(gen * f,long n,int r,int l,gen * t,bool direct,gen & tmp1, gen & tmp2,mpz_t & tmpqz);
+  // alpha[i] *= beta[i] mod 2^(expoN)+1
+  void fft2rltimes(modpoly & alpha,const modpoly & beta,unsigned long expoN,mpz_t & tmp,mpz_t & tmpqz);
+  void fft2rltimes(const modpoly & alpha,const modpoly & beta,modpoly & res,unsigned long expoN,mpz_t & tmp,mpz_t & tmpqz);
+  // pq *= -2^shift mod N=2^(expoN+1) where -2^shift is the inverse of n mod N
+  void fft2rldiv(modpoly & pq,unsigned long expoN,unsigned long shift,mpz_t & tmp,mpz_t & tmpqz);
+  gen intnorm(const dense_POLY1 & p,GIAC_CONTEXT);
 
   // Convolution of p and q, omega a n-th root of unity, n=2^k
   // WARNING p0 and q0 are given in ascending power
@@ -247,7 +263,7 @@ namespace giac {
   // Convolution of p and q, omega a n-th root of unity, n=2^k
   // p and q are given in descending power order
   void fftconv(const modpoly & p0,const modpoly & q0,unsigned long k,const gen & omega,modpoly & pq,environment * env);
-  bool fftmult(const modpoly & p,const modpoly & q,modpoly & pq,int modulo=0);
+  bool fftmult(const modpoly & p,const modpoly & q,modpoly & pq,int modulo,int maxdeg=RAND_MAX);
   modpoly fftmult(const modpoly & p,const modpoly & q);
   // input A with positive int, output fft in A
   // w a 2^n-th root of unity mod p

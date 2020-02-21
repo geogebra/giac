@@ -57,26 +57,18 @@ namespace giac {
     //A est un vecteur de vecteur=une matrice!
     //on met ds A :(la jacobienne de q)/2 
     for (int i=0;i<n;i++){
+      gen qxi(derive(q,x[i],contextptr));
       for (int j=i;j<n;j++){
-	qdd=derive(derive(q,x[i],contextptr),x[j],contextptr);
+	qdd=derive(qxi,x[j],contextptr);
 	qdd=recursive_normal(qdd,contextptr); 
 	//cout<<i<<","<<j<<qdd<<'\n';
-	if (i==j){
-	  (*A[i]._VECTptr)[i]=rdiv(qdd,2,contextptr);
-	} 
-	else {
-	  (*A[i]._VECTptr)[j]=rdiv(qdd,2,contextptr);
-	  (*A[j]._VECTptr)[i]=rdiv(qdd,2,contextptr);
-	}
+	(*A[j]._VECTptr)[i]=(*A[i]._VECTptr)[j]=rdiv(qdd,2,contextptr);
       }
     }
     //2*A=jacobienne de q
     //on calcule qs=q en zero
     //cout<<A<<'\n';  
-    qs=q;
-    for (int i=0;i<n;i++){
-      qs=subst(qs,x[i],0,false,contextptr);
-    }
+    qs=subst(q,x,vecteur(n),false,contextptr);
     //qs=la valeur de q en 0
     if (qs !=0){
       b=0;
@@ -85,10 +77,7 @@ namespace giac {
     //on regarde si il y des termes lineaires
     for (int j=0;j<n;j++){
       dq=derive(q,x[j],contextptr);
-      dqs=dq;
-      for (int i=0;i<n;i++){
-	dqs=subst(dqs,x[i],0,false,contextptr);
-      }
+      dqs=subst(dq,x,vecteur(n),false,contextptr);
       //dqs=la diff de q en zero
       if (dqs!=0){
 	b=1;
@@ -136,7 +125,7 @@ namespace giac {
   gen _q2a(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_VECT)
-      return symb_q2a(args);
+      return _q2a(makesequence(args,lidnt(args)),contextptr);
     int s=int(args._VECTptr->size());
     if (s!=2)
       return gendimerr(contextptr);
@@ -149,65 +138,37 @@ namespace giac {
   define_unary_function_ptr5( at_q2a ,alias_at_q2a,&__q2a,0,true);
 
   vecteur gauss(const gen & q, const vecteur & x, vecteur & D, vecteur & U, vecteur & P,GIAC_CONTEXT){
-    int n=int(x.size());
-    int b;
-    gen u1;
-    gen u2;
-    gen q1; 
-    gen l1;
-    gen l2;
+    int n=int(x.size()),b;
+    gen u1,u2,q1,l1,l2;
     vecteur R(1);
-    vecteur A;
- 
-    vecteur I;
-    vecteur L;
-    for (int i=0;i<n;i++){
-      vecteur li(n);
-      A.push_back(li);
-    }
     vecteur PR;
     for (int i=0;i<n-1;i++){
-      vecteur li(n-1);
-      PR.push_back(li);
+      PR.push_back(vecteur(n-1));
     }
     vecteur PP;
     for (int i=0;i<n;i++){
-      vecteur li(n);
-      PP.push_back(li);
+      PP.push_back(vecteur(n));
     } 
-    for (int i=0;i<n;i++){
-      vecteur li(n);
-      li[i]=gen(1);
-      I.push_back(li);
-    }
-    //n=x.size();
-    //if (n==0){
-    //R[0]=q; 
-    //vecteur vide;
-    //D=vide;
-    //U=vide;
-    //P=vide;
-    //return(R);
-    //}
+    vecteur I;
+    if (n) I=midn(n);
+    vecteur L;
   
     //si q n'est pas quadratique b<>2 et on retourne q
-    A=quad(b,q,x,contextptr);
+    vecteur A(quad(b,q,x,contextptr));
     if (b!=2){
       R[0]=q;
-      vecteur vide;
-      D=vide;
-      U=vide;
-      return(R);
+      D.clear();
+      U.clear();
+      return R;
     }
     //la forme q est quadratique de matrice A
     if (q==0) { 
       //R[0]=q;    
       vecteur vide(n);
       D=vide; 
-      U=vide;
-    
+      U=vide;    
       P=I;
-      return(vide);
+      return vide;
     }
     if (n==1){
       gen q0=_factor(q,contextptr);
@@ -245,7 +206,7 @@ namespace giac {
       //q= 1/a_r_r*(u1)^2+... 
       R[0]=u1; 
       U=mergevecteur(R,U);      
-      //on _VECTlete la matrice PR de dim n-1 en la matrice PP de dim n
+      //on complete la matrice PR de dim n-1 en la matrice PP de dim n
       //1iere ligne les coeff de u1 et rieme colonne doit avoir des 0
       for (int i=0;i<n;i++){
 	(*PP[0]._VECTptr)[i]=recursive_normal(derive(u1,x[i],contextptr),contextptr); 
@@ -289,14 +250,14 @@ namespace giac {
     L=gauss(q1,y,D,U,PR,contextptr);
     //on rajoute 1/a_r1_r2 et -1/a_r1_r2 sur la diagonale D
     R[0]=rdiv(1,plus_two*A[r1][r2],contextptr);
-    R.push_back(rdiv(-1,plus_two*A[r1][r2],contextptr));
+    R.push_back(-R[0]);
     D=mergevecteur(R,D); 
     //on rajoute u1 et u2 au vecteur U constitue des formes lineaires
     //q= 1/a_r1_r2*(u1)^2 - 1/a_r1_r2*(u2)^2 + ... 
     R[0]=u1;
     R[1]=u2;
     U=mergevecteur(R,U);
-    //on _VECTlete la matrice PR de dim n-2 en la matrice PP de dim n
+    //on complete la matrice PR de dim n-2 en la matrice PP de dim n
     //1iere et 2ieme ligne les coeff de u1 et de u2 
     //r1ieme et r2ieme colonne doit avoir des 0
     for (int i=0;i<n;i++){
@@ -325,20 +286,24 @@ namespace giac {
     return gauss(q,x,D,U,P,contextptr);
   }
 
-  static gen symb_gauss(const gen & args){
-    return symbolic(at_gauss,args);
-  }
   gen _gauss(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_VECT)
-      return symb_gauss(args);
+      return _gauss(makesequence(args,lidnt(args)),contextptr);
     int s=int(args._VECTptr->size());
-    if (s!=2)
+    if (s<2)
       return gendimerr(contextptr);
-    if (args._VECTptr->back().type==_VECT)
-      return _plus(gauss(args._VECTptr->front(),*(args._VECTptr->back()._VECTptr),contextptr),contextptr);
+    const gen & arg1=(*args._VECTptr)[1];
+    if (arg1.type==_VECT){
+      const vecteur & v=*arg1._VECTptr;
+      vecteur D,U,P;
+      gen w=gauss(args._VECTptr->front(),v.empty()?lidnt(args):v,D,U,P,contextptr);
+      w=_plus(w,contextptr);
+      if (s>2|| v.empty())
+	return makesequence(w,D,P);
+      return w;
+    }
     return _randNorm(args,contextptr);
-    return symb_gauss(args);
   }
   static const char _gauss_s []="gauss";
   static define_unary_function_eval (__gauss,&_gauss,_gauss_s);
@@ -347,30 +312,16 @@ namespace giac {
   gen axq(const vecteur &A,const vecteur & x,GIAC_CONTEXT){
     //transforme une matrice carree (symetrique) en la forme quadratique q
     //(les variables sont dans x)
-    int d;
     //d nbre de variables
-    d=int(x.size());
-    int da;
     //il faut verifier que A est carree
     //A n'est pas forcement symetrique  
-    da=int(A.size());
-    if (!(is_squarematrix(A)) || (da!=d) ){
+    int d=int(x.size());
+    int da=int(A.size());
+    if (!(is_squarematrix(A)) || (da!=d) )
       return gensizeerr(gettext("Invalid dimension"));
-    } 
-    vecteur XL(1);
-    XL=makevecteur(x);
-    COUT<<XL<<'\n';
-    vecteur XC;
-    for (int i=0;i<d;i++) {
-      vecteur elem;
-      elem=makevecteur(x[i]);
-      XC.push_back(elem);
-    }
-    vecteur QI(d);
-    vecteur Q(1);
-    QI=mmult(A,XC);
-    Q=mmult(XL,QI);
-    return(normal(Q[0][0],contextptr));
+    vecteur Ax;
+    multmatvecteur(A,x,Ax);
+    return normal(dotvecteur(x,Ax),contextptr);
   }
   
   static gen symb_a2q(const gen & args){

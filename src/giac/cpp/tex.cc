@@ -1320,8 +1320,10 @@ namespace giac {
   // assume math mode enabled
   string gen2tex(const gen & e,GIAC_CONTEXT){
     string s;
+#if 1 //ndef S390X
     if (has_improved_latex_export(e,s,false,contextptr))
       return s;
+#endif
     switch (e.type){
     case _INT_: case _ZINT: case _REAL:
       if (e.subtype==_INT_BOOLEAN)

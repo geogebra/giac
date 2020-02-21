@@ -1106,6 +1106,8 @@ namespace giac {
 
   static string svg_segment(gen A, gen B, svg_attribut attr, string legende,double xmin,double xmax,double ymin,double ymax,GIAC_CONTEXT){
     string s;
+    if (attr.width<attr.epaisseur_point-1)
+      attr.width=attr.epaisseur_point-1;
     // gen thickness((xmax+ymax-xmin-ymin)/svg_epaisseur1);
     A=evalf(A,1,contextptr); B=evalf(B,1,contextptr);
     if (attr.ie){
@@ -1433,6 +1435,8 @@ namespace giac {
       if(v.size()==3)
 	name=v[2].print(contextptr);
       if (v[0].type==_VECT){
+	if (v[0].subtype==_GROUP__VECT && v[0]._VECTptr->size()==2)
+	  name="";
 	return vect2svg(v[0], attr, name,xmin,xmax,ymin,ymax,contextptr);
       }                     
       if (v[0].type==4)           //indispensable, mais je ne sais pas pourquoi

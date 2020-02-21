@@ -343,7 +343,7 @@ namespace giac {
 	    int res=is_irreducible_primitive(*P._VECTptr,v[0],vmin,false,contextptr);
 	    if (res==0)
 	      return gensizeerr("Polynomial "+v[1].print(contextptr)+" is not irreducible modulo "+v[0].print(contextptr));
-	    fieldvalue=galois_field(v[0],P,v[2],undef);
+	    fieldvalue=galois_field(v[0],smod(P,v[0]),v[2],undef);
 	  }
 	}
 	v[2]=makevecteur(k,K,g);
@@ -392,7 +392,7 @@ namespace giac {
       if (res==2)
 	*logptr(contextptr) << gettext("Warning ") << symb_horner(*v[1]._VECTptr,xid) << gettext(" is irreducible but not primitive. You could use ") << symb_horner(vmin,xid) << gettext(" instead ") << '\n';
     }
-    return galois_field(v[0],v[1],v[2],v[3]);
+    return galois_field(v[0],smod(v[1],v[0]),v[2],v[3]);
   }
   static define_unary_function_eval (__galois_field,&_galois_field,_galois_field_s);
   define_unary_function_ptr5( at_galois_field ,alias_at_galois_field,&__galois_field,0,true); // auto-register
@@ -483,6 +483,7 @@ namespace giac {
 	  else {
 	    p=p0;
 	    P=find_irreducible_primitive(p0,m0,primitive,contextptr);
+	    P=smod(P,this->p);
 	    if (g._VECTptr->size()>2)
 	      x=(*g._VECTptr)[2];
 	    else {
@@ -509,6 +510,8 @@ namespace giac {
       a = smod(a,p);
       if (a.type!=_VECT)
 	a=gen(vecteur(1,a),_POLY1__VECT);
+      else 
+	trim(*a._VECTptr);
     }
   }
 
@@ -1110,6 +1113,8 @@ namespace giac {
 	continue;
       }
       if (v[i].type==_MOD){
+	if (*(v[i]._MODptr+1)!=plus_two)
+	  return -1;
 	V[i]=v[i]._MODptr->val % 2;
 	continue;
       }
@@ -1405,8 +1410,9 @@ namespace giac {
       return;
     }
     // now bdeg>=adeg
-    // INT_KARAMUL_SIZE=1; //M=0; // uncomment for debug with integer mult
-    if (adeg>INT_KARAMUL_SIZE && bdeg>INT_KARAMUL_SIZE){
+#if 0
+    //INT_KARAMUL_SIZE=1; //M=0; // uncomment for debug with integer mult
+    if (adeg>KARAMUL_SIZE && bdeg>KARAMUL_SIZE){
       if (bdeg/2>adeg){       
 	// split b in 2 parts?
 	vector< vector<int> > res1,res2;
@@ -1439,6 +1445,7 @@ namespace giac {
       gf_addp(res4,reshigh,res,modulo);
       return;
     }
+#endif
     // plain multiplication, 
     res.clear();
     int s=adeg+bdeg+1;
@@ -1446,7 +1453,7 @@ namespace giac {
     vector<int> tmp;
     for (int k=0;k<s;++k){
       vector<int> & r =res[k];
-      for (int i=giacmax(0,k-bdeg);i<k && i<=adeg;++i){
+      for (int i=giacmax(0,k-bdeg);i<=k && i<=adeg;++i){
 	tmp.clear();
 	mulext(a[i+astart],b[k-i+bstart],pmin,modulo,tmp);
 	addmod(r,tmp,modulo);
@@ -1466,18 +1473,30 @@ namespace giac {
     // multiply A*B in x with FFT over Z/p1, p1=2013265921
     // reduce coeffs as a polynomial in y w.r.t. the polynomial corresp. to M
     int adeg=a.size()-1,bdeg=b.size()-1;
-#if 0
+#if 1
     if (//1
-	adeg>FFTMUL_SIZE && bdeg>FFTMUL_SIZE
+	adeg>FFTMUL_SIZE/10 && bdeg>FFTMUL_SIZE/10
 	){
       //CERR << "fft" << adeg << "x" << bdeg << endl;
-      int n=2*(nbits(M)-1);
+      int n=2*(pmin.size()-1);
       int p1=2013265921;
       if (longlong(adeg+bdeg+1)*n<(1<<27)){
-	vector<int> A,B,RES,W,tmpa,tmpb;
+	vector<int> A,B,RES,W,tmpa,tmpb,tmp3,tmp4,tmp5,tmp6,tmp7,tmp8;
 	kronecker_expand(a,n,A);
+	makepositive(&A.front(),A.size(),modulo);
 	kronecker_expand(b,n,B);
-	if (fft2mult(modulo-1,A,B,RES,modulo,W,tmpa,tmpb,true /* reverseatend */,true/*dividebyn*/,false /* pos coeff */)){
+	makepositive(&B.front(),B.size(),modulo);
+#if 1
+	if ( (modulo-1.0)*(modulo-1.0)*giacmin(adeg,bdeg)<p1 && fft2mult(modulo-1,A,B,RES,p1,W,tmpa,tmpb,true /* reverseatend */,true/*dividebyn*/,false /* make coeff + */)){
+	  kronecker_shrink(RES,n,res,pmin,modulo);
+	  return true;
+	}
+#endif
+	vecteur AV,BV,ABV;
+	vector_int2vecteur(A,AV);
+	vector_int2vecteur(B,BV);
+	if (fftmult(AV,BV,modulo-1,modulo-1,ABV,modulo,tmpa,tmpb,tmp3,tmp4,tmp5,tmp6,tmp7,tmp8,true)){
+	  vecteur2vector_int(ABV,modulo,RES);
 	  kronecker_shrink(RES,n,res,pmin,modulo);
 	  return true;
 	}
@@ -1487,6 +1506,117 @@ namespace giac {
     gf_multp(a,0,a.size(),b,0,b.size(),res,pmin,modulo);
     return true;
   } 
+
+  int gf_vecteur2vectorvectorint(const vecteur & v,std::vector< std::vector<int> > & V,gen & x,std::vector<int> & pmin){
+    // quick check
+    int i=0,carac=0; gen P;
+    for (;i<v.size();++i){
+      if (v[i].type==_INT_ || v[i].type==_ZINT)
+	continue;
+      if (v[i].type==_MOD){
+	gen & m=*(v[i]._MODptr+1);
+	if (m.type!=_INT_)
+	  return 0;
+	if (carac==0)
+	  carac=m.val;
+	if (m.val!=carac)
+	  return 0;
+      }
+      if (v[i].type!=_USER)
+	return 0;
+      if (galois_field * gf=dynamic_cast<galois_field *>(v[i]._USERptr)){
+	if (gf->p.type!=_INT_ || gf->P.type!=_VECT)
+	  return 0;
+	if (carac==0)
+	  carac=gf->p.val;
+	if (gf->p.val!=carac)
+	  return 0;
+	x=gf->x;
+	P=gf->P;
+	vecteur2vector_int(*P._VECTptr,carac,pmin);
+ 	break;
+      }
+      else
+	return 0;
+    }
+    // convert
+    V.resize(v.size());
+    for (i=0;i<v.size();++i){
+      if (v[i].type==_INT_){
+	V[i]=vector<int>(1,v[i].val % 2);
+	continue;
+      }
+      if (v[i].type==_ZINT){
+	V[i]=vector<int>(1,modulo(*v[i]._ZINTptr,2) % 2);
+	continue;
+      }
+      if (v[i].type==_MOD){
+	if (*(v[i]._MODptr+1)!=carac)
+	  return 0;
+	V[i]=vector<int>(1,v[i]._MODptr->val % 2);
+	continue;
+      }
+      if (v[i].type!=_USER)
+	return 0;
+      if (galois_field * gf=dynamic_cast<galois_field *>(v[i]._USERptr)){
+	if (P!=gf->P || gf->a.type!=_VECT)
+	  return 0;
+	vecteur2vector_int(*gf->a._VECTptr,carac,V[i]);
+      }
+    }
+    return carac;
+  }
+
+  // convert m, returns minimal polynomial or 0 (unknown) or -1 (unable to convert)
+  int gf_matrice2vectorvectorvectorint(const matrice & m,std::vector< std::vector< std::vector<int> > > & M,gen & x,std::vector<int> & pmin){
+    M.resize(m.size());
+    vector<int> b;
+    int carac=0,c;
+    for (int i=0;i<m.size();++i){
+      if (m[i].type!=_VECT || !(c=gf_vecteur2vectorvectorint(*m[i]._VECTptr,M[i],x,b)))
+	return 0;
+      if (carac==0)
+	carac=c;
+      if (carac!=c)
+	return 0;
+      if (pmin.empty())
+	pmin=b;
+      else {
+	if (!b.empty() && pmin!=b)
+	  return 0;
+      }
+    }
+    return carac;
+  }
+
+  void gf_vectorvectorint2vecteur(const std::vector< std::vector<int> > & source,vecteur & target,const gen & carac,const vecteur & pmin,const gen & x){
+    //CERR << pmin << endl;
+    target.resize(source.size());
+    vecteur tmp; 
+    for (int i=0;i<source.size();++i){
+      tmp.clear();
+      vector_int2vecteur(source[i],tmp);
+      target[i]=galois_field(carac,pmin,x,tmp);
+    }
+  }
+
+  void gf_vectorvectorint2vecteur(const std::vector< std::vector<int> > & source,vecteur & target,int carac,const std::vector<int> & pmin,const gen & x){
+    vecteur Pmin;
+    vector_int2vecteur(pmin,Pmin);
+    //CERR << pmin << " " << Pmin << endl;
+    gf_vectorvectorint2vecteur(source,target,carac,Pmin,x);
+  }
+
+  void gf_vectorvectorvectorint2mat(const std::vector< std::vector< std::vector<int> > > & source,matrice & target,int carac,const std::vector<int> & pmin,const gen & x){
+    vecteur Pmin;
+    vector_int2vecteur(pmin,Pmin);
+    target.resize(source.size());
+    for (int i=0;i<source.size();++i){
+      vecteur T;
+      gf_vectorvectorint2vecteur(source[i],T,carac,Pmin,x);
+      target[i]=T;
+    }    
+  }
 
   gen galois_field::operator * (const gen & g) const { 
     bool char2=p.type==_INT_ && p.val==2 && a.type==_INT_;
@@ -1919,6 +2049,41 @@ namespace giac {
       return has_gf_coeff(*e._VECTptr,p,pmin);
     case _POLY:
       return has_gf_coeff(*e._POLYptr,p,pmin);
+    default:
+      return false;
+    }
+  }
+
+  bool has_gf_coeff(const polynome & P){
+    vector< monomial<gen> >::const_iterator it=P.coord.begin(),itend=P.coord.end();
+    for (;it!=itend;++it){
+      if (has_gf_coeff(it->value))
+	return true;
+    }
+    return false;
+  }
+
+  bool has_gf_coeff(const vecteur & v){
+    const_iterateur it=v.begin(),itend=v.end();
+    for (;it!=itend;++it){
+      if (has_gf_coeff(*it))
+	return true;
+    }
+    return false;
+  }
+  bool has_gf_coeff(const gen & e){
+    switch (e.type){
+    case _USER:
+      if (galois_field * ptr=dynamic_cast<galois_field *>(e._USERptr)){
+	return true;
+      }
+      return false;
+    case _SYMB:
+      return has_gf_coeff(e._SYMBptr->feuille);
+    case _VECT:
+      return has_gf_coeff(*e._VECTptr);
+    case _POLY:
+      return has_gf_coeff(*e._POLYptr);
     default:
       return false;
     }

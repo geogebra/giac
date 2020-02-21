@@ -792,7 +792,7 @@ namespace giac {
     // print then convert to a malloc-ated wchar_t *
     void modify(int i) { *this =gen(i); };
     const char * dbgprint() const; 
-    void uncoerce() ;
+    void uncoerce(size_t s=128) ;
     gen conj(GIAC_CONTEXT) const;
     gen re(GIAC_CONTEXT) const ;
     gen im(GIAC_CONTEXT) const ;

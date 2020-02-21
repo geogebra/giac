@@ -439,9 +439,13 @@ namespace giac {
     return a.first==b.first && a.second==b.second;
   }
   
+#ifdef WORDS_BIGENDIAN // autoconf macro defines this (thanks to Julien Puydt for pointing this and checking for s390x architecture)
+#define BIGENDIAN
+#endif
+
 #if !defined CAS38_DISABLED && !defined FXCG
   //#define GBASIS_SELECT_TOTAL_DEGREE
-#if GROEBNER_VARS!=15 // double revlex ordering is not compatible with indices swapping
+#if GROEBNER_VARS!=15 && !defined BIGENDIAN // double revlex ordering is not compatible with indices swapping
 #define GBASIS_SWAP 
 #endif
   // minimal numbers of pair to reduce simultaneously with f4buchberger
@@ -14831,9 +14835,11 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	gbasis_logz_age=0; // special sorting is not meaningfull after 1 reinjection, and we want to have interreduction
     }
   }
+#ifndef BIGENDIAN
+#define GBASIS_SWAP 
+#endif
 
-  #define GBASIS_SWAP 
-#ifndef NO_STDEXCEPT
+#if !defined NO_STDEXCEPT && !defined BIGENDIAN
   #define GIAC_TDEG_T14
 #endif
 

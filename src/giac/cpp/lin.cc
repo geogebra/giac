@@ -222,19 +222,12 @@ namespace giac {
       v.push_back(f);
       return ; // 1*exp(arg)
     }
-    if (s==at_cosh){
-      v.push_back(rdiv(1,2,contextptr));
+    if (s==at_cosh || s==at_sinh){
+      v.push_back(plus_one_half);
       v.push_back(f);
-      v.push_back(rdiv(1,2,contextptr));
+      v.push_back(s==at_cosh?plus_one_half:minus_one_half);
       v.push_back(-f);
-      return ; // 1/2*exp(arg)+1/2*exp(-arg)
-    }
-    if (s==at_sinh){
-      v.push_back(rdiv(1,2,contextptr));
-      v.push_back(f);
-      v.push_back(rdiv(-1,2,contextptr));
-      v.push_back(-f);
-      return ; // 1/2*exp(arg)-1/2*exp(-arg)
+      return ; // 1/2*exp(arg)+-1/2*exp(-arg)
     }
     v.push_back(symbolic(s,f));
     v.push_back(0);

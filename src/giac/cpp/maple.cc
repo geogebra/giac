@@ -3093,9 +3093,9 @@ namespace giac {
       args=*g._VECTptr;
       if (!args.empty()){
 	gen f=args.back();
-	if (f.is_symb_of_sommet(at_equal) && f._SYMBptr->feuille[0]==at_dtype){
+	if (f==at_float || (f.is_symb_of_sommet(at_equal) && f._SYMBptr->feuille[0]==at_dtype)){
 	  args.pop_back();
-	  return _convert(makesequence(_array(args.size()==1?args.front():gen(args,_SEQ__VECT),contextptr),f._SYMBptr->feuille[1]),contextptr);
+	  return _convert(makesequence(_array(args.size()==1?args.front():gen(args,_SEQ__VECT),contextptr),f.type==_FUNC?f:f._SYMBptr->feuille[1]),contextptr);
 	}
       }
     }

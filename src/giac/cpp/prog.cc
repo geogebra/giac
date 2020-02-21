@@ -4926,7 +4926,10 @@ namespace giac {
   gen _makemat(const gen & args,const context * contextptr){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     if (args.type==_INT_ && args.val>0 && double(args.val)*args.val<LIST_SIZE_LIMIT){
-      return gen(vecteur(args.val,vecteur(args.val,0)),_MATRIX__VECT);
+      vecteur res;
+      for (int i=0;i<args.val;++i)
+	res.push_back(vecteur(args.val,0));
+      return gen(res,_MATRIX__VECT);
     }
     if (args.type!=_VECT)
       return symb_makemat(args);
@@ -6343,8 +6346,10 @@ namespace giac {
 
   gen _scientific_format(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
+#ifndef KHICAS
     gen tmp=check_secure();
     if (is_undef(tmp)) return tmp;
+#endif
     gen args(g);
     if (g.type==_DOUBLE_)
       args=int(g._DOUBLE_val);    
@@ -6359,8 +6364,9 @@ namespace giac {
 
   gen _integer_format(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
-    gen tmp=check_secure();
-    if (is_undef(tmp)) return tmp;
+#ifndef KHICAS
+    gen tmp=check_secure(); if (is_undef(tmp)) return tmp;
+#endif
     gen args(g);
     if (g.type==_DOUBLE_)
       args=int(g._DOUBLE_val);    
@@ -7784,6 +7790,10 @@ namespace giac {
 	}
 	if ( f==at_vector || f==at_array){
 	  g.subtype=_MATRIX__VECT;
+	  return g;
+	}
+	if (f==at_seq){
+	  g.subtype=_SEQ__VECT;
 	  return g;
 	}
 	if (f==at_table){
@@ -12471,14 +12481,14 @@ namespace giac {
     if (is_undef(v)) return v;
     gen res1=v[0];
     int s=int(v.size());
+    for (int i=s;i<5;++i)
+      v.push_back(zero);
     for (;s>0;--s){
       if (!is_zero(v[s-1]))
 	break;
     }
     if (s>5)
       return g;
-    for (int i=s;i<5;++i)
-      v.push_back(zero);
     // look first if it's a mksa
     int pos=0;
     for (int i=1;i<5;++i){
@@ -12497,7 +12507,9 @@ namespace giac {
     // const_iterateur it=usual_units().begin(),itend=usual_units().end();
     for (;it!=itend;++it){
       string s=(*it)->print(contextptr);
-      gen tmp=mksa_unit2vecteur(s);
+      vecteur tmp=mksa_unit2vecteur(s);
+      for (int i=tmp.size();i<5;++i)
+	tmp.push_back(zero);
       if (tmp==v)
 	return _ufactor(gen(makevecteur(g,symbolic(at_unit,makevecteur(1,**it))),_SEQ__VECT),contextptr);
     }

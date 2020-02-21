@@ -495,6 +495,11 @@ namespace giac {
     vecteur v(gen2vecteur(g));
     int vs=int(v.size()),deg=10;
     gen x=vx_var;
+    if (vs && v.back().type==_VECT && v.back()._VECTptr->empty()){
+      --vs;
+      x=v.back();
+      v.pop_back();
+    }
     gen f=0;
     if (vs>=3 && v[2].type==_INT_ && v[1].type==_INT_ && v[0].type==_VECT){
       // randpoly(variables,total_degree,nterms,[law])
@@ -630,7 +635,7 @@ namespace giac {
 #ifdef GIAC_HAS_STO_38
     return w;
 #else
-    return (f.type==_VECT && f._VECTptr->empty())?gen(w,_POLY1__VECT):symb_horner(w,x);
+    return (deg>=1024 || (f.type==_VECT && f._VECTptr->empty()) )?gen(w,_POLY1__VECT):symb_horner(w,x);
 #endif
   }
   static const char _randPoly_s[]="randPoly";

@@ -998,7 +998,7 @@ namespace giac {
 	  }
 	} // end for on f_it
 	if (min_abs>1e-4*racine_max_d){
-	  *logptr(contextptr) << "Precision problem choosing root in common_EXT, current precision " << ndig << endl;
+	  *logptr(contextptr) << "Precision problem choosing root in common_EXT, current precision " << ndig << '\n';
 	  trouve=false;
 	  ndig=2*ndig;
 	  f_it=f.begin();

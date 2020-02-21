@@ -5533,7 +5533,7 @@ namespace giac {
     if (v.size()!=2)
       return gensizeerr(contextptr);
     static bool alert_array_start=true;
-    if (alert_array_start && contextptr->globalptr->_python_compat_){
+    if (alert_array_start && contextptr && contextptr->globalptr->_python_compat_){
       alert_array_start=false;
 #ifdef GIAC_HAS_STO_38
       alert(gettext("Python compatibility enabled. List index will start at 0, run index:=1 or of:=1 to disable Python compatibility."),contextptr);

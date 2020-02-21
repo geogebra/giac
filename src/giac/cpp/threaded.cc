@@ -63,6 +63,30 @@ mpz_class smod(const mpz_class & a,int reduce){
   static define_unary_function_eval (__heap_mult,&_heap_mult,_heap_mult_s);
   define_unary_function_ptr5( at_heap_mult ,alias_at_heap_mult,&__heap_mult,0,true);
 
+  gen _half_gcd(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if (g.type!=_INT_ || g.val<0)
+      return gensizeerr(contextptr);
+    if (g.val>0)
+      HGCD=g.val;
+    return HGCD;
+  }
+  static const char _half_gcd_s []="half_gcd";
+  static define_unary_function_eval (__half_gcd,&_half_gcd,_half_gcd_s);
+  define_unary_function_ptr5( at_half_gcd ,alias_at_half_gcd,&__half_gcd,0,true);
+
+  gen _ntl_modgcd(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if (g.type!=_INT_ || g.val<0)
+      return gensizeerr(contextptr);
+    if (g.val>0)
+      NTL_MODGCD=g.val;
+    return NTL_MODGCD;
+  }
+  static const char _ntl_modgcd_s []="ntl_modgcd";
+  static define_unary_function_eval (__ntl_modgcd,&_ntl_modgcd,_ntl_modgcd_s);
+  define_unary_function_ptr5( at_ntl_modgcd ,alias_at_ntl_modgcd,&__ntl_modgcd,0,true);
+
   double modgcd_cachesize=6291456;
   gen _modgcd_cachesize(const gen & g0,GIAC_CONTEXT){
     if ( g0.type==_STRNG && g0.subtype==-1) return  g0;

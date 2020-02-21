@@ -253,7 +253,7 @@ namespace giac {
   // capacity of deg_t by direct addressing
   const int POLY_VARS=POLY_VARS_DIRECT+POLY_VARS_OTHER-1;
 
-#if defined(GIAC_NO_OPTIMIZATIONS) || ((defined(VISUALC) || defined(__APPLE__)) && !defined(GIAC_VECTOR)) || defined __clang__ // || defined(NSPIRE) || defined FXCG
+#if defined(GIAC_NO_OPTIMIZATIONS) || ((defined(VISUALC) || defined(__APPLE__)) && !defined(GIAC_VECTOR)) || defined __clang__ || defined S390X // || defined(NSPIRE) || defined FXCG
   class index_m {
   public:
     ref_index_t * riptr;

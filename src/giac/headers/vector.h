@@ -94,8 +94,12 @@ namespace std {
 	_endalloc_immediate_vect=_begin_immediate_vect+n;
 	return;
       }
-      if ( _endalloc_immediate_vect-_begin_immediate_vect>=int(n) )
+      if ( _endalloc_immediate_vect-_begin_immediate_vect>=int(n) ){
+	_Tp * ptr=_begin_immediate_vect+n;
+	for (;ptr!=_endalloc_immediate_vect;++ptr)
+	  *ptr=_Tp();
 	return;
+      }
       n=nextpow2(n);
       _Tp * _newbegin = new _Tp[n];
       _Tp * _end_immediate_vect = _begin_immediate_vect+(_taille==immvector_max?0:_taille);
