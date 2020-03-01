@@ -652,7 +652,7 @@ namespace giac {
 	      // A*exp(t)+C*(t-b)/a+D=0 -> A*exp(t)+C/a*t+D-C*b/a=0
 	      gen a_(A),b_(C/a),c_(D-C*b/a);
 	      gen delta=a_/b_*exp(-c_/b_,contextptr);
-	      if (is_greater(m1,delta,contextptr))
+	      if (is_strictly_greater(m1,delta,contextptr))
 		return; // no solution
 	      gen sol=-_LambertW(delta,contextptr)-c_/b_;
 	      v.push_back((sol-b)/a);

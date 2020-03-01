@@ -3410,7 +3410,13 @@ namespace giac {
 	m<HGCD
 	){ 
       if (debug_infolevel>1)
-	CERR << CLOCK()*1e-6 << " halfgcd iter " << dega0 << "," << dega1 << '\n';
+	CERR << CLOCK()*1e-6 << " halfgcd iter m=" << m << " dega0/a1 " << dega0 << "," << dega1 << '\n';
+      if (egcd_mpz(a0,a1,m,modulo,C,D,b,&A,&B,&a)){
+	//CERR << a0 << " " << a1 << " " << A << " " << B << " " << C << " " << D << endl;
+	if (debug_infolevel>1)
+	  CERR << CLOCK()*1e-6 << " halfgcd mpz iter end" << dega0 << "," << dega1 << '\n';
+	return true;
+      }
       // limit on m depends on modulo (smaller limit is faster for large modulo)
       modpoly q,r,tmp;
       a=a0;
@@ -3428,12 +3434,17 @@ namespace giac {
 	  va=operator_div(operator_minus(a,operator_times(ua,a0,&env),&env),a1,&env); // ua*a0+va*b0=a
 	  vb=operator_div(operator_minus(b,operator_times(ub,a0,&env),&env),a1,&env); // ub*a0+vb*b0=b
 #endif
+	  //if (ua!=A)
 	  A.swap(ua);
-	  B.swap(va); 
+	  //if (va!=B)
+	  B.swap(va);
+	  //if (ub!=C)
 	  C.swap(ub);
+	  //if (vb!=D)
 	  D.swap(vb);
 	  if (debug_infolevel>1)
 	    CERR << CLOCK()*1e-6 << " halfgcd iter end" << dega0 << "," << dega1 << '\n';
+	  //CERR << a0 << " " << a1 << " " << A << " " << B << " " << C << " " << D << endl;
 	  return true;
 	}
 	DivRem(a,b,&env,q,r); // division works always
@@ -3572,7 +3583,7 @@ namespace giac {
       return gcdmodpoly(q,rem,env,a);
     // now gcd(q,rem) with q.size()>rem.size()
     if (hgcd(q,rem,env->modulo,RA,RB,RC,RD,b0,b1,tmp1,tmp2)){
-      if (b0.empty()){
+      if (b0.empty() || b1.empty()){
 	int maxadeg=q.size()-giacmax(RA.size(),RB.size()),maxbdeg=q.size()/2;
 #if 1
 	matrix22timesvect(RA,RB,RC,RD,q,rem,maxadeg,maxbdeg,b0,b1,*env,tmp1,tmp2);
@@ -3582,6 +3593,8 @@ namespace giac {
 	ab_cd(maxbdeg,RC,q,RD,rem,env,b1,tmp1,tmp2); // b1=trim(RC*q+RD*rem,env);
 #endif
       }
+      else
+	;//CERR << b1.size() << endl;
       if (b1.empty()){
 	a=b0;
 	mulmodpoly(a,invenv(a.front(),env),env,a);
@@ -4845,7 +4858,7 @@ namespace giac {
   }
 
 #ifdef USE_GMP_REPLACEMENTS
-  bool egcd_mpz(const modpoly & a,const modpoly &b,const gen & m,modpoly & u,modpoly &v,modpoly & d){
+  bool egcd_mpz(const modpoly & a,const modpoly &b,int degstop,const gen & m,modpoly & u,modpoly &v,modpoly & d,modpoly * u_ptr,modpoly * v_ptr,modpoly * r_ptr){
     return false;
   }
 
@@ -4854,19 +4867,20 @@ namespace giac {
   bool assign_mpz(const modpoly & a,modpoly &A,int s=128){
     int n=a.size();
     A.reserve(n);
-    for (int i=0;i<a;++i){
+    for (int i=0;i<n;++i){
       gen ai(a[i]);
       if (ai.type==_INT_)
 	ai.uncoerce(s);
       else {
 	if (ai.type!=_ZINT)
 	  return false;
-	mpz_t z;
-	mpz_init2(z,s);
-	mpz_set(z,*ai._ZINTptr);
+	gen b; b.uncoerce(s);
+	mpz_set(*b._ZINTptr,*ai._ZINTptr);
+	swapgen(ai,b);
       }
       A.push_back(ai);
     }
+    return true;
   }
 
   void uncoerce(modpoly & R,int s){
@@ -4884,7 +4898,7 @@ namespace giac {
       i=cancel;
     else {
       mpz_set(z,*A.front()._ZINTptr);
-      mpz_submul(z,*q0._ZINTptr,*B.front()._ZINTptr);
+      mpz_submul(z,*q1._ZINTptr,*B.front()._ZINTptr);
       mpz_tdiv_r(*A.front()._ZINTptr,z,*m._ZINTptr);
       if (mpz_cmp_si(*A.front()._ZINTptr,0)==0)
 	cancel=1;
@@ -4904,7 +4918,7 @@ namespace giac {
       A.erase(A.begin(),A.begin()+cancel);
   }
 
-  bool egcd_mpz(const modpoly & a,const modpoly &b,const gen & m,modpoly & u,modpoly &v,modpoly & d){
+  bool egcd_mpz(const modpoly & a,const modpoly &b,int degstop,const gen & m,modpoly & u,modpoly &v,modpoly & d,modpoly * u_ptr,modpoly * v_ptr,modpoly * r_ptr){
     if (m.type!=_ZINT)
       return false;
     environment env;
@@ -4919,36 +4933,51 @@ namespace giac {
     if (swapped)
       A.swap(B);
     gen q1,q0; q1.uncoerce(s); q0.uncoerce(s);
-    mpz_t z; mpz_init2(z,2*s);
-    int bs;
-    for (;(bs=B.size())>=1;){
-      gen B0=invmod(B.front(),m); B0.uncoerce(s);
-      mpz_mul(z,*A.front()._ZINTptr,*B0._ZINTptr);
+    gen Z; Z.uncoerce(2*s);
+    mpz_t & z=*Z._ZINTptr; 
+    int bs,niter=0;
+    for (;(bs=B.size())-1>=degstop;++niter){
+      // gen B0=invmod(B.front(),m); B0.uncoerce(s);
+      mpz_invert(*q0._ZINTptr,*B.front()._ZINTptr,*m._ZINTptr);
+      mpz_mul(z,*A.front()._ZINTptr,*q0._ZINTptr); // B0 stored in q0
       mpz_tdiv_r(*q1._ZINTptr,z,*m._ZINTptr); // A.front()*B0 modulo m
       if (A.size()==bs){ // may happen only at first iteration
 	// quotient is a constant, A0*B0, replace A by A-quotient*B
-	swapgen(q0,q1);
-	for (int i=0;i<bs;++i){
+	int cancel=1;
+	for (int i=1;i<bs;++i){
 	  mpz_set(z,*A[i]._ZINTptr);
-	  mpz_submul(z,*q0._ZINTptr,*B[i]._ZINTptr);
+	  mpz_submul(z,*q1._ZINTptr,*B[i]._ZINTptr);
 	  mpz_tdiv_r(*A[i]._ZINTptr,z,*m._ZINTptr);
+	  if (i==cancel && mpz_cmp_si(*A[i]._ZINTptr,0)==0)
+	    ++cancel;
 	}
 	// no change for U0 since U1 is 0 at 1st iteration
+	A.erase(A.begin(),A.begin()+cancel);
+	if (A.empty())
+	  break;
       }
       else {
 	if (A.size()==bs+1){ // generic iteration, compute quotient=q1*X+q0
 	  mpz_set(z,*A[1]._ZINTptr);
 	  mpz_submul(z,*q1._ZINTptr,*B[1]._ZINTptr);
-	  mpz_mul(z,z,*B0._ZINTptr);
+	  mpz_mul(z,z,*q0._ZINTptr); // B0 stored in q0
 	  mpz_tdiv_r(*q0._ZINTptr,z,*m._ZINTptr); // (A[1]-q1*B[1])*B0 modulo m
 	  // A -= (q1*X+q0)*B (2 leading terms cancel, maybe more)
-	  rem_mpz(A,q1,q0,m,B,z,true);
+	  rem_mpz(A,q1,q0,m,B,z,2);
+	  if (A.empty())
+	    break;
 	  // U0=U0-(q1*X+q0)*U1 (U1.size()>U0.size(), no leading term cancel)
 	  if (!U1.empty()){
 	    U0.insert(U0.begin(),2,0);
 	    U0[0].uncoerce(s);
 	    U0[1].uncoerce(s);
-	    rem_mpz(U0,q1,q0,m,U1,z,false);
+	    if (U0.size()==2 && U1.size()==1 && mpz_cmp_si(*U1.front()._ZINTptr,1)==0){
+	      mpz_neg(*U0[0]._ZINTptr,*q1._ZINTptr);
+	      mpz_neg(*U0[1]._ZINTptr,*q0._ZINTptr);
+	    }
+	    else {
+	      rem_mpz(U0,q1,q0,m,U1,z,0);
+	    }
 	  }
 	}
 	else {
@@ -4956,38 +4985,105 @@ namespace giac {
 	  DivRem(A,B,&env,Q,R,false);
 	  uncoerce(R,s);
 	  A.swap(R);
+	  if (A.empty()) 
+	    break; // B is the gcd
 	  // U0=U0-Q*U1
 	  operator_times(Q,U1,&env,R); submodpoly(U0,R,&env,U0); // ur=ua-q*ub;
 	  uncoerce(U0,s);
 	}
       }
-      // next iteration A is the remainder and U0 the coeff, swap
+      // next iteration A is the remainder (non zero) and U0 the coeff, swap
       A.swap(B);
       U0.swap(U1);
     }
-    if (bs==1){ // B is the gcd, U1 is the coeff of a unless swapped is true
-      trim_inplace(B,&env);
-      d.swap(B);
-      trim_inplace(U1,&env);
-      u.swap(U1);
+    if (niter==0){
+      if (swapped){
+	u=vecteur(1,1);
+	v=vecteur(0);
+	d=a;
+	if (r_ptr)
+	  *r_ptr=b;
+      }
+      else {
+	u=vecteur(0);
+	v=vecteur(1,1);
+	d=b;
+	if (r_ptr)
+	  *r_ptr=a;
+      }
+      if (u_ptr){
+	*u_ptr=v;
+	*v_ptr=u;
+      }
+      return true;
     }
-    else { // bs==0, A is the gcd, U0 is the coeff of a unless swapped is true
+    // B is the gcd, U1 is the coeff of a unless swapped is true
+    trim_inplace(B,&env);
+    d.swap(B);
+    trim_inplace(U1,&env);
+    u.swap(U1);
+    if (r_ptr){
       trim_inplace(A,&env);
-      d.swap(A);
-      trim_inplace(U0,&env);
-      u.swap(U0);
+      r_ptr->swap(A);
     }
+    if (u_ptr){
+      trim_inplace(U0,&env);
+      u_ptr->swap(U0);
+    }
+#if 0
+    q1=invmod(d.front(),m);
+    mulmodpoly(u,q1,&env,u);
+    mulmodpoly(d,q1,&env,d);
+#endif
     modpoly tmp1,tmp2;
     operator_times(u,swapped?b:a,&env,tmp1);
-    submodpoly(tmp1,d,&env,tmp2); // tmp2=u*a-d
-    DivRem(tmp2,swapped?a:b,&env,v,R); // R should be 0
+    // next step is not required because degree(d)<degree(smallest of a and b)
+    // since we made at least 1 iteration without breaking
+    if (0 && (d.size()==swapped?a.size():b.size())){
+      submodpoly(tmp1,d,&env,tmp2); tmp1.swap(tmp2); // tmp1=u*a-d
+    }
+    DivRem(tmp1,swapped?a:b,&env,v,R); // R would be 0 if step above was taken, DivQuo might be called if degree are large, but egcd_mpz should not be called...
+    negmodpoly(v,v);
     if (swapped)
       u.swap(v);
+    if (u_ptr && v_ptr){
+      if (niter==1){
+	// breaked at 2nd iteration, at 1st iteration we have u=0 and v=1
+	u_ptr->clear();
+	*v_ptr=vecteur(1,1);
+      }
+      else {
+	operator_times(*u_ptr,swapped?b:a,&env,tmp1);
+	DivRem(tmp1,swapped?a:b,&env,*v_ptr,R); 
+	negmodpoly(*v_ptr,*v_ptr);
+      }
+      if (swapped)
+	u_ptr->swap(*v_ptr);
+    }
+    return true;
   }
 #endif // USE_GMP_REPLACEMENTS
 
   // p1*u+p2*v=d
   void egcd(const modpoly &p1, const modpoly & p2, environment * env,modpoly & u,modpoly & v,modpoly & d){
+#if 1
+    if (!p1.empty() && !p2.empty() &&
+	(!env || !env->moduloon)){
+      bool p1mod=p1.front().type==_MOD,p2mod=p1.front().type==_MOD;
+      if (p1mod || p2mod){
+	environment e;
+	e.modulo=*((p1mod?p1:p2).front()._MODptr+1);
+	e.moduloon=true;
+	egcd(unmod(p1,e.modulo),unmod(p2,e.modulo),&e,u,v,d);
+	modularize(u,e.modulo);
+	modularize(v,e.modulo);
+	modularize(d,e.modulo);
+	return;
+      }
+    }
+    if (env && env->moduloon && egcd_mpz(p1,p2,1,env->modulo,u,v,d,0,0,0))
+      return;
+#endif
     if ( (!env || !env->moduloon || !is_zero(env->coeff))){
       int dim=giacmax(inner_POLYdim(p1),inner_POLYdim(p2));
       polynome pp1(dim),pp2(dim),pu(dim),pv(dim),pd(dim);

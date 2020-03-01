@@ -305,16 +305,13 @@ namespace giac {
       for (;it!=itend;++it){
 	newcoeff=coeff*(*it);
 	++it;
-	if ( (it->type==_SYMB) && (it->_SYMBptr->sommet==at_cos) ){
+	bool iscos=it->type==_SYMB && it->_SYMBptr->sommet==at_cos;
+	if ( (it->type==_SYMB) && (iscos || it->_SYMBptr->sommet==at_sin) ){
 	  newcoeff=recursive_normal(rdiv(newcoeff,plus_two,contextptr),false,contextptr);
-	  tadd(res,newcoeff,cos(normal(arg._SYMBptr->feuille-it->_SYMBptr->feuille,false,contextptr),contextptr),contextptr);
-	  tadd(res,newcoeff,cos(normal(arg._SYMBptr->feuille+it->_SYMBptr->feuille,false,contextptr),contextptr),contextptr);
-	  continue;
-	}
-	if ( (it->type==_SYMB) && (it->_SYMBptr->sommet==at_sin) ){
-	  newcoeff=recursive_normal(rdiv(newcoeff,plus_two,contextptr),false,contextptr);
-	  tadd(res,newcoeff,sin(normal(it->_SYMBptr->feuille+arg._SYMBptr->feuille,false,contextptr),contextptr),contextptr);
-	  tadd(res,newcoeff,sin(normal(it->_SYMBptr->feuille-arg._SYMBptr->feuille,false,contextptr),contextptr),contextptr);
+	  gen tmp1(normal(it->_SYMBptr->feuille+arg._SYMBptr->feuille,false,contextptr));
+	  gen tmp2(normal(it->_SYMBptr->feuille-arg._SYMBptr->feuille,false,contextptr));
+	  tadd(res,newcoeff,iscos?cos(tmp2,contextptr):sin(tmp1,contextptr),contextptr);
+	  tadd(res,newcoeff,iscos?cos(tmp1,contextptr):sin(tmp2,contextptr),contextptr);
 	  continue;
 	}
 	res.push_back(recursive_normal(newcoeff*(*it),false,contextptr));
@@ -328,16 +325,19 @@ namespace giac {
       for (;it!=itend;++it){
 	newcoeff=coeff*(*it);
 	++it;
-	if ( (it->type==_SYMB) && (it->_SYMBptr->sommet==at_cos) ){
+	bool iscos=it->type==_SYMB && it->_SYMBptr->sommet==at_cos;
+	if ( (it->type==_SYMB) && (iscos || it->_SYMBptr->sommet==at_sin) ){
 	  newcoeff=recursive_normal(rdiv(newcoeff,plus_two,contextptr),false,contextptr);
-	  tadd(res,newcoeff,sin(normal(arg._SYMBptr->feuille+it->_SYMBptr->feuille,false,contextptr),contextptr),contextptr);
-	  tadd(res,newcoeff,sin(normal(arg._SYMBptr->feuille-it->_SYMBptr->feuille,false,contextptr),contextptr),contextptr);
-	  continue;
-	}
-	if ( (it->type==_SYMB) && (it->_SYMBptr->sommet==at_sin)){
-	  newcoeff=recursive_normal(rdiv(newcoeff,plus_two,contextptr),false,contextptr);
-	  tadd(res,newcoeff,cos(normal(arg._SYMBptr->feuille-it->_SYMBptr->feuille,false,contextptr),contextptr),contextptr);
-	  tadd(res,-newcoeff,cos(normal(arg._SYMBptr->feuille+it->_SYMBptr->feuille,false,contextptr),contextptr),contextptr);
+	  gen tmp1(normal(arg._SYMBptr->feuille+it->_SYMBptr->feuille,false,contextptr));
+	  gen tmp2(normal(arg._SYMBptr->feuille-it->_SYMBptr->feuille,false,contextptr));
+	  if (iscos){
+	    tadd(res,newcoeff,sin(tmp1,contextptr),contextptr);
+	    tadd(res,newcoeff,sin(tmp2,contextptr),contextptr);
+	  }
+	  else {
+	    tadd(res,newcoeff,cos(tmp2,contextptr),contextptr);
+	    tadd(res,-newcoeff,cos(tmp1,contextptr),contextptr);
+	  }
 	  continue;
 	}
 	res.push_back(recursive_normal(newcoeff*(*it),false,contextptr));

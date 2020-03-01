@@ -198,6 +198,8 @@ namespace giac {
   bool gcd_modular_algo1(polynome &p,polynome &q,polynome &d,bool compute_cof);
   // p1*u+p2*v=d
   void egcd(const modpoly &p1, const modpoly & p2, environment * env,modpoly & u,modpoly & v,modpoly & d);
+  // a*u+b*v=d optimized for GMP, if u_ptr and v_ptr are non 0 compute previous line of Euclide algorithm, stops as soon as degree<degstop
+  bool egcd_mpz(const modpoly & a,const modpoly &b,int degstop,const gen & m,modpoly & u,modpoly &v,modpoly & d,modpoly * u_ptr,modpoly * v_ptr,modpoly * r_ptr);
   bool egcd_pade(const modpoly & n,const modpoly & x,int l,modpoly & a,modpoly &b,environment * env,bool psron=true);
   // alg extension norme for p_y, alg extension defined by pmini
   bool algnorme(const polynome & p_y,const polynome & pmini,polynome & n);

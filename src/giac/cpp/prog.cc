@@ -595,7 +595,16 @@ namespace giac {
     if (f.type!=_VECT || f._VECTptr->size()!=3)
       return gettext("// Invalid program");
     vecteur & v =*f._VECTptr;
-    vecteur vars=rm_checktype(gen2vecteur(v[0]),contextptr),res1,res2(1,undef),res3,res4;
+    vecteur vars=gen2vecteur(v[0]),res1,res2,res3,res4;
+    // add implicit declaration of global var in argument optional value
+    for (int i=0;i<vars.size();i++){
+      if (vars[i].is_symb_of_sommet(at_equal)){
+	gen g=vars[i]._SYMBptr->feuille[1];
+	res2=mergevecteur(res2,lidnt(g));
+      }
+    }
+    res2.push_back(undef);
+    vars=rm_checktype(vars,contextptr);
     for (unsigned i=0;i<vars.size();++i){
       if (equalposcomp(vars,vars[i])!=int(i+1))
 	res += gettext("// Warning, duplicate argument name: ")+vars[i].print(contextptr)+'\n';

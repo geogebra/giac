@@ -2147,10 +2147,29 @@ namespace giac {
     }
   }
 
+  void tri_rlvarx(vecteur & v){
+    int s=v.size();
+    for (;;){
+      bool ok=true;
+      for (int i=0;i<s-1;++i){
+	if (symb_size_less(v[i+1],v[i])){
+	  ok=false;
+	  swapgen(v[i],v[i+1]);
+	}
+      }
+      if (ok)
+	return;
+    }
+  }
+
   vecteur rlvarx(const gen &e,const gen & x){
     vecteur res;
     rlvarx(e,x,res);
+#ifdef FXCG
+    tri_rlvarx(res);
+#else
     gen_sort_f(res.begin(),res.end(),symb_size_less);
+#endif
     return res;
   }
 

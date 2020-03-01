@@ -3355,14 +3355,14 @@ namespace giac {
     if (fg.type==_FRAC && fg._FRACptr->num.type==_FRAC){
       fraction f(fg._FRACptr->num._FRACptr->num,fg._FRACptr->den*fg._FRACptr->num._FRACptr->den);
       f.normal();
-      return r2sym(f,l,contextptr); 
+      return ratnormal(r2sym(f,l,contextptr),contextptr); 
     }
     if (fg.type==_FRAC && fg._FRACptr->den.type==_CPLX){
       gen tmp=conj(fg._FRACptr->den,contextptr);
       fg._FRACptr->num = fg._FRACptr->num * tmp;
       fg._FRACptr->den = fg._FRACptr->den * tmp;
     }
-    return r2sym(fg,l,contextptr);
+    return ratnormal(r2sym(fg,l,contextptr),contextptr);
   }
   gen rationalgcd(const gen & a, const gen & b,GIAC_CONTEXT){
     gen A,B,C,D;

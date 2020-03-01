@@ -8744,9 +8744,9 @@ namespace giac {
 	  clean[B[i].first]=false;
 	  clean[B[i].second]=false;
 	}
-	for (unsigned i=0;i<clean.size();++i){
-	  if (clean[i] && res[i].coord.capacity()>1){
-		  cleared += unsigned(res[i].coord.capacity()) - 1;
+	for (unsigned i=0;i<clean.size() && i<res.size();++i){
+	  if (clean[i] && res[i].coord.capacity()>1 && !res[i].coord.empty()){
+	    cleared += unsigned(res[i].coord.capacity()) - 1;
 	    polymod<tdeg_t> clearer;
 	    clearer.coord.push_back(res[i].coord.front());
 	    clearer.coord.swap(res[i].coord);
@@ -9189,6 +9189,7 @@ namespace giac {
 	    it->g=tmpz;
 	  }
 	}
+	mpz_clear(tmpz);
 	return true;
       }
     }

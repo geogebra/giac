@@ -490,8 +490,10 @@ namespace giac {
       return normal_cdf(v[1],contextptr)-normal_cdf(v[0],contextptr); 
     if (s==3)
       return normal_cdf((v[2]-v[0])/v[1],contextptr);
-    if (s==4)
+    if (s==4){
+      // FIXME precision: compute with quadratures?
       return normal_cdf((v[3]-v[0])/v[1],contextptr)-normal_cdf((v[2]-v[0])/v[1],contextptr);
+    }
     return gensizeerr(contextptr);
   }
   static const char _normal_cdf_s []="normal_cdf";
@@ -531,10 +533,26 @@ namespace giac {
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     if (g.type!=_VECT)
       return normal_icdf(g,contextptr);
-    vecteur & v=*g._VECTptr;
-    if (v.size()!=3)
+    vecteur v=*g._VECTptr;
+    int s=v.size();
+    if (s==2 && (v.back()==at_left || v.back()==at_right || v.back()==at_centre|| v.back()==at_tail)){
+      v=makevecteur(0,1,v[0],v[1]);
+      s=4;
+    }    
+    if (s<3)
       return gensizeerr(contextptr);
-    return v[0]+v[1]*normal_icdf(v[2],contextptr);
+    if (s==4 && v.back()==at_centre)
+      v[2]=(1-v[2])/2;
+    if (s==4 && v.back()==at_tail)
+      v[2]=v[2]/2;
+    gen g2(normal_icdf(v[2],contextptr));
+    gen g1=v[0]-v[1]*g2;
+    g2=v[0]+v[1]*g2;
+    if (s==4 && (v.back()==at_centre || v.back()==at_tail))
+      return makevecteur(g2,g1);
+    if (s==4 && v.back()==at_right)
+      return g1;
+    return g2;
   }
   static const char _normal_icdf_s []="normal_icdf";
   static define_unary_function_eval (__normal_icdf,&_normal_icdf,_normal_icdf_s);
