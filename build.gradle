@@ -450,11 +450,6 @@ model {
                 } else {
                     cppCompiler.define 'SIZEOF_LONG', '4'
                 }
-                if (targetPlatform.architecture.name == 'arm-v7') {
-                    cppCompiler.define 'HAVE_GETTEXT'
-                    linker.args '-lstdc++'
-                }
-
                 // OS based settings:
                 if (targetPlatform.operatingSystem.name == 'windows') {
                     cppCompiler.define 'GIAC_MPQS'
@@ -489,6 +484,12 @@ model {
                 }
 
                 if (targetPlatform.operatingSystem.name == 'linux') {
+                    if (targetPlatform.architecture.name == 'arm-v7') {
+                        cppCompiler.define 'HAVE_GETTEXT'
+                        linker.args '-lstdc++'
+                    }
+
+
                     cppCompiler.define 'HAVE_UNISTD_H'
 
                     cppCompiler.args '-I', file('src/jni/jdkHeaders/linux').toString()
