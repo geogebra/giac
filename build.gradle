@@ -200,6 +200,10 @@ model {
             architecture 'x64'
             operatingSystem 'linux'
         }
+        rpi {
+            architecture 'arm'
+            operatingSystem 'linux'
+        }
         osx_amd64 {
             architecture 'amd64'
             operatingSystem 'osx'
@@ -247,6 +251,12 @@ model {
             target('win64') {
                 cppCompiler.executable 'x86_64-w64-mingw32-g++'
                 linker.executable 'x86_64-w64-mingw32-g++'
+            }
+        }
+        gcc(Gcc) {
+            target('rpi') {
+                 cppCompiler.executable 'gcc'
+                 linker.executable 'gcc'
             }
         }
         clang(Clang) {
@@ -335,6 +345,7 @@ model {
             targetPlatform 'ios_arm64'
             targetPlatform 'ios_i386'
             targetPlatform 'ios_x86_64'
+            targetPlatform 'rpi'
 
             binaries.all {
                 giacCommonDefines(cppCompiler)
@@ -403,6 +414,7 @@ model {
             targetPlatform 'androidx86'
             targetPlatform 'androidx86_64'
             targetPlatform 'androidarm64'
+            targetPlatform 'rpi'
 
             sources.cpp {
                 source {
@@ -437,6 +449,10 @@ model {
                     cppCompiler.define 'SIZEOF_LONG', '8'
                 } else {
                     cppCompiler.define 'SIZEOF_LONG', '4'
+                }
+                if (targetPlatform.architecture.name == 'arm-v7') {
+                    cppCompiler.define 'HAVE_GETTEXT'
+                    linker.args '-lstdc++'
                 }
 
                 // OS based settings:
