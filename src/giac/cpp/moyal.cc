@@ -478,20 +478,50 @@ namespace giac {
   // proba that X<x for X following a normal distrib of mean mean and dev dev
   // arg = vector [mean,dev,x] or x alone (mean=0, dev=1)
   static gen normal_cdf(const gen & g,GIAC_CONTEXT){
+    if (g.type==_DOUBLE_){
+      double x=-g._DOUBLE_val*std::sqrt(2.0)/2;
+#if 1
+      if (x>0){
+	// erf is odd, (erf(sqrt(2)/2*g)+1)/2=(1-erf(x))/2=erfc(x)/2
+	return .5*erfc(x,contextptr);
+      }
+#else
+      if (x>5){
+	double p=.3275911,a1=.254829592,a2=-.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429;
+	double t=1.0/(1+p*x);
+	return .5*std::exp(-x*x)*t*(a1+t*(a2+t*(a3+t*(a4+t*a5))));
+	//double p=0.47047,a1=.3480242,a2=-0.0958798,a3=.7478556;
+	//double t=1.0/(1+p*x);
+	//return .5*std::exp(-x*x)*t*(a1+t*(a2+t*a3));
+      }
+#endif
+    }
     return rdiv(erf(ratnormal(plus_sqrt2_2*g,contextptr),contextptr)+plus_one,2,contextptr);
   }
   gen _normal_cdf(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     if (g.type!=_VECT)
       return normal_cdf(g,contextptr);
-    vecteur & v=*g._VECTptr;
+    vecteur v=*g._VECTptr;
     int s=int(v.size());
-    if (s==2)
-      return normal_cdf(v[1],contextptr)-normal_cdf(v[0],contextptr); 
+    if (s==2){
+      v.insert(v.begin(),1);
+      v.insert(v.begin(),0);
+      s +=2;
+      // return normal_cdf(v[1],contextptr)-normal_cdf(v[0],contextptr); 
+    }
     if (s==3)
       return normal_cdf((v[2]-v[0])/v[1],contextptr);
     if (s==4){
-      // FIXME precision: compute with quadratures?
+      // precision:
+      if (is_strictly_greater(v[2],v[3],contextptr))
+	return gensizeerr(contextptr);
+      if (is_strictly_greater(v[3]-v[0],v[0]-v[2],contextptr)){
+	v[0]=-v[0];
+	v[2]=-v[2];
+	v[3]=-v[3];
+	swapgen(v[2],v[3]);
+      }
       return normal_cdf((v[3]-v[0])/v[1],contextptr)-normal_cdf((v[2]-v[0])/v[1],contextptr);
     }
     return gensizeerr(contextptr);
@@ -1472,8 +1502,21 @@ namespace giac {
     int s=int(v.size());
     if (s==2)
       return student_icdf(v[0],v[1],contextptr);
-    if (s==3)
+    if (s==3){
+      if (v[2]==at_left)
+	return student_icdf(v[0],v[1],contextptr);
+      if (v[2]==at_right)
+	return -student_icdf(v[0],v[1],contextptr);
+      if (v[2]==at_centre){
+	gen t=student_icdf(v[0],(1-v[1])/2,contextptr);
+	return makevecteur(-t,t);
+      }
+      if (v[2]==at_tail){
+	gen t=student_icdf(v[0],v[1]/2,contextptr);
+	return makevecteur(-t,t);
+      }
       return student_icdf(v[0],v[2],contextptr)-student_icdf(v[0],v[1],contextptr);
+    }
     return gensizeerr(contextptr);
   }
   static const char _student_icdf_s []="student_icdf";
@@ -1645,8 +1688,17 @@ namespace giac {
     int s=int(v.size());
     if (s==2)
       return chisquare_icdf(v[0],v[1],contextptr);
-    if (s==3)
+    if (s==3){
+      if (v[2]==at_left)
+	return chisquare_icdf(v[0],v[1],contextptr);
+      if (v[2]==at_right)
+	return chisquare_icdf(v[0],1-v[1],contextptr);
+      if (v[2]==at_centre)
+	return makevecteur(chisquare_icdf(v[0],(1-v[1])/2,contextptr),chisquare_icdf(v[0],(1+v[1])/2,contextptr));
+      if (v[2]==at_tail)
+	return makevecteur(chisquare_icdf(v[0],(v[1])/2,contextptr),chisquare_icdf(v[0],1-v[1]/2,contextptr));
       return chisquare_icdf(v[0],v[2],contextptr)-chisquare_icdf(v[0],v[1],contextptr);
+    }
     return gensizeerr(contextptr);
   }
   static const char _chisquare_icdf_s []="chisquare_icdf";
@@ -1849,8 +1901,17 @@ namespace giac {
     int s=int(v.size());
     if (s==3)
       return snedecor_icdf(v[0],v[1],v[2],contextptr);
-    if (s==4)
+    if (s==4){
+      if (v[3]==at_left)
+	return snedecor_icdf(v[0],v[1],v[2],contextptr);
+      if (v[3]==at_right)
+	return snedecor_icdf(v[0],v[1],1-v[2],contextptr);
+      if (v[3]==at_centre)
+	return makevecteur(snedecor_icdf(v[0],v[1],(1-v[2])/2,contextptr),snedecor_icdf(v[0],v[1],(1+v[2])/2,contextptr));
+      if (v[3]==at_tail)
+	return makevecteur(snedecor_icdf(v[0],v[1],(v[2])/2,contextptr),snedecor_icdf(v[0],v[1],1-v[2]/2,contextptr));
       return snedecor_icdf(v[0],v[1],v[3],contextptr)-snedecor_icdf(v[0],v[1],v[2],contextptr);
+    }
     return gensizeerr(contextptr);
   }
   static const char _snedecor_icdf_s []="snedecor_icdf";
@@ -4170,7 +4231,7 @@ namespace giac {
   static define_unary_function_eval (__hidden_name,&_constants_catalog,_hidden_name_s);
   define_unary_function_ptr5( at_hidden_name ,alias_at_hidden_name,&__hidden_name,0,T_NUMBER);
 
-#ifdef VISUALC
+#if defined(VISUALC) || defined(BESTA_OS)
   const double M_E=2.7182818284590452;
 #endif
 

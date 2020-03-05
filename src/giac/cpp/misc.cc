@@ -4521,7 +4521,11 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
       double inf,sup; // delta=h._DOUBLE_val-g._DOUBLE_val;
       it=v.begin();
       //  int nclass=itend-it;
+#ifdef HAVE_LIBFLTK // changes by L. Marohnić
+      vecteur res(1,symb_equal(change_subtype(gen(_AXES),_INT_PLOT),3));
+#else
       vecteur res;
+#endif
       for (;it!=itend;++it){
 	gen current=it->_VECTptr->front();
 	if (current.is_symb_of_sommet(at_interval)){
@@ -4540,9 +4544,16 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
 	gen mini(inf,height),maxi(sup,height);
 	gen rectan(makevecteur(inf,sup,maxi,mini,inf),_LINE__VECT);
 	res.push_back(pnt_attrib(rectan,attributs,contextptr));
+#if 1 // changes by L. Marohnić
+	res.push_back(_segment(makevecteur(inf,mini),contextptr));
+	res.push_back(_segment(makevecteur(mini,maxi),contextptr));
+	res.push_back(_segment(makevecteur(maxi,sup),contextptr));
+	res.push_back(_segment(makevecteur(inf,sup),contextptr));
+#else
 	// res.push_back(_segment(makevecteur(inf,mini),contextptr));
 	// res.push_back(_segment(makevecteur(mini,maxi),contextptr));
 	// res.push_back(_segment(makevecteur(maxi,sup),contextptr));	    
+#endif
       }
 #ifndef WIN32
     io_graph(old_iograph,contextptr);
@@ -4557,7 +4568,11 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
     double kbegin=std::floor((w1.front()-class_minimum)/class_size);
     double kend=std::floor((w1.back()-class_minimum)/class_size);
     vector<double>::const_iterator it=w1.begin(),itend=w1.end();
+#ifdef HAVE_LIBFLTK // changes by L. Marohnić
+    vecteur res(1,symb_equal(change_subtype(gen(_AXES),_INT_PLOT),3));
+#else
     vecteur res;
+#endif
     for (;kbegin<=kend;++kbegin){
       // count in this class
       double min_class=kbegin*class_size+class_minimum;
@@ -4572,9 +4587,16 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
       gen maxg=max_class+gen(0.0,effectif);
       gen rectan(makevecteur(min_class,max_class,maxg,ming,min_class),_LINE__VECT);
       res.push_back(pnt_attrib(rectan,attributs,contextptr));
+#if 1 // changes by L. Marohnić
+      res.push_back(_segment(makevecteur(min_class,ming),contextptr));
+      res.push_back(_segment(makevecteur(ming,maxg),contextptr));
+      res.push_back(_segment(makevecteur(maxg,max_class),contextptr));
+      res.push_back(_segment(makevecteur(min_class,max_class),contextptr));
+#else
       // res.push_back(_segment(makevecteur(min_class,ming),contextptr));
       // res.push_back(_segment(makevecteur(ming,maxg),contextptr));
       // res.push_back(_segment(makevecteur(maxg,max_class),contextptr));
+#endif
     }
 #ifndef WIN32
     io_graph(old_iograph,contextptr);
@@ -4593,8 +4615,16 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
     vecteur args;
     if (g.subtype==_SEQ__VECT)
       args=*g._VECTptr;
+#ifdef HAVE_LIBFLTK // changes by L. Marohnić
+    vecteur attributs(1,int(FL_DARK1));
+    int s=read_attributs(args,attributs,contextptr);
+    int col=attributs[0].val;
+    col=int(unsigned(col) | _FILL_POLYGON);
+    attributs[0]=col;
+#else
     vecteur attributs(1,default_color(contextptr));
     int s=read_attributs(args,attributs,contextptr);
+#endif
     args=vecteur(args.begin(),args.begin()+s);
     int nd;
     if (s>=1 && (nd=is_distribution(args[0]))){
@@ -5115,6 +5145,11 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
     gen g(g_);
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     vecteur vals,names,attributs,res;
+#ifdef HAVE_LIBFLTK // changes by L. Marohnić
+    res.push_back(symb_equal(change_subtype(gen(_AXES),_INT_PLOT),2));
+#else
+    ;
+#endif
     double largeur=.8;
     if (g.type==_VECT && g.subtype==_SEQ__VECT){
       vecteur v=*g._VECTptr;
@@ -5156,6 +5191,44 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
       t=0;
       c=attr[0].val;
     }
+#ifdef HAVE_LIBFLTK // changes by L. Marohnić
+    vecteur allvals(0);
+    for (const_iterateur it=vals.begin();it!=vals.end();++it) {
+      if (it->type==_VECT)
+        allvals=mergevecteur(allvals,vecteur(it->_VECTptr->begin()+(it->_VECTptr->front().type==_STRNG?1:0),
+                                             it->_VECTptr->end()));
+    }
+    double dsc=2.0,padding=0.0;
+    if (!allvals.empty()) {
+      gen maxval=_evalf(_max(allvals,contextptr),contextptr);
+      if (maxval.type==_DOUBLE_ && is_positive(maxval,contextptr)) {
+        dsc=maxval.DOUBLE_val()*0.1;
+        padding=maxval.DOUBLE_val()*0.02;
+      }
+    }
+    for (int j=0;j<ncamemberts;j++){
+      vecteur & Vals = *vals[j]._VECTptr;
+      int i=0;
+      gen xy=(s-0.25)*j;
+      if (Vals[0].type==_STRNG){
+	// add title
+	res.push_back(symb_pnt_name(xy-largeur-dsc*cst_i,_POINT_INVISIBLE,Vals[0],contextptr));
+	++i;
+      }
+      for (;i<s;++i){
+	gen tmp,xpos;
+	if (names[i].type!=_STRNG && has_evalf(names[i],xpos,1,contextptr)){
+	  tmp=gen(makevecteur(xpos+largeur+cst_i*Vals[i],xpos+largeur,xpos-largeur,xpos-largeur+cst_i*Vals[i],xpos+largeur+cst_i*Vals[i]),_LINE__VECT);
+	  res.push_back(symb_pnt(tmp,i<t?attr[i]:(c | _FILL_POLYGON),contextptr));
+	}
+	else {
+	  tmp=gen(makevecteur(xy+i-1+largeur+cst_i*Vals[i],xy+i-1+largeur,xy+i-1-largeur,xy+i-1-largeur+cst_i*Vals[i],xy+i-1+largeur+cst_i*Vals[i]),_LINE__VECT);
+	  res.push_back(symb_pnt(tmp,i<t?attr[i]:((i==7?0:i) | _FILL_POLYGON),contextptr));
+    res.push_back(symb_pnt_name(xy+i-1+largeur+cst_i*(Vals[i]+padding),_POINT_INVISIBLE | _QUADRANT2,names[i],contextptr));
+	}
+      }
+    }
+#else
     for (int j=0;j<ncamemberts;j++){
       vecteur & Vals = *vals[j]._VECTptr;
       int i=0;
@@ -5177,6 +5250,7 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
 	}
       }
     }
+#endif
     return res;
   }
   static const char _diagramme_batons_s []="bar_plot";
@@ -5190,6 +5264,58 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
   gen _camembert(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     vecteur vals,names,attributs,res;
+#if 1 // changes by L. Marohnić
+    res.push_back(symb_equal(change_subtype(gen(_AXES),_INT_PLOT),0));
+    res.push_back(symb_equal(change_subtype(gen(_GL_ORTHO),_INT_PLOT),1));
+    gen errcode=read_camembert_args(g,vals,names,attributs,contextptr);
+    if (is_undef(errcode)) return errcode;
+    vecteur attr(gen2vecteur(attributs[0]));
+    int ncamemberts=int(vals.size()),s=int(vals.front()._VECTptr->size()),t=int(attr.size());
+    int rowlen=2;
+    if (ncamemberts>4) rowlen=3;
+    if (ncamemberts>6) rowlen=4;
+    for (int j=0;j<ncamemberts;j++){
+      gen xy=5*(j%rowlen)-5*(j/rowlen)*cst_i;
+      gen diametre=makevecteur(-1+xy,1+xy);
+      gen a(0),da;
+      double da100;
+      char ss[256];
+      vecteur & Vals = *vals[j]._VECTptr;
+      gen somme;
+      int i=0,pos=0;;
+      if (Vals[0].type==_STRNG){
+	// add title
+	res.push_back(symb_pnt_name(xy-1+1.75*cst_i,_POINT_INVISIBLE,Vals[0],contextptr));
+	++i;
+	somme=_plus(vecteur(Vals.begin()+1,Vals.end()),contextptr);
+      }
+      else
+	somme=_plus(Vals,contextptr);
+  string name;
+      for (;i<s;++i){
+	if (ck_is_strictly_positive(-Vals[i],contextptr))
+	  return gensizeerr(gettext("Negative value encoutered"));
+	da=2*cst_pi*Vals[i]/somme;
+	da100=evalf_double(100*Vals[i]/somme,1,contextptr)._DOUBLE_val;
+	if (da100>0){        
+	  sprintfdouble(ss,"%.4g",da100);
+	  if (is_positive(a-cst_pi/2,contextptr))
+	    pos=_QUADRANT2;
+	  if (is_positive(a-cst_pi,contextptr))
+	    pos=_QUADRANT3;
+	  if (is_positive(a-3*cst_pi/2,contextptr))
+	    pos=_QUADRANT4;
+	  gen tmp=symbolic(at_cercle,gen(makevecteur(diametre,a,a+da),_PNT__VECT));
+    name=gen2string(names[i]);
+    if (name.length()>1)
+      name+=": ";
+	  res.push_back(symb_pnt_name(tmp,i<t?attr[i]:(i%7 | _FILL_POLYGON | pos),
+                                string2gen(name+string(ss)+"%",false),contextptr));
+	  a=a+da;
+	}
+      }
+    }
+#else
     gen errcode=read_camembert_args(g,vals,names,attributs,contextptr);
     if (is_undef(errcode)) return errcode;
     vecteur attr(gen2vecteur(attributs[0]));
@@ -5230,6 +5356,7 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
 	}
       }
     }
+#endif
     return res;
   }
   static const char _camembert_s []="camembert";

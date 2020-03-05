@@ -9183,6 +9183,19 @@ namespace giac {
   }
   define_partial_derivative_onearg_genop( D_at_erfc," D_at_erfc",d_erfc);
   gen erfc(const gen & x,GIAC_CONTEXT){
+#if 0
+    if (x.type==_DOUBLE_ && x._DOUBLE_val<-6){
+      double z=-x._DOUBLE_val;
+      // 2z^2=x^2
+      // sqrt(pi)*z*exp(z^2)*erfc(z)=1+sum(m>=1,(-1)^m*1*3*...*(2m-1)/(2*z^2)^m)
+      double res=1,X=1.0/(2*z*z),general=1;
+      for (int m=1;m<=10;++m){
+	general *= -(2*m-1)*X;
+	res += general;
+      }
+      return 1.0/std::sqrt(M_PI)*std::exp(-z*z)/z*res;
+    }
+#endif
     if (x.type==_FLOAT_)
       return erfc(get_double(x._FLOAT_val),contextptr);
     if (is_equal(x))
