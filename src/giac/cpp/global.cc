@@ -6516,6 +6516,10 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	  }
 	  if (p && progpos>=0 && progpos<cs && instruction_at(cur,progpos,q)){
 	    pythonmode=true;
+#if 1
+	    res = cur.substr(0,p)+":\n"+string(progpos+4,' ')+cur.substr(p+1,pos-p)+'\n'+res;
+	    continue;
+#else
 	    cur=cur.substr(0,p)+" then "+cur.substr(p+1,pos-p);
 	    convert_python(cur,contextptr);
 	    // no fi if there is an else or elif
@@ -6523,18 +6527,25 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	      if (res[p]!=' ' && res[p]!=char(9))
 		break;
 	    }
-	    if (p<res.size()+5 && (res.substr(p,4)=="else" || res.substr(p,4)=="elif"))
+	    if (p<res.size()+5 && (res.substr(p,4)=="else" || res.substr(p,4)=="elif")){
 	      cur += " ";
+	    }
 	    else
 	      cur += " fi";
 	    p=0;
+#endif
 	  }
 	  progpos=cur.find("else");
 	  if (p && progpos>=0 && progpos<cs && instruction_at(cur,progpos,4)){
 	    pythonmode=true;
+#if 1
+	    res = cur.substr(0,p)+":\n"+string(progpos+4,' ')+cur.substr(p+1,pos-p)+'\n'+res;
+	    continue;
+#else
 	    cur=cur.substr(0,p)+' '+cur.substr(p+1,pos-p)+" fi";
 	    convert_python(cur,contextptr);
 	    p=0;
+#endif
 	  }
 	  progpos=cur.find("for");
 	  if (p && progpos>=0 && progpos<cs && instruction_at(cur,progpos,3)){

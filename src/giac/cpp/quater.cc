@@ -1481,7 +1481,7 @@ namespace giac {
       int n=2*(pmin.size()-1);
       int p1=2013265921;
       if (longlong(adeg+bdeg+1)*n<(1<<27)){
-	vector<int> A,B,RES,W,tmpa,tmpb,tmp3,tmp4,tmp5,tmp6,tmp7,tmp8;
+	vector<int> A,B,RES,W,tmpa,tmpb,resp1,resp2,resp3,Wp1,Wp2,Wp3,Wp4,tmp7,tmp8;
 	kronecker_expand(a,n,A);
 	makepositive(&A.front(),A.size(),modulo);
 	kronecker_expand(b,n,B);
@@ -1495,7 +1495,7 @@ namespace giac {
 	vecteur AV,BV,ABV;
 	vector_int2vecteur(A,AV);
 	vector_int2vecteur(B,BV);
-	if (fftmult(AV,BV,modulo-1,modulo-1,ABV,modulo,tmpa,tmpb,tmp3,tmp4,tmp5,tmp6,tmp7,tmp8,true)){
+	if (fftmultp1234(AV,BV,modulo-1,modulo-1,ABV,modulo,tmpa,tmpb,resp1,resp2,resp3,Wp1,Wp2,Wp3,Wp4,tmp7,tmp8,true)){
 	  vecteur2vector_int(ABV,modulo,RES);
 	  kronecker_shrink(RES,n,res,pmin,modulo);
 	  return true;

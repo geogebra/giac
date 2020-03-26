@@ -1096,6 +1096,33 @@ mpz_class smod(const mpz_class & a,int reduce){
       v.erase(v.begin(),it);
   }
 
+  // v <- w-v % m
+  void submodneg(vector<int> & v,const vector<int> & w,int m){
+    vector<int>::iterator it=v.begin(),itend=v.end();
+    vector<int>::const_iterator jt=w.begin(),jtend=w.end();
+    int addv=int(jtend-jt)-int(itend-it);
+    if (addv>0){
+      v.insert(v.begin(),addv,0);
+      it=v.begin();
+      itend=v.end();
+    }
+    else {
+      itend -= jtend-jt;
+      for (;it!=itend;++it)
+	*it = -*it;
+      itend += jtend-jt;
+    }
+    for (;it!=itend;++jt,++it){
+      *it = (*jt-*it)%m;
+    }
+    for (it=v.begin();it!=itend;++it){
+      if (*it)
+	break;
+    }
+    if (it!=v.begin())
+      v.erase(v.begin(),it);
+  }
+
   // v <- k*(v-w) % m
   static void mulsubmod(int k,vector<int> & v,const vector<int> & w,int m){
     vector<int>::iterator it=v.begin(),itend=v.end();
@@ -3810,12 +3837,10 @@ mpz_class smod(const mpz_class & a,int reduce){
       vector<int>::const_iterator ita_cur=ita,itb_cur=itb;
       for (;;) {
 	res += longlong(*ita_cur) * *itb_cur ;
-	if (ita_cur==ita_begin)
+	++itb_cur;
+	if (ita_cur==ita_begin || itb_cur==itb_end)
 	  break;
 	--ita_cur;
-	++itb_cur;
-	if (itb_cur==itb_end)
-	  break;
       }
       new_coord.push_back(smod(res,modulo));
     }

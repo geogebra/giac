@@ -32,7 +32,7 @@ extern "C" {
 #include <cmath>
 #include <cstdlib>
 #include <algorithm>
-#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG
 #include <fstream>
 #endif
 #include "prog.h"
@@ -4480,6 +4480,9 @@ namespace giac {
     gen to_apply=v.front();
     int n=to_apply.subtype;
     int n2=int(v.size());
+    int subt=0;
+    if (n2>=2 && v[1].type==_VECT)
+      subt=v[1].subtype;
     for (int i=2;i<n2;++i){
       if (v[i]==at_matrix){
 	swapgen(v[0],v[1]);
@@ -4526,7 +4529,7 @@ namespace giac {
 	else
 	  res.push_back(to_apply(tmp,contextptr));
       }
-      return res;
+      return gen(res,subt);
     }
     else
       return gensizeerr(contextptr);

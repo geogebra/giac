@@ -181,6 +181,8 @@ namespace giac {
   void addmod(std::vector< std::vector<int> > & v,const std::vector< std::vector<int> > & w,int m);
   // v <- v-w % m
   void submod(std::vector<int> & v,const std::vector<int> & w,int m);
+  // v <- w-v % m
+  void submodneg(std::vector<int> & v,const std::vector<int> & w,int m);
   // v <- v*k % m
   void mulmod(std::vector<int> & v,int k,int m);
   // v <- v*k % m

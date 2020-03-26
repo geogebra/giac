@@ -864,6 +864,10 @@ namespace giac {
 	first=symbolic(at_plus,v);
       gen ta=tan_expand(first,contextptr);
       gen tb=tan_expand(last,contextptr);
+      if (is_inf(ta))
+	return -inv(tb,contextptr);
+      if (is_inf(tb))
+	return -inv(ta,contextptr);
       return rdiv(ta+tb,1-ta*tb,contextptr);
     }
     if (e._SYMBptr->sommet==at_neg)

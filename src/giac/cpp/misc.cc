@@ -52,6 +52,8 @@ inline giac::gen _graph_charpoly(const giac::gen &g,const giac::context *){ retu
 #include "graphtheory.h"
 #endif
 
+#define GIAC_LMCHANGES 1 // changes by L. Marohnić // regression checks
+
 #ifdef KHICAS
 #include "kdisplay.h"
 const char * mp_hal_input(const char * prompt) ;
@@ -4521,7 +4523,7 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
       double inf,sup; // delta=h._DOUBLE_val-g._DOUBLE_val;
       it=v.begin();
       //  int nclass=itend-it;
-#ifdef HAVE_LIBFLTK // changes by L. Marohnić
+#if defined HAVE_LIBFLTK && defined GIAC_LMCHANGES // changes by L. Marohnić
       vecteur res(1,symb_equal(change_subtype(gen(_AXES),_INT_PLOT),3));
 #else
       vecteur res;
@@ -4544,7 +4546,7 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
 	gen mini(inf,height),maxi(sup,height);
 	gen rectan(makevecteur(inf,sup,maxi,mini,inf),_LINE__VECT);
 	res.push_back(pnt_attrib(rectan,attributs,contextptr));
-#if 1 // changes by L. Marohnić
+#ifdef GIAC_LMCHANGES // changes by L. Marohnić
 	res.push_back(_segment(makevecteur(inf,mini),contextptr));
 	res.push_back(_segment(makevecteur(mini,maxi),contextptr));
 	res.push_back(_segment(makevecteur(maxi,sup),contextptr));
@@ -4568,7 +4570,7 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
     double kbegin=std::floor((w1.front()-class_minimum)/class_size);
     double kend=std::floor((w1.back()-class_minimum)/class_size);
     vector<double>::const_iterator it=w1.begin(),itend=w1.end();
-#ifdef HAVE_LIBFLTK // changes by L. Marohnić
+#if defined HAVE_LIBFLTK && defined GIAC_LMCHANGES // changes by L. Marohnić
     vecteur res(1,symb_equal(change_subtype(gen(_AXES),_INT_PLOT),3));
 #else
     vecteur res;
@@ -4587,7 +4589,7 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
       gen maxg=max_class+gen(0.0,effectif);
       gen rectan(makevecteur(min_class,max_class,maxg,ming,min_class),_LINE__VECT);
       res.push_back(pnt_attrib(rectan,attributs,contextptr));
-#if 1 // changes by L. Marohnić
+#ifdef GIAC_LMCHANGES // changes by L. Marohnić
       res.push_back(_segment(makevecteur(min_class,ming),contextptr));
       res.push_back(_segment(makevecteur(ming,maxg),contextptr));
       res.push_back(_segment(makevecteur(maxg,max_class),contextptr));
@@ -4615,7 +4617,7 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
     vecteur args;
     if (g.subtype==_SEQ__VECT)
       args=*g._VECTptr;
-#ifdef HAVE_LIBFLTK // changes by L. Marohnić
+#if defined HAVE_LIBFLTK && defined GIAC_LMCHANGES // changes by L. Marohnić
     vecteur attributs(1,int(FL_DARK1));
     int s=read_attributs(args,attributs,contextptr);
     int col=attributs[0].val;
@@ -5145,7 +5147,7 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
     gen g(g_);
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     vecteur vals,names,attributs,res;
-#ifdef HAVE_LIBFLTK // changes by L. Marohnić
+#if defined HAVE_LIBFLTK && defined GIAC_LMCHANGES // changes by L. Marohnić
     res.push_back(symb_equal(change_subtype(gen(_AXES),_INT_PLOT),2));
 #else
     ;
@@ -5191,7 +5193,7 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
       t=0;
       c=attr[0].val;
     }
-#ifdef HAVE_LIBFLTK // changes by L. Marohnić
+#if defined HAVE_LIBFLTK && defined GIAC_LMCHANGES // changes by L. Marohnić
     vecteur allvals(0);
     for (const_iterateur it=vals.begin();it!=vals.end();++it) {
       if (it->type==_VECT)
@@ -8728,7 +8730,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     }
     if (abs_calc_mode(contextptr)!=38){
       *logptr(contextptr) << (param?"plotparam(":"plotfunc(") << gen(w,_SEQ__VECT) << ')'
-#ifdef HAVE_LIBFLTK
+#if defined HAVE_LIBFLTK && defined GIAC_LMCHANGES
 			  <<"\nInside Xcas you can see the function with Cfg>Show>DispG."
 #endif
 			  <<  '\n';

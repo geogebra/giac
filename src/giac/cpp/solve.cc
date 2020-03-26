@@ -2948,7 +2948,13 @@ namespace giac {
   // -1 means no step specified, positive means nstep specified
   vecteur bisection_solver(const gen & equation,const gen & var,const gen & a0,const gen &b0,int & iszero,GIAC_CONTEXT){
     bool onlyone=iszero==0;
-    int nstep=iszero>0?iszero:gnuplot_pixels_per_eval;
+    int nstep=gnuplot_pixels_per_eval;
+    if (iszero>0)
+      nstep=iszero;
+    else {
+      if (has_op(equation,*at_tan))
+	nstep *= 16;
+    }
     iszero=0;
     gen a(evalf_double(a0,1,contextptr)),b(evalf_double(b0,1,contextptr));
     if (is_strictly_greater(a,b,contextptr))
@@ -3005,7 +3011,7 @@ namespace giac {
       }
     }
     ab=(b-a)/ntries;
-    if (fb.type==_DOUBLE_ && fa.type!=_DOUBLE_){
+    if (fb.type==_DOUBLE_ && (fa.type!=_DOUBLE_ || is_undef(fa))){
       for (int i=0;i<ntries;++i){
 	a += ab;
 	fa=subst(equation,var,a,false,contextptr);
