@@ -4475,6 +4475,12 @@ namespace giac {
 	fa=evalf(eval(subst(f,x,a,false,contextptr),eval_level(contextptr),contextptr),1,contextptr); 
 	// First loop to localize the solution with prefactor
 	gen lambda(init_prefactor);
+#ifdef HAVE_LIBMPFR
+	if (a.type==_REAL){
+	  int prec=mpfr_get_prec(a._REALptr->inf);
+	  lambda=accurate_evalf(exact(lambda,contextptr),prec);
+	}
+#endif
 	int k;
 	for (k=0;k<niter;++k){
 #ifdef TIMEOUT
@@ -4540,7 +4546,7 @@ namespace giac {
 	  if ( (real && !is_zero(im(fb,contextptr),contextptr)) ||
 	       is_positive(_l2norm(fb,contextptr)-_l2norm(fa,contextptr),contextptr)){
 	    // Decrease prefactor and try again
-	    lambda=evalf(plus_one_half,1,contextptr)*lambda;
+	    lambda=evalf(plus_one_half*lambda,1,contextptr);
 	  }
 	  else {
 	    // Save new value of a and increase the prefactor slightly
@@ -6258,8 +6264,9 @@ namespace giac {
 	// first check for linear dependencies -> substitutions
 	gen a,b;
 	for (unsigned i=0;i<eq.size();++i){
+	  gen numeqi=_numer(eq[i],contextptr);
 	  for (unsigned j=0;j<var.size();++j){
-	    if (is_linear_wrt(eq[i],var[j],a,b,contextptr)){
+	    if (is_linear_wrt(numeqi,var[j],a,b,contextptr)){
 	      if (j==0 && is_zero(a) && is_zero(b)){
 		// suppress eq[i]
 		eq.erase(eq.begin()+i);
@@ -6272,7 +6279,7 @@ namespace giac {
 		  // maybe eq[i] is linear wrt var[jj] for jj>j with a simpler a coeff
 		  for (unsigned jj=j+1;jj<var.size();++jj){
 		    gen aa,bb;
-		    if (is_linear_wrt(eq[i],var[jj],aa,bb,contextptr) 
+		    if (is_linear_wrt(numeqi,var[jj],aa,bb,contextptr) 
 			&& is_zero(derive(aa,var,contextptr),contextptr) 
 			&& !is_zero(simplify(aa,contextptr),contextptr)){
 		      if (aa.islesscomplexthan(a)){
