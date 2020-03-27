@@ -8093,7 +8093,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       gprintf(gettext("====================\nFunction plot %gen, variable %gen"),makevecteur(f,x),1,contextptr);
     if (is_periodic(f,x,periode,contextptr)){
       gprintf(gettext("Periodic function T=%gen"),vecteur(1,periode),1,contextptr);
-      if (is_greater(xmax-xmin,periode,contextptr)){
+      if (is_strictly_greater(xmax-xmin,periode,contextptr)){
 	xmin=normal(-periode/2,contextptr);
 	xmax=normal(periode/2,contextptr);
       }
