@@ -5987,8 +5987,10 @@ namespace giac {
     if ((a.type!=_VECT) || (a._VECTptr->size()!=2))
       return symb_same(a);
     gen res=undef;
-    if (a._VECTptr->front().type==_SYMB || a._VECTptr->back().type==_SYMB){
-      if (!is_inf(a._VECTptr->front()) && !is_undef(a._VECTptr->front()) && !is_inf(a._VECTptr->back()) && !is_undef(a._VECTptr->back()) && a._VECTptr->front().type!=_VECT &&a._VECTptr->back().type!=_VECT ){
+    const gen & af=a._VECTptr->front();
+    const gen & ab=a._VECTptr->back();
+    if (af.type!=_FUNC && ab.type!=_FUNC && (af.type==_SYMB || ab.type==_SYMB)){
+      if (!is_inf(af) && !is_undef(af) && !is_inf(ab) && !is_undef(ab) && af.type!=_VECT &&ab.type!=_VECT ){
 	if (same_warning){
 	  string s=autosimplify(contextptr);
 	  if (unlocalize(s)!="'simplify'"){
@@ -5996,14 +5998,14 @@ namespace giac {
 	    same_warning=false;
 	  }
 	}
-	res=add_autosimplify(a._VECTptr->front()-a._VECTptr->back(),contextptr);
+	res=add_autosimplify(af-ab,contextptr);
 	if (res.type==_SYMB)
 	  res=res._SYMBptr->sommet(res._SYMBptr->feuille,contextptr);
 	res=is_zero(res,contextptr);
       }
     }
     if (is_undef(res))
-      res=operator_equal(a._VECTptr->front(),a._VECTptr->back(),contextptr);
+      res=operator_equal(af,ab,contextptr);
     if (res.type==_INT_ && abs_calc_mode(contextptr)!=38)
       res.subtype=_INT_BOOLEAN;
     return res;
