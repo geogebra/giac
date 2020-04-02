@@ -1074,7 +1074,7 @@ namespace giac {
 	    if (complexmode)
 	      newv=proot(w,epsilon(contextptr));
 	    else {
-	      if (lidnt(w_orig).empty() && !has_num_coeff(w_orig))
+	      if (lvar(w_orig).empty() && !has_num_coeff(w_orig))
 		newv=gen2vecteur(_realroot(gen(makevecteur(w_orig,epsilon(contextptr),at_evalf),_SEQ__VECT),contextptr));
 	      else 
 		newv=real_proot(w,epsilon(contextptr),contextptr);
