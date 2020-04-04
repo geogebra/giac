@@ -5425,6 +5425,20 @@ namespace giac {
 	}
       }
     }
+#if 1
+    vecteur v0(lop(qf,at_derive));
+    if (!v0.empty()){
+      vecteur v1,v2;
+      for (int i=0;i<v0.size();++i){
+	if (v0[i]._SYMBptr->feuille.type!=_VECT){
+	  v1.push_back(v0[i]);
+	  v2.push_back(symbolic(at_function_diff,v0[i]._SYMBptr->feuille));
+	}
+      }
+      if (!v1.empty())
+	qf=subst(qf,v1,v2,true,contextptr);
+    }
+#endif
     f=qf.eval(eval_level(contextptr),contextptr);
     if (f.is_symb_of_sommet(at_struct_dot) && f._SYMBptr->feuille.type==_VECT && f._SYMBptr->feuille._VECTptr->size()==2){
       gen v=f._SYMBptr->feuille._VECTptr->front(),op=f._SYMBptr->feuille._VECTptr->back();

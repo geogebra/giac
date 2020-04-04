@@ -1110,6 +1110,7 @@ namespace giac {
   // more advanced arithmetic
   gen gcd(const gen & A,const gen & B,GIAC_CONTEXT);
   gen gcd(const gen & A,const gen & B);
+  int iegcd(int a_,int b_,int &u,int & v);
   gen lcm(const gen & a,const gen & b);
   gen simplify(gen & n, gen & d);
   void egcd(const gen &a,const gen &b, gen & u,gen &v,gen &d );

@@ -1047,6 +1047,7 @@ mpz_class smod(const mpz_class & a,int reduce){
   }
 
   // v <- v+w % m
+  // requires m<=2^30 to avoid possible overflow
   static void addmod(vecteur & v,const vecteur & w,int m){
     vecteur::const_iterator jt=w.begin(),jtend=w.end();
     vecteur::iterator it=v.begin(),itend=v.end();
@@ -1086,7 +1087,7 @@ mpz_class smod(const mpz_class & a,int reduce){
       itend=v.end();
     }
     for (it=itend-(jtend-jt);it!=itend;++jt,++it){
-      *it = (*it-*jt)%m;
+      *it = (*it-longlong(*jt))%m;
     }
     for (it=v.begin();it!=itend;++it){
       if (*it)
@@ -1113,7 +1114,7 @@ mpz_class smod(const mpz_class & a,int reduce){
       itend += jtend-jt;
     }
     for (;it!=itend;++jt,++it){
-      *it = (*jt-*it)%m;
+      *it = (*jt-longlong(*it))%m;
     }
     for (it=v.begin();it!=itend;++it){
       if (*it)
@@ -3814,12 +3815,45 @@ mpz_class smod(const mpz_class & a,int reduce){
   /* ************************************************* 
            MODULAR ALGEBRAIC EXTENSIONS GCD
      ************************************************* */
+  // Beware: overflow may occur if INT128 not defined
+  // if min(degree)*modulo^2>=2^63
   void mulsmall(const vector<int>::const_iterator & ita0,const vector<int>::const_iterator & ita_end,const vector<int>::const_iterator & itb0,const vector<int>::const_iterator & itb_end,int modulo,vector<int> & new_coord){  
     new_coord.clear();
     if (ita0==ita_end || itb0==itb_end)
       return;
     new_coord.reserve((ita_end-ita0)+(itb_end-itb0)-1);
     vector<int>::const_iterator ita_begin=ita0,ita=ita0,itb=itb0;
+#ifdef INT128
+    if ( (giacmin(itb_end-itb0,ita_end-ita0)-1)*double(modulo)*modulo >= (1ULL<<63) ){
+      for ( ; ita!=ita_end; ++ita ){
+	vector<int>::const_iterator ita_cur=ita,itb_cur=itb;
+	int128_t res=0;
+	for (;itb_cur!=itb_end;--ita_cur,++itb_cur) {
+	  res += longlong(*ita_cur) * *itb_cur ;
+	  if (ita_cur==ita_begin)
+	    break;
+	}
+	int R=res%modulo;
+	new_coord.push_back(smod(R,modulo));
+      }
+      --ita;
+      ++itb;
+      for ( ; itb!=itb_end;++itb){
+	int128_t res=0;
+	vector<int>::const_iterator ita_cur=ita,itb_cur=itb;
+	for (;;) {
+	  res += longlong(*ita_cur) * *itb_cur ;
+	  ++itb_cur;
+	  if (ita_cur==ita_begin || itb_cur==itb_end)
+	    break;
+	  --ita_cur;
+	}
+	int R=res%modulo;
+	new_coord.push_back(smod(R,modulo));
+      }
+      return;
+    }
+#endif
     for ( ; ita!=ita_end; ++ita ){
       vector<int>::const_iterator ita_cur=ita,itb_cur=itb;
       longlong res=0;
@@ -3833,7 +3867,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     --ita;
     ++itb;
     for ( ; itb!=itb_end;++itb){
-      longlong res= 0;
+      longlong res=0;
       vector<int>::const_iterator ita_cur=ita,itb_cur=itb;
       for (;;) {
 	res += longlong(*ita_cur) * *itb_cur ;

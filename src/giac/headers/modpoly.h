@@ -274,14 +274,14 @@ namespace giac {
   // if size is not n or Wp[0]==0, Wp is computed
   // do not share Wp1/p2/p3 between different threads
   void to_fft(const vecteur & A,int modulo,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,std::vector<int> & a,int n,fft_rep & f,bool reverse,bool makeplus);
-  void to_fft(const std::vector<int> & a,int modulo,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,int n,fft_rep & f,bool reverse,bool makeplus);
+  void to_fft(const std::vector<int> & a,int modulo,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,int n,fft_rep & f,bool reverse,bool makeplus,bool makemod=true);
   // FFT representation f -> res
   // Wp1,p2,p3 should be computed with to_fft
   // division by n=size of f.modp1/p2/p3 is done
   // result should normally be reversed at end
   // tmp1/p2/p3 are temporary vectors
   // do not share Wp1/p2/p3 between different threads
-  void from_fft(const fft_rep & f,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,std::vector<int> & res,std::vector<int> & tmp1,std::vector<int> & tmp2,std::vector<int> & tmp3,bool reverseatend);
+  void from_fft(const fft_rep & f,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,std::vector<int> & res,std::vector<int> & tmp1,std::vector<int> & tmp2,std::vector<int> & tmp3,bool reverseatend,bool revw);
 
   struct multi_fft_rep {
     gen modulo;
@@ -290,8 +290,9 @@ namespace giac {
   };
   // convert A to multi fft representation, with a number of primes
   // suitable for ichinrem reconstruction mod modulo
-  void to_fft(const vecteur & A,const gen & modulo,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,int n,multi_fft_rep & f);
-  void from_fft(const multi_fft_rep & f,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,vecteur & res,bool reverseatend);
+  void to_multi_fft(const vecteur & A,const gen & modulo,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,unsigned long n,multi_fft_rep & f,bool reverse,bool makeplus);
+  void from_multi_fft(const multi_fft_rep & f,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,vecteur & res,bool reverseatend);
+  void multi_fft_ab_cd(const multi_fft_rep & a,const multi_fft_rep & b,const multi_fft_rep & c,const multi_fft_rep & d,multi_fft_rep & res);
 
   // Convolution of p and q, omega a n-th root of unity, n=2^k
   // WARNING p0 and q0 are given in ascending power

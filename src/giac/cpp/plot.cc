@@ -3722,15 +3722,19 @@ namespace giac {
       gen b=c._VECTptr->back();
       if (a.type==_VECT && b.type==_VECT){
 	gen tmp=a-b;
-	if (tmp.type!=_VECT || tmp._VECTptr->size()!=2)
-	  return gensizeerr(contextptr);
-	a=tmp._VECTptr->front();
-	b=tmp._VECTptr->back();
+	if (tmp.type==_VECT && tmp._VECTptr->size()==2){
+	  a=tmp._VECTptr->front();
+	  b=tmp._VECTptr->back();
+	  c=a+cst_i*b;
+	}
       }
-      c=a+cst_i*b;
+      else {
+	if (!has_i(a) && !has_i(b))
+	  c=a+cst_i*b;
+      }
     }
     if (c.type==_VECT)
-      return gensizeerr(contextptr);
+      return apply(c,_coordonnees_polaires,contextptr);
     gen a=abs(c,contextptr);
     gen b=arg(c,contextptr);
     return makevecteur(a,b);
@@ -3746,10 +3750,12 @@ namespace giac {
     if (args.type!=_VECT)
       return makevecteur(re(args,contextptr),im(args,contextptr));
     if (args._VECTptr->size()!=2)
-      return gensizeerr(contextptr);
+      return apply(args,_coordonnees_rectangulaires,contextptr);
     gen a=args._VECTptr->front();
     gen b=args._VECTptr->back();
-    return makevecteur(a*cos(b,contextptr),a*sin(b,contextptr));
+    if (a.type!=_VECT && b.type!=_VECT)
+      return makevecteur(a*cos(b,contextptr),a*sin(b,contextptr));
+    return apply(args,_coordonnees_rectangulaires,contextptr);
   }
   static const char _coordonnees_rectangulaires_s []="rectangular_coordinates";
   static define_unary_function_eval (__coordonnees_rectangulaires,&_coordonnees_rectangulaires,_coordonnees_rectangulaires_s);

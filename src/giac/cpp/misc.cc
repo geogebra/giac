@@ -6330,7 +6330,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     if (args.type!=_VECT) return gensizeerr(contextptr);
     vecteur res;
     aplatir(*args._VECTptr,res,true);
-    return res;
+    return gen(res,args.subtype);
   }
   static const char _flatten_s []="flatten";
   static define_unary_function_eval (__flatten,&_flatten,_flatten_s);
@@ -8094,8 +8094,16 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     if (is_periodic(f,x,periode,contextptr)){
       gprintf(gettext("Periodic function T=%gen"),vecteur(1,periode),1,contextptr);
       if (is_strictly_greater(xmax-xmin,periode,contextptr)){
-	xmin=normal(-periode/2,contextptr);
-	xmax=normal(periode/2,contextptr);
+	if (!is_inf(xmin)) // ? do_inflex_tabsign==2 && 
+	  xmax=xmin+periode;
+	else {
+	  if (!is_inf(xmax)) // ? do_inflex_tabsign==2 && 
+	    xmin=xmax-periode;
+	  else {
+	    xmin=normal(-periode/2,contextptr);
+	    xmax=normal(periode/2,contextptr);
+	  }
+	}
       }
     }
     int eo=0;

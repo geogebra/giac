@@ -10725,6 +10725,23 @@ namespace giac {
     v=iquo(d-a_orig*u,b_orig);
   }
 
+  int iegcd(int a_,int b_,int &u,int & v){
+    int a(a_),b(b_),au(1),bu(0),r,ru;
+    longlong q;
+    while (b){
+      q=a/b;
+      r=a-b*q;
+      a=b;
+      b=r;
+      ru=au-bu*q;
+      au=bu;
+      bu=ru;
+    }
+    u=au;
+    v=(a-longlong(a_)*u)/b_;
+    return a;
+  }
+
   void egcd(const gen &ac,const gen &bc, gen & u,gen &v,gen &d ){
     gen a(ac),b(bc);
     switch ( (a.type<< _DECALAGE) | b.type ) {
