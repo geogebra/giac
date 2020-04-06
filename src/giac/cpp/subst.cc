@@ -2434,6 +2434,10 @@ namespace giac {
     }
     e=quotesubst(e,vabs,vabs2,contextptr);
     e=quotesubst(e,vabs,vabs2,contextptr); // second replacement because vabs2 might contain expression in vabs
+    vecteur ve(lop(e,at_exp));
+    ve=lop(ve,at_atan);
+    if (!ve.empty())
+      e=_exp2trig(e,contextptr); // exp(i*atan())
     e=recursive_normal(e,contextptr); 
     if (is_undef(e)) return e;
     if (!bases.empty())
