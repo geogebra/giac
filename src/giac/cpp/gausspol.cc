@@ -4399,7 +4399,7 @@ namespace giac {
 	polynome Fb(1),Gb(1),Db(1);
 	if (debug_infolevel >= 20-p_simp.dim)
 	  CERR << "// GCD eval dimension " << p_simp.dim << " " << CLOCK() << " " << p_deg << " " << p_simp.coord.size() << " " << q_deg << q_simp.coord.size() << " " << '\n';
-	gen essaimod=30011; // mod 4 = 3
+	gen essaimod=30013; // 30011; // mod 4 = 3
 	for (int essai=0;essai<2;++essai){
 	  if (essai)
 	    b=vranm(p_simp.dim-1,0,0); // find another random point
@@ -4407,7 +4407,7 @@ namespace giac {
 	  for (;!find_good_eval(p_simp,q_simp,Fb,Gb,b,debug_infolevel >= 20-p_simp.dim,essaimod);){
 	    for (;;){
 	      essaimod=nextprime(essaimod+1);
-	      if (!is_one(smod(essaimod,4)))
+	      if (is_one(smod(essaimod,4)))
 		break;
 	    }
 	  }
@@ -4530,7 +4530,7 @@ namespace giac {
       env->complexe=!est_reel;
       for (int essai=0;essai<2 && !avoid_it;++essai){
 	env->modulo=nextprime(env->modulo+2);
-	while ( is_one(smod(env->modulo,4)) || !is_one(gcd(gcd(env->modulo,pp.front(),context0),qq.front(),context0)) )
+	while ( !is_one(smod(env->modulo,4)) || !is_one(gcd(gcd(env->modulo,pp.front(),context0),qq.front(),context0)) )
 	  env->modulo=nextprime(env->modulo+2);
 	modpoly _gcdmod;
 	gcdmodpoly(pp,qq,env,_gcdmod);

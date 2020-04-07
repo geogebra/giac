@@ -3559,7 +3559,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     return true;
   }
 
-  static int modsqrtminus1(int modulo){
+  int modsqrtminus1(int modulo){
     int i;
     for (int j=2;j<modulo;++j){
       i=powmod(j,(modulo-1)/4,modulo);

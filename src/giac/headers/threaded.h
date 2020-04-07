@@ -795,6 +795,7 @@ namespace giac {
 
   bool mod_gcd(const std::vector< T_unsigned<int,hashgcd_U> > & p_orig,const std::vector< T_unsigned<int,hashgcd_U> > & q_orig,int modulo,std::vector< T_unsigned<int,hashgcd_U> > & d, std::vector< T_unsigned<int,hashgcd_U> > & pcofactor, std::vector< T_unsigned<int,hashgcd_U> > & qcofactor,const std::vector<hashgcd_U> & vars, bool compute_pcofactor,bool compute_qcofactor,int nthreads);
 
+  int modsqrtminus1(int modulo);
   bool gcd(const std::vector< T_unsigned<gen,hashgcd_U> > & p_orig,const std::vector< T_unsigned<gen,hashgcd_U> > & q_orig,std::vector< T_unsigned<gen,hashgcd_U> > & d, std::vector< T_unsigned<gen,hashgcd_U> > & pcofactor, std::vector< T_unsigned<gen,hashgcd_U> > & qcofactor,const std::vector<hashgcd_U> & vars, bool compute_cofactors,int nthreads=1);
 
   bool gcd_ext(const std::vector< T_unsigned<gen,hashgcd_U> > & p_orig,const std::vector< T_unsigned<gen,hashgcd_U> > & q_orig,std::vector< T_unsigned<gen,hashgcd_U> > & d, std::vector< T_unsigned<gen,hashgcd_U> > & pcofactor, std::vector< T_unsigned<gen,hashgcd_U> > & qcofactor,const std::vector<hashgcd_U> & vars, bool compute_cofactors,int nthreads=1);
