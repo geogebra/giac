@@ -77,6 +77,8 @@ mpz_class smod(const mpz_class & a,int reduce){
 
   gen _ntl_modgcd(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if (g.type==_VECT)
+      return NTL_MODGCD;
     if (g.type!=_INT_ || g.val<0)
       return gensizeerr(contextptr);
     if (g.val>0)

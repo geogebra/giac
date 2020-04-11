@@ -172,6 +172,8 @@ namespace giac {
   void modpoly2smallmodpoly(const modpoly & p,std::vector<int> & v,int m);
 
   bool gcdmodpoly(const modpoly &p,const modpoly & q,environment * env,modpoly &a); 
+  bool gcd_modular_algo(const modpoly &p,const modpoly &q,modpoly &d,modpoly * p_simp,modpoly * q_simp); // p and q must have coeffs in Z or Z[i]
+
   // half-gcd: a0.size() must be > a1.size(), returns [[A,B],[C,D]]
   bool hgcd(const modpoly & a0,const modpoly & a1,const gen & modulo,modpoly &A,modpoly &B,modpoly &C,modpoly &D); // a0 is A in Yap, a1 is B
   // fast modular inverse: f*g=1 mod x^l, f must be invertible (f.back()!=0)
@@ -228,6 +230,7 @@ namespace giac {
   dense_POLY1 ichinrem(const dense_POLY1 &p,const dense_POLY1 & q,const gen & pmod,const gen & qmod);
   modpoly chinrem(const modpoly & p,const modpoly & q, const modpoly & pmod, const modpoly & qmod,environment * env);
   int ichinrem_inplace(dense_POLY1 &p,const std::vector<int> & q,const gen & pmod,int qmodval); // 0 error, 1 p changed, 2 p unchanged
+  bool ichinrem_inplace(dense_POLY1 &p,const dense_POLY1 & q,const gen & pmod,int qmodval);
   void divided_differences(const vecteur & x,const vecteur & y,vecteur & res,environment * env);
   // in-place modification and exact division if divexact==true
   void divided_differences(const vecteur & x,vecteur & res,environment * env,bool divexact);

@@ -5911,6 +5911,92 @@ namespace giac {
     }
   }
 
+  int prevprimep1p2p3(int p,int maxp){
+    if (p==p1+1)
+      return p1;
+    if (p==p1)
+      return p2;
+    if (p==p2)
+      return p3;
+    if (p==p3)
+      p=maxp;
+    p=prevprime(p-2).val;
+    if (p==p1 || p==p2 || p==p3)
+      p=prevprime(p-2).val;
+    return p;
+  }
+
+  bool gcd_modular_algo(const modpoly &p,const modpoly &q,modpoly &d,modpoly * p_simp,modpoly * q_simp){
+    gen gcdfirstcoeff(gcd(p.front(),q.front(),context0));
+    int gcddeg= giacmin(int(p.size()),int(q.size()))-1;
+    environment env;
+    env.modulo=p1+1; env.moduloon=true;
+    env.complexe=!vect_is_real(p,context0) || !vect_is_real(q,context0);
+    int maxdeg=giacmax(p.size(),q.size())-1;
+    int maxp=std::sqrt(p1p2/4./maxdeg);
+    gen productmodulo(1);
+    modpoly currentgcd,Q,R;
+    for (;;){
+      env.modulo=prevprimep1p2p3(env.modulo.val,maxp); 
+      while (is_zero(p.front() % env.modulo) || is_zero(q.front() % env.modulo)){
+	env.modulo=prevprimep1p2p3(env.modulo.val,maxp);
+	if (env.complexe){
+	  while (smod(env.modulo,4)!=1)
+	    env.modulo=prevprimep1p2p3(env.modulo.val,maxp);
+	}
+      }
+      modpoly gcdmod;
+      gcdmodpoly(p,q,&env,gcdmod);
+      if (is_undef(gcdmod))
+	return false;
+      gen adjustcoeff=gcdfirstcoeff*invmod(gcdmod.front(),env.modulo);
+      mulmodpoly(gcdmod,adjustcoeff,&env,gcdmod);
+      int m=int(gcdmod.size())-1;
+      if (!m){
+	d=makevecteur(1,1);
+	return true;
+      }
+      if (m>gcddeg) // this prime is bad, just ignore
+	continue;
+      // combine step
+      if (m<gcddeg){ // previous prime was bad
+	gcddeg=m;
+	currentgcd.swap(gcdmod);
+	productmodulo=env.modulo;
+      }
+      else {
+	// m==gcddeg, start combine
+	if (productmodulo==gen(1)){ // no need to combine primes
+	  currentgcd.swap(gcdmod);
+	  productmodulo=env.modulo;
+	}
+	else {
+	  if (productmodulo.type==_INT_)
+	    currentgcd=ichinrem(gcdmod,currentgcd,env.modulo,productmodulo);
+	  else
+	    ichinrem_inplace(currentgcd,gcdmod,productmodulo,env.modulo.val);
+	  productmodulo=productmodulo*env.modulo;
+	}
+      }
+      // check candidate gcd
+      modpoly dmod(currentgcd);
+      if (is_undef(dmod))
+	return false;
+      ppz(dmod);
+      if ( DenseDivRem(p,dmod,Q,R,true) && R.empty()){
+	if (p_simp)
+	  p_simp->swap(Q);
+	if (DenseDivRem(q,dmod,Q,R,true) && R.empty() ){
+	  if (q_simp)
+	    q_simp->swap(Q);
+	  d.swap(dmod);
+	  return true;
+	}
+      }
+    }
+    return false;
+  }
+
   modpoly gcd(const modpoly & p,const modpoly &q,environment * env){
     if (p.empty()) return q;
     if (q.empty()) return p;
@@ -5933,6 +6019,9 @@ namespace giac {
       }
     }
     if (!env || !env->moduloon || !is_zero(env->coeff)){
+      modpoly g;
+      if (gcd_modular_algo(p,q,g,NULL,NULL))
+	return g;
       polynome r,s;
       int dim=giacmax(inner_POLYdim(p),inner_POLYdim(q));
       poly12polynome(p,1,r,dim);
@@ -11671,20 +11760,6 @@ namespace giac {
     return tmp;
   }
 #if 1
-  int prevprimep1p2p3(int p,int maxp){
-    if (p==p1+1)
-      return p1;
-    if (p==p1)
-      return p2;
-    if (p==p2)
-      return p3;
-    if (p==p3)
-      p=maxp;
-    p=prevprime(p-2).val;
-    if (p==p1 || p==p2 || p==p3)
-      p=prevprime(p-2).val;
-    return p;
-  }
   bool giac_gcd_modular_algo1(polynome &p,polynome &q,polynome &d){
     environment env,envtmp;
     dense_POLY1 pp(modularize(p,0,&env)),qq(modularize(q,0,&env));
