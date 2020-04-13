@@ -89,6 +89,34 @@ mpz_class smod(const mpz_class & a,int reduce){
   static define_unary_function_eval (__ntl_modgcd,&_ntl_modgcd,_ntl_modgcd_s);
   define_unary_function_ptr5( at_ntl_modgcd ,alias_at_ntl_modgcd,&__ntl_modgcd,0,true);
 
+  gen _ntl_xgcd(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if (g.type==_VECT)
+      return NTL_XGCD;
+    if (g.type!=_INT_ || g.val<0)
+      return gensizeerr(contextptr);
+    if (g.val>0)
+      NTL_XGCD=g.val;
+    return NTL_XGCD;
+  }
+  static const char _ntl_xgcd_s []="ntl_xgcd";
+  static define_unary_function_eval (__ntl_xgcd,&_ntl_xgcd,_ntl_xgcd_s);
+  define_unary_function_ptr5( at_ntl_xgcd ,alias_at_ntl_xgcd,&__ntl_xgcd,0,true);
+
+  gen _modresultant(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if (g.type==_VECT)
+      return MODRESULTANT;
+    if (g.type!=_INT_ || g.val<0)
+      return gensizeerr(contextptr);
+    if (g.val>0)
+      MODRESULTANT=g.val;
+    return MODRESULTANT;
+  }
+  static const char _modresultant_s []="modresultant";
+  static define_unary_function_eval (__modresultant,&_modresultant,_modresultant_s);
+  define_unary_function_ptr5( at_modresultant ,alias_at_modresultant,&__modresultant,0,true);
+
   double modgcd_cachesize=6291456;
   gen _modgcd_cachesize(const gen & g0,GIAC_CONTEXT){
     if ( g0.type==_STRNG && g0.subtype==-1) return  g0;

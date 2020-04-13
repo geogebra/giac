@@ -24,10 +24,12 @@
 #ifdef HAVE_LIBNTL
 #include <NTL/ZZXFactoring.h>
 #include <NTL/ZZ.h>
+#include <NTL/ZZ_p.h>
 #include <NTL/GF2X.h>
 #include <NTL/pair_GF2X_long.h>
 #include <NTL/GF2XFactoring.h>
 #include <NTL/ZZ_pX.h>
+#include <NTL/ZZX.h>
 #include <NTL/pair_ZZ_pX_long.h>
 #include <NTL/ZZ_pXFactoring.h>
 #ifdef HAVE_PTHREAD_H
@@ -199,6 +201,9 @@ namespace giac {
   bool mod_gcd(const polynome &p_orig, const polynome & q_orig, const gen & modulo, polynome & pgcd,polynome & pcofactor,polynome & qcofactor,bool compute_cofactors);
   modpoly lcm(const modpoly & a,const modpoly &b,environment * env); 
   bool gcd_modular_algo1(polynome &p,polynome &q,polynome &d,bool compute_cof);
+
+  // check if a (normally a fraction) modulo m is equal to p
+  bool chk_equal_mod(const gen & a,longlong p,int m);
   // p1*u+p2*v=d
   void egcd(const modpoly &p1, const modpoly & p2, environment * env,modpoly & u,modpoly & v,modpoly & d);
   // a*u+b*v=d optimized for GMP, if u_ptr and v_ptr are non 0 compute previous line of Euclide algorithm, stops as soon as degree<degstop
@@ -311,6 +316,8 @@ namespace giac {
   // float fft, theta should be +/-2*M_PI/n
   void fft2( std::complex<double> * A, int n, double theta );
 
+  bool ntlresultant(const modpoly &p,const modpoly &q,const gen & modulo,gen & res);
+  bool ntlxgcd(const modpoly &a,const modpoly &b,const gen & modulo,modpoly & reu,modpoly &v,modpoly & d);
 #ifdef HAVE_LIBNTL
 #ifdef HAVE_LIBPTHREAD
   extern pthread_mutex_t ntl_mutex;

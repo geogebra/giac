@@ -5927,6 +5927,13 @@ namespace giac {
   }
 
   bool gcd_modular_algo(const modpoly &p,const modpoly &q,modpoly &d,modpoly * p_simp,modpoly * q_simp){
+    gen tmp;
+    int pt=coefftype(p,tmp),qt=coefftype(q,tmp);
+    if (pt!=0 || qt!=0) // FIXME (chk_morley_demo)
+      return false;
+    if ( (pt!=_INT_ && pt!=_CPLX)
+	 || (qt!=_INT_ && qt!=_CPLX) )
+      return false;
     gen gcdfirstcoeff(gcd(p.front(),q.front(),context0));
     int gcddeg= giacmin(int(p.size()),int(q.size()))-1;
     environment env;
@@ -5953,7 +5960,7 @@ namespace giac {
       mulmodpoly(gcdmod,adjustcoeff,&env,gcdmod);
       int m=int(gcdmod.size())-1;
       if (!m){
-	d=makevecteur(1,1);
+	d=makevecteur(1);
 	return true;
       }
       if (m>gcddeg) // this prime is bad, just ignore
@@ -6304,6 +6311,92 @@ namespace giac {
     matrix22(RA,RB,RC,RD,SA,SB,SC,SD,A,B,C,D,env,tmp1,tmp2);
     return true;
   }
+  
+  bool chk_equal_mod(const gen & a,longlong p,int m){
+    if (a.type==_FRAC){
+      int n=a._FRACptr->num.type==_ZINT?modulo(*a._FRACptr->num._ZINTptr,m):a._FRACptr->num.val;
+      int d=a._FRACptr->den.type==_ZINT?modulo(*a._FRACptr->den._ZINTptr,m):a._FRACptr->den.val;
+      return (n-longlong(p)*d)%m==0;
+    }
+    if (a.type==_ZINT)
+      return (modulo(*a._ZINTptr,m)-p)%m==0;
+    if (a.type==_INT_)
+      return (a.val-p)%m==0;
+    CERR << "Unknow type in reconstruction " << a << '\n';
+    return false;
+  }
+
+  bool chk_equal_mod(const vecteur & a,const vecteur & p,int m){
+    if (a.size()!=p.size())
+      return false;
+    const_iterateur it=a.begin(),itend=a.end(),jt=p.begin();
+    for (;it!=itend;++jt,++it){
+      if (it->type==_INT_ && *it==*jt) continue;
+      if (jt->type!=_INT_ || !chk_equal_mod(*it,jt->val,m))
+	return false;
+    }
+    return true;
+  }
+
+  // modular extended Euclide algorithm with rational reconstruction
+  // this would become faster only for very large degrees
+  bool egcd_z(const modpoly &a, const modpoly & b, modpoly & u,modpoly & v,modpoly & d){
+    if (a.size()>=NTL_XGCD && b.size()>=NTL_XGCD && ntlxgcd(a,b,0,u,v,d))
+      return true;
+    if (a.size()<HGCD || b.size()<HGCD)
+      return false;
+    environment env;
+    env.moduloon=true;
+    env.modulo=p1+1; gen pip=1;
+    int gcddeg=giacmin(a.size(),b.size())-1;
+    int maxdeg=giacmax(a.size(),b.size())-1;
+    int maxp=std::sqrt(p1p2/4./maxdeg);
+    modpoly urec,vrec,drec,ucur,vcur,dcur;
+    gen borne=2*pow(norm(a,context0),b.size()-1)*pow(norm(b,context0),a.size()-1);
+    borne=borne*borne;
+    for (int iter=0;is_greater(borne,pip,context0);++iter){
+      env.modulo=prevprimep1p2p3(env.modulo.val,maxp);
+      while (is_zero(a.front() % env.modulo) || is_zero(b.front() % env.modulo))
+	env.modulo=prevprimep1p2p3(env.modulo.val,maxp);
+      egcd(a,b,&env,ucur,vcur,dcur);
+      int m=dcur.size();
+      if (m>gcddeg)
+	continue;
+      if (m<gcddeg || pip==1){ // 1st run or previous primes were bad
+	gcddeg=m;
+	pip=env.modulo;
+	urec.swap(ucur);
+	vrec.swap(vcur);
+	drec.swap(dcur);
+	u.clear(); v.clear(); d.clear();
+      }
+      else { 
+	// chinese remainder
+	if (pip.type==_INT_){
+	  urec=ichinrem(urec,ucur,pip,env.modulo);
+	  vrec=ichinrem(vrec,vcur,pip,env.modulo);
+	  drec=ichinrem(drec,dcur,pip,env.modulo);
+	}
+	else {
+	  ichinrem_inplace(urec,ucur,pip,env.modulo.val);
+	  ichinrem_inplace(vrec,vcur,pip,env.modulo.val);
+	  ichinrem_inplace(drec,dcur,pip,env.modulo.val);
+	}
+	pip=pip*env.modulo;
+      }
+    }
+    // rational reconstruction
+    CERR << CLOCK()*1e-6 << " fracmod begin\n" ;
+    gen den(1);
+    d=fracmod(drec,pip,&den);
+    u=fracmod(urec,pip,&den);
+    v=fracmod(vrec,pip,&den);
+    mulmodpoly(d,den,d);
+    mulmodpoly(u,den,u);
+    mulmodpoly(v,den,v);
+    CERR << CLOCK()*1e-6 << " fracmod end\n" ;
+    return true;
+  }
 
   // p1*u+p2*v=d
   void egcd(const modpoly &p1, const modpoly & p2, environment * env,modpoly & u,modpoly & v,modpoly & d){
@@ -6325,6 +6418,12 @@ namespace giac {
     if (env && env->moduloon){
       modpoly C,D;
       if (p1.size()>=HGCD && p2.size()>=HGCD && half_egcd(p1,p2,env->modulo,u,v,C,D,d)){
+	if (!is_one(d.front())){
+	  gen d0=invmod(d.front(),env->modulo);
+	  mulmodpoly(u,d0,env,u);
+	  mulmodpoly(v,d0,env,v);
+	  mulmodpoly(d,d0,env,d);
+	}
 	return;
       }
       if (egcd_mpz(p1,p2,1,env->modulo,u,v,d,0,0,0))
@@ -6332,6 +6431,11 @@ namespace giac {
     }
 #endif
     if ( (!env || !env->moduloon || !is_zero(env->coeff))){
+      gen p1g,p2g;
+      int p1t=coefftype(p1,p1g);
+      int p2t=coefftype(p2,p2g);
+      if (p1t==0 && p2t==0 && egcd_z(p1,p2,u,v,d))
+	return;
       int dim=giacmax(inner_POLYdim(p1),inner_POLYdim(p2));
       polynome pp1(dim),pp2(dim),pu(dim),pv(dim),pd(dim);
       gen den1(1),den2(1);
@@ -6341,9 +6445,6 @@ namespace giac {
       poly12polynome(p2,1,pp2,dim);
       lcmdeno(pp2,den2);
       if (!is_one(pp2)) pp2=den2*pp2;
-      gen p1g,p2g;
-      int p1t=coefftype(pp1,p1g);
-      int p2t=coefftype(pp2,p2g);
       if (p1t==0 && p2t==0 
 	  && p1.size()>=GIAC_PADIC/2 && p2.size()>=GIAC_PADIC/2
 	  ){
@@ -7061,6 +7162,9 @@ namespace giac {
     return m+(sizeinbase2(int(v.size()))+1)/2;
   }
   gen mod_resultant(const modpoly & P,const modpoly & Q,double eps){
+    gen R;
+    if (ntlresultant(P,Q,0,R))
+      return R;
     // gen h2=4*pow(l2norm2(P),Q.size()-1)*pow(l2norm2(Q),P.size()-1);
     int h=sizeinbase2(P)*(int(Q.size())-1)+sizeinbase2(Q)*(int(P.size())-1)+1;
     vector<int> p,q,tmp1,tmp2;
@@ -7074,10 +7178,12 @@ namespace giac {
     }
     // reconstruct resultant/D
     int m=2147483647;
-    gen pim=m;
-    vecteur2vector_int(P,m,p);
-    vecteur2vector_int(Q,m,q);
-    gen res=resultant(p,q,tmp1,tmp2,m);
+    gen pim=m,res;
+    if (!ntlresultant(P,Q,m,res)){
+      vecteur2vector_int(P,m,p);
+      vecteur2vector_int(Q,m,q);
+      resultant(p,q,tmp1,tmp2,m);
+    }
     if (D!=1)
       res=int((res.val*longlong(invmod(smod(D,m).val,m)))%m);
     mpz_t tmpz;
@@ -7088,9 +7194,14 @@ namespace giac {
       probamax=int(-std::log(eps)/30/std::log(2.0));
     while (h>sizeinbase2(pim) && proba<probamax){
       m=prevprime(m-1).val;
-      vecteur2vector_int(P,m,p);
-      vecteur2vector_int(Q,m,q);
-      int r=resultant(p,q,tmp1,tmp2,m);
+      int r; 
+      if (ntlresultant(P,Q,m,R))
+	r=R.val;
+      else {
+	vecteur2vector_int(P,m,p);
+	vecteur2vector_int(Q,m,q);
+	int r=resultant(p,q,tmp1,tmp2,m);
+      }
       if (D!=1)
 	r=(r*longlong(invmod(smod(D,m).val,m)))%m;
 #ifndef USE_GMP_REPLACEMENTS
@@ -7142,8 +7253,9 @@ namespace giac {
 
   void subresultant(const modpoly & P,const modpoly & Q,gen & res){
     if (
-	//1 ||
-	(0 && P.size()>GIAC_PADIC && Q.size()>GIAC_PADIC && is_integer_vecteur(P) && is_integer_vecteur(Q))
+	(
+	 //0 && 
+	 P.size()>MODRESULTANT && Q.size()>MODRESULTANT && is_integer_vecteur(P) && is_integer_vecteur(Q))
 	){
       res=mod_resultant(P,Q,0.0); 
       // according to my tests ducos is faster (except for very small coefficients)
@@ -12067,7 +12179,7 @@ namespace giac {
       conv(tmp,inttype2ZZ(p[degree-i]));
       SetCoeff(f,i,tmp);
     }
-    CERR << f << '\n';
+    if (debug_infolevel) CERR << f << '\n';
     return f;
   }
 
@@ -12082,6 +12194,98 @@ namespace giac {
     return tab;
   }
 
+  NTL::ZZX modpoly2ZZX(const modpoly & p){
+    NTL::ZZX f;
+    int degree=p.size()-1;
+    for (int i=0;i<=degree;i++){
+      NTL::ZZ tmp=inttype2ZZ(p[degree-i]);
+      SetCoeff(f,i,tmp);
+    }
+    if (debug_infolevel) CERR << f << '\n';
+    return f;
+  }
+
+  modpoly ZZX2modpoly(const NTL::ZZX & f){
+    // COUT << f << '\n';
+    int degree=deg(f);
+    modpoly tab (degree+1) ;
+    for (int i=degree;i>=0;i--){
+      tab[i]=ZZ2inttype(coeff(f,i));
+    }
+    reverse(tab.begin(),tab.end());
+    return tab;
+  }
+
+  bool ntlresultant(const modpoly &p,const modpoly &q,const gen & modulo,gen & res){
+    //return false;
+#ifdef HAVE_LIBPTHREAD
+    int locked=pthread_mutex_trylock(&ntl_mutex);
+#endif // HAVE_LIBPTHREAD
+    if (locked || ntl_on(context0)==0)
+      return false;
+    bool ok=true;
+    try {
+      if (is_zero(modulo)){
+	NTL::ZZX P(modpoly2ZZX(p));
+	NTL::ZZX Q(modpoly2ZZX(q));
+	NTL::ZZ R(resultant(P,Q));
+	res=ZZ2inttype(R);
+      }
+      else {
+	NTL::ZZ_p::init(inttype2ZZ(modulo));
+	NTL::ZZ_pX P(modpoly2ZZ_pX(p));
+	NTL::ZZ_pX Q(modpoly2ZZ_pX(q));
+	NTL::ZZ_p R(resultant(P,Q));
+	res=ZZ2inttype(NTL::rep(R));
+      }
+    } catch(std::runtime_error & e){
+      ok=false;
+    }
+#ifdef HAVE_LIBPTHREAD
+    pthread_mutex_unlock(&ntl_mutex);
+#endif
+    return ok;
+  }
+
+  bool ntlxgcd(const modpoly &a,const modpoly &b,const gen & modulo,modpoly & u,modpoly &v,modpoly & d){
+    // return false;
+#ifdef HAVE_LIBPTHREAD
+    int locked=pthread_mutex_trylock(&ntl_mutex);
+#endif // HAVE_LIBPTHREAD
+    if (locked || ntl_on(context0)==0)
+      return false;
+    bool ok=true;
+    try {
+      if (is_zero(modulo)){
+	NTL::ZZX A(modpoly2ZZX(a));
+	NTL::ZZX B(modpoly2ZZX(b));
+	NTL::ZZX U,V; NTL::ZZ R;
+	XGCD(R,U,V,A,B);
+	u=ZZX2modpoly(U);
+	v=ZZX2modpoly(V);
+	d=makevecteur(ZZ2inttype(R));
+	ok=R!=0;
+      }
+      else {
+	NTL::ZZ_p::init(inttype2ZZ(modulo));
+	NTL::ZZ_pX A(modpoly2ZZ_pX(a));
+	NTL::ZZ_pX B(modpoly2ZZ_pX(b));
+	NTL::ZZ_pX U,V,D;
+	XGCD(A,B,D,U,V);
+	u=ZZ_pX2modpoly(U);
+	v=ZZ_pX2modpoly(V);
+	d=ZZ_pX2modpoly(D);
+      }
+    } catch(std::runtime_error & e){
+      ok=false;
+    }
+#ifdef HAVE_LIBPTHREAD
+    pthread_mutex_unlock(&ntl_mutex);
+#endif
+    return ok;
+  }
+
+  // modular resultant using NTL
   bool polynome2tab(const polynome & p,int deg,inttype * tab){
     inttype n0(0);
     if (p.dim!=1) return false; // setsizeerr(gettext("modpoly.cc/polynome2tab"));
@@ -12172,6 +12376,13 @@ namespace giac {
   }
 
 #else // HAVE_LIBNTL
+  bool ntlresultant(const modpoly &p,const modpoly &q,const gen & modulo,gen & res){
+    return false;
+  }
+
+  bool ntlxgcd(const modpoly &a,const modpoly &b,const gen & modulo,modpoly & reu,modpoly &v,modpoly & d){
+    return false;
+  }
 
   bool gcd_modular_algo1(polynome &p,polynome &q,polynome &d,bool compute_cof){
     return giac_gcd_modular_algo1(p,q,d);

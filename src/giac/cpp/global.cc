@@ -1826,6 +1826,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int DEFAULT_EVAL_LEVEL=5;
   int MODFACTOR_PRIMES =5;
   int NTL_MODGCD=50;
+  int NTL_XGCD=100;
   int HGCD=32;//16384;
   int HENSEL_QUADRATIC_POWER=25;
   int KARAMUL_SIZE=13;
@@ -1863,6 +1864,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int DEFAULT_EVAL_LEVEL=25;
   int MODFACTOR_PRIMES =5;
   int NTL_MODGCD=50;
+  int NTL_XGCD=100;
   int HGCD=32;//16384;
   int HENSEL_QUADRATIC_POWER=25;
   int KARAMUL_SIZE=13;
@@ -1899,8 +1901,10 @@ extern "C" void Sleep(unsigned int miliSecond);
 #endif
 #ifdef HAVE_LIBNTL
   int PROOT_FACTOR_MAXDEG=300;
+  int MODRESULTANT=100;
 #else
   int PROOT_FACTOR_MAXDEG=30;
+  int MODRESULTANT=1000000;
 #endif
   int ABS_NBITS_EVALF=1000;
 

@@ -11146,7 +11146,7 @@ namespace giac {
     return true;
   }
 
-  static bool alloc_fracmod(const gen & a_orig,const gen & modulo,gen & res,mpz_t & d,mpz_t & d1,mpz_t & absd1,mpz_t &u,mpz_t & u1,mpz_t & ur,mpz_t & q,mpz_t & r,mpz_t &sqrtm,mpz_t & tmp){  
+  bool alloc_fracmod(const gen & a_orig,const gen & modulo,gen & res,mpz_t & d,mpz_t & d1,mpz_t & absd1,mpz_t &u,mpz_t & u1,mpz_t & ur,mpz_t & q,mpz_t & r,mpz_t &sqrtm,mpz_t & tmp){  
     // write a as p/q with |p| and |q|<sqrt(modulo/2)
     if (a_orig.type==_VECT){
       const_iterateur it=a_orig._VECTptr->begin(),itend=a_orig._VECTptr->end();

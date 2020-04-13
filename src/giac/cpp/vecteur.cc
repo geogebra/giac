@@ -6279,16 +6279,50 @@ namespace giac {
     return g.type==_POLY?g._POLYptr->untrunc1():g;
   }
 
-  vecteur fracmod(const vecteur & v,const gen & modulo){
+  vecteur fracmod(const vecteur & v,const gen & modulo,gen * den,int prealloc){
+    mpz_t u,d,u1,d1,absd1,sqrtm,q,ur,r,tmp;
+    mpz_init2(u,prealloc);
+    mpz_init2(d,prealloc);
+    mpz_init2(u1,prealloc);
+    mpz_init(d1);
+    mpz_init(absd1);
+    mpz_init(sqrtm);
+    mpz_init(q);
+    mpz_init2(ur,prealloc);
+    mpz_init2(r,prealloc);
+    mpz_init2(tmp,prealloc);
+    gen g;
     const_iterateur it=v.begin(),itend=v.end();
     vecteur res;
     res.reserve(itend-it);
+    int s=sizeinbase2(modulo);
     for (;it!=itend;++it){
       if (it->type==_VECT)
-	res.push_back(fracmod(*it->_VECTptr,modulo));
-      else
-	res.push_back(fracmod(*it,modulo));
+	res.push_back(fracmod(*it->_VECTptr,modulo,den,prealloc));
+      else {
+	if (den){
+	  g=smod(*den**it,modulo);
+	  if (2*sizeinbase2(g)<s){
+	    res.push_back(g/ *den);
+	    continue;
+	  }
+	}
+	bool b=alloc_fracmod(*it,modulo,g,d,d1,absd1,u,u1,ur,q,r,sqrtm,tmp);
+	res.push_back(g);
+	if (den && g.type==_FRAC)
+	  *den=lcm(*den,g._FRACptr->den);
+      }
     }
+    mpz_clear(d);
+    mpz_clear(u);
+    mpz_clear(u1);
+    mpz_clear(d1);
+    mpz_clear(absd1);
+    mpz_clear(sqrtm);
+    mpz_clear(q);
+    mpz_clear(ur);
+    mpz_clear(r);
+    mpz_clear(tmp);
     return res;
   }
 

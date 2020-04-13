@@ -320,7 +320,7 @@ namespace giac {
   void doublerref(matrix_double & N,vecteur & pivots,std::vector<int> & permutation,std::vector<int> & maxrankcols,double & idet,int l, int lmax, int c,int cmax,int fullreduction,int dont_swap_below,int rref_or_det_or_lu,double eps);
   void modlinear_combination(vecteur & v1,const gen & c2,const vecteur & v2,const gen & modulo,int cstart,int cend=0);
   void modlinear_combination(std::vector<int> & v1,int c2,const std::vector<int> & v2,int modulo,int cstart,int cend,bool pseudo);
-  vecteur fracmod(const vecteur & v,const gen & modulo);
+  vecteur fracmod(const vecteur & v,const gen & modulo,gen * den=0,int prealloc=128);
   gen modproduct(const vecteur & v, const gen & modulo);
   matrice mrref(const matrice & a,GIAC_CONTEXT);
   gen _rref(const gen & a,GIAC_CONTEXT); // first non 0 elem in row is 1

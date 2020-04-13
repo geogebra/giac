@@ -9776,20 +9776,6 @@ namespace giac {
     return B;
   }
 
-  bool chk_equal_mod(const gen & a,longlong p,int m){
-    if (a.type==_FRAC){
-      int n=a._FRACptr->num.type==_ZINT?modulo(*a._FRACptr->num._ZINTptr,m):a._FRACptr->num.val;
-      int d=a._FRACptr->den.type==_ZINT?modulo(*a._FRACptr->den._ZINTptr,m):a._FRACptr->den.val;
-      return (n-longlong(p)*d)%m==0;
-    }
-    if (a.type==_ZINT)
-      return (modulo(*a._ZINTptr,m)-p)%m==0;
-    if (a.type==_INT_)
-      return (a.val-p)%m==0;
-    CERR << "Unknow type in reconstruction " << a << '\n';
-    return false;
-  }
-
   bool chk_equal_mod(const gen & a,const vector<int> & p,int m){
     if (a.type!=_VECT || a._VECTptr->size()!=p.size())
       return false;
