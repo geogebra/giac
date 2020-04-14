@@ -2288,6 +2288,26 @@ namespace giac {
   gen limit_symbolic_preprocess(const gen & e0,const identificateur & x,const gen & lim_point,int direction,GIAC_CONTEXT){
     // FIXME: add support for int and sum
     gen e=factorial2gamma(e0,contextptr);
+    int trigs=loptab(e,sincostan_tab).size();
+    if (trigs>=2){
+      gen tmp=trigcos(e,contextptr);
+      int trigtmps=loptab(tmp,sincostan_tab).size();
+      if (trigtmps<trigs){
+	e=ratnormal(tmp);
+	trigs=loptab(e,sincostan_tab).size();
+      }
+      tmp=trigsin(e,contextptr);
+      trigtmps=loptab(tmp,sincostan_tab).size();
+      if (trigtmps<trigs){
+	e=ratnormal(tmp);
+	trigs=loptab(e,sincostan_tab).size();
+      }
+      tmp=trigtan(e,contextptr);
+      trigtmps=loptab(tmp,sincostan_tab).size();
+      if (trigtmps<trigs){
+	e=ratnormal(tmp);
+      }
+    }
     gen first_try=subst(e,x,lim_point,false,contextptr);
     first_try=simplifier(first_try,contextptr);
     if (!contains(lidnt(first_try),unsigned_inf)){
