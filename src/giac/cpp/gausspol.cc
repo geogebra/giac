@@ -6251,6 +6251,21 @@ namespace giac {
 	if (dd.type==_VECT){
 	  const_iterateur it=dd._VECTptr->begin(),itend=dd._VECTptr->end();
 	  for (;it!=itend;++it){
+	    if (with_sqrt){
+	      if (it->val==5 || it->val==10){
+		gen e=algebraic_EXTension(makevecteur(1,0),makevecteur(1,0,-5));
+		gen f=it->val==5?1:-1;
+		addtov(poly12polynome(makevecteur(1,(f-e)/2,1),1),v,false,false);
+		addtov(poly12polynome(makevecteur(1,(f+e)/2,1),1),v,false,false);
+		continue;
+	      }
+	      if (it->val==8){
+		gen e=algebraic_EXTension(makevecteur(1,0),makevecteur(1,0,-2));
+		addtov(poly12polynome(makevecteur(1,e,1),1),v,false,false);
+		addtov(poly12polynome(makevecteur(1,-e,1),1),v,false,false);
+		continue;
+	      }
+	    }
 	    polynome tmp=poly12polynome(cyclotomic(it->val),1);
 	    addtov(tmp,v,with_sqrt,complexmode);
 	  }
