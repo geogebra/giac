@@ -315,6 +315,11 @@ namespace giac {
   void fft2( int *A, int n, int w, int p );
   // float fft, theta should be +/-2*M_PI/n
   void fft2( std::complex<double> * A, int n, double theta );
+  // resultant on Z, if eps!=0 might be non deterministic
+  gen mod_resultant(const modpoly & P,const modpoly & Q,double eps);
+  modpoly unmod(const modpoly & a,const gen & m);
+  // resultant of P and Q modulo m, modifies P and Q, 
+  int resultant(std::vector<int> & P,std::vector<int> & Q,std::vector<int> & tmp1,std::vector<int> & tmp2,int m);
 
   bool ntlresultant(const modpoly &p,const modpoly &q,const gen & modulo,gen & res);
   bool ntlxgcd(const modpoly &a,const modpoly &b,const gen & modulo,modpoly & reu,modpoly &v,modpoly & d);

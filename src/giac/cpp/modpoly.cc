@@ -3342,7 +3342,7 @@ namespace giac {
     }
   }
 
-  bool hgcd_iter_int(const vector<int> & a0i,const vector<int> & b0i,int m,vector<int> & ua,vector<int> & ub,vector<int> & va,vector<int> &vb,int p){
+  bool hgcd_iter_int(const vector<int> & a0i,const vector<int> & b0i,int m,vector<int> & ua,vector<int> & ub,vector<int> & va,vector<int> &vb,int p,vector<int> & coeffv,vector<int> & degv){
     if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " halfgcd iter m=" << m << " dega0/a1 " << a0i.size() << "," << b0i.size() << '\n';
     int as=a0i.size();
@@ -3376,6 +3376,10 @@ namespace giac {
 	  CERR << CLOCK()*1e-6 << " halfgcd iter end" << a0i.size() << "," << b0i.size() << '\n';
 	//CERR << a0 << " " << a1 << " " << A << " " << B << " " << C << " " << D << '\n';
 	return true;
+      }
+      if (!degv.empty()){
+	degv.push_back(degv.back()+b.size()-a.size());
+	coeffv.push_back(b[0]);
       }
       DivRem(a,b,p,q,r); // division works always
       swap(a,b); swap(b,r); // a=b; b=r;
@@ -4415,7 +4419,10 @@ namespace giac {
   }
 
 #define HGCD_DIV 1
-  bool hgcd(const vector<int> & a0,const vector<int> & a1,int modulo,vector<int> &A,vector<int> &B,vector<int> &C,vector<int> &D,vector<int> & a,vector<int> & b){ // a0 is A in Yap, a1 is B
+  // coeffv and degv are used by resultant (otherwise they are left empty)
+  // coeffv is the list of leading coefficients of the remainder sequence
+  // degv is the list of degrees of the remainder sequence
+  bool hgcd(const vector<int> & a0,const vector<int> & a1,int modulo,vector<int> &A,vector<int> &B,vector<int> &C,vector<int> &D,vector<int> & a,vector<int> & b,vector<int> & coeffv,vector<int> & degv){ // a0 is A in Yap, a1 is B
     vector<int> tmp1;
     a.clear(); b.clear();
     int dega0=a0.size()-1,dega1=a1.size()-1;
@@ -4427,7 +4434,7 @@ namespace giac {
       return true;
     }
     if (m<64){ 
-      hgcd_iter_int(a0,a1,m,A,C,B,D,modulo);
+      hgcd_iter_int(a0,a1,m,A,C,B,D,modulo,coeffv,degv);
       return true;
     }
     // 1st recursive call
@@ -4436,7 +4443,7 @@ namespace giac {
     vector<int> RA,RB,RC,RD,q,f;
     if (debug_infolevel>2)
       CERR << CLOCK()*1e-6 << " halfgcd 1st recursive call " << dega0 << "," << dega1 << '\n';
-    if (!hgcd(b0,b1,modulo,RA,RB,RC,RD,a,b))
+    if (!hgcd(b0,b1,modulo,RA,RB,RC,RD,a,b,coeffv,degv))
       return false;
     if (debug_infolevel>2)
       CERR << CLOCK()*1e-6 << " halfgcd compute A' B' " << dega0 << "," << dega1 << '\n';
@@ -4454,6 +4461,10 @@ namespace giac {
     if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " halfgcd euclid div " << dega0 << "," << dega1 << '\n';
     // 1 euclidean step
+    if (!degv.empty()){
+      coeffv.push_back(b[0]);
+      degv.push_back(degv.back()+b.size()-a.size());
+    }
     DivRem(a,b,modulo,q,f); // q,f are Q,D in Yap 
     // [[0,1],[1,-q]]*[[RA,RB],[RC,RD]] == [[RC,RD],[-RC*q+RA,-RD*q+RB]]
     a_bc(RA,RC,q,modulo,RA,tmp1); // RA=trim(RA-RC*q,&env);
@@ -4469,7 +4480,7 @@ namespace giac {
     vector<int> SA,SB,SC,SD;
     if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " halfgcd 2nd recursive call " << dega0 << "," << dega1 << '\n';
-    if (!hgcd(g0,g1,modulo,SA,SB,SC,SD,b0,b1))
+    if (!hgcd(g0,g1,modulo,SA,SB,SC,SD,b0,b1,coeffv,degv))
       return false;
     if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " halfgcd end 2nd recursive call " << dega0 << "," << dega1 << '\n';
@@ -4504,10 +4515,10 @@ namespace giac {
 #endif
 	){
       int p=modulo.val;
-      vector<int> a0i,a1i,Ai,Bi,Ci,Di,ai,bi;
+      vector<int> a0i,a1i,Ai,Bi,Ci,Di,ai,bi,coeffv,degv;
       vecteur2vector_int(a0,p,a0i);
       vecteur2vector_int(a1,p,a1i);
-      if (hgcd(a0i,a1i,p,Ai,Bi,Ci,Di,ai,bi)){
+      if (hgcd(a0i,a1i,p,Ai,Bi,Ci,Di,ai,bi,coeffv,degv)){
 	vector_int2vecteur(Ai,A);
 	vector_int2vecteur(Bi,B);
 	vector_int2vecteur(Ci,C);
@@ -4531,11 +4542,11 @@ namespace giac {
 	  && dega0*double(modulo.val)*modulo.val<(1ULL<<63)
 #endif
 	  ){
-	vector<int> a0i,b0i,ua,ub,va,vb; 
+	vector<int> a0i,b0i,ua,ub,va,vb,coeffv,degv; 
 	int p=modulo.val;
 	vecteur2vector_int(a0,p,a0i);
 	vecteur2vector_int(a1,p,b0i);
-	hgcd_iter_int(a0i,b0i,m,ua,ub,va,vb,p);
+	hgcd_iter_int(a0i,b0i,m,ua,ub,va,vb,p,coeffv,degv);
 	vector_int2vecteur(ua,A);
 	vector_int2vecteur(ub,C);
 	vector_int2vecteur(va,B); 
@@ -7120,6 +7131,38 @@ namespace giac {
 
   // resultant of P and Q modulo m, modifies P and Q, 
   int resultant(vector<int> & P,vector<int> & Q,vector<int> & tmp1,vector<int> & tmp2,int m){
+    if (P.size()<Q.size()){
+      int res=(P.size() % 2==1 || Q.size() % 2==1)?1:-1; // (-1)^deg(P)*deg(Q)
+      return res*resultant(Q,P,tmp1,tmp2,m);
+    }
+    if (P.size()==Q.size()){
+      int coeff=Q[0];
+      int invcoeff=invmod(coeff,m);
+      mulsmall(Q,invcoeff,m);
+      DivRem(P,Q,m,tmp1,tmp2);
+      longlong res=(P.size() % 2==1)?1:-1;
+      res = res*powmod(Q[0],P.size()-tmp2.size(),m);
+      return smod(res*resultant(Q,tmp2,P,tmp1,m),m);
+    }
+    // now P.size()>Q.size()
+    if (Q.size()>=HGCD){
+      vector<int> coeffv,degv,A,B,C,D,a,b;
+      coeffv.reserve(Q.size()+1);
+      degv.reserve(Q.size()+1);
+      degv.push_back(P.size()-1);
+      hgcd(P,Q,m,A,B,C,D,tmp1,tmp2,coeffv,degv);
+      int maxadeg=P.size()-giacmax(A.size(),B.size());
+      matrix22timesvect(A,B,C,D,P,Q,maxadeg,maxadeg,a,b,m);
+      degv.push_back(b.size()-1);
+      longlong res=resultant(a,b,tmp1,tmp2,m);
+      // adjust
+      for (int i=0;i<coeffv.size();++i){
+	if (degv[i]%2==1 && degv[i+1]%2==1)
+	  res=-res;
+	res=(res*powmod(coeffv[i],degv[i]-degv[i+2],m))%m;
+      }
+      return smod(res,m);
+    }
     longlong res=1;
     while (Q.size()>1){
 #if 1
@@ -7177,13 +7220,16 @@ namespace giac {
       h -= sizeinbase2(D);
     }
     // reconstruct resultant/D
-    int m=2147483647;
+    int m=p1;//2147483647;
     gen pim=m,res;
-    if (!ntlresultant(P,Q,m,res)){
-      vecteur2vector_int(P,m,p);
-      vecteur2vector_int(Q,m,q);
-      resultant(p,q,tmp1,tmp2,m);
-    }
+    vecteur2vector_int(P,m,p);
+    vecteur2vector_int(Q,m,q);
+    res=resultant(p,q,tmp1,tmp2,m);
+#if 0
+    ntlresultant(P,Q,m,R); 
+    if ((R-res)%m!=0)
+      CERR << "bug\n";
+#endif
     if (D!=1)
       res=int((res.val*longlong(invmod(smod(D,m).val,m)))%m);
     mpz_t tmpz;
@@ -7192,16 +7238,18 @@ namespace giac {
     int probamax=RAND_MAX;
     if (eps>0)
       probamax=int(-std::log(eps)/30/std::log(2.0));
+    int maxdeg=giacmax(P.size(),Q.size())-1;
+    int maxp=std::sqrt(p1p2/4./maxdeg);
     while (h>sizeinbase2(pim) && proba<probamax){
-      m=prevprime(m-1).val;
-      int r; 
-      if (ntlresultant(P,Q,m,R))
-	r=R.val;
-      else {
-	vecteur2vector_int(P,m,p);
-	vecteur2vector_int(Q,m,q);
-	int r=resultant(p,q,tmp1,tmp2,m);
-      }
+      m=prevprimep1p2p3(m-1,maxp);
+      vecteur2vector_int(P,m,p);
+      vecteur2vector_int(Q,m,q);
+      int r=resultant(p,q,tmp1,tmp2,m);
+#if 0
+      ntlresultant(P,Q,m,R);
+      if ((R-r)%m!=0)
+	CERR << "bug\n";
+#endif
       if (D!=1)
 	r=(r*longlong(invmod(smod(D,m).val,m)))%m;
 #ifndef USE_GMP_REPLACEMENTS

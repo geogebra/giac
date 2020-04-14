@@ -3998,7 +3998,32 @@ namespace giac {
 	return evalf(g,1,contextptr);
       }
     }
-    if (v[0].type==_VECT && v[1].type==_VECT){ // not very efficient...
+    if (v[0].type==_VECT && v[1].type==_VECT){ 
+      gen g1,g2;
+      int t1=coefftype(*v[0]._VECTptr,g1),t2=coefftype(*v[1]._VECTptr,g2);
+      if (t1==0 && t2==0){
+	double eps=epsilon(contextptr);
+	if (eps>0)
+	  return mod_resultant(*v[0]._VECTptr,*v[1]._VECTptr,eps);
+	gen res;
+	subresultant(*v[0]._VECTptr,*v[1]._VECTptr,res);
+	return res;
+      }
+      if (t1==_MOD || t2==_MOD){
+	gen m=t1==_MOD?*(g1._MODptr+1):*(g2._MODptr+1);
+	modpoly A=unmod(*v[0]._VECTptr,m);
+	modpoly B=unmod(*v[1]._VECTptr,m);
+	if (m.type==_INT_){
+	  vector<int> a,b,tmp1,tmp2;
+	  vecteur2vector_int(A,m.val,a);
+	  vecteur2vector_int(B,m.val,b);
+	  return makemod(resultant(a,b,tmp1,tmp2,m.val),m);
+	}
+	gen res;
+	if (ntlresultant(A,B,m,res))
+	  return res;
+      }
+      // not very efficient...
       gen g(identificateur("tresultant"));
       v[0]=_poly2symb(makesequence(v[0],g),contextptr);
       v[1]=_poly2symb(makesequence(v[1],g),contextptr);
