@@ -3349,7 +3349,7 @@ namespace giac {
     vector<int> a(a0i),b(b0i),q,r; r.reserve(as);
     // initializes ua to 1 and ub to 0, the coeff of u in ua*a+va*b=a
     vector<int> ur,vr; 
-    ua.reserve(as); ua.push_back(1); ub.reserve(as); ur.reserve(as);
+    ua.reserve(as); ua.clear(); ua.push_back(1); ub.clear(); ub.reserve(as); ur.reserve(as);
     vector<int>::iterator it,itend;
     // DivRem: a = bq+r 
     // hence ur <- ua-q*ub, vr <- va-q*vb verify
@@ -5940,8 +5940,7 @@ namespace giac {
   bool gcd_modular_algo(const modpoly &p,const modpoly &q,modpoly &d,modpoly * p_simp,modpoly * q_simp){
     gen tmp;
     int pt=coefftype(p,tmp),qt=coefftype(q,tmp);
-    if (pt!=0 || qt!=0) // FIXME (chk_morley_demo)
-      return false;
+    //if (pt!=0 || qt!=0) return false;// FIXME (chk_morley_demo) fixed
     if ( (pt!=_INT_ && pt!=_CPLX)
 	 || (qt!=_INT_ && qt!=_CPLX) )
       return false;
@@ -6363,8 +6362,8 @@ namespace giac {
     int maxdeg=giacmax(a.size(),b.size())-1;
     int maxp=std::sqrt(p1p2/4./maxdeg);
     modpoly urec,vrec,drec,ucur,vcur,dcur;
-    gen borne=2*pow(norm(a,context0),b.size()-1)*pow(norm(b,context0),a.size()-1);
-    borne=borne*borne;
+    gen borne=pow(norm(a,context0),b.size()-1)*pow(norm(b,context0),a.size()-1);
+    borne=2*pow(b.size(),a.size()-1)*pow(a.size(),b.size()-1)*borne*borne;
     for (int iter=0;is_greater(borne,pip,context0);++iter){
       env.modulo=prevprimep1p2p3(env.modulo.val,maxp);
       while (is_zero(a.front() % env.modulo) || is_zero(b.front() % env.modulo))
@@ -6397,7 +6396,8 @@ namespace giac {
       }
     }
     // rational reconstruction
-    CERR << CLOCK()*1e-6 << " fracmod begin\n" ;
+    if (debug_infolevel)
+      CERR << CLOCK()*1e-6 << " fracmod begin\n" ;
     gen den(1);
     d=fracmod(drec,pip,&den);
     u=fracmod(urec,pip,&den);
@@ -6405,7 +6405,8 @@ namespace giac {
     mulmodpoly(d,den,d);
     mulmodpoly(u,den,u);
     mulmodpoly(v,den,v);
-    CERR << CLOCK()*1e-6 << " fracmod end\n" ;
+    if (debug_infolevel)
+      CERR << CLOCK()*1e-6 << " fracmod end\n" ;
     return true;
   }
 
@@ -7150,11 +7151,14 @@ namespace giac {
       coeffv.reserve(Q.size()+1);
       degv.reserve(Q.size()+1);
       degv.push_back(P.size()-1);
-      hgcd(P,Q,m,A,B,C,D,tmp1,tmp2,coeffv,degv);
-      int maxadeg=P.size()-giacmax(A.size(),B.size());
-      matrix22timesvect(A,B,C,D,P,Q,maxadeg,maxadeg,a,b,m);
-      degv.push_back(b.size()-1);
-      longlong res=resultant(a,b,tmp1,tmp2,m);
+      while (Q.size()>=HGCD){
+	hgcd(P,Q,m,A,B,C,D,tmp1,tmp2,coeffv,degv);
+	int maxadeg=P.size()-giacmax(A.size(),B.size());
+	matrix22timesvect(A,B,C,D,P,Q,maxadeg,maxadeg,a,b,m);
+	a.swap(P); b.swap(Q);
+      }
+      degv.push_back(Q.size()-1);
+      longlong res=resultant(P,Q,tmp1,tmp2,m);
       // adjust
       for (int i=0;i<coeffv.size();++i){
 	if (degv[i]%2==1 && degv[i+1]%2==1)
@@ -7254,14 +7258,14 @@ namespace giac {
 	r=(r*longlong(invmod(smod(D,m).val,m)))%m;
 #ifndef USE_GMP_REPLACEMENTS
       if (pim.type==_ZINT && res.type==_ZINT){
-	gen u,v,d;
-	egcd(pim,m,u,v,d);
-	if (u.type==_ZINT)
-	  u=modulo(*u._ZINTptr,m);
-	if (d==-1){ u=-u; v=-v; d=1; }
-	int U=u.val;
 	int amodm=modulo(*res._ZINTptr,m);
 	if (amodm!=r){
+	  gen u,v,d;
+	  egcd(pim,m,u,v,d);
+	  if (u.type==_ZINT)
+	    u=modulo(*u._ZINTptr,m);
+	  if (d==-1){ u=-u; v=-v; d=1; }
+	  int U=u.val;
 	  mpz_mul_si(tmpz,*pim._ZINTptr,(U*(r-longlong(amodm)))%m);
 	  mpz_add(*res._ZINTptr,*res._ZINTptr,tmpz);
 	  proba=0;
@@ -12265,11 +12269,12 @@ namespace giac {
   }
 
   bool ntlresultant(const modpoly &p,const modpoly &q,const gen & modulo,gen & res){
-    //return false;
+    if (ntl_on(context0)==0)
+      return false;
 #ifdef HAVE_LIBPTHREAD
     int locked=pthread_mutex_trylock(&ntl_mutex);
 #endif // HAVE_LIBPTHREAD
-    if (locked || ntl_on(context0)==0)
+    if (locked)
       return false;
     bool ok=true;
     try {
@@ -12296,11 +12301,12 @@ namespace giac {
   }
 
   bool ntlxgcd(const modpoly &a,const modpoly &b,const gen & modulo,modpoly & u,modpoly &v,modpoly & d){
-    // return false;
+    if (ntl_on(context0)==0)   
+      return false;
 #ifdef HAVE_LIBPTHREAD
     int locked=pthread_mutex_trylock(&ntl_mutex);
 #endif // HAVE_LIBPTHREAD
-    if (locked || ntl_on(context0)==0)
+    if (locked)
       return false;
     bool ok=true;
     try {
@@ -12378,7 +12384,7 @@ namespace giac {
   }
 
   bool gcd_modular_algo1(polynome &p,polynome &q,polynome &d,bool compute_cof){
-    if (!poly_is_real(p) || !poly_is_real(q))
+    if (ntl_on(context0)==0 || !poly_is_real(p) || !poly_is_real(q))
       return giac_gcd_modular_algo1(p,q,d);
     int np=p.lexsorted_degree();
     int nq=q.lexsorted_degree();
@@ -12387,7 +12393,7 @@ namespace giac {
 #ifdef HAVE_LIBPTHREAD
     int locked=pthread_mutex_trylock(&ntl_mutex);
 #endif // HAVE_LIBPTHREAD
-    if (locked || ntl_on(context0)==0)
+    if (locked)
       return giac_gcd_modular_algo1(p,q,d);
     bool res=true;
     try {

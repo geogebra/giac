@@ -1901,10 +1901,10 @@ extern "C" void Sleep(unsigned int miliSecond);
 #endif
 #ifdef HAVE_LIBNTL
   int PROOT_FACTOR_MAXDEG=300;
-  int MODRESULTANT=100;
+  int MODRESULTANT=20;
 #else
   int PROOT_FACTOR_MAXDEG=30;
-  int MODRESULTANT=1000000;
+  int MODRESULTANT=300;
 #endif
   int ABS_NBITS_EVALF=1000;
 
