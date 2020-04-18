@@ -205,7 +205,7 @@ namespace giac {
   // check if a (normally a fraction) modulo m is equal to p
   bool chk_equal_mod(const gen & a,longlong p,int m);
   // p1*u+p2*v=d
-  void egcd(const modpoly &p1, const modpoly & p2, environment * env,modpoly & u,modpoly & v,modpoly & d);
+  void egcd(const modpoly &p1, const modpoly & p2, environment * env,modpoly & u,modpoly & v,modpoly & d,bool deterministic=true);
   // a*u+b*v=d optimized for GMP, if u_ptr and v_ptr are non 0 compute previous line of Euclide algorithm, stops as soon as degree<degstop
   bool egcd_mpz(const modpoly & a,const modpoly &b,int degstop,const gen & m,modpoly & u,modpoly &v,modpoly & d,modpoly * u_ptr,modpoly * v_ptr,modpoly * r_ptr);
   bool egcd_pade(const modpoly & n,const modpoly & x,int l,modpoly & a,modpoly &b,environment * env,bool psron=true);
@@ -282,6 +282,7 @@ namespace giac {
   // if size is not n or Wp[0]==0, Wp is computed
   // do not share Wp1/p2/p3 between different threads
   void to_fft(const vecteur & A,int modulo,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,std::vector<int> & a,int n,fft_rep & f,bool reverse,bool makeplus);
+  void to_fft(const std::vector<int> & a,int modulo,int w,std::vector<int> & Wp,int n,std::vector<int> & f,bool reverse,bool makeplus,bool makemod=true);
   void to_fft(const std::vector<int> & a,int modulo,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,int n,fft_rep & f,bool reverse,bool makeplus,bool makemod=true);
   // FFT representation f -> res
   // Wp1,p2,p3 should be computed with to_fft
@@ -290,6 +291,7 @@ namespace giac {
   // tmp1/p2/p3 are temporary vectors
   // do not share Wp1/p2/p3 between different threads
   void from_fft(const fft_rep & f,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,std::vector<int> & res,std::vector<int> & tmp1,std::vector<int> & tmp2,std::vector<int> & tmp3,bool reverseatend,bool revw);
+  void from_fft(const std::vector<int> & f,int p,std::vector<int> & Wp,std::vector<int> & res,bool reverseatend,bool revw);
 
   struct multi_fft_rep {
     gen modulo;

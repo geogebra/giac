@@ -10265,6 +10265,8 @@ namespace giac {
       return 1;
     if (n==1)
       return a;
+    if (n==2)
+      return (a*longlong(a))%m;
     int b=a%m,c=1;
     if (m<46340){
       while (n>0){

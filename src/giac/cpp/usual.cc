@@ -5882,7 +5882,7 @@ namespace giac {
     vecteur & a = *args._VECTptr;
     if ( (a.front().type==_VECT) && (a.back().type==_VECT) ){
       vecteur u,v,d;
-      egcd(*a.front()._VECTptr,*a.back()._VECTptr,0,u,v,d);
+      egcd(*a.front()._VECTptr,*a.back()._VECTptr,0,u,v,d,epsilon(contextptr)==0);
       return gen(makevecteur(gen(u,_POLY1__VECT),gen(v,_POLY1__VECT),gen(d,_POLY1__VECT)));
     }
     vecteur lv;
