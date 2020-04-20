@@ -1783,6 +1783,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     longlong test=longlong(modulo)*std::min(ita_end-ita0,itb_end-itb0);
     bool large=test/RAND_MAX>RAND_MAX/modulo;
     new_coord.clear();
+    if (ita0==ita_end || itb0==itb_end) return;
     vector<int>::const_iterator ita_begin=ita0,ita=ita0,itb=itb0;
     for ( ; ita!=ita_end; ++ita ){
       vector<int>::const_iterator ita_cur=ita,itb_cur=itb;

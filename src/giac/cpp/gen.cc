@@ -10245,6 +10245,43 @@ namespace giac {
   }
 #endif
 
+  longlong invmodll(longlong a,longlong b){
+    if (a==1 || a==-1 || a==1-b)
+      return a;
+    longlong aa(1),ab(0),ar(0);
+#ifdef VISUALC
+    longlong q,r;
+    while (b){
+      q=a/b;
+      r=a-q*b;
+      ar=aa-q*ab;
+      a=b;
+      b=r;
+      aa=ab;
+      ab=ar;
+    }
+#else
+    lldiv_t qr;
+    while (b){
+      qr=lldiv(a,b);
+      ar=aa-qr.quot*ab;
+      a=b;
+      b=qr.rem;
+      aa=ab;
+      ab=ar;
+    }
+#endif
+    if (a==1)
+      return aa;
+    if (a!=-1){
+#ifndef NO_STDEXCEPT
+      setsizeerr(gettext("Not invertible"));
+#endif
+      return 0;
+    }
+    return -aa;
+  }
+
   /*
   int powmod(int a,unsigned long n,int m){
     if (!n)
@@ -10317,6 +10354,17 @@ namespace giac {
       CERR << "smod longlong " << r << " " << m << '\n';
     return res1;
     //return smod(R,m);
+  }
+
+  longlong smodll(longlong a,longlong b){
+    longlong r=a%b;
+    if (r>b/2)
+      r -= b;
+    else {
+      if (r<=-b/2)
+	r += b;
+    }
+    return r;
   }
 
   int gcd(int a,int b){

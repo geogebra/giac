@@ -323,7 +323,7 @@ namespace giac {
   // resultant of P and Q modulo m, modifies P and Q, 
   int resultant(std::vector<int> & P,std::vector<int> & Q,std::vector<int> & tmp1,std::vector<int> & tmp2,int m);
 
-  bool ntlresultant(const modpoly &p,const modpoly &q,const gen & modulo,gen & res);
+  bool ntlresultant(const modpoly &p,const modpoly &q,const gen & modulo,gen & res,bool ntl_on_check=true);
   bool ntlxgcd(const modpoly &a,const modpoly &b,const gen & modulo,modpoly & reu,modpoly &v,modpoly & d);
 #ifdef HAVE_LIBNTL
 #ifdef HAVE_LIBPTHREAD

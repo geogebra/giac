@@ -131,6 +131,7 @@ namespace giac {
   int invmod(int n,int modulo);
   unsigned invmod(unsigned a,int b);
   int invmod(longlong a,int b);
+  longlong invmodll(longlong a,longlong b);
 #ifdef INT128
   int invmod(int128_t a,int b);
   inline int smod(int128_t r,int m){
@@ -145,6 +146,7 @@ namespace giac {
   }
   int smod(int a,int b); // where b is assumed to be positive
   int smod(longlong a,int b); 
+  longlong smodll(longlong res,longlong m);
   int simplify(int & a,int & b);
 
   struct ref_mpz_t {
