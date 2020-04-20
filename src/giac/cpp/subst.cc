@@ -1488,6 +1488,11 @@ namespace giac {
     gen a(a_orig);
     for (int i=begin;i<signed(primeargs.size());){
       gen g=simplify3(a,primeargs[i]);
+      if (g.type==_FRAC){
+	a=a*g;
+	primeargs[i]=primeargs[i]*g;
+	++i; continue;
+      }
       if (is_strictly_positive(r2e(-g,vars,contextptr),contextptr)){
 	g=-g; a=-a; primeargs[i]=-primeargs[i];
       }
