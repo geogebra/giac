@@ -3865,7 +3865,9 @@ mpz_class smod(const mpz_class & a,int reduce){
 	    break;
 	}
 	int R=res%modulo;
-	new_coord.push_back(smod(R,modulo));
+	R += (unsigned(R)>>31)*modulo; // make positive
+	R -= (unsigned((modulo>>1)-R)>>31)*modulo;
+	new_coord.push_back(R);// smod(R,modulo);
       }
       --ita;
       ++itb;
@@ -3880,7 +3882,9 @@ mpz_class smod(const mpz_class & a,int reduce){
 	  --ita_cur;
 	}
 	int R=res%modulo;
-	new_coord.push_back(smod(R,modulo));
+	R += (unsigned(R)>>31)*modulo; // make positive
+	R -= (unsigned((modulo>>1)-R)>>31)*modulo;
+	new_coord.push_back(R);// smod(R,modulo);
       }
       return;
     }
