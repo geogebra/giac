@@ -81,6 +81,10 @@ namespace giac {
     }
     return i;
   }
+  inline ulonglong nextpow2(ulonglong n){
+    unsigned i=sizeinbase2(n);
+    return 1ULL<<i;
+  }
   std::vector<int> operator % (const std::vector<int> & a,int modulo);
   std::vector<int> operator / (const std::vector<int> & v,const std::vector<int> & b);
   std::vector<int> operator % (const std::vector<int> & v,const std::vector<int> & b);

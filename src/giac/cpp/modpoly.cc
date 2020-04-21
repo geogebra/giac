@@ -2631,15 +2631,12 @@ namespace giac {
 	}
       }
       // second part of the loop, remainder is not empty, push r always
-      for (++at;;++at){
-	longlong r=*at-q1*(*bt);
-	++bt;
-	if (bt==btend){
-	  rem.push_back(r%m);
-	  return;
-	}
-	rem.push_back((r-q0*(*bt))%m);
+      --btend;
+      for (++at;bt!=btend;++at,++bt){
+	rem.push_back( (*at-q1*(*bt)-q0*bt[1])%m );
       }
+      rem.push_back((*at-q1*(*bt))%m);
+      return;
     }
     rem=th;
     if (a<b)
@@ -3239,9 +3236,8 @@ namespace giac {
     }
   }
   
+
   // a=source mod x^N-1 mod p
-  // coeffs of a are not necessarily reduced mod p, nor positive
-  // if source coeff are reduced mod p or positive, then coeffs of a too
   void reverse_assign(const vector<int> & source,vector<int> & a,int N,int p){
     a.clear(); a.resize(N);
     if (source.empty()) return;
@@ -3376,23 +3372,11 @@ namespace giac {
 	  CERR << CLOCK()*1e-6 << " halfgcd iter compute v " << a0i.size() << "," << b0i.size() << '\n';
 	// va=(a-ua*a0i)/b0i
 	mulsmall(ua.begin(),ua.end(),a0i.begin(),a0i.end(),p,ur);
-#if 1
 	submodneg(ur,a,p);
-#else
-	submod(ur,a,p);
-	for (it=ur.begin(),itend=ur.end();it!=itend;++it)
-	  *it = -*it; 
-#endif
 	DivRem(ur,b0i,p,va,r); // shoud be va
 	// vb=(b-ub*a0i)/b0i
 	mulsmall(ub.begin(),ub.end(),a0i.begin(),a0i.end(),p,ur);
-#if 1
 	submodneg(ur,b,p);
-#else
-	submod(ur,b,p);
-	for (it=ur.begin(),itend=ur.end();it!=itend;++it)
-	  *it = -*it; 
-#endif
 	DivRem(ur,b0i,p,vb,r); // should be vb
 	if (debug_infolevel>1)
 	  CERR << CLOCK()*1e-6 << " halfgcd iter end" << a0i.size() << "," << b0i.size() << '\n';
@@ -4187,7 +4171,7 @@ namespace giac {
     vector<longlong> Wp,sc,sd,raf,rbf,rcf,rdf,saf,sbf,scf,sdf,resf;
     reverse_assign(SC,sc,n,p); 
     reverse_assign(SD,sd,n,p); 
-    to_fft(ra,p,w,Wp,n,raf,false,true,false); 
+    to_fft(ra,p,w,Wp,n,raf,false,true,false); // mod was done by reverse_assign
     to_fft(rb,p,w,Wp,n,rbf,false,true,false);
     to_fft(rc,p,w,Wp,n,rcf,false,true,false);
     to_fft(rd,p,w,Wp,n,rdf,false,true,false);
@@ -4227,7 +4211,7 @@ namespace giac {
     tmp1.swap(res);
   }
 
-  bool hgcd(const vector<longlong> & a0,const vector<longlong> & a1,longlong modulo,vector<longlong> &A,vector<longlong> &B,vector<longlong> &C,vector<longlong> &D,vector<longlong> & a,vector<longlong> & b,vector<longlong> & coeffv,vector<longlong> & degv){ // a0 is A in Yap, a1 is B
+  bool hgcdll(const vector<longlong> & a0,const vector<longlong> & a1,longlong modulo,vector<longlong> &A,vector<longlong> &B,vector<longlong> &C,vector<longlong> &D,vector<longlong> & a,vector<longlong> & b,vector<longlong> & coeffv,vector<longlong> & degv){ // a0 is A in Yap, a1 is B
     vector<longlong> tmp1;
     a.clear(); b.clear();
     longlong dega0=a0.size()-1,dega1=a1.size()-1;
@@ -4248,7 +4232,7 @@ namespace giac {
     vector<longlong> RA,RB,RC,RD,q,f;
     if (debug_infolevel>2)
       CERR << CLOCK()*1e-6 << " halfgcd 1st recursive call " << dega0 << "," << dega1 << '\n';
-    if (!hgcd(b0,b1,modulo,RA,RB,RC,RD,a,b,coeffv,degv))
+    if (!hgcdll(b0,b1,modulo,RA,RB,RC,RD,a,b,coeffv,degv))
       return false;
     if (debug_infolevel>2)
       CERR << CLOCK()*1e-6 << " halfgcd compute A' B' " << dega0 << "," << dega1 << '\n';
@@ -4285,7 +4269,7 @@ namespace giac {
     vector<longlong> SA,SB,SC,SD;
     if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " halfgcd 2nd recursive call " << dega0 << "," << dega1 << '\n';
-    if (!hgcd(g0,g1,modulo,SA,SB,SC,SD,b0,b1,coeffv,degv))
+    if (!hgcdll(g0,g1,modulo,SA,SB,SC,SD,b0,b1,coeffv,degv))
       return false;
     if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " halfgcd end 2nd recursive call " << dega0 << "," << dega1 << '\n';
@@ -4340,7 +4324,7 @@ namespace giac {
 	copy(P.begin(),P.end()-straddle,b0.begin()); // quo(P,x^s), 
 	b1.resize(Q.size()-straddle);
 	copy(Q.begin(),Q.end()-straddle,b1.begin()); // quo(Q,x^s), 
-	hgcd(b0,b1,m,A,B,C,D,a,b,coeffv,degv);
+	hgcdll(b0,b1,m,A,B,C,D,a,b,coeffv,degv);
 	longlong maxadeg=P.size()-giacmax(A.size(),B.size());
 	matrix22timesvect(A,B,C,D,P,Q,maxadeg,maxadeg,a,b,m);
 	if (b.size()<HGCD){
@@ -4718,7 +4702,7 @@ namespace giac {
   }
 
   // [[RA,RB],[RC,RD]]*[a0,a1]->[a,b]
-  void matrix22timesvect(const vector<int> & RA,const vector<int> & RB,const vector<int> & RC,const vector<int> & RD,const vector<int> & a0,const vector<int> &a1,int maxadeg,int maxbdeg,vector<int> & a,vector<int> &b,int p){
+  void matrix22timesvectint(const vector<int> & RA,const vector<int> & RB,const vector<int> & RC,const vector<int> & RD,const vector<int> & a0,const vector<int> &a1,int maxadeg,int maxbdeg,vector<int> & a,vector<int> &b,int p,vector<int> & ra,vector<int> & rb,vector<int> & rc,vector<int> & rd){
     int dega0=a0.size()-1,m=(dega0+1)/2;
     int maxabdeg=giacmax(maxadeg,maxbdeg);
     int bbsize=giacmin(maxabdeg+1,a0.size());
@@ -4728,12 +4712,14 @@ namespace giac {
     gen pPQ(Nreal*gen(2*longlong(p)*p)+1);
     unsigned long l=gen(N2).bindigits()-1; // m=2^l <= Nreal < 2^{l+1}
     unsigned long n=1<<(l+1);
+    if (debug_infolevel>0)
+      CERR << "mat22vectint " << n << '\n';
     unsigned long bound=pPQ.bindigits()+1; // 2^bound=smod bound on coeff of p*q
     unsigned long r=(bound >> l)+1;
-    vector<int> ra; reverse_assign(RA,ra,n,p);
-    vector<int> rb; reverse_assign(RB,rb,n,p);
-    vector<int> rc; reverse_assign(RC,rc,n,p);
-    vector<int> rd; reverse_assign(RD,rd,n,p);
+    reverse_assign(RA,ra,n,p);
+    reverse_assign(RB,rb,n,p);
+    reverse_assign(RC,rc,n,p);
+    reverse_assign(RD,rd,n,p);
     vector<int> a0_; 
     reverse_assign(a0,a0_,n,p);
     vector<int> a1_; 
@@ -4743,20 +4729,18 @@ namespace giac {
       w=nthroot(p,l+1);
     // vector<int> adbg,bdbg;
     if (w){
-      vector<int> Wp,tmp;
-      // here we assume RA..RD, a0_, a1_ are reduced
-      // FIXME? if not replace last arg of to_fft by true (a little slower)
-      to_fft(ra,p,w,Wp,n,tmp,false,true,false);ra.swap(tmp);
-      to_fft(rb,p,w,Wp,n,tmp,false,true,false);rb.swap(tmp);
-      to_fft(rc,p,w,Wp,n,tmp,false,true,false);rc.swap(tmp);
-      to_fft(rd,p,w,Wp,n,tmp,false,true,false);rd.swap(tmp);
-      to_fft(a0_,p,w,Wp,n,tmp,false,true,true);a0_.swap(tmp);
-      to_fft(a1_,p,w,Wp,n,tmp,false,true,true);a1_.swap(tmp);
+      vector<int> Wp; 
+      to_fft(ra,p,w,Wp,n,b,false,true,false);ra.swap(b);
+      to_fft(rb,p,w,Wp,n,b,false,true,false);rb.swap(b);
+      to_fft(rc,p,w,Wp,n,b,false,true,false);rc.swap(b);
+      to_fft(rd,p,w,Wp,n,b,false,true,false);rd.swap(b);
+      to_fft(a0_,p,w,Wp,n,b,false,true,false);a0_.swap(b);
+      to_fft(a1_,p,w,Wp,n,b,false,true,false);a1_.swap(b);
       fft_reverse(Wp,p); 
-      fft_ab_cd_p(ra,a0_,rb,a1_,tmp,p);
-      from_fft(tmp,p,Wp,a,true,false);
-      fft_ab_cd_p(rc,a0_,rd,a1_,tmp,p);
-      from_fft(tmp,p,Wp,b,true,false);
+      fft_ab_cd_p(ra,a0_,rb,a1_,b,p);
+      from_fft(b,p,Wp,a,true,false);
+      fft_ab_cd_p(rc,a0_,rd,a1_,ra,p);
+      from_fft(ra,p,Wp,b,true,false);
       //fft_reverse(Wp,p); 
     } else {
       vector<int> Wp1,Wp2,Wp3;
@@ -4902,7 +4886,7 @@ namespace giac {
     }
   }
 
-  void matrix22(vector<int> & RA,vector<int> &RB,vector<int> & RC,vector<int> &RD,vector<int> &SA,vector<int> &SB,vector<int> &SC,vector<int> &SD,vector<int> &A,vector<int> &B,vector<int> &C,vector<int> &D,int p){
+  void matrix22int(vector<int> & RA,vector<int> &RB,vector<int> & RC,vector<int> &RD,vector<int> &SA,vector<int> &SB,vector<int> &SC,vector<int> &SD,vector<int> &A,vector<int> &B,vector<int> &C,vector<int> &D,int p,vector<int> & tmp,vector<int> & Wp){
     // 2x2 matrix operations
     // [[SA,SB],[SC,SD]]*[[RC,RD],[RA,RB]] == [[RA*SB+RC*SA,RB*SB+RD*SA],[RA*SD+RC*SC,RB*SD+RD*SC]]
     int Nreal=giacmax(giacmax(RC.size(),RD.size()),giacmax(RA.size(),RB.size()))+giacmax(giacmax(SC.size(),SD.size()),giacmax(SA.size(),SB.size()))-2;
@@ -4911,7 +4895,9 @@ namespace giac {
     unsigned long bound=pPQ.bindigits()+1; // 2^bound=smod bound on coeff of p*q
     unsigned long r=(bound >> l)+1;
     unsigned long n=1<<(l+1);
-    vector<int> tmp; reverse_assign(RA,tmp,n,p); RA.swap(tmp);
+    if (debug_infolevel>0)
+      CERR << "mat22int " << n << '\n';
+    reverse_assign(RA,tmp,n,p); RA.swap(tmp);
     reverse_assign(RB,tmp,n,p); RB.swap(tmp);
     reverse_assign(RC,tmp,n,p); RC.swap(tmp);
     reverse_assign(RD,tmp,n,p); RD.swap(tmp);
@@ -4924,9 +4910,7 @@ namespace giac {
       w=nthroot(p,l+1);
     // vector<int> adbg,bdbg;
     if (w){
-      vector<int> Wp;
-      // reverse_assign does not do mod p, assumes RA..SD are reduced
-      // FIXME? if not replace last arg of to_fft by true? (a little slower)
+      Wp.clear();
       to_fft(RA,p,w,Wp,n,tmp,false,true,false); RA.swap(tmp);
       to_fft(RB,p,w,Wp,n,tmp,false,true,false); RB.swap(tmp);
       to_fft(RC,p,w,Wp,n,tmp,false,true,false); RC.swap(tmp);
@@ -5114,18 +5098,15 @@ namespace giac {
   // coeffv and degv are used by resultant (otherwise they are left empty)
   // coeffv is the list of leading coefficients of the remainder sequence
   // degv is the list of degrees of the remainder sequence
-  bool hgcd(const vector<int> & a0,const vector<int> & a1,int modulo,vector<int> &A,vector<int> &B,vector<int> &C,vector<int> &D,vector<int> & a,vector<int> & b,vector<int> & coeffv,vector<int> & degv){ // a0 is A in Yap, a1 is B
-    vector<int> tmp1;
-    a.clear(); b.clear();
+  bool hgcdint(const vector<int> & a0,const vector<int> & a1,int modulo,vector<int> &A,vector<int> &B,vector<int> &C,vector<int> &D,vector<int> & coeffv,vector<int> & degv){ // a0 is A in Yap, a1 is B
     int dega0=a0.size()-1,dega1=a1.size()-1;
     int m=(dega0+1)/2;
     if (dega1<m){
       D=A=vector<int>(1,1);
       B.clear(); C.clear();
-      a=a0; b=a1;
       return true;
     }
-    if (m<64){ 
+    if (m<40){ 
       hgcd_iter_int(a0,a1,m,A,C,B,D,modulo,coeffv,degv);
       return true;
     }
@@ -5135,51 +5116,50 @@ namespace giac {
     vector<int> RA,RB,RC,RD,q,f;
     if (debug_infolevel>2)
       CERR << CLOCK()*1e-6 << " halfgcd 1st recursive call " << dega0 << "," << dega1 << '\n';
-    if (!hgcd(b0,b1,modulo,RA,RB,RC,RD,a,b,coeffv,degv))
+    if (!hgcdint(b0,b1,modulo,RA,RB,RC,RD,coeffv,degv))
       return false;
     if (debug_infolevel>2)
       CERR << CLOCK()*1e-6 << " halfgcd compute A' B' " << dega0 << "," << dega1 << '\n';
     int maxadeg=dega0+1-giacmax(RA.size(),RB.size()),maxbdeg=dega0-m/2;
-    matrix22timesvect(RA,RB,RC,RD,a0,a1,maxadeg,maxbdeg,a,b,modulo);
-    int dege=b.size()-1;
+    vector<int> g0,g1;
+    matrix22timesvectint(RA,RB,RC,RD,a0,a1,maxadeg,maxbdeg,b0,b1,modulo,q,f,g0,g1);
+    int dege=b1.size()-1;
     if (dege<m){
       A.swap(RA); B.swap(RB); C.swap(RC); D.swap(RD);  
-      a.clear(); b.clear();
       return true;
       // A=RA; B=RB; C=RC; D=RD; return true;
     }
-    if (dege>=a.size()-1)
+    if (dege>=b0.size()-1)
       COUT << "hgcd error" << '\n';
     if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " halfgcd euclid div " << dega0 << "," << dega1 << '\n';
     // 1 euclidean step
     if (!degv.empty()){
-      coeffv.push_back(b[0]);
-      degv.push_back(degv.back()+b.size()-a.size());
+      coeffv.push_back(b1[0]);
+      degv.push_back(degv.back()+b1.size()-b0.size());
     }
-    DivRem(a,b,modulo,q,f); // q,f are Q,D in Yap 
+    DivRem(b0,b1,modulo,q,f); // q,f are Q,D in Yap 
     // [[0,1],[1,-q]]*[[RA,RB],[RC,RD]] == [[RC,RD],[-RC*q+RA,-RD*q+RB]]
-    a_bc(RA,RC,q,modulo,RA,tmp1); // RA=trim(RA-RC*q,&env);
-    a_bc(RB,RD,q,modulo,RB,tmp1); // RB=trim(RB-RD*q,&env);
-    int l=b.size()-1,k=2*m-l;
+    a_bc(RA,RC,q,modulo,RA,b0); // RA=trim(RA-RC*q,&env);
+    a_bc(RB,RD,q,modulo,RB,b0); // RB=trim(RB-RD*q,&env);
+    int l=b1.size()-1,k=2*m-l;
     if (f.size()-1<m){
       A.swap(RC); B.swap(RD); C.swap(RA); D.swap(RB); return true;
     }
-    vector<int> g0(b.begin(),b.end()-k); // quo(b,x^k), C0 in Yap
-    vector<int> g1;
+    g0.resize(b1.size()-k);
+    copy(b1.begin(),b1.end()-k,g0.begin()); // vector<int> g0(b1.begin(),b1.end()-k); // quo(b,x^k), C0 in Yap
     if (f.size()>k)
       g1=vector<int>(f.begin(),f.end()-k); // quo(f,x^k), D0 in Yap
-    vector<int> SA,SB,SC,SD;
+    vector<int> & SA=b0, &SB=b1,&SC=q,&SD=f;
     if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " halfgcd 2nd recursive call " << dega0 << "," << dega1 << '\n';
-    if (!hgcd(g0,g1,modulo,SA,SB,SC,SD,b0,b1,coeffv,degv))
+    if (!hgcdint(g0,g1,modulo,SA,SB,SC,SD,coeffv,degv))
       return false;
     if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " halfgcd end 2nd recursive call " << dega0 << "," << dega1 << '\n';
-    matrix22(RA,RB,RC,RD,SA,SB,SC,SD,A,B,C,D,modulo);
+    matrix22int(RA,RB,RC,RD,SA,SB,SC,SD,A,B,C,D,modulo,g0,g1);
     if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " halfgcd end " << dega0 << "," << dega1 << '\n';
-    a.clear(); b.clear();
     return true;
   }
 
@@ -5207,16 +5187,14 @@ namespace giac {
 #endif
 	){
       int p=modulo.val;
-      vector<int> a0i,a1i,Ai,Bi,Ci,Di,ai,bi,coeffv,degv;
+      vector<int> a0i,a1i,Ai,Bi,Ci,Di,coeffv,degv;
       vecteur2vector_int(a0,p,a0i);
       vecteur2vector_int(a1,p,a1i);
-      if (hgcd(a0i,a1i,p,Ai,Bi,Ci,Di,ai,bi,coeffv,degv)){
+      if (hgcdint(a0i,a1i,p,Ai,Bi,Ci,Di,coeffv,degv)){
 	vector_int2vecteur(Ai,A);
 	vector_int2vecteur(Bi,B);
 	vector_int2vecteur(Ci,C);
 	vector_int2vecteur(Di,D);
-	vector_int2vecteur(ai,a);
-	vector_int2vecteur(bi,b);
 	return true;
       }
     }
@@ -6615,14 +6593,14 @@ namespace giac {
   }
 
   int prevprimep1p2p3(int p,int maxp,int fourier_for_n=0){
-    if (p==p1+1)
+    if (p==p1+2 || p==p1+1)
       return p1;
-    if (p==p1)
+    if (p==p1 || p==p1-1 || p==p1-2)
       return p2;
-    if (p==p2)
+    if (p==p2 || p==p2-1 || p==p2-2)
       return p3;
-    if (p==p3)
-      p=fourier_for_n?(1LL<<31-1):maxp;
+    if (p==p3 || p==p3-1 || p==p3-2)
+      p=fourier_for_n?((1LL<<31)-1):maxp;
     if (fourier_for_n){
       int l=sizeinbase2(fourier_for_n);
       int pdiv=p>>l;
@@ -7911,70 +7889,8 @@ namespace giac {
     }
   }
 
-  // resultant of P and Q modulo m, modifies P and Q, 
-  int resultant(vector<int> & P,vector<int> & Q,vector<int> & tmp1,vector<int> & tmp2,int m){
-    if (P.size()<Q.size()){
-      int res=(P.size() % 2==1 || Q.size() % 2==1)?1:-1; // (-1)^deg(P)*deg(Q)
-      return res*resultant(Q,P,tmp1,tmp2,m);
-    }
-    if (P.size()==Q.size()){
-      int coeff=Q[0];
-      int invcoeff=invmod(coeff,m);
-      mulsmall(Q,invcoeff,m);
-      DivRem(P,Q,m,tmp1,tmp2);
-      longlong res=(P.size() % 2==1)?1:-1;
-      res = res*powmod(Q[0],P.size()-tmp2.size(),m);
-      return smod(res*resultant(Q,tmp2,P,tmp1,m),m);
-    }
-    // now P.size()>Q.size()
-    if (Q.size()>=HGCD){
-      vector<int> coeffv,degv,A,B,C,D,a,b,b0,b1;
-      coeffv.reserve(Q.size()+1);
-      degv.reserve(Q.size()+1);
-      degv.push_back(P.size()-1);
-      while (Q.size()>=HGCD){
-#if 0
-	hgcd(P,Q,m,A,B,C,D,tmp1,tmp2,coeffv,degv);
-	int maxadeg=P.size()-giacmax(A.size(),B.size());
-	matrix22timesvect(A,B,C,D,P,Q,maxadeg,maxadeg,a,b,m);
-	a.swap(P); b.swap(Q);
-#else
-	int straddle=P.size()/2;
-	if (straddle>=Q.size()-HGCD/4){
-	  coeffv.push_back(Q.front());
-	  degv.push_back(degv.back()+Q.size()-P.size());
-	  DivRem(P,Q,m,a,b);
-	  P.swap(Q);
-	  Q.swap(b);
-	  continue;
-	}
-	// 1st recursive call
-	b0.resize(P.size()-straddle); 
-	copy(P.begin(),P.end()-straddle,b0.begin()); // quo(P,x^s), 
-	b1.resize(Q.size()-straddle);
-	copy(Q.begin(),Q.end()-straddle,b1.begin()); // quo(Q,x^s), 
-	hgcd(b0,b1,m,A,B,C,D,a,b,coeffv,degv);
-	int maxadeg=P.size()-giacmax(A.size(),B.size());
-	matrix22timesvect(A,B,C,D,P,Q,maxadeg,maxadeg,a,b,m);
-	if (b.size()<HGCD){
-	  a.swap(P); b.swap(Q); break;
-	}
-	coeffv.push_back(b.front());
-	degv.push_back(degv.back()+b.size()-a.size());
-	DivRem(a,b,m,P,Q);
-	b.swap(P); 
-#endif
-      }
-      degv.push_back(Q.size()-1);
-      longlong res=resultant(P,Q,tmp1,tmp2,m);
-      // adjust
-      for (int i=0;i<coeffv.size();++i){
-	if (degv[i]%2==1 && degv[i+1]%2==1)
-	  res=-res;
-	res=(res*powmod(coeffv[i],degv[i]-degv[i+2],m))%m;
-      }
-      return smod(res,m);
-    }
+  int resultant_iter(const vector<int> & P0,const vector<int> & Q0,int m){
+    vector<int> P(P0),Q(Q0),tmp1,tmp2;
     longlong res=1;
     while (Q.size()>1){
 #if 1
@@ -7996,6 +7912,291 @@ namespace giac {
       return 0;
     res = (res*powmod(Q[0],P.size()-1,m))%m;
     return smod(res,m);
+  }
+
+  // adapted from NTL
+  inline int deg(const vector<int> & v){ return v.size()-1;}
+  inline bool IsZero(const vector<int> &v){return v.empty();}
+  inline int LeadCoeff(const vector<int> &v){return v.front(); }
+  void RightShift(vector<int> & target,const vector<int> & source,long n){
+    if (source.size()<n){
+      target.clear(); return;
+    }
+    target.resize(source.size()-n);
+    copy(source.begin(),source.end()-n,target.begin());
+  }
+
+  void ResHalfGCD(const vector<int> &U,const vector<int> & V,long d_red,vector<int> & cvec,vector<int> & dvec,vector<int> & A,vector<int> &B,vector<int> &C,vector<int> & D,int p,vector<int> & a,vector<int> &b,vector<int> & tmp1,vector<int> & tmp2,vector<int> & tmp3,vector<int> & tmp4){
+    if (V.size()<=U.size()-d_red){
+      D=A=vector<int>(1,1);
+      B.clear(); C.clear(); return;
+    }
+
+    long n = deg(U) - 2*d_red + 2;
+    if (n < 0) n = 0;
+
+    vector<int> U1, V1;
+
+    RightShift(U1, U, n);
+    RightShift(V1, V, n);
+
+    if (d_red <= HGCD) { 
+      hgcd_iter_int(U1,V1,U1.size()-d_red,A,C,B,D,p,cvec,dvec); // d_red?
+      return;
+    }
+
+    long d1 = (d_red + 1)/2;
+    if (d1 < 1) d1 = 1;
+    if (d1 >= d_red) d1 = d_red - 1;
+
+    vector<int> A1,B1,C1,D1;
+
+    ResHalfGCD(U1, V1, d1, cvec, dvec,A1,B1,C1,D1,p,a,b,tmp1,tmp2,tmp3,tmp4);
+    int maxdeg=U1.size()-giacmax(A1.size(),B1.size());
+    matrix22timesvectint(A1,B1,C1,D1,U1,V1,maxdeg,maxdeg,a,b,p,tmp1,tmp2,tmp3,tmp4);
+    a.swap(U1); b.swap(V1);
+
+    long d2 = deg(V1) - deg(U) + n + d_red;
+
+    if (IsZero(V1) || d2 <= 0) {
+      A.swap(A1); B.swap(B1); C.swap(C1); D.swap(D1);
+      return;
+    }
+
+    cvec.push_back( LeadCoeff(V1));
+    dvec.push_back( dvec.back()-deg(U1)+deg(V1));
+    DivRem(U1,V1,p,tmp2, tmp1); 
+    U1.swap(V1); V1.swap(tmp1);
+    a_bc(A1,C1,tmp2,p,A1,tmp1);
+    a_bc(B1,D1,tmp2,p,B1,tmp1);
+
+    ResHalfGCD(U1, V1, d2, cvec, dvec,A,B,C,D,p,a,b,tmp1,tmp2,tmp3,tmp4);
+    matrix22int(A1,B1,C1,D1,A,B,C,D,tmp1,tmp2,tmp3,tmp4,p,a,b);
+    A.swap(tmp1); B.swap(tmp2); C.swap(tmp3); D.swap(tmp4);
+
+  }
+
+  void ResHalfGCD(vector<int>& U, vector<int> & V, vector<int>& cvec, vector<int>& dvec,int p,vector<int>& A1,vector<int>& B1,vector<int>& C1,vector<int>& D1,vector<int>& a,vector<int>& b,vector<int>& tmp1,vector<int>& tmp2,vector<int>& tmp3,vector<int>& tmp4){
+    long d_red = (deg(U)+1)/2;
+
+    if (IsZero(V) || deg(V) <= deg(U) - d_red) {
+      return;
+    }
+
+    long du = deg(U);
+
+
+    long d1 = (d_red + 1)/2;
+    if (d1 < 1) d1 = 1;
+    if (d1 >= d_red) d1 = d_red - 1;
+
+    ResHalfGCD(U, V, d1, cvec, dvec,A1,B1,C1,D1,p,a,b,tmp1,tmp2,tmp3,tmp4);
+    int maxdeg=U.size()-giacmax(A1.size(),B1.size());
+    matrix22timesvectint(A1,B1,C1,D1,U,V,maxdeg,maxdeg,a,b,p,tmp1,tmp2,tmp3,tmp4);
+    U.swap(a); V.swap(b);
+
+    long d2 = deg(V) - du + d_red;
+
+    if (IsZero(V) || d2 <= 0) {
+      return;
+    }
+
+    cvec.push_back( LeadCoeff(V));
+    dvec.push_back( dvec.back()-deg(U)+deg(V));
+    DivRem(U,V, p,tmp2, tmp1); 
+    U.swap(V); V.swap(tmp1);
+
+    ResHalfGCD(U, V, d2, cvec, dvec,A1,B1,C1,D1,p,a,b,tmp1,tmp2,tmp3,tmp4);
+    maxdeg=U.size()-giacmax(A1.size(),B1.size());
+    matrix22timesvectint(A1,B1,C1,D1,U,V,maxdeg,maxdeg,a,b,p,tmp1,tmp2,tmp3,tmp4);
+    U.swap(a); V.swap(b);
+  }
+
+  inline void PlainResultant(int & res,const vector<int> & u,const vector<int> &v,int p){
+    res=resultant_iter(u,v,p);
+  }
+
+  inline void power(int & res,int a,int m,int p){
+    res=powmod(a,m,p);
+  }
+
+  void resultant(int & res, const vector<int> & u, const vector<int> & v,int p){
+    if (deg(u) <= HGCD || deg(v) <= HGCD) { 
+      PlainResultant(res, u, v,p);
+      return;
+    }
+
+    vector<int> u1(u), v1(v),tmp1,tmp2;;
+
+    int t; res=1;
+
+    if (deg(u1) == deg(v1)) {
+      DivRem(u1,v1,p,tmp1,tmp2);
+      u1.swap(v1);
+      v1.swap(tmp2);
+
+      if (IsZero(v1)) {
+	res=0;
+	return;
+      }
+
+      power(t, LeadCoeff(u1), deg(u1) - deg(v1),p);
+      res=(longlong(res)*t) %p;
+      if (deg(u1) & 1)
+	res=-res;
+    }
+    else if (deg(u1) < deg(v1)) {
+      u1.swap(v1);
+      if (deg(u1) & deg(v1) & 1)
+	res=-res;
+    }
+
+    // deg(u1) > deg(v1) && v1 != 0
+
+    vector<int> cvec,dvec;
+
+    cvec.reserve(deg(v1)+2);
+    dvec.reserve(deg(v1)+2);
+
+    cvec.push_back( LeadCoeff(u1));
+    dvec.push_back( deg(u1));
+
+    vector<int> A1,B1,C1,D1,a,b,tmp3,tmp4; // all temporary
+
+    while (deg(u1) > HGCD && !IsZero(v1)) { 
+      ResHalfGCD(u1, v1, cvec, dvec,p,A1,B1,C1,D1,a,b,tmp1,tmp2,tmp3,tmp4);
+
+      if (!IsZero(v1)) {
+	cvec.push_back( LeadCoeff(v1));
+	dvec.push_back( deg(v1));
+	DivRem(u1,v1,p,tmp1,tmp2);
+	u1.swap(v1);
+	v1.swap(tmp2);
+      }
+    }
+
+    if (IsZero(v1) && deg(u1) > 0) {
+      res=0;
+      return;
+    }
+
+    long i, l;
+    l = dvec.size();
+
+    if (deg(u1) == 0) {
+      // we went all the way...
+
+      for (i = 0; i <= l-3; i++) {
+	power(t, cvec[i+1], dvec[i]-dvec[i+2],p);
+	res=(longlong(res)*t) % p;
+	if (dvec[i] & dvec[i+1] & 1)
+	  res=-res;
+      }
+
+      power(t, cvec[l-1], dvec[l-2],p);
+      res=(longlong(res)*t) % p;
+    }
+    else {
+      for (i = 0; i <= l-3; i++) {
+	power(t, cvec[i+1], dvec[i]-dvec[i+2],p);
+	res=(longlong(res)*t) % p;
+	if (dvec[i] & dvec[i+1] & 1)
+	  res=-res;
+      }
+
+      power(t, cvec[l-1], dvec[l-2]-deg(v1),p);
+      res=(longlong(res)*t) % p;
+      if (dvec[l-2] & dvec[l-1] & 1)
+	res=-res;
+
+      PlainResultant(t, u1, v1,p);
+      res=(longlong(res)*t) % p;
+    }
+
+  }
+
+  // resultant of P and Q modulo m, modifies P and Q, 
+  int resultant(vector<int> & P,vector<int> & Q,vector<int> & tmp1,vector<int> & tmp2,int m){
+    if (P.size()<Q.size()){
+      int res=(P.size() % 2==1 || Q.size() % 2==1)?1:-1; // (-1)^deg(P)*deg(Q)
+      return res*resultant(Q,P,tmp1,tmp2,m);
+    }
+    if (P.size()==Q.size()){
+      int coeff=Q[0];
+      int invcoeff=invmod(coeff,m);
+      mulsmall(Q,invcoeff,m);
+      DivRem(P,Q,m,tmp1,tmp2);
+      longlong res=(P.size() % 2==1)?1:-1;
+      res = res*powmod(Q[0],P.size()-tmp2.size(),m);
+      return smod(res*resultant(Q,tmp2,P,tmp1,m),m);
+    }
+    // now P.size()>Q.size()
+    if (Q.size()>=HGCD){
+      if (debug_infolevel>2)
+	CERR << "resultantint hgcd mod " << m << '\n';
+#if 0 // activate NTL-like ResHalfGCD code
+      int r;
+      resultant(r,P,Q,m);
+      r=smod(r,m);
+      return r;
+#endif
+      // old code
+      vector<int> coeffv,degv,A,B,C,D,a,b,b0,b1,b2,b3;
+      coeffv.reserve(Q.size()+1);
+      degv.reserve(Q.size()+1);
+      degv.push_back(P.size()-1);
+      while (Q.size()>=HGCD){
+#if 0
+	hgcdint(P,Q,m,A,B,C,D,coeffv,degv);
+#else
+	int deg1=P.size(),deg2=(3*deg1)/4;
+	double coeff1=nextpow2(deg1/2)*2./deg1;
+	double coeff2=nextpow2(deg2)/double(deg2);
+	double coeff=0.5*std::min(coeff1,coeff2);
+	if (debug_infolevel)
+	  CERR << "deg " << P.size() << " coeff " << coeff << "\n";
+	int seuil=1+int(std::ceil((1-coeff)*P.size())); 
+	if (HGCD/4>=Q.size()-seuil){
+	  coeffv.push_back(Q.front());
+	  degv.push_back(degv.back()+Q.size()-P.size());
+	  DivRem(P,Q,m,a,b);
+	  P.swap(Q);
+	  Q.swap(b);
+	  continue;
+	}
+	// 1st recursive call
+	b0.resize(P.size()-seuil); 
+	copy(P.begin(),P.end()-seuil,b0.begin()); // quo(P,x^s), 
+	b1.resize(Q.size()-seuil);
+	copy(Q.begin(),Q.end()-seuil,b1.begin()); // quo(Q,x^s), 
+	hgcdint(b0,b1,m,A,B,C,D,coeffv,degv); // degree=deg(P)*coeff
+#endif
+	int maxadeg=P.size()-giacmax(A.size(),B.size());
+	matrix22timesvectint(A,B,C,D,P,Q,maxadeg,maxadeg,a,b,m,b0,b1,b2,b3);
+	if (b.size()<HGCD){
+	  a.swap(P); b.swap(Q); 
+	  break;
+	}
+	if (0 && a.size()-b.size()==1){
+	  a.swap(P); b.swap(Q);	  
+	  continue;
+	}
+	coeffv.push_back(b.front());
+	degv.push_back(degv.back()+b.size()-a.size());
+	DivRem(a,b,m,P,Q);
+	b.swap(P); 
+      }
+      degv.push_back(Q.size()-1);
+      longlong res=resultant(P,Q,tmp1,tmp2,m);
+      // adjust
+      for (int i=0;i<coeffv.size();++i){
+	if (degv[i]%2==1 && degv[i+1]%2==1)
+	  res=-res;
+	res=(res*powmod(coeffv[i],degv[i]-degv[i+2],m))%m;
+      }
+      return smod(res,m);
+    }
+    return resultant_iter(P,Q,m);
   }
   int sizeinbase2(const gen & g){
     if (g.type==_INT_)
