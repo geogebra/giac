@@ -10734,7 +10734,7 @@ namespace giac {
     case _POLY__POLY:
       return polygcd(*a._POLYptr,*b._POLYptr);
     case _VECT__VECT:
-      return gen(gcd(*a._VECTptr,*b._VECTptr,0),_POLY1__VECT);
+      return gen(gcd(*a._VECTptr,*b._VECTptr,0,ntl_on(contextptr) && a._VECTptr->size()>=NTL_MODGCD && b._VECTptr->size()>=NTL_MODGCD),_POLY1__VECT);
     case _FRAC__FRAC:
       return fraction(gcd(a._FRACptr->num,b._FRACptr->num,contextptr),lcm(a._FRACptr->den,b._FRACptr->den));
     default:

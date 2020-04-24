@@ -8153,6 +8153,27 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     gen c1=solve(f1,x,periode==0?2:0,contextptr);
     if (is_undef(c1))
       return 0;
+    // add approx root if not detected by exact solver
+    double eps=epsilon(contextptr);
+    gen c1f=evalf(c1,1,contextptr);
+    if (c1.type==_VECT && c1f.type==_VECT){
+      vecteur c1v=*c1f._VECTptr,w=*c1._VECTptr;
+      c1f=_fsolve(makesequence(f1,x),contextptr);
+      if (c1f.type==_VECT){
+	vecteur c1fv=*c1f._VECTptr;
+	for (int i=0;i<c1fv.size();++i){
+	  gen r=c1fv[i];
+	  int j=0;
+	  for (;j<c1v.size();++j){
+	    if (is_greater(eps,abs(r-c1v[j],contextptr),contextptr))
+	      break;
+	  }
+	  if (j==c1v.size())
+	    w.push_back(r);
+	}
+      }
+      c1=gen(w,c1.subtype);
+    }
     gen c2=(!(do_inflex_tabsign & 1) || is_zero(f2))?gen(vecteur(0)):solve(_numer(f2,contextptr),x,periode==0?2:0,contextptr),c(c1);
     calc_mode(cm,contextptr);
     step_infolevel(st,contextptr);

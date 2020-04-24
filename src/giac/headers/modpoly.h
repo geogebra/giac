@@ -190,7 +190,7 @@ namespace giac {
   void gcdsmallmodpoly(const std::vector<int> &p,const std::vector<int> & q,int m,std::vector<int> & d);
   void gcdsmallmodpoly(const modpoly &p,const modpoly & q,int m,modpoly & d);
   void DivRem(const std::vector<int> & th, const std::vector<int> & other,int m,std::vector<int> & quo, std::vector<int> & rem);
-  modpoly gcd(const modpoly & a,const modpoly &b,environment * env); 
+  modpoly gcd(const modpoly & a,const modpoly &b,environment * env,bool call_ntl=false); 
   // n-var modular gcd
   bool gcd_modular(const polynome &p_orig, const polynome & q_orig, polynome & pgcd,polynome & pcofactor,polynome & qcofactor,bool compute_cofactors);
 
@@ -324,8 +324,9 @@ namespace giac {
   int resultant(std::vector<int> & P,std::vector<int> & Q,std::vector<int> & tmp1,std::vector<int> & tmp2,int m);
 
   bool ntlresultant(const modpoly &p,const modpoly &q,const gen & modulo,gen & res,bool ntl_on_check=true);
-  bool ntlxgcd(const modpoly &a,const modpoly &b,const gen & modulo,modpoly & reu,modpoly &v,modpoly & d);
-#ifdef HAVE_LIBNTL
+  bool ntlxgcd(const modpoly &a,const modpoly &b,const gen & modulo,modpoly & reu,modpoly &v,modpoly & d,bool ntl_on_check=true);
+  bool ntlgcd(const modpoly &a,const modpoly &b,const gen & modulo,modpoly & d,bool ntl_on_check=true);
+ #ifdef HAVE_LIBNTL
 #ifdef HAVE_LIBPTHREAD
   extern pthread_mutex_t ntl_mutex;
 #endif
@@ -333,9 +334,9 @@ namespace giac {
 
   bool polynome2tab(const polynome & p,int deg,inttype * tab);
   polynome tab2polynome(const inttype * tab,int deg);
-  void ininttype2ZZ(const inttype & temp,const inttype & step,NTL::ZZ & z,const NTL::ZZ & zzstep);
+  bool ininttype2ZZ(const inttype & temp,const inttype & step,NTL::ZZ & z,const NTL::ZZ & zzstep);
   NTL::ZZ inttype2ZZ(const inttype & i);
-  void inZZ2inttype(const NTL::ZZ & zztemp,const NTL::ZZ & zzstep,inttype & temp,const inttype & step);
+  void inZZ2inttype(const NTL::ZZ & zztemp,int pow2,inttype & temp);
   inttype ZZ2inttype(const NTL::ZZ & z);
   NTL::ZZX tab2ZZX(const inttype * tab,int degree);
   void ZZX2tab(const NTL::ZZX & f,int & degree,inttype * & tab);
