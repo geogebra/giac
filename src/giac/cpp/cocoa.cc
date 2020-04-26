@@ -5342,6 +5342,10 @@ namespace giac {
   }
 
 #ifdef PSEUDO_MOD
+  // find pseudo remainder of x mod p, 2^nbits>=p>2^(nbits-1)
+  // assumes invp=2^(2*nbits)/p+1 has been precomputed 
+  // and abs(x)<2^(31+nbits)
+  // |remainder| <= max(2^nbits,|x|*p/2^(2nbits)), <=2*p if |x|<=p^2
   inline int pseudo_mod(longlong x,int p,unsigned invp,unsigned nbits){
     return int(x - (((x>>nbits)*invp)>>(nbits))*p);
   }

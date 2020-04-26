@@ -11357,7 +11357,7 @@ namespace giac {
   gen ichinrem(const gen & a,const gen &b,const gen & amod, const gen & bmod){
     if (a.type==_INT_ && b.type==_INT_ && amod.type==_INT_ && bmod.type==_INT_ && gcd(amod.val,bmod.val)==1){
       int amodinv=invmod(amod.val,bmod.val);
-      longlong res=a.val+((longlong(amodinv)*(b.val-a.val))%bmod.val)*amod.val;
+      longlong res=a.val+((longlong(amodinv)*(b.val-longlong(a.val)))%bmod.val)*amod.val;
       return res;
     }
     gen A,B,d,q;

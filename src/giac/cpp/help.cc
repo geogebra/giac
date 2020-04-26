@@ -190,7 +190,11 @@ namespace giac {
   }
 
   // Run ./icas with export GIAC_DEBUG=-2 to print static_help.h and static_help_w.h, then sort in emacs
-  // cascmd_fr -> longhelp.js: 
+  // /usr/share/giac/doc/fr or en -> longhelp.js or longhelp_en.js: html_mtt 
+  // replace string \244 with :
+  // macro replace /usr/share/giac/doc/en/cascmd_en/ with ' and #... with '
+  // longhelp*.js should begin with var longhelp = {
+  // and end with };
   static bool output_static_help(vector<aide> & v,const vector<int> & langv){
 #if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
     add_language(5,context0); // add german help de/aide_cas

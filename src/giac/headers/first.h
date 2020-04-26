@@ -302,6 +302,7 @@ typedef unsigned long long ulonglong;
 
 #endif // __VISUALC__
 
+
 #ifdef VISUALC
 inline void swap_giac_double(double & a,double & b){ double c=a; a=b; b=c; }
 #else

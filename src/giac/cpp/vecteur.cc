@@ -5071,6 +5071,7 @@ namespace giac {
     }
     return q;
   }
+
   // find pseudo remainder of x mod p, 2^nbits>=p>2^(nbits-1)
   // assumes invp=2^(2*nbits)/p+1 has been precomputed 
   // and abs(x)<2^(31+nbits)

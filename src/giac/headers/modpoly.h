@@ -234,7 +234,7 @@ namespace giac {
   // A=u*(q-p)/d
   dense_POLY1 ichinrem(const dense_POLY1 &p,const dense_POLY1 & q,const gen & pmod,const gen & qmod);
   modpoly chinrem(const modpoly & p,const modpoly & q, const modpoly & pmod, const modpoly & qmod,environment * env);
-  int ichinrem_inplace(dense_POLY1 &p,const std::vector<int> & q,const gen & pmod,int qmodval); // 0 error, 1 p changed, 2 p unchanged
+  int ichinrem_inplace(dense_POLY1 &p,const std::vector<int> & q,const gen & pmod,int qmodval,int reserve_mem=0); // 0 error, 1 p changed, 2 p unchangedb
   bool ichinrem_inplace(dense_POLY1 &p,const dense_POLY1 & q,const gen & pmod,int qmodval);
   void divided_differences(const vecteur & x,const vecteur & y,vecteur & res,environment * env);
   // in-place modification and exact division if divexact==true
