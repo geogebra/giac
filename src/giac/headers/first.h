@@ -281,8 +281,9 @@ typedef unsigned __int64 ulonglong ;
 typedef long long longlong;
 typedef unsigned long long ulonglong;
 #ifdef x86_64
-  typedef int int128_t __attribute__((mode(TI)));
-  typedef unsigned int uint128_t __attribute__((mode(TI)));
+typedef int int128_t __attribute__((mode(TI)));
+typedef unsigned int uint128_t __attribute__((mode(TI)));
+typedef __float128  long_double;
 #ifndef INT128
 #define INT128 1
 #endif

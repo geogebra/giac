@@ -4017,7 +4017,7 @@ namespace giac {
 	  vector<int> a,b,tmp1,tmp2;
 	  vecteur2vector_int(A,m.val,a);
 	  vecteur2vector_int(B,m.val,b);
-	  return makemod(resultant(a,b,tmp1,tmp2,m.val),m);
+	  return makemod(resultant_int(a,b,tmp1,tmp2,m.val),m);
 	}
 	gen res;
 	if (ntlresultant(A,B,m,res))

@@ -5113,6 +5113,16 @@ namespace giac {
     return y+((p-y)>>31)*p;
   }
 #endif // PSEUDO_MOD
+  inline int double_mod(longlong x,int p,double invp){
+    longlong q=x*invp;
+    return x-q*p;
+  }
+
+  // a <- (a+b*c) mod or smod p
+  inline void double_mod(int & a,int b,int c,int p,double invp){
+    a=double_mod(a+((longlong)b)*c,p,invp);
+  }
+
 
   // v1 += c1*w % p, v2 += c2*w %p, v3 += c3*w % p, v4 += c4*w % p; 
   // v1 += c1*w % p, v2 += c2*w %p, v3 += c3*w % p, v4 += c4*w % p; 
@@ -5161,7 +5171,8 @@ namespace giac {
       }
     }
     else
-#endif // PSEUDO_MOD
+#endif
+#if 0
       {
 	for (;it1<=it1_;){
 	  int tmp=*jt;
@@ -5197,6 +5208,41 @@ namespace giac {
 	  *it4 = (*it4+longlong(c4)*tmp)%p;
 	}
       }
+#else
+      {
+	double invp=1.0/p;
+	for (;it1<=it1_;){
+	  int tmp=*jt;
+	  double_mod(*it1,c1,tmp,p,invp);
+	  double_mod(*it2,c2,tmp,p,invp);
+	  double_mod(*it3,c3,tmp,p,invp);
+	  double_mod(*it4,c4,tmp,p,invp);
+	  tmp=jt[1];
+	  double_mod(it1[1],c1,tmp,p,invp);
+	  double_mod(it2[1],c2,tmp,p,invp);
+	  double_mod(it3[1],c3,tmp,p,invp);
+	  double_mod(it4[1],c4,tmp,p,invp);
+	  tmp=jt[2];
+	  double_mod(it1[2],c1,tmp,p,invp);
+	  double_mod(it2[2],c2,tmp,p,invp);
+	  double_mod(it3[2],c3,tmp,p,invp);
+	  double_mod(it4[2],c4,tmp,p,invp);
+	  tmp=jt[3];
+	  double_mod(it1[3],c1,tmp,p,invp);
+	  double_mod(it2[3],c2,tmp,p,invp);
+	  double_mod(it3[3],c3,tmp,p,invp);
+	  double_mod(it4[3],c4,tmp,p,invp);
+	  jt+=4;it4+=4;it3+=4;it2+=4;it1+=4;
+	}
+	for (;it1!=it1end;++jt,++it4,++it3,++it2,++it1){
+	  int tmp=*jt;
+	  double_mod(*it1,c1,tmp,p,invp);
+	  double_mod(*it2,c2,tmp,p,invp);
+	  double_mod(*it3,c3,tmp,p,invp);
+	  double_mod(*it4,c4,tmp,p,invp);
+	}
+      }
+#endif
   }
 
   void LL_multilinear_combination(std::vector<longlong> & v1,int c1,std::vector<longlong> & v2,int c2,std::vector<longlong> & v3,int c3,std::vector<longlong> & v4,int c4,const std::vector<longlong> & w,int p,int cstart,int cend){

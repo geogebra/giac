@@ -44,13 +44,14 @@ using namespace std;
 #endif
 #endif
 
-#define GIAC_PRECOND 1
+//#define GIAC_PRECOND 1
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
   // Fourier primes that fit in 32 bit int
   const int p1=2013265921,p2=1811939329,p3=469762049,p4=2113929217;
+  const double invp1=1.0/p1,invp2=1.0/p2,invp3=1.0/p3;
   const longlong p1p2=longlong(p1)*p2,p1p2sur2=p1p2/2;
 
   gen _fft_mult_size(const gen & args,GIAC_CONTEXT){
@@ -2168,7 +2169,10 @@ namespace giac {
 	h=modpoly(h.end()-i,h.end());
       // g=plus_two*g-f*h;
       mulmodpoly(g,plus_two,env,tmp1);
-      modpoly F(f.end()-giacmin(i,l),f.end());
+      int taille=giacmin(i,l);
+      if (taille>f.size())
+	taille=f.size();
+      modpoly F(f.end()-taille,f.end());
       operator_times(F,h,env,tmp2);
 #if 0 // debug
       int fft_mult_save=FFTMUL_SIZE;
@@ -2220,7 +2224,7 @@ namespace giac {
     gen pip=env->modulo;
     gen p=pip;
     vecteur a,b,q,r,quo_,rem_;
-    while (is_greater(M,p,context0)){
+    while (is_greater(M,pip,context0)){
       p=prevprime(p-1);
       while (smod(B0,p)==0)
 	p=prevprime(p-1);
@@ -2506,10 +2510,10 @@ namespace giac {
     return true;
   }
 
-  bool DenseDivRem(const modpoly & th, const modpoly & other,modpoly & quo, modpoly & rem,bool fastfalsetest){
+  bool DenseDivRem(const modpoly & th, const modpoly & other,modpoly & quo, modpoly & rem,bool fastdivcheck){
     int n=int(th.size()), m=int(other.size());
     gen t=th[n-1], o=other[m-1];
-    if (fastfalsetest && n && m ){
+    if (fastdivcheck && n && m ){
       if (is_zero(o)){
 	if (!is_zero(t))
 	  return false;
@@ -2521,9 +2525,16 @@ namespace giac {
 	//  COUT << ( th[n-2]-other[m-2]*(t/o) ) % o << '\n';
       }
     }
-    environment * env=new environment;
-    bool res=DivRem(th,other,env,quo,rem,false);
-    delete env;
+    environment env;
+    if (fastdivcheck){
+      env.moduloon=true;
+      env.modulo=p4;
+      bool res=DivRem(th,other,&env,quo,rem,false);
+      if (!res || !rem.empty())
+	return false;
+    }
+    env.moduloon=false;
+    bool res=DivRem(th,other,&env,quo,rem,false);
     return res;
   }
 
@@ -2589,19 +2600,6 @@ namespace giac {
   }
   */
 
-  // Multiply each element of v by k
-  inline void mulmodpoly(vector<int> & v,int k,int m){
-    if (k==1)
-      return;
-    vector<int>::iterator it=v.begin(),itend=v.end();
-    for (;it!=itend;++it){
-      *it *= k;
-      *it %= m;
-    }
-    if (v.front()<0)
-      v.front() += m;
-  }
-
   inline int precond_mulmod31(int b1,int q1,int p,int q1surp){
     b1 += (b1>>31) &p;
     int t=longlong(b1)*q1-((longlong(b1)*q1surp)>>31)*p;
@@ -2622,6 +2620,33 @@ namespace giac {
     int msurp=((1LL<<31)*m)/p;
     msurp += (msurp>>31) & p;
     precond_mulmod31(v,m,p,msurp);
+  }
+
+  inline int amodp(longlong a,int p,double invp){
+    longlong q=a*invp;
+    return a-q*p;
+  }
+
+  void precond_mulmod_double(vector<int> & v,int m,int p,double invp){
+    vector<int>::iterator it=v.begin(),itend=v.end();
+    for (;it!=itend;++it){
+      *it=amodp((*it)*longlong(m),p,invp);
+    }
+  }
+
+  void precond_mulmod_double(vector<int> & v,int m,int p){
+    double invp=1.0/p;
+    precond_mulmod_double(v,m,p,invp);
+  }
+
+  inline void precond_mulmod(vector<int> & v,int m,int p){
+    if (m==1)
+      return;
+#if 1 //def GIAC_PRECOND
+    precond_mulmod31(v,m,p);
+#else
+    precond_mulmod_double(v,m,p);
+#endif
   }
 
   // a-b*q
@@ -2674,6 +2699,43 @@ namespace giac {
       // frequent case in euclidean algorithms
       // rem=th-other*q
       vector<int>::const_iterator at=th.begin()+2,bt=other.begin()+1,btend=other.end();
+#if 1
+      //vector<int> rem_,quo_;
+      {
+      double invm=1.0/m;
+      longlong q0=amodp(longlong(th[0])*invcoeff,m,invm);
+      if (q0<0) q0+=m;
+      longlong q1=amodp(longlong(amodp(th[1]-other[1]*q0,m,invm) )*invcoeff,m,invm);
+      if (q1<0) q1+=m;
+      quo.push_back(int(q0));
+      quo.push_back(int(q1));
+      // first part of the loop, remainder is empty, push r only if non 0
+      for (;;++at){
+	longlong r=*at-q1*(*bt);
+	++bt;
+	if (bt==btend){
+	  r=amodp(r,m,invm);
+	  if (r && r!=m && r!=-m)
+	    rem.push_back(int(r));
+	  return;
+	}
+	r -= q0*(*bt);
+	r =amodp(r,m,invm);
+	if (r && r!=m && r!=-m){
+	  rem.push_back(int(r));
+	  break;
+	}
+      }
+      // second part of the loop, remainder is not empty, push r always
+      --btend;
+      for (++at;bt!=btend;++at,++bt){
+	rem.push_back( amodp(*at-q1*(*bt)-q0*bt[1],m,invm) );
+      }
+      rem.push_back(amodp(*at-q1*(*bt),m,invm));
+      return;
+      //rem_.swap(rem);quo_.swap(quo);at=th.begin()+2;bt=other.begin()+1;btend=other.end();
+      }
+#endif
 #ifdef GIAC_PRECOND
       invcoeff += (invcoeff>>31)&m;
       int invcoeffinv=(1LL<<31)*invcoeff/m+1;
@@ -2705,6 +2767,10 @@ namespace giac {
 	rem.push_back(r);
       }
       rem.push_back(precond_a_bq(*at,*bt,q1,m,q1inv));
+      return;
+      //submod(rem_,rem,m); submod(quo_,quo,m); 
+      //if (!rem_.empty() || !quo_.empty())
+      //CERR << "err\n";
 #else
       longlong q0=(longlong(th[0])*invcoeff)%m;
       longlong q1= (( (th[1]-other[1]*q0)%m )*invcoeff)%m;
@@ -3441,32 +3507,36 @@ namespace giac {
     fft_ab_p3(a.modp3,b.modp3);
   }
 
+  const double prec(1.0/(1LL<<52));
+
+  double find_invp(int p){
+    return (1.0+prec)/p;
+  }
+
   void a_minus_qsize2_b(const vector<int> & ua,const vector<int> & q,const vector<int> &ub,vector<int> & ur,int p){
+    double invp=find_invp(p);
     longlong q1=-q[0],q0=-q[1];
     ur.clear(); ur.push_back((q1*ub.front())%p);
     const int * it=&ub[0],*itend=it-1+ub.size(),*itmid=it+ub.size()-ua.size(),*jt=&ua[0];
     if (ua.empty()){
       for (;it!=itend;++it){
-	ur.push_back((q0*it[0]+q1*it[1])%p);
+	ur.push_back(amodp(q0*it[0]+q1*it[1],p,invp));
       }
-      ur.push_back((q0*it[0])%p);
+      ur.push_back(amodp(q0*it[0],p,invp));
     }
     else {
       for (;it!=itmid;++it){
-	ur.push_back((q0*it[0]+q1*it[1])%p);
+	ur.push_back(amodp(q0*it[0]+q1*it[1],p,invp));
       }
       for (;it!=itend;++jt,++it){
-	ur.push_back((q0*it[0]+q1*it[1]+*jt)%p); 
+	ur.push_back(amodp(q0*it[0]+q1*it[1]+*jt,p,invp)); 
       }
-      ur.push_back((q0*it[0]+*jt)%p);
+      ur.push_back(amodp(q0*it[0]+*jt,p,invp));
     }
   }
 
   void a_minus_qsize2_b(const vector<int> & ua,const vector<int>& q,const vector<int> &ub,vector<int> & ur,int p,int & q0inv,int & q1inv){
-#ifdef GIAC_PRECOND
-    if (ua.empty())
-#endif
-      return a_minus_qsize2_b(ua,q,ub,ur,p);
+    return a_minus_qsize2_b(ua,q,ub,ur,p);
     int q1=q[0],q0=q[1];
     if (q0inv==0 || q1inv==0){
       q0 += (q0>>31)&p;
@@ -3643,6 +3713,16 @@ namespace giac {
     return res;
   }
 
+#if 0
+  // Unfortunately, this does not work because long_double
+  // aka float128 seems to be FPU 80 bits integers with 64 bits of mantissa
+  // insufficent precision
+  inline longlong amodpll(int128_t a,longlong p,long_double invp){
+    longlong q=long_double(a)*invp;
+    return a-int128_t(q)*p;
+  }
+#endif
+
   void vecteur2vector_ll(const vecteur & v,longlong m,vector<longlong> & res){
     vecteur::const_iterator it=v.begin(),itend=v.end();
     res.clear();
@@ -3660,7 +3740,7 @@ namespace giac {
     }
   } 
 
-  #define GIAC_PRECONDLL 1
+  #define GIAC_LLPRECOND 1
   // longlong fft
   // exemple of Fourier primes (with 2^53-roots of unity)
   // [4719772409484279809,4782822804267466753,4854880398305394689,5071053180419178497,5179139571476070401,5323254759551926273,5395312353589854209,5503398744646746113,5998794703657500673,6151917090988097537,6269010681299730433,6566248256706183169,6782421038819966977,6962565023914786817,7097673012735901697,7557040174727692289,7728176960567771137,7908320945662590977,8295630513616453633,8583860889768165377,8592868089022906369,8691947280825057281,9097271247288401921]
@@ -3981,7 +4061,7 @@ namespace giac {
     if (W.size()<2)
       return;
     longlong * a=&W.front();
-#ifdef GIAC_PRECONDLL
+#ifdef GIAC_LLPRECOND
     longlong N=W.size()/2;
     fft_rev1(a+1,a+N-1,p);
     fft_rev1(a+N+1,a+2*N-1,1);
@@ -3990,7 +4070,7 @@ namespace giac {
 #endif
   }
 
-#ifdef GIAC_PRECONDLL // preconditionned
+#ifdef GIAC_LLPRECOND // preconditionned
   void fft2wp(vector<longlong> & W,longlong n,longlong w,longlong p){
     W.resize(n); 
     w=w % p;
@@ -4031,7 +4111,7 @@ namespace giac {
 
   inline void fft_loop_p(longlong & A,longlong & An2,longlong * W,longlong n2,longlong p){
     longlong s=A;
-#ifdef GIAC_PRECONDLL
+#ifdef GIAC_LLPRECOND
     longlong t=precond_mulmodll(An2,*W,*(W+n2),p);
 #else
     longlong t = mulmodll(*W,An2,p);
@@ -4045,7 +4125,7 @@ namespace giac {
     if (n==4){
       longlong w1=W[step];
       longlong f0=A[0],f1=A[1],f2=A[2],f3=A[3],
-#ifdef GIAC_PRECONDLL
+#ifdef GIAC_LLPRECOND
 	f01=precond_mulmodll(submodll(f1,f3,p),w1,W[3*step],p),
 #else
 	f01=mulmodll(submodll(f1,f3,p),w1,p),
@@ -4085,7 +4165,7 @@ namespace giac {
     Ai=Acur;
     An2i=An2cur;
     Acur = addmodll(Ai,An2i,p);
-#ifdef GIAC_PRECONDLL
+#ifdef GIAC_LLPRECOND
     An2cur=precond_mulmodll((Ai-An2i)+p,*Wcur,*(Wcur+n2),p);
 #else
     An2cur=((int128_t(Ai)+(p-An2i))* *Wcur) % p;
@@ -4097,7 +4177,7 @@ namespace giac {
     if (n==4){
       longlong w1=W[step];
       longlong f0=A[0],f1=A[1],f2=A[2],f3=A[3],
-#ifdef GIAC_PRECONDLL
+#ifdef GIAC_LLPRECOND
 	f01=precond_mulmodll(submodll(f1,f3,p),w1,W[3*step],p),
 #else
 	f01=mulmodll(submodll(f1,f3,p),w1,p),
@@ -4178,7 +4258,7 @@ namespace giac {
   }
 
   void to_fft(const std::vector<longlong> & a,longlong modulo,longlong w,std::vector<longlong> & Wp,longlong n,std::vector<longlong> & f,bool reverse,bool makeplus,bool makemod=true){
-#if defined GIAC_PRECOND || defined GIAC_PRECONDLL
+#if defined GIAC_LLPRECOND
     longlong nw=n;
 #else
     longlong nw=n/2;
@@ -4426,8 +4506,10 @@ namespace giac {
 
   void mulsmall(vector<longlong> & Q,longlong c,longlong m){
     if (c==1) return;
+    //long_double invm=long_double(1)/long_double(m);
     longlong * ptr=&Q.front(), * ptrend=ptr+Q.size();
     for (;ptr!=ptrend;++ptr){
+      //*ptr =amodpll(int128_t(*ptr)*c,m,invm);
       *ptr = (int128_t(*ptr)*c)%m;
     }
   }
@@ -4588,27 +4670,19 @@ namespace giac {
   void fft_ab_cd_p(const vector<int> &a,const vector<int> &b,const vector<int> & c,const vector<int> &d,vector<int> & res,int p){
     int s=a.size();
     res.resize(s);
-#if 0 // def PSEUDO_MOD // it's not faster
-    if (p>=(1<<30)){
-      unsigned invp=(1LL<<62)/p+1;
-      for (int i=0;i<s;++i){
-	longlong A=a[i],C=c[i];
-	int B=b[i],D=d[i];
-	C = A*B+C*D;
-	A = pseudo_mod(C,p,invp);
-	A += (A>>63)&p;
-	A -= p;
-	A += (A>>63)&p;
-	res[i]=A;
-	continue;
-	if ((res[i]-C)%p!=0)
-	  CERR << "err\n";
-      }
+#if 1 //def __x86_64__
+    double invp=find_invp(p);
+    for (int i=0;i<s;++i){
+      longlong l=(longlong(a[i])*b[i]+longlong(c[i])*d[i]);
+      double q=l*invp;
+      l -= longlong(q)*p;
+      res[i]=l;
     }
-#endif
+#else
     for (int i=0;i<s;++i){
       res[i]=(longlong(a[i])*b[i]+longlong(c[i])*d[i])%p;
     }
+#endif
   }
 
   void fft_ab_cd_p1(const vector<int> &a,const vector<int> &b,const vector<int> & c,const vector<int> &d,vector<int> & res){
@@ -4817,6 +4891,32 @@ namespace giac {
     }
   }
 
+  inline int precond_mulmodp(unsigned A,unsigned W,unsigned Winvp,int p){
+#if 1
+    longlong t = ulonglong(A)*W-((ulonglong(A)*Winvp)>>32)*p;
+    return t+ ((t>>31)&p);
+#else
+    longlong t = ulonglong(A)*W-((ulonglong(A)*Winvp)>>32)*p;
+    return t- (t>>63)*p;
+    int tt= t- (t>>63)*p;
+    unsigned s=(ulonglong(A)*W)%p;
+    if (tt!=s)
+      CERR << '\n';
+    return s;
+#endif
+  }
+
+  inline int mulmodp(int a,int b,int p){
+    return (longlong(a)*b) % p;    
+  }
+
+  inline int mulmodp(int a,int b,int p,double invp){
+    int t=amodp(longlong(a)*b, p,invp);    
+    //t=(longlong(a)*b) % p;
+    //t += (t>>31)&p;
+    return t;
+  }
+
   // reverse *a..*b and neg
   void fft_rev1(int * a,int *b,longlong p){
     for (;b>a;++a,--b){
@@ -4828,18 +4928,129 @@ namespace giac {
       *a=p-*a;
   }
 
+#ifdef GIAC_PRECOND // preconditionned
   void fft_reverse(vector<int> & W,int p){
     if (W.size()<2)
       return;
     int * a=&W.front();
-#ifdef GIAC_PRECOND
     int N=W.size()/2;
     fft_rev1(a+1,a+N-1,p);
     fft_rev1(a+N+1,a+2*N-1,1);
-#else
-    fft_rev1(a+1,a+W.size()-1,p);
-#endif
   }
+
+  void fft2wp(vector<int> & W,int n,int w,int p){
+    W.resize(n); 
+    w %= p;
+    if (w<0) w += p;
+    double invp=double(1ULL<<32)/p;
+    int N=n/2;
+    unsigned ww=1;
+    for (int i=0;i<N;++i){
+      W[i]=ww;
+#if 0
+      unsigned u=1+ww*invp;
+#else
+      unsigned u=1+((1ULL<<32)*ww)/unsigned(p); // quotient ceiling
+#endif
+      W[N+i]=u; 
+      ww=precond_mulmodp(w,ww,u,p);
+      // ww=(ww*longlong(w))%p;
+      // if (www!=ww)
+      //CERR << '\n';
+    }
+  }
+  void fft2wp1(vector<int> & W,int n,int w){
+    W.resize(n); 
+    const int p = p1 ;
+    w=w % p;
+    if (w<0) w += p;
+    int N=n/2;
+    unsigned ww=1;
+    for (int i=0;i<N;++i){
+      W[i]=ww;
+      W[N+i]=1+((1ULL<<32)*ww)/unsigned(p); // quotient ceiling
+      ww=(ww*longlong(w))%p;
+    }
+  }
+  void fft2wp2(vector<int> & W,int n,int w){
+    W.resize(n); 
+    const int p = p2 ;
+    w=w % p;
+    if (w<0) w += p;
+    int N=n/2;
+    unsigned ww=1;
+    for (int i=0;i<N;++i){
+      W[i]=ww;
+      W[N+i]=1+((1LL<<32)*ww)/unsigned(p); // quotient ceiling
+      ww=(ww*longlong(w))%p;
+    }
+  }
+  void fft2wp3(vector<int> & W,int n,int w){
+    W.resize(n); 
+    const int p = p3 ;
+    w=w % p;
+    if (w<0) w += p;
+    int N=n/2;
+    unsigned ww=1;
+    for (int i=0;i<N;++i){
+      W[i]=ww;
+      W[N+i]=1+((1ULL<<32)*ww)/unsigned(p); // quotient ceiling
+      ww=(ww*longlong(w))%p;
+    }
+  }
+#else
+  void fft_reverse(vector<int> & W,int p){
+    if (W.size()<2)
+      return;
+    int * a=&W.front();
+    fft_rev1(a+1,a+W.size()-1,p);
+  }
+
+  void fft2wp(vector<int> & W,int n,int w,int p){
+    W.reserve(n/2);
+    double invp=find_invp(p);
+    w=amodp(w,p,invp);
+    if (w<0) w += p;
+    int N=n/2,ww=1;
+    for (int i=0;i<N;++i){
+      W.push_back(ww);
+      ww=mulmodp(ww,w,p,invp);//(ww*longlong(w))%p;
+    }
+  }
+  void fft2wp1(vector<int> & W,int n,int w){
+    W.reserve(n/2); 
+    const int p = p1 ;
+    w=w % p;
+    if (w<0) w += p;
+    int N=n/2,ww=1;
+    for (int i=0;i<N;++i){
+      W.push_back(ww);
+      ww=(ww*longlong(w))%p;
+    }
+  }
+  void fft2wp2(vector<int> & W,int n,int w){
+    W.reserve(n/2); 
+    const int p = p2 ;
+    w=w % p;
+    if (w<0) w += p;
+    int N=n/2,ww=1;
+    for (int i=0;i<N;++i){
+      W.push_back(ww);
+      ww=(ww*longlong(w))%p;
+    }
+  }
+  void fft2wp3(vector<int> & W,int n,int w){
+    W.reserve(n/2); 
+    const int p = p3 ;
+    w=w % p;
+    if (w<0) w += p;
+    int N=n/2,ww=1;
+    for (int i=0;i<N;++i){
+      W.push_back(ww);
+      ww=(ww*longlong(w))%p;
+    }
+  }
+#endif
 
   void fft_rev(vector<int> & W,int p){
     if (p==p1 || p==p2 || p==p3){
@@ -8381,7 +8592,7 @@ namespace giac {
     res=powmod(a,m,p);
   }
 
-  void resultant_int(int & res, const vector<int> & u, const vector<int> & v,int p){
+  void resultant_int_like_ntl(int & res, const vector<int> & u, const vector<int> & v,int p){
     if (deg(u) <= HGCD || deg(v) <= HGCD) { 
       PlainResultant(res, u, v,p);
       return;
@@ -8476,10 +8687,10 @@ namespace giac {
   }
 
   // resultant of P and Q modulo m, modifies P and Q, 
-  int resultant(vector<int> & P,vector<int> & Q,vector<int> & tmp1,vector<int> & tmp2,int m){
+  int resultant_int(vector<int> & P,vector<int> & Q,vector<int> & tmp1,vector<int> & tmp2,int m){
     if (P.size()<Q.size()){
       int res=(P.size() % 2==1 || Q.size() % 2==1)?1:-1; // (-1)^deg(P)*deg(Q)
-      return res*resultant(Q,P,tmp1,tmp2,m);
+      return res*resultant_int(Q,P,tmp1,tmp2,m);
     }
     if (P.size()==Q.size()){
       int coeff=Q[0];
@@ -8488,7 +8699,7 @@ namespace giac {
       DivRem(P,Q,m,tmp1,tmp2);
       longlong res=(P.size() % 2==1)?1:-1;
       res = res*powmod(Q[0],P.size()-tmp2.size(),m);
-      return smod(res*resultant(Q,tmp2,P,tmp1,m),m);
+      return smod(res*resultant_int(Q,tmp2,P,tmp1,m),m);
     }
     // now P.size()>Q.size()
     if (Q.size()>=HGCD){
@@ -8496,7 +8707,7 @@ namespace giac {
 	CERR << "resultantint hgcd mod " << m << '\n';
 #if 0 //ndef USE_GMP_REPLACEMENTS // activate NTL-like ResHalfGCD code
       int r;
-      resultant_int(r,P,Q,m);
+      resultant_int_like_ntl(r,P,Q,m);
       r=smod(r,m);
       return r;
 #endif
@@ -8548,7 +8759,7 @@ namespace giac {
 	b.swap(P); 
       }
       degv.push_back(Q.size()-1);
-      int res=resultant(P,Q,tmp1,tmp2,m);
+      int res=resultant_int(P,Q,tmp1,tmp2,m);
       adjust_resultant(res,coeffv,degv,m);
       return smod(res,m);
     }
@@ -8573,6 +8784,7 @@ namespace giac {
     }
     return m+(sizeinbase2(int(v.size()))+1)/2;
   }
+  int wpcount=0;
   gen mod_resultant(const modpoly & P,const modpoly & Q,double eps){
     gen R;
     if (ntlresultant(P,Q,0,R))
@@ -8587,7 +8799,7 @@ namespace giac {
       lcmdeno(u,D,context0);
       h -= sizeinbase2(D);
     }
-#if 0 && defined INT128 && defined GIAC_PRECONDLL
+#if 0 && defined INT128 && defined GIAC_LLPRECOND
     if (1){
       vector<longlong> p,q,tmp1,tmp2;
       // reconstruct resultant/D
@@ -8646,13 +8858,15 @@ namespace giac {
       return smod(res,pim)*D;
     }
 #endif // INT128
+    if (debug_infolevel)
+      CERR << CLOCK()*1e-6 << " Wpcount begin " << wpcount << "\n";
     vector<int> p,q,tmp1,tmp2;
     // reconstruct resultant/D
     int m=p1;//2147483647;
     gen pim=m,res;
     vecteur2vector_int(P,m,p);
     vecteur2vector_int(Q,m,q);
-    res=resultant(p,q,tmp1,tmp2,m);
+    res=resultant_int(p,q,tmp1,tmp2,m);
 #if 0
     ntlresultant(P,Q,m,R); 
     if ((R-res)%m!=0)
@@ -8667,13 +8881,13 @@ namespace giac {
     if (eps>0)
       probamax=int(-std::log(eps)/30/std::log(2.0));
     int maxdeg=giacmax(P.size(),Q.size())-1;
-    int maxp=std::sqrt(p1p2/4./maxdeg);
+    int maxp=std::sqrt(p1p2/4./maxdeg),nprimes=1;
     while (h>sizeinbase2(pim) && proba<probamax){
       m=prevprimep1p2p3(m-1,maxp,maxdeg);
       vecteur2vector_int(P,m,p);
       vecteur2vector_int(Q,m,q);
       int r;
-      r=resultant(p,q,tmp1,tmp2,m);
+      r=resultant_int(p,q,tmp1,tmp2,m); ++nprimes;
 #if 0
       ntlresultant(P,Q,m,R);
       if ((R-r)%m!=0)
@@ -8702,6 +8916,8 @@ namespace giac {
 	res=ichinrem(res,r,pim,m);
       pim=m*pim;
     }
+    if (debug_infolevel)
+      CERR << CLOCK()*1e-6 << " Wpcount end " << wpcount << " nprimes " << nprimes << "\n";
     mpz_clear(tmpz);
     return smod(res,pim)*D;
   }
@@ -10697,6 +10913,7 @@ namespace giac {
   }
 
   inline int mulmodp1(int a,int b){
+    return amodp((longlong(a)*b),p1,invp1);
     return (longlong(a)*b) % p1;    
   }
 
@@ -10711,6 +10928,7 @@ namespace giac {
   }
 
   inline int mulmodp2(int a,int b){
+    return amodp((longlong(a)*b),p2,invp2);
     return (longlong(a)*b) % p2;    
   }
 
@@ -10725,6 +10943,7 @@ namespace giac {
   }
 
   inline int mulmodp3(int a,int b){
+    return amodp((longlong(a)*b),p3,invp3);
     return (longlong(a)*b) % p3;    
   }
 
@@ -10740,9 +10959,8 @@ namespace giac {
 
   // this should probably not be defined because gcc does division by csts
   // with multiplication itself 
-  //#define GIAC_PRECOND 1 
 
-#ifdef GIAC_PRECOND // preconditionned
+#if 0 //def GIAC_PRECOND // preconditionned
   inline void fft_loop_p1(int & A,int & An2,int W,int Winv){
     int s = A;
     int t1;
@@ -10766,16 +10984,16 @@ namespace giac {
     Ai=*Acur;
     An2i=*An2cur;
     *Acur = addmod(Ai,An2i,p1);
-#ifdef GIAC_PRECOND
+#if 0 //def GIAC_PRECOND
     *An2cur=precond_mulmodp1(submod(Ai,An2i,p1),*Wcur,*(Wcur+n2));
 #else
-    *An2cur=((longlong(Ai)+p1-An2i)* *Wcur) % p1;
+    *An2cur=amodp((longlong(Ai)+p1-An2i)* *Wcur,p1,invp1);
 #endif
   }
 
   inline void fft_loop_p2(int * A,int *An2,int *W,int n2){
     int s = *A;
-#ifdef GIAC_PRECOND // preconditionned
+#if 0 //def GIAC_PRECOND // preconditionned
     int t=precond_mulmodp2(*An2,*W,*(W+n2));
 #else // not preconditionned
     int t = mulmodp2(*W,*An2);
@@ -10789,16 +11007,16 @@ namespace giac {
     Ai=*Acur;
     An2i=*An2cur;
     *Acur = addmod(Ai,An2i,p2);
-#ifdef GIAC_PRECOND
+#if 0 //def GIAC_PRECOND
     *An2cur=precond_mulmodp2(submod(Ai,An2i,p2),*Wcur,*(Wcur+n2));
 #else
-    *An2cur=((longlong(Ai)+p2-An2i)* *Wcur) % p2;
+    *An2cur=amodp((longlong(Ai)+p2-An2i)* *Wcur,p2,invp2);
 #endif
   }
 
   inline void fft_loop_p3(int * A,int *An2,int *W,int n2){
     int s = *A;
-#ifdef GIAC_PRECOND // preconditionned
+#if 0 // def GIAC_PRECOND // preconditionned
     int t=precond_mulmodp3(*An2,*W,*(W+n2));
 #else // not preconditionned
     int t = mulmodp3(*W,*An2);
@@ -10812,10 +11030,10 @@ namespace giac {
     Ai=*Acur;
     An2i=*An2cur;
     *Acur = addmod(Ai,An2i,p3);
-#ifdef GIAC_PRECOND
+#if 0 // def GIAC_PRECOND
     *An2cur=precond_mulmodp3(submod(Ai,An2i,p3),*Wcur,*(Wcur+n2));
 #else
-    *An2cur=((longlong(Ai)+p3-An2i)* *Wcur) % p3;
+    *An2cur=amodp((longlong(Ai)+p3-An2i)* *Wcur,p3,invp3);
 #endif
   }
 
@@ -10938,7 +11156,7 @@ namespace giac {
     return;
 #endif
     int n2s = n/2*step; // n2%4==0
-#ifdef GIAC_PRECOND
+#if 0 //def GIAC_PRECOND
 #if 1
     for(; A<Aend; ) {
       fft_loop_p1(*A,*An2,*W,*(W+n2s));
@@ -11033,27 +11251,7 @@ namespace giac {
     fft2p1nopermafter(An2, n/2, W,2*step);
   }  
 
-  inline int precond_mulmodp(unsigned A,unsigned W,unsigned Winvp,int p){
-#if 1
-    longlong t = ulonglong(A)*W-((ulonglong(A)*Winvp)>>32)*p;
-    return t+ ((t>>31)&p);
-#else
-    longlong t = ulonglong(A)*W-((ulonglong(A)*Winvp)>>32)*p;
-    return t- (t>>63)*p;
-    int tt= t- (t>>63)*p;
-    unsigned s=(ulonglong(A)*W)%p;
-    if (tt!=s)
-      CERR << '\n';
-    return s;
-#endif
-  }
-
-  inline int mulmodp(int a,int b,int p){
-    return (longlong(a)*b) % p;    
-  }
-
-#ifdef GIAC_PRECOND // preconditionned
-  inline void fft_loop_p(int & A,int & An2,int W,int Winv,int p){
+  inline void fft_loop_p_precond(int & A,int & An2,int W,int Winv,int p){
     int s = A;
     int t1;
     // t1=longlong(*An2)*(*W)-((longlong(*An2)*(*(W+n2)))>>31)*p; t1 -= (t1>>31)*p;
@@ -11061,17 +11259,16 @@ namespace giac {
     A = addmod(s,t1,p);
     An2 = submod(s,t1,p); 
   }
-#else // not preconditionned
-  inline void fft_loop_p(int & A,int & An2,int W,int p){
+
+  inline void fft_loop_p(int & A,int & An2,int W,int p,double invp){
     int s=A;
-    int t = mulmodp(W,An2,p);
+    int t = mulmodp(An2,W,p,invp);
     // if (t1!=t) CERR << t1 << " " << t << '\n';
     A = addmod(s,t,p);
     An2 = submod(s,t,p); 
   }
-#endif
 
-  static void fft2pnopermbefore( int *A, int n, int *W,int p,int step=1) {  
+  static void fft2pnopermbefore( int *A, int n, int *W,int p,double invp,int step) {  
     if (n==0)
       CERR << "bug" << endl;
     if ( n==1 ) return;
@@ -11079,10 +11276,10 @@ namespace giac {
     if (n==4){
       int w1=W[step];
       int f0=A[0],f1=A[1],f2=A[2],f3=A[3],
-#ifdef GIAC_PRECOND
+#if 0 //def GIAC_PRECOND
 	f01=precond_mulmodp(f1-f3+p,w1,W[3*step],p),
 #else
-	f01=mulmod(submod(f1,f3,p),w1,p),
+	f01=mulmodp(submod(f1,f3,p),w1,p,invp),
 #endif
 	f02p=addmod(f0,f2,p),f02m=submod(f0,f2,p),f13=addmod(f1,f3,p);
       A[0]=addmod(f02p,f13,p);
@@ -11097,59 +11294,59 @@ namespace giac {
       A[1]=submod(f0,f1,p);
       return;
     }
-    fft2pnopermbefore( A, n/2, W,p,2*step); // fft2pnopermbefore(A,n2,W+n2);
-    fft2pnopermbefore( A+n/2, n/2, W,p,2*step); // fft2pnopermbefore(An2,n2,W+n2);
+    fft2pnopermbefore( A, n/2, W,p,invp,2*step); // fft2pnopermbefore(A,n2,W+n2);
+    fft2pnopermbefore( A+n/2, n/2, W,p,invp,2*step); // fft2pnopermbefore(An2,n2,W+n2);
     int * An2=A+n/2;
     int * Aend=A+n/2;
     int n2s = n/2*step; // n2%4==0
-#ifdef GIAC_PRECOND
+#if 0 //def GIAC_PRECOND
     for(; A<Aend; ) {
-      fft_loop_p(*A,*An2,*W,*(W+n2s),p);
+      fft_loop_p_precond(*A,*An2,*W,*(W+n2s),p);
       ++A; ++An2; W +=step ;
-      fft_loop_p(*A,*An2,*W,*(W+n2s),p);
+      fft_loop_p_precond(*A,*An2,*W,*(W+n2s),p);
       ++A; ++An2; W +=step ;
-      fft_loop_p(*A,*An2,*W,*(W+n2s),p);
+      fft_loop_p_precond(*A,*An2,*W,*(W+n2s),p);
       ++A; ++An2; W += step;
-      fft_loop_p(*A,*An2,*W,*(W+n2s),p);
+      fft_loop_p_precond(*A,*An2,*W,*(W+n2s),p);
       ++A; ++An2; W +=step;
     }
 #else // GIAC_PRECOND
     for(; A<Aend; ) {
-      fft_loop_p(*A,*An2,*W,p);
+      fft_loop_p(*A,*An2,*W,p,invp);
       ++A; ++An2; W +=step ;
-      fft_loop_p(*A,*An2,*W,p);
+      fft_loop_p(*A,*An2,*W,p,invp);
       ++A; ++An2; W +=step ;
-      fft_loop_p(*A,*An2,*W,p);
+      fft_loop_p(*A,*An2,*W,p,invp);
       ++A; ++An2; W += step;
-      fft_loop_p(*A,*An2,*W,p);
+      fft_loop_p(*A,*An2,*W,p,invp);
       ++A; ++An2; W +=step;
     }
 #endif // GIAC_PRECOND
   }  
 
-  inline void fft_loop_p_(int * Acur,int *An2cur,int * Wcur,int n2,int p){
+  inline void fft_loop_p_(int * Acur,int *An2cur,int * Wcur,int n2,int p,double invp){
     int Ai,An2i;
     Ai=*Acur;
     An2i=*An2cur;
     *Acur = addmod(Ai,An2i,p);
-#ifdef GIAC_PRECOND
+#if 0 //def GIAC_PRECOND
     *An2cur=precond_mulmodp(Ai-An2i+p,*Wcur,*(Wcur+n2),p);
     // *An2cur=precond_mulmodp(submod(Ai,An2i,p),*Wcur,*(Wcur+n2),p);
 #else
-    *An2cur=((longlong(Ai)+p-An2i)* *Wcur) % p;
+    *An2cur=amodp((longlong(Ai)+p-An2i)* *Wcur,p,invp);
 #endif
   }
 
-  static void fft2pnopermafter( int *A, int n, int *W,int p,int step=1) {  
+  static void fft2pnopermafter( int *A, int n, int *W,int p,double invp,int step) {  
     if ( n==1 ) return;
     // if p is fixed, the code is about 2* faster
     if (n==4){
       int w1=W[step];
       int f0=A[0],f1=A[1],f2=A[2],f3=A[3],
-#ifdef GIAC_PRECOND
+#if 0 //def GIAC_PRECOND
 	f01=precond_mulmodp(f1-f3+p,w1,W[3*step],p),
 #else
-	f01=mulmod(submod(f1,f3,p),w1,p),
+	f01=mulmodp(submod(f1,f3,p),w1,p,invp),
 #endif
 	f02p=addmod(f0,f2,p),f02m=submod(f0,f2,p),f13=addmod(f1,f3,p);
       A[0]=addmod(f02p,f13,p);
@@ -11170,18 +11367,18 @@ namespace giac {
     int n2=n/2*step;
     for (;Acur!=An2;){
       int Ai,An2i;
-      fft_loop_p_(Acur,An2cur,Wcur,n2,p);
+      fft_loop_p_(Acur,An2cur,Wcur,n2,p,invp);
       ++Acur;++An2cur; Wcur +=step;
-      fft_loop_p_(Acur,An2cur,Wcur,n2,p);
+      fft_loop_p_(Acur,An2cur,Wcur,n2,p,invp);
       ++Acur;++An2cur; Wcur += step;
-      fft_loop_p_(Acur,An2cur,Wcur,n2,p);
+      fft_loop_p_(Acur,An2cur,Wcur,n2,p,invp);
       ++Acur;++An2cur; Wcur += step;
-      fft_loop_p_(Acur,An2cur,Wcur,n2,p);
+      fft_loop_p_(Acur,An2cur,Wcur,n2,p,invp);
       ++Acur;++An2cur; Wcur += step;
     }
     // Step 2 : recursive calls
-    fft2pnopermafter(A, n/2, W,p,2*step);
-    fft2pnopermafter(An2, n/2, W,p,2*step);
+    fft2pnopermafter(A, n/2, W,p,invp,2*step);
+    fft2pnopermafter(An2, n/2, W,p,invp,2*step);
   }  
 
 #if 0
@@ -11856,107 +12053,6 @@ namespace giac {
     return;
   }  
 
-#ifdef GIAC_PRECOND // preconditionned
-  void fft2wp(vector<int> & W,int n,int w,int p){
-    W.resize(n); 
-    w=w % p;
-    if (w<0) w += p;
-    int N=n/2;
-    unsigned ww=1;
-    for (int i=0;i<N;++i){
-      W[i]=ww;
-      unsigned u=1+((1ULL<<32)*ww)/unsigned(p); // quotient ceiling
-      W[N+i]=u; 
-      ww=precond_mulmodp(w,ww,u,p);
-      // ww=(ww*longlong(w))%p;
-      // if (www!=ww)
-      //CERR << '\n';
-    }
-  }
-  void fft2wp1(vector<int> & W,int n,int w){
-    W.resize(n); 
-    const int p = p1 ;
-    w=w % p;
-    if (w<0) w += p;
-    int N=n/2;
-    unsigned ww=1;
-    for (int i=0;i<N;++i){
-      W[i]=ww;
-      W[N+i]=1+((1ULL<<32)*ww)/unsigned(p); // quotient ceiling
-      ww=(ww*longlong(w))%p;
-    }
-  }
-  void fft2wp2(vector<int> & W,int n,int w){
-    W.resize(n); 
-    const int p = p2 ;
-    w=w % p;
-    if (w<0) w += p;
-    int N=n/2;
-    unsigned ww=1;
-    for (int i=0;i<N;++i){
-      W[i]=ww;
-      W[N+i]=1+((1LL<<32)*ww)/unsigned(p); // quotient ceiling
-      ww=(ww*longlong(w))%p;
-    }
-  }
-  void fft2wp3(vector<int> & W,int n,int w){
-    W.resize(n); 
-    const int p = p3 ;
-    w=w % p;
-    if (w<0) w += p;
-    int N=n/2;
-    unsigned ww=1;
-    for (int i=0;i<N;++i){
-      W[i]=ww;
-      W[N+i]=1+((1ULL<<32)*ww)/unsigned(p); // quotient ceiling
-      ww=(ww*longlong(w))%p;
-    }
-  }
-#else
-  void fft2wp(vector<int> & W,int n,int w,int p){
-    W.reserve(n/2); 
-    w=w % p;
-    if (w<0) w += p;
-    int N=n/2,ww=1;
-    for (int i=0;i<N;++i){
-      W.push_back(ww);
-      ww=(ww*longlong(w))%p;
-    }
-  }
-  void fft2wp1(vector<int> & W,int n,int w){
-    W.reserve(n/2); 
-    const int p = p1 ;
-    w=w % p;
-    if (w<0) w += p;
-    int N=n/2,ww=1;
-    for (int i=0;i<N;++i){
-      W.push_back(ww);
-      ww=(ww*longlong(w))%p;
-    }
-  }
-  void fft2wp2(vector<int> & W,int n,int w){
-    W.reserve(n/2); 
-    const int p = p2 ;
-    w=w % p;
-    if (w<0) w += p;
-    int N=n/2,ww=1;
-    for (int i=0;i<N;++i){
-      W.push_back(ww);
-      ww=(ww*longlong(w))%p;
-    }
-  }
-  void fft2wp3(vector<int> & W,int n,int w){
-    W.reserve(n/2); 
-    const int p = p3 ;
-    w=w % p;
-    if (w<0) w += p;
-    int N=n/2,ww=1;
-    for (int i=0;i<N;++i){
-      W.push_back(ww);
-      ww=(ww*longlong(w))%p;
-    }
-  }
-#endif
 
   void fft2wp4(vector<int> & W,int n,int w){
     W.reserve(n); 
@@ -12870,11 +12966,12 @@ namespace giac {
   // Faster code would require truncated FFT, see David Harvey
   // A cache-friendly truncated FFT
   void to_fft(const std::vector<int> & a,int modulo,int w,std::vector<int> & Wp,int n,std::vector<int> & f,bool reverse,bool makeplus,bool makemod){
-#if defined GIAC_PRECOND || defined GIAC_PRECONDLL
+#if defined GIAC_PRECOND 
     int nw=n;
 #else
     int nw=n/2;
 #endif
+    double invp=1.0/modulo;
     int s=giacmin(a.size(),n);
     int logrs=sizeinbase2(n-1);
     if (reverse){
@@ -12890,14 +12987,15 @@ namespace giac {
     if (makeplus) 
       makepositive(&f.front(),s,modulo);
     if (Wp.size()<nw || Wp[0]==0){
+      ++wpcount;
       Wp.clear();
       fft2wp(Wp,n,w,modulo);
     }
-    fft2pnopermafter(&f.front(),n,&Wp.front(),modulo,Wp.size()/nw);
+    fft2pnopermafter(&f.front(),n,&Wp.front(),modulo,invp,Wp.size()/nw);
   }
 
   void to_fft(const std::vector<int> & a,int modulo,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,int n,fft_rep & f,bool reverse,bool makeplus,bool makemod){
-#if defined GIAC_PRECOND || defined GIAC_PRECONDLL
+#if defined GIAC_PRECOND 
     int nw=n;
 #else
     int nw=n/2;
@@ -13020,11 +13118,7 @@ namespace giac {
       if (revw) fft_rev(Wp1,p1);
       if (p==p1){
 	tmp1.swap(res);
-#ifdef GIAC_PRECOND
-	precond_mulmod31(res,invmod(n,p1),p1);
-#else
-	mulmod(res,invmod(n,p1),p1);
-#endif
+	precond_mulmod(res,invmod(n,p1),p1);
 	if (reverseatend)
 	  reverse(res.begin(),res.end());
 	return;
@@ -13037,11 +13131,7 @@ namespace giac {
       if (revw) fft_rev(Wp2,p2);
       if (p==p2){
 	tmp2.swap(res);
-#ifdef GIAC_PRECOND
-	precond_mulmod31(res,invmod(n,p2),p2);
-#else
-	mulmod(res,invmod(n,p2),p2);
-#endif
+	precond_mulmod(res,invmod(n,p2),p2);
 	if (reverseatend)
 	  reverse(res.begin(),res.end());
 	return;
@@ -13054,11 +13144,7 @@ namespace giac {
       if (revw) fft_rev(Wp3,p3); 
       if (p==p3){
 	tmp3.swap(res);
-#ifdef GIAC_PRECOND
-	precond_mulmod31(res,invmod(n,p3),p3);
-#else
-	mulmod(res,invmod(n,p3),p3);
-#endif
+	precond_mulmod(res,invmod(n,p3),p3);
 	if (reverseatend)
 	  reverse(res.begin(),res.end());
 	return;
@@ -13074,20 +13160,17 @@ namespace giac {
   void from_fft(const std::vector<int> & f,int p,std::vector<int> & Wp,std::vector<int> & res,bool reverseatend,bool revw){
     res=f;
     int n=res.size();
-#if defined GIAC_PRECOND || defined GIAC_PRECONDLL
+#if defined GIAC_PRECOND 
     int nw=n;
 #else
     int nw=n/2;
 #endif
+    double invp=find_invp(p);
     if (revw) fft_reverse(Wp,p);
-    fft2pnopermbefore(&res.front(),n,&Wp.front(),p,Wp.size()/nw);
+    fft2pnopermbefore(&res.front(),n,&Wp.front(),p,invp,Wp.size()/nw);
     if (revw) fft_reverse(Wp,p);
     int m=invmod(n,p);
-#ifdef GIAC_PRECOND
-    precond_mulmod31(res,m,p);
-#else
-    mulmod(res,m,p);
-#endif
+    precond_mulmod(res,m,p);
     if (reverseatend)
       reverse(res.begin(),res.end());
   }
@@ -13101,19 +13184,11 @@ namespace giac {
     int n=tmp.size();
     fft2p1nopermbefore(&tmp.front(),n,&Wp1.front());
     int ninv=invmod(n,p1);
-#ifdef GIAC_PRECOND
-    precond_mulmod31(tmp,ninv,p1);
-#else
-    mulmod(tmp,ninv,p1);
-#endif
+    precond_mulmod(tmp,ninv,p1);
     tmp1=f.p1p2p3.modp2;
     fft2p2nopermbefore(&tmp1.front(),n,&Wp2.front());
     ninv=invmod(n,p2);
-#ifdef GIAC_PRECOND
-    precond_mulmod31(tmp,ninv,p2);
-#else
-    mulmod(tmp1,ninv,p2);
-#endif
+    precond_mulmod(tmp,ninv,p2);
     int zsize=64+sizeinbase2(4*n*modulo*modulo);
     // vector_int2vecteur(tmp,res); vecteur cur; vector_int2vecteur(tmp1,cur); cur=ichinrem(res,cur,p1,p2);
     ichinremp1p2(tmp,tmp1,tmp.size(),res,zsize);
@@ -13121,11 +13196,7 @@ namespace giac {
     tmp=f.p1p2p3.modp3;
     fft2p3nopermbefore(&tmp.front(),n,&Wp3.front());
     ninv=invmod(n,p3);
-#ifdef GIAC_PRECOND
-    precond_mulmod31(tmp,ninv,p3);
-#else
-    mulmod(tmp,ninv,p3);
-#endif
+    precond_mulmod(tmp,ninv,p3);
     //vector_int2vecteur(tmp,cur); cur=ichinrem(res,cur,pip,p3);
     ichinrem_inplace(res,tmp,pip,p3);
     pip=p3*pip;
@@ -13697,11 +13768,14 @@ namespace giac {
       if (is_undef(dmod))
 	return false;
       ppz(dmod);
-      if ( (DenseDivRem(pp,dmod,p_simp,rem,true)) && (rem.empty()) && (DenseDivRem(qq,dmod,q_simp,rem,true)) && (rem.empty()) ){
-	p=unmodularize(p_simp);
-	q=unmodularize(q_simp);
-	d=unmodularize(dmod);
-	return true;
+      if ( DenseDivRem(pp,dmod,p_simp,rem,true) && rem.empty() ){
+	if (DenseDivRem(qq,dmod,q_simp,rem,true)
+	    && (rem.empty())){
+	  p=unmodularize(p_simp);
+	  q=unmodularize(q_simp);
+	  d=unmodularize(dmod);
+	  return true;
+	}
       }
     }
     return false;
