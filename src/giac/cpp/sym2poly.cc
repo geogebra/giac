@@ -2183,7 +2183,7 @@ namespace giac {
     }
     if (b==plus_inf)
       return _rand(makesequence(a+1,a+100),contextptr);
-    return _rand(gen(boundaries,_SEQ__VECT),contextptr);
+    return (b-a)*_rand(makesequence(0.0,1.0),contextptr)+a;
   }
 
   static void check_assume(vecteur & vzero,const vecteur & vassume,GIAC_CONTEXT){
@@ -2368,6 +2368,7 @@ namespace giac {
 	    vzero=*vinitd._VECTptr;
 	  else 
 	    check_assume(vzero,vassume,contextptr);
+	  vzero=subst(vzero,vinit,vzero,false,contextptr);
 	  gen tmp0=r2sym(*pp._EXTptr,lt,ltend,contextptr);
 	  gen tmp1=r2sym(f,lt,ltend,contextptr);
 	  for (int ntry=0;ntry<10;++ntry,tst=false){
