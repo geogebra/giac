@@ -2376,7 +2376,7 @@ namespace giac {
 	    if (!lvar(makevecteur(tmp00,tmp10)).empty())
 	      break;
 	    if (tmp10.type==_VECT && _size(_gcd(makesequence(tmp10,derivative(*tmp10._VECTptr)),contextptr),contextptr)>1)
-	      tmp00=cst_i; // retry
+	      tmp00=plus_one_half; // retry
 	    else {
 	      tmp00=algebraic_EXTension(tmp00,tmp10);
 	      tmp00=accurate_evalf_until(tmp00,contextptr); // tmp00.evalf_double(1,contextptr); 
