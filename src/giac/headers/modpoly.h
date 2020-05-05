@@ -183,8 +183,12 @@ namespace giac {
   bool hgcd(const modpoly & a0,const modpoly & a1,const gen & modulo,modpoly &A,modpoly &B,modpoly &C,modpoly &D); // a0 is A in Yap, a1 is B
   // fast modular inverse: f*g=1 mod x^l, f must be invertible (f.back()!=0)
   bool invmod(const modpoly & f,int l,environment * env,modpoly & g);
+  // for p prime such that p-1 is divisible by 2^N, compute a 2^N-th root of 1
+  // otherwise return 0
+  int nthroot(int p,int N);
   // euclidean quotient using modular inverse
-  bool DivQuo(const modpoly & a, const modpoly & b, environment * env,modpoly & q);
+  // returns 0 on failure, 1 on success, 2 if division is exact
+  int DivQuo(const modpoly & a, const modpoly & b, environment * env,modpoly & q);
   // 1-d modular for small modulus<sqrt(RAND_MAX)
   bool gcdsmallmodpoly(const polynome &p,const polynome & q,int m,polynome & d,polynome & dp,polynome & dq,bool compute_cof); 
   void smallmodpoly2modpoly(const std::vector<int> & v,modpoly & p,int m);
@@ -259,8 +263,10 @@ namespace giac {
   // void fft(std::vector< std::complex<double> >& f,const std::vector< std::complex<double> > & w ,std::vector<std::complex< double> > & res);
   void fft(std::complex<double> * f,int n,const std::complex<double> * w,int m,std::complex< double> * t);
   void fft(const std::vector<int> & f,const std::vector<int> & w ,std::vector<int> & res,int modulo);
-  // res=a*b mod p
-  void fft_ab_p(const vector<int> &a,const vector<int> &b,vector<int> & res,int p);
+  // res=a .* b mod p
+  void fft_ab_p(const std::vector<int> &a,const std::vector<int> &b,std::vector<int> & res,int p);
+  // res=a ./ b mod p
+  void fft_aoverb_p(const std::vector<int> &a,const std::vector<int> &b,std::vector<int> & res,int p);
   // reverse the table of root of unity^k for inverse fft
   void fft_reverse(vector<int> & W,int p);
 

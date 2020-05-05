@@ -2202,16 +2202,39 @@ namespace giac {
   }
 
   // euclidean quotient using modular inverse
-  bool DivQuo(const modpoly & a, const modpoly & b, environment * env,modpoly & q){
+  int DivQuo(const modpoly & a, const modpoly & b, environment * env,modpoly & q){
     q.clear();
     int n=a.size(),m=b.size();
     if (n<m)
-      return true;
+      return 1;
     int s=n-m+1;
+    if (s>=FFTMUL_SIZE && m>=FFTMUL_SIZE && env && env->modulo.type==_INT_){
+      int p=env->modulo.val,l=sizeinbase2(n);
+      // check if p is a Fourier prime for n
+      int N=1<<l;
+      if ( (((p-1)>>l)<<l)==p-1 && is_probab_prime_p(p)){
+	int w=nthroot(p,l);
+	if (w){
+	  vector<int> A,B,Wp,tmp0;
+	  vecteur2vector_int(a,p,A);
+	  vecteur2vector_int(b,p,B);
+	  to_fft(A,p,w,Wp,N,tmp0,true,false,false); A.swap(tmp0);
+	  to_fft(B,p,w,Wp,N,tmp0,true,false,false); B.swap(tmp0);
+	  fft_aoverb_p(A,B,tmp0,p);
+	  fft_reverse(Wp,p); 
+	  from_fft(tmp0,p,Wp,A,true,false);
+	  fast_trim_inplace(A,p);
+	  if (A.size()==s){
+	    vector_int2vecteur(A,q);
+	    return 2;
+	  }
+	}
+      }
+    }
     modpoly f(b),g;
     reverse(f.begin(),f.end());
     if (!invmod(f,n-m+1,env,g))
-      return false;
+      return 0;
     f=a;
     reverse(f.begin(),f.end());
     operator_times(f,g,env,q);
@@ -2219,7 +2242,7 @@ namespace giac {
       q=modpoly(q.end()-s,q.end());
     reverse(q.begin(),q.end());
     trim(q,env);
-    return true;
+    return 1;
   }
 
   // for p prime such that p-1 is divisible by 2^N, compute a 2^N-th root of 1
@@ -2633,10 +2656,14 @@ namespace giac {
       return true;
     }
 #if 1
+    int divquores=0;
     if (env && env->moduloon &&
 	other.size()>FFTMUL_SIZE && th.size()-other.size()>FFTMUL_SIZE &&
-	DivQuo(th,other,env,quo)
+	(divquores=DivQuo(th,other,env,quo))
 	){
+      rem.clear();
+      if (divquores==2)
+	return true;
       modpoly tmp;
       operator_times(other,quo,env,tmp);
       submodpoly(th,tmp,env,rem);
@@ -5046,6 +5073,16 @@ namespace giac {
       res[i]=(longlong(a[i])*b[i])%p;
     }
 #endif
+  }
+
+  void fft_aoverb_p(const vector<int> &a,const vector<int> &b,vector<int> & res,int p){
+    int s=a.size();
+    res.resize(s);
+    for (int i=0;i<s;++i){
+      int bi=invmod(b[i],p);
+      bi += (bi>>31)&p;
+      res[i]=(longlong(a[i])*bi)%p;
+    }
   }
 
   void fft_ab_cd_p(const vector<int> &a,const vector<int> &b,const vector<int> & c,const vector<int> &d,vector<int> & res,int p){
