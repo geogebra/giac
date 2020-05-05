@@ -132,6 +132,8 @@ typedef long double giac_double;
 typedef double giac_double;
 #endif
 
+typedef long double  long_double;
+
 // sprintf replacement
 int my_sprintf(char * s, const char * format, ...);
 #ifdef GIAC_HAS_STO_38
@@ -283,7 +285,6 @@ typedef unsigned long long ulonglong;
 #ifdef x86_64
 typedef int int128_t __attribute__((mode(TI)));
 typedef unsigned int uint128_t __attribute__((mode(TI)));
-typedef __float128  long_double;
 #ifndef INT128
 #define INT128 1
 #endif

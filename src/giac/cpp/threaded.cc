@@ -1144,7 +1144,14 @@ mpz_class smod(const mpz_class & a,int reduce){
       itend += jtend-jt;
     }
     for (;it!=itend;++jt,++it){
+#if 1 
+      int a=*it,b=*jt;
+      a += (a>>31)&m;
+      b += (b>>31)&m;
+      *it = b-a;
+#else
       *it = (*jt-longlong(*it))%m;
+#endif
     }
     for (it=v.begin();it!=itend;++it){
       if (*it)

@@ -6143,6 +6143,14 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
     first=s_orig.find("xcas_mode");
     if (first>=0 && first<sss)
       return s_orig;
+    first=s_orig.find('\''); // derivative or Python string delimiter?
+    if (first>=0 && first<sss){
+      if (first==sss-1 || s_orig[first+1]=='\'') // '' is a second derivative
+	return s_orig;
+      first=s_orig.find('\'',first+1);
+      if (first<0 || first>=sss)
+	return s_orig;
+    }
     bool pythoncompat=python_compat(contextptr);
     bool pythonmode=false;
     first=0;

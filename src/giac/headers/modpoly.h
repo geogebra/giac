@@ -40,6 +40,8 @@
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
+  // Previous Fourier prime if fourier_for_n!=0, or previous prime <= maxp
+  int prevprimep1p2p3(int p,int maxp,int fourier_for_n=0);
   template<class T> class tensor;
   typedef tensor<gen> polynome;
   typedef vecteur modpoly;
@@ -71,6 +73,7 @@ namespace giac {
   void mergemodpoly(modpoly & high,const modpoly & low,int n); 
   modpoly trim(const modpoly & p,environment * env);
   void trim_inplace(modpoly & p);
+  void fast_trim_inplace(vector<int> & p,int modulo);
   bool trim(modpoly & v); // true if v is empty after trimming
   void rrdm(modpoly & p, int n);   // right redimension poly to degree n
 
@@ -257,6 +260,11 @@ namespace giac {
   void fft(std::complex<double> * f,int n,const std::complex<double> * w,int m,std::complex< double> * t);
   void fft(const std::vector<int> & f,const std::vector<int> & w ,std::vector<int> & res,int modulo);
   // res=a*b mod p
+  void fft_ab_p(const vector<int> &a,const vector<int> &b,vector<int> & res,int p);
+  // reverse the table of root of unity^k for inverse fft
+  void fft_reverse(vector<int> & W,int p);
+
+  // res=a*b mod p
   bool fft2mult(int ablinfnorm,const std::vector<int> & a,const std::vector<int> & b,std::vector<int> & res,int modulo,std::vector<int> & W,std::vector<int> & fftmult_p,std::vector<int> & fftmult_q,bool reverseatend,bool dividebyn,bool makeplus);
   bool fftmultp1234(const modpoly & p,const modpoly & q,const gen &P,const gen &Q,modpoly & pq,int modulo, std::vector<int> & a,std::vector<int>&b,std::vector<int> &resp1,std::vector<int>&resp2,std::vector<int> & resp3, std::vector<int> & Wp1,std::vector<int> & Wp2, std::vector<int> & Wp3,std::vector<int> & Wp4,std::vector<int> &tmp_p,std::vector<int> &tmp_q,bool compute_pq);
   // FFT mod 2^{r*2^l}+1, tmp1, tmp2 temporary gen must be _ZINT
@@ -314,7 +322,7 @@ namespace giac {
   modpoly fftmult(const modpoly & p,const modpoly & q);
   // input A with positive int, output fft in A
   // w a 2^n-th root of unity mod p
-  void fft2( int *A, int n, int w, int p );
+  void fft2( int *A, int n, int w, int p ,bool permute=true);
   // float fft, theta should be +/-2*M_PI/n
   void fft2( std::complex<double> * A, int n, double theta );
   // resultant on Z, if eps!=0 might be non deterministic

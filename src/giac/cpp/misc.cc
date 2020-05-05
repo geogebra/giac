@@ -8158,7 +8158,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     gen c1f=evalf(c1,1,contextptr);
     if (c1.type==_VECT && c1f.type==_VECT){
       vecteur c1v=*c1f._VECTptr,w=*c1._VECTptr;
-      c1f=_fsolve(makesequence(f1,x),contextptr);
+      c1f=_fsolve(makesequence(f1,symb_equal(x,symb_interval(xmin,xmax))),contextptr);
       if (c1f.type==_VECT){
 	vecteur c1fv=*c1f._VECTptr;
 	for (int i=0;i<c1fv.size();++i){

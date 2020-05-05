@@ -1426,7 +1426,7 @@ namespace giac {
 
   // Approx fft or exact if args=poly1,omega,n
   gen fft(const gen & g_orig,int direct,GIAC_CONTEXT){
-    if (g_orig.type==_VECT && g_orig.subtype==_SEQ__VECT && g_orig._VECTptr->size()==3 && g_orig._VECTptr->front().type==_VECT){
+    if (g_orig.type==_VECT && g_orig.subtype==_SEQ__VECT && g_orig._VECTptr->size()>=3 && g_orig._VECTptr->front().type==_VECT){
       vecteur & v =*g_orig._VECTptr->front()._VECTptr;
       int n=int(v.size());
       if (n<2)
@@ -1446,7 +1446,7 @@ namespace giac {
 	    A.push_back(smod(v[i],modulo).val);
 	}
 	int p=modulo.val;
-	fft2(&A.front(),n,omega.val,p);
+	fft2(&A.front(),n,omega.val,p,g_orig._VECTptr->size()==3);
 	gen r=vecteur(0);
 	vecteur & res=*r._VECTptr;
 	res.reserve(n);

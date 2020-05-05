@@ -2956,7 +2956,7 @@ namespace giac {
 	nstep *= 16;
     }
     iszero=0;
-    gen a(evalf_double(a0,1,contextptr)),b(evalf_double(b0,1,contextptr));
+    gen a(is_inf(a0)?gnuplot_xmin:evalf_double(a0,1,contextptr)),b(is_inf(b0)?gnuplot_xmax:evalf_double(b0,1,contextptr));
     if (is_strictly_greater(a,b,contextptr))
       swapgen(a,b);
     gen fa,fb,decal=(b-a)/nstep;
@@ -3754,7 +3754,7 @@ namespace giac {
       if (1
 	  //abs_calc_mode(contextptr)==38
 	  ){
-	*logptr(contextptr) << gettext("Solving by bisection with change of variable x=tan(t) and t=-1.57..1.57. Try fsolve(equation,x=guess) for iterative solver or fsolve(equation,x=xmin..xmax) for bisection.") << '\n';
+	*logptr(contextptr) << gettext("Solving by bisection with change of variable x=tan(t) and t=-1.57..1.57. Try fsolve(equation,x=guess) for iterative solver or fsolve(equation,x=xmin..xmax) for bisection.") << "\nEquation: " << v[0] << '\n';
 	gen eq=subst(v[0],v[1],tan(v[1],contextptr),false,contextptr);
   //grad
 	vecteur v_=makevecteur(eq,symb_equal(v[1],angle_radian(contextptr)?symb_interval(-1.57,1.57):(angle_degree(contextptr)?symb_interval(-89.97,89.97):symb_interval(-99.97,99.97))));
