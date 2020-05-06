@@ -196,7 +196,7 @@ namespace giac {
   void gcdsmallmodpoly(const std::vector<int> &p,const std::vector<int> & q,int m,std::vector<int> & d,std::vector<int> * pcof,std::vector<int> * qcof);
   void gcdsmallmodpoly(const std::vector<int> &p,const std::vector<int> & q,int m,std::vector<int> & d);
   void gcdsmallmodpoly(const modpoly &p,const modpoly & q,int m,modpoly & d);
-  void DivRem(const std::vector<int> & th, const std::vector<int> & other,int m,std::vector<int> & quo, std::vector<int> & rem);
+  void DivRem(const std::vector<int> & th, const std::vector<int> & other,int m,std::vector<int> & quo, std::vector<int> & rem,bool ck_exactquo=false);
   modpoly gcd(const modpoly & a,const modpoly &b,environment * env,bool call_ntl=false); 
   // n-var modular gcd
   bool gcd_modular(const polynome &p_orig, const polynome & q_orig, polynome & pgcd,polynome & pcofactor,polynome & qcofactor,bool compute_cofactors);
