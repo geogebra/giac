@@ -4002,8 +4002,8 @@ namespace giac {
     if (v[0].type==_VECT && v[1].type==_VECT){ 
       gen g1,g2;
       int t1=coefftype(*v[0]._VECTptr,g1),t2=coefftype(*v[1]._VECTptr,g2);
+      double eps=epsilon(contextptr);
       if (t1==0 && t2==0){
-	double eps=epsilon(contextptr);
 	if (eps>0)
 	  return mod_resultant(*v[0]._VECTptr,*v[1]._VECTptr,eps);
 	gen res;
@@ -4014,15 +4014,29 @@ namespace giac {
 	gen m=t1==_MOD?*(g1._MODptr+1):*(g2._MODptr+1);
 	modpoly A=unmod(*v[0]._VECTptr,m);
 	modpoly B=unmod(*v[1]._VECTptr,m);
+	gen res;
+	if (ntlresultant(A,B,m,res))
+	  return res;
 	if (m.type==_INT_){
 	  vector<int> a,b,tmp1,tmp2;
 	  vecteur2vector_int(A,m.val,a);
 	  vecteur2vector_int(B,m.val,b);
 	  return makemod(resultant_int(a,b,tmp1,tmp2,m.val),m);
 	}
-	gen res;
-	if (ntlresultant(A,B,m,res))
-	  return res;
+#ifdef INT128
+	if (m.type==_ZINT && sizeinbase2(m)<61){
+	  longlong p=mpz_get_si(*m._ZINTptr);
+	  int n=giacmax(A.size(),B.size());
+	  int l=sizeinbase2(n);
+	  if (((p-1)>>l)<<l==p-1){
+	    vector<longlong> a,b,tmp1,tmp2;
+	    vecteur2vector_ll(A,p,a);
+	    vecteur2vector_ll(B,p,b);
+	    return makemod(resultantll(a,b,tmp1,tmp2,p),m);
+	  }
+	}
+#endif
+	return makemod(mod_resultant(A,B,eps),m);
       }
       // not very efficient...
       gen g(identificateur("tresultant"));

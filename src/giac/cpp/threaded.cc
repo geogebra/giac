@@ -3862,7 +3862,7 @@ mpz_class smod(const mpz_class & a,int reduce){
     new_coord.reserve((ita_end-ita0)+(itb_end-itb0)-1);
     vector<int>::const_iterator ita_begin=ita0,ita=ita0,itb=itb0;
 #ifdef INT128
-    if ( (giacmin(itb_end-itb0,ita_end-ita0)-1)*double(modulo)*modulo >= (1ULL<<63) ){
+    if ( giacmin(itb_end-itb0,ita_end-ita0)*double(modulo)*modulo >= (1ULL<<63) ){
       for ( ; ita!=ita_end; ++ita ){
 	vector<int>::const_iterator ita_cur=ita,itb_cur=itb;
 	int128_t res=0;
