@@ -60,6 +60,7 @@ using namespace std;
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
+
   const double prec(1.0/(1LL<<51)); // 52?
 
   double find_invp(int p){
@@ -146,6 +147,23 @@ namespace giac {
     return res;
   }
   */
+  unsigned powmod(unsigned a,unsigned long n,unsigned m){
+    if (!n)
+      return 1;
+    if (n==1)
+      return a;
+    if (n==2)
+      return (a*ulonglong(a))%m;
+    unsigned b=a%m,c=1;
+    while (n>0){
+      if (n%2)
+	c=(c*ulonglong(b))%m;
+      n /= 2;
+      b=(b*ulonglong(b))%m;
+    }
+    return c;
+  }
+
 
   modpoly derivative(const modpoly & p){
     if (p.empty())
@@ -2258,22 +2276,22 @@ namespace giac {
 
   // for p prime such that p-1 is divisible by 2^N, compute a 2^N-th root of 1
   // otherwise return 0
-  int nthroot(int p,int N){
-    int expo=(p-1)>>N;
+ unsigned nthroot(unsigned p,unsigned N){
+    unsigned expo=(p-1)>>N;
     if ( (expo<<N)!=p-1)
       return 0;
-    for (int n=2;;++n){
+    for (unsigned n=2;;++n){
       int w=powmod(n,expo,p); // w=n^((p-1)/2^N)
-      longlong r=w;
-      for (int i=1;i<N;++i)
+      ulonglong r=w;
+      for (unsigned i=1;i<N;++i)
 	r=(r*r)%p;
       if (r==p-1) // r=w^(2^(N-1))=n^((p-1)/2)
 	return w;
     }
   }
 
-  int find_w(vector<int> & Wp,int shift,int p){
-    int n=1<<shift,w=0;
+  int find_w(vector<int> & Wp,unsigned shift,unsigned p){
+    unsigned n=1<<shift,w=0;
 #if defined GIAC_PRECOND || defined GIAC_CACHEW
     int ws=Wp.size();
 #else
@@ -3918,13 +3936,14 @@ namespace giac {
   }
 
   void a_minus_qsize2_b(const vector<int> & ua,const vector<int>& q,const vector<int> &ub,vector<int> & ur,int p,int & q0inv,int & q1inv){
-    return a_minus_qsize2_b(ua,q,ub,ur,p);
+    //if (ua.empty())
+      return a_minus_qsize2_b(ua,q,ub,ur,p);
     int q1=q[0],q0=q[1];
     if (q0inv==0 || q1inv==0){
       q0 += (q0>>31)&p;
       q1 += (q1>>31)&p;
-      q0inv=(1LL<<31)*q0/p+1;
-      q1inv=(1LL<<31)*q1/p+1;
+      q0inv=(1ULL<<31)*unsigned(q0)/unsigned(p)+1;
+      q1inv=(1ULL<<31)*unsigned(q1)/unsigned(p)+1;
     }
     ur.clear(); 
     ur.push_back(precond_mulmod31(-ub.front(),q1,p,q1inv)); // (-q1*ub.front())%p);
@@ -4091,7 +4110,12 @@ namespace giac {
   #define GIAC_LLPRECOND 1
   inline longlong precond_mulmodll(ulonglong A,ulonglong W,ulonglong Winvp,ulonglong p){
     longlong t = uint128_t(A)*W-((uint128_t(A)*Winvp)>>64)*p;
-    return t+((t>>63)&p);
+    t+=((t>>63)&p);
+    return t;
+    // debug
+    if ((uint128_t(A)*W-t)%p!=0)
+      CERR << "err\n";
+    return t;
   }
   inline ulonglong preconditionner_ll(ulonglong ww,longlong p){
     return 1+((uint128_t(1)<<64)*ww)/ulonglong(p); // quotient ceiling
@@ -4109,8 +4133,13 @@ namespace giac {
   inline longlong amodpll(int128_t a,longlong p,long_double invp){
     longlong q=long_double(a)*invp;
     q=a-int128_t(q)*p;
-    q+=(q>>63)&p;
+    q+=(q>>63)&p;q+=(q>>63)&p;
+    q-=p;q+=(q>>63)&p;
     return q;
+    // debug
+    if (q!=q%p)
+      CERR << "err amodpll\n";
+    return q%p;
   }
 
   void vecteur2vector_ll(const vecteur & v,longlong m,vector<longlong> & res){
@@ -4399,15 +4428,18 @@ namespace giac {
       v.erase(v.begin(),it);
   }
 
-  bool hgcd_iter_ll(const vector<longlong> & a0i,const vector<longlong> & b0i,longlong m,vector<longlong> & ua,vector<longlong> & ub,vector<longlong> & va,vector<longlong> &vb,longlong p,vector<longlong> & coeffv,vector<longlong> & degv){
+  bool hgcd_iter_ll(const vector<longlong> & a0i,const vector<longlong> & b0i,longlong m,vector<longlong> & ua,vector<longlong> & ub,vector<longlong> & va,vector<longlong> &vb,longlong p,vector<longlong> & coeffv,vector<longlong> & degv,vector<longlong> &a,vector<longlong> & b,vector<longlong> & q,vector<longlong> & r,vector<longlong> & ur,vector<longlong> & vr){
     if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " halfgcd iter m=" << m << " dega0/a1 " << a0i.size() << "," << b0i.size() << '\n';
     longlong as=a0i.size();
-    vector<longlong> a(a0i),b(b0i),q,r; r.reserve(as);
+    a.resize(a0i.size());
+    b.resize(b0i.size());
+    copy(a0i.begin(),a0i.end(),a.begin());
+    copy(b0i.begin(),b0i.end(),b.begin());
+    r.reserve(as);
     // initializes ua to 1 and ub to 0, the coeff of u in ua*a+va*b=a
-    vector<longlong> ur,vr; 
-    ua.reserve(as); ua.clear(); ua.push_back(1); ub.clear(); ub.reserve(as); ur.reserve(as); 
-    va.clear(); va.reserve(as); vb.clear(); vb.reserve(as); vb.push_back(1);
+    ua.reserve(as); ua.clear(); ua.push_back(1); ub.clear(); ub.reserve(as); ur.clear(); ur.reserve(as); 
+    va.reserve(as); va.clear(); vb.clear(); vb.reserve(as); vb.push_back(1); vr.clear(); vr.reserve(as);
     vector<longlong>::iterator it,itend;
     // DivRem: a = bq+r 
     // hence ur <- ua-q*ub, vr <- va-q*vb verify
@@ -4577,6 +4609,72 @@ namespace giac {
     An2 = submodll(s,t,p); 
   }
 #endif
+
+#if !defined VISUALC && !defined USE_GMP_REPLACEMENTS && defined GIAC_LLPRECOND // de-recurse
+  static void fft2pnopermbefore( longlong *A, longlong n, longlong *W,longlong p,long_double invp,longlong step) {  
+    if (n==0)
+      CERR << "bug\n";
+    if (n<=1 ) return;
+    if (n==2){
+      longlong f0=A[0],f1=A[1];
+      A[0]=addmodll(f0,f1,p);
+      A[1]=submodll(f0,f1,p);
+      return;
+    }
+    longlong n2s=n/2*step;
+    // start by groups of 4
+    step=n2s/2;
+    longlong w1=W[step],w1surp=W[3*step];
+    longlong *Aeff=A;
+    for (longlong pos=0;pos<n;pos+=4,Aeff+=4){
+      longlong f0=Aeff[0],f1=Aeff[1],f2=Aeff[2],f3=Aeff[3],
+	f01=precond_mulmodll(f1-f3+p,w1,w1surp,p),
+	f02p=addmodll(f0,f2,p),f02m=submodll(f0,f2,p),f13=addmodll(f1,f3,p);
+      Aeff[0]=addmodll(f02p,f13,p);
+      Aeff[1]=addmodll(f02m,f01,p);
+      Aeff[2]=submodll(f02p,f13,p);
+      Aeff[3]=submodll(f02m,f01,p);
+    }
+    longlong Wstack[n];
+    //size_t T=n*sizeof(longlong);
+    //longlong * Wstack=(longlong*)stack_or_heap_alloc(T);//longlong Wstack[taille];
+    // now by 8, then by 16, etc.
+    for (longlong taille=8;taille<=n;taille*=2){
+      step /= 2;
+      Aeff=A;
+      for (longlong pos=0;pos<taille;pos+=8){
+	Wstack[pos]=W[pos/2*step];
+	Wstack[pos+1]=W[(pos/2+1)*step];
+	Wstack[pos+2]=W[(pos/2+2)*step];
+	Wstack[pos+3]=W[(pos/2+3)*step];
+	Wstack[pos+4]=W[pos/2*step+n2s];
+	Wstack[pos+5]=W[(pos/2+1)*step+n2s];
+	Wstack[pos+6]=W[(pos/2+2)*step+n2s];
+	Wstack[pos+7]=W[(pos/2+3)*step+n2s];
+      }
+      for (longlong pos=0;pos<n;pos+=taille){
+	longlong *An2=Aeff+taille/2,*Aend=An2,*Weff=Wstack;
+	longlong s=*Aeff,t1=*An2;
+	*Aeff=addmodll(s,t1,p);
+	*An2=submodll(s,t1,p);
+	fft_loop_p(Aeff[1],An2[1],&Weff[1],4,p,invp);
+	fft_loop_p(Aeff[2],An2[2],&Weff[2],4,p,invp);
+	fft_loop_p(Aeff[3],An2[3],&Weff[3],4,p,invp);
+	Aeff+=4; An2+=4; Weff+=8;
+	for (;Aeff<Aend;){
+	  fft_loop_p(Aeff[0],An2[0],&Weff[0],4,p,invp);
+	  fft_loop_p(Aeff[1],An2[1],&Weff[1],4,p,invp);
+	  fft_loop_p(Aeff[2],An2[2],&Weff[2],4,p,invp);
+	  fft_loop_p(Aeff[3],An2[3],&Weff[3],4,p,invp);
+	  Aeff+=4; An2+=4; Weff+=8;
+	}
+	Aeff+=taille/2;
+      }
+    }
+    //stack_or_heap_dealloc(Wstack,T);
+  }
+
+#else // de-recurse
   static void fft2pnopermbefore( longlong *A, longlong n, longlong *W,longlong p,long_double invp,longlong step) {  
     if ( n==1 ) return;
     // if p is fixed, the code is about 2* faster
@@ -4617,6 +4715,7 @@ namespace giac {
       ++A; ++An2; W +=step;
     }
   }  
+#endif
 
 #ifdef GIAC_LLPRECOND
   inline void fft_loop_p_(longlong & Acur,longlong & An2cur,longlong * Wcur,longlong n2,longlong p,long_double invp){
@@ -4642,6 +4741,71 @@ namespace giac {
   }
 #endif
 
+#if !defined VISUALC && !defined USE_GMP_REPLACEMENTS && defined GIAC_LLPRECOND // de-recurse
+  static void fft2pnopermafter( longlong *A, longlong n, longlong *W,longlong p,long_double invp,longlong step) {  
+    if (n==0)
+      CERR << "bug\n";
+    if (n<=1 ) return;
+    if (n==2){
+      longlong f0=A[0],f1=A[1];
+      A[0]=addmodll(f0,f1,p);
+      A[1]=submodll(f0,f1,p);
+      return;
+    }
+    longlong n2s=n/2*step;
+    // group by decreasing size
+    longlong Wstack[n];
+    //size_t T=n*sizeof(longlong);
+    //longlong * Wstack=(longlong*)stack_or_heap_alloc(T);//longlong Wstack[taille];
+    for (longlong taille=n;taille>=8;taille/=2){
+      longlong * Aeff=A;
+      for (longlong pos=0;pos<taille;pos+=8){
+	Wstack[pos]=W[pos/2*step];
+	Wstack[pos+1]=W[(pos/2+1)*step];
+	Wstack[pos+2]=W[(pos/2+2)*step];
+	Wstack[pos+3]=W[(pos/2+3)*step];
+	Wstack[pos+4]=W[pos/2*step+n2s];
+	Wstack[pos+5]=W[(pos/2+1)*step+n2s];
+	Wstack[pos+6]=W[(pos/2+2)*step+n2s];
+	Wstack[pos+7]=W[(pos/2+3)*step+n2s];
+      }
+      for (longlong pos=0;pos<n;pos+=taille){
+	longlong *An2=Aeff+taille/2,*Aend=An2,*Weff=Wstack;
+	longlong s=*Aeff,t1=*An2;
+	*Aeff=addmodll(s,t1,p);
+	*An2=submodll(s,t1,p);
+	fft_loop_p_(Aeff[1],An2[1],&Weff[1],4,p,invp);
+	fft_loop_p_(Aeff[2],An2[2],&Weff[2],4,p,invp);
+	fft_loop_p_(Aeff[3],An2[3],&Weff[3],4,p,invp);
+	Aeff+=4; An2+=4; Weff+=8;
+	for (;Aeff<Aend;){
+	  fft_loop_p_(Aeff[0],An2[0],&Weff[0],4,p,invp);
+	  fft_loop_p_(Aeff[1],An2[1],&Weff[1],4,p,invp);
+	  fft_loop_p_(Aeff[2],An2[2],&Weff[2],4,p,invp);
+	  fft_loop_p_(Aeff[3],An2[3],&Weff[3],4,p,invp);
+	  Aeff+=4; An2+=4; Weff+=8;
+	}
+	Aeff+=taille/2;
+      }
+      step *= 2;
+    }
+    //stack_or_heap_dealloc(Wstack,T);
+    // finish by groups of 4
+    step=n2s/2;
+    longlong w1=W[step],w1surp=W[3*step];
+    longlong *Aeff=A;
+    for (longlong pos=0;pos<n;pos+=4,Aeff+=4){
+      longlong f0=Aeff[0],f1=Aeff[1],f2=Aeff[2],f3=Aeff[3],
+	f01=precond_mulmodll(f1-f3+p,w1,w1surp,p),
+	f02p=addmodll(f0,f2,p),f02m=submodll(f0,f2,p),f13=addmodll(f1,f3,p);
+      Aeff[0]=addmodll(f02p,f13,p);
+      Aeff[1]=addmodll(f02m,f01,p);
+      Aeff[2]=submodll(f02p,f13,p);
+      Aeff[3]=submodll(f02m,f01,p);
+    }
+  }
+
+#else // de-recurse
   static void fft2pnopermafter( longlong *A, longlong n, longlong *W,longlong p,long_double invp,longlong step) {  
     if (n==1) return;
     if (n==4){
@@ -4684,6 +4848,7 @@ namespace giac {
     fft2pnopermafter(A, n/2, W,p,invp,2*step);
     fft2pnopermafter(An2, n/2, W,p,invp,2*step);
   }  
+#endif
 
   // a=source mod x^N-1 mod p
   void reverse_assign(const vector<longlong> & source,vector<longlong> & a,longlong N,longlong p){
@@ -4736,29 +4901,51 @@ namespace giac {
     longlong s=giacmin(a.size(),n);
     longlong logrs=sizeinbase2(n-1);
     if (reverse){
-      f.resize(n);
-      reverse_assign(a,f,n,modulo);
+      if (&f==&a){
+	if (f.size()>n){
+	  vector<longlong> tmp(n);
+	  reverse_assign(a,tmp,n,modulo);
+	  tmp.swap(f);
+	}
+	else {
+	  vector<longlong>::iterator it=f.begin(),itend=f.end();
+	  for (;it!=itend;++it)
+	    *it += (*it>>63)&modulo;
+	  std::reverse(f.begin(),f.end());
+	  f.resize(n);
+	}
+      }
+      else {
+	f.resize(n);
+	reverse_assign(a,f,n,modulo);
+      }
     }
     else {
-      f=a;
+      if (&f!=&a) 
+	f=a;
       f.resize(n);
     }
     if (makemod)
       makemodulop(&f.front(),s,modulo);
     if (makeplus) makepositive(&f.front(),s,modulo);
-    if (Wp.size()!=nw || Wp[0]==0){
+    if (Wp.size()<nw || Wp[0]==0){
       Wp.clear();
       fft2wp(Wp,n,w,modulo);
     }
-    fft2pnopermafter(&f.front(),n,&Wp.front(),modulo,invp,1);
+    fft2pnopermafter(&f.front(),n,&Wp.front(),modulo,invp,Wp.size()/nw);
   }
 
   void from_fft(const std::vector<longlong> & f,longlong p,std::vector<longlong> & Wp,std::vector<longlong> & res,bool reverseatend,bool revw){
     long_double invp=long_double(1)/p;
-    res=f;
+    if (&res!=&f) res=f;
     longlong n=res.size();
+#if defined GIAC_LLPRECOND
+    int nw=n;
+#else
+    int nw=n/2;
+#endif
     if (revw) fft_reverse(Wp,p);
-    fft2pnopermbefore(&res.front(),n,&Wp.front(),p,invp,1);
+    fft2pnopermbefore(&res.front(),n,&Wp.front(),p,invp,Wp.size()/nw);
     if (revw) fft_reverse(Wp,p);
     longlong i=invmodll(n,p);
     //mulmodll(res,i,p,invp);
@@ -4815,8 +5002,28 @@ namespace giac {
     }
   }
 
+  longlong find_wll(vector<longlong> & Wp,longlong shift,longlong p){
+    longlong n=1<<shift,w=0;
+#if defined GIAC_LLPRECOND
+    longlong ws=Wp.size();
+#else
+    longlong ws=2*Wp.size();
+#endif
+    if (ws/n){
+      w=Wp[ws/n];
+      longlong wp=powmodll(w,n/2,p);
+      if (wp!=p-1){
+	w=0; Wp.clear();
+      }
+      //CERR << Wp << endl;
+    }
+    if (w==0 && p!=p1 && p!=p2 && p!=p3)
+      w=nthroot(p,shift);
+    return w;
+  }
+
   // [[RA,RB],[RC,RD]]*[a0,a1]->[a,b]
-  bool matrix22timesvect(const vector<longlong> & RA,const vector<longlong> & RB,const vector<longlong> & RC,const vector<longlong> & RD,const vector<longlong> & a0,const vector<longlong> &a1,longlong maxadeg,longlong maxbdeg,vector<longlong> & a,vector<longlong> &b,longlong p){
+  bool matrix22lltimesvect(const vector<longlong> & RA,const vector<longlong> & RB,const vector<longlong> & RC,const vector<longlong> & RD,const vector<longlong> & a0,const vector<longlong> &a1,longlong maxadeg,longlong maxbdeg,vector<longlong> & a,vector<longlong> &b,longlong p,vector<longlong> & ra,vector<longlong> & rb,vector<longlong> & rc,vector<longlong> & rd,vector<longlong> &Wp){
     longlong dega0=a0.size()-1,m=(dega0+1)/2;
     longlong maxabdeg=giacmax(maxadeg,maxbdeg);
     longlong bbsize=giacmin(maxabdeg+1,a0.size());
@@ -4825,31 +5032,23 @@ namespace giac {
     int N2=giacmin(maxabdeg,Nreal);
     unsigned long l=sizeinbase2(N2)-1; 
     longlong n=1<<(l+1);
-    vector<longlong> ra; reverse_assign(RA,ra,n,p);
-    vector<longlong> rb; reverse_assign(RB,rb,n,p);
-    vector<longlong> rc; reverse_assign(RC,rc,n,p);
-    vector<longlong> rd; reverse_assign(RD,rd,n,p);
-    vector<longlong> a0_; 
-    reverse_assign(a0,a0_,n,p);
-    vector<longlong> a1_; 
-    reverse_assign(a1,a1_,n,p);
-    longlong w=nthroot(p,l+1);
+    longlong w=find_wll(Wp,l+1,p);
     // vector<longlong> adbg,bdbg;
     if (!w)
       return false;
-    vector<longlong> Wp;
-    to_fft(ra,p,w,Wp,n,b,false,false,false);ra.swap(b);
-    to_fft(rb,p,w,Wp,n,b,false,false,false);rb.swap(b);
-    to_fft(rc,p,w,Wp,n,b,false,false,false);rc.swap(b);
-    to_fft(rd,p,w,Wp,n,b,false,false,false);rd.swap(b);
-    to_fft(a0_,p,w,Wp,n,b,false,false,false);a0_.swap(b);
-    to_fft(a1_,p,w,Wp,n,b,false,false,false);a1_.swap(b);
+    to_fft(RA,p,w,Wp,n,b,true,false,false);ra.swap(b);
+    to_fft(RB,p,w,Wp,n,b,true,false,false);rb.swap(b);
+    to_fft(RC,p,w,Wp,n,b,true,false,false);rc.swap(b);
+    to_fft(RD,p,w,Wp,n,b,true,false,false);rd.swap(b);
+    to_fft(a0,p,w,Wp,n,a,true,false,false);
+    to_fft(a1,p,w,Wp,n,b,true,false,false);
     fft_reverse(Wp,p); 
-    fft_ab_cd_p(ra,a0_,rb,a1_,b,p);
-    from_fft(b,p,Wp,a,true,false);
-    fft_ab_cd_p(rc,a0_,rd,a1_,ra,p);
-    from_fft(ra,p,Wp,b,true,false);
-    //fft_reverse(Wp,p);  
+    fft_ab_cd_p(rc,a,rd,b,rc,p);
+    from_fft(rc,p,Wp,rc,true,false);
+    fft_ab_cd_p(ra,a,rb,b,ra,p);
+    from_fft(ra,p,Wp,ra,true,false);
+    a.swap(ra);
+    b.swap(rc);
     trim_deg(a,maxabdeg);
     fast_trim_inplace(a,p);
     trim_deg(b,maxabdeg);
@@ -4863,35 +5062,28 @@ namespace giac {
     int Nreal=giacmax(giacmax(RC.size(),RD.size()),giacmax(RA.size(),RB.size()))+giacmax(giacmax(SC.size(),SD.size()),giacmax(SA.size(),SB.size()))-2;
     unsigned long l=sizeinbase2(Nreal)-1; // l=gen(Nreal).bindigits()-1; // m=2^l <= Nreal < 2^{l+1}
     unsigned long n=1<<(l+1);
-    reverse_assign(RA,tmp,n,p); RA.swap(tmp);
-    reverse_assign(RB,tmp,n,p); RB.swap(tmp);
-    reverse_assign(RC,tmp,n,p); RC.swap(tmp);
-    reverse_assign(RD,tmp,n,p); RD.swap(tmp);
-    reverse_assign(SA,tmp,n,p); SA.swap(tmp);
-    reverse_assign(SB,tmp,n,p); SB.swap(tmp);
-    reverse_assign(SC,tmp,n,p); SC.swap(tmp);
-    reverse_assign(SD,tmp,n,p); SD.swap(tmp);
     longlong w=nthroot(p,l+1);
     // vector<longlong> adbg,bdbg;
     if (!w)
       return false;
-    to_fft(RA,p,w,Wp,n,tmp,false,false,false); RA.swap(tmp);
-    to_fft(RB,p,w,Wp,n,tmp,false,false,false); RB.swap(tmp);
-    to_fft(RC,p,w,Wp,n,tmp,false,false,false); RC.swap(tmp);
-    to_fft(RD,p,w,Wp,n,tmp,false,false,false); RD.swap(tmp);
-    to_fft(SA,p,w,Wp,n,tmp,false,false,false); SA.swap(tmp);
-    to_fft(SB,p,w,Wp,n,tmp,false,false,false); SB.swap(tmp);
-    to_fft(SC,p,w,Wp,n,tmp,false,false,false); SC.swap(tmp);
-    to_fft(SD,p,w,Wp,n,tmp,false,false,false); SD.swap(tmp);
+    // makepositive set to false since reverse_assign should make RA positive
+    to_fft(SC,p,w,Wp,n,SC,true,false,false); 
+    to_fft(SD,p,w,Wp,n,SD,true,false,false); 
+    to_fft(RA,p,w,Wp,n,RA,true,false,false); 
+    to_fft(RB,p,w,Wp,n,RB,true,false,false); 
+    to_fft(RC,p,w,Wp,n,RC,true,false,false); 
+    to_fft(RD,p,w,Wp,n,RD,true,false,false); 
+    to_fft(SA,p,w,Wp,n,SA,true,false,false); 
+    to_fft(SB,p,w,Wp,n,SB,true,false,false); 
     fft_reverse(Wp,p); 
-    fft_ab_cd_p(RA,SB,RC,SA,tmp,p);
-    from_fft(tmp,p,Wp,A,true,false);
-    fft_ab_cd_p(RB,SB,RD,SA,tmp,p);
-    from_fft(tmp,p,Wp,B,true,false);
-    fft_ab_cd_p(RA,SD,RC,SC,tmp,p);
-    from_fft(tmp,p,Wp,C,true,false);
-    fft_ab_cd_p(RB,SD,RD,SC,tmp,p);
-    from_fft(tmp,p,Wp,D,true,false);
+    fft_ab_cd_p(RA,SB,RC,SA,A,p);
+    from_fft(A,p,Wp,A,true,false);
+    fft_ab_cd_p(RB,SB,RD,SA,SA,p); SA.swap(B);
+    from_fft(B,p,Wp,B,true,false);
+    fft_ab_cd_p(RA,SD,RC,SC,RA,p); RA.swap(C);
+    from_fft(C,p,Wp,C,true,false);
+    fft_ab_cd_p(RB,SD,RD,SC,RB,p); RB.swap(D);
+    from_fft(D,p,Wp,D,true,false);
     //       fft_reverse(Wp,p); 
     fast_trim_inplace(A,p);
     fast_trim_inplace(B,p);
@@ -4915,72 +5107,70 @@ namespace giac {
     tmp1.swap(res);
   }
 
-  bool hgcdll(const vector<longlong> & a0,const vector<longlong> & a1,longlong modulo,vector<longlong> &A,vector<longlong> &B,vector<longlong> &C,vector<longlong> &D,vector<longlong> & a,vector<longlong> & b,vector<longlong> & coeffv,vector<longlong> & degv){ // a0 is A in Yap, a1 is B
-    vector<longlong> tmp1;
-    a.clear(); b.clear();
+  bool hgcdll(const vector<longlong> & a0,const vector<longlong> & a1,longlong modulo,vector<longlong> & Wp,vector<longlong> &A,vector<longlong> &B,vector<longlong> &C,vector<longlong> &D,vector<longlong> & coeffv,vector<longlong> & degv,vector<longlong> & q,vector<longlong> & f,vector<longlong> & tmp0,vector<longlong> & tmp1,vector<longlong> & tmp2,vector<longlong> & tmp3){ // a0 is A in Yap, a1 is B
+    vector<longlong> & g0=tmp2,&g1=tmp3;
     longlong dega0=a0.size()-1,dega1=a1.size()-1;
     longlong m=(dega0+1)/2;
     if (dega1<m){
       D=A=vector<longlong>(1,1);
       B.clear(); C.clear();
-      a=a0; b=a1;
       return true;
     }
-    if (m<HGCD){ 
-      hgcd_iter_ll(a0,a1,m,A,C,B,D,modulo,coeffv,degv);
+    if (m<HGCD/2){ 
+      hgcd_iter_ll(a0,a1,m,A,C,B,D,modulo,coeffv,degv,q,f,tmp0,tmp1,tmp2,tmp3);
       return true;
     }
     vector<longlong> b0(a0.begin(),a0.end()-m); // quo(a0,x^m), A0 in Yap
     vector<longlong> b1(a1.begin(),a1.end()-m); // quo(a1,x^m), B0 in Yap
     // 1st recursive call
-    vector<longlong> RA,RB,RC,RD,q,f;
+    vector<longlong> RA,RB,RC,RD;
     if (debug_infolevel>2)
-      CERR << CLOCK()*1e-6 << " halfgcd 1st recursive call " << dega0 << "," << dega1 << '\n';
-    if (!hgcdll(b0,b1,modulo,RA,RB,RC,RD,a,b,coeffv,degv))
+      CERR << CLOCK()*1e-6 << " hgcdll 1st recursive call " << dega0 << "," << dega1 << '\n';
+    if (!hgcdll(b0,b1,modulo,Wp,RA,RB,RC,RD,coeffv,degv,tmp0,tmp1,A,B,C,D))
       return false;
     if (debug_infolevel>2)
-      CERR << CLOCK()*1e-6 << " halfgcd compute A' B' " << dega0 << "," << dega1 << '\n';
+      CERR << CLOCK()*1e-6 << " hgcdll compute A' B' " << dega0 << "," << dega1 << '\n';
     longlong maxadeg=dega0+1-giacmax(RA.size(),RB.size()),maxbdeg=dega0-m/2;
-    matrix22timesvect(RA,RB,RC,RD,a0,a1,maxadeg,maxbdeg,a,b,modulo);
-    longlong dege=b.size()-1;
+    matrix22lltimesvect(RA,RB,RC,RD,a0,a1,maxadeg,maxbdeg,b0,b1,modulo,tmp0,tmp1,tmp2,tmp3,Wp);
+    longlong dege=b1.size()-1;
     if (dege<m){
       A.swap(RA); B.swap(RB); C.swap(RC); D.swap(RD);  
-      a.clear(); b.clear();
       return true;
       // A=RA; B=RB; C=RC; D=RD; return true;
     }
-    if (dege>=a.size()-1)
-      COUT << "hgcd error" << '\n';
+    if (dege>=b0.size()-1)
+      COUT << "hgcdll error" << '\n';
     if (debug_infolevel>1)
-      CERR << CLOCK()*1e-6 << " halfgcd euclid div " << dega0 << "," << dega1 << '\n';
+      CERR << CLOCK()*1e-6 << " hgcdll euclid div " << dega0 << "," << dega1 << '\n';
     // 1 euclidean step
     if (!degv.empty()){
-      coeffv.push_back(b[0]);
-      degv.push_back(degv.back()+b.size()-a.size());
+      coeffv.push_back(b1[0]);
+      degv.push_back(degv.back()+b1.size()-b0.size());
     }
-    DivRem(a,b,modulo,q,f); // q,f are Q,D in Yap 
+    DivRem(b0,b1,modulo,q,f); // q,f are Q,D in Yap 
     // [[0,1],[1,-q]]*[[RA,RB],[RC,RD]] == [[RC,RD],[-RC*q+RA,-RD*q+RB]]
     a_bc(RA,RC,q,modulo,RA,tmp1); // RA=trim(RA-RC*q,&env);
     a_bc(RB,RD,q,modulo,RB,tmp1); // RB=trim(RB-RD*q,&env);
-    longlong l=b.size()-1,k=2*m-l;
+    longlong l=b1.size()-1,k=2*m-l;
     if (f.size()-1<m){
       A.swap(RC); B.swap(RD); C.swap(RA); D.swap(RB); return true;
     }
-    vector<longlong> g0(b.begin(),b.end()-k); // quo(b,x^k), C0 in Yap
-    vector<longlong> g1;
-    if (f.size()>k)
-      g1=vector<longlong>(f.begin(),f.end()-k); // quo(f,x^k), D0 in Yap
-    vector<longlong> SA,SB,SC,SD;
+    g0.resize(b1.size()-k);
+    copy(b1.begin(),b1.end()-k,g0.begin()); // vector<int> g0(b1.begin(),b1.end()-k); // quo(b,x^k), C0 in Yap
+    if (f.size()>k){
+      g1.resize(f.size()-k);
+      copy(f.begin(),f.end()-k,g1.begin()); // quo(f,x^k), D0 in Yap
+    }
+    vector<longlong> &SA=b0,&SB=b1,&SC=q,&SD=f;
     if (debug_infolevel>1)
-      CERR << CLOCK()*1e-6 << " halfgcd 2nd recursive call " << dega0 << "," << dega1 << '\n';
-    if (!hgcdll(g0,g1,modulo,SA,SB,SC,SD,b0,b1,coeffv,degv))
+      CERR << CLOCK()*1e-6 << " hgcdll 2nd recursive call " << dega0 << "," << dega1 << '\n';
+    if (!hgcdll(g0,g1,modulo,Wp,SA,SB,SC,SD,coeffv,degv,tmp0,tmp1,A,B,C,D))
       return false;
     if (debug_infolevel>1)
-      CERR << CLOCK()*1e-6 << " halfgcd end 2nd recursive call " << dega0 << "," << dega1 << '\n';
-    matrix22ll(RA,RB,RC,RD,SA,SB,SC,SD,A,B,C,D,modulo,g0,g1);
+      CERR << CLOCK()*1e-6 << " hgcdll end 2nd recursive call " << dega0 << "," << dega1 << '\n';
+    matrix22ll(RA,RB,RC,RD,SA,SB,SC,SD,A,B,C,D,modulo,tmp0,Wp);
     if (debug_infolevel>1)
-      CERR << CLOCK()*1e-6 << " halfgcd end " << dega0 << "," << dega1 << '\n';
-    a.clear(); b.clear();
+      CERR << CLOCK()*1e-6 << " hgcdll end " << dega0 << "," << dega1 << '\n';
     return true;
   }
 
@@ -5011,14 +5201,26 @@ namespace giac {
       return smodll(res*resultantll(Q,tmp2,P,tmp1,m), m);
     }
     // now P.size()>Q.size()
-    if (Q.size()>=HGCD){
-      vector<longlong> coeffv,degv,A,B,C,D,a,b,b0,b1;
+    int HGCD2=HGCD;
+    if (Q.size()>=HGCD2){
+      vector<longlong> coeffv,degv,A,B,C,D,a,b,b0,b1,b2,b3,b4,b5,b6,b7,Wp;
       coeffv.reserve(Q.size()+1);
       degv.reserve(Q.size()+1);
       degv.push_back(P.size()-1);
-      while (Q.size()>=HGCD){
-	longlong straddle=P.size()/2;
-	if (straddle>=Q.size()-HGCD/4){
+      while (Q.size()>=HGCD2){
+	int deg1=P.size(),deg2=(3*deg1)/4;
+	double coeff=nextpow2(deg1/2)*2./deg1;
+	double coeff2=nextpow2(deg2)/double(deg2);
+	coeff=0.5*std::min(coeff,coeff2);
+	if (Wp.empty() && m!=p1 && m!=p2 && m!=p3){
+	  longlong l=sizeinbase2(int(3*2*coeff/4*deg1-1));
+	  longlong w=find_wll(Wp,l,m);
+	  fft2wp(Wp,(1<<l),w,m);
+	}
+	if (debug_infolevel>1)
+	  CERR << CLOCK()*1e-6 << " deg " << P.size() << " coeff " << coeff << "\n";
+	int seuil=1+int(std::ceil((1-coeff)*P.size())); 
+	if (HGCD/4>=Q.size()-seuil){
 	  coeffv.push_back(Q.front());
 	  degv.push_back(degv.back()+Q.size()-P.size());
 	  DivRem(P,Q,m,a,b);
@@ -5027,13 +5229,13 @@ namespace giac {
 	  continue;
 	}
 	// 1st recursive call
-	b0.resize(P.size()-straddle); 
-	copy(P.begin(),P.end()-straddle,b0.begin()); // quo(P,x^s), 
-	b1.resize(Q.size()-straddle);
-	copy(Q.begin(),Q.end()-straddle,b1.begin()); // quo(Q,x^s), 
-	hgcdll(b0,b1,m,A,B,C,D,a,b,coeffv,degv);
+	b0.resize(P.size()-seuil); 
+	copy(P.begin(),P.end()-seuil,b0.begin()); // quo(P,x^s), 
+	b1.resize(Q.size()-seuil);
+	copy(Q.begin(),Q.end()-seuil,b1.begin()); // quo(Q,x^s), 
+	hgcdll(b0,b1,m,Wp,A,B,C,D,coeffv,degv,b2,b3,b4,b5,b6,b7);
 	longlong maxadeg=P.size()-giacmax(A.size(),B.size());
-	matrix22timesvect(A,B,C,D,P,Q,maxadeg,maxadeg,a,b,m);
+	matrix22lltimesvect(A,B,C,D,P,Q,maxadeg,maxadeg,a,b,m,b4,b5,b6,b7,Wp);
 	if (b.size()<HGCD){
 	  a.swap(P); b.swap(Q); break;
 	}
@@ -5625,7 +5827,7 @@ namespace giac {
 
   //#define DEBUG 1
   // [[RA,RB],[RC,RD]]*[a0,a1]->[a,b]
-  void matrix22timesvectint(const vector<int> & RA,const vector<int> & RB,const vector<int> & RC,const vector<int> & RD,const vector<int> & a0,const vector<int> &a1,int maxadeg,int maxbdeg,vector<int> & a,vector<int> &b,int p,vector<int> & ra,vector<int> & rb,vector<int> & rc,vector<int> & rd,vector<int> &Wp){
+  void matrix22inttimesvect(const vector<int> & RA,const vector<int> & RB,const vector<int> & RC,const vector<int> & RD,const vector<int> & a0,const vector<int> &a1,int maxadeg,int maxbdeg,vector<int> & a,vector<int> &b,int p,vector<int> & ra,vector<int> & rb,vector<int> & rc,vector<int> & rd,vector<int> &Wp){
     int dega0=a0.size()-1,m=(dega0+1)/2;
     int maxabdeg=giacmax(maxadeg,maxbdeg);
     int bbsize=giacmin(maxabdeg+1,a0.size());
@@ -6042,13 +6244,13 @@ namespace giac {
     // 1st recursive call
     vector<int> RA,RB,RC,RD;
     if (debug_infolevel>2)
-      CERR << CLOCK()*1e-6 << " halfgcd 1st recursive call " << dega0 << "," << dega1 << '\n';
+      CERR << CLOCK()*1e-6 << " hgcdint 1st recursive call " << dega0 << "," << dega1 << '\n';
     if (!hgcdint(b0,b1,modulo,Wp,RA,RB,RC,RD,coeffv,degv,tmp0,tmp1,A,B,C,D))
       return false;
     if (debug_infolevel>2)
-      CERR << CLOCK()*1e-6 << " halfgcd compute A' B' " << dega0 << "," << dega1 << '\n';
+      CERR << CLOCK()*1e-6 << " hgcdint compute A' B' " << dega0 << "," << dega1 << '\n';
     int maxadeg=dega0+1-giacmax(RA.size(),RB.size()),maxbdeg=dega0-m/2;
-    matrix22timesvectint(RA,RB,RC,RD,a0,a1,maxadeg,maxbdeg,b0,b1,modulo,tmp0,tmp1,tmp2,tmp3,Wp);
+    matrix22inttimesvect(RA,RB,RC,RD,a0,a1,maxadeg,maxbdeg,b0,b1,modulo,tmp0,tmp1,tmp2,tmp3,Wp);
     int dege=b1.size()-1;
     if (dege<m){
       A.swap(RA); B.swap(RB); C.swap(RC); D.swap(RD);  
@@ -6058,7 +6260,7 @@ namespace giac {
     if (dege>=b0.size()-1)
       COUT << "hgcdint error" << '\n';
     if (debug_infolevel>1)
-      CERR << CLOCK()*1e-6 << " halfgcd euclid div " << dega0 << "," << dega1 << '\n';
+      CERR << CLOCK()*1e-6 << " hgcdint euclid div " << dega0 << "," << dega1 << '\n';
     // 1 euclidean step
     if (!degv.empty()){
       coeffv.push_back(b1[0]);
@@ -6081,14 +6283,14 @@ namespace giac {
     }
     vector<int> & SA=b0, &SB=b1,&SC=q,&SD=f;
     if (debug_infolevel>1)
-      CERR << CLOCK()*1e-6 << " halfgcd 2nd recursive call " << dega0 << "," << dega1 << '\n';
+      CERR << CLOCK()*1e-6 << " hgcdint 2nd recursive call " << dega0 << "," << dega1 << '\n';
     if (!hgcdint(g0,g1,modulo,Wp,SA,SB,SC,SD,coeffv,degv,tmp0,tmp1,A,B,C,D))
       return false;
     if (debug_infolevel>1)
-      CERR << CLOCK()*1e-6 << " halfgcd end 2nd recursive call " << dega0 << "," << dega1 << '\n';
+      CERR << CLOCK()*1e-6 << " hgcdint end 2nd recursive call " << dega0 << "," << dega1 << '\n';
     matrix22int(RA,RB,RC,RD,SA,SB,SC,SD,A,B,C,D,modulo,tmp0,Wp);
     if (debug_infolevel>1)
-      CERR << CLOCK()*1e-6 << " halfgcd end " << dega0 << "," << dega1 << '\n';
+      CERR << CLOCK()*1e-6 << " hgcdint end " << dega0 << "," << dega1 << '\n';
     return true;
   }
 
@@ -7521,6 +7723,39 @@ namespace giac {
     }
   }
 
+  // Previous Fourier prime, find n-throot of unity
+  int prevfourier(unsigned p,int fourier_for_n,int & w){
+    int l=sizeinbase2(fourier_for_n);
+    unsigned pdiv=p>>l;
+    for (--pdiv;pdiv>=(1<<(30-l));--pdiv){
+      p=(pdiv<<l)+1;
+      int p15=p%15;
+      if (p15==0 || p15==3 || p15==6 || p15==9 || p15==12 || p15==5 || p15==10)
+	continue;
+      // find nthroot of 1 and checks Miller-Rabin primality
+      unsigned char charprimes[]={2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,107,109,113,127,131,137,139,149,151,157,163,167,173,179,181,191,193,197,199,211,223,227,229,233,239,241,251};
+      w=0;
+      for (int i=0;i<sizeof(charprimes);++i){
+	ulonglong r=powmod(unsigned(charprimes[i]),pdiv,p);
+	unsigned w_=r,j;
+	if (r==1)
+	  continue;
+	for (j=1;j<l;++j){
+	  r=(r*r)%p;
+	  if (r==1 || r==p-1)
+	    break;
+	}
+	if (r!=p-1)
+	  break; // p is not prime
+	if (j==l-1)
+	  w=w_;
+	if (w && i>=20)
+	  return p;
+      }
+    }
+    return 0;
+  }
+
   // Previous Fourier prime
   int prevprimep1p2p3(int p,int maxp,int fourier_for_n){
     if (p==p1+2 || p==p1+1)
@@ -7990,7 +8225,7 @@ namespace giac {
     if (!hgcdint(a,b,p,Wp,RA,RB,RC,RD,coeffv,degv,tmp0,tmp1,tmp2,tmp3,tmp4,tmp5))
       return false;
     int maxadeg=a.size()+1-giacmax(RA.size(),RB.size());
-    matrix22timesvectint(RA,RB,RC,RD,a,b,maxadeg,maxadeg,tmp0,tmp1,p,tmp2,tmp3,tmp4,tmp5,Wp);
+    matrix22inttimesvect(RA,RB,RC,RD,a,b,maxadeg,maxadeg,tmp0,tmp1,p,tmp2,tmp3,tmp4,tmp5,Wp);
     if (tmp1.empty()){
       A.swap(RA); B.swap(RB); C.swap(RC); D.swap(RD);
       return true;
@@ -8947,6 +9182,8 @@ namespace giac {
   }
 
   int resultant_iter(const vector<int> & P0,const vector<int> & Q0,int m){
+    if (debug_infolevel>1)
+      CERR << CLOCK()*1e-6 << " resultant_iter begin " << Q0.size() << '\n';
     vector<int> P(P0),Q(Q0),tmp1,tmp2;
     longlong res=1;
     while (Q.size()>1){
@@ -8968,6 +9205,8 @@ namespace giac {
     if (Q.empty())
       return 0;
     res = (res*powmod(Q[0],P.size()-1,m))%m;
+    if (debug_infolevel>1)
+      CERR << CLOCK()*1e-6 << " resultant_iter end " << Q0.size() << '\n';
     return smod(res,m);
   }
 
@@ -9013,7 +9252,7 @@ namespace giac {
 
     ResHalfGCD(U1, V1, d1, cvec, dvec,A1,B1,C1,D1,p,a,b,tmp1,tmp2,tmp3,tmp4);
     int maxdeg=U1.size()-giacmax(A1.size(),B1.size());
-    matrix22timesvectint(A1,B1,C1,D1,U1,V1,maxdeg,maxdeg,a,b,p,tmp1,tmp2,tmp3,tmp4,Wp);
+    matrix22inttimesvect(A1,B1,C1,D1,U1,V1,maxdeg,maxdeg,a,b,p,tmp1,tmp2,tmp3,tmp4,Wp);
     a.swap(U1); b.swap(V1);
     tmp1.clear(); tmp2.clear(); tmp3.clear(); tmp4.clear();
       
@@ -9055,7 +9294,7 @@ namespace giac {
     ResHalfGCD(U, V, d1, cvec, dvec,A1,B1,C1,D1,p,a,b,tmp1,tmp2,tmp3,tmp4);
     int maxdeg=U.size()-giacmax(A1.size(),B1.size());
     vector<int> Wp;
-    matrix22timesvectint(A1,B1,C1,D1,U,V,maxdeg,maxdeg,a,b,p,tmp1,tmp2,tmp3,tmp4,Wp);
+    matrix22inttimesvect(A1,B1,C1,D1,U,V,maxdeg,maxdeg,a,b,p,tmp1,tmp2,tmp3,tmp4,Wp);
     U.swap(a); V.swap(b);
     tmp1.clear(); tmp2.clear(); tmp3.clear(); tmp4.clear();
 
@@ -9072,7 +9311,7 @@ namespace giac {
 
     ResHalfGCD(U, V, d2, cvec, dvec,A1,B1,C1,D1,p,a,b,tmp1,tmp2,tmp3,tmp4);
     maxdeg=U.size()-giacmax(A1.size(),B1.size());
-    matrix22timesvectint(A1,B1,C1,D1,U,V,maxdeg,maxdeg,a,b,p,tmp1,tmp2,tmp3,tmp4,Wp);
+    matrix22inttimesvect(A1,B1,C1,D1,U,V,maxdeg,maxdeg,a,b,p,tmp1,tmp2,tmp3,tmp4,Wp);
     U.swap(a); V.swap(b);
   }
 
@@ -9179,10 +9418,10 @@ namespace giac {
   }
 
   // resultant of P and Q modulo m, modifies P and Q, 
-  int resultant_int(vector<int> & P,vector<int> & Q,vector<int> & tmp1,vector<int> & tmp2,int m){
+  int resultant_int(vector<int> & P,vector<int> & Q,vector<int> & tmp1,vector<int> & tmp2,int m,int w){
     if (P.size()<Q.size()){
       int res=(P.size() % 2==1 || Q.size() % 2==1)?1:-1; // (-1)^deg(P)*deg(Q)
-      return res*resultant_int(Q,P,tmp1,tmp2,m);
+      return res*resultant_int(Q,P,tmp1,tmp2,m,w);
     }
     if (P.size()==Q.size()){
       int coeff=Q[0];
@@ -9191,10 +9430,11 @@ namespace giac {
       DivRem(P,Q,m,tmp1,tmp2);
       longlong res=(P.size() % 2==1)?1:-1;
       res = res*powmod(Q[0],P.size()-tmp2.size(),m);
-      return smod(res*resultant_int(Q,tmp2,P,tmp1,m),m);
+      return smod(res*resultant_int(Q,tmp2,P,tmp1,m,w),m);
     }
     // now P.size()>Q.size()
-    if (Q.size()>=HGCD){
+    int HGCD2=3*HGCD;
+    if (Q.size()>=HGCD2){
       if (debug_infolevel>2)
 	CERR << "resultantint hgcd mod " << m << '\n';
 #if 0 //ndef USE_GMP_REPLACEMENTS // activate NTL-like ResHalfGCD code
@@ -9208,7 +9448,7 @@ namespace giac {
       coeffv.reserve(Q.size()+1);
       degv.reserve(Q.size()+1);
       degv.push_back(P.size()-1);
-      while (Q.size()>=HGCD){
+      while (Q.size()>=HGCD2){
 #if 0 
 	// b4..b7 data is used below
 	hgcdint(P,Q,m,Wp,A,B,C,D,coeffv,degv,b2,b3,b4,b5,b6,b7);
@@ -9217,6 +9457,27 @@ namespace giac {
 	double coeff=nextpow2(deg1/2)*2./deg1;
 	double coeff2=nextpow2(deg2)/double(deg2);
 	coeff=0.5*std::min(coeff,coeff2);
+	if (Wp.empty() && m!=p1 && m!=p2 && m!=p3){
+	  int l=sizeinbase2(int(3*2*coeff/4*deg1-1));
+	  if (w){
+	    longlong ww=w; // powmod(w,2**(l-1),m)
+	    for (int j=1;j<l;++j)
+	      ww=(ww*ww)%m;
+	    if (ww==1)
+	      w=0;
+	    else {
+	      for (int j=0;ww!=m-1 && j<27;++j){
+		ww=(ww*ww)%m;
+		w=(w*longlong(w))%m;
+	      }
+	      if (ww!=m-1)
+		w=0;
+	    }
+	  }
+	  if (w==0) 
+	    w=find_w(Wp,l,m);
+	  fft2wp(Wp,(1<<l),w,m);
+	}
 	if (debug_infolevel>1)
 	  CERR << CLOCK()*1e-6 << " deg " << P.size() << " coeff " << coeff << "\n";
 	int seuil=1+int(std::ceil((1-coeff)*P.size())); 
@@ -9236,7 +9497,7 @@ namespace giac {
 	hgcdint(b0,b1,m,Wp,A,B,C,D,coeffv,degv,b2,b3,b4,b5,b6,b7); // degree=deg(P)*coeff
 #endif
 	int maxadeg=P.size()-giacmax(A.size(),B.size());
-	matrix22timesvectint(A,B,C,D,P,Q,maxadeg,maxadeg,a,b,m,b4,b5,b6,b7,Wp);
+	matrix22inttimesvect(A,B,C,D,P,Q,maxadeg,maxadeg,a,b,m,b4,b5,b6,b7,Wp);
 	if (b.size()<HGCD){
 	  a.swap(P); b.swap(Q); 
 	  break;
@@ -9251,7 +9512,7 @@ namespace giac {
 	b.swap(P); 
       }
       degv.push_back(Q.size()-1);
-      int res=resultant_int(P,Q,tmp1,tmp2,m);
+      int res=resultant_int(P,Q,tmp1,tmp2,m,w);
       adjust_resultant(res,coeffv,degv,m);
       return smod(res,m);
     }
@@ -9291,6 +9552,7 @@ namespace giac {
       lcmdeno(u,D,context0);
       h -= sizeinbase2(D);
     }
+    gen P0=P.front(),Q0=Q.front();
 #if 0 && defined INT128 // && defined GIAC_LLPRECOND
     if (1){
       vector<longlong> p,q,tmp1,tmp2;
@@ -9355,11 +9617,12 @@ namespace giac {
       CERR << CLOCK()*1e-6 << " Wpcount begin " << wpcount << "\n";
     vector<int> p,q,tmp1,tmp2;
     // reconstruct resultant/D
-    int m=p1;//2147483647;
+    int maxdeg=giacmax(P.size(),Q.size())-1;
+    int w=0,m=prevfourier(2147483647,maxdeg,w);//p1,w=1227303670;
     gen pim=m,res;
     vecteur2vector_int(P,m,p);
     vecteur2vector_int(Q,m,q);
-    res=resultant_int(p,q,tmp1,tmp2,m);
+    res=resultant_int(p,q,tmp1,tmp2,m,w);
 #if 0
     ntlresultant(P,Q,m,R,false); 
     if ((R-res)%m!=0)
@@ -9373,18 +9636,72 @@ namespace giac {
     int probamax=RAND_MAX;
     if (eps>0)
       probamax=1+int(-std::log(eps)/30/std::log(2.0));
-    int maxdeg=giacmax(P.size(),Q.size())-1;
     int maxp=std::sqrt(p1p2/4./maxdeg);int niter=1;
     if (debug_infolevel)
       CERR << CLOCK()*1e-6 << " resultant modular algo max #primes " << h/30 << endl;
     for (;h>sizeinbase2(pim) && proba<probamax;++niter){
-      m=prevprimep1p2p3(m-1,maxp,maxdeg);
+      if (debug_infolevel)
+	CERR << CLOCK()*1e-6 << " prevfourier start\n";
+      m=prevfourier(m-1,maxdeg,w);//prevprimep1p2p3(m-1,maxp,maxdeg);
+      if (debug_infolevel)
+	CERR << CLOCK()*1e-6 << " prevfourier end\n";
+      if (m && (is_multiple(P0,m)||is_multiple(Q0,m)))
+	continue;
+#ifdef INT128
+      if (m<(1<<30) 
+	  && m!=p3
+	  ){
+	CERR << CLOCK()*1e-6 << " modular resultant, switching to long primes\n";
+	longlong m=(1LL<<61); //m=2305843009116209153+16385;
+	vector<longlong> p,q,tmp1,tmp2;
+	mpz_t tmpz;
+	mpz_init(tmpz);
+	for (;h>sizeinbase2(pim) && proba<probamax;++niter){
+	  m=prevprimell(m-1,maxdeg);
+	  vecteur2vector_ll(P,m,p);
+	  vecteur2vector_ll(Q,m,q);
+	  longlong r;
+	  r=resultantll(p,q,tmp1,tmp2,m);
+#if 0
+	  ntlresultant(P,Q,m,R,false);
+	  if ((R-r)%m!=0){
+	    CERR << "bug\n";
+	    CERR << m << endl;
+	    break;
+	  }
+#endif
+#ifndef USE_GMP_REPLACEMENTS
+	  if (pim.type==_ZINT && res.type==_ZINT){
+	    longlong amodm=mpz_fdiv_ui(*res._ZINTptr,m);
+	    if (amodm!=r){
+	      gen u,v,d; longlong U;
+	      egcd(pim,m,u,v,d);
+	      if (u.type==_ZINT)
+		U=mpz_fdiv_ui(*u._ZINTptr,m);
+	      else
+		U=u.val;
+	      if (d==-1){ U=-U; v=-v; d=1; }
+	      mpz_mul_si(tmpz,*pim._ZINTptr,(U*(r-int128_t(amodm)))%m);
+	      mpz_add(*res._ZINTptr,*res._ZINTptr,tmpz);
+	      proba=0;
+	    }
+	    else ++proba;
+	  }
+	  else
+#endif
+	    res=ichinrem(res,gen(r),pim,gen(m));
+	  pim=gen(m)*pim;
+	}
+	mpz_clear(tmpz);
+	break;
+      }
+#endif
       vecteur2vector_int(P,m,p);
       vecteur2vector_int(Q,m,q);
       int r;
       if (debug_infolevel)
-	CERR << CLOCK()*1e-6 << " resultant begin niter " << niter << " proba " << proba << endl;
-      r=resultant_int(p,q,tmp1,tmp2,m); 
+	CERR << CLOCK()*1e-6 << " resultant begin niter " << niter << " proba " << proba << " p= " << m << "\n";
+      r=resultant_int(p,q,tmp1,tmp2,m,w); 
       if (debug_infolevel)
 	CERR << CLOCK()*1e-6 << " resultant end " << niter << endl;
 #if 0
@@ -11799,22 +12116,32 @@ namespace giac {
       Aeff[3]=submod(f02m,f01,p);
     }
     // now by 8, then by 16, etc.
+    int Wstack[n];
+    //size_t T=n*sizeof(int);
+    //int * Wstack=(int*)stack_or_heap_alloc(T);//int Wstack[taille];
     for (int taille=8;taille<=n;taille*=2){
       step /= 2;
       Aeff=A;
-      int Wstack[taille];
-      for (int pos=0;pos<taille;pos+=8){
-	Wstack[pos]=W[pos/2*step];
-	Wstack[pos+1]=W[(pos/2+1)*step];
-	Wstack[pos+2]=W[(pos/2+2)*step];
-	Wstack[pos+3]=W[(pos/2+3)*step];
-	Wstack[pos+4]=W[pos/2*step+n2s];
-	Wstack[pos+5]=W[(pos/2+1)*step+n2s];
-	Wstack[pos+6]=W[(pos/2+2)*step+n2s];
-	Wstack[pos+7]=W[(pos/2+3)*step+n2s];
+      int * end=Wstack+taille,*source=W,*source2=W+n2s;
+      for (int * target=Wstack;target<end;target+=8){
+	target[0]=*source; source+=step;
+	target[1]=*source; source+=step;
+	target[2]=*source; source+=step;
+	target[3]=*source; source+=step;
+	target[4]=*source2; source2+=step;
+	target[5]=*source2; source2+=step;
+	target[6]=*source2; source2+=step;
+	target[7]=*source2; source2+=step;
       }
       for (int pos=0;pos<n;pos+=taille){
 	int *An2=Aeff+taille/2,*Aend=An2,*Weff=Wstack;
+	int s=*Aeff,t1=*An2;
+	*Aeff=addmod(s,t1,p);
+	*An2=submod(s,t1,p);
+	fft_loop_p_precond(Aeff[1],An2[1],Weff[1],Weff[5],p);
+	fft_loop_p_precond(Aeff[2],An2[2],Weff[2],Weff[6],p);
+	fft_loop_p_precond(Aeff[3],An2[3],Weff[3],Weff[7],p);
+	Aeff+=4; An2+=4; Weff+=8;
 	for (;Aeff<Aend;){
 	  fft_loop_p_precond(Aeff[0],An2[0],Weff[0],Weff[4],p);
 	  fft_loop_p_precond(Aeff[1],An2[1],Weff[1],Weff[5],p);
@@ -11825,6 +12152,7 @@ namespace giac {
 	Aeff+=taille/2;
       }
     }
+    //stack_or_heap_dealloc(Wstack,T);      
   }
 
 #else // de-recurse
@@ -11950,21 +12278,31 @@ namespace giac {
     }
     int n2s=n/2*step;
     // group by decreasing size
+    int Wstack[n];
+    // size_t T=n*sizeof(int);
+    // int * Wstack=(int*)stack_or_heap_alloc(T);
     for (int taille=n;taille>=8;taille/=2){
       int * Aeff=A;
-      int Wstack[taille];
-      for (int pos=0;pos<taille;pos+=8){
-	Wstack[pos]=W[pos/2*step];
-	Wstack[pos+1]=W[(pos/2+1)*step];
-	Wstack[pos+2]=W[(pos/2+2)*step];
-	Wstack[pos+3]=W[(pos/2+3)*step];
-	Wstack[pos+4]=W[pos/2*step+n2s];
-	Wstack[pos+5]=W[(pos/2+1)*step+n2s];
-	Wstack[pos+6]=W[(pos/2+2)*step+n2s];
-	Wstack[pos+7]=W[(pos/2+3)*step+n2s];
+      int * end=Wstack+taille,*source=W,*source2=W+n2s;
+      for (int * target=Wstack;target<end;target+=8){
+	target[0]=*source; source+=step;
+	target[1]=*source; source+=step;
+	target[2]=*source; source+=step;
+	target[3]=*source; source+=step;
+	target[4]=*source2; source2+=step;
+	target[5]=*source2; source2+=step;
+	target[6]=*source2; source2+=step;
+	target[7]=*source2; source2+=step;
       }
       for (int pos=0;pos<n;pos+=taille){
 	int *An2=Aeff+taille/2,*Aend=An2,*Weff=Wstack;
+	int s=*Aeff,t1=*An2;
+	*Aeff=addmod(s,t1,p);
+	*An2=submod(s,t1,p);
+	fft_loop_p_(&Aeff[1],&An2[1],&Weff[1],4,p,invp);
+	fft_loop_p_(&Aeff[2],&An2[2],&Weff[2],4,p,invp);
+	fft_loop_p_(&Aeff[3],&An2[3],&Weff[3],4,p,invp);
+	Aeff+=4; An2+=4; Weff+=8;
 	for (;Aeff<Aend;){
 	  fft_loop_p_(&Aeff[0],&An2[0],&Weff[0],4,p,invp);
 	  fft_loop_p_(&Aeff[1],&An2[1],&Weff[1],4,p,invp);
@@ -11976,6 +12314,7 @@ namespace giac {
       }
       step *= 2;
     }
+    // stack_or_heap_dealloc(Wstack,T);
     // finish by groups of 4
     step=n2s/2;
     int w1=W[step],w1surp=W[3*step];

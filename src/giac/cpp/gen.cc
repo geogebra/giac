@@ -10876,6 +10876,19 @@ namespace giac {
     return 0;
   }
 
+  bool is_multiple(const gen & a,const gen &b){
+    if (a.type==_INT_){
+      if (b.type!=_INT_)
+	return false;
+      return a.val%b.val==0;
+    }
+    if (a.type!=_ZINT)
+      return false;
+    if (b.type==_INT_)
+      return modulo(*a._ZINTptr,b.val)==0;
+    return a%b==0;
+  }
+
   static void _ZINTrem(const gen & a,const gen &b,gen & q,ref_mpz_t * & rem){
     // COUT << a << " irem " << b << '\n';
     ref_mpz_t *aptr,*bptr;

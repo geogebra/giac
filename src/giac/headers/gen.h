@@ -1018,6 +1018,7 @@ namespace giac {
   gen rdiv(const gen & a,const gen & b,GIAC_CONTEXT0); // rational division
   inline gen operator /(const gen & a,const gen & b){ return rdiv(a,b); };
   gen operator %(const gen & a,const gen & b); // for int only
+  bool is_multiple(const gen & a,const gen &b);
   // gen inv(const gen & a);
   gen inv(const gen & a,GIAC_CONTEXT);
   inline wchar_t * wprint(const gen & g,GIAC_CONTEXT){ return g.wprint(contextptr); }

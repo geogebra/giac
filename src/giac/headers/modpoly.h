@@ -185,7 +185,7 @@ namespace giac {
   bool invmod(const modpoly & f,int l,environment * env,modpoly & g);
   // for p prime such that p-1 is divisible by 2^N, compute a 2^N-th root of 1
   // otherwise return 0
-  int nthroot(int p,int N);
+  unsigned nthroot(unsigned p,unsigned N);
   // euclidean quotient using modular inverse
   // returns 0 on failure, 1 on success, 2 if division is exact
   int DivQuo(const modpoly & a, const modpoly & b, environment * env,modpoly & q);
@@ -335,7 +335,7 @@ namespace giac {
   gen mod_resultant(const modpoly & P,const modpoly & Q,double eps);
   modpoly unmod(const modpoly & a,const gen & m);
   // resultant of P and Q modulo m, modifies P and Q, 
-  int resultant_int(std::vector<int> & P,std::vector<int> & Q,std::vector<int> & tmp1,std::vector<int> & tmp2,int m);
+  int resultant_int(std::vector<int> & P,std::vector<int> & Q,std::vector<int> & tmp1,std::vector<int> & tmp2,int m,int w=0);
   void vecteur2vector_ll(const vecteur & v,longlong m,std::vector<longlong> & res);
   longlong resultantll(vector<longlong> & P,vector<longlong> & Q,vector<longlong> & tmp1,vector<longlong> & tmp2,longlong m);
 
