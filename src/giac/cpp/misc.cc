@@ -5149,8 +5149,6 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
     vecteur vals,names,attributs,res;
 #if defined HAVE_LIBFLTK && defined GIAC_LMCHANGES // changes by L. Marohnić
     res.push_back(symb_equal(change_subtype(gen(_AXES),_INT_PLOT),2));
-#else
-    ;
 #endif
     double largeur=.8;
     if (g.type==_VECT && g.subtype==_SEQ__VECT){
@@ -5379,6 +5377,14 @@ static define_unary_function_eval (__camembert,&_camembert,_camembert_s);
   static const char _axis_s []="axis";
   static define_unary_function_eval (__axis,&_axis,_axis_s);
   define_unary_function_ptr5( at_axis ,alias_at_axis,&__axis,0,true);
+
+  gen _grid(const gen & g,GIAC_CONTEXT){
+    bool b=is_exactly_zero(g);
+    return symb_equal(change_subtype(_AXES,_INT_PLOT),b?0:(g==2?2:1));
+  }
+  static const char _grid_s []="grid";
+  static define_unary_function_eval (__grid,&_grid,_grid_s);
+  define_unary_function_ptr5( at_grid ,alias_at_grid,&__grid,0,true);
 
   // Graham scan convex hull
  static bool graham_sort_function(const gen & a,const gen & b){

@@ -6018,7 +6018,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 
   static void python_import(string & cur,int cs,int posturtle,int poscmath,int posmath,int posnumpy,int posmatplotlib,GIAC_CONTEXT){
     if (posmatplotlib>=0 && posmatplotlib<cs){
-      cur += "np:=numpy:;xlim(a,b):=gl_x=a..b:;ylim(a,b):=gl_y=a..b:;scatter:=scatterplot:;bar:=bar_plot:;text:=legend:;xlabel:=gl_x_axis_name:;ylabel:=gl_y_axis_name:;";
+      cur += "np:=numpy:;xlim(a,b):=gl_x=a..b:;ylim(a,b):=gl_y=a..b:;scatter:=scatterplot:;bar:=bar_plot:;text:=legend:;xlabel:=gl_x_axis_name:;ylabel:=gl_y_axis_name:;arrow:=vector:;boxplot:=moustache:;";
       posnumpy=posmatplotlib;
     }
     if (posnumpy>=0 && posnumpy<cs){

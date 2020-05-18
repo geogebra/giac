@@ -73,7 +73,7 @@ namespace giac {
   void mergemodpoly(modpoly & high,const modpoly & low,int n); 
   modpoly trim(const modpoly & p,environment * env);
   void trim_inplace(modpoly & p);
-  void fast_trim_inplace(vector<int> & p,int modulo);
+  void fast_trim_inplace(vector<int> & p,int modulo,int maxsize=-1);
   bool trim(modpoly & v); // true if v is empty after trimming
   void rrdm(modpoly & p, int n);   // right redimension poly to degree n
 
@@ -296,7 +296,7 @@ namespace giac {
   // if size is not n or Wp[0]==0, Wp is computed
   // do not share Wp1/p2/p3 between different threads
   void to_fft(const vecteur & A,int modulo,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,std::vector<int> & a,int n,fft_rep & f,bool reverse,bool makeplus);
-  void to_fft(const std::vector<int> & a,int modulo,int w,std::vector<int> & Wp,int n,std::vector<int> & f,bool reverse,bool makeplus,bool makemod=true);
+  void to_fft(const std::vector<int> & a,int modulo,int w,std::vector<int> & Wp,int n,std::vector<int> & f,int reverse,bool makeplus,bool makemod=true);
   void to_fft(const std::vector<int> & a,int modulo,std::vector<int> & Wp1,std::vector<int> & Wp2,std::vector<int> & Wp3,int n,fft_rep & f,bool reverse,bool makeplus,bool makemod=true);
   // FFT representation f -> res
   // Wp1,p2,p3 should be computed with to_fft

@@ -59,6 +59,8 @@
 #define NO_STDEXCEPT 1
 #endif
 
+#define MAX_INTSTACK 32768 // maximal size for allocating an array by int tab[]
+
 #ifdef FXCG
 #define RAND_MAX 2147483647
 #define clock() 0
