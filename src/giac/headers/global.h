@@ -252,6 +252,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   extern int GCDHEU_DEGREE; // max degree allowed inside gcdheu
   extern int MODFACTOR_PRIMES; // number of primes used for factorization
   extern int NTL_MODGCD; // lowest degree for NTL univariate modular GCD 
+  extern int NTL_RESULTANT; // lowest degree for NTL univariate resultant 
   extern int NTL_XGCD; // lowest degree for NTL univariate extended GCD over Z
   extern int MODRESULTANT; // lowest degree for modular resultant 
   extern int HGCD; // lowest degree for half gcd call

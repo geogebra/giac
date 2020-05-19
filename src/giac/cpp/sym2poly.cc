@@ -4148,7 +4148,7 @@ namespace giac {
 	    gen den=pow(r2sym(f1_den,l,contextptr),qp.lexsorted_degree(),contextptr)*pow(r2sym(f2_den,l,contextptr),pp.lexsorted_degree(),contextptr);
 	    vecteur tmpv1,tmpv2,S;
 	    for (int i=0;i<=d;++i,++j){
-	      if (debug_infolevel)
+	      if (debug_infolevel && i%16==0)
 		CERR << CLOCK()*1e-6 << " interp horner " << i << "\n";
 	      gen xi;
 	      for (;;++j){
@@ -4165,7 +4165,7 @@ namespace giac {
 	      X[i]=xi;
 	      gen gp=horner(vp,xi);
 	      gen gq=horner(vq,xi);
-	      if (debug_infolevel)
+	      if (debug_infolevel && i%16==0)
 		CERR << CLOCK()*1e-6 << " interp resultant " << j << ", " << 100*double(i)/(d+1) << "% done" << "\n";
 	      if (gp.type==_POLY && gq.type==_POLY){
 		if (0 &&

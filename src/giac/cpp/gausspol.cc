@@ -2837,7 +2837,7 @@ namespace giac {
 	  if (cclock-iclock>15)
 	    debug_infolevel=1;
 	}
-	if (debug_infolevel)
+	if (debug_infolevel && (i%16==0))
 	  CERR << CLOCK()*1e-6 << " interp horner, loop index " << i << '\n';
 	gen xi;
 	for (;;++j){
@@ -2853,7 +2853,7 @@ namespace giac {
 	X[i]=xi;
 	gen gp=horner(vp,xi);
 	gen gq=horner(vq,xi);
-	if (debug_infolevel)
+	if (debug_infolevel && (i%16==0))
 	  CERR << CLOCK()*1e-6 << " interp resultant evaled at " << j << ", " << 100*double(i)/(d+1) << "% done" << '\n';
 	if (gp.type==_POLY && gq.type==_POLY){
 	  Y[i]=resultant(*gp._POLYptr,*gq._POLYptr);
@@ -2935,7 +2935,17 @@ namespace giac {
     gen coefft,coeffqt;
     int pt=coefftype(p,coefft),qt=coefftype(q,coeffqt);
     polynome g;
+    c=pow(pz,q.lexsorted_degree())*pow(qz,p.lexsorted_degree());
     if (pt==0 && qt==0){
+      if (P.dim==1 && p.lexsorted_degree()>MODRESULTANT && q.lexsorted_degree()>MODRESULTANT){
+	gen r=mod_resultant(polynome2poly1(p,1),polynome2poly1(q,1),0.0);
+	c=c*r;
+	if (is_zero(r))
+	  C.coord.clear();
+	else
+	  poly12polynome(vecteur(1,1),1,C);
+	return;
+      }
       // try gcd only if it is fast (integer coefficients for example)
       g=gcd(p,q);
       if (g.lexsorted_degree()){
@@ -2952,7 +2962,6 @@ namespace giac {
       q=q/g;
     }
     subresultant(p,q,C,ducos);
-    c=pow(pz,q.lexsorted_degree())*pow(qz,p.lexsorted_degree());
     if (!is_one(g)){
       int expo=p.lexsorted_degree()+q.lexsorted_degree();
       for (int i=0;i<expo;++i)

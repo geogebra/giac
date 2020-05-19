@@ -103,6 +103,20 @@ mpz_class smod(const mpz_class & a,int reduce){
   static define_unary_function_eval (__ntl_xgcd,&_ntl_xgcd,_ntl_xgcd_s);
   define_unary_function_ptr5( at_ntl_xgcd ,alias_at_ntl_xgcd,&__ntl_xgcd,0,true);
 
+  gen _ntl_resultant(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if (g.type==_VECT)
+      return NTL_RESULTANT;
+    if (g.type!=_INT_ || g.val<0)
+      return gensizeerr(contextptr);
+    if (g.val>0)
+      NTL_RESULTANT=g.val;
+    return NTL_RESULTANT;
+  }
+  static const char _ntl_resultant_s []="ntl_resultant";
+  static define_unary_function_eval (__ntl_resultant,&_ntl_resultant,_ntl_resultant_s);
+  define_unary_function_ptr5( at_ntl_resultant ,alias_at_ntl_resultant,&__ntl_resultant,0,true);
+
   gen _modresultant(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     if (g.type==_VECT)

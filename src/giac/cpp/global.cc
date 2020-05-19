@@ -1826,6 +1826,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int DEFAULT_EVAL_LEVEL=5;
   int MODFACTOR_PRIMES =5;
   int NTL_MODGCD=1<<30; // default: ntl gcd disabled
+  int NTL_RESULTANT=382; 
   int NTL_XGCD=50;
   int HGCD=128;//16384;
   int HENSEL_QUADRATIC_POWER=25;
@@ -1864,6 +1865,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int DEFAULT_EVAL_LEVEL=25;
   int MODFACTOR_PRIMES =5;
   int NTL_MODGCD=1<<30; // default: ntl gcd disabled
+  int NTL_RESULTANT=382; 
   int NTL_XGCD=50;
   int HGCD=128;//16384;
   int HENSEL_QUADRATIC_POWER=25;
