@@ -12019,7 +12019,7 @@ template<class modint_t,class modint_u>
 	CERR << "Error building M" << '\n';
     }
 #else
-    zbuildM_t<tdeg_t> tmp={&res,&G,env,multimodular,&quo,&R,&Rdegpos,Rhashptr,&coeffindex,N,&Mindex,&Mcoeff,&atrier,0,G.size(),0};
+    zbuildM_t<tdeg_t> tmp={&res,&G,env,multimodular,&quo,&R,&Rdegpos,Rhashptr,&coeffindex,N,&Mindex,&Mcoeff,&atrier,0,int(G.size()),0};
     zbuildM_<tdeg_t>((void *)&tmp);
 #endif
   } // end parallelization

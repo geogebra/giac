@@ -455,6 +455,7 @@ namespace giac {
   extern const unary_function_ptr * const  at_homothetie;
   gen _est_coplanaire(const gen & args,GIAC_CONTEXT);
 
+  extern const unary_function_ptr * const  at_est_dans;
   gen _est_aligne(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_est_aligne;
 

@@ -8506,7 +8506,7 @@ namespace giac {
     int maxdeg=giacmax(a.size(),b.size())-1;
     int maxp=std::sqrt(p1p2/4./maxdeg),iter;
     modpoly urec,vrec,drec,ucur,vcur,dcur;
-    gen borne=pow(norm(a,context0),b.size()-1)*pow(norm(b,context0),a.size()-1);
+    gen borne=pow(norm(a,context0),(int)b.size()-1)*pow(norm(b,context0),(int)a.size()-1);
     borne=2*pow(b.size(),a.size()-1)*pow(a.size(),b.size()-1)*borne*borne;
 #if 1 // compute resultant first
 #ifdef EGCD_INT
@@ -14222,7 +14222,7 @@ namespace giac {
     vector<int> a,P;
     to_fft(A,0,Wp1,Wp2,Wp3,a,n,f.p1p2p3,reverse,makeplus);
     gen pip=p3*gen(longlong(p1)*p2);
-    gen lim=4*gen(n)*modulo*modulo; 
+    gen lim=4*gen(long(n))*gen(modulo)*gen(modulo); 
     // linfnorm(A*B+C*D)<=(degree(A*B)+degree(C*D))*modulo^2<pip/2
     // 4*n because A*B+C*D can not be "reduced" more than half the degree of
     // A*B and C*D

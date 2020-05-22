@@ -73,7 +73,7 @@ namespace giac {
   void mergemodpoly(modpoly & high,const modpoly & low,int n); 
   modpoly trim(const modpoly & p,environment * env);
   void trim_inplace(modpoly & p);
-  void fast_trim_inplace(vector<int> & p,int modulo,int maxsize=-1);
+  void fast_trim_inplace(std::vector<int> & p,int modulo,int maxsize=-1);
   bool trim(modpoly & v); // true if v is empty after trimming
   void rrdm(modpoly & p, int n);   // right redimension poly to degree n
 
@@ -268,7 +268,7 @@ namespace giac {
   // res=a ./ b mod p
   void fft_aoverb_p(const std::vector<int> &a,const std::vector<int> &b,std::vector<int> & res,int p);
   // reverse the table of root of unity^k for inverse fft
-  void fft_reverse(vector<int> & W,int p);
+  void fft_reverse(std::vector<int> & W,int p);
 
   // res=a*b mod p
   bool fft2mult(int ablinfnorm,const std::vector<int> & a,const std::vector<int> & b,std::vector<int> & res,int modulo,std::vector<int> & W,std::vector<int> & fftmult_p,std::vector<int> & fftmult_q,bool reverseatend,bool dividebyn,bool makeplus);
