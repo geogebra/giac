@@ -83,6 +83,7 @@ extern "C" {
   char * os_input(const char * prompt,const char * default_value=0,const char * title=0);
 #if defined NSPIRE || defined NSPIRE_NEWLIB
   extern bool on_key_enabled;
+  void get_hms(int *h,int *m,int *s);
 #endif
 
 

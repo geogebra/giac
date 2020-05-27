@@ -241,7 +241,7 @@ namespace xcas {
   int Console_Backspace(void);
   int Console_GetKey(const giac::context *);
   int Console_Init(void);
-  int Console_Disp(int redraw_mode=1);
+  int Console_Disp(int redraw_mode,const giac::context*ptr);
   int Console_FMenu(int key,const giac::context *);
   extern char menu_f1[8],menu_f2[8],menu_f3[8],menu_f4[8],menu_f5[8],menu_f6[8];
   const char * console_menu(int key,char* cfg,int active_app);

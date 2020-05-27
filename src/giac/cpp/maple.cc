@@ -402,11 +402,16 @@ namespace giac {
     int level=eval_level(contextptr);
     double t1= millis(); // RTC_GetTicks(); // 1 tick=1/128 s
     // CERR << t1 << endl;
-    for (unsigned i=1;i<=100;++i){
+    for (unsigned i=1;i<=1000;++i){
       eval(a,level,contextptr);
       double t2= millis(); // RTC_GetTicks();
+#ifdef NSPIRE_NEWLIB
+      if (t2>=t1+5000)
+	return double(t2-t1)/double(i)/1000;
+#else
       if (t2>=t1+32)
 	return double(t2-t1)/double(i)/1000;
+#endif
     }
     return 0.0;
   }

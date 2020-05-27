@@ -8727,7 +8727,7 @@ namespace giac {
       vecteur w0=*v0._VECTptr,w1=*v1._VECTptr;
       int ss=w0.size(),i;
       for (i=0;i<ss;++i){
-	if (w0[i].type>_REAL || w1[i].type>_REAL)
+	if ( (w0[i].type>_REAL && w0[i].type!=_FRAC) || (w1[i].type>_REAL && w1[i].type!=_FRAC))
 	  break;
       }
       if (i==ss){

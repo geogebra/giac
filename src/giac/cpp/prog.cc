@@ -5403,6 +5403,11 @@ namespace giac {
   define_unary_function_ptr5( at_rmbreakpoint ,alias_at_rmbreakpoint,&__rmbreakpoint,_QUOTE_ARGUMENTS,true);
 
 #ifdef KHICAS
+#ifdef NSPIRE_NEWLIB
+#define lineh 14
+#else
+#define lineh 12
+#endif
   void debug_loop(gen &res,GIAC_CONTEXT){
     if (!debug_ptr(contextptr)->debug_allowed || (!debug_ptr(contextptr)->sst_mode && !equalposcomp(debug_ptr(contextptr)->sst_at,debug_ptr(contextptr)->current_instruction)) )
       return;
@@ -5478,7 +5483,7 @@ namespace giac {
       for (int i=m;i<=M;++i){
 	os_draw_string_small(dispx,dispy,(i==w[4].val?_WHITE:_BLACK),(i==w[4].val?_BLACK:_WHITE),(print_INT_(i)+":"+ws[i]).c_str());
 	//mPrintXY(dispx,dispy,(print_INT_(i)+":"+ws[i]).c_str(),(i==w[4].val?TEXT_MODE_INVERT:TEXT_MODE_TRANSPARENT_BACKGROUND),TEXT_COLOR_BLACK);
-	dispy+=12;
+	dispy+=lineh;
 	dispx=0;
 	// progs += print_INT_(i)+((i==w[4].val)?" => ":"    ")+ws[i]+'\n';
       }
@@ -5489,7 +5494,7 @@ namespace giac {
     }
     os_draw_string_small_(dispx,dispy,"----------------");
     dispx=0;
-    dispy += 8;
+    dispy += lineh-3;
     // progs += "======\n";
     // evaluate watch with debug_ptr(contextptr)->debug_allowed=false
     debug_ptr(contextptr)->debug_allowed=false;
@@ -5506,7 +5511,7 @@ namespace giac {
       evals += s+",";
       if (fewvars || (nv % 2)==1 || nv==nvars-1){
 	os_draw_string_small_(dispx,dispy,evals.c_str());
-	dispy+=12;
+	dispy+=lineh;
 	evals="";
 	// evals += '\n';
       }

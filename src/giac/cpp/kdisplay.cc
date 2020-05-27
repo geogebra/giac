@@ -47,6 +47,7 @@ int khicas_addins_menu(GIAC_CONTEXT); // in kadd.cc
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
   void Bdisp_PutDisp_DD(){
+    sync_screen();
   }
   void Bdisp_AllClr_VRAM(){
     waitforvblank();
@@ -8338,7 +8339,7 @@ namespace xcas {
       // j=Last_Line;
       Console_NewLine(LINE_TYPE_OUTPUT, 1);    
       // Line[j].type=LINE_TYPE_OUTPUT;
-      Console_Disp();
+      Console_Disp(1,contextptr);
       Bdisp_PutDisp_DD();
     }
     return 0;
@@ -8931,7 +8932,7 @@ namespace xcas {
     if (l && S[l-1]=='\n'){
       Console_NewLine(LINE_TYPE_OUTPUT, 1);
       if (!freeze)
-	Console_Disp();
+	Console_Disp(1,0);
     }
   }
 
@@ -9106,7 +9107,7 @@ namespace xcas {
 	//DisplayStatusArea();
       }
 #endif
-      Console_Disp();
+      Console_Disp(1,0);
       return CONSOLE_SUCCEEDED;
     }
     int return_val;
@@ -9126,7 +9127,7 @@ namespace xcas {
       Console_Init();
       Console_Clear_EditLine();
     }    
-    Console_Disp();
+    Console_Disp(1,0);
   }
 
 
@@ -9187,7 +9188,7 @@ namespace xcas {
 #if 0
     return 0;
 #else
-    // cout << "0" << fname << endl; Console_Disp(); GetKey(&key);
+    // cout << "0" << fname << endl; Console_Disp(1); GetKey(&key);
     string filename(remove_path(remove_extension(fname)));
     filename+=string(".xw");
 #ifdef NSPIRE_NEWLIB
@@ -9343,7 +9344,7 @@ namespace xcas {
       GetKey(&key);
       bool alph=alphawasactive();
       if (key==KEY_PRGM_ACON)
-	Console_Disp();
+	Console_Disp(1,contextptr);
       translate_fkey(key);
       if (key==KEY_CTRL_PASTE)
 	return Console_Input((const char*) paste_clipboard());
@@ -9353,7 +9354,7 @@ namespace xcas {
 	tmp_str[0] = key;
 	tmp_str[1] = '\0';
 	Console_Input(tmp_str);
-	Console_Disp(0);
+	Console_Disp(0,contextptr);
 	continue;
       }
       if ( (key==KEY_CHAR_PLUS || key==KEY_CHAR_MINUS || key==KEY_CHAR_MULT || key==KEY_CHAR_DIV) && Current_Line<Last_Line-1){
@@ -9421,7 +9422,7 @@ namespace xcas {
 #endif
 	  }	  
 	}
-	Console_Disp();
+	Console_Disp(1,contextptr);
 	continue;
       }
       if (0 &&key==KEY_CTRL_F6){
@@ -9665,7 +9666,7 @@ namespace xcas {
 	  break;
 	} // end while(1)
 	if (key!=KEY_SHIFT_ANS){
-	  Console_Disp();
+	  Console_Disp(1,contextptr);
 	  return CONSOLE_SUCCEEDED;
 	}
 #else
@@ -9681,7 +9682,7 @@ namespace xcas {
 	int res=khicas_addins_menu(contextptr);
 	if (res==KEY_CTRL_MENU)
 	  return res;
-	Console_Disp();
+	Console_Disp(1,contextptr);
 	return CONSOLE_SUCCEEDED;
       }
       if ( (key >= KEY_CTRL_F1 && key <= KEY_CTRL_F6) ||
@@ -9698,7 +9699,7 @@ namespace xcas {
 	  buf[Cursor.x]=0;
 	  string s=help_insert(buf,contextptr);
 	  Console_Input(s.c_str());
-	  Console_Disp();
+	  Console_Disp(1,contextptr);
 	  Console_MoveCursor(CURSOR_SHIFT_RIGHT);
 	  continue;
 	}
@@ -9716,7 +9717,7 @@ namespace xcas {
 	Console_MoveCursor(CURSOR_SHIFT_RIGHT);
       if (key == KEY_SHIFT_RIGHT || key == KEY_SHIFT_LEFT ||
 	  key == KEY_CTRL_RIGHT || key == KEY_CTRL_LEFT){
-	Console_Disp(0);
+	Console_Disp(0,contextptr);
 	continue;
       }
       if (key == KEY_CTRL_EXIT){
@@ -9727,7 +9728,7 @@ namespace xcas {
 	    edptr->y=0;
 	    doTextArea(edptr,contextptr);
 	  }
-	  Console_Disp();
+	  Console_Disp(1,contextptr);
 	}
 	else {
 	  move_line = Last_Line - Current_Line;
@@ -9762,13 +9763,13 @@ namespace xcas {
 	}
 	else
 	  Console_Input((const char*)":=");
-	Console_Disp();
+	Console_Disp(1,contextptr);
 	continue;
       }
 
       if (key == KEY_CTRL_SETUP) {
 	menu_setup(contextptr);
-	Console_Disp();
+	Console_Disp(1,contextptr);
 	continue;
       }
 
@@ -9972,7 +9973,7 @@ namespace xcas {
       }
       PrintMini(3+position_x+quick_len*4,box.bottom-7*selector, entries[selector], 4);
       GetKey(&input_key);
-      if (input_key==KEY_PRGM_ACON) Console_Disp();
+      if (input_key==KEY_PRGM_ACON) Console_Disp(1,0);
       if (input_key == KEY_CTRL_EXIT || input_key==KEY_CTRL_AC) return 0;
       if (input_key == KEY_CTRL_UP && selector < nb_entries-1) selector++;	
       if (input_key == KEY_CTRL_DOWN && selector > 0) selector--;
@@ -9987,7 +9988,7 @@ namespace xcas {
 	   ((input_key >= KEY_CTRL_F1 && input_key <= KEY_CTRL_F6) ||
 	    (input_key >= KEY_CTRL_F7 && input_key <= KEY_CTRL_F12) )
 	   ){
-	Console_Disp();
+	Console_Disp(1,0);
 	key=input_key;
 	return console_menu(key,cfg,active_app);
       }
@@ -10146,7 +10147,7 @@ namespace xcas {
   }
 
   // redraw_mode=1 clear area
-  int Console_Disp(int redraw_mode){
+  int Console_Disp(int redraw_mode,GIAC_CONTEXT){
     unsigned int* pBitmap;
     int i, alpha_shift_status;
     DISPBOX ficon;
@@ -10315,14 +10316,37 @@ namespace xcas {
       PrintMiniMini(0,205,menu.c_str(),4);
     }
   
-    // status, clock, 
+    // status, clock,
+    i=python_compat(contextptr);
+    string msg;
+    if (i==0)
+      msg="Xcas";
+    else {
+      if (i==1)
+	msg="Py ^=**";
+      else
+	msg="Py ^=xor";
+    }
+    if (angle_radian(contextptr))
+      msg += " RAD ";
+    else
+      msg += " DEG ";
+    msg += session_filename;
+    if (console_changed)
+      msg += " *";
+#ifdef NSPIRE_NEWLIB
+    int h,m,s;
+    get_hms(&h,&m,&s);
+    msg += " "+print_INT_(h)+"h"+print_INT_(m)+"m"+print_INT_(s);
+#endif
+    statuslinemsg(msg.c_str());
     set_xcas_status();
     Bdisp_PutDisp_DD();
     return CONSOLE_SUCCEEDED;
   }
 
   void dConsoleRedraw(){
-    Console_Disp();
+    Console_Disp(1,0);
   }
 
   char *Console_GetLine(GIAC_CONTEXT)
@@ -10332,7 +10356,7 @@ namespace xcas {
     do
       {
 	return_val = Console_GetKey(contextptr);
-	Console_Disp();
+	Console_Disp(1,contextptr);
 	if (return_val == KEY_CTRL_MENU) return 0;
 	if (return_val == CONSOLE_MEM_ERR) return NULL;
       } while (return_val != CONSOLE_NEW_LINE_SET);
@@ -10389,7 +10413,7 @@ namespace xcas {
     restore_session("session",contextptr);
     giac::angle_radian(os_get_angle_unit()==0,contextptr);
     //GetKey(&key);
-    Console_Disp();
+    Console_Disp(1,contextptr);
     // GetKey(&key);
     char *expr=0;
     while(1){
@@ -10403,7 +10427,7 @@ namespace xcas {
 	  Console_Output(" cancelled");
 	  Console_NewLine(LINE_TYPE_OUTPUT,1);
 	  //GetKey(&key);
-	  Console_Disp();
+	  Console_Disp(1,contextptr);
 	  continue;
 	}
       }
@@ -10417,7 +10441,7 @@ namespace xcas {
       //print_mem_info();
       Console_NewLine(LINE_TYPE_OUTPUT,1);
       //GetKey(&key);
-      Console_Disp();
+      Console_Disp(1,contextptr);
     }
     Console_Free();
     return 0;

@@ -6480,6 +6480,10 @@ namespace giac {
   gen double2gen(double d){
     if (my_isinf(d))
       return d;
+    if (d< (1ULL<<63) && -d < (1ULL<<63))
+      return gen(longlong(d));
+#ifdef NSPIRE_NEWLIB
+#endif
     ref_mpz_t * m= new ref_mpz_t;
     mpz_set_d(m->z,d);
     return m;

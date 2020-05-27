@@ -287,7 +287,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	return Console_Input(console_buf);
       }
     } // end sres==menu_selection
-    Console_Disp();
+    Console_Disp(1,contextptr);
     break;
   } // end endless while
   return CONSOLE_SUCCEEDED;

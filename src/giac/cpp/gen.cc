@@ -2,7 +2,7 @@
 #include "giacPCH.h"
 #ifdef KHICAS
 #include "kdisplay.h"
-#ifdef DEVICE
+#if defined DEVICE && !defined NSPIRE_NEWLIB
 size_t stackptr=0x20036000;
 #else
 size_t stackptr=0xffffffffffffffff;
@@ -6114,7 +6114,7 @@ namespace giac {
       return string2gen(res,false);
     }
 #endif
-    case _VECT__INT_: 
+    case _VECT__INT_:
       if (b.val>=0 && python_compat(contextptr)==2){
 	vecteur res;
 	res.reserve(a._VECTptr->size()*b.val);
