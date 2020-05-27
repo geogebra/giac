@@ -17,6 +17,10 @@
  */
 #include "config.h"
 #include "giacPCH.h"
+#ifdef NSPIRE_NEWLIB
+#include <sys/stat.h>
+#include <sys/types.h>
+#endif
 #ifdef KHICAS
 #include "kdisplay.h"
 #include <string.h>
@@ -5151,7 +5155,7 @@ namespace xcas {
     int horizontal_pixels=LCD_WIDTH_PX-2*giac::COORD_SIZE;
     // Check for fast redraw
     // Then redraw the background
-    drawRectangle(deltax, deltay, LCD_WIDTH_PX, LCD_HEIGHT_PX-24,COLOR_WHITE);
+    drawRectangle(deltax, deltay, LCD_WIDTH_PX, LCD_HEIGHT_PX,COLOR_WHITE);
     if (turtleptr &&
 #ifdef TURTLETAB
 	turtle_stack_size
@@ -7368,7 +7372,7 @@ namespace xcas {
     if (editable){
       // waitforvblank();
       drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
-      PrintMiniMini(0,205,"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 tortue",4,44444,giac::_BLACK);
+      PrintMiniMini(0,205,"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 tortue|7 matr|8 list",4,44444,giac::_BLACK);
       //draw_menu(1);
     }
 #ifdef SCROLLBAR
@@ -7434,10 +7438,22 @@ namespace xcas {
   }
 
   void save_script(const char * filename,const string & s){
+#ifdef NUMWORKS
     char buf[s.size()+2];
     buf[0]=1;
     strcpy(buf+1,s.c_str());
+#else
+    char buf[s.size()+1];
+    strcpy(buf,s.c_str());    
+#endif
+#ifdef NSPIRE_NEWLIB
+    char filenametns[strlen(filename)+5];
+    strcpy(filenametns,filename);
+    strcpy(filenametns+strlen(filename),".tns");
+    write_file(filenametns,buf);
+#else
     write_file(filename,buf);
+#endif
   }
 
   bool textedit(char * s,int bufsize,bool OKparse,const giac::context * contextptr){
@@ -8402,7 +8418,11 @@ namespace xcas {
       size += 2*sizeof(short)+2*sizeof(char)+strlen((const char *)Line[i].str);
     }
     char savebuf[size+4];
+#ifdef NUMWORKS
     char * hFile=savebuf+1;
+#else
+    char * hFile=savebuf;
+#endif
     // save variables and modes
     Bfile_WriteFile_OS4(hFile, statesize);
     Bfile_WriteFile_OS(hFile, state.c_str(), statesize);
@@ -8433,7 +8453,9 @@ namespace xcas {
     }
     char BUF[2]={0,0};
     Bfile_WriteFile_OS(hFile, BUF, sizeof(BUF));
+#ifdef NUMWORKS
     savebuf[0]=1;
+#endif
     int len=hFile-savebuf;
     write_file(filename,savebuf,len);
   }
@@ -8459,11 +8481,13 @@ namespace xcas {
     const char * hf=read_file(filename);
     if (!hf) return false;
     size_t L=Bfile_ReadFile_OS4(hf);
-    char BUF[L+1];
-    Bfile_ReadFile_OS(hf,BUF,L);
-    BUF[L]=0;
+    char BUF[L+4];
+    BUF[1]=BUF[0]='/'; // avoid trying python compat.
+    BUF[2]='\n';
+    Bfile_ReadFile_OS(hf,BUF+3,L);
+    BUF[L+3]=0;
     giac::gen g,ge;
-    dconsole_mode=0;
+    dconsole_mode=0; python_compat(contextptr)=0; xcas_mode(contextptr)=0;
     do_run((char*)BUF,g,ge,contextptr);
     dconsole_mode=1;
     // read script
@@ -9148,7 +9172,11 @@ namespace xcas {
     return;
 #else
     string filename(remove_path(remove_extension(fname)));
-    save_console_state_smem((filename+".xw").c_str(),contextptr); // call before save_khicas_symbols_smem(), because this calls create_data_folder if necessary!
+    filename+=".xw";
+#ifdef NSPIRE_NEWLIB
+    filename+=".tns";
+#endif
+    save_console_state_smem(filename.c_str(),contextptr); // call before save_khicas_symbols_smem(), because this calls create_data_folder if necessary!
     // save_khicas_symbols_smem(("\\\\fls0\\"+filename+".xw").c_str());
     if (edptr)
       check_leave(edptr);
@@ -9161,7 +9189,11 @@ namespace xcas {
 #else
     // cout << "0" << fname << endl; Console_Disp(); GetKey(&key);
     string filename(remove_path(remove_extension(fname)));
-    if (!load_console_state_smem((filename+string(".xw")).c_str(),contextptr)){
+    filename+=string(".xw");
+#ifdef NSPIRE_NEWLIB
+    filename+=string(".tns");
+#endif
+    if (!load_console_state_smem(filename.c_str(),contextptr)){
       int x=0,y=0;
       PrintMini(x,y,"KhiCAS 1.5 (c) 2019 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE);
       y +=18;
@@ -10278,7 +10310,7 @@ namespace xcas {
       menu += string(menu_f2);
       menu += "|3 ";
       menu += string(menu_f3);
-      menu += "|4 edit|5 2d|6 regr.";
+      menu += "|4 edit|5 2d|6 regr|7 matr|8 list|9 arit|0 C";
       drawRectangle(0,205,LCD_WIDTH_PX,17,_BLACK);
       PrintMiniMini(0,205,menu.c_str(),4);
     }
@@ -10335,6 +10367,16 @@ namespace xcas {
   }
 
   int console_main(GIAC_CONTEXT){
+#ifdef NSPIRE_NEWLIB
+    mkdir("Xcas",0755);
+    //mkdir("/Xcas",0755);
+    //mkdir("A:/Xcas",0755);
+    //mkdir("A:\\Xcas",0755);
+    int err=chdir("Xcas");
+    if (err){
+      err=chdir("ndless");
+    }
+#endif
     // SetQuitHandler(save_session); // automatically save session when exiting
     if (!turtleptr){
       turtle();

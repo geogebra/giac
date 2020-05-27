@@ -373,6 +373,25 @@ namespace giac {
 #endif // ndef NO_NAMESPACE_XCAS
 
 
+#define COLOR_BLACK giac::_BLACK
+#define COLOR_RED giac::_RED
+#define COLOR_GREEN giac::_GREEN
+#define COLOR_CYAN giac::_CYAN
+#define COLOR_BLUE giac::_BLUE
+#define COLOR_YELLOW giac::_YELLOW
+#define COLOR_MAGENTA giac::_MAGENTA
+#define COLOR_WHITE giac::_WHITE
+#define COLOR_YELLOWDARK 64934
+#define COLOR_BROWN 65000
+#define TEXT_COLOR_BLACK giac::_BLACK
+#define TEXT_COLOR_RED giac::_RED
+#define TEXT_COLOR_GREEN giac::_GREEN
+#define TEXT_COLOR_CYAN giac::_CYAN
+#define TEXT_COLOR_BLUE giac::_BLUE
+#define TEXT_COLOR_YELLOW giac::_YELLOW
+#define TEXT_COLOR_WHITE giac::_WHITE
+#define TEXT_COLOR_MAGENTA giac::_MAGENTA
+
 
 #endif // _KDISPLAY_H
 #endif

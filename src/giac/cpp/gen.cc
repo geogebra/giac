@@ -14610,6 +14610,8 @@ void sprint_double(char * s,double d){
 
   string remove_extension(const string & chaine){
     int s=int(chaine.size());
+    if (s>4 && chaine.substr(s-4,4)==".tns")
+      return remove_extension(chaine.substr(0,s-4));
     int l=int(chaine.find_last_of('.',s));
     int ll=int(chaine.find_last_of('/',s));
     if (l>0 && l<s){
@@ -16159,7 +16161,8 @@ void sprint_double(char * s,double d){
     if (!strcmp(s,"+")){
       char buf[4096]="def f(x):\n  return x*x\n";
       if (file_exists("temp.py")){
-	S=read_file("temp.py");
+	const char * ch=read_file("temp.py");
+	S=ch;
 	if (S.size()>sizeof(buf))
 	  S=S.substr(0,sizeof(buf)-1);
 	strcpy(buf,S.c_str());

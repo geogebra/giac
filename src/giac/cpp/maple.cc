@@ -78,6 +78,7 @@ using namespace std;
 
 #ifdef KHICAS
 int time_shift;
+#ifdef NUMWORKS
 namespace Ion {
   namespace Timing {
     
@@ -90,6 +91,12 @@ namespace Ion {
     
   }
 }
+double millis(){
+  return double(Ion::Timing::millis()); // RTC_GetTicks();
+}
+#else
+extern "C" double millis();
+#endif
 #endif
 
 
@@ -388,16 +395,16 @@ namespace giac {
 	time_shift=h*60+m;
 	return 1;
       }
-      return double(Ion::Timing::millis()); // RTC_GetTicks();
+      return millis();
     }
     double delta;
     int ntimes=1,i=0;
     int level=eval_level(contextptr);
-    double t1= Ion::Timing::millis(); // RTC_GetTicks(); // 1 tick=1/128 s
+    double t1= millis(); // RTC_GetTicks(); // 1 tick=1/128 s
     // CERR << t1 << endl;
     for (unsigned i=1;i<=100;++i){
       eval(a,level,contextptr);
-      double t2= Ion::Timing::millis(); // RTC_GetTicks();
+      double t2= millis(); // RTC_GetTicks();
       if (t2>=t1+32)
 	return double(t2-t1)/double(i)/1000;
     }

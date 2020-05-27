@@ -11260,7 +11260,7 @@ namespace giac {
   static define_unary_function_eval (__interactive_odeplot,&_interactive_plotode,_interactive_odeplot_s);
   define_unary_function_ptr5( at_interactive_odeplot ,alias_at_interactive_odeplot,&__interactive_odeplot,0,true);
 
-#if !defined NSPIRE && !defined FXCG
+#if !defined NSPIRE && !defined FXCG && !defined EMCC
   static vecteur unarchive_VECT(istream & is,GIAC_CONTEXT){
     vecteur v;
     int taille;

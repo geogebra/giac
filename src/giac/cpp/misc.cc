@@ -2523,9 +2523,18 @@ namespace giac {
 
   gen _input(const gen & args,GIAC_CONTEXT){
 #ifdef KHICAS
+#ifdef NUMWORKS
     const char * s=mp_hal_input("?") ;
     if (s)
       return string2gen(s,false);
+#else
+    char * s=os_input("?") ;
+    if (s){
+      gen g=string2gen(s,false);
+      free(s);
+      return g;
+    }
+#endif
     std::string S;
     const char * prompt = args.type==_STRNG?args._STRNGptr->c_str():"?";
     inputline(prompt,0,S,false,194,contextptr);
@@ -9096,6 +9105,12 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     freeze=true;
     gen a(a_);
     if (a.type==_STRNG && a.subtype==-1) return  a;
+#ifdef KHICAS
+    if (a.type==_VECT && a._VECTptr->empty()){
+      sync_screen();
+      return 1;
+    }
+#endif
 #if defined GIAC_HAS_STO_38 || defined KHICAS
     if (a.type!=_VECT || a._VECTptr->size()<2)
       return gentypeerr(contextptr);

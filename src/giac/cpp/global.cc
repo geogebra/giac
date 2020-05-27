@@ -104,6 +104,10 @@ extern "C" int KeyPressed( void );
 #include "kdisplay.h"
 #endif
 
+#ifdef NSPIRE_NEWLIB
+#include <libndls.h>
+#endif
+
 int my_sprintf(char * s, const char * format, ...){
     int z;
     va_list ap;
@@ -161,8 +165,8 @@ namespace giac {
   void control_c(){
 #if defined NSPIRE || defined KHICAS
     if (
-#ifdef NSPIRE
-	on_key_pressed()
+#if defined NSPIRE || defined NSPIRE_NEWLIB
+	on_key_enabled && on_key_pressed()
 #else
 	back_key_pressed()
 #endif
@@ -199,6 +203,7 @@ namespace giac {
 
 #if defined NSPIRE_NEWLIB || defined KHICAS
   void usleep(int t){
+    os_wait_1ms(t/1000);
   }
 #endif
 
