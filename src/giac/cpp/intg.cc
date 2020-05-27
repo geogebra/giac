@@ -4131,8 +4131,10 @@ namespace giac {
       }
       if (approxint_exact(f,x,contextptr)){
 	gen r,F=linear_integrate(f,x,r,contextptr);
-	value=subst(F,x,b,false,contextptr)-subst(F,x,a,false,contextptr);
-	return true;
+	if (is_zero(r)){
+	  value=subst(F,x,b,false,contextptr)-subst(F,x,a,false,contextptr);
+	  return true;
+	}
       }
     }
     // adaptive integration, cf. Hairer
