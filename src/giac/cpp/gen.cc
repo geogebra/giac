@@ -16370,7 +16370,8 @@ void sprint_double(char * s,double d){
 	  last=tmp;
       }
       if (last.is_symb_of_sommet(at_pnt)){
-	xcas::displaygraph(g,&C);
+	if (os_shell) 
+	  xcas::displaygraph(g,&C);
 	S="Graphic_object";
       }
       else {

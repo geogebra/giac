@@ -75,12 +75,11 @@ extern "C" {
   void disable_back_interrupt();
   inline void clear_abort(){  disable_back_interrupt(); }
   bool isalphaactive();
-  bool alphawasactive();
+  bool alphawasactive(int * key);
   void lock_alpha();
   void reset_kbd();
   void statuslinemsg(const char * msg);
   void statusline(int mode=0);
-  char * os_input(const char * prompt,const char * default_value=0,const char * title=0);
 #if defined NSPIRE || defined NSPIRE_NEWLIB
   extern bool on_key_enabled;
   void get_hms(int *h,int *m,int *s);

@@ -142,6 +142,20 @@ int os_file_browser(const char ** filenames,int maxrecords,const char * extensio
     }
   }
   closedir (dp);
+  // qsort would be faster for large n, but here n<FILENAME_MAXRECORDS
+  for (;;){
+    bool finished=true;
+    for (int i=1;i<cur;++i){
+      if (strcmp(filenames[i-1],filenames[i])>0){
+	finished=false;
+	const char * tmp=filenames[i-1];
+	filenames[i-1]=filenames[i];
+	filenames[i]=tmp;
+      }
+    }
+    if (finished)
+      break;
+  }
   filenames[cur]=0;
   return cur;
 }
@@ -274,11 +288,11 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_MENU)) return KEY_CTRL_MENU ;
   
   // Characters
-  if (isKeyPressed(KEY_NSPIRE_A)) return SHIFT('a','A');
+  if (isKeyPressed(KEY_NSPIRE_A)) return SHIFTCTRL('a','A',KEY_CTRL_A);
   if (isKeyPressed(KEY_NSPIRE_B)) return SHIFT('b','B');
   if (isKeyPressed(KEY_NSPIRE_C)) return SHIFTCTRL('c','C',KEY_CTRL_CLIP);
   if (isKeyPressed(KEY_NSPIRE_D)) return SHIFT('d','D');
-  if (isKeyPressed(KEY_NSPIRE_E)) return SHIFT('e','E');
+  if (isKeyPressed(KEY_NSPIRE_E)) return SHIFTCTRL('e','E',KEY_CTRL_E);
   if (isKeyPressed(KEY_NSPIRE_F)) return SHIFT('f','F');
   if (isKeyPressed(KEY_NSPIRE_G)) return SHIFT('g','G');
   if (isKeyPressed(KEY_NSPIRE_H)) return SHIFT('h','H');
@@ -291,7 +305,7 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_O)) return SHIFTCTRL('o','O',KEY_SHIFT_OPTN);
   if (isKeyPressed(KEY_NSPIRE_P)) return SHIFTCTRL('p','P',KEY_CTRL_PRGM);
   if (isKeyPressed(KEY_NSPIRE_Q)) return SHIFT('q','Q');
-  if (isKeyPressed(KEY_NSPIRE_R)) return SHIFT('r','R');
+  if (isKeyPressed(KEY_NSPIRE_R)) return SHIFTCTRL('r','R',KEY_CTRL_R);
   if (isKeyPressed(KEY_NSPIRE_S)) return SHIFTCTRL('s','S',KEY_CTRL_SETUP);
   if (isKeyPressed(KEY_NSPIRE_T)) return SHIFT('t','T');
   if (isKeyPressed(KEY_NSPIRE_U)) return SHIFT('u','U');
@@ -302,7 +316,7 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_Z)) return SHIFTCTRL('z','Z',KEY_CTRL_UNDO);
 
   // Numbers
-#if 1 // for firebird, redefine ctrl
+#if 0 // for firebird, redefine ctrl
   if (isKeyPressed(KEY_NSPIRE_0)) return SHIFTCTRL('0',KEY_CTRL_F10,')');
   if (isKeyPressed(KEY_NSPIRE_1)) return SHIFTCTRL('1',KEY_CTRL_F1,'!');
   if (isKeyPressed(KEY_NSPIRE_2)) return SHIFTCTRL('2',KEY_CTRL_F2,'@');
@@ -336,8 +350,9 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_LP))			return SHIFTCTRL('(',']','[');
   if (isKeyPressed(KEY_NSPIRE_RP))			return SHIFTCTRL(')','}','{');
   if (isKeyPressed(KEY_NSPIRE_SPACE))		return SHIFT(' ','_');
-  if (isKeyPressed(KEY_NSPIRE_DIVIDE))		return SHIFTCTRL('/','%','\\');
-  if (isKeyPressed(KEY_NSPIRE_MULTIPLY))	return SHIFT('*','\"');
+  if (isKeyPressed(KEY_NSPIRE_DIVIDE))
+    return SHIFTCTRL('/','%','\\');
+  if (isKeyPressed(KEY_NSPIRE_MULTIPLY))	return SHIFTCTRL('*','\'','\"');
   if (isKeyPressed(KEY_NSPIRE_MINUS))		return SHIFTCTRL('-','<', '_');
   if (isKeyPressed(KEY_NSPIRE_NEGATIVE))	return SHIFTCTRL('-','_',KEY_CHAR_ANS);
   if (isKeyPressed(KEY_NSPIRE_PLUS))		return SHIFTCTRL('+', '>','>');
@@ -363,10 +378,10 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_DEL))		return SHIFTCTRL(KEY_CTRL_DEL,KEY_CTRL_DEL,KEY_CTRL_AC);
   if (isKeyPressed(KEY_NSPIRE_RET))		return KEY_CTRL_OK;
   if (isKeyPressed(KEY_NSPIRE_TAB))		return '\t';
-  if (isKeyPressed(KEY_NSPIRE_UP))			return SHIFT(KEY_CTRL_UP,KEY_CTRL_PAGEUP);
-  if (isKeyPressed(KEY_NSPIRE_DOWN))		return SHIFT(KEY_CTRL_DOWN,KEY_CTRL_PAGEDOWN);
-  if (isKeyPressed(KEY_NSPIRE_LEFT)|| isKeyPressed(KEY_NSPIRE_LEFTUP) || isKeyPressed(KEY_NSPIRE_DOWNLEFT))		return SHIFT(KEY_CTRL_LEFT,KEY_SHIFT_LEFT);
-  if (isKeyPressed(KEY_NSPIRE_RIGHT)|| isKeyPressed(KEY_NSPIRE_UPRIGHT) || isKeyPressed(KEY_NSPIRE_RIGHTDOWN))		return SHIFT(KEY_CTRL_RIGHT,KEY_SHIFT_RIGHT);
+  if (isKeyPressed(KEY_NSPIRE_UP))		return SHIFTCTRL(KEY_CTRL_UP,KEY_CTRL_PAGEUP,KEY_UP_CTRL);
+  if (isKeyPressed(KEY_NSPIRE_DOWN))		return SHIFTCTRL(KEY_CTRL_DOWN,KEY_CTRL_PAGEDOWN,KEY_DOWN_CTRL);
+  if (isKeyPressed(KEY_NSPIRE_LEFT)|| isKeyPressed(KEY_NSPIRE_LEFTUP) || isKeyPressed(KEY_NSPIRE_DOWNLEFT))		return SHIFTCTRL(KEY_CTRL_LEFT,KEY_SHIFT_LEFT,KEY_LEFT_CTRL);
+  if (isKeyPressed(KEY_NSPIRE_RIGHT)|| isKeyPressed(KEY_NSPIRE_UPRIGHT) || isKeyPressed(KEY_NSPIRE_RIGHTDOWN))		return SHIFTCTRL(KEY_CTRL_RIGHT,KEY_SHIFT_RIGHT,KEY_RIGHT_CTRL);
   
   return 0;
 }
@@ -401,7 +416,23 @@ void GetKey(int * key){
   *key=getkey(true);
 }
 
-bool alphawasactive(){
+bool alphawasactive(int * key){
+  if (*key==KEY_DOWN_CTRL){
+    *key=KEY_CTRL_DOWN;
+    return true;
+  }
+  if (*key==KEY_UP_CTRL){
+    *key=KEY_CTRL_UP;
+    return true;
+  }
+  if (*key==KEY_LEFT_CTRL){
+    *key=KEY_CTRL_LEFT;
+    return true;
+  }
+  if (*key==KEY_RIGHT_CTRL){
+    *key=KEY_CTRL_RIGHT;
+    return true;
+  }
   return false;
 }
 
@@ -425,12 +456,6 @@ void enable_back_interrupt(){
 
 void disable_back_interrupt(){
   on_key_enabled=false;
-}
-
-char * os_input(const char * prompt,const char * default_value,const char * title){
-  char * value;
-  show_msg_user_input(title?title:"", prompt, default_value?default_value:"", &value);
-  return value;
 }
 
 #endif

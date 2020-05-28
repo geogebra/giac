@@ -2528,19 +2528,14 @@ namespace giac {
     if (s)
       return string2gen(s,false);
 #else
-    char * s=os_input("?") ;
-    if (s){
-      gen g=string2gen(s,false);
-      free(s);
-      return g;
-    }
-#endif
     std::string S;
     const char * prompt = args.type==_STRNG?args._STRNGptr->c_str():"?";
     inputline(prompt,0,S,false,194,contextptr);
     *logptr(contextptr) << prompt << S << '\n';
     return string2gen(S,false);
-#else
+    string s;
+#endif
+#else // KHICAS
     if (interactive_op_tab && interactive_op_tab[0])
       return interactive_op_tab[0](args,contextptr);
     if ( args.type==_STRNG && args.subtype==-1) return  args;

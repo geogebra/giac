@@ -117,7 +117,7 @@ namespace giac {
 #if defined NSPIRE || defined FXCG
   std::vector<size_t> * builtin_lexer_functions_();
 #else
-#ifdef KHICAS
+#if defined KHICAS || defined NSPIRE_NEWLIB
   extern const unary_function_ptr * const * const builtin_lexer_functions_[];
 #else
   extern const size_t builtin_lexer_functions_[];

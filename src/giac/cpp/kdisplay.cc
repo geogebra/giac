@@ -1305,11 +1305,17 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 };
 
   const char aide_khicas_string[]="Aide Khicas";
+#ifdef NUMWORKS
   const char shortcuts_fr_string[]="Raccourcis clavier (shell et editeur)\nshift-/: %\nalpha shift \": '\nshift--: \\\nshift-*: factor\nshift-+: normal\nshift-1 a 6: selon bandeau en bas\nshift-7: matrices\nshift-8: listes\nshift-9:arithmetique\nshift-0: polynomes\nshift-.: reels\nshift-10^: programme\nvar: liste des variables (shell) ou dessin tortue (editeur)\n\nshift-x^y (sto) renvoie =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: Editeur 2d ou graphique ou texte selon objet\nshift-6: editeur texte\n+ ou - modifie un parametre en surbrillance\n\nEditeur d'expressions\nshift-cut: defaire/refaire (1 fois)\npave directionnel: deplace la selection dans l'arborescence de l'expression\nshift-droit/gauche echange selection avec argument a droite ou a gauche\nalpha-droit/gauche dans une somme ou un produit: augmente la selection avec argument droit ou gauche\nshift-4: Editer selection, shift-5: taille police + ou - grande\nEXE: evaluer la selection\nshift-6: valeur approchee\nBackspace: supprime l'operateur racine de la selection\n\nEditeur de scripts\nEXE: passage a la ligne\nshift-CUT: defaire/refaire (1 fois)\nshift-COPY: marque le debut de la selection, deplacer le curseur vers la fin puis Backspace pour effacer ou shift-COPY pour copier sans effacer. shift-PASTE pour coller.\nHome-6 recherche seule: entrer un mot puis EXE puis EXE. Taper EXE pour l'occurence suivante, Back pour annuler.\nHome-6 remplacer: entrer un mot puis EXE puis le remplacement et EXE. Taper EXE ou Back pour remplacer ou non et passer a l'occurence suivante, AC pour annuler\nOK: tester syntaxe\n\nRaccourcis Graphes:\n+ - zoom\n(-): zoomout selon y\n*: autoscale\n/: orthonormalisation\nOPTN: axes on/off";
   const char shortcuts_en_string[]="Keyboard shortcuts (shell and editor)\nshift-/: %\nalpha shift \": '\nshift--: \\\nshift-*: factor\nshift-+: normal\nshift-1 to 6: cf. screen bottom\nshift-7: matrices\nshift-8: lists\nshift-9:arithmetic\nshift-0: polynomials\nshift-.: reals\nshift-10^: programs\nvar: variables list (shell) or turtle screen (editor)\n\nshift-x^y (sto) returns =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: 2d editor or graph or text\nshift-6: text edit\n+ ou - modifies selected slider\n\nExpressions editor\nshift-cut: undo/redo (1 fois)\nkeypad: move selection inside expression tree\nshift-right/left exchange selection with right or left argument\nalpha-right/left: inside a sum or product: increase selection with right or left argument\nshift-4: Edit selection, shift-5: change fontsize\nEXE: eval selection\nshift-6: approx value\nBackspace: suppress selection's rootnode operator\n\nScript Editor\nEXE: newline\nshift-CUT: undo/redo (1 time)\nshift-COPY: marks selection begin, move the cursor to the end, then hit Backspace to erase or shift-COPY to copy (no erase). shift-PASTE to paste.\nHome-6 search: enter a word then EXE then again EXE. Type EXE for next occurence, Back to cancel.\nHome-6 replace: enter a word then EXE then replacement word then EXE. Type EXE or Back to replace or ignore and go to next occurence, AC to cancel\nOK: test syntax\n\nGraph shortcuts:\n+ - zoom\n(-): zoomout along y\n*: autoscale\n/: orthonormalization\nOPTN: axes on/off";
-  const char apropos_fr_string[]="Giac/Xcas 1.5.0, (c) 2019 B. Parisse et R. De Graeve, www-fourier.univ-grenoble-alpes.fr/~parisse.\nKhicas, interface pour calculatrices par B. Parisse, license GPL version 2, adaptee de l'interface d'Eigenmath pour Casio, G. Maia (http://gbl08ma.com), Mike Smith, Nemhardy, LePhenixNoir, ...\nPortage sur Numworks par Damien Nicolet. Remerciements a Jean-Baptiste Boric et Maxime Friess\nTable periodique d'apres Maxime Friess\nRemerciements au site tiplanet, en particulier Xavier Andreani, Adrien Bertrand, Lionel Debroux";
+#else
+  const char shortcuts_fr_string[]="Raccourcis clavier (shell et editeur)\nshift-/: %\nshift *: '\nctrl-/: \\\nshift-1 a 6: selon bandeau en bas\nshift-7: matrices\nshift-8: listes\nshift-9:arithmetique\nshift-0: complexes\nshift-.: reels\nctrl P: programme\nvar: liste des variables (shell) ou dessin tortue (editeur)\n\nctrl-var (sto) renvoie =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: Editeur 2d ou graphique ou texte selon objet\nshift-6: editeur texte\n+ ou - modifie un parametre en surbrillance\n\nEditeur d'expressions\nshift-cut: defaire/refaire (1 fois)\npave directionnel: deplace la selection dans l'arborescence de l'expression\nshift-droit/gauche echange selection avec argument a droite ou a gauche\nctrl droit/gauche dans une somme ou un produit: augmente la selection avec argument droit ou gauche\nshift-4: Editer selection, shift-5: taille police + ou - grande\nEXE: evaluer la selection\nshift-6: valeur approchee\nBackspace: supprime l'operateur racine de la selection\n\nEditeur de scripts\nEXE: passage a la ligne\nshift-CUT: defaire/refaire (1 fois)\nshift-COPY: marque le debut de la selection, deplacer le curseur vers la fin puis Backspace pour effacer ou shift-COPY pour copier sans effacer. shift-PASTE pour coller.\nHome-6 recherche seule: entrer un mot puis EXE puis EXE. Taper EXE pour l'occurence suivante, Back pour annuler.\nHome-6 remplacer: entrer un mot puis EXE puis le remplacement et EXE. Taper EXE ou Back pour remplacer ou non et passer a l'occurence suivante, AC pour annuler\nOK: tester syntaxe\n\nRaccourcis Graphes:\n+ - zoom\n(-): zoomout selon y\n*: autoscale\n/: orthonormalisation\nOPTN: axes on/off";
+  const char shortcuts_en_string[]="Keyboard shortcuts (shell and editor)\nshift-/: %\nalpha shift *: '\nctrl-/: \\\nshift-1 a 6: see at bottom\nshift-7: matrices\nshift-8: listes\nshift-9:arithmetic\nshift-0: complexes\nshift-.: reals\nctrl P: program\nvar: variables list (shell) or turtle screen (editor)\n\nctrl var (sto) returns =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: 2d editor or graph or text\nshift-6: text edit\n+ ou - modifies selected slider\n\nExpressions editor\nshift-cut: undo/redo (1 fois)\nkeypad: move selection inside expression tree\nshift-right/left exchange selection with right or left argument\nalpha-right/left: inside a sum or product: increase selection with right or left argument\nshift-4: Edit selection, shift-5: change fontsize\nEXE: eval selection\nshift-6: approx value\nBackspace: suppress selection's rootnode operator\n\nScript Editor\nEXE: newline\nshift-CUT: undo/redo (1 time)\nshift-COPY: marks selection begin, move the cursor to the end, then hit Backspace to erase or shift-COPY to copy (no erase). shift-PASTE to paste.\nHome-6 search: enter a word then EXE then again EXE. Type EXE for next occurence, Back to cancel.\nHome-6 replace: enter a word then EXE then replacement word then EXE. Type EXE or Back to replace or ignore and go to next occurence, AC to cancel\nOK: test syntax\n\nGraph shortcuts:\n+ - zoom\n(-): zoomout along y\n*: autoscale\n/: orthonormalization\nOPTN: axes on/off";
+#endif
+  
+  const char apropos_fr_string[]="Giac/Xcas 1.6.0, (c) 2020 B. Parisse et R. De Graeve, www-fourier.univ-grenoble-alpes.fr/~parisse.\nKhicas, interface pour calculatrices par B. Parisse, license GPL version 2, adaptee de l'interface d'Eigenmath pour Casio, G. Maia (http://gbl08ma.com), Mike Smith, Nemhardy, LePhenixNoir, ...\nPortage sur Numworks par Damien Nicolet. Remerciements a Jean-Baptiste Boric et Maxime Friess\nPortage sur Nspire grace a Fabian Vogt (firebird-emu, ndless...).\nTable periodique d'apres Maxime Friess\nRemerciements au site tiplanet, en particulier Xavier Andreani, Adrien Bertrand, Lionel Debroux";
 
-  const char apropos_en_string[]="Giac/Xcas 1.5.0, (c) 2019 B. Parisse et R. De Graeve, www-fourier.univ-grenoble-alpes.fr/~parisse.\nKhicas, calculators interface by B. Parisse, GPL license version 2, adapted from Eigenmath for Casio, G. Maia (http://gbl08ma.com), Mike Smith, Nemhardy, LePhenixNoir, ...\nPorted on Numworks by Damien Nicolet. Thanks to Jean-Baptiste Boric and Maxime Friess\nPeriodic table by Maxime Friess\nThanks to tiplanet, especially Xavier Andreani, Adrien Bertrand, Lionel Debroux";
+  const char apropos_en_string[]="Giac/Xcas 1.6.0, (c) 2020 B. Parisse et R. De Graeve, www-fourier.univ-grenoble-alpes.fr/~parisse.\nKhicas, calculators interface by B. Parisse, GPL license version 2, adapted from Eigenmath for Casio, G. Maia (http://gbl08ma.com), Mike Smith, Nemhardy, LePhenixNoir, ...\nPorted on Numworks by Damien Nicolet. Thanks to Jean-Baptiste Boric and Maxime Friess\nPorted on Nspire thanks to Fabian Vogt (firebird-emu, ndless...)\nPeriodic table by Maxime Friess\nThanks to tiplanet, especially Xavier Andreani, Adrien Bertrand, Lionel Debroux";
 
   const int CAT_COMPLETE_COUNT_FR=sizeof(completeCatfr)/sizeof(catalogFunc);
   const int CAT_COMPLETE_COUNT_EN=sizeof(completeCaten)/sizeof(catalogFunc);
@@ -1981,10 +1987,6 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       return "";
     case KEY_CTRL_F4:
       if(showCatalog(text,0,contextptr)) 
-	return text;
-      return "";
-    case KEY_SHIFT_OPTN:
-      if(showCatalog(text,10,contextptr))
 	return text;
       return "";
     case KEY_CTRL_OPTN:
@@ -5661,7 +5663,7 @@ namespace xcas {
       int key;
       //cout << eq.data << endl;
       GetKey(&key);
-      bool alph=alphawasactive();
+      bool alph=alphawasactive(&key);
       if (key==KEY_CTRL_OK || key==KEY_CTRL_MENU){
 	os_hide_graph();
 	if (edited && xcas::do_select(eq.data,true,value) && value.type==_EQW){
@@ -6231,6 +6233,7 @@ namespace xcas {
       _restart(0,contextptr);
   }
   void do_run(const char * s,gen & g,gen & ge,const context * & contextptr){
+    os_shell=true;
     if (!contextptr)
       contextptr=new giac::context;
     if (!strcmp(s,"restart")){
@@ -9342,21 +9345,12 @@ namespace xcas {
     for (;;){
       int keyflag = GetSetupSetting(0x14);
       GetKey(&key);
-      bool alph=alphawasactive();
+      bool alph=alphawasactive(&key);
       if (key==KEY_PRGM_ACON)
 	Console_Disp(1,contextptr);
       translate_fkey(key);
       if (key==KEY_CTRL_PASTE)
 	return Console_Input((const char*) paste_clipboard());
-      if ( (key >= ' ' && key <= '~' )
-	   // (key>='0' && key<='9')|| (key >= 'A' && key <= 'Z') || (key >= 'a' && key <= 'z')
-	   ){
-	tmp_str[0] = key;
-	tmp_str[1] = '\0';
-	Console_Input(tmp_str);
-	Console_Disp(0,contextptr);
-	continue;
-      }
       if ( (key==KEY_CHAR_PLUS || key==KEY_CHAR_MINUS || key==KEY_CHAR_MULT || key==KEY_CHAR_DIV) && Current_Line<Last_Line-1){
 	console_line * nxt=&Line[Current_Line];
 	if (strncmp((const char *)nxt->str,"parameter([",11)==0)
@@ -9391,6 +9385,15 @@ namespace xcas {
 	    }
 	  }
 	}
+      }
+      if ( (key >= ' ' && key <= '~' )
+	   // (key>='0' && key<='9')|| (key >= 'A' && key <= 'Z') || (key >= 'a' && key <= 'z')
+	   ){
+	tmp_str[0] = key;
+	tmp_str[1] = '\0';
+	Console_Input(tmp_str);
+	Console_Disp(0,contextptr);
+	continue;
       }
       if (key == KEY_CTRL_F5 || key==KEY_CTRL_F4 || ( (key==KEY_CTRL_RIGHT || key==KEY_CTRL_LEFT) && Current_Line<Last_Line) ){
 	int l=Current_Line;
@@ -9781,7 +9784,10 @@ namespace xcas {
       }
       if (key == KEY_CTRL_DEL)
 	return Console_Backspace();
-
+      if (key == KEY_CTRL_R){
+	run_session(0,contextptr);
+	return 0;
+      }
       if (key == KEY_CTRL_CLIP){
 	copy_clipboard((const char *)Line[Current_Line].str,true);
       }
@@ -10337,7 +10343,15 @@ namespace xcas {
 #ifdef NSPIRE_NEWLIB
     int h,m,s;
     get_hms(&h,&m,&s);
-    msg += " "+print_INT_(h)+"h"+print_INT_(m)+"m"+print_INT_(s);
+    msg += " ";
+    msg +='0'+(h/10);
+    msg +='0'+(h%10);
+    msg += "h";
+    msg += ('0'+(m/10));
+    msg += ('0'+(m%10));
+    msg += "m";
+    msg += ('0'+(s/10));
+    msg += ('0'+(s%10));
 #endif
     statuslinemsg(msg.c_str());
     set_xcas_status();

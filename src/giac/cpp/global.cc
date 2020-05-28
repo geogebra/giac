@@ -201,10 +201,17 @@ namespace giac {
 #endif // POCKETCAS
 #endif // TIMEOUT
 
-#if defined NSPIRE_NEWLIB || defined KHICAS
+#if defined KHICAS
   void usleep(int t){
     os_wait_1ms(t/1000);
   }
+#else
+#ifdef NSPIRE_NEWLIB
+  void usleep(int t){
+    msleep(t/1000);
+  }
+#endif
+  
 #endif
 
 #if defined VISUALC || defined BESTA_OS
@@ -599,7 +606,12 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   bool python_color=false;
+#ifdef NSPIRE_NEWLIB
+  bool os_shell=false;
+#else
   bool os_shell=true;
+#endif
+
 #ifdef KHICAS
   static int _python_compat_=true;
 #else
@@ -6835,7 +6847,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 #if defined(GIAC_HAS_STO_38) && defined(CAS38_DISABLED)
 #include "static_lexer_38.h"
 #else
-#ifdef KHICAS
+#if defined KHICAS || defined NSPIRE_NEWLIB
 #include "static_lexer_numworks.h"
 #else
 #include "static_lexer.h"
@@ -6856,7 +6868,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
     }
 #else
     // Array added because GH compiler stores builtin_lexer_functions in RAM
-#ifdef KHICAS
+#if defined KHICAS || defined NSPIRE_NEWLIB
     const unary_function_ptr * const * const builtin_lexer_functions_[]={
 #include "static_lexer__numworks.h"
     };
