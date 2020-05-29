@@ -16,6 +16,7 @@ extern "C" {
 #include "k_csdk.h"
 }
 extern int lang;
+extern bool warn_nr;
 int select_item(const char ** ptr,const char * title);
 const char * gettext(const char * s) ;
 

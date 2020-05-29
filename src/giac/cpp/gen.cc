@@ -2206,7 +2206,14 @@ namespace giac {
 		  gensizeerr(gettext("Too many recursions)"),evaled);
 		  return true;
 		}
+#ifdef KHICAS
+		if (warn_nr){
+		  *logptr(contextptr) << gettext("Running non recursive evaluator") << '\n';
+		  warn_nr=false;
+		}
+#else
 		*logptr(contextptr) << gettext("Running non recursive evaluator") << '\n';
+#endif
 		evaled=nr_eval(*this,level,contextptr);
 		return true;
 	      }
@@ -16370,7 +16377,7 @@ void sprint_double(char * s,double d){
 	  last=tmp;
       }
       if (last.is_symb_of_sommet(at_pnt)){
-	if (os_shell) 
+	if (os_shell)
 	  xcas::displaygraph(g,&C);
 	S="Graphic_object";
       }

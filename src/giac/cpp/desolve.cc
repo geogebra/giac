@@ -879,6 +879,15 @@ namespace giac {
       gen & b=v[1];
       gen & c=v[2];
       gen & d=cst;
+#if 0
+      if (is_exactly_zero(c)){
+	vecteur v1(makevecteur(a,b,d));
+	if (desolve_linn(x,y,t,1,v1,parameters,result,step_info,contextptr)){
+	  result=_integrate(makesequence(result,x),contextptr);
+	  return true;
+	}
+      }
+#endif
       gen u=-b/a,V=-c/a,w=-d/a,
 	k=simplify(u*u/4-derive(u,x,contextptr)/2+V,contextptr);
       // y''=u*y'+V*y+w  (with u,V,w functions of x)

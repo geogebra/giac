@@ -17,7 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#if !defined NSPIRE 
+#if !defined NSPIRE
 using namespace std;
 #endif
 #ifdef HAVE_CONFIG_H
@@ -25,7 +25,7 @@ using namespace std;
 #endif
 
 #include <stdexcept>
-#include "gen.h" 
+#include "gen.h"
 #include "identificateur.h"
 #include "sym2poly.h"
 #include "plot.h"
@@ -39,6 +39,7 @@ using namespace std;
 #endif
 
 #ifdef HAVE_LIBPARI
+
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif
@@ -60,74 +61,101 @@ extern "C" {
 #endif
   extern entree functions_basic[];
 }
-#if PARI_VERSION_CODE<PARI_VERSION(2,4,0) // 132096
-#define PARI23
-#else
-jmp_buf env; 
+jmp_buf env;
 static void
 gp_err_recover(long numerr)
 {
   longjmp(env, numerr);
 }
 
-#endif
 #include <cstdlib>
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
-#ifdef HAVE_LIBPTHREAD
-  static pthread_mutex_t * pari_mutex_ptr = 0;
-#endif
-
-#if PARI_VERSION_CODE >= PARI_VERSION(2,8,0)
-#define PARI_DYNAMIC_STACK
-#endif
-
   static map<string,entree *> pari_function_table;
-  static void do_giac_pari_init(long maxprime){
-#ifdef PARI_DYNAMIC_STACK
-    long pari_mem_size=512000;
-#else
-    long pari_mem_size=64000000;
-#endif
-    if (getenv("PARI_SIZE")){
-      string pari_size_s(getenv("PARI_SIZE"));
-      pari_mem_size= atoi(pari_size_s.c_str());
+
+  static long pari_mem_size=512000;
+  static long pari_maxprime=100000;
+  static struct pari_constants_initialization {
+
+    pari_constants_initialization () {
+
+      if (getenv("PARI_SIZE")){
+	string pari_size_s(getenv("PARI_SIZE"));
+	pari_mem_size= atoi(pari_size_s.c_str());
+      }
+      entree * ptr=functions_basic;
+      for (;ptr->name;++ptr){
+	pari_function_table[ptr->name]=ptr;
+      }
     }
+  } pari_constants_initialization_singleton;
+
+  static void call_pari_init()
+  {
     // do not initialize INIT_JMP so that PARI error do not exit
-    pari_init_opts(pari_mem_size,maxprime,INIT_SIGm | INIT_DFTm);
-#ifdef PARI_DYNAMIC_STACK
-    paristack_setsize(pari_mem_size, (1<<30)); // pari 2.8
-    //paristack_alloc(pari_mem_size, (1<<30)); // pari 2.8
-#endif
-    entree * ptr=functions_basic;
-    for (;ptr->name;++ptr){
-      pari_function_table[ptr->name]=ptr;
-    }
+    pari_init_opts(pari_mem_size,pari_maxprime,INIT_SIGm | INIT_DFTm);
+    paristack_setsize(pari_mem_size, (1<<30));
     // initialize variable ordering x,y,z
     gp_read_str("[x,y,z,t]");
   }
+  
+#ifdef ENABLE_TLS  // pari is MT-safe, so needs init in each thread
 
-#if 0
-  struct giac_pari_init {
-    giac_pari_init(long maxprime) { 
-      if(!avma){ 
-	do_giac_pari_init(maxprime); 
-      }
-    }
+  struct ensure_pari_is_ready {
+
+    ensure_pari_is_ready() { call_pari_init(); }
+
+    ~ensure_pari_is_ready() { pari_close(); }
   };
-  static long pari_maxprime=100000;
-  static giac_pari_init bidon(pari_maxprime);
-#else
-  static long pari_maxprime=100000;
-  long get_pari_avma() {
-    if(!avma){
-      do_giac_pari_init(pari_maxprime);
+#elif HAVE_LIBPTHREAD // pari is not MT-safe, so single init and multiple locks!
+
+  static pthread_mutex_t *pari_mutex_ptr = 0;
+
+  static struct pari_initialization {
+
+    pari_initialization ()
+    {
+      pthread_mutex_t tmp = PTHREAD_MUTEX_INITIALIZER;
+      pari_mutex_ptr = new pthread_mutex_t(tmp);
+      call_pari_init();
     }
-    return avma;
-  }
+
+    ~pari_initialization ()
+    {
+      pari_close();
+      delete pari_mutex_ptr;
+    }
+  } pari_initialization_singleton;
+
+  struct ensure_pari_is_ready {
+
+    ensure_pari_is_ready() { pthread_mutex_lock(pari_mutex_ptr); }
+
+    ~ensure_pari_is_ready() { pthread_mutex_unlock(pari_mutex_ptr); }
+  };
+#else // pari is not MT-safe and we don't have threads - does it happen?!
+
+  static struct pari_initialization {
+
+    pari_initialization ()
+    {
+      pthread_mutex_t tmp = PTHREAD_MUTEX_INITIALIZER;
+      pari_mutex_ptr = new pthread_mutex_t(tmp);
+      call_pari_init();
+    }
+
+    ~pari_initialization ()
+    {
+      pari_close();
+      delete pari_mutex_ptr;
+    }
+  } pari_initialization_singleton;
+
+  struct ensure_pari_is_ready {};
+
 #endif
 
   static gen pow2sizeof_long(pow(256,sizeof(long)));
@@ -136,7 +164,6 @@ namespace giac {
     long Gs=signe(G);
     if (!Gs)
       return 0;
-    //setsigne(G,1);
     long Gpl=lgefint(G)-2;
     // use one of the following code depending how pari codes long integers
     // Code 1
@@ -144,8 +171,7 @@ namespace giac {
     ref_mpz_t * mz = new ref_mpz_t;
     mpz_realloc2(mz->z,32*Gpl);
     mpz_import(mz->z,Gpl,-1,sizeof(GEN),0,0,&G[2]);
-    //setsigne(G,Gs);
-    if (Gs>0) 
+    if (Gs>0)
       return mz;
     else
       return -gen(mz);
@@ -267,7 +293,6 @@ namespace giac {
 
   // WARNING: If g is a matrix this print the transpose of the matrix
   static string GEN2string(const GEN & g){
-    // cerr << typ(g) << " " << t_MAT << '\n';
     char * ch;
     string s;
     if ((typ(g)==t_MAT) || (typ(g)==t_COL)){
@@ -308,7 +333,7 @@ namespace giac {
     switch (typ(G)){
     case t_INT:
       return t_INT2gen(G);
-    case t_INTMOD: 
+    case t_INTMOD:
       return t_MOD2gen(G,vars);
     case t_POLMOD:
       return t_POLMOD2gen(G,vars);
@@ -322,16 +347,12 @@ namespace giac {
       return t_POL2gen(G,vars);
     case t_VEC: case t_COL:
       return t_VEC2gen(G,vars,1,lg(G));
-    case t_VECSMALL: 
+    case t_VECSMALL:
       return t_VECSMALL2gen(G);
     case t_MAT:
       return _tran(t_VEC2gen(G,vars,1,lg(G)),context0);
     case t_LIST:
-#ifdef PARI23
-      return t_VEC2gen(G,vars,2,lgeflist(G));
-#else
       return t_VEC2gen(G,vars,2,list_nmax(G));
-#endif
     case t_STR:
       return string2gen(GSTR(G),false);
     case t_QUAD:
@@ -365,7 +386,7 @@ namespace giac {
     for (;it!=itend;++it){
       s += pariprint(*it,varnum,contextptr);
       if (it+1!=itend)
-	s += ",";      
+	s += ",";
     }
     if (subtype!=_SEQ__VECT)
       s+="]";
@@ -430,23 +451,20 @@ namespace giac {
     python_compat(py,contextptr);
     return res;
   }
-  
+
   static GEN zint2GEN(const gen & g){
     mpz_t * zz=g._ZINTptr;
     int sgn=mpz_sgn(*zz);
     if (!sgn)
       return utoi(0);
     int count=mpz_sizeinbase(*zz,2);
-    if (count % (8*sizeof(GEN))) 
+    if (count % (8*sizeof(GEN)))
       count=count/(8*sizeof(GEN))+3;
     else
       count=count/(8*sizeof(GEN))+2;
     GEN G=cgetg(count,t_INT);
-    //size_t countp;
-    // mpz_export(&G[2],&countp,-1,sizeof(GEN),0,0,*zz);
     setlgefint(G,count);
     setsigne(G,sgn);
-    // return G;
     gen q(abs(g)),tmp,r;
     GEN Gstep(int2n(16));
     vector<int> v;
@@ -560,7 +578,6 @@ namespace giac {
     // add vars to e
     string s=pariprint(e,0,contextptr);
     vecteur vars_(vars);
-    // if (vars_.empty()) vars_.push_back(vx_var);
     if (!vars_.empty())
       s="["+(vars_.size()==1?vars_.front().print():print_VECT(vars_,_SEQ__VECT,contextptr))+","+s+"]";
     GEN res= gp_read_str((char *) s.c_str());
@@ -568,144 +585,72 @@ namespace giac {
     return vars_.empty()?res:gel(res,1+vars_.size());
   }
   GEN gen2GEN(const gen & e,const vecteur & vars,GIAC_CONTEXT){
-#ifdef PARI23
-    if (setjmp(GP_DATA->env)){
-      setsizeerr(gettext("Error in PARI subsystem"));
-    }
-#else
     cb_pari_err_recover=gp_err_recover;
-    if (setjmp(env)){ 
+    if (setjmp(env)){
       setsizeerr(gettext("Error in PARI subsystem"));
     }
-#endif
     return ingen2GEN(e,vars,contextptr);
-  }
-
-  static void pari_cleanup(void * arg) {
-#ifdef HAVE_LIBPTHREAD
-    if (arg)
-      pthread_mutex_unlock((pthread_mutex_t *)arg);
-#endif
-  }
-
-  int check_pari_mutex(){
-#ifdef HAVE_LIBPTHREAD
-    if (!pari_mutex_ptr){
-      pthread_mutex_t tmp=PTHREAD_MUTEX_INITIALIZER;
-      pari_mutex_ptr=new pthread_mutex_t(tmp);
-    }
-    return pthread_mutex_trylock(pari_mutex_ptr);
-#else
-    return 0;
-#endif
-  }
-
-  void abort_if_locked(){
-    if (check_pari_mutex())
-      setsizeerr(gettext("PARI locked by another thread. Try again later.\nIf PARI is locked by a cancelled thread, you can unlock it with pari_unlock()"));
   }
 
   gen pari_isprime(const gen & e,int certif){
     gen tmp;
-    abort_if_locked();
-#ifdef HAVE_LIBPTHREAD
-    pthread_cleanup_push(pari_cleanup, (void *) pari_mutex_ptr);
-#endif
-    long av=get_pari_avma();
+    ensure_pari_is_ready now;
+    long av=avma;
     tmp=GEN2gen(gisprime(gen2GEN(e,vecteur(0),0),certif),vecteur(0));
     avma=av;
-#ifdef HAVE_LIBPTHREAD
-    if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-    pthread_cleanup_pop(0);
-#endif
     return tmp;
   }
 
   string pari_ifactor(const gen & e){
-    abort_if_locked();
     string s;
-#ifdef HAVE_LIBPTHREAD
-    pthread_cleanup_push(pari_cleanup, (void *) pari_mutex_ptr);
-#endif
-    long av=get_pari_avma();
+    ensure_pari_is_ready now;
+    long av=avma;
     GEN g=gen2GEN(e,vecteur(0),0);
     GEN gf=factorint(g,0);
     s=GEN2string(gf);
     avma=av;
-#ifdef HAVE_LIBPTHREAD
-    if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-    pthread_cleanup_pop(0);
-#endif
     return s;
   }
 
   gen pari_gamma(const gen & e){
-    abort_if_locked();
     gen res;
-#ifdef HAVE_LIBPTHREAD
-    pthread_cleanup_push(pari_cleanup, (void *) pari_mutex_ptr);
-#endif
-    long av=get_pari_avma();
+    ensure_pari_is_ready now;
+    long av=avma;
     GEN g=gen2GEN(e,vecteur(0),0);
     GEN gf=ggamma(g,precision(g));
     res=GEN2gen(gf,vecteur(0));
     avma=av;
-#ifdef HAVE_LIBPTHREAD
-    if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-    pthread_cleanup_pop(0);
-#endif
     return res;
   }
 
   gen pari_zeta(const gen & e){
-    abort_if_locked();
     gen res;
-#ifdef HAVE_LIBPTHREAD
-    pthread_cleanup_push(pari_cleanup, (void *) pari_mutex_ptr);
-#endif
-    long av=get_pari_avma();
+    ensure_pari_is_ready now;
+    long av=avma;
     GEN g=gen2GEN(e,vecteur(0),0);
     GEN gf=gzeta(g,precision(g));
     res=GEN2gen(gf,vecteur(0));
     avma=av;
-#ifdef HAVE_LIBPTHREAD
-    if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-    pthread_cleanup_pop(0);
-#endif
     return res;
   }
 
   gen pari_psi(const gen & e){
-    abort_if_locked();
     gen res;
-#ifdef HAVE_LIBPTHREAD
-    pthread_cleanup_push(pari_cleanup, (void *) pari_mutex_ptr);
-#endif
-    long av=get_pari_avma();
+    ensure_pari_is_ready now;
+    long av=avma;
     GEN g=gen2GEN(e,vecteur(0),0);
     GEN gf=gpsi(g,precision(g));
     res=GEN2gen(gf,vecteur(0));
     avma=av;
-#ifdef HAVE_LIBPTHREAD
-    if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-    pthread_cleanup_pop(0);
-#endif
     return res;
   }
 
   gen pari_ffinit(const gen & p,int n){
     gen tmp;
-#ifdef HAVE_LIBPTHREAD
-    abort_if_locked();
-    pthread_cleanup_push(pari_cleanup, (void *) pari_mutex_ptr);
-#endif
-    long av=get_pari_avma();
+    ensure_pari_is_ready now;
+    long av=avma;
     tmp=GEN2gen(ffinit(gen2GEN(p,vecteur(0),0),n,0),vecteur(0));
     avma=av;
-#ifdef HAVE_LIBPTHREAD
-    if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-    pthread_cleanup_pop(0);
-#endif
     return tmp;
   }
 
@@ -715,59 +660,22 @@ namespace giac {
   // in pari/src/basemath/polarith2.c
   // GEN combine_factors(GEN a, GEN famod, GEN p, long klim, long hint);
   bool pari_lift_combine(const vecteur & a,const vector<vecteur> & factmod,gen & modulo,vector<vecteur> & res){
-#ifdef PARI23
-    long av=get_pari_avma();
-    GEN pari_a=gen2GEN(r2e(a,x__IDNT_e,context0),vecteur(0),0);
-    string s("[");
-    vector<vecteur>::const_iterator it=factmod.begin(),itend=factmod.end();
-    for (;it!=itend;){
-      s += r2e(*it,x__IDNT_e,context0).print();
-      ++it;
-      if (it==itend)
-	break;
-      s+=",";
-    }
-    s+="]";
-    // cerr << s << '\n';
-    GEN pari_factmod=gp_read_str((char *) s.c_str());
-    GEN pari_modulo=gen2GEN(modulo,vecteur(0),0);
-    GEN pari_res=combine_factors(pari_a,pari_factmod,pari_modulo,0,1);
-    // back conversion
-    string res_s=GENtostr(pari_res);
-    gen res_v(res_s.substr(0,res_s.size()-1),context0);
-    if (res_v.type!=_VECT)
-      setsizeerr();
-    const_iterateur jt=res_v._VECTptr->begin(),jtend=res_v._VECTptr->end();
-    for (;jt!=jtend;++jt){
-      res.push_back(*e2r(*jt,x__IDNT_e,context0)._VECTptr);
-    }
-    avma=av;
-    return true;
-#else
     return false;
-#endif
   }
 
   static gen pari_exec(const string & s,GIAC_CONTEXT){
-    long av=get_pari_avma();
+    ensure_pari_is_ready now;
+    long av=avma;
     void * save_pari_stack_limit = PARI_stack_limit;
     PARI_stack_limit=0; // required since the stack changed
-#ifdef PARI23
-    if (setjmp(GP_DATA->env))
-#else
     cb_pari_err_recover=gp_err_recover;
     if (setjmp(env))
-#endif
-      { 
-#ifdef HAVE_LIBPTHREAD
-	if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-#endif
+      {
 	avma = av;
 	*logptr(contextptr) << gettext("Error in PARI subsystem") << '\n';
 	PARI_stack_limit = save_pari_stack_limit ;
-	// setsizeerr();
 	return undef;
-      } 
+      }
     GEN gres= gp_read_str((char *) s.c_str());
     gen res=GEN2gen(gres,vecteur(0));
     avma=av;
@@ -822,39 +730,15 @@ namespace giac {
     lidnt(v,vars,false);
     vars.erase(vars.begin());
     bool parse_all=false;
-    long av=get_pari_avma();
-#ifdef PARI23
-    if (setjmp(GP_DATA->env)){ 
-      avma = av;
-      parse_all=true;
-      if (setjmp(GP_DATA->env)){ // if (setjmp(GP_DATA->env)){
-#ifdef HAVE_LIBPTHREAD
-	if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-#endif
-	avma = av;
-	*logptr(contextptr) << gettext("Error in PARI subsystem") << '\n';
-	// setsizeerr();
-	return undef;
-      } 
-    }
-#else
+    ensure_pari_is_ready now;
+    long av=avma;
     cb_pari_err_recover=gp_err_recover;
-    if (setjmp(env)){ 
+    if (setjmp(env)){
       avma = av;
       parse_all=true;
-      if (setjmp(env)){ // if (setjmp(GP_DATA->env)){
-#ifdef HAVE_LIBPTHREAD
-	if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-#endif
-	avma = av;
-	*logptr(contextptr) << gettext("Error in PARI subsystem") << '\n';
-	// setsizeerr();
-	return undef;
-      } 
     }
-#endif
 #ifdef EMCC
-    parse_all=true; 
+    parse_all=true;
     // otherwise fibonacci or lngamma do not work, probably because of the 'L'
     // conversion (long argument expected) or precision (same)
 #endif
@@ -877,7 +761,7 @@ namespace giac {
 	  else if (*s == 'l') { ret = RET_LONG; s++; }
 	  else                  ret = RET_GEN;
 	  void * call= i->second->value;
-	  // translate gen to GEN's 
+	  // translate gen to GEN's
 	  GEN argvec[9]={0,0,0,0,0,0,0,0,0},res; long m;
 	  int k=0;
 	  for (int j=1;k<9 && *s && *s!='\n';++s){
@@ -897,14 +781,10 @@ namespace giac {
 	      {
 		++s;
 		switch(*s){
-		case 'G': case '&': case 'I': case 'V': 
+		case 'G': case '&': case 'I': case 'V':
 		  if (j<vs)
 		    argvec[k]=ingen2GEN(v[j],vars,contextptr);
-#ifdef PARI23
-		  else
-		    argvec[k]=utoi(0);
-#endif
-		  ++j; ++k; 
+		  ++j; ++k;
 		  break;
 		case 'n':
 		  if (j<vs){
@@ -914,7 +794,7 @@ namespace giac {
 		  }
 		  else
 		    argvec[k]=0;
-		  ++j; ++k; 
+		  ++j; ++k;
 		  break;
 		default:
 		  if (j<vs)
@@ -929,8 +809,8 @@ namespace giac {
 		break;
 	      }
 	    case 'p':
-	      argvec[k]=(GEN) precreal; 
-	      ++k; 
+	      argvec[k]=(GEN) precreal;
+	      ++k;
 	      break;
 	    default:
 	      if (j==vs) {
@@ -941,27 +821,27 @@ namespace giac {
 	      argvec[k]=ingen2GEN(v[j],vars,contextptr);
 	      ++j; ++k;
 	      break;
-	    } 
+	    }
 	  }
 	  switch (ret)
 	    {
 	    case RET_GEN:
 	      res = ((PFGEN)call)(_ARGS_);
 	      break;
-	      
+
 	    case RET_INT:
 	      m = (long)((int (*)(ANYARG))call)(_ARGS_);
 	      res = stoi(m); break;
-	      
+
 	    case RET_LONG:
 	      m = ((long (*)(ANYARG))call)(_ARGS_);
 	      res = stoi(m); break;
-	      
+
 	    case RET_VOID:
 	      ((void (*)(ANYARG))call)(_ARGS_);
 	      res = gnil; break;
-	    }	  
-	  // cerr << GEN2string(res) << '\n';
+	    }
+
 	  gen resg(GEN2gen(res,vars));
 	  PARI_stack_limit = save_pari_stack_limit ;
 	  avma=av;
@@ -969,7 +849,8 @@ namespace giac {
 	} // end if (i!=pari_function_table.end())
       } // end if vstr!=""
       if (vstr=="" && vs==2){
-	long av=get_pari_avma();
+	ensure_pari_is_ready now;
+	long av=avma;
 	gen res= GEN2gen(gen2GEN(v[1],vars,contextptr),vars);
 	avma=av;
 	return res;
@@ -995,16 +876,8 @@ namespace giac {
   }
   gen _pari(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    abort_if_locked();
     gen res;
-#ifdef HAVE_LIBPTHREAD
-    pthread_cleanup_push(pari_cleanup, (void *) pari_mutex_ptr);
-#endif
     res=in_pari(args,contextptr);
-#ifdef HAVE_LIBPTHREAD
-    if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-    pthread_cleanup_pop(0);
-#endif
     return res;
   }
   static const char _pari_s []="pari";
@@ -1013,13 +886,6 @@ namespace giac {
 
   gen _pari_unlock(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    int locked=check_pari_mutex();
-    if (!locked)
-      return 0;
-#ifdef HAVE_LIBPTHREAD
-    delete pari_mutex_ptr;
-    pari_mutex_ptr = 0;
-#endif
     return 1;
   }
   static const char _pari_unlock_s []="pari_unlock";
@@ -1075,23 +941,15 @@ namespace giac {
   }
 
   bool pari_polroots(const vecteur & p,vecteur & res,long prec,GIAC_CONTEXT){
-    if (check_pari_mutex())
-      return false;
     gen tmp;
-#ifdef HAVE_LIBPTHREAD
-    pthread_cleanup_push(pari_cleanup, (void *) pari_mutex_ptr);
-#endif
-    long av=get_pari_avma();
+    ensure_pari_is_ready now;
+    long av=avma;
     GEN G=gen2GEN(change_subtype(p,_POLY1__VECT),vecteur(0),contextptr);
     if (debug_infolevel)
       CERR << "pari_polroots " << GEN2gen(G,vecteur(1,vx_var)) << '\n';
     G=roots(G,prec);
     tmp=GEN2gen(G,vecteur(0));
     avma=av;
-#ifdef HAVE_LIBPTHREAD
-    if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-    pthread_cleanup_pop(0);
-#endif
     if (tmp.type!=_VECT)
       return false;
     res=*tmp._VECTptr;
@@ -1099,72 +957,42 @@ namespace giac {
   }
 
   bool pari_polresultant(const gen & p,const gen & q,const vecteur & lv,gen & res,GIAC_CONTEXT){
-    if (check_pari_mutex())
-      return false;
     gen tmp;
-#ifdef HAVE_LIBPTHREAD
-    pthread_cleanup_push(pari_cleanup, (void *) pari_mutex_ptr);
-#endif
-    long av=get_pari_avma();
+    ensure_pari_is_ready now;
+    long av=avma;
     void * save_pari_stack_limit = PARI_stack_limit;
-    PARI_stack_limit=0; 
+    PARI_stack_limit=0;
     GEN P=gen2GEN(p,lv,contextptr);
     GEN Q=gen2GEN(q,lv,contextptr);
     GEN PQ=polresultant0(P,Q,-1,2);
     tmp=GEN2gen(PQ,lv);
     avma=av;
     PARI_stack_limit=save_pari_stack_limit;
-#ifdef HAVE_LIBPTHREAD
-    if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-    pthread_cleanup_pop(0);
-#endif
     res=tmp;
     return true;
   }
 
   bool pari_nffactor(const gen & p,const gen & pmin,const vecteur & lv,gen & res,GIAC_CONTEXT){
-    if (check_pari_mutex())
-      return false;
     gen tmp;
-#ifdef HAVE_LIBPTHREAD
-    pthread_cleanup_push(pari_cleanup, (void *) pari_mutex_ptr);
-#endif
-    long av=get_pari_avma();
+    ensure_pari_is_ready now;
+    long av=avma;
     void * save_pari_stack_limit = PARI_stack_limit;
-    PARI_stack_limit=0; 
+    PARI_stack_limit=0;
     GEN P=gen2GEN(p,lv,contextptr);
     GEN Pmin=gen2GEN(pmin,lv,contextptr);
     int prec=decimal_digits(contextptr);
     if (prec<30)
       prec=30;
-#if 0
-    GEN nf=nfinit0(Pmin,0,prec);
-    tmp=GEN2gen(nffactor(nf,P),lv);
-#else
     tmp=GEN2gen(nffactor(Pmin,P),lv);
-#endif
     avma=av;
     PARI_stack_limit=save_pari_stack_limit;
-#ifdef HAVE_LIBPTHREAD
-    if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-    pthread_cleanup_pop(0);
-#endif
     res=tmp;
     return true;
   }
 
   bool pari_galoisconj(const gen & g,vecteur & w,GIAC_CONTEXT){
-    if (check_pari_mutex())
-      return false;
     gen res;
-#ifdef HAVE_LIBPTHREAD
-    pthread_cleanup_push(pari_cleanup, (void *) pari_mutex_ptr);
-#endif
     res=in_pari(makesequence(string2gen("nfgaloisconj",false),g),contextptr);
-#ifdef HAVE_LIBPTHREAD
-    if (pari_mutex_ptr) pthread_mutex_unlock(pari_mutex_ptr);    
-    pthread_cleanup_pop(0);
-#endif
     if (res.type!=_VECT)
       return false;
     w=*res._VECTptr;
@@ -1179,7 +1007,7 @@ namespace giac {
     }
     return true;
   }
-  
+
 #ifndef NO_NAMESPACE_GIAC
 }
 #endif // ndef NO_NAMESPACE_GIAC
@@ -1200,7 +1028,7 @@ namespace giac {
   std::string pari_ifactor(const gen & e){
     return "please recompile giac with PARI";
   }
-  
+
   gen pari_ffinit(const gen & p,int n){
     return string2gen("please recompile giac with PARI",false);
   }
@@ -1214,7 +1042,7 @@ namespace giac {
   gen pari_psi(const gen & e){
     return pari_error();
   }
-  
+
   bool pari_lift_combine(const vecteur& a, const std::vector<vecteur>& factmod,
 			 gen& modulo, std::vector<vecteur>& res){
     vecteur tmp(1,pari_error());
@@ -1225,12 +1053,12 @@ namespace giac {
   bool pari_galoisconj(const gen & g,vecteur & w,GIAC_CONTEXT){
     return false;
   }
-  
+
   gen _pari(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     return pari_error();
   }
-  
+
   std::string pari_help(const gen & g){
     return "please recompile giac with PARI";
   }

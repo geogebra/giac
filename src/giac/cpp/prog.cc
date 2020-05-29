@@ -826,6 +826,7 @@ namespace giac {
     return res;
   }
 
+  static string printasbloc(const gen & feuille,const char * sommetstr,GIAC_CONTEXT);
   static string printasprogram(const gen & feuille,const char * sommetstr,GIAC_CONTEXT){
     if ( (feuille.type!=_VECT) || (feuille._VECTptr->size()!=3) )
       return string(sommetstr)+('('+feuille.print(contextptr)+')');
@@ -934,7 +935,7 @@ namespace giac {
 	if (fb0.type==_VECT && fb0._VECTptr->empty())
 	  return res+'{'+fb.print(contextptr)+'}';
       }
-      return res+fb.print(contextptr);
+      return res+(fb.type==_VECT?printasbloc(fb,sommetstr,contextptr):fb.print(contextptr));
     }
     if (xcas_mode(contextptr)>0){
       if (xcas_mode(contextptr)==3)

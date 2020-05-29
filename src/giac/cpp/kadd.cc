@@ -165,6 +165,9 @@ int mastermind(GIAC_CONTEXT){
 int fractale(GIAC_CONTEXT){
   freeze=true;
   int X=320,Y=222,Nmax=10;
+  double d=10;
+  if (inputdouble(lang?"Number of iterations? (default 10)":"Nombre d'iterations? (defaut 10)",d,contextptr) && d>=1 && d<=20)
+    Nmax=d;
   double w=2.7/X;
   double h=-1.87/Y;
   for (int y=0;y<=Y/2;++y){
@@ -182,6 +185,7 @@ int fractale(GIAC_CONTEXT){
       os_set_pixel(x,(Y-y),color);
       c = c+w;
     }
+    sync_screen();
   }
   statuslinemsg("Ecran fige. Taper EXIT");
   getkey(true);

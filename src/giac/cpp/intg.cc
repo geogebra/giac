@@ -2548,6 +2548,14 @@ namespace giac {
 	return res;
     }
     // Step1: detection of some unary_op[linear fcn]
+    if (e.is_symb_of_sommet(at_inv) && e._SYMBptr->feuille.is_symb_of_sommet(at_pow)){
+      gen f=e._SYMBptr->feuille._SYMBptr->feuille;
+      if (f.type==_VECT && f._VECTptr->size()==2){
+	gen b=f._VECTptr->back();
+	if (!is_integer(b) && b.type!=_FRAC)
+	  e=symbolic(at_pow,makevecteur(f._VECTptr->front(),-b));
+      }
+    }
     unary_function_ptr u=e._SYMBptr->sommet;
     gen f=e._SYMBptr->feuille,a,b;
     // particular case for ^, _FUNCnd arg must be constant
