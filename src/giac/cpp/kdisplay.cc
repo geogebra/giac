@@ -1482,7 +1482,11 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       }
       elem[2].s = ex;
       if (example2){
+#ifdef NSPIRE_NEWLIB
+	string ex2="enter: ";
+#else
 	string ex2="EXE: ";
+#endif
 	if (example2[0]=='#')
 	  ex2 += example2+1;
 	else {
@@ -1677,7 +1681,11 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	    }
 	    elem[2].s = ex;
 	    if (example2){
+#ifdef NSPIRE_NEWLIB
+	      string ex2="enter: ";
+#else
 	      string ex2="EXE: ";
+#endif
 	      if (example2[0]=='#')
 		ex2 += example2+1;
 	      else {
@@ -1740,7 +1748,11 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	      ex += ")";
 	    }
 	    if (example2){
+#ifdef NSPIRE_NEWLIB
+	      ex2="enter: ";
+#else
 	      ex2="EXE: ";
+#endif	      
 	      if (example2[0]=='#')
 		ex2 += example2+1;
 	      else {
@@ -5413,7 +5425,11 @@ namespace xcas {
       }
     }
     // UI
+#ifdef NSPIRE_NEWLIB
+    DefineStatusMessage((char*)"+-: zoom, pad: move, esc: quit", 1, 0, 0);
+#else
     DefineStatusMessage((char*)"+-: zoom, pad: move, EXIT: quit", 1, 0, 0);
+#endif
     // EnableStatusArea(2);
     for (;;){
       gr.draw();
@@ -5540,7 +5556,11 @@ namespace xcas {
 #else
     xcas::Turtle t={&turtle_stack(),0,0,1,1};
 #endif
+#ifdef NSPIRE_NEWLIB
+    DefineStatusMessage((char*)"+-: zoom, pad: move, esc: quit", 1, 0, 0);
+#else
     DefineStatusMessage((char*)"+-: zoom, pad: move, EXIT: quit", 1, 0, 0);
+#endif
     DisplayStatusArea();
     while (1){
       int save_ymin=clip_ymin;
@@ -5632,7 +5652,11 @@ namespace xcas {
     for (;;){
 #if 1
       if (firstrun==2){
+#ifdef NSPIRE_NEWLIB
+	DefineStatusMessage((char*)(lang?"enter: quitte, resultat dans last":"enter: quit, result stored in last"), 1, 0, 0);
+#else
 	DefineStatusMessage((char*)(lang?"EXE: quitte, resultat dans last":"EXE: quit, result stored in last"), 1, 0, 0);
+#endif
 	DisplayStatusArea();
 	firstrun=1;
       }
@@ -6463,7 +6487,7 @@ namespace xcas {
       gen tmp=eqw(ge,false,contextptr);
       if (!is_undef(tmp) && tmp!=ge){
 	//dConsolePutChar(147);
-	*giac::logptr(contextptr) << ge << '\n';
+	*giac::logptr(contextptr) << ge.print(contextptr) << '\n';
 	ge=tmp;
       }
     }
@@ -6745,7 +6769,11 @@ namespace xcas {
   }
 
   void search_msg(){
-    DefineStatusMessage((char *)(lang?"EXE: suivant, DEL: annuler":"EXE: next, DEL: cancel"),1,0,0);
+#ifdef NSPIRE_NEWLIB
+    DefineStatusMessage((char *)(lang?"enter: suivant, DEL: annuler":"enter: next, DEL: cancel"),1,0,0);
+#else
+    DefineStatusMessage((char *)(lang?"enter: suivant, DEL: annuler":"enter: next, DEL: cancel"),1,0,0);
+#endif
     DisplayStatusArea();    	    
   }  
 
@@ -6775,7 +6803,11 @@ namespace xcas {
 	status += giac::printint(text->elements.size());
       }
       if (search.size()){
+#ifdef NSPIRE_NEWLIB
+	status += "enter: " + search;
+#else
 	status += "EXE: " + search;
+#endif
 	if (replace.size())
 	  status += "->"+replace;
       }
@@ -6785,8 +6817,13 @@ namespace xcas {
   }
 
   bool chk_replace(textArea * text,const std::string & search,const std::string & replace){
-    if (replace.size())
+    if (replace.size()){
+#ifdef NSPIRE_NEWLIB      
+      DefineStatusMessage((char *)(lang?"Remplacer? enter: Oui, 8 ou N: Non":"Replace? enter: Yes, 8 or N: No"),1,0,0);
+#else
       DefineStatusMessage((char *)(lang?"Remplacer? EXE: Oui, 8 ou N: Non":"Replace? EXE: Yes, 8 or N: No"),1,0,0);
+#endif
+    }
     else
       search_msg();
     DisplayStatusArea();
@@ -7591,7 +7628,11 @@ namespace xcas {
   int get_filename(char * filename,const char * extension){
     handle_f5();
     string str;
+#ifdef NSPIRE_NEWLIB
+    int res=inputline(lang?"esc ou chaine vide: annulation":"esc or empty string: cancel",lang?"Nom de fichier:":"Filename:",str,false);
+#else
     int res=inputline(lang?"EXIT ou chaine vide: annulation":"EXIT or empty string: cancel",lang?"Nom de fichier:":"Filename:",str,false);
+#endif
     if (res==KEY_CTRL_EXIT || str.empty())
       return 0;
     strcpy(filename,str.c_str());
@@ -7698,11 +7739,19 @@ namespace xcas {
     replace="";
     std::string search;
     handle_f5();
+#ifdef NSPIRE_NEWLIB
+    int res=inputline(lang?"esc ou chaine vide: annulation":"esc or empty string: cancel",lang?"Chercher:":"Search:",search,false);
+    if (search.empty() || res==KEY_CTRL_EXIT)
+      return "";
+    replace="";
+    std::string tmp=(lang?"esc: recherche seule de ":"esc: search only ")+search;
+#else
     int res=inputline(lang?"EXIT ou chaine vide: annulation":"EXIT or empty string: cancel",lang?"Chercher:":"Search:",search,false);
     if (search.empty() || res==KEY_CTRL_EXIT)
       return "";
     replace="";
     std::string tmp=(lang?"EXIT: recherche seule de ":"EXIT: search only ")+search;
+#endif
     handle_f5();
     res=inputline(tmp.c_str(),lang?"Remplacer par:":"Replace by:",replace,false);
     if (res==KEY_CTRL_EXIT)
@@ -7809,7 +7858,7 @@ namespace xcas {
 	       (key >= KEY_CTRL_F6 && key <= KEY_CTRL_F14)
 	       ){
 	    string le_menu=text->python?"F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\n&\nprint(\ninput(\n":"F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nlocal\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\n";
-	    le_menu += "F6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nefface\nF3 draw\nset_pixel(\ndraw_line\ndraw_rectangle\nfill_rect\ndraw_polygon\ndraw_circle\ndraw_arc\ndisplay=filled\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF8 list\nmakelist(\nrange(\nseq(\nsize(\nappend(\nranv(\nsort(\napply(\nF: plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\nF= cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF> misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(";
+	    le_menu += "F6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF3 draw\nset_pixel(\ndraw_line\ndraw_rectangle\nfill_rect\ndraw_polygon\ndraw_circle\ndraw_arc\ndisplay=filled\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF8 list\nmakelist(\nrange(\nseq(\nsize(\nappend(\nranv(\nsort(\napply(\nF: plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\nF= cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF> misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(";
 	    const char * ptr=console_menu(key,(char*)(le_menu.c_str()),2);
 	    if (!ptr){
 	      show_status(text,search,replace);
@@ -8237,6 +8286,28 @@ namespace xcas {
 #define Current_Line (Start_Line + Cursor.y)
 #define Current_Col (Line[Cursor.y + Start_Line].start_col + Cursor.x)
 
+  void console_disp_status(GIAC_CONTEXT){
+    int i=python_compat(contextptr);
+    string msg;
+    if (i==0)
+      msg="Xcas";
+    else {
+      if (i==1)
+	msg="Py ^=**";
+      else
+	msg="Py ^=xor";
+    }
+    if (angle_radian(contextptr))
+      msg += " RAD ";
+    else
+      msg += " DEG ";
+    msg += session_filename;
+    if (console_changed)
+      msg += " *";
+    statuslinemsg(msg.c_str());
+    set_xcas_status();
+    Bdisp_PutDisp_DD();
+  }    
 
   void menu_setup(GIAC_CONTEXT){
     Menu smallmenu;
@@ -8340,7 +8411,11 @@ namespace xcas {
     do_run(s,g,ge,contextptr);
     if (giac::freeze){
       giac::freeze=false;
+#ifdef NSPIRE_NEWLIB
+      DefineStatusMessage((char*)(lang?"Ecran fige. Taper esc":"Screen freezed. Press esc."), 1, 0, 0);
+#else
       DefineStatusMessage((char*)(lang?"Ecran fige. Taper EXIT":"Screen freezed. Press EXIT."), 1, 0, 0);
+#endif
       DisplayStatusArea();
       for (;;){
 	int key;
@@ -9201,13 +9276,13 @@ namespace xcas {
 
   void chk_clearscreen(){
     drawRectangle(0, 24, LCD_WIDTH_PX, LCD_HEIGHT_PX-24, COLOR_WHITE);
-    if (confirm(lang?"Conserver l'historique?":"Keep history?",
+    if (confirm(lang?"Effacer l'historique?":"Clear history?",
 #ifdef NSPIRE_NEWLIB
-		lang?"enter: oui, esc: effacer":"enter: yes, esc: erase",
+		lang?"enter: oui, esc: conserver":"enter: yes, esc: keep",
 #else
-		lang?"OK: oui, Back: effacer":"OK: yes, Back: erase",
+		lang?"OK: oui, Back: conserver":"OK: yes, Back: keep",
 #endif
-		false)==KEY_CTRL_F6){
+		false)==KEY_CTRL_F1){
       Console_Init();
       Console_Clear_EditLine();
     }    
@@ -9442,6 +9517,35 @@ namespace xcas {
       do_restart(contextptr);
   }
 
+  void load(GIAC_CONTEXT){
+    char filename[MAX_FILENAME_SIZE+1];
+    if (giac_filebrowser(filename, "xw", "Sessions")){
+      if (console_changed==0 ||
+	  strcmp(session_filename,"session")==0 ||
+	  confirm(lang?"Session courante perdue?":"Current session will be lost",
+#ifdef NSPIRE_NEWLIB
+		  lang?"enter: annul, esc: ok":"enter: cancel, esc: ok"
+#else
+		  lang?"OK: annul, Back: ok":"OK: cancel, Back: ok"
+#endif
+		  )==KEY_CTRL_F6){
+	giac::_restart(giac::gen(giac::vecteur(0),giac::_SEQ__VECT),contextptr);
+	restore_session(filename,contextptr);
+	clip_pasted=true;
+	strcpy(session_filename,remove_path(giac::remove_extension(filename)).c_str());
+#ifdef NSPIRE_NEWLIB
+	static bool ctrl_r=true;
+	if (ctrl_r){
+	  confirm(lang?"Taper ctrl puis r pour executer session ":"Type ctrl then r to run session","Enter: OK");
+	  ctrl_r=false;
+	}
+#endif
+	Console_Disp(0,contextptr);
+	// reload_edptr(session_filename,edptr);
+      }     
+    }
+  }    
+  
   int Console_GetKey(GIAC_CONTEXT){
     int key;
     unsigned int i, move_line, move_col;
@@ -9497,7 +9601,7 @@ namespace xcas {
 	tmp_str[0] = key;
 	tmp_str[1] = '\0';
 	Console_Input(tmp_str);
-	Console_Disp(0,contextptr);
+	Console_Disp(1,contextptr);
 	continue;
       }
       if (key == KEY_CTRL_F5 || key==KEY_CTRL_F4 || ( (key==KEY_CTRL_RIGHT || key==KEY_CTRL_LEFT) && Current_Line<Last_Line) ){
@@ -9541,6 +9645,12 @@ namespace xcas {
       }
       if (key==KEY_SAVE){
 	save(session_filename,contextptr);
+	console_changed=false;
+	console_disp_status(contextptr);
+	continue;
+      }
+      if (key==KEY_LOAD){
+	load(contextptr);
 	continue;
       }
       if (key==KEY_CTRL_MENU){
@@ -9608,31 +9718,7 @@ namespace xcas {
 	      break;
 	    }
 	    if (smallmenu.selection==4){
-	      char filename[MAX_FILENAME_SIZE+1];
-	      if (giac_filebrowser(filename, "xw", "Sessions")){
-		if (console_changed==0 ||
-		    strcmp(session_filename,"session")==0 ||
-		    confirm(lang?"Session courante perdue?":"Current session will be lost",
-#ifdef NSPIRE_NEWLIB
-			    lang?"enter: annul, esc: ok":"enter: cancel, esc: ok"
-#else
-			    lang?"OK: annul, Back: ok":"OK: cancel, Back: ok"
-#endif
-			    )==KEY_CTRL_F6){
-		  giac::_restart(giac::gen(giac::vecteur(0),giac::_SEQ__VECT),contextptr);
-		  restore_session(filename,contextptr);
-		  clip_pasted=true;
-		  strcpy(session_filename,remove_path(giac::remove_extension(filename)).c_str());
-#ifdef NSPIRE_NEWLIB
-		  static bool ctrl_r=true;
-		  if (ctrl_r){
-		    confirm(lang?"Taper ctrl puis r pour executer session ":"Type ctrl then r to run session","Enter: OK");
-		    ctrl_r=false;
-		  }
-#endif
-		  // reload_edptr(session_filename,edptr);
-		}     
-	      }
+	      load(contextptr);
 	      break;
 	    }
 	    if (0 && smallmenu.selection==5) {
@@ -9905,7 +9991,11 @@ namespace xcas {
 	Console_Disp(1,contextptr);
 	continue;
       }
-
+      if (key==KEY_AFFECT){
+	Console_Input((const char*)":=");
+	Console_Disp(1,contextptr);
+	continue;
+      }	
       if (key == KEY_CTRL_SETUP) {
 	menu_setup(contextptr);
 	Console_Disp(1,contextptr);
@@ -10459,26 +10549,7 @@ namespace xcas {
     }
   
     // status, clock,
-    i=python_compat(contextptr);
-    string msg;
-    if (i==0)
-      msg="Xcas";
-    else {
-      if (i==1)
-	msg="Py ^=**";
-      else
-	msg="Py ^=xor";
-    }
-    if (angle_radian(contextptr))
-      msg += " RAD ";
-    else
-      msg += " DEG ";
-    msg += session_filename;
-    if (console_changed)
-      msg += " *";
-    statuslinemsg(msg.c_str());
-    set_xcas_status();
-    Bdisp_PutDisp_DD();
+    console_disp_status(contextptr);
     return CONSOLE_SUCCEEDED;
   }
 

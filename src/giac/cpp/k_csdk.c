@@ -1,5 +1,5 @@
 // implementation of the minimal C SDK for KhiCAS
-//#define FIREBIRDEMU 1 // for the Nspire emulator
+#define FIREBIRDEMU 1 // for the Nspire emulator
 
 int rgb888to565(int c){
   int r=(c>>16)&0xff,g=(c>>8)&0xff,b=c&0xff;
@@ -251,6 +251,16 @@ void display_time(){
   nspire_draw_string(270,0,0xffff,0x0,Regular9,msg,false);
 }
 
+void sync_screen(){
+  get_gc();
+  //gui_gc_finish(nspire_gc);
+  gui_gc_blit_to_screen(nspire_gc);
+  msleep(10);
+  //nspire_gc=0;
+  // gui_gc_begin(nspire_gc);
+}
+
+
 bool nspire_shift=false;
 bool nspire_ctrl=false;
 void statusline(int mode){
@@ -272,17 +282,8 @@ void statusline(int mode){
   nspire_draw_string(220,0,0xffff,0x0,Regular9,msg,false);
   display_time();
   if (mode==0)
-    return;  
-}
-
-
-void sync_screen(){
-  get_gc();
-  //gui_gc_finish(nspire_gc);
-  gui_gc_blit_to_screen(nspire_gc);
-  msleep(10);
-  //nspire_gc=0;
-  // gui_gc_begin(nspire_gc);
+    return;
+  sync_screen();
 }
 
 
@@ -368,9 +369,10 @@ int ascii_get(int* adaptive_cursor_state){
 #endif
   
   // Symbols
-  if (isKeyPressed(KEY_NSPIRE_SQU)) return SHIFT(KEY_CHAR_SQUARE,KEY_CHAR_ROOT);
+  if (isKeyPressed(KEY_NSPIRE_FRAC)) return SHIFTCTRL(KEY_EQW_TEMPLATE,KEY_AFFECT,KEY_AFFECT);
+  if (isKeyPressed(KEY_NSPIRE_SQU)) return CTRL(KEY_CHAR_SQUARE,KEY_CHAR_ROOT);
   if (isKeyPressed(KEY_NSPIRE_TENX)) return CTRL(KEY_CHAR_EXPN10,KEY_CHAR_LOG);
-  if (isKeyPressed(KEY_NSPIRE_eEXP)) return CTRL(KEY_CHAR_EXP,KEY_CHAR_LN);
+  if (isKeyPressed(KEY_NSPIRE_eEXP)) return CTRL(KEY_CHAR_EXPN,KEY_CHAR_LN);
   if (isKeyPressed(KEY_NSPIRE_COMMA))		return SHIFTCTRL(',',';',':');
   if (isKeyPressed(KEY_NSPIRE_PERIOD)) 	return SHIFTCTRL('.',':',KEY_CTRL_F11);
   if (isKeyPressed(KEY_NSPIRE_COLON))		return NORMAL(':');
@@ -388,17 +390,18 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_GTHAN))		return NORMAL('>');
   if (isKeyPressed(KEY_NSPIRE_QUOTE))		return NORMAL('\"');
   if (isKeyPressed(KEY_NSPIRE_APOSTROPHE))	return NORMAL('\'');
-  if (isKeyPressed(KEY_NSPIRE_QUES))		return SHIFT('?','!');
-  if (isKeyPressed(KEY_NSPIRE_QUESEXCL))	return SHIFT('?','!');
+  if (isKeyPressed(KEY_NSPIRE_QUES))		return SHIFTCTRL('?','|','!');
+  if (isKeyPressed(KEY_NSPIRE_QUESEXCL))	return SHIFTCTRL('?','|','!');
   if (isKeyPressed(KEY_NSPIRE_BAR))		return NORMAL('|');
   if (isKeyPressed(KEY_NSPIRE_EXP))		return SHIFT('^',KEY_CHAR_RECIP);
   if (isKeyPressed(KEY_NSPIRE_EE))		return SHIFTCTRL('&','%', '@');
   if (isKeyPressed(KEY_NSPIRE_PI)) return KEY_CHAR_PI;
-  if (isKeyPressed(KEY_NSPIRE_ENTER))		return SHIFT('\n','~');
+  if (isKeyPressed(KEY_NSPIRE_FLAG)) return SHIFTCTRL(';',':',KEY_CHAR_IMGNRY);
+  if (isKeyPressed(KEY_NSPIRE_ENTER))		return SHIFTCTRL('\n','~',KEY_CTRL_OK);
   if (isKeyPressed(KEY_NSPIRE_TRIG))		return SHIFTCTRL(KEY_CHAR_SIN,KEY_CHAR_COS,KEY_CHAR_TAN);
   
   // Special chars
-  if (isKeyPressed(KEY_NSPIRE_SCRATCHPAD)) return KEY_PRGM_ACON;
+  if (isKeyPressed(KEY_NSPIRE_SCRATCHPAD)) return SHIFTCTRL(KEY_CTRL_AC,KEY_LOAD,KEY_SAVE);
   if (isKeyPressed(KEY_NSPIRE_VAR)) return CTRL(KEY_CTRL_VARS,KEY_CHAR_STORE);
   if (isKeyPressed(KEY_NSPIRE_DOC))		return KEY_CTRL_CATALOG;
   if (isKeyPressed(KEY_NSPIRE_CAT))		return KEY_CTRL_CATALOG;
@@ -435,19 +438,28 @@ int getkey(bool allow_suspend){
       wait_no_key_pressed();
       continue;
     }
-    int delay=(lastkey==i)?1:70,j;
-    for (j=0;j<delay && any_key_pressed();++j){
-#ifdef FIREBIRDEMU
-      msleep(14);
-#else // real calculator
-      msleep(1);
-#endif
+    if (i==KEY_FLAG){
     }
-    if (j<delay)
+    if ( (i>=KEY_CTRL_LEFT && i<=KEY_CTRL_RIGHT) ||
+	 (i>=KEY_UP_CTRL && i<=KEY_RIGHT_CTRL) ||
+	 i==KEY_CTRL_DEL){
+      int delay=(lastkey==i)?1:40,j;
+      for (j=0;j<delay && any_key_pressed();++j){
+#ifdef FIREBIRDEMU
+	msleep(14);
+#else // real calculator
+	msleep(1);
+#endif
+      }
+      if (any_key_pressed())
+	lastkey=i;
+      else 
+	lastkey=-1;
+    }
+    else {
+      wait_no_key_pressed();
       lastkey=-1;
-    else ;
-      lastkey=i;    
-    // wait_no_key_pressed();
+    }
     if (nspire_ctrl || nspire_shift){
       nspire_ctrl=nspire_shift=false;
       statusline(0);

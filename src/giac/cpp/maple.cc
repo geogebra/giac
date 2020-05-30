@@ -393,8 +393,8 @@ namespace giac {
 	if (m<0)
 	  m+=60;
 #ifdef NSPIRE_NEWLIB
-	unsigned NSPIRE_RTC_ADDR=0x90090000;
-	* (volatile unsigned *) NSPIRE_RTC_ADDR = (h*60+m)*60;
+	unsigned NSPIRE_RTC_WADDR=0x90090008;
+	* (volatile unsigned *) NSPIRE_RTC_WADDR = (h*60+m)*60;
 #else
 	time_shift=h*60+m;
 #endif
