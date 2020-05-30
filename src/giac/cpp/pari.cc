@@ -886,6 +886,15 @@ namespace giac {
 
   gen _pari_unlock(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
+#if 0 // old code was
+    int locked=check_pari_mutex();
+    if (!locked)
+      return 0;
+#ifdef HAVE_LIBPTHREAD
+    delete pari_mutex_ptr;
+    pari_mutex_ptr = 0;
+#endif
+#endif
     return 1;
   }
   static const char _pari_unlock_s []="pari_unlock";
@@ -1045,9 +1054,39 @@ namespace giac {
 
   bool pari_lift_combine(const vecteur& a, const std::vector<vecteur>& factmod,
 			 gen& modulo, std::vector<vecteur>& res){
+#ifdef PARI23
+    long av=get_pari_avma();
+    GEN pari_a=gen2GEN(r2e(a,x__IDNT_e,context0),vecteur(0),0);
+    string s("[");
+    vector<vecteur>::const_iterator it=factmod.begin(),itend=factmod.end();
+    for (;it!=itend;){
+      s += r2e(*it,x__IDNT_e,context0).print();
+      ++it;
+      if (it==itend)
+	break;
+      s+=",";
+    }
+    s+="]";
+    // cerr << s << '\n';
+    GEN pari_factmod=gp_read_str((char *) s.c_str());
+    GEN pari_modulo=gen2GEN(modulo,vecteur(0),0);
+    GEN pari_res=combine_factors(pari_a,pari_factmod,pari_modulo,0,1);
+    // back conversion
+    string res_s=GENtostr(pari_res);
+    gen res_v(res_s.substr(0,res_s.size()-1),context0);
+    if (res_v.type!=_VECT)
+      setsizeerr();
+    const_iterateur jt=res_v._VECTptr->begin(),jtend=res_v._VECTptr->end();
+    for (;jt!=jtend;++jt){
+      res.push_back(*e2r(*jt,x__IDNT_e,context0)._VECTptr);
+    }
+    avma=av;
+    return true;
+#else
     vecteur tmp(1,pari_error());
     res=std::vector<vecteur>(1,tmp);
     return false;
+#endif
   }
 
   bool pari_galoisconj(const gen & g,vecteur & w,GIAC_CONTEXT){

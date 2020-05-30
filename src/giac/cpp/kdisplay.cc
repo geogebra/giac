@@ -20,6 +20,8 @@
 #ifdef NSPIRE_NEWLIB
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <os.h>
+#include <syscall.h>
 #endif
 #ifdef KHICAS
 #include "kdisplay.h"
@@ -145,7 +147,11 @@ namespace giac {
   }
   
   bool do_confirm(const char * s){
+#ifdef NSPIRE_NEWLIB
+    return confirm(s,(lang?"enter: oui,  esc:annuler":"enter: yes,   esc: cancel"))==KEY_CTRL_F1;
+#else
     return confirm(s,(lang?"OK: oui,  Back:annuler":"OK: yes,   Back: cancel"))==KEY_CTRL_F1;
+#endif
   }
   
   int confirm(const char * msg1,const char * msg2,bool acexit,int y){
@@ -165,11 +171,21 @@ namespace giac {
   }  
   
   bool confirm_overwrite(){
+#ifdef NSPIRE_NEWLIB
+    return do_confirm(lang?"enter: oui,  esc:annuler":"enter: yes,   esc: cancel")==KEY_CTRL_F1;
+#else
     return do_confirm(lang?"OK: oui,  Back:annuler":"OK: yes,   Back: cancel")==KEY_CTRL_F1;
+#endif
   }
   
   void invalid_varname(){
-    confirm(lang?"Nom de variable incorrect":"Invalid variable name", lang?"OK: ok":"OK: ok");
+    confirm(lang?"Nom de variable incorrect":"Invalid variable name",
+#ifdef NSPIRE_NEWLIB
+	    lang?"enter: ok":"enter: ok"
+#else
+	    lang?"OK: ok":"OK: ok"
+#endif
+	    );
   }
 
 
@@ -1582,7 +1598,11 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       menu.height = 11;
       while(1) {
 	drawRectangle(0,200,LCD_WIDTH_PX,22,giac::_WHITE);
+#ifdef NSPIRE_NEWLIB
+	PrintMini(0,200,(category==CAT_CATEGORY_ALL?"doc: help | Ans: ex1 | enter: ex2":"doc: help | ans: ex1 | enter ex2"),4,33333,giac::_WHITE);
+#else
 	PrintMini(0,200,(category==CAT_CATEGORY_ALL?"Toolbox help | Ans ex1 | EXE  ex2":"Toolbox help | Ans ex1 | EXE ex2"),4,33333,giac::_WHITE);
+#endif
 	int sres = doMenu(&menu);
 	if (sres==KEY_CTRL_F4 && category!=CAT_CATEGORY_ALL){
 	  break;
@@ -5682,7 +5702,13 @@ namespace xcas {
 	  os_hide_graph();
 	  return geq;
 	}
-	if (confirm(lang?"Vraiment abandonner?":"Really leave",lang?"Back: editeur,  OK: confirmer":"Back: editor,  OK: confirm")==KEY_CTRL_F1){
+	if (confirm(
+#ifdef NSPIRE_NEWLIB
+		    lang?"Vraiment abandonner?":"Really leave",lang?"esc: editeur,  enter: confirmer":"esc: editor,  enter: confirm"
+#else
+		    lang?"Vraiment abandonner?":"Really leave",lang?"Back: editeur,  OK: confirmer":"Back: editor,  OK: confirm"
+#endif
+		    )==KEY_CTRL_F1){
 	  os_hide_graph();
 	  return geq;
 	}
@@ -6273,7 +6299,13 @@ namespace xcas {
       if (!kbd_interrupted){
 	// clear turtle, display msg
 	clear_turtle_history(contextptr);
-	int res=confirm(lang?"Memoire remplie! Purger":"Memory full. Purge",lang?"EXE variable, Back: tout.":"EXE variables, Back: all",false);
+	int res=confirm(lang?"Memoire remplie! Purger":"Memory full. Purge",
+#ifdef NSPIRE_NEWLIB
+			lang?"enter: variable, esc: tout.":"enter: variables, esc: all",
+#else
+			lang?"EXE variable, Back: tout.":"EXE variables, Back: all",
+#endif
+			false);
 	if (res==KEY_CTRL_F1 && select_var(contextptr).type==_IDNT){
 	  size_t savestackptr = stackptr;
 #ifdef x86_64
@@ -6376,14 +6408,38 @@ namespace xcas {
 
   void warn_python(int mode,bool autochange){
     if (mode==0)
-      confirm(autochange?(lang?"Source en syntaxe Xcas detecte.":"Xcas syntax source code detected."):(lang?"Syntaxe Xcas.":"Xcas syntax."),"OK: ok");
+      confirm(autochange?(lang?"Source en syntaxe Xcas detecte.":"Xcas syntax source code detected."):(lang?"Syntaxe Xcas.":"Xcas syntax."),
+#ifdef NSPIRE_NEWLIB
+	      "enter: ok"
+#else
+	      "OK: ok"
+#endif
+	      );
     if (mode==1)
       if (autochange)
-	confirm(lang?"Source en syntaxe Python. Passage":"Python syntax source detected. Setting",lang?"en Python avec ^=**, OK: ok":"Python mode with ^=**, OK:ok");
+	confirm(lang?"Source en syntaxe Python. Passage":"Python syntax source detected. Setting",
+#ifdef NSPIRE_NEWLIB
+		lang?"en Python avec ^=**, enter: ok":"Python mode with ^=**, enter:ok"
+#else
+		lang?"en Python avec ^=**, OK: ok":"Python mode with ^=**, OK:ok"
+#endif
+		);
       else
-	confirm(lang?"Syntaxe Python avec ^==**, tapez":"Python syntax with ^==**, type",lang?"python_compat(2) pour xor. OK: ok":"python_compat(2) for xor. OK: ok");
+	confirm(lang?"Syntaxe Python avec ^==**, tapez":"Python syntax with ^==**, type",
+#ifdef NSPIRE_NEWLIB
+		lang?"python_compat(2) pour xor. enter: ok":"python_compat(2) for xor. enter: ok"
+#else
+		lang?"python_compat(2) pour xor. OK: ok":"python_compat(2) for xor. OK: ok"
+#endif
+		);
     if (mode==2){
-      confirm(lang?"Syntaxe Python avec ^==xor":"Python syntax with ^==xor",lang?"python_compat(1) pour **. OK: ok":"python_compat(1) for **. OK: ok");
+      confirm(lang?"Syntaxe Python avec ^==xor":"Python syntax with ^==xor",
+#ifdef NSPIRE_NEWLIB
+	      lang?"python_compat(1) pour **. enter: ok":"python_compat(1) for **. enter: ok"
+#else
+	      lang?"python_compat(1) pour **. OK: ok":"python_compat(1) for **. OK: ok"
+#endif	      
+	      );
     }
   }
 
@@ -6763,14 +6819,26 @@ namespace xcas {
 	// save or cancel?
 	std::string tmp=text->filename;
 	if (strcmp(tmp.c_str(),"temp.py")==0){
-	  if (confirm(lang?"Les modifications seront perdues":"Changes will be lost",lang?"OK: annuler, Back: tant pis":"OK: cancel, Back: confirm")==KEY_CTRL_F1)
+	  if (confirm(lang?"Les modifications seront perdues":"Changes will be lost",
+#ifdef NSPIRE_NEWLIB
+		      lang?"enter: annuler, esc: tant pis":"enter: cancel, esc: confirm"
+#else
+		      lang?"OK: annuler, Back: tant pis":"OK: cancel, Back: confirm"
+#endif
+		      )==KEY_CTRL_F1)
 	    return 2;
 	  else {
 	    return 0;
 	  }
 	}
 	tmp += lang?" a ete modifie!":" was modified!";
-	if (confirm(tmp.c_str(),lang?"OK: sauvegarder, Back: tant pis":"OK: save, Back: discard changes")==KEY_CTRL_F1){
+	if (confirm(tmp.c_str(),
+#ifdef NSPIRE_NEWLIB
+		    lang?"enter: sauvegarder, esc: tant pis":"enter: save, esc: discard changes"
+#else
+		    lang?"OK: sauvegarder, Back: tant pis":"OK: save, Back: discard changes"
+#endif
+		    )==KEY_CTRL_F1){
 	  save_script(text->filename.c_str(),merge_area(text->elements));
 	  text->changed=false;
 	  return 1;
@@ -7533,7 +7601,13 @@ namespace xcas {
     // if file already exists, warn, otherwise create
     if (!file_exists(filename))
       return 1;
-    if (confirm(lang?"  Le fichier existe!":"  File exists!",lang?"OK: ecraser,Back: annuler":"OK:overwrite, Back: cancel")==KEY_CTRL_F1)
+    if (confirm(lang?"  Le fichier existe!":"  File exists!",
+#ifdef NSPIRE_NEWLIB
+		lang?"enter: ecraser, esc: annuler":"enter:overwrite, esc: cancel"
+#else
+		lang?"OK: ecraser,Back: annuler":"OK:overwrite, Back: cancel"
+#endif
+		)==KEY_CTRL_F1)
       return 1;
     return 0;
   }
@@ -9127,7 +9201,13 @@ namespace xcas {
 
   void chk_clearscreen(){
     drawRectangle(0, 24, LCD_WIDTH_PX, LCD_HEIGHT_PX-24, COLOR_WHITE);
-    if (confirm(lang?"Conserver l'historique?":"Keep history?",lang?"OK: oui, Back: effacer":"OK: yes, Back: erase",false)==KEY_CTRL_F6){
+    if (confirm(lang?"Conserver l'historique?":"Keep history?",
+#ifdef NSPIRE_NEWLIB
+		lang?"enter: oui, esc: effacer":"enter: yes, esc: erase",
+#else
+		lang?"OK: oui, Back: effacer":"OK: yes, Back: erase",
+#endif
+		false)==KEY_CTRL_F6){
       Console_Init();
       Console_Clear_EditLine();
     }    
@@ -9200,21 +9280,33 @@ namespace xcas {
 #endif
     if (!load_console_state_smem(filename.c_str(),contextptr)){
       int x=0,y=0;
-      PrintMini(x,y,"KhiCAS 1.5 (c) 2019 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE);
+      PrintMini(x,y,"KhiCAS 1.6 (c) 2020 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE);
       y +=18;
       PrintMini(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       y += 18;
+#ifdef NSPIRE_NEWLIB
+      PrintMini(x,y,(lang?"Taper menu plusieurs fois":"Type menu several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+#else
       PrintMini(x,y,(lang?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+#endif
       y += 18;
       PrintMini(x,y,(lang?"pour quitter KhiCAS.":"to leave KhiCAS."),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       y += 18;
       PrintMini(x,y,lang?"Si le calcul formel est interdit":"If CAS is forbidden!",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
       y += 18;
+#ifdef NSPIRE_NEWLIB
+      PrintMini(x,y,lang?"quittez Khicas (menu menu menu)":"Leave Khicas (menu menu menu)",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
+      if (confirm("Syntaxe?","enter: Xcas, esc: Python",false,130)==KEY_CTRL_F6)
+	python_compat(true,contextptr);
+      else
+	python_compat(false,contextptr);
+#else
       PrintMini(x,y,lang?"quittez Khicas (HOME HOME HOME)":"Leave Khicas (HOME HOME HOME)",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
       if (confirm("Syntaxe?","OK: Xcas, Back: Python",false,130)==KEY_CTRL_F6)
 	python_compat(true,contextptr);
       else
 	python_compat(false,contextptr);
+#endif
       Bdisp_AllClr_VRAM();
 #ifdef GIAC_SHOWTIME
       Console_Output("Reglage de l'heure, exemple");
@@ -9301,7 +9393,13 @@ namespace xcas {
       if (s.empty()){
 	s=python_compat(contextptr)?(lang?"Prog. Python, sinon taper":"Python prog., for Xcas"):(lang?"Prog. Xcas, sinon taper":"Xcas prog., for Python");
 	s += " AC F6 12";
-	int k=confirm(s.c_str(),"OK: Prog, Back: Tortue");
+	int k=confirm(s.c_str(),
+#ifdef NSPIRE_NEWLIB
+		      "enter: Prog, esc: Tortue"
+#else
+		      "OK: Prog, Back: Tortue"
+#endif
+		      );
 	if (k==-1)
 	  return;
 	if (k==KEY_CTRL_F6)
@@ -9334,7 +9432,13 @@ namespace xcas {
 
   void chk_restart(GIAC_CONTEXT){
     drawRectangle(0, 24, LCD_WIDTH_PX, LCD_HEIGHT_PX-24, COLOR_WHITE);
-    if (confirm(lang?"Conserver les variables?":"Keep variables?",lang?"OK: conserver, Back: effacer":"OK: keep, Back: erase")==KEY_CTRL_F6)
+    if (confirm(lang?"Conserver les variables?":"Keep variables?",
+#ifdef NSPIRE_NEWLIB
+		lang?"enter: conserver, esc: effacer":"enter: keep, esc: erase"
+#else
+		lang?"OK: conserver, Back: effacer":"OK: keep, Back: erase"
+#endif
+		)==KEY_CTRL_F6)
       do_restart(contextptr);
   }
 
@@ -9435,6 +9539,10 @@ namespace xcas {
 	  buf[0]=0;
 	return Console_Input((const char*)buf);
       }
+      if (key==KEY_SAVE){
+	save(session_filename,contextptr);
+	continue;
+      }
       if (key==KEY_CTRL_MENU){
 #if 1
 	Menu smallmenu;
@@ -9465,7 +9573,11 @@ namespace xcas {
 	  smallmenuitems[13].text = (char*)(lang?"Editer matrice (i)":"Matrix editor");
 	  smallmenuitems[14].text = (char*) (lang?"Creer parametre (,)":"Create slider (,)");
 	  smallmenuitems[15].text = (char*) (lang?"A propos (x^y)":"About");
+#ifdef NSPIRE_NEWLIB
+	  smallmenuitems[16].text = (char*) (lang?"Quitter (menu)":"Quit");
+#else
 	  smallmenuitems[16].text = (char*) (lang?"Quitter (HOME)":"Quit");
+#endif
 	  int sres = doMenu(&smallmenu);
 	  if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
 	    if (smallmenu.selection==smallmenu.numitems){
@@ -9498,7 +9610,15 @@ namespace xcas {
 	    if (smallmenu.selection==4){
 	      char filename[MAX_FILENAME_SIZE+1];
 	      if (giac_filebrowser(filename, "xw", "Sessions")){
-		if (console_changed==0 || strcmp(session_filename,"session")==0 || confirm(lang?"Session courante perdue?":"Current session will be lost",lang?"OK: annul, Back: ok":"OK: cancel, Back: ok")==KEY_CTRL_F6){
+		if (console_changed==0 ||
+		    strcmp(session_filename,"session")==0 ||
+		    confirm(lang?"Session courante perdue?":"Current session will be lost",
+#ifdef NSPIRE_NEWLIB
+			    lang?"enter: annul, esc: ok":"enter: cancel, esc: ok"
+#else
+			    lang?"OK: annul, Back: ok":"OK: cancel, Back: ok"
+#endif
+			    )==KEY_CTRL_F6){
 		  giac::_restart(giac::gen(giac::vecteur(0),giac::_SEQ__VECT),contextptr);
 		  restore_session(filename,contextptr);
 		  clip_pasted=true;
@@ -9506,7 +9626,7 @@ namespace xcas {
 #ifdef NSPIRE_NEWLIB
 		  static bool ctrl_r=true;
 		  if (ctrl_r){
-		    confirm(lang?"Ctrl puis R : executer session ":"Ctrl then R: run session","Enter: OK");
+		    confirm(lang?"Taper ctrl puis r pour executer session ":"Type ctrl then r to run session","Enter: OK");
 		    ctrl_r=false;
 		  }
 #endif
@@ -9526,7 +9646,15 @@ namespace xcas {
 	      char filename[MAX_FILENAME_SIZE+1];
 	      drawRectangle(0, 0, LCD_WIDTH_PX, LCD_HEIGHT_PX, COLOR_WHITE);
 	      if (get_filename(filename,".xw")){
-		if (console_changed==0 || strcmp(session_filename,"session")==0 || confirm(lang?"Session courante perdue?":"Current session will be lost",lang?"OK: annul, Back: ok":"OK: cancel, Back: ok")==KEY_CTRL_F6){
+		if (console_changed==0 ||
+		    strcmp(session_filename,"session")==0 ||
+		    confirm(lang?"Session courante perdue?":"Current session will be lost",
+#ifdef NSPIRE_NEWLIB
+			    lang?"enter: annul, esc: ok":"enter: cancel, esc: ok"
+#else
+			    lang?"OK: annul, Back: ok":"OK: cancel, Back: ok"
+#endif
+			    )==KEY_CTRL_F6){
 		  clip_pasted=true;
 		  Console_Init();
 		  Console_Clear_EditLine();
@@ -10348,19 +10476,6 @@ namespace xcas {
     msg += session_filename;
     if (console_changed)
       msg += " *";
-#ifdef NSPIRE_NEWLIB
-    int h,m,s;
-    get_hms(&h,&m,&s);
-    msg += " ";
-    msg +='0'+(h/10);
-    msg +='0'+(h%10);
-    msg += "h";
-    msg += ('0'+(m/10));
-    msg += ('0'+(m%10));
-    msg += "m";
-    msg += ('0'+(s/10));
-    msg += ('0'+(s%10));
-#endif
     statuslinemsg(msg.c_str());
     set_xcas_status();
     Bdisp_PutDisp_DD();
@@ -10398,7 +10513,13 @@ namespace xcas {
     if (strcmp(session_filename,"session") && console_changed){
       string tmp(session_filename);
       tmp += lang?" a ete modifie!":" was modified!";
-      if (confirm(tmp.c_str(),lang?"OK: sauve, Back: tant pis":"OK: save, Back: discard changes")==KEY_CTRL_F1){
+      if (confirm(tmp.c_str(),
+#ifdef NSPIRE_NEWLIB
+		  lang?"enter: sauve, esc: tant pis":"enter: save, esc: discard changes"
+#else
+		  lang?"OK: sauve, Back: tant pis":"OK: save, Back: discard changes"
+#endif
+		  )==KEY_CTRL_F1){
 	save(session_filename,contextptr);
 	console_changed=0;
       }    
@@ -10412,6 +10533,35 @@ namespace xcas {
     }
   }
 
+#ifdef NSPIRE_NEWLIB
+  bool nspire_fr(){
+    char16_t input_w[] = u"getLangInfo()";
+    void *math_expr = nullptr;
+    int str_offset = 0;
+    
+    int error = TI_MS_evaluateExpr_ACBER(NULL, NULL, (const uint16_t*)input_w, &math_expr, &str_offset);
+    if (error)
+      return false;
+    
+    char16_t *output_w;
+    error = TI_MS_MathExprToStr(math_expr, NULL, (uint16_t**)&output_w);
+    syscall<e_free, void>(math_expr); // Should be TI_MS_DeleteMathExpr
+    
+    if (error)
+      return false;
+    int l=0;
+    for (l=0;l<64;++l){
+      if (output_w[l]==0)
+	break;
+    }
+    bool b=l==4 && output_w[1]=='f' && output_w[2]=='r';
+    // Do something with output_w, it's u"42." here
+    
+    syscall<e_free, void>(output_w);
+    return b;
+  }
+#endif
+  
   int console_main(GIAC_CONTEXT){
 #ifdef NSPIRE_NEWLIB
     mkdir("Xcas",0755);
@@ -10419,9 +10569,10 @@ namespace xcas {
     //mkdir("A:/Xcas",0755);
     //mkdir("A:\\Xcas",0755);
     int err=chdir("Xcas");
-    if (err){
+    if (err)
       err=chdir("ndless");
-    }
+    bool b=nspire_fr();
+    lang=b?1:0;
 #endif
     // SetQuitHandler(save_session); // automatically save session when exiting
     if (!turtleptr){
@@ -10445,7 +10596,13 @@ namespace xcas {
 	return 0;
       }
       if (strcmp((const char *)expr,"restart")==0){
-	if (confirm(lang?"Effacer variables?":"Clear variables?",lang?"OK: annul,  Back: confirmer":"OK: cancel,  Back: confirm")!=KEY_CTRL_F6){
+	if (confirm(lang?"Effacer variables?":"Clear variables?",
+#ifdef NSPIRE_NEWLIB
+		    lang?"enter: annul,  esc: confirmer":"enter: cancel,  esc: confirm"
+#else
+		    lang?"OK: annul,  Back: confirmer":"OK: cancel,  Back: confirm"
+#endif
+		    )!=KEY_CTRL_F6){
 	  Console_Output(" cancelled");
 	  Console_NewLine(LINE_TYPE_OUTPUT,1);
 	  //GetKey(&key);
@@ -10705,7 +10862,11 @@ void drawAtom(uint8_t id) {
 	} else {
 	  drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
 	}
+#ifdef NSPIRE_NEWLIB
+	os_draw_string_small_(0,200,gettext("enter: tout, P:protons, N:nucleons, M:mass, E:khi"));
+#else
 	os_draw_string_small_(0,200,gettext("OK: tout, P:protons, N:nucleons, M:mass, E:khi"));
+#endif
 	for(int i = 0; i < ATOM_NUMS; i++) {
 	  drawAtom(i);
 	}

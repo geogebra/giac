@@ -1,4 +1,5 @@
 // implementation of the minimal C SDK for KhiCAS
+//#define FIREBIRDEMU 1 // for the Nspire emulator
 
 int rgb888to565(int c){
   int r=(c>>16)&0xff,g=(c>>8)&0xff,b=c&0xff;
@@ -11,7 +12,7 @@ int rgb565to888(int c){
   return (r<<19)|(g<<10)|(b<<3);
 }
 
-#if 1//def NSPIRE_NEWLIB
+#ifdef NSPIRE_NEWLIB
 #include "os.h" // Ndless/ndless-sdk/include/os.h
 #include <unistd.h>
 #include <stdio.h>
@@ -230,28 +231,50 @@ void statuslinemsg(const char * msg){
   nspire_draw_string(0,0,0xffff,0x0,Regular9,msg,false);
 }
 
+void display_time(){
+  int h,m,s;
+  get_hms(&h,&m,&s);
+  char msg[10];
+  msg[0]=' ';
+  msg[1]='0'+(h/10);
+  msg[2]='0'+(h%10);
+  msg[3]= 'h';
+  msg[4]= ('0'+(m/10));
+  msg[5]= ('0'+(m%10));
+  msg[6]=0;
+  //msg[6]= 'm';
+  //msg[7] = ('0'+(s/10));
+  //msg[8] = ('0'+(s%10));
+  //msg[9]=0;
+  gui_gc_setColor(nspire_gc,rgb565to888(0x0));
+  gui_gc_fillRect(nspire_gc,270,0,SCREEN_WIDTH-270,nspire_statusarea);
+  nspire_draw_string(270,0,0xffff,0x0,Regular9,msg,false);
+}
+
 bool nspire_shift=false;
 bool nspire_ctrl=false;
 void statusline(int mode){
   char *msg=0;
   if (nspire_ctrl){
     if (nspire_shift)
-      msg="SHIFT CTRL";
+      msg="shift ctrl";
     else
-      msg="        CTRL";
+      msg="        ctrl";
   }
   else {
     if (nspire_shift)
-      msg="SHIFT";
+      msg="shift";
     else
       msg="";
   }
   gui_gc_setColor(nspire_gc,rgb565to888(0x0));
-  gui_gc_fillRect(nspire_gc,240,0,SCREEN_WIDTH-240,nspire_statusarea);
-  nspire_draw_string(240,0,0xffff,0x0,Regular9,msg,false);
+  gui_gc_fillRect(nspire_gc,220,0,SCREEN_WIDTH-220,nspire_statusarea);
+  nspire_draw_string(220,0,0xffff,0x0,Regular9,msg,false);
+  display_time();
   if (mode==0)
     return;  
 }
+
 
 void sync_screen(){
   get_gc();
@@ -282,6 +305,10 @@ int ascii_get(int* adaptive_cursor_state){
     return -1;
   }
   *adaptive_cursor_state = SHIFTCTRL(0, 1, 4);
+  if (isKeyPressed(KEY_NSPIRE_LEFT)|| isKeyPressed(KEY_NSPIRE_LEFTUP) || isKeyPressed(KEY_NSPIRE_DOWNLEFT))		return SHIFTCTRL(KEY_CTRL_LEFT,KEY_SHIFT_LEFT,KEY_LEFT_CTRL);
+  if (isKeyPressed(KEY_NSPIRE_RIGHT)|| isKeyPressed(KEY_NSPIRE_UPRIGHT) || isKeyPressed(KEY_NSPIRE_RIGHTDOWN))		return SHIFTCTRL(KEY_CTRL_RIGHT,KEY_SHIFT_RIGHT,KEY_RIGHT_CTRL);
+  if (isKeyPressed(KEY_NSPIRE_UP))		return SHIFTCTRL(KEY_CTRL_UP,KEY_CTRL_PAGEUP,KEY_UP_CTRL);
+  if (isKeyPressed(KEY_NSPIRE_DOWN))		return SHIFTCTRL(KEY_CTRL_DOWN,KEY_CTRL_PAGEDOWN,KEY_DOWN_CTRL);
 	
   if (isKeyPressed(KEY_NSPIRE_ESC)) return KEY_CTRL_EXIT ;
   if (isKeyPressed(KEY_NSPIRE_HOME)) return KEY_CTRL_MENU ;
@@ -316,7 +343,7 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_Z)) return SHIFTCTRL('z','Z',KEY_CTRL_UNDO);
 
   // Numbers
-#if 0 // for firebird, redefine ctrl
+#ifdef FIREBIRDEMU // for firebird, redefine ctrl
   if (isKeyPressed(KEY_NSPIRE_0)) return SHIFTCTRL('0',KEY_CTRL_F10,')');
   if (isKeyPressed(KEY_NSPIRE_1)) return SHIFTCTRL('1',KEY_CTRL_F1,'!');
   if (isKeyPressed(KEY_NSPIRE_2)) return SHIFTCTRL('2',KEY_CTRL_F2,'@');
@@ -378,10 +405,6 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_DEL))		return SHIFTCTRL(KEY_CTRL_DEL,KEY_CTRL_DEL,KEY_CTRL_AC);
   if (isKeyPressed(KEY_NSPIRE_RET))		return KEY_CTRL_OK;
   if (isKeyPressed(KEY_NSPIRE_TAB))		return '\t';
-  if (isKeyPressed(KEY_NSPIRE_UP))		return SHIFTCTRL(KEY_CTRL_UP,KEY_CTRL_PAGEUP,KEY_UP_CTRL);
-  if (isKeyPressed(KEY_NSPIRE_DOWN))		return SHIFTCTRL(KEY_CTRL_DOWN,KEY_CTRL_PAGEDOWN,KEY_DOWN_CTRL);
-  if (isKeyPressed(KEY_NSPIRE_LEFT)|| isKeyPressed(KEY_NSPIRE_LEFTUP) || isKeyPressed(KEY_NSPIRE_DOWNLEFT))		return SHIFTCTRL(KEY_CTRL_LEFT,KEY_SHIFT_LEFT,KEY_LEFT_CTRL);
-  if (isKeyPressed(KEY_NSPIRE_RIGHT)|| isKeyPressed(KEY_NSPIRE_UPRIGHT) || isKeyPressed(KEY_NSPIRE_RIGHTDOWN))		return SHIFTCTRL(KEY_CTRL_RIGHT,KEY_SHIFT_RIGHT,KEY_RIGHT_CTRL);
   
   return 0;
 }
@@ -389,13 +412,42 @@ int ascii_get(int* adaptive_cursor_state){
 // ? see also ndless-sdk/thirdparty/nspire-io/arch-nspire/nspire.c nio_ascii_get
 int getkey(bool allow_suspend){
   sync_screen();
+  int lastkey=-1;
+  static unsigned lastt=0;
   for (;;){
-    wait_key_pressed();
+    unsigned NSPIRE_RTC_ADDR=0x90090000;
+    unsigned t1= * (volatile unsigned *) NSPIRE_RTC_ADDR;
+    if (t1-lastt>10){
+      display_time();
+      sync_screen();
+    }
+    if (!any_key_pressed()){
+#ifdef FIREBIRDEMU
+      msleep(50); // 100?
+#else // real calculator
+      msleep(1);
+#endif
+      continue;
+    }
     int cursor_state=0;
     int i=ascii_get(&cursor_state);
-    if (i<0)
+    if (i<0){
+      wait_no_key_pressed();
       continue;
-    wait_no_key_pressed();
+    }
+    int delay=(lastkey==i)?1:70,j;
+    for (j=0;j<delay && any_key_pressed();++j){
+#ifdef FIREBIRDEMU
+      msleep(14);
+#else // real calculator
+      msleep(1);
+#endif
+    }
+    if (j<delay)
+      lastkey=-1;
+    else ;
+      lastkey=i;    
+    // wait_no_key_pressed();
     if (nspire_ctrl || nspire_shift){
       nspire_ctrl=nspire_shift=false;
       statusline(0);

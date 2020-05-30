@@ -9144,8 +9144,12 @@ namespace giac {
   }
 
   string printastifunction(const gen & feuille,const char * sommetstr,GIAC_CONTEXT){
-    if (feuille.type==_VECT && feuille.subtype==_SEQ__VECT && feuille._VECTptr->empty())
-      return string(sommetstr)+" ";
+    if (feuille.type==_VECT && feuille.subtype==_SEQ__VECT){
+      if (feuille._VECTptr->empty())
+	return string(sommetstr)+" ";
+      else
+	return sommetstr+(" ("+feuille.print(contextptr)+')');
+    }
     return sommetstr+(" "+feuille.print(contextptr));
   }
   gen _Text(const gen & args,GIAC_CONTEXT){
