@@ -3190,9 +3190,18 @@ namespace xcas {
   }
   
   int text_width(int fontsize,const char * s){
+#ifdef NSPIRE_NEWLIB
+    int x=0;
+    if (fontsize>=18)
+      x=os_draw_string(0,0,0,1,s,true);
+    else
+      x=os_draw_string_small(0,0,0,1,s,true);
+    return x;
+#else
     if (fontsize>=18)
       return strlen(s)*11;
     return strlen(s)*7;
+#endif
   }
 
   void fl_arc(int x,int y,int rx,int ry,int theta1_deg,int theta2_deg,int c=COLOR_BLACK){
@@ -9604,7 +9613,7 @@ namespace xcas {
 	Console_Disp(1,contextptr);
 	continue;
       }
-      if (key == KEY_CTRL_F5 || key==KEY_CTRL_F4 || ( (key==KEY_CTRL_RIGHT || key==KEY_CTRL_LEFT) && Current_Line<Last_Line) ){
+      if (key == KEY_CTRL_F5 || key==KEY_EQW_TEMPLATE || key==KEY_CTRL_F4 || ( (key==KEY_CTRL_RIGHT || key==KEY_CTRL_LEFT) && Current_Line<Last_Line) ){
 	int l=Current_Line;
 	bool graph=strcmp((const char *)Line[l].str,"Graphic object")==0;
 	if (graph && l>0) --l;
@@ -9651,6 +9660,7 @@ namespace xcas {
       }
       if (key==KEY_LOAD){
 	load(contextptr);
+	Console_Disp(1,contextptr);
 	continue;
       }
       if (key==KEY_CTRL_MENU){

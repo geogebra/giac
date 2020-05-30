@@ -196,16 +196,16 @@ int nspire_draw_string(int x,int y,int c,int bg,int f,const char * s,bool fake){
   utf16[2*l]=0;
   utf16[2*l+1]=0;
   get_gc();
+  gui_gc_setFont(nspire_gc,f);
   int dx=gui_gc_getStringWidth(nspire_gc, f, utf16, 0, l) ;
   if (fake)
     return x+dx;
-  gui_gc_setFont(nspire_gc,f);
   int dy=f==Regular9?13:17;
   gui_gc_setColor(nspire_gc,rgb565to888(bg));
-  gui_gc_fillRect(nspire_gc,x,y+1,dx,dy);
+  gui_gc_fillRect(nspire_gc,x,y,dx,dy);
   gui_gc_setColor(nspire_gc,rgb565to888(c));
   //gui_gc_setPen(nspire_gc, GC_PS_MEDIUM, GC_PM_SMOOTH);
-  gui_gc_drawString(nspire_gc, utf16, x, y, GC_SM_NORMAL | GC_SM_TOP); // normal mode
+  gui_gc_drawString(nspire_gc, utf16, x, y-1, GC_SM_NORMAL | GC_SM_TOP); // normal mode
   return x+dx;
 }
 
