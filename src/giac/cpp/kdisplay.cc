@@ -5662,7 +5662,7 @@ namespace xcas {
 #if 1
       if (firstrun==2){
 #ifdef NSPIRE_NEWLIB
-	DefineStatusMessage((char*)(lang?"enter: quitte, resultat dans last":"enter: quit, result stored in last"), 1, 0, 0);
+	DefineStatusMessage((char*)(lang?"ctrl enter: eval, esc: quitte, ":"ctrl enter: eval, esc: exit"), 1, 0, 0);
 #else
 	DefineStatusMessage((char*)(lang?"EXE: quitte, resultat dans last":"EXE: quit, result stored in last"), 1, 0, 0);
 #endif
@@ -7973,7 +7973,7 @@ namespace xcas {
 	}
 	break;
       case KEY_CTRL_OK:
-	if(text->allowEXE) return TEXTAREA_RETURN_EXE;
+	if (text->allowEXE || !text->editable) return TEXTAREA_RETURN_EXE;
 	if (search.size()){
 	  for (;;){
 	    if (!move_to_word(text,search,replace,isFirstDraw,totalTextY,scroll,textY,contextptr))

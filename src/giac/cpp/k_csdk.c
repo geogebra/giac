@@ -1,16 +1,5 @@
 // implementation of the minimal C SDK for KhiCAS
-#define FIREBIRDEMU 1 // for the Nspire emulator
-
-int rgb888to565(int c){
-  int r=(c>>16)&0xff,g=(c>>8)&0xff,b=c&0xff;
-  return (((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
-}
-
-int rgb565to888(int c){
-  c &= 0xffff;
-  int r=(c>>11)&0x1f,g=(c>>5)&0x3f,b=c&0x1f;
-  return (r<<19)|(g<<10)|(b<<3);
-}
+//#define FIREBIRDEMU 1 // for the Nspire emulator
 
 #ifdef NSPIRE_NEWLIB
 #include "os.h" // Ndless/ndless-sdk/include/os.h
@@ -19,6 +8,12 @@ int rgb565to888(int c){
 #include <dirent.h>
 #include <ngc.h>
 #include "k_defs.h"
+
+int c_rgb565to888(int c){
+  c &= 0xffff;
+  int r=(c>>11)&0x1f,g=(c>>5)&0x3f,b=c&0x1f;
+  return (r<<19)|(g<<10)|(b<<3);
+}
 
 const int nspire_statusarea=18;
 
@@ -174,13 +169,13 @@ Gc * get_gc(){
 
 void os_set_pixel(int x,int y,int c){
   get_gc();
-  gui_gc_setColor(nspire_gc,rgb565to888(c));
+  gui_gc_setColor(nspire_gc,c_rgb565to888(c));
   gui_gc_drawRect(nspire_gc,x,y+nspire_statusarea,1,1);
 }
 
 void os_fill_rect(int x,int y,int w,int h,int c){
   get_gc();
-  gui_gc_setColor(nspire_gc,rgb565to888(c));
+  gui_gc_setColor(nspire_gc,c_rgb565to888(c));
   gui_gc_fillRect(nspire_gc,x,y+nspire_statusarea,w,h);
 }
 
@@ -201,9 +196,9 @@ int nspire_draw_string(int x,int y,int c,int bg,int f,const char * s,bool fake){
   if (fake)
     return x+dx;
   int dy=f==Regular9?13:17;
-  gui_gc_setColor(nspire_gc,rgb565to888(bg));
+  gui_gc_setColor(nspire_gc,c_rgb565to888(bg));
   gui_gc_fillRect(nspire_gc,x,y,dx,dy);
-  gui_gc_setColor(nspire_gc,rgb565to888(c));
+  gui_gc_setColor(nspire_gc,c_rgb565to888(c));
   //gui_gc_setPen(nspire_gc, GC_PS_MEDIUM, GC_PM_SMOOTH);
   gui_gc_drawString(nspire_gc, utf16, x, y-1, GC_SM_NORMAL | GC_SM_TOP); // normal mode
   return x+dx;
@@ -226,7 +221,7 @@ int os_draw_string_small(int x,int y,int c,int bg,const char * s,bool fake){
 
 void statuslinemsg(const char * msg){
   get_gc();
-  gui_gc_setColor(nspire_gc,rgb565to888(0x0));
+  gui_gc_setColor(nspire_gc,c_rgb565to888(0x0));
   gui_gc_fillRect(nspire_gc,0,0,SCREEN_WIDTH,nspire_statusarea);
   nspire_draw_string(0,0,0xffff,0x0,Regular9,msg,false);
 }
@@ -246,7 +241,7 @@ void display_time(){
   //msg[7] = ('0'+(s/10));
   //msg[8] = ('0'+(s%10));
   //msg[9]=0;
-  gui_gc_setColor(nspire_gc,rgb565to888(0x0));
+  gui_gc_setColor(nspire_gc,c_rgb565to888(0x0));
   gui_gc_fillRect(nspire_gc,270,0,SCREEN_WIDTH-270,nspire_statusarea);
   nspire_draw_string(270,0,0xffff,0x0,Regular9,msg,false);
 }
@@ -277,7 +272,7 @@ void statusline(int mode){
     else
       msg="";
   }
-  gui_gc_setColor(nspire_gc,rgb565to888(0x0));
+  gui_gc_setColor(nspire_gc,c_rgb565to888(0x0));
   gui_gc_fillRect(nspire_gc,220,0,SCREEN_WIDTH-220,nspire_statusarea);
   nspire_draw_string(220,0,0xffff,0x0,Regular9,msg,false);
   display_time();
@@ -397,7 +392,7 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_EE))		return SHIFTCTRL('&','%', '@');
   if (isKeyPressed(KEY_NSPIRE_PI)) return KEY_CHAR_PI;
   if (isKeyPressed(KEY_NSPIRE_FLAG)) return SHIFTCTRL(';',':',KEY_CHAR_IMGNRY);
-  if (isKeyPressed(KEY_NSPIRE_ENTER))		return SHIFTCTRL('\n','~',KEY_CTRL_OK);
+  if (isKeyPressed(KEY_NSPIRE_ENTER))		return SHIFTCTRL(KEY_CTRL_OK,'~',KEY_CTRL_EXE);
   if (isKeyPressed(KEY_NSPIRE_TRIG))		return SHIFTCTRL(KEY_CHAR_SIN,KEY_CHAR_COS,KEY_CHAR_TAN);
   
   // Special chars
@@ -406,7 +401,7 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_DOC))		return KEY_CTRL_CATALOG;
   if (isKeyPressed(KEY_NSPIRE_CAT))		return KEY_CTRL_CATALOG;
   if (isKeyPressed(KEY_NSPIRE_DEL))		return SHIFTCTRL(KEY_CTRL_DEL,KEY_CTRL_DEL,KEY_CTRL_AC);
-  if (isKeyPressed(KEY_NSPIRE_RET))		return KEY_CTRL_OK;
+  if (isKeyPressed(KEY_NSPIRE_RET))		return KEY_CTRL_EXE;
   if (isKeyPressed(KEY_NSPIRE_TAB))		return '\t';
   
   return 0;
@@ -465,8 +460,6 @@ int getkey(bool allow_suspend){
       statusline(0);
       sync_screen();
     }
-    if (i==10)
-      i=KEY_CTRL_EXE;
     return i;
   }
   // void send_key_event(struct s_ns_event* eventbuf, unsigned short keycode_asciicode, BOOL is_key_up, BOOL unknown): since r721. Simulate a key event

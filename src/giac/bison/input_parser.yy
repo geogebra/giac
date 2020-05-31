@@ -305,6 +305,8 @@ exp	: T_NUMBER		{$$ = $1;}
 	if (*$1._FUNCptr==at_maple_mode ||*$1._FUNCptr==at_xcas_mode ){
           xcas_mode(contextptr)=$3.val;
         }
+        if (*$1._FUNCptr==at_python_compat)
+          python_compat(contextptr)=$3.val;
 	if (*$1._FUNCptr==at_user_operator){
           user_operator($3,contextptr);
         }
@@ -486,8 +488,12 @@ $$ = symbolic(*$2._FUNCptr,gen(makevecteur($1,python_compat(giac_yyget_extra(sca
         }
 	| T_BEGIN_PAR exp T_END_PAR T_BEGIN_PAR suite T_END_PAR {$$ = check_symb_of($2,$5,giac_yyget_extra(scanner));}
 	| T_BEGIN_PAR exp T_END_PAR		{
-	if ($1==_LIST__VECT && python_compat(giac_yyget_extra(scanner))){
-           $$=symbolic(at_python_list,$2);
+	if ( ($1==_LIST__VECT && python_compat(giac_yyget_extra(scanner))) ||
+              python_compat(giac_yyget_extra(scanner))==2){
+           if (python_compat(giac_yyget_extra(scanner))==2)
+             $$=change_subtype($2,_TUPLE__VECT);
+           else
+             $$=symbolic(at_python_list,$2);
         }
         else {
  	 if (abs_calc_mode(giac_yyget_extra(scanner))==38 && $2.type==_VECT && $2.subtype==_SEQ__VECT && $2._VECTptr->size()==2 && ($2._VECTptr->front().type<=_DOUBLE_ || $2._VECTptr->front().type==_FLOAT_) && ($2._VECTptr->back().type<=_DOUBLE_ || $2._VECTptr->back().type==_FLOAT_)){ 

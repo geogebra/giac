@@ -9096,6 +9096,25 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   define_unary_function_ptr5( at_python_list ,alias_at_python_list,&__python_list,0,true);
 
   bool freeze=false;
+  
+  int rgb565to888(int c){
+    c &= 0xffff;
+    int r=(c>>11)&0x1f,g=(c>>5)&0x3f,b=c&0x1f;
+    return (r<<19)|(g<<10)|(b<<3);
+  }
+
+  inline int rgb(const gen & g,GIAC_CONTEXT){
+    return g.type==_INT_?g.val:_rgb(g,contextptr).val;
+  }
+  gen remove_at_display(const gen &g,GIAC_CONTEXT){
+    if (g.is_symb_of_sommet(at_equal)){
+      const gen & f=g._SYMBptr->feuille;
+      if (f.type==_VECT && f._VECTptr->size()==2 && f._VECTptr->front()==at_display)
+	return rgb(f._VECTptr->back(),contextptr);
+    }
+    return rgb(g,contextptr);
+  }
+
   gen _set_pixel(const gen & a_,GIAC_CONTEXT){
     freeze=true;
     gen a(a_);
@@ -9120,9 +9139,9 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	y=int(y._DOUBLE_val+.5);
       if (x.type==_INT_ &&  y.type==_INT_ ){
 #ifdef KHICAS
-	os_set_pixel(x.val,y.val,vs==2?0:v[2].val);
+	os_set_pixel(x.val,y.val,vs==2?0:remove_at_display(v[2],contextptr).val);
 #else
-	aspen_set_pixel(x.val,y.val,vs==2?0:v[2].val);
+	aspen_set_pixel(x.val,y.val,vs==2?0:remove_at_display(v[2],contextptr).val);
 #endif // KHICAS
 	return 1;
       }
@@ -9139,10 +9158,13 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       return _pixon(a,contextptr);
     }
     else {
-      if (a.type!=_VECT || !is_integer_vecteur(*a._VECTptr))
+      vecteur v=*a._VECTptr;
+      if (v.size()==3)
+	v[2]=remove_at_display(v[2],contextptr);
+      if (a.type!=_VECT || a._VECTptr->size()<2 || !is_integer_vecteur(v))
 	return 0;
-      pixel_v()._VECTptr->push_back(_pixon(a,contextptr));
-      const vecteur & v=*a._VECTptr;
+      gen b(v,_SEQ__VECT);
+      pixel_v()._VECTptr->push_back(_pixon(b,contextptr));
       size_t vs=v.size();
       if (vs>=2){
 	const gen & x=v.front();
@@ -9366,7 +9388,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     gen g(v[0]);
     if (!ckmatrix(g) || g._VECTptr->front()._VECTptr->size()!=2 || !vecteur2vectvector_int(*g._VECTptr,0,v1))
       return gensizeerr(contextptr);
-    int attr=v.back().val;
+    int attr=remove_at_display(v.back(),contextptr).val;
     if (attr & 0x40000000)
       draw_filled_polygon(v1,0,1024,0,768,attr & 0xffff,contextptr);
     else
@@ -9561,15 +9583,6 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     }
   }
   
-  gen remove_at_display(const gen &g){
-    if (g.is_symb_of_sommet(at_equal)){
-      const gen & f=g._SYMBptr->feuille;
-      if (f.type==_VECT && f._VECTptr->size()==2 && f._VECTptr->front()==at_display)
-	return f._VECTptr->back();
-    }
-    return g;
-  }
-
   gen _draw_arc(const gen & a_,bool arc,GIAC_CONTEXT){
     freeze=true;
     gen a(a_);
@@ -9590,7 +9603,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	y0=int(y0._DOUBLE_val+.5);
       if (r.type==_DOUBLE_)
 	r=int(r._DOUBLE_val+.5);
-      int attr=vs==(arc?6:3)?0:remove_at_display(v.back()).val;
+      int attr=vs==(arc?6:3)?0:remove_at_display(v.back(),contextptr).val;
       if (x0.type==_INT_ &&  y0.type==_INT_ && r.type==_INT_){
 	if (arc){
 	  gen ry=v[3];
@@ -9651,7 +9664,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	y1=int(y1._DOUBLE_val+.5);
       if (x0.type==_INT_ &&  y0.type==_INT_ && x1.type==_INT_ && y1.type==_INT_){
 	if (rect){
-	  int attr=vs==4?0:remove_at_display(v[4]).val;
+	  int attr=vs==4?0:remove_at_display(v[4],contextptr).val;
 	  if (rect==2 || (attr & 0x40000000))
 	    draw_rectangle(x0.val,y0.val,x1.val,y1.val,attr & 0xffff,contextptr);
 	  else {
@@ -9662,7 +9675,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	  }	    
 	}
 	else
-	  draw_line(x0.val,y0.val,x1.val,y1.val,vs==4?0:remove_at_display(v[4]).val,contextptr);
+	  draw_line(x0.val,y0.val,x1.val,y1.val,vs==4?0:remove_at_display(v[4],contextptr).val,contextptr);
 	return 1;
       }
     }
@@ -9737,10 +9750,16 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     gen x=a._VECTptr->front(),y=a._VECTptr->back();
     if (x.type==_INT_ && x.val>=0 && x.val<pixel_cols && y.type==_INT_ && y.val>=0 && y.val<pixel_lines){
 #ifdef KHICAS
-      return os_get_pixel(x.val,y.val);
+      int c=os_get_pixel(x.val,y.val);
 #else      
-      return pixel_buffer[y.val][x.val];
+      int c=pixel_buffer[y.val][x.val];
 #endif
+      if (python_compat(contextptr)==2){
+	c &= 0xffff;
+	int r=(c>>11)&0x1f,g=(c>>5)&0x3f,b=c&0x1f;
+	return gen(makevecteur(r<<3,g<<2,b<<3),_TUPLE__VECT);
+      }
+      return c;
     }
 #ifdef KHICAS
     return undef;
