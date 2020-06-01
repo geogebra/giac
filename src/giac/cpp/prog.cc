@@ -3756,8 +3756,14 @@ namespace giac {
   static define_unary_function_eval (__concat,&_concat,_concat_s);
   define_unary_function_ptr5( at_concat ,alias_at_concat,&__concat,0,true);
 
+  gen _extend(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+    if (args.type!=_VECT || args._VECTptr->size()!=2 || args._VECTptr->front().type!=_VECT || args._VECTptr->back().type!=_VECT)
+      return gensizeerr(contextptr);
+    return gen(mergevecteur(*args._VECTptr->front()._VECTptr,*args._VECTptr->back()._VECTptr),args._VECTptr->front().subtype);
+  }
   static const char _extend_s []="extend";
-  static define_unary_function_eval (__extend,&_concat,_extend_s);
+  static define_unary_function_eval (__extend,&_extend,_extend_s);
   define_unary_function_ptr5( at_extend ,alias_at_extend,&__extend,0,true);
 
   static gen symb_option(const gen & args){

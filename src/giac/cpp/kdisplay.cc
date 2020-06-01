@@ -2030,10 +2030,6 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       if(showCatalog(text,20,contextptr))
 	return text;
       return "";
-    case KEY_CTRL_SETUP:
-      if(showCatalog(text,7,contextptr))
-	return text;
-      return "";
     case KEY_CTRL_PASTE:
       return paste_clipboard();
     case KEY_CHAR_DQUATE:
@@ -6813,9 +6809,9 @@ namespace xcas {
       }
       if (search.size()){
 #ifdef NSPIRE_NEWLIB
-	status += "enter: " + search;
+	status += " enter: " + search;
 #else
-	status += "EXE: " + search;
+	status += " EXE: " + search;
 #endif
 	if (replace.size())
 	  status += "->"+replace;
@@ -6839,7 +6835,7 @@ namespace xcas {
     for (;;){
       int key;
       GetKey(&key);
-      if (key==KEY_CHAR_MINUS || key==KEY_CHAR_Y || key==KEY_CHAR_9 || key==KEY_CHAR_O || key==KEY_CTRL_EXE){
+      if (key==KEY_CHAR_MINUS || key==KEY_CHAR_Y || key==KEY_CHAR_9 || key==KEY_CHAR_O || key==KEY_CTRL_EXE || key==KEY_CTRL_OK){
 	if (replace.size()){
 	  set_undo(text);
 	  std::string & s = text->elements[text->line].s;
@@ -6848,13 +6844,13 @@ namespace xcas {
 	}
 	return true;
       }
+      if (key==KEY_CTRL_DEL || (replace.empty() && key==KEY_CTRL_EXIT)){
+	show_status(text,search,replace);
+	return false;
+      }
       if (key==KEY_CHAR_8 || key==KEY_CHAR_N || key==KEY_CTRL_EXIT){
 	search_msg();
 	return true;
-      }
-      if (key==KEY_CTRL_DEL){
-	show_status(text,search,replace);
-	return false;
       }
     }
   }
@@ -7181,17 +7177,17 @@ namespace xcas {
     //drawRectangle(text->x, text->y+24, text->width, LCD_HEIGHT_PX-24, COLOR_WHITE);
     // insure cursor is visible
     if (editable && !isFirstDraw){
-      int linesbefore=0;
-      for (int cur=0;cur<text->line;++cur){
-	linesbefore += v[cur].nlines;
+      int linesbefore=0,cur;
+      for (cur=0;cur<text->line;++cur){
+	linesbefore += v[cur].nlines*(text->lineHeight+v[cur].lineSpacing);
       }
       // line begin Y is at scroll+linesbefore*17, must be positive
-      if (linesbefore*19+scroll<0)
-	scroll = -19*linesbefore;
-      linesbefore += v[text->line].nlines;
+      if (linesbefore+scroll<0)
+	scroll = -linesbefore;
+      linesbefore += v[text->line].nlines*(text->lineHeight+v[cur].lineSpacing);
       // after line Y is at scroll+linesbefore*17
-      if (linesbefore*19+scroll>154)
-	scroll = 154-19*linesbefore;
+      if (linesbefore+scroll>154)
+	scroll = 154-linesbefore;
     }
     textY = scroll+(showtitle ? 24 : 0)+text->y; // 24 pixels for title (or not)
     int deltax=0;
@@ -7251,6 +7247,14 @@ namespace xcas {
       if(v[cur].newLine) {
 	textY=textY+text->lineHeight+v[cur].lineSpacing;
       }
+      if (!isFirstDraw && clipline==-1){
+	// check if we can skip directly to the next line
+	int y=textY+(v[cur].nlines-1)*(text->lineHeight+v[cur].lineSpacing);
+	if (y<-text->lineHeight){
+	  textY=y;
+	  continue;
+	}
+      }
       int dh=18+v[cur].lineSpacing;
       if (textY+dh+(editable?17:0)>LCD_HEIGHT_PX){
 	if (isFirstDraw)
@@ -7262,7 +7266,7 @@ namespace xcas {
       }
       if (dh>0 && textY>=(showtitle?24:0))
 	drawRectangle(textX, textY, LCD_WIDTH_PX, dh, COLOR_WHITE);
-      if (editable){
+      if (editable && textY>=(showtitle?24:0)){
 	char line_s[16];
 	sprint_int(line_s,cur+1);
 	os_draw_string_small(textX,textY,COLOR_MAGENTA,_WHITE,line_s);
@@ -7791,9 +7795,9 @@ namespace xcas {
       GetKey(&key);
       if (key==KEY_CTRL_F3) // Numworks has no UNDO key
 	key=KEY_CTRL_UNDO;
-#if 0
+#if 1
       if (key == KEY_CTRL_SETUP) {
-	menu_setup();
+	menu_setup(contextptr);
 	continue;
       }
 #endif
@@ -7858,6 +7862,8 @@ namespace xcas {
 	  for (int i=0;i<v.size();++i)
 	    v[i].minimini=minimini;
 	  text->lineHeight=minimini?13:17;
+	  isFirstDraw=1;
+	  display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
 	  continue;
 	}
 	if (clipline<0){
@@ -7972,6 +7978,18 @@ namespace xcas {
 	  show_status(text,search,replace);
 	}
 	break;
+      case KEY_CTRL_S:
+	display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
+	search=get_searchitem(replace);
+	if (!search.empty()){
+	  for (;;){
+	    if (!move_to_word(text,search,replace,isFirstDraw,totalTextY,scroll,textY,contextptr)){
+	      break;
+	    }
+	  }
+	  show_status(text,search,replace);
+	}
+	continue;
       case KEY_CTRL_OK:
 	if (text->allowEXE || !text->editable) return TEXTAREA_RETURN_EXE;
 	if (search.size()){
@@ -7991,6 +8009,14 @@ namespace xcas {
 	}
 	break;
       case KEY_CTRL_EXE: 
+	if (search.size()){
+	  for (;;){
+	    if (!move_to_word(text,search,replace,isFirstDraw,totalTextY,scroll,textY,contextptr))
+	      break;
+	  }
+	  show_status(text,search,replace);
+	  continue;
+	}
 	if (clipline<0 && editable){
 	  set_undo(text);
 	  add_indented_line(v,textline,textpos);
@@ -8086,6 +8112,14 @@ namespace xcas {
 	  }
 	}
 	break;
+      case KEY_SAVE: 
+	save_script(text->filename.c_str(),merge_area(v));
+	text->changed=false;
+	char status[256];
+	sprintf(status,lang?"%s sauvegarde":"%s saved",text->filename.c_str());
+	DefineStatusMessage(status, 1, 0, 0);
+	DisplayStatusArea();    	    
+	continue;      
       case KEY_CTRL_F1:
 	if(text->allowF1) return KEY_CTRL_F1;
 	break;
@@ -8210,12 +8244,25 @@ namespace xcas {
 	  }
 	}
 	break;
+      case KEY_CTRL_SETUP: // inactive
+	text->python=text->python?0:1;
+	show_status(text,search,replace);
+	python_compat(text->python,contextptr);
+	warn_python(text->python,false);
+	drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
+	PrintMiniMini(0,205,"shift-1 test|2 loop|3 undo|4 misc|5 +- |      ",4,44444,giac::_BLACK);
+	continue;
       case KEY_CTRL_F2:
 	if (clipline<0)
 	  return KEY_CTRL_F2;
       case KEY_CTRL_EXIT:
 	if (clipline>=0){
 	  clipline=-1;
+	  show_status(text,search,replace);
+	  continue;
+	}
+	if (!search.empty()){
+	  search="";
 	  show_status(text,search,replace);
 	  continue;
 	}
@@ -9652,7 +9699,7 @@ namespace xcas {
 	  buf[0]=0;
 	return Console_Input((const char*)buf);
       }
-      if (key==KEY_SAVE){
+      if (key==KEY_SAVE || key==KEY_CTRL_S){
 	save(session_filename,contextptr);
 	console_changed=false;
 	console_disp_status(contextptr);

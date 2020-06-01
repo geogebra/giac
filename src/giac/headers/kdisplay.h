@@ -174,7 +174,7 @@ namespace xcas {
 			   CONSOLE_SUCCEEDED = 0,
 			   CONSOLE_MEM_ERR = -1,
 			   CONSOLE_ARG_ERR = -2,
-			   CONSOLE_NO_EVENT = -3
+			   CONSOLE_NO_EVENT = -3,
   };
 
   enum CONSOLE_CURSOR_DIRECTION{
@@ -201,7 +201,11 @@ namespace xcas {
   enum CONSOLE_SCREEN_SPEC {
 			    _LINE_MAX = 48,
 			    LINE_DISP_MAX = 11,
+#ifdef NSPIRE_NEWLIB
+			    COL_DISP_MAX = 32,
+#else
 			    COL_DISP_MAX = 30,//32
+#endif
 			    EDIT_LINE_MAX = 2048
   };
   

@@ -180,7 +180,18 @@ void os_fill_rect(int x,int y,int w,int h,int c){
 }
 
 int os_get_pixel(int x,int y){
-  return 0;
+  if (x<0 || x>=SCREEN_WIDTH || y<0 || y>=SCREEN_HEIGHT)
+    return -1;
+#if 1
+  get_gc();
+  char ** off_buff = ((((char *****)nspire_gc)[9])[0])[0x8];
+  int res = *(unsigned short *) (off_buff[y+nspire_statusarea] + 2*x);
+  return res;
+#else
+  unsigned short * addr=*(unsigned short **) 0xC0000010;
+  int r=addr[(y+nspire_statusarea)*SCREEN_WIDTH+x];
+  return r;
+#endif
 }
 
 int nspire_draw_string(int x,int y,int c,int bg,int f,const char * s,bool fake){
@@ -329,7 +340,7 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_P)) return SHIFTCTRL('p','P',KEY_CTRL_PRGM);
   if (isKeyPressed(KEY_NSPIRE_Q)) return SHIFT('q','Q');
   if (isKeyPressed(KEY_NSPIRE_R)) return SHIFTCTRL('r','R',KEY_CTRL_R);
-  if (isKeyPressed(KEY_NSPIRE_S)) return SHIFTCTRL('s','S',KEY_CTRL_SETUP);
+  if (isKeyPressed(KEY_NSPIRE_S)) return SHIFTCTRL('s','S',KEY_CTRL_S);
   if (isKeyPressed(KEY_NSPIRE_T)) return SHIFT('t','T');
   if (isKeyPressed(KEY_NSPIRE_U)) return SHIFT('u','U');
   if (isKeyPressed(KEY_NSPIRE_V)) return SHIFTCTRL('v','V',KEY_CTRL_PASTE);
@@ -396,7 +407,7 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_TRIG))		return SHIFTCTRL(KEY_CHAR_SIN,KEY_CHAR_COS,KEY_CHAR_TAN);
   
   // Special chars
-  if (isKeyPressed(KEY_NSPIRE_SCRATCHPAD)) return SHIFTCTRL(KEY_CTRL_AC,KEY_LOAD,KEY_SAVE);
+  if (isKeyPressed(KEY_NSPIRE_SCRATCHPAD)) return SHIFTCTRL(KEY_CTRL_SETUP,KEY_LOAD,KEY_SAVE);
   if (isKeyPressed(KEY_NSPIRE_VAR)) return CTRL(KEY_CTRL_VARS,KEY_CHAR_STORE);
   if (isKeyPressed(KEY_NSPIRE_DOC))		return KEY_CTRL_CATALOG;
   if (isKeyPressed(KEY_NSPIRE_CAT))		return KEY_CTRL_CATALOG;
