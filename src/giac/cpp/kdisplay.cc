@@ -6844,7 +6844,7 @@ namespace xcas {
 	}
 	return true;
       }
-      if (key==KEY_CTRL_DEL || (replace.empty() && key==KEY_CTRL_EXIT)){
+      if (key==KEY_CTRL_DEL || (replace.empty() && key==KEY_CTRL_EXIT) || key==KEY_CTRL_LEFT || key==KEY_CTRL_RIGHT || key==KEY_CTRL_UP || key==KEY_CTRL_DOWN){
 	show_status(text,search,replace);
 	return false;
       }
@@ -7171,6 +7171,7 @@ namespace xcas {
 #ifdef CURSOR  
     Cursor_SetFlashOff();
 #endif
+    drawRectangle(text->x, text->y, LCD_WIDTH_PX, LCD_HEIGHT_PX-text->y, COLOR_WHITE);
     bool editable=text->editable;
     int showtitle = !editable && (text->title != NULL);
     std::vector<textElement> & v=text->elements;
@@ -7179,15 +7180,15 @@ namespace xcas {
     if (editable && !isFirstDraw){
       int linesbefore=0,cur;
       for (cur=0;cur<text->line;++cur){
-	linesbefore += v[cur].nlines*(text->lineHeight+v[cur].lineSpacing);
+	linesbefore += (v[cur].newLine+(v[cur].nlines-1))*(text->lineHeight+v[cur].lineSpacing); //*logptr(contextptr) << cur << "," << v[cur].nlines << " ";
       }
       // line begin Y is at scroll+linesbefore*17, must be positive
       if (linesbefore+scroll<0)
 	scroll = -linesbefore;
-      linesbefore += v[text->line].nlines*(text->lineHeight+v[cur].lineSpacing);
+      linesbefore += (v[cur].newLine+(v[cur].nlines-1))*(text->lineHeight+v[cur].lineSpacing); //*logptr(contextptr) << '\n';
       // after line Y is at scroll+linesbefore*17
-      if (linesbefore+scroll>154)
-	scroll = 154-linesbefore;
+      if (linesbefore+scroll>148)
+	scroll = 148-linesbefore;
     }
     textY = scroll+(showtitle ? 24 : 0)+text->y; // 24 pixels for title (or not)
     int deltax=0;
@@ -7264,8 +7265,8 @@ namespace xcas {
 	  break;
 	}
       }
-      if (dh>0 && textY>=(showtitle?24:0))
-	drawRectangle(textX, textY, LCD_WIDTH_PX, dh, COLOR_WHITE);
+      //if (dh>0 && textY>=(showtitle?24:0))
+      //drawRectangle(textX, textY, LCD_WIDTH_PX, dh, COLOR_WHITE);
       if (editable && textY>=(showtitle?24:0)){
 	char line_s[16];
 	sprint_int(line_s,cur+1);
@@ -7406,8 +7407,8 @@ namespace xcas {
 	  //time for a new line
 	  textX=text->x+deltax;
 	  textY=textY+text->lineHeight+v[cur].lineSpacing;
-	  if (textY>=(showtitle?24:0))
-	    drawRectangle(0, textY, LCD_WIDTH_PX, 18+v[cur].lineSpacing, COLOR_WHITE);
+	  //if (textY>=(showtitle?24:0))
+	  //  drawRectangle(0, textY, LCD_WIDTH_PX, 18+v[cur].lineSpacing, COLOR_WHITE);
 	  ++nlines;
 	} //else still fits, print new word normally (or just increment textX, if we are not "on stage" yet)
 	if(textY >= (showtitle?24:0) && textY < LCD_HEIGHT_PX) {
@@ -7476,12 +7477,12 @@ namespace xcas {
 	  textX += temptextX;
 	  if(*src || v[cur].spaceAtEnd) textX += 7; // size of a PrintMini space
 	}
-      }
+      } // end while (*src)
       // free(singleword);
-      v[cur].nlines=nlines;
+      v[cur].nlines=nlines; //if (cur<6) *logptr(contextptr) << cur << ":" << src << nlines << '\n';
       if (isFirstDraw) 
 	totalTextY = textY+(showtitle ? 0 : 24);
-    } // end main draw loop
+    } // end main draw loop (for cur<v.size())
     int dh=LCD_HEIGHT_PX-textY-text->lineHeight-(editable?17:0);
     if (dh>0)
       drawRectangle(0, textY+text->lineHeight, LCD_WIDTH_PX, dh, COLOR_WHITE);
@@ -7533,6 +7534,7 @@ namespace xcas {
 	text->clipline=line;
 	text->clippos=p;
 	text->pos=p+s.size();
+	display(text,isFirstDraw,totalTextY,scroll,textY,contextptr); // this modifies text->elements[].nlines (no idea why), 2 calls insure scrolling is adequate
 	display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
 	text->clipline=-1;
 	return chk_replace(text,s,replace);
@@ -7547,6 +7549,7 @@ namespace xcas {
 	text->clippos=p;
 	text->pos=p+s.size();
 	display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
+	display(text,isFirstDraw,totalTextY,scroll,textY,contextptr); // 2 callslike above
 	text->clipline=-1;
 	return chk_replace(text,s,replace);
       }

@@ -2596,7 +2596,7 @@ namespace giac {
 	if (first_try!=unsigned_inf)
 	  return first_try;
       }
-    }
+    } // end if vsign.empty()
     if (has_op(e,*at_surd) || has_op(e,*at_NTHROOT)){
       // FIXME: adjust using limit/direction information
       vecteur subst1,subst2;
