@@ -2223,6 +2223,19 @@ namespace giac {
   static define_unary_function_eval(__get_key,&_getKey,_get_key_s);
   define_unary_function_ptr5( at_get_key ,alias_at_get_key,&__get_key,0,true);
 
+  gen _keydown(const gen & g,GIAC_CONTEXT){
+    if (g.type!=_INT_)
+      return gensizeerr(contextptr);
+#ifdef KHICAS
+    return iskeydown(g.val);
+#else
+    return 0;
+#endif
+  }
+  static const char _keydown_s[]="keydown";
+  static define_unary_function_eval(__keydown,&_keydown,_keydown_s);
+  define_unary_function_ptr5( at_keydown ,alias_at_keydown,&__keydown,0,true);
+
   gen _CopyVar(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     vecteur v(gen2vecteur(g));

@@ -157,6 +157,7 @@ namespace giac {
 #endif
 #endif
   extern const unary_function_ptr * const  at_getKey;
+  extern const unary_function_ptr * const  at_keydown;
   extern const unary_function_ptr * const  at_numer;
   extern const unary_function_ptr * const  at_ClrIO;
   extern const unary_function_ptr * const  at_Output;

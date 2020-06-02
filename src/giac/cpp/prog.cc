@@ -9385,6 +9385,9 @@ namespace giac {
 
   gen _monotonic(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
+#ifdef NSPIRE_NEWLIB
+    return int(unsigned(millis()/1000.) & ((1u<<31)-1));
+#endif
 #ifdef FXCG
     return RTC_GetTicks();
 #else

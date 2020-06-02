@@ -418,6 +418,151 @@ int ascii_get(int* adaptive_cursor_state){
   return 0;
 }
 
+bool iskeydown(int key){
+  t_key t=KEY_NSPIRE_SPACE;
+  switch (key){
+  case 0:
+    t=KEY_NSPIRE_LEFT;
+    break;
+  case 1:
+    t=KEY_NSPIRE_UP;
+    break;
+  case 2:
+    t=KEY_NSPIRE_DOWN;
+    break;
+  case 3:
+    t=KEY_NSPIRE_RIGHT;
+    break;
+  case 4:
+    t=KEY_NSPIRE_ENTER;
+    break;
+  case 5:
+    t=KEY_NSPIRE_ESC;
+    break;
+  case 6:
+    t=KEY_NSPIRE_HOME;
+    break;
+  case 7:
+    t=KEY_NSPIRE_MENU;
+    break;
+  case 12:
+    t=KEY_NSPIRE_SHIFT;
+    break;
+  case 13:
+    t=KEY_NSPIRE_CTRL;
+    break;
+  case 14:
+    t=KEY_NSPIRE_SCRATCHPAD;
+    break;
+  case 15:
+    t=KEY_NSPIRE_VAR;
+    break;
+  case 16:
+    t=KEY_NSPIRE_DOC;
+    break;
+  case 17:
+    t=KEY_NSPIRE_DEL;
+    break;
+  case 18:
+    t=KEY_NSPIRE_eEXP;
+    break;
+  case 19:
+    t=KEY_NSPIRE_EQU;
+    break;
+  case 20:
+    t=KEY_NSPIRE_TENX;
+    break;
+  case 21:
+    t=KEY_NSPIRE_I;
+    break;
+  case 22:
+    t=KEY_NSPIRE_COMMA;
+    break;
+  case 23:
+    t=KEY_NSPIRE_EXP;
+    break;
+  case 24:
+    t=KEY_NSPIRE_TRIG;
+    break;
+  case 25:
+    t=KEY_NSPIRE_C;
+    break;
+  case 26:
+    t=KEY_NSPIRE_T;
+    break;
+  case 27:
+    t=KEY_NSPIRE_PI;
+    break;
+  case 28:
+    t=KEY_NSPIRE_S;
+    break;
+  case 29:
+    t=KEY_NSPIRE_SQU;
+    break;
+  case 30:
+    t=KEY_NSPIRE_7;
+    break;
+  case 31:
+    t=KEY_NSPIRE_8;
+    break;
+  case 32:
+    t=KEY_NSPIRE_9;
+    break;
+  case 33:
+    t=KEY_NSPIRE_LP;
+    break;
+  case 34:
+    t=KEY_NSPIRE_RP;
+    break;
+  case 36:
+    t=KEY_NSPIRE_4;
+    break;
+  case 37:
+    t=KEY_NSPIRE_5;
+    break;
+  case 38:
+    t=KEY_NSPIRE_6;
+    break;
+  case 39:
+    t=KEY_NSPIRE_MULTIPLY;
+    break;
+  case 40:
+    t=KEY_NSPIRE_DIVIDE;
+    break;
+  case 42:
+    t=KEY_NSPIRE_1;
+    break;
+  case 43:
+    t=KEY_NSPIRE_2;
+    break;
+  case 44:
+    t=KEY_NSPIRE_3;
+    break;
+  case 45:
+    t=KEY_NSPIRE_PLUS;
+    break;
+  case 46:
+    t=KEY_NSPIRE_MINUS;
+    break;
+  case 48:
+    t=KEY_NSPIRE_0;
+    break;
+  case 49:
+    t=KEY_NSPIRE_PERIOD;
+    break;
+  case 50:
+    t=KEY_NSPIRE_EE;
+    break;
+  case 51:
+    t=KEY_NSPIRE_NEGATIVE;
+    break;
+  case 52:
+    t=KEY_NSPIRE_RET;
+    break;
+  }
+  return isKeyPressed(t);
+}
+
 // ? see also ndless-sdk/thirdparty/nspire-io/arch-nspire/nspire.c nio_ascii_get
 int getkey(bool allow_suspend){
   sync_screen();
