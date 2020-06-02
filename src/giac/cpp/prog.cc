@@ -13013,7 +13013,7 @@ namespace giac {
       if (v[0].val)
 	return v[1];
       else
-	return piecewisetowhen(vecteur(v.begin()+2,v.end()),contextptr);
+	return s==2?bounded_function(contextptr):piecewisetowhen(vecteur(v.begin()+2,v.end()),contextptr);
     }
     if (s==2){
       v.push_back(0); // undef does not work

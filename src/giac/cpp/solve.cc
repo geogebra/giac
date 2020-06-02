@@ -7562,6 +7562,8 @@ namespace giac {
 	    if (a.type!=_VECT || a._VECTptr->size()!=2)
 	      return gensizeerr(contextptr);
 	    gen r=_resultant(makesequence(a._VECTptr->front(),a._VECTptr->back(),bestvar),contextptr);
+	    vecteur rv=lvar(r);
+	    r=_primpart(makesequence(r,rv),contextptr);
 	    neweq.push_back(r);
 	  }
 	  vecteur newelim;
