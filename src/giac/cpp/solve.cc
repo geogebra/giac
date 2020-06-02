@@ -7426,7 +7426,10 @@ namespace giac {
     vecteur elim=gen2vecteur((*args._VECTptr)[1]);
     if (elim.empty())
       return eqs;
-    // if (elim.size()==1) returngb=3; // should I add this, for example for eliminate([((-((t)^(2)))*((((t)^(2))+(1))^(3)))+((((((t)^(4))+((x)*((((t)^(2))+(1))^(2))))+((6)*((t)^(2))))-(3))^(2)), (-((((t)^(2))+(1))^(3)))+((((-(8))*((t)^(3)))+((y)*((((t)^(2))+(1))^(2))))^(2))],[t])
+    if (elim.size()==1 && returngb!=1) {
+      *logptr(contextptr) << "1 variable to eliminate, using resultant. Run with last optional parameter gbasis if you want to force gbasis\n";
+      returngb=3; // for example for eliminate([((-((t)^(2)))*((((t)^(2))+(1))^(3)))+((((((t)^(4))+((x)*((((t)^(2))+(1))^(2))))+((6)*((t)^(2))))-(3))^(2)), (-((((t)^(2))+(1))^(3)))+((((-(8))*((t)^(3)))+((y)*((((t)^(2))+(1))^(2))))^(2))],[t])
+    }
     vecteur l(elim);
     if (args._VECTptr->size()>2 && (*args._VECTptr)[2].type==_VECT)
       lvar((*args._VECTptr)[2],l);
