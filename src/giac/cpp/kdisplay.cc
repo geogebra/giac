@@ -10056,6 +10056,11 @@ namespace xcas {
 	Console_Disp(1,contextptr);
 	continue;
       }	
+      if (key==KEY_CTRL_D){
+	Console_Input((const char*)"debug(");
+	Console_Disp(1,contextptr);
+	continue;
+      }	
       if (key == KEY_CTRL_SETUP) {
 	menu_setup(contextptr);
 	Console_Disp(1,contextptr);

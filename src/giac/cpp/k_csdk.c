@@ -1,5 +1,5 @@
 // implementation of the minimal C SDK for KhiCAS
-//#define FIREBIRDEMU 1 // for the Nspire emulator
+// #define FIREBIRDEMU 1 // for the Nspire emulator
 
 #ifdef NSPIRE_NEWLIB
 #include "os.h" // Ndless/ndless-sdk/include/os.h
@@ -325,7 +325,7 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_A)) return SHIFTCTRL('a','A',KEY_CTRL_A);
   if (isKeyPressed(KEY_NSPIRE_B)) return SHIFT('b','B');
   if (isKeyPressed(KEY_NSPIRE_C)) return SHIFTCTRL('c','C',KEY_CTRL_CLIP);
-  if (isKeyPressed(KEY_NSPIRE_D)) return SHIFT('d','D');
+  if (isKeyPressed(KEY_NSPIRE_D)) return SHIFTCTRL('d','D',KEY_CTRL_D);
   if (isKeyPressed(KEY_NSPIRE_E)) return SHIFTCTRL('e','E',KEY_CTRL_E);
   if (isKeyPressed(KEY_NSPIRE_F)) return SHIFT('f','F');
   if (isKeyPressed(KEY_NSPIRE_G)) return SHIFT('g','G');

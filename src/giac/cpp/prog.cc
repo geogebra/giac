@@ -2752,7 +2752,34 @@ namespace giac {
 
   // returns level or -RAND_MAX on error
   int giac_bind(const vecteur & vals_,const vecteur & vars_,context * & contextptr){
-    vecteur vals(vals_),vars(vars_);
+    vecteur vals(vals_),vars(vars_),vals1,vars1;
+    // reorder: search in vals_ var=value and corresponding vars in vars_
+    for (int i=0;i<vals_.size();++i){
+      if (!vals[i].is_symb_of_sommet(at_equal))
+	continue;
+      gen f=vals[i]._SYMBptr->feuille;
+      if (f.type!=_VECT || f._VECTptr->size()!=2 || f._VECTptr->front().type!=_IDNT)
+	continue;
+      gen var=f._VECTptr->front(),val=f._VECTptr->back();int j=0;
+      for (;j<vars.size();++j){
+	if (!vars[i].is_symb_of_sommet(at_equal))
+	  continue;
+	f=vars[j]._SYMBptr->feuille;
+	if (f.type!=_VECT || f._VECTptr->size()!=2 || f._VECTptr->front()!=var)
+	  continue;
+	break;
+      }
+      if (j<vars.size()){
+	vars1.push_back(var);
+	vals1.push_back(val);
+	vars.erase(vars.begin()+j);
+	vals.erase(vals.begin()+i);
+	--i;
+      }
+    }
+    // add remaining
+    vals=mergevecteur(vals1,vals);
+    vars=mergevecteur(vars1,vars);
 #if 1
     int ins=int(vals.size());
     for (int i=int(vars.size())-1;i>=0;--i){

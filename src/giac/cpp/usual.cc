@@ -5378,6 +5378,23 @@ namespace giac {
     "SetSample",
   };
   static const char * const * const aspen_quoted_name_tab_end=aspen_quoted_name_tab+sizeof(aspen_quoted_name_tab)/sizeof(char *);
+  gen eval_except_equal(const gen & b,GIAC_CONTEXT){
+    if (b.is_symb_of_sommet(at_equal)){
+      gen &f =b._SYMBptr->feuille;
+      if (f.type==_VECT && f._VECTptr->size()==2 && f._VECTptr->front().type==_IDNT)
+	return symb_equal(f._VECTptr->front(),eval_except_equal(f._VECTptr->back(),contextptr));
+    }
+    if (b.type==_VECT){
+      vecteur v=*b._VECTptr;
+      for (int i=0;i<int(v.size());++i)
+	v[i]=eval_except_equal(v[i],contextptr);
+      return gen(v,b.subtype);
+    }
+    if (approx_mode(contextptr))
+      return b.evalf(eval_level(contextptr),contextptr);
+    else
+      return b.eval(eval_level(contextptr),contextptr);
+  }
   gen _of(const gen & args,const context * contextptr){
     gen qf,b,f,value;
     // *logptr(contextptr) << &qf << '\n';
@@ -5395,12 +5412,8 @@ namespace giac {
       }
     }
 #endif
-    if (!quoteb){
-      if (approx_mode(contextptr))
-	b=b.evalf(eval_level(contextptr),contextptr);
-      else
-	b=b.eval(eval_level(contextptr),contextptr);
-    }
+    if (!quoteb)
+      b=eval_except_equal(b,contextptr);
     /*
     if (qf.type!=_IDNT || !(strcmp(qf._IDNTptr->id_name,"RECURSE")==0 ||
                             strcmp(qf._IDNTptr->id_name,"SOLVE")==0 ||
