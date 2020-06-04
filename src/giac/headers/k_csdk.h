@@ -80,7 +80,9 @@ extern "C" {
   void reset_kbd();
   void statuslinemsg(const char * msg);
   void statusline(int mode=0);
+  bool iskeydown(int key); // FIXME implement on Numworks
 #if defined NSPIRE || defined NSPIRE_NEWLIB
+  extern char nspire_filebuf[NSPIRE_FILEBUFFER];
   extern bool on_key_enabled;
   void get_hms(int *h,int *m,int *s);
 #endif

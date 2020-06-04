@@ -308,6 +308,8 @@ namespace giac {
   extern const unary_function_ptr * const  at_normalmod;
 
   symbolic symb_sto(const gen & a,gen & b,bool in_place=false);
+  symbolic parser_symb_sto(const gen & a_,gen & b,bool in_place=false);
+  // same as symb_sto but check if a is a vector, if so make a copy
   symbolic symb_sto(const gen & e);
   extern const unary_function_ptr * const  at_sto ;
   extern const unary_function_ptr * const  at_array_sto ;

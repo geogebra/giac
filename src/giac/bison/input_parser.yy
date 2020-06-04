@@ -220,13 +220,13 @@ exp	: T_NUMBER		{$$ = $1;}
 	| exp TI_STO symbol T_BEGIN_PAR suite T_END_PAR {if (is_array_index($3,$5,giac_yyget_extra(scanner)) || (abs_calc_mode(giac_yyget_extra(scanner))==38 && $3.type==_IDNT && check_vect_38($3._IDNTptr->id_name))) $$=symbolic(at_sto,gen(makevecteur($1,symbolic(at_of,gen(makevecteur($3,$5) ,_SEQ__VECT))) ,_SEQ__VECT)); else $$ = symb_program_sto($5,$5*zero,$1,$3,false,giac_yyget_extra(scanner));}
 	| exp TI_STO symbol T_INDEX_BEGIN exp T_VECT_END { 
          const giac::context * contextptr = giac_yyget_extra(scanner);
-         gen g=symb_at($3,$5,contextptr); $$=symb_sto($1,g); 
+         gen g=symb_at($3,$5,contextptr); $$=parser_symb_sto($1,g); 
         }
 	| exp TI_STO symbol T_INDEX_BEGIN T_VECT_DISPATCH exp T_VECT_END T_VECT_END { 
          const giac::context * contextptr = giac_yyget_extra(scanner);
-         gen g=symbolic(at_of,gen(makevecteur($3,$6) ,_SEQ__VECT)); $$=symb_sto($1,g); 
+         gen g=symbolic(at_of,gen(makevecteur($3,$6) ,_SEQ__VECT)); $$=parser_symb_sto($1,g); 
         }
-	| exp TI_STO symbol { if ($3.type==_IDNT) { const char * ch=$3.print(context0).c_str(); if (ch[0]=='_' && unit_conversion_map().find(ch+1) != unit_conversion_map().end()) $$=symbolic(at_convert,gen(makevecteur($1,symbolic(at_unit,makevecteur(1,$3))) ,_SEQ__VECT)); else $$=symb_sto($1,$3); } else $$=symb_sto($1,$3); }
+	| exp TI_STO symbol { if ($3.type==_IDNT) { const char * ch=$3.print(context0).c_str(); if (ch[0]=='_' && unit_conversion_map().find(ch+1) != unit_conversion_map().end()) $$=symbolic(at_convert,gen(makevecteur($1,symbolic(at_unit,makevecteur(1,$3))) ,_SEQ__VECT)); else $$=parser_symb_sto($1,$3); } else $$=parser_symb_sto($1,$3); }
 	| exp TI_STO T_UNARY_OP { $$=symbolic(at_convert,gen(makevecteur($1,$3) ,_SEQ__VECT)); }
 	| exp TI_STO T_PLUS { $$=symbolic(at_convert,gen(makevecteur($1,$3) ,_SEQ__VECT)); }
 	| exp TI_STO T_FOIS { $$=symbolic(at_convert,gen(makevecteur($1,$3) ,_SEQ__VECT)); }
@@ -292,7 +292,7 @@ exp	: T_NUMBER		{$$ = $1;}
         }
 	/* | T_ROOTOF_BEGIN exp T_VIRGULE exp T_ROOTOF_END {if ($2.type==_VECT) $$ = real_complex_rootof(*$2._VECTptr,$4); else $$=zero;} */
 	| T_OF { $$=gen(at_of,2); }
-	| exp T_AFFECT exp 		{if ($1.type==_FUNC) *logptr(giac_yyget_extra(scanner))<< ("Warning: "+$1.print(context0)+" is a reserved word")<<'\n'; if ($1.type==_INT_) $$=symb_equal($1,$3); else {$$ = symb_sto($3,$1,$2==at_array_sto); if ($3.is_symb_of_sommet(at_program)) *logptr(giac_yyget_extra(scanner))<<"// End defining "<<$1<<'\n';}}
+	| exp T_AFFECT exp 		{if ($1.type==_FUNC) *logptr(giac_yyget_extra(scanner))<< ("Warning: "+$1.print(context0)+" is a reserved word")<<'\n'; if ($1.type==_INT_) $$=symb_equal($1,$3); else {$$ = parser_symb_sto($3,$1,$2==at_array_sto); if ($3.is_symb_of_sommet(at_program)) *logptr(giac_yyget_extra(scanner))<<"// End defining "<<$1<<'\n';}}
 	| T_NOT exp	{ $$ = symbolic(*$1._FUNCptr,$2);}
 	| T_ARGS T_BEGIN_PAR exp T_END_PAR	{$$ = symb_args($3);}
 	| T_ARGS T_INDEX_BEGIN exp T_VECT_END	{$$ = symb_args($3);}
@@ -761,7 +761,7 @@ suite_symbol : affectable_symbol { $$=gen(vecteur(1,$1),_SEQ__VECT); }
 	     ;
 
 affectable_symbol : symbol { $$=$1; }
-	     | T_SYMBOL T_AFFECT exp { $$=symb_sto($3,$1,$2==at_array_sto); }
+	     | T_SYMBOL T_AFFECT exp { $$=parser_symb_sto($3,$1,$2==at_array_sto); }
 	     | T_SYMBOL T_EQUAL exp { $$=symb_equal($1,$3); }
 	     | T_SYMBOL T_DEUXPOINTS exp { $$=symbolic(at_deuxpoints,makesequence($1,$3));  }
 	     | T_BEGIN_PAR affectable_symbol T_END_PAR { $$=$2; }

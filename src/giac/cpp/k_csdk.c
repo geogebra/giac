@@ -1,5 +1,5 @@
 // implementation of the minimal C SDK for KhiCAS
-// #define FIREBIRDEMU 1 // for the Nspire emulator
+#define FIREBIRDEMU 1 // for the Nspire emulator
 
 #ifdef NSPIRE_NEWLIB
 #include "os.h" // Ndless/ndless-sdk/include/os.h
@@ -65,7 +65,6 @@ bool erase_file(const char * filename){
   return remove(filename)==0;
 }
 
-#define NSPIRE_FILEBUFFER 32768
 char nspire_filebuf[NSPIRE_FILEBUFFER];
 
 const char * read_file(const char * filename){

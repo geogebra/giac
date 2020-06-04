@@ -6505,7 +6505,9 @@ namespace xcas {
     std::string s=merge_area(v);
     giac::python_compat(python,contextptr);
     if (python) s="@@"+s; // force Python translation
+    freeze=true;
     giac::gen g(s,contextptr);
+    freeze=false;
     int lineerr=giac::first_error_line(contextptr);
     if (lineerr){
       char status[256];
@@ -8514,8 +8516,13 @@ namespace xcas {
 	}
       }
     }
+#ifdef NUMWORKS
     if (s_.size()>512)
       s_=s_.substr(0,509)+"...";
+#else
+    if (s_.size()>8192)
+      s_=s_.substr(0,8189)+"...";
+#endif
     char* edit_line = (char*)Console_GetEditLine();
     Console_Output((const char*)s_.c_str());
     //return ge; 
@@ -8563,18 +8570,32 @@ namespace xcas {
     int b=python_compat(contextptr);
     python_compat(0,contextptr);
 #if 1
+#ifdef NSPIRE_NEWLIB
+    char *buf=nspire_filebuf;
+    buf[0]=0;
+    int bufsize=NSPIRE_FILEBUFFER;
+#else
     char buf[6144]="";
+    int bufsize=sizeof(buf);
+#endif
     if (g.type==giac::_VECT){
+      bool ok=true;
       for (int i=0;i<g._VECTptr->size();++i){
 	string s((*g._VECTptr)[i].print(contextptr));
-	if (strlen(buf)+s.size()+128<sizeof(buf)){
+	if (strlen(buf)+s.size()+128<bufsize){
 	  strcat(buf,s.c_str());
 	  strcat(buf,":;");
 	}
+	else
+	  ok=false;
+      }
+      if (!ok){
+	confirm(lang?"Contexte trop lourd, non sauvegarde":"Context too havy, not saved.",lang?"Re-executez scripts au chargement (esc enter)":"Re-run scripts at load time (esc enter)",true,64);
+	buf[0]=0;
       }
     }
     python_compat(b,contextptr);
-    if (strlen(buf)+128<sizeof(buf)){
+    if (strlen(buf)+128<bufsize){
       strcat(buf,"python_compat(");
       strcat(buf,giac::print_INT_(b).c_str());
       strcat(buf,");angle_radian(");
@@ -8652,7 +8673,7 @@ namespace xcas {
       Bfile_WriteFile_OS2(hFile, s);
       unsigned char c=cur.type;
       Bfile_WriteFile_OS(hFile, &c, sizeof(c));
-      c=cur.readonly;
+      c=1;//cur.readonly;
       Bfile_WriteFile_OS(hFile, &c, sizeof(c));
       unsigned char buf[l+1];
       buf[l]=0;
@@ -8701,7 +8722,10 @@ namespace xcas {
     BUF[L+3]=0;
     giac::gen g,ge;
     dconsole_mode=0; python_compat(contextptr)=0; xcas_mode(contextptr)=0;
+    bool bi=try_parse_i(contextptr);
+    try_parse_i(false,contextptr);
     do_run((char*)BUF,g,ge,contextptr);
+    try_parse_i(bi,contextptr);
     dconsole_mode=1;
     // read script
     L=Bfile_ReadFile_OS4(hf);

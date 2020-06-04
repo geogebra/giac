@@ -4051,6 +4051,14 @@ namespace giac {
       return symbolic(at_array_sto,gen(makevecteur(a,b),_SEQ__VECT));
     return symbolic(at_sto,gen(makevecteur(a,b),_SEQ__VECT));
   }
+  symbolic parser_symb_sto(const gen & a_,gen & b,bool in_place){
+    gen a(a_); 
+    if (a.type==_VECT) // create a copy of the vector (avoid self-modif code)
+      a=symbolic(at_copy,a);
+    if (in_place)
+      return symbolic(at_array_sto,gen(makevecteur(a,b),_SEQ__VECT));
+    return symbolic(at_sto,gen(makevecteur(a,b),_SEQ__VECT));
+  }
   symbolic symb_sto(const gen & e){
     return symbolic(at_sto,e);
   }
