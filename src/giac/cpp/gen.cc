@@ -13909,6 +13909,8 @@ void sprint_double(char * s,double d){
 	return hexa_print_INT_(val);
       case 8:
 	return octal_print_INT_(val);
+      case 2:
+	return binary_print_INT_(val);
       default:
 	return print_INT_(val);
       }

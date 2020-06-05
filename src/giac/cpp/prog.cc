@@ -8191,8 +8191,22 @@ namespace giac {
     return v.size()==1?v.front():gen(v,_SEQ__VECT);
 #endif // KHICAS
   }
+  bool is_address(const gen & g,size_t & addr){
+    if (g.type==_INT_){
+      addr=g.val;
+      return true;
+    }
+    if (g.type!=_ZINT)
+      return false;
+    addr = modulo(*g._ZINTptr,(unsigned)0x80000000);
+    addr += 0x80000000;
+    return true;
+  }
   gen _read(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+    size_t addr;
+    if (is_address(args,addr))
+      return (int) *(unsigned char *) addr;
     if (args.type==_VECT && !args._VECTptr->empty() && args._VECTptr->front().type==_STRNG){
       string file=*args._VECTptr->front()._STRNGptr;
       if (file.size()>4 && file.substr(0,4)=="http"){
@@ -8216,6 +8230,28 @@ namespace giac {
   static define_unary_function_eval (__read,&_read,_read_s);
   define_unary_function_ptr5( at_read ,alias_at_read ,&__read,0,T_RETURN);
 
+  gen _read16(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+    size_t addr;
+    if (is_address(args,addr))
+      return (int) *(unsigned short *) addr;
+    return gensizeerr(contextptr);
+  }
+  static const char _read16_s []="read16";
+  static define_unary_function_eval (__read16,&_read16,_read16_s);
+  define_unary_function_ptr5( at_read16 ,alias_at_read16 ,&__read16,0,true);
+
+  gen _read32(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+    size_t addr;
+    if (is_address(args,addr))
+      return (longlong) *(unsigned *) addr;
+    return gensizeerr(contextptr);
+  }
+  static const char _read32_s []="read32";
+  static define_unary_function_eval (__read32,&_read32,_read32_s);
+  define_unary_function_ptr5( at_read32 ,alias_at_read32 ,&__read32,0,true);
+
   gen _write(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     gen tmp=check_secure();
@@ -8223,6 +8259,16 @@ namespace giac {
     if (args.type==_VECT){
       vecteur v=*args._VECTptr;
       v.front()=eval(v.front(),eval_level(contextptr),contextptr);
+      size_t addr;
+      if (v.size()==2 && is_address(v.front(),addr)){
+	gen vb=eval(v.back(),1,contextptr);
+	if (vb.type==_INT_){
+	  unsigned char * ptr =(unsigned char *) addr;
+	  // int res=*ptr;
+	  *ptr=vb.val;
+	  return *ptr;//return res;
+	}
+      }
       if (v.size()<2 || v.front().type!=_STRNG)
 	return gensizeerr(contextptr);
       if (v.size()==2 && is_zero(v[1])){
@@ -8266,6 +8312,51 @@ namespace giac {
   static const char _write_s []="write";
   static define_unary_function_eval_quoted (__write,&_write,_write_s);
   define_unary_function_ptr5( at_write ,alias_at_write,&__write,_QUOTE_ARGUMENTS,true);
+
+  gen _write32(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+    if (args.type==_VECT){
+      vecteur v=*args._VECTptr;
+      size_t addr;
+      if (v.size()==2 && is_address(v.front(),addr)){
+	gen vb=v.back();
+	unsigned * ptr =(unsigned *) addr;
+	if (vb.type==_INT_){
+	  *ptr=vb.val;
+	  return longlong(unsigned(vb.val));
+	}
+	if (vb.type==_ZINT){
+	  unsigned l =mpz_get_si(*vb._ZINTptr);
+	  *ptr=l;
+	  return longlong(l);
+	}
+      }
+    }
+    return gensizeerr(contextptr);
+  }
+  static const char _write32_s []="write32";
+  static define_unary_function_eval_quoted (__write32,&_write32,_write32_s);
+  define_unary_function_ptr5( at_write32 ,alias_at_write32,&__write32,0,true);
+
+  gen _write16(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+    if (args.type==_VECT){
+      vecteur v=*args._VECTptr;
+      size_t addr;
+      if (v.size()==2 && is_address(v.front(),addr)){
+	gen vb=v.back();
+	unsigned short * ptr =(unsigned short *) addr;
+	if (vb.type==_INT_){
+	  *ptr=vb.val;
+	  return int( (unsigned short) vb.val);
+	}
+      }
+    }
+    return gensizeerr(contextptr);
+  }
+  static const char _write16_s []="write16";
+  static define_unary_function_eval_quoted (__write16,&_write16,_write16_s);
+  define_unary_function_ptr5( at_write16 ,alias_at_write16,&__write16,0,true);
 
   gen _save_history(const gen & args,GIAC_CONTEXT){
 #ifdef NSPIRE

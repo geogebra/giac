@@ -249,10 +249,19 @@ namespace giac {
 
   string binary_print_INT_(int i){
     char c[256];
+#if 1
+    unsigned ii=i;
+    int j=sizeinbase2(ii);
+    c[j]=0;
+    for (--j;ii;--j,ii/=2){
+      c[j]='0'+(ii%2);
+    }
+#else
     mpz_t tmp;
     mpz_init_set_ui(tmp, i);
     mpz_get_str(c, 2, tmp);
     mpz_clear(tmp);
+#endif
     return string("0b")+c;
   }
 
