@@ -482,7 +482,7 @@ namespace giac {
       case KEY_CTRL_F3:
       case KEY_CTRL_F4:
       case KEY_CTRL_F5:
-      case KEY_CTRL_F6: case KEY_CTRL_CATALOG:
+      case KEY_CTRL_F6: case KEY_CTRL_CATALOG: case KEY_BOOK: case '\t':
       case KEY_CHAR_ANS:
 	if (menu->type == MENUTYPE_FKEYS || menu->type==MENUTYPE_MULTISELECT) return key; // MULTISELECT also returns on Fkeys
 	break;
@@ -1351,6 +1351,29 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     return s;//s+' ';
   }
 
+  // not tested
+  void aide2catalogFunc(const giac::aide & a,catalogFunc & c){
+    static aide as=a;
+    static string desc;
+    string descrip;
+    c.name=as.cmd_name.c_str();
+    c.insert=c.name;
+    desc=as.syntax+'\n';
+    for (int i=0;i<as.blabla.size();++i){
+      localized_string & ls=as.blabla[i];
+      if (ls.language==lang){ // exact match
+	descrip=as.blabla[i].chaine.c_str();
+	break;
+      }
+      if (ls.language==0) // default
+	descrip=as.blabla[i].chaine.c_str();
+    }
+    desc += descrip;
+    c.desc=desc.c_str();
+    c.example=as.examples.size()?as.examples[0].c_str():0;
+    c.example2=as.examples.size()>=2?as.examples[1].c_str():0;
+    c.category=-1;
+  }
   int showCatalog(char* insertText,int preselect,int menupos,GIAC_CONTEXT) {
     // returns 0 on failure (user exit) and 1 on success (user chose a option)
     MenuItem menuitems[CAT_CATEGORY_LOGO+1];
@@ -1414,7 +1437,8 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     int l=strlen(cmdline);
     char buf[l+1];
     strcpy(buf,cmdline);
-    if (l && buf[l-1]=='('){
+    bool openpar=l && buf[l-1]=='(';
+    if (openpar){
       buf[l-1]=0;
       --l;
     }
@@ -1423,14 +1447,19 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	break;
     }
     // cmdname in buf+l
-    const char * cmdname=buf+l;
+    const char * cmdname=buf+l,*cmdnameorig=cmdname;
     l=strlen(cmdname);
     // search in catalog: dichotomy would be more efficient
     // but leading spaces cmdnames would be missed
-    int i=0,nfunc=lang?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN;//sizeof(completeCat)/sizeof(catalogFunc);
+    int nfunc=lang?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN;//sizeof(completeCat)/sizeof(catalogFunc);
+#ifdef NSPIRE_NEWLIB
+    int iii=nfunc; // no search in completeCat, directly in static_help.h
+#else
+    int iii=0;
+#endif
     const catalogFunc * completeCat=lang?completeCatfr:completeCaten;
-    for (;i<nfunc;++i){
-      const char * name=completeCat[i].name;
+    for (;iii<nfunc;++iii){
+      const char * name=completeCat[iii].name;
       while (*name==' ')
 	++name;
       int j=0;
@@ -1441,12 +1470,20 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       if (j==l)
 	break;
     }
-    if (i==nfunc){
-      confirm("Pas d'aide disponible pour",cmdname,true);
-      return "";
+    const catalogFunc * catf=iii==nfunc?0:completeCat+iii;
+    const char * fhowto=0,* fsyntax=0,* frelated=0,* fexamples=0;
+    if (iii==nfunc){
+      if (!has_static_help(cmdname,lang,fhowto,fsyntax,fexamples,frelated)){
+	confirm("Pas d'aide disponible pour",cmdname,true);
+	return "";
+      }
+      if (fexamples && fexamples[0]==0){
+	fexamples=frelated;
+	frelated=0;
+      }
     }
-    const char * example=completeCat[i].example;
-    const char * example2=completeCat[i].example2;
+    const char * example=catf?catf->example:fexamples;
+    const char * example2=catf?catf->example2:frelated;
     xcas::textArea text;
     text.editable=false;
     text.clipline=-1;
@@ -1455,20 +1492,24 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     text.python=false;
     std::vector<xcas::textElement> & elem=text.elements;
     elem = std::vector<xcas::textElement> (example2?4:3);
-    elem[0].s = completeCat[i].name;
+    elem[0].s = catf?catf->name:cmdname;
     elem[0].newLine = 0;
     //elem[0].color = COLOR_BLUE;
     elem[1].newLine = 1;
     elem[1].lineSpacing = 1;
     elem[1].minimini=1;
     std::string autoexample;
-    if (completeCat[i].desc==0){
+    if (catf && catf->desc==0){
       // if (token==T_UNARY_OP || token==T_UNARY_OP_38)
       elem[1].s=elem[0].s+"(args)";
     }
     else
-      elem[1].s = completeCat[i].desc;
+      elem[1].s = catf?catf->desc:fhowto;
+#ifdef NSPIRE_NEWLIB
+    std::string ex("tab: ");
+#else
     std::string ex("Ans: ");
+#endif
     elem[2].newLine = 1;
     elem[2].lineSpacing = 0;
     //elem[2].minimini=1;
@@ -1476,9 +1517,13 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       if (example[0]=='#')
 	ex += example+1;
       else {
-	ex += insert_string(i);
-	ex += example;
-	ex += ")";
+	if (iii==nfunc)
+	  ex += fexamples;
+	else {
+	  ex += insert_string(iii);
+	  ex += example;
+	  ex += ")";
+	}
       }
       elem[2].s = ex;
       if (example2){
@@ -1490,9 +1535,13 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	if (example2[0]=='#')
 	  ex2 += example2+1;
 	else {
-	  ex2 += insert_string(i);
-	  ex2 += example2;
-	  ex2 += ")";
+	  if (iii==nfunc)
+	    ex2=example2;
+	  else {
+	    ex2 += insert_string(iii);
+	    ex2 += example2;
+	    ex2 += ")";
+	  }
 	}
 	elem[3].newLine = 1;
 	// elem[3].lineSpacing = 0;
@@ -1507,20 +1556,31 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	elem.pop_back();
     }
     int sres=doTextArea(&text,contextptr);
-    if (sres == KEY_CHAR_ANS || sres==KEY_CTRL_EXE) {
+    if (sres==KEY_CTRL_OK){
+      while (*cmdname && *cmdname==*cmdnameorig){
+	++cmdname; ++cmdnameorig;
+      }
+      return cmdname;
+    }
+    if (sres == KEY_CHAR_ANS || sres==KEY_BOOK || sres=='\t' || sres==KEY_CTRL_EXE) {
       reset_kbd();
       std::string s;
       const char * example=0;
-      if (sres==KEY_CHAR_ANS)
-	example=completeCat[i].example;
+      if (sres==KEY_CHAR_ANS || sres==KEY_BOOK || sres=='\t')
+	example=catf?catf->example:fexamples;
       else
-	example=completeCat[i].example2;
+	example=catf?catf->example2:fexamples;
       if (example){
+	while (*example && *example==*cmdnameorig){
+	  ++example; ++cmdnameorig;
+	}
+	if (openpar && example[0]=='(')
+	  ++example;
 	if (example[0]=='#')
 	  s=example+1;
 	else {
 	  s += example;
-	  s += ")";
+	  //if (catf && s[s.size()-1]!=')') s += ")";
 	}
       }
       return s;
@@ -1603,7 +1663,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       while(1) {
 	drawRectangle(0,200,LCD_WIDTH_PX,22,giac::_WHITE);
 #ifdef NSPIRE_NEWLIB
-	PrintMini(0,200,(category==CAT_CATEGORY_ALL?"doc: help | Ans: ex1 | enter: ex2":"doc: help | ans: ex1 | enter ex2"),4,33333,giac::_WHITE);
+	PrintMini(0,200,(category==CAT_CATEGORY_ALL?"doc: help | tab: ex1 | enter: ex2":"doc: help | tab: ex1 | enter ex2"),4,33333,giac::_WHITE);
 #else
 	PrintMini(0,200,(category==CAT_CATEGORY_ALL?"Toolbox help | Ans ex1 | EXE  ex2":"Toolbox help | Ans ex1 | EXE ex2"),4,33333,giac::_WHITE);
 #endif
@@ -1619,10 +1679,9 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	  return sres;
 	}
 	int index=menuitems[menu.selection-1].isfolder;
-	if(sres == KEY_CTRL_CATALOG) {
+	if(sres == KEY_CTRL_CATALOG || sres==KEY_BOOK) {
 	  const char * example=index<allcmds?completeCat[index].example:0;
 	  const char * example2=index<allcmds?completeCat[index].example2:0;
-#if 1
 	  xcas::textArea text;
 	  text.editable=false;
 	  text.clipline=-1;
@@ -1643,31 +1702,42 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	  else {
 	    int token=menuitems[menu.selection-1].token;
 	    elem[1].s="Desole, pas d'aide disponible...";
-	    // *logptr(contextptr) << token << endl;
-	    if (isopt){
-	      if (token==_INT_PLOT+T_NUMBER*256){
-		autoexample="display="+elem[0].s;
-		elem[1].s ="Option d'affichage: "+ autoexample;
-	      }
-	      if (token==_INT_COLOR+T_NUMBER*256){
-		autoexample="display="+elem[0].s;
-		elem[1].s="Option de couleur: "+ autoexample;
-	      }
-	      if (token==_INT_SOLVER+T_NUMBER*256){
-		autoexample=elem[0].s;
-		elem[1].s="Option de fsolve: " + autoexample;
-	      }
-	      if (token==_INT_TYPE+T_TYPE_ID*256){
-		autoexample=elem[0].s;
-		elem[1].s="Type d'objet: " + autoexample;
-	      }
+	    const char *fcmdname=menuitems[menu.selection-1].text,* fhowto=0,*fsyntax=0,*fexamples=0,*frelated=0;
+	    if (has_static_help(fcmdname,lang,fhowto,fsyntax,fexamples,frelated)){
+	      elem[1].s=fhowto;
+	      example=fexamples;
 	    }
-	    if (isall){
-	      if (token==T_UNARY_OP || token==T_UNARY_OP_38)
-		elem[1].s=elem[0].s+"(args)";
+	    else {
+	      // *logptr(contextptr) << token << endl;
+	      if (isopt){
+		if (token==_INT_PLOT+T_NUMBER*256){
+		  autoexample="display="+elem[0].s;
+		  elem[1].s ="Option d'affichage: "+ autoexample;
+		}
+		if (token==_INT_COLOR+T_NUMBER*256){
+		  autoexample="display="+elem[0].s;
+		  elem[1].s="Option de couleur: "+ autoexample;
+		}
+		if (token==_INT_SOLVER+T_NUMBER*256){
+		  autoexample=elem[0].s;
+		  elem[1].s="Option de fsolve: " + autoexample;
+		}
+		if (token==_INT_TYPE+T_TYPE_ID*256){
+		  autoexample=elem[0].s;
+		  elem[1].s="Type d'objet: " + autoexample;
+		}
+	      }
+	      if (isall){
+		if (token==T_UNARY_OP || token==T_UNARY_OP_38)
+		  elem[1].s=elem[0].s+"(args)";
+	      }
 	    }
 	  }
+#ifdef NSPIRE_NEWLIB
+	  std::string ex("tab: ");
+#else
 	  std::string ex("Ans: ");
+#endif
 	  elem[2].newLine = 1;
 	  elem[2].lineSpacing = 0;
 	  //elem[2].minimini=1;
@@ -1675,9 +1745,12 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	    if (example[0]=='#')
 	      ex += example+1;
 	    else {
-	      ex += insert_string(index);
-	      ex += example;
-	      ex += ")";
+	      if (index<allcmds){
+		ex += insert_string(index);
+		ex += example;
+		ex += ")";
+	      }
+	      else ex+=example;
 	    }
 	    elem[2].s = ex;
 	    if (example2){
@@ -1689,9 +1762,13 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	      if (example2[0]=='#')
 		ex2 += example2+1;
 	      else {
-		ex2 += insert_string(index);
-		ex2 += example2;
-		ex2 += ")";
+		if (index<allcmds){
+		  ex2 += insert_string(index);
+		  ex2 += example2;
+		  ex2 += ")";
+		}
+		else
+		  ex2 += example2;
 	      }
 	      elem[3].newLine = 1;
 	      // elem[3].lineSpacing = 0;
@@ -1706,106 +1783,31 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	      elem.pop_back();
 	  }
 	  sres=doTextArea(&text,contextptr);
-#else
-	  string cmdname = index<allcmds?completeCat[index].name:menuitems[menu.selection-1].text;
-	  string desc;
-	  std::string autoexample;
-	  if (index<allcmds)
-	    desc = completeCat[index].desc;
-	  else {
-	    int token=menuitems[menu.selection-1].token;
-	    desc ="Desole, pas d'aide disponible...";
-	    if (isopt){
-	      if (token==_INT_PLOT+T_NUMBER*256){
-		autoexample="display="+cmdname;
-		desc ="Option d'affichage: "+ autoexample;
-	      }
-	      if (token==_INT_COLOR+T_NUMBER*256){
-		autoexample="display="+cmdname;
-		desc ="Option de couleur: "+ autoexample;
-	      }
-	      if (token==_INT_SOLVER+T_NUMBER*256){
-		autoexample=cmdname;
-		desc ="Option de fsolve: " + autoexample;
-	      }
-	      if (token==_INT_TYPE+T_TYPE_ID*256){
-		autoexample=cmdname;
-		desc ="Type d'objet: " + autoexample;
-	      }
-	    }
-	    if (isall){
-	      if (token==T_UNARY_OP || token==T_UNARY_OP_38)
-		desc =cmdname+"(args)";
-	    }
-	  }
-	  std::string ex("Ans: "),ex2;
-	  if (example){
-	    if (example[0]=='#')
-	      ex += example+1;
-	    else {
-	      ex += insert_string(index);
-	      ex += example;
-	      ex += ")";
-	    }
-	    if (example2){
-#ifdef NSPIRE_NEWLIB
-	      ex2="enter: ";
-#else
-	      ex2="EXE: ";
-#endif	      
-	      if (example2[0]=='#')
-		ex2 += example2+1;
-	      else {
-		ex2 += insert_string(index);
-		ex2 += example2;
-		ex2 += ")";
-	      }
-	    }
-	  }
-	  else {
-	    if (autoexample.size())
-	      ex2=ex+autoexample;
-	  }
-	  // cmdname, desc, ex1, ex2
-	  drawRectangle(0,0,320,222,_WHITE);
-	  os_draw_string_(0,0,cmdname.c_str());
-	  vector<int> endlines;
-	  string res=cut_string(desc,40,endlines);
-	  if (!endlines.empty())
-	    os_draw_string_small_(0,20,res.substr(0,endlines[0]).c_str());
-	  for (int i=1;i<endlines.size();++i){
-	    os_draw_string_small_(0,20+18*i,res.substr(endlines[i-1]+5,endlines[i]-endlines[i-1]-5).c_str());
-	  }
-	  os_draw_string_(0,20+18*endlines.size(),ex.c_str());
-	  os_draw_string_(0,40+18*endlines.size(),ex2.c_str());
-	  while (1){
-	    int key;
-	    GetKey(&key);
-	    if (key==KEY_CHAR_ANS || key==KEY_CTRL_EXE){
-	      sres=key;
-	      break;
-	    }
-	    if (key==KEY_CTRL_AC || key==KEY_CTRL_EXIT || key==KEY_CTRL_OK)
-	      break;
-	  }
-#endif
 	}
-	if (sres == KEY_CHAR_ANS || sres==KEY_CTRL_EXE) {
+	if (sres == KEY_CHAR_ANS || sres=='\t' ||sres==KEY_BOOK || sres==KEY_CTRL_EXE) {
 	  reset_kbd();
+	  const char * example=0;
+	  std::string s;
 	  if (index<allcmds ){
-	    std::string s(insert_string(index));
-	    const char * example=0;
-	    if (sres==KEY_CHAR_ANS)
+	    s=insert_string(index);
+	    if (sres==KEY_CHAR_ANS || sres=='\t' || sres==KEY_BOOK)
 	      example=completeCat[index].example;
 	    else
 	      example=completeCat[index].example2;
-	    if (example){
-	      if (example[0]=='#')
-		s=example+1;
-	      else {
-		s += example;
+	  }
+	  else {
+	    const char *fcmdname=menuitems[menu.selection-1].text,* fhowto=0,*fsyntax=0,*fexamples=0,*frelated=0;
+	    if (has_static_help(fcmdname,lang,fhowto,fsyntax,fexamples,frelated)){
+	      example=fexamples;
+	    }
+	  }
+	  if (example){
+	    if (example[0]=='#')
+	      s=example+1;
+	    else {
+	      s += example;
+	      if (s[s.size()-1]!=')')
 		s += ")";
-	      }
 	    }
 	    strcpy(insertText, s.c_str());
 #ifdef MENUITEM_MALLOC
@@ -1813,17 +1815,19 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 #endif
 	    return 1;
 	  }
-	  if (isopt){
-	    int token=menuitems[menu.selection-1].token;
-	    if (token==_INT_PLOT+T_NUMBER*256 || token==_INT_COLOR+T_NUMBER*256)
-	      strcpy(insertText,"display=");
-	    else
-	      *insertText=0;
-	    strcat(insertText,menuitems[menu.selection-1].text);
+	  else {
+	    if (isopt){
+	      int token=menuitems[menu.selection-1].token;
+	      if (token==_INT_PLOT+T_NUMBER*256 || token==_INT_COLOR+T_NUMBER*256)
+		strcpy(insertText,"display=");
+	      else
+		*insertText=0;
+	      strcat(insertText,menuitems[menu.selection-1].text);
 #ifdef MENUITEM_MALLOC
-	    free(menuitems);
+	      free(menuitems);
 #endif
-	    return 1;
+	      return 1;
+	    }
 	  }
 	  sres=KEY_CTRL_OK;
 	}
@@ -2014,7 +2018,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       if(showCatalog(text,18,contextptr))
 	return text;
       return "";
-    case KEY_CTRL_CATALOG:
+    case KEY_CTRL_CATALOG: case KEY_BOOK:
       if(showCatalog(text,0,contextptr)) 
 	return text;
       return "";
@@ -5444,7 +5448,7 @@ namespace xcas {
       int key=-1;
       GetKey(&key);
 #if 1
-      if (key==KEY_CTRL_CATALOG){
+      if (key==KEY_CTRL_CATALOG || key==KEY_BOOK){
 	char menu_xmin[32],menu_xmax[32],menu_ymin[32],menu_ymax[32];
 	string s;
 	s="xmin "+print_DOUBLE_(gr.window_xmin,contextptr);
@@ -7816,9 +7820,18 @@ namespace xcas {
       int & textpos=text->pos;
       if (key==KEY_CTRL_CUT && clipline<0) // if no selection, CUT -> pixel menu
 	key=KEY_CTRL_F3;
-      if (!editable && (key==KEY_CHAR_ANS || key==KEY_CTRL_EXE))
+      if (!editable && (key==KEY_CHAR_ANS || key==KEY_BOOK || key=='\t' || key==KEY_CTRL_EXE))
 	return key;
       if (editable){
+	if (key==KEY_BOOK){
+	  string curs=v[textline].s.substr(0,textpos);
+	  if (!curs.empty()){
+	    string adds=help_insert(curs.c_str(),contextptr);
+	    if (!adds.empty())
+	      insert(text,adds.c_str(),false);
+	  }
+	  continue;
+	}
 	if (key=='\t'){
 	  int indent=0; // indent deduced from prev line
 	  if (textline!=0){
@@ -10025,7 +10038,10 @@ namespace xcas {
       }
       if (key == KEY_CTRL_UP)
 	return Console_MoveCursor(alph?CURSOR_ALPHA_UP:CURSOR_UP);
-      if (key == KEY_CTRL_DOWN){
+      if (key == KEY_CTRL_DOWN || key=='\t'
+	  // FIREBIRDEMU
+	  || key==KEY_BOOK
+	  ){
 	if (Current_Line==Last_Line && !Line[Current_Line].readonly && Current_Col>0){
 	  char buf[strlen(Edit_Line)+1];
 	  strcpy(buf,Edit_Line);
@@ -11154,6 +11170,10 @@ int select_item(const char ** ptr,const char * title){
   int nitems=0;
   for (const char ** p=ptr;*p;++p)
     ++nitems;
+  if (nitems==0)
+    return -1;
+  if (nitems==1)
+    return 0;
   MenuItem smallmenuitems[nitems];
   for (int i=0;i<nitems;++i){
     smallmenuitems[i].text=(char *) ptr[i];

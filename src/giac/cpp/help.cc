@@ -31,6 +31,9 @@ using namespace std;
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef KHICAS
+#include "kdisplay.h" // for select_item
+#endif
 
 #if defined VISUALC || defined BESTA_OS
 
@@ -98,7 +101,7 @@ namespace giac {
   }
 
   // NB: cmd_name may be localized but related is not localized
-  bool has_static_help(const char * cmd_name,int lang,const char * & howto,const char * & syntax,const char * & related,const char * & examples){
+  bool has_static_help(const char * & cmd_name,int lang,const char * & howto,const char * & syntax,const char * & related,const char * & examples){
 #ifdef GIAC_HAS_STO_38
     const char nullstring[]=" ";
 #else
@@ -112,6 +115,43 @@ namespace giac {
     int l=int(s.size());
     if ( (l>2) && (s[0]=='\'') && (s[l-1]=='\'') )
       s=s.substr(1,l-2);
+#ifdef KHICAS
+    int pos=0,kk,ks=s.size();
+    for (;pos<static_help_size;++pos){
+      if (strcmp(static_help[pos].cmd_name,s.c_str())>=0)
+	break;
+    }
+    const char * items[1+static_help_size];
+    kk=0;
+    for (;pos<static_help_size;++kk,++pos){
+      const static_help_t & sh=static_help[pos];
+      const char * ptr=sh.cmd_name;
+      if (strcmp(ptr,s.c_str())==0){
+	howto=sh.cmd_howto[lang-1];
+	if (!howto)
+	  howto=sh.cmd_howto[1];
+	syntax=sh.cmd_syntax;
+	if (!syntax)
+	  syntax=nullstring;
+	related=sh.cmd_related;
+	if (!related)
+	  related=nullstring;
+	examples=sh.cmd_examples;
+	if (!examples)
+	  examples=nullstring;
+	return true;
+      }
+      if (strlen(ptr)<ks || strncmp(ptr,s.c_str(),ks)!=0)
+	break;
+      items[kk]=ptr;
+    }
+    items[kk]=0;
+    int r=select_item(items,"Select completion");
+    if (r<0)
+      return false;
+    cmd_name=items[r];
+    return has_static_help(items[r],lang,howto,syntax,related,examples);
+#endif
     static_help_t h={s.c_str(),{0,0,0,0,0},0,0,0};
     std::pair<const static_help_t *,const static_help_t *> p=equal_range(static_help,static_help+static_help_size,h,static_help_sort());
     if (p.first!=p.second && p.first!=static_help+static_help_size){
@@ -129,7 +169,7 @@ namespace giac {
 	examples=nullstring;
       return true;
     }
-#ifdef EMCC
+#if defined EMCC 
     // Find closest string
     syntax=nullstring;
     related=nullstring;

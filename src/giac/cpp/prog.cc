@@ -8460,8 +8460,8 @@ namespace giac {
     if (argss.size()>5 && argss.substr(0,5)=="pari_")
       return string2gen(pari_help(string2gen(argss.substr(5,argss.size()-5),false)),false);      
 #endif
-    const char * howto, * syntax, * related, *examples;
-    if (has_static_help(argss.c_str(),lang,howto,syntax,examples,related)){
+    const char *cmdname=argss.c_str(),* howto=0, * syntax=0, * related=0, *examples=0;
+    if (has_static_help(cmdname,lang,howto,syntax,examples,related)){
 #ifdef EMCC
       if (argss.size()>2 && argss[0]=='\'' && argss[argss.size()-1]=='\'')
 	argss=argss.substr(1,argss.size()-2);

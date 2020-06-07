@@ -265,6 +265,11 @@ void sync_screen(){
   // gui_gc_begin(nspire_gc);
 }
 
+// Nspire peripheral reset :
+// https://github.com/nDroidProject/nDroid-bootloader/blob/master/kernel.c
+// https://hackspire.org/index.php?title=Memory-mapped_I/O_ports_on_CX#CC000000_-_SHA-256_hash_generator
+// hardware ports
+// https://hackspire.org/index.php?title=Memory-mapped_I/O_ports_on_CX
 
 bool nspire_shift=false;
 bool nspire_ctrl=false;
@@ -322,13 +327,13 @@ int ascii_get(int* adaptive_cursor_state){
   
   // Characters
   if (isKeyPressed(KEY_NSPIRE_A)) return SHIFTCTRL('a','A',KEY_CTRL_A);
-  if (isKeyPressed(KEY_NSPIRE_B)) return SHIFT('b','B');
+  if (isKeyPressed(KEY_NSPIRE_B)) return SHIFTCTRL('b','B',KEY_BOOK);
   if (isKeyPressed(KEY_NSPIRE_C)) return SHIFTCTRL('c','C',KEY_CTRL_CLIP);
   if (isKeyPressed(KEY_NSPIRE_D)) return SHIFTCTRL('d','D',KEY_CTRL_D);
   if (isKeyPressed(KEY_NSPIRE_E)) return SHIFTCTRL('e','E',KEY_CTRL_E);
   if (isKeyPressed(KEY_NSPIRE_F)) return SHIFT('f','F');
   if (isKeyPressed(KEY_NSPIRE_G)) return SHIFT('g','G');
-  if (isKeyPressed(KEY_NSPIRE_H)) return SHIFT('h','H');
+  if (isKeyPressed(KEY_NSPIRE_H)) return SHIFTCTRL('h','H',KEY_CTRL_CATALOG);
   if (isKeyPressed(KEY_NSPIRE_I)) return SHIFT('i','I');
   if (isKeyPressed(KEY_NSPIRE_J)) return SHIFT('j','J');
   if (isKeyPressed(KEY_NSPIRE_K)) return SHIFTCTRL('k','K',KEY_CTRL_AC);
@@ -409,7 +414,7 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_SCRATCHPAD)) return SHIFTCTRL(KEY_CTRL_SETUP,KEY_LOAD,KEY_SAVE);
   if (isKeyPressed(KEY_NSPIRE_VAR)) return CTRL(KEY_CTRL_VARS,KEY_CHAR_STORE);
   if (isKeyPressed(KEY_NSPIRE_DOC))		return KEY_CTRL_CATALOG;
-  if (isKeyPressed(KEY_NSPIRE_CAT))		return KEY_CTRL_CATALOG;
+  if (isKeyPressed(KEY_NSPIRE_CAT))		return KEY_BOOK;
   if (isKeyPressed(KEY_NSPIRE_DEL))		return SHIFTCTRL(KEY_CTRL_DEL,KEY_CTRL_DEL,KEY_CTRL_AC);
   if (isKeyPressed(KEY_NSPIRE_RET))		return KEY_CTRL_EXE;
   if (isKeyPressed(KEY_NSPIRE_TAB))		return '\t';
@@ -566,17 +571,20 @@ bool iskeydown(int key){
 int getkey(bool allow_suspend){
   sync_screen();
   int lastkey=-1;
+  unsigned NSPIRE_RTC_ADDR=0x90090000;
   static unsigned lastt=0;
   for (;;){
-    unsigned NSPIRE_RTC_ADDR=0x90090000;
     unsigned t1= * (volatile unsigned *) NSPIRE_RTC_ADDR;
+    if (lastt==0)
+      lastt=t1;
     if (t1-lastt>10){
       display_time();
       sync_screen();
     }
-    if (allow_suspend && nspire_ctrl && on_key_pressed()){
-      nspire_ctrl=false;
-      while (on_key_pressed())
+    bool autosuspend=(t1-lastt>=100);
+    if (allow_suspend && (autosuspend || (nspire_ctrl && on_key_pressed()))){
+      nspire_ctrl=nspire_shift=false;
+      while (!autosuspend && on_key_pressed())
 	msleep(10);
       // somewhat OFF by setting LCD to 0
       unsigned NSPIRE_CONTRAST_ADDR=0x900f0020;
@@ -587,6 +595,7 @@ int getkey(bool allow_suspend){
       *(volatile unsigned *)NSPIRE_CONTRAST_ADDR=oldval;
       statusline(0);
       sync_screen();
+      lastt=* (volatile unsigned *) NSPIRE_RTC_ADDR;
       continue;
     }
     if (!any_key_pressed()){
@@ -597,6 +606,7 @@ int getkey(bool allow_suspend){
 #endif
       continue;
     }
+    lastt=t1;
     int cursor_state=0;
     int i=ascii_get(&cursor_state);
     if (i<0){

@@ -352,6 +352,8 @@ namespace giac {
     int category;
   } catalogFunc;
 
+  void aide2catalogFunc(const giac::aide & a,catalogFunc & c);
+
   giac::gen select_var(const giac::context * contextptr);
   int showCatalog(char* insertText,int preselect,int menupos,const giac::context * contextptr);
   int doMenu(Menu* menu, MenuItemIcon* icontable=NULL);
