@@ -1,5 +1,5 @@
 // implementation of the minimal C SDK for KhiCAS
-#define FIREBIRDEMU 1 // for the Nspire emulator
+//#define FIREBIRDEMU 1 // for the Nspire emulator
 
 #ifdef NSPIRE_NEWLIB
 #include "os.h" // Ndless/ndless-sdk/include/os.h
@@ -573,6 +573,21 @@ int getkey(bool allow_suspend){
     if (t1-lastt>10){
       display_time();
       sync_screen();
+    }
+    if (allow_suspend && nspire_ctrl && on_key_pressed()){
+      nspire_ctrl=false;
+      while (on_key_pressed())
+	msleep(10);
+      // somewhat OFF by setting LCD to 0
+      unsigned NSPIRE_CONTRAST_ADDR=0x900f0020;
+      unsigned oldval=*(volatile unsigned *)NSPIRE_CONTRAST_ADDR;
+      *(volatile unsigned *)NSPIRE_CONTRAST_ADDR=0x100;
+      while (!on_key_pressed())
+	msleep(100);
+      *(volatile unsigned *)NSPIRE_CONTRAST_ADDR=oldval;
+      statusline(0);
+      sync_screen();
+      continue;
     }
     if (!any_key_pressed()){
 #ifdef FIREBIRDEMU

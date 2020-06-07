@@ -248,6 +248,8 @@ namespace giac {
   }
 
   string binary_print_INT_(int i){
+    if (i==0)
+      return "0b0";
     char c[256];
 #if 1
     unsigned ii=i;

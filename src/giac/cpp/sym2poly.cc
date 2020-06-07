@@ -2188,7 +2188,11 @@ namespace giac {
 
   static void check_assume(vecteur & vzero,const vecteur & vassume,GIAC_CONTEXT){
     for (unsigned i=0;i<vzero.size();++i){
-      gen assi=vassume[i];
+      gen assi=vassume[i],tmp;
+      if (assi.type==_IDNT && has_evalf(assi,tmp,1,contextptr)){
+	vzero[i]=tmp;
+	continue;
+      }
       if (assi.type==_VECT && assi.subtype==_ASSUME__VECT && assi._VECTptr->size()==3){
 	if((*assi._VECTptr)[1].type==_VECT && !(*assi._VECTptr)[1]._VECTptr->empty()){
 	  vzero[i]=randassume(*(*assi._VECTptr)[1]._VECTptr,contextptr);

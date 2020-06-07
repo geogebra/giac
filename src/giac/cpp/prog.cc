@@ -8323,19 +8323,19 @@ namespace giac {
 	unsigned * ptr =(unsigned *) addr;
 	if (vb.type==_INT_){
 	  *ptr=vb.val;
-	  return longlong(unsigned(vb.val));
+	  return makevecteur(longlong(addr),longlong(*ptr));
 	}
 	if (vb.type==_ZINT){
 	  unsigned l =mpz_get_si(*vb._ZINTptr);
 	  *ptr=l;
-	  return longlong(l);
+	  return makevecteur(longlong(addr),longlong(*ptr));
 	}
       }
     }
     return gensizeerr(contextptr);
   }
   static const char _write32_s []="write32";
-  static define_unary_function_eval_quoted (__write32,&_write32,_write32_s);
+  static define_unary_function_eval (__write32,&_write32,_write32_s);
   define_unary_function_ptr5( at_write32 ,alias_at_write32,&__write32,0,true);
 
   gen _write16(const gen & args,GIAC_CONTEXT){
@@ -8355,7 +8355,7 @@ namespace giac {
     return gensizeerr(contextptr);
   }
   static const char _write16_s []="write16";
-  static define_unary_function_eval_quoted (__write16,&_write16,_write16_s);
+  static define_unary_function_eval (__write16,&_write16,_write16_s);
   define_unary_function_ptr5( at_write16 ,alias_at_write16,&__write16,0,true);
 
   gen _save_history(const gen & args,GIAC_CONTEXT){

@@ -7819,6 +7819,30 @@ namespace xcas {
       if (!editable && (key==KEY_CHAR_ANS || key==KEY_CTRL_EXE))
 	return key;
       if (editable){
+	if (key=='\t'){
+	  int indent=0; // indent deduced from prev line
+	  if (textline!=0){
+	    std::string & s=v[textline-1].s;
+	    indent=find_indentation(s);
+	    if (!s.empty())
+	      indent+=2*end_do_then(s);
+	  }
+	  std::string & s=v[textline].s;
+	  int curindent=find_indentation(s);
+	  int diff=curindent-indent;
+	  if (diff>0){
+	    s=s.substr(diff,s.size()-diff);
+	    if (textpos>diff)
+	      textpos -= diff;
+	    else
+	      textpos = 0;
+	  }
+	  if (diff<0){
+	    s=string(-diff,' ')+s;
+	    textpos += -diff;
+	  }
+	  continue;
+	}
 	if (key==KEY_CHAR_FRAC && clipline<0){
 	  if (textline==0) continue;
 	  std::string & s=v[textline].s;
