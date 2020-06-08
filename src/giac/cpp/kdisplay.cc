@@ -104,7 +104,7 @@ namespace giac {
       *clipboard()+=s;
     clip_pasted=false;
     if (status){
-      DefineStatusMessage((char*)(lang?"Selection copiee vers presse-papiers.":"Selection copied to clipboard"), 1, 0, 0);
+      DefineStatusMessage((char*)((lang==1)?"Selection copiee vers presse-papiers.":"Selection copied to clipboard"), 1, 0, 0);
       DisplayStatusArea();
     }
   }
@@ -148,9 +148,9 @@ namespace giac {
   
   bool do_confirm(const char * s){
 #ifdef NSPIRE_NEWLIB
-    return confirm(s,(lang?"enter: oui,  esc:annuler":"enter: yes,   esc: cancel"))==KEY_CTRL_F1;
+    return confirm(s,((lang==1)?"enter: oui,  esc:annuler":"enter: yes,   esc: cancel"))==KEY_CTRL_F1;
 #else
-    return confirm(s,(lang?"OK: oui,  Back:annuler":"OK: yes,   Back: cancel"))==KEY_CTRL_F1;
+    return confirm(s,((lang==1)?"OK: oui,  Back:annuler":"OK: yes,   Back: cancel"))==KEY_CTRL_F1;
 #endif
   }
   
@@ -172,18 +172,18 @@ namespace giac {
   
   bool confirm_overwrite(){
 #ifdef NSPIRE_NEWLIB
-    return do_confirm(lang?"enter: oui,  esc:annuler":"enter: yes,   esc: cancel")==KEY_CTRL_F1;
+    return do_confirm((lang==1)?"enter: oui,  esc:annuler":"enter: yes,   esc: cancel")==KEY_CTRL_F1;
 #else
-    return do_confirm(lang?"OK: oui,  Back:annuler":"OK: yes,   Back: cancel")==KEY_CTRL_F1;
+    return do_confirm((lang==1)?"OK: oui,  Back:annuler":"OK: yes,   Back: cancel")==KEY_CTRL_F1;
 #endif
   }
   
   void invalid_varname(){
-    confirm(lang?"Nom de variable incorrect":"Invalid variable name",
+    confirm((lang==1)?"Nom de variable incorrect":"Invalid variable name",
 #ifdef NSPIRE_NEWLIB
-	    lang?"enter: ok":"enter: ok"
+	    (lang==1)?"enter: ok":"enter: ok"
 #else
-	    lang?"OK: ok":"OK: ok"
+	    (lang==1)?"OK: ok":"OK: ok"
 #endif
 	    );
   }
@@ -483,7 +483,7 @@ namespace giac {
       case KEY_CTRL_F4:
       case KEY_CTRL_F5:
       case KEY_CTRL_F6: case KEY_CTRL_CATALOG: case KEY_BOOK: case '\t':
-      case KEY_CHAR_ANS:
+      case KEY_CHAR_ANS: 
 	if (menu->type == MENUTYPE_FKEYS || menu->type==MENUTYPE_MULTISELECT) return key; // MULTISELECT also returns on Fkeys
 	break;
       case KEY_CTRL_PASTE:
@@ -495,7 +495,7 @@ namespace giac {
 	if (menu->type==MENUTYPE_FKEYS) return key; // return on the Format key so that event lists can prompt to change event category
 	break;
       case KEY_CTRL_RIGHT:
-	if(menu->type != MENUTYPE_MULTISELECT) break;
+	if(menu->type != MENUTYPE_MULTISELECT) return KEY_BOOK; // break;
 	// else fallthrough
       case KEY_CTRL_EXE: case KEY_CTRL_OK:
 	if(menu->numitems>0) return key==KEY_CTRL_OK?MENU_RETURN_SELECTION:key;
@@ -1326,8 +1326,8 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   const char shortcuts_fr_string[]="Raccourcis clavier (shell et editeur)\nshift-/: %\nalpha shift \": '\nshift--: \\\nshift-*: factor\nshift-+: normal\nshift-1 a 6: selon bandeau en bas\nshift-7: matrices\nshift-8: listes\nshift-9:arithmetique\nshift-0: polynomes\nshift-.: reels\nshift-10^: programme\nvar: liste des variables (shell) ou dessin tortue (editeur)\n\nshift-x^y (sto) renvoie =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: Editeur 2d ou graphique ou texte selon objet\nshift-6: editeur texte\n+ ou - modifie un parametre en surbrillance\n\nEditeur d'expressions\nshift-cut: defaire/refaire (1 fois)\npave directionnel: deplace la selection dans l'arborescence de l'expression\nshift-droit/gauche echange selection avec argument a droite ou a gauche\nalpha-droit/gauche dans une somme ou un produit: augmente la selection avec argument droit ou gauche\nshift-4: Editer selection, shift-5: taille police + ou - grande\nEXE: evaluer la selection\nshift-6: valeur approchee\nBackspace: supprime l'operateur racine de la selection\n\nEditeur de scripts\nEXE: passage a la ligne\nshift-CUT: defaire/refaire (1 fois)\nshift-COPY: marque le debut de la selection, deplacer le curseur vers la fin puis Backspace pour effacer ou shift-COPY pour copier sans effacer. shift-PASTE pour coller.\nHome-6 recherche seule: entrer un mot puis EXE puis EXE. Taper EXE pour l'occurence suivante, Back pour annuler.\nHome-6 remplacer: entrer un mot puis EXE puis le remplacement et EXE. Taper EXE ou Back pour remplacer ou non et passer a l'occurence suivante, AC pour annuler\nOK: tester syntaxe\n\nRaccourcis Graphes:\n+ - zoom\n(-): zoomout selon y\n*: autoscale\n/: orthonormalisation\nOPTN: axes on/off";
   const char shortcuts_en_string[]="Keyboard shortcuts (shell and editor)\nshift-/: %\nalpha shift \": '\nshift--: \\\nshift-*: factor\nshift-+: normal\nshift-1 to 6: cf. screen bottom\nshift-7: matrices\nshift-8: lists\nshift-9:arithmetic\nshift-0: polynomials\nshift-.: reals\nshift-10^: programs\nvar: variables list (shell) or turtle screen (editor)\n\nshift-x^y (sto) returns =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: 2d editor or graph or text\nshift-6: text edit\n+ ou - modifies selected slider\n\nExpressions editor\nshift-cut: undo/redo (1 fois)\nkeypad: move selection inside expression tree\nshift-right/left exchange selection with right or left argument\nalpha-right/left: inside a sum or product: increase selection with right or left argument\nshift-4: Edit selection, shift-5: change fontsize\nEXE: eval selection\nshift-6: approx value\nBackspace: suppress selection's rootnode operator\n\nScript Editor\nEXE: newline\nshift-CUT: undo/redo (1 time)\nshift-COPY: marks selection begin, move the cursor to the end, then hit Backspace to erase or shift-COPY to copy (no erase). shift-PASTE to paste.\nHome-6 search: enter a word then EXE then again EXE. Type EXE for next occurence, Back to cancel.\nHome-6 replace: enter a word then EXE then replacement word then EXE. Type EXE or Back to replace or ignore and go to next occurence, AC to cancel\nOK: test syntax\n\nGraph shortcuts:\n+ - zoom\n(-): zoomout along y\n*: autoscale\n/: orthonormalization\nOPTN: axes on/off";
 #else
-  const char shortcuts_fr_string[]="Raccourcis clavier (shell et editeur)\nshift-/: %\nshift *: '\nctrl-/: \\\nshift-1 a 6: selon bandeau en bas\nshift-7: matrices\nshift-8: listes\nshift-9:arithmetique\nshift-0: complexes\nshift-.: reels\nctrl P: programme\nvar: liste des variables (shell) ou dessin tortue (editeur)\n\nctrl-var (sto) renvoie =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: Editeur 2d ou graphique ou texte selon objet\nshift-4: editeur texte\n+ ou - modifie un parametre en surbrillance\n\nEditeur d'expressions\nctrl z: defaire/refaire (1 fois)\npave directionnel: deplace la selection dans l'arborescence de l'expression\nshift-droit/gauche echange selection avec argument a droite ou a gauche\nctrl droit/gauche dans une somme ou un produit: augmente la selection avec argument droit ou gauche\nshift-4: Editer selection, shift-5: taille police + ou - grande\nenter: evaluer la selection\nshift-6: valeur approchee\nDel: supprime l'operateur racine de la selection\n\nEditeur de scripts\nenter: passage a la ligne\nctrl z: defaire/refaire (1 fois)\nctrl c: marque le debut de la selection, deplacer le curseur vers la fin puis Del pour effacer ou ctrl c pour copier sans effacer. ctrl v pour coller.\nMenu-6 recherche seule: entrer un mot puis enter puis enter. Taper enter pour l'occurence suivante, esc pour annuler.\nMenu-6 remplacer: entrer un mot puis enter puis le remplacement et enter. Taper enter ou esc pour remplacer ou non et passer a l'occurence suivante, ctrl del pour annuler\nvalidation (a droite de U): tester syntaxe\n\nRaccourcis Graphes:\n+ - zoom\n(-): zoomout selon y\n*: autoscale\n/: orthonormalisation\nOPTN: axes on/off";
-  const char shortcuts_en_string[]="Keyboard shortcuts (shell and editor)\nshift-/: %\nalpha shift *: '\nctrl-/: \\\nshift-1 a 6: see at bottom\nshift-7: matrices\nshift-8: listes\nshift-9:arithmetic\nshift-0: complexes\nshift-.: reals\nctrl P: program\nvar: variables list (shell) or turtle screen (editor)\n\nctrl var (sto) returns =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: 2d editor or graph or text\nshift-4: text edit\n+ ou - modifies selected slider\n\nExpressions editor\nctrl z: undo/redo (1 fois)\nkeypad: move selection inside expression tree\nshift-right/left exchange selection with right or left argument\nalpha-right/left: inside a sum or product: increase selection with right or left argument\nshift-4: Edit selection, shift-5: change fontsize\nenter: eval selection\nshift-6: approx value\nDel: suppress selection's rootnode operator\n\nScript Editor\nenter: newline\nctrl z: undo/redo (1 time)\nctrl c: marks selection begin, move the cursor to the end, then hit Del to erase or ctrl c to copy (no erase). ctrl v to paste.\nMenu-6 search: enter a word then enter then again enter. Type enter for next occurence, esc to cancel.\nMenu-6 replace: enter a word then enter then replacement word then enter. Type enter or esc to replace or ignore and go to next occurence, AC to cancel\nOK: test syntax\n\nGraph shortcuts:\n+ - zoom\n(-): zoomout along y\n*: autoscale\n/: orthonormalization\nOPTN: axes on/off";
+  const char shortcuts_fr_string[]="Raccourcis clavier (shell et editeur)\nlivre: aide/complete\ntab: complete (shell)/indente (editeur)\nshift-/: %\nshift *: '\nctrl-/: \\\nshift-1 a 6: selon bandeau en bas\nshift-7: matrices\nshift-8: listes\nshift-9:arithmetique\nshift-0: complexes\nshift-.: reels\nctrl P: programme\nvar: liste des variables (shell) ou dessin tortue (editeur)\n\nctrl-var (sto) renvoie =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: Editeur 2d ou graphique ou texte selon objet\nshift-4: editeur texte\n+ ou - modifie un parametre en surbrillance\n\nEditeur d'expressions\nctrl z: defaire/refaire (1 fois)\npave directionnel: deplace la selection dans l'arborescence de l'expression\nshift-droit/gauche echange selection avec argument a droite ou a gauche\nctrl droit/gauche dans une somme ou un produit: augmente la selection avec argument droit ou gauche\nshift-4: Editer selection, shift-5: taille police + ou - grande\nenter: evaluer la selection\nshift-6: valeur approchee\nDel: supprime l'operateur racine de la selection\n\nEditeur de scripts\nenter: passage a la ligne\nctrl z: defaire/refaire (1 fois)\nctrl c: marque le debut de la selection, deplacer le curseur vers la fin puis Del pour effacer ou ctrl c pour copier sans effacer. ctrl v pour coller.\nMenu-6 recherche seule: entrer un mot puis enter puis enter. Taper enter pour l'occurence suivante, esc pour annuler.\nMenu-6 remplacer: entrer un mot puis enter puis le remplacement et enter. Taper enter ou esc pour remplacer ou non et passer a l'occurence suivante, ctrl del pour annuler\nvalidation (a droite de U): tester syntaxe\n\nRaccourcis Graphes:\n+ - zoom\n(-): zoomout selon y\n*: autoscale\n/: orthonormalisation\nOPTN: axes on/off";
+  const char shortcuts_en_string[]="Keyboard shortcuts (shell and editor)\nbook: help or completion\ntab: completion (shell), indent (editor)\nshift-/: %\nalpha shift *: '\nctrl-/: \\\nshift-1 a 6: see at bottom\nshift-7: matrices\nshift-8: listes\nshift-9:arithmetic\nshift-0: complexes\nshift-.: reals\nctrl P: program\nvar: variables list (shell) or turtle screen (editor)\n\nctrl var (sto) returns =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: 2d editor or graph or text\nshift-4: text edit\n+ ou - modifies selected slider\n\nExpressions editor\nctrl z: undo/redo (1 fois)\nkeypad: move selection inside expression tree\nshift-right/left exchange selection with right or left argument\nalpha-right/left: inside a sum or product: increase selection with right or left argument\nshift-4: Edit selection, shift-5: change fontsize\nenter: eval selection\nshift-6: approx value\nDel: suppress selection's rootnode operator\n\nScript Editor\nenter: newline\nctrl z: undo/redo (1 time)\nctrl c: marks selection begin, move the cursor to the end, then hit Del to erase or ctrl c to copy (no erase). ctrl v to paste.\nMenu-6 search: enter a word then enter then again enter. Type enter for next occurence, esc to cancel.\nMenu-6 replace: enter a word then enter then replacement word then enter. Type enter or esc to replace or ignore and go to next occurence, AC to cancel\nOK: test syntax\n\nGraph shortcuts:\n+ - zoom\n(-): zoomout along y\n*: autoscale\n/: orthonormalization\nOPTN: axes on/off";
 #endif
   
   const char apropos_fr_string[]="Giac/Xcas 1.6.0, (c) 2020 B. Parisse et R. De Graeve, www-fourier.univ-grenoble-alpes.fr/~parisse.\nKhicas, interface pour calculatrices par B. Parisse, license GPL version 2, adaptee de l'interface d'Eigenmath pour Casio, G. Maia (http://gbl08ma.com), Mike Smith, Nemhardy, LePhenixNoir, ...\nPortage sur Numworks par Damien Nicolet. Remerciements a Jean-Baptiste Boric et Maxime Friess\nPortage sur Nspire grace a Fabian Vogt (firebird-emu, ndless...).\nTable periodique d'apres Maxime Friess\nRemerciements au site tiplanet, en particulier Xavier Andreani, Adrien Bertrand, Lionel Debroux";
@@ -1339,7 +1339,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 
   std::string insert_string(int index){
     std::string s;
-    const catalogFunc * completeCat=lang?completeCatfr:completeCaten;
+    const catalogFunc * completeCat=(lang==1)?completeCatfr:completeCaten;
     if (completeCat[index].insert)
       s=completeCat[index].insert;
     else {
@@ -1377,34 +1377,34 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   int showCatalog(char* insertText,int preselect,int menupos,GIAC_CONTEXT) {
     // returns 0 on failure (user exit) and 1 on success (user chose a option)
     MenuItem menuitems[CAT_CATEGORY_LOGO+1];
-    menuitems[CAT_CATEGORY_ALL].text = (char*)(lang?"Tout":"All");
-    menuitems[CAT_CATEGORY_ALGEBRA].text = (char*)(lang?"Algebre":"Algebra");
-    menuitems[CAT_CATEGORY_LINALG].text = (char*)(lang?"Algebre lineaire":"Linear algebra");
-    menuitems[CAT_CATEGORY_CALCULUS].text = (char*)(lang?"Analyse":"Calculus");
+    menuitems[CAT_CATEGORY_ALL].text = (char*)((lang==1)?"Tout":"All");
+    menuitems[CAT_CATEGORY_ALGEBRA].text = (char*)((lang==1)?"Algebre":"Algebra");
+    menuitems[CAT_CATEGORY_LINALG].text = (char*)((lang==1)?"Algebre lineaire":"Linear algebra");
+    menuitems[CAT_CATEGORY_CALCULUS].text = (char*)((lang==1)?"Analyse":"Calculus");
     menuitems[CAT_CATEGORY_ARIT].text = (char*)"Arithmetic, crypto";
     menuitems[CAT_CATEGORY_COMPLEXNUM].text = (char*)"Complexes";
-    menuitems[CAT_CATEGORY_PLOT].text = (char*)(lang?"Courbes":"Curves");
-    menuitems[CAT_CATEGORY_POLYNOMIAL].text = (char*)(lang?"Polynomes":"Polynomials");
-    menuitems[CAT_CATEGORY_PROBA].text = (char*)(lang?"Probabilites":"Probabilities");
-    menuitems[CAT_CATEGORY_PROGCMD].text = (char*)(lang?"Programmes cmds (0)":"Program cmds (0)");
-    menuitems[CAT_CATEGORY_REAL].text = (char*)(lang?"Reels (e^)":"Reals");
-    menuitems[CAT_CATEGORY_SOLVE].text = (char*)(lang?"Resoudre (ln)":"Solve (ln)");
-    menuitems[CAT_CATEGORY_STATS].text = (char*)(lang?"Statistiques (log)":"Statistics (log)");
-    menuitems[CAT_CATEGORY_TRIG].text = (char*)(lang?"Trigonometrie (i)":"Trigonometry (i)");
+    menuitems[CAT_CATEGORY_PLOT].text = (char*)((lang==1)?"Courbes":"Curves");
+    menuitems[CAT_CATEGORY_POLYNOMIAL].text = (char*)((lang==1)?"Polynomes":"Polynomials");
+    menuitems[CAT_CATEGORY_PROBA].text = (char*)((lang==1)?"Probabilites":"Probabilities");
+    menuitems[CAT_CATEGORY_PROGCMD].text = (char*)((lang==1)?"Programmes cmds (0)":"Program cmds (0)");
+    menuitems[CAT_CATEGORY_REAL].text = (char*)((lang==1)?"Reels (e^)":"Reals");
+    menuitems[CAT_CATEGORY_SOLVE].text = (char*)((lang==1)?"Resoudre (ln)":"Solve (ln)");
+    menuitems[CAT_CATEGORY_STATS].text = (char*)((lang==1)?"Statistiques (log)":"Statistics (log)");
+    menuitems[CAT_CATEGORY_TRIG].text = (char*)((lang==1)?"Trigonometrie (i)":"Trigonometry (i)");
     menuitems[CAT_CATEGORY_OPTIONS].text = (char*)"Options (,)";
-    menuitems[CAT_CATEGORY_LIST].text = (char*)(lang?"Listes (x^y)":"Lists (x^y)");
+    menuitems[CAT_CATEGORY_LIST].text = (char*)((lang==1)?"Listes (x^y)":"Lists (x^y)");
     menuitems[CAT_CATEGORY_MATRIX].text = (char*)"Matrices (sin)";
-    menuitems[CAT_CATEGORY_PROG].text = (char*)(lang?"Programmes (cos)":"Programs");
-    menuitems[CAT_CATEGORY_SOFUS].text = (char*)(lang?"Modifier variables (tan)":"Change variables (tan)");
-    menuitems[CAT_CATEGORY_PHYS].text = (char*)(lang?"Constantes physique (pi)":"Physics constants (pi)");
-    menuitems[CAT_CATEGORY_UNIT].text = (char*)(lang?"Unites physiques (sqrt)":"Units (sqrt)");
-    menuitems[CAT_CATEGORY_LOGO].text = (char*)(lang?"Tortue (x^2)":"Turtle (x^2)");
+    menuitems[CAT_CATEGORY_PROG].text = (char*)((lang==1)?"Programmes (cos)":"Programs");
+    menuitems[CAT_CATEGORY_SOFUS].text = (char*)((lang==1)?"Modifier variables (tan)":"Change variables (tan)");
+    menuitems[CAT_CATEGORY_PHYS].text = (char*)((lang==1)?"Constantes physique (pi)":"Physics constants (pi)");
+    menuitems[CAT_CATEGORY_UNIT].text = (char*)((lang==1)?"Unites physiques (sqrt)":"Units (sqrt)");
+    menuitems[CAT_CATEGORY_LOGO].text = (char*)((lang==1)?"Tortue (x^2)":"Turtle (x^2)");
   
     Menu menu;
     menu.items=menuitems;
     menu.numitems=sizeof(menuitems)/sizeof(MenuItem);
     menu.scrollout=1;
-    menu.title = (char*)(lang?"Liste de commandes":"Commands list");
+    menu.title = (char*)((lang==1)?"Liste de commandes":"Commands list");
     //puts("catalog 1");
     while(1) {
       if (preselect)
@@ -1451,13 +1451,13 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     l=strlen(cmdname);
     // search in catalog: dichotomy would be more efficient
     // but leading spaces cmdnames would be missed
-    int nfunc=lang?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN;//sizeof(completeCat)/sizeof(catalogFunc);
+    int nfunc=(lang==1)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN;//sizeof(completeCat)/sizeof(catalogFunc);
 #ifdef NSPIRE_NEWLIB
     int iii=nfunc; // no search in completeCat, directly in static_help.h
 #else
     int iii=0;
 #endif
-    const catalogFunc * completeCat=lang?completeCatfr:completeCaten;
+    const catalogFunc * completeCat=(lang==1)?completeCatfr:completeCaten;
     for (;iii<nfunc;++iii){
       const char * name=completeCat[iii].name;
       while (*name==' ')
@@ -1472,6 +1472,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     }
     const catalogFunc * catf=iii==nfunc?0:completeCat+iii;
     const char * fhowto=0,* fsyntax=0,* frelated=0,* fexamples=0;
+    char fbuf[1024];
     if (iii==nfunc){
       if (!has_static_help(cmdname,lang,fhowto,fsyntax,fexamples,frelated)){
 	confirm("Pas d'aide disponible pour",cmdname,true);
@@ -1481,13 +1482,33 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	fexamples=frelated;
 	frelated=0;
       }
+      // cut example at ; if there is one
+      for (int i=0;i<sizeof(fbuf);++i){
+	if (fexamples[i]==0)
+	  break;
+	if (fexamples[i]==';'){
+	  strcpy(fbuf,fexamples);
+	  fbuf[i]=0;
+	  fexamples=fbuf;
+	  frelated=fbuf+i+1;
+	  for (++i;i<sizeof(fbuf);++i){
+	    if (fbuf[i]==0)
+	      break;
+	    if (fbuf[i]==';'){
+	      fbuf[i]=0;
+	      break;
+	    }
+	  }
+	  break;
+	}
+      }
     }
     const char * example=catf?catf->example:fexamples;
     const char * example2=catf?catf->example2:frelated;
     xcas::textArea text;
     text.editable=false;
     text.clipline=-1;
-    text.title = (char*)"Aide sur la commande";
+    text.title = (char*)((lang==1)?"Aide sur la commande":"Help on command");
     text.allowF1=true;
     text.python=false;
     std::vector<xcas::textElement> & elem=text.elements;
@@ -1528,7 +1549,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       elem[2].s = ex;
       if (example2){
 #ifdef NSPIRE_NEWLIB
-	string ex2="enter: ";
+	string ex2="ret: ";
 #else
 	string ex2="EXE: ";
 #endif
@@ -1536,7 +1557,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	  ex2 += example2+1;
 	else {
 	  if (iii==nfunc)
-	    ex2=example2;
+	    ex2 += example2;
 	  else {
 	    ex2 += insert_string(iii);
 	    ex2 += example2;
@@ -1556,7 +1577,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	elem.pop_back();
     }
     int sres=doTextArea(&text,contextptr);
-    if (sres==KEY_CTRL_OK){
+    if (sres==MENU_RETURN_SELECTION){
       while (*cmdname && *cmdname==*cmdnameorig){
 	++cmdname; ++cmdnameorig;
       }
@@ -1569,7 +1590,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       if (sres==KEY_CHAR_ANS || sres==KEY_BOOK || sres=='\t')
 	example=catf?catf->example:fexamples;
       else
-	example=catf?catf->example2:fexamples;
+	example=catf?catf->example2:frelated;
       if (example){
 	while (*example && *example==*cmdnameorig){
 	  ++example; ++cmdnameorig;
@@ -1590,13 +1611,13 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 
   // 0 on exit, 1 on success
   int doCatalogMenu(char* insertText, const char* title, int category,GIAC_CONTEXT) {
-    const catalogFunc * completeCat=lang?completeCatfr:completeCaten;
+    const catalogFunc * completeCat=(lang==1)?completeCatfr:completeCaten;
     for (;;){
       int allcmds=builtin_lexer_functions_end()-builtin_lexer_functions_begin();
       int allopts=lexer_tab_int_values_end-lexer_tab_int_values_begin;
       bool isall=category==CAT_CATEGORY_ALL;
       bool isopt=category==CAT_CATEGORY_OPTIONS;
-      const int CAT_COMPLETE_COUNT=(lang?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN);
+      const int CAT_COMPLETE_COUNT=((lang==1)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN);
       int nitems = isall? allcmds:(isopt?allopts:CAT_COMPLETE_COUNT);
 #ifdef MENUITEM_MALLOC
       MenuItem *menuitems=(MenuItem *) malloc(sizeof(MenuItem)*nitems);
@@ -1685,7 +1706,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	  xcas::textArea text;
 	  text.editable=false;
 	  text.clipline=-1;
-	  text.title = (char*)(lang?"Aide sur la commande":"Help on command");
+	  text.title = (char*)((lang==1)?"Aide sur la commande":"Help on command");
 	  text.allowF1=true;
 	  text.python=python_compat(contextptr);
 	  std::vector<xcas::textElement> & elem=text.elements;
@@ -1850,7 +1871,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     kbd_interrupted=giac::ctrl_c=giac::interrupted=false;
     gen g(_VARS(0,contextptr));
     if (g.type!=_VECT || g._VECTptr->empty()){
-      confirm(lang?"Pas de variables. Exemples pour en creer":"No variables. Examples to create",lang?"a=1 ou f(x):=sin(x^2)":"a=1 or f(x):=sin(x^2)",true);
+      confirm((lang==1)?"Pas de variables. Exemples pour en creer":"No variables. Examples to create",(lang==1)?"a=1 ou f(x):=sin(x^2)":"a=1 or f(x):=sin(x^2)",true);
       return undef;
     }
     vecteur & v=*g._VECTptr;
@@ -2063,7 +2084,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 
   bool inputdouble(const char * msg1,double & d,GIAC_CONTEXT){
     string s1;
-    inputline(msg1,(lang?"Nouvelle valeur?":"New value?"),s1,false,65,contextptr);
+    inputline(msg1,((lang==1)?"Nouvelle valeur?":"New value?"),s1,false,65,contextptr);
     return stringtodouble(s1,d);
   }
   
@@ -5474,9 +5495,9 @@ namespace xcas {
 	smallmenuitems[6].text = (char *) ("Zoom in +");
 	smallmenuitems[7].text = (char *) ("Zoom out -");
 	smallmenuitems[8].text = (char *) ("Y-Zoom out (-)");
-	smallmenuitems[9].text = (char*) (lang?"Voir axes":"Show axes");
-	smallmenuitems[10].text = (char*) (lang?"Cacher axes":"Hide axes");
-	smallmenuitems[11].text = (char*)(lang?"Quitter":"Quit");
+	smallmenuitems[9].text = (char*) ((lang==1)?"Voir axes":"Show axes");
+	smallmenuitems[10].text = (char*) ((lang==1)?"Cacher axes":"Hide axes");
+	smallmenuitems[11].text = (char*)((lang==1)?"Quitter":"Quit");
 	int sres = doMenu(&smallmenu);
 	if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
 	  const char * ptr=0;
@@ -5662,9 +5683,9 @@ namespace xcas {
 #if 1
       if (firstrun==2){
 #ifdef NSPIRE_NEWLIB
-	DefineStatusMessage((char*)(lang?"ctrl enter: eval, esc: quitte, ":"ctrl enter: eval, esc: exit"), 1, 0, 0);
+	DefineStatusMessage((char*)((lang==1)?"ctrl enter: eval, esc: quitte, ":"ctrl enter: eval, esc: exit"), 1, 0, 0);
 #else
-	DefineStatusMessage((char*)(lang?"EXE: quitte, resultat dans last":"EXE: quit, result stored in last"), 1, 0, 0);
+	DefineStatusMessage((char*)((lang==1)?"EXE: quitte, resultat dans last":"EXE: quit, result stored in last"), 1, 0, 0);
 #endif
 	DisplayStatusArea();
 	firstrun=1;
@@ -5722,7 +5743,7 @@ namespace xcas {
 	os_hide_graph();
 	if (edited && xcas::do_select(eq.data,true,value) && value.type==_EQW){
 	  //cout << "ok " << value._EQWptr->g << endl;
-	  DefineStatusMessage((lang?"resultat stocke dans last":"result stored in last"), 1, 0, 0);
+	  DefineStatusMessage(((lang==1)?"resultat stocke dans last":"result stored in last"), 1, 0, 0);
 	  //DisplayStatusArea();
 	  giac::sto(value._EQWptr->g,giac::gen("last",contextptr),contextptr);
 	  return value._EQWptr->g;
@@ -5737,9 +5758,9 @@ namespace xcas {
 	}
 	if (confirm(
 #ifdef NSPIRE_NEWLIB
-		    lang?"Vraiment abandonner?":"Really leave",lang?"esc: editeur,  enter: confirmer":"esc: editor,  enter: confirm"
+		    (lang==1)?"Vraiment abandonner?":"Really leave",(lang==1)?"esc: editeur,  enter: confirmer":"esc: editor,  enter: confirm"
 #else
-		    lang?"Vraiment abandonner?":"Really leave",lang?"Back: editeur,  OK: confirmer":"Back: editor,  OK: confirm"
+		    (lang==1)?"Vraiment abandonner?":"Really leave",(lang==1)?"Back: editeur,  OK: confirmer":"Back: editor,  OK: confirm"
 #endif
 		    )==KEY_CTRL_F1){
 	  os_hide_graph();
@@ -5834,7 +5855,7 @@ namespace xcas {
 	if (keyflag==0)
 	  handle_f5();
 	std::string varname;
-	if (inputline((lang?"Stocker la selection dans":"Save selection in",lang?"Nom de variable: ":"Variable name: "),0,varname,false,65,contextptr) && !varname.empty() && isalpha(varname[0])){
+	if (inputline(((lang==1)?"Stocker la selection dans":"Save selection in",(lang==1)?"Nom de variable: ":"Variable name: "),0,varname,false,65,contextptr) && !varname.empty() && isalpha(varname[0])){
 	  giac::gen g(varname,contextptr);
 	  giac::gen ge(protecteval(g,1,contextptr));
 	  if (g.type!=_IDNT){
@@ -5951,7 +5972,7 @@ namespace xcas {
       if (0 && key==KEY_CTRL_EXE){
 	if (xcas::do_select(eq.data,true,value) && value.type==_EQW){
 	  //cout << "ok " << value._EQWptr->g << endl;
-	  DefineStatusMessage((lang?"resultat stocke dans last":"result stored in last"), 1, 0, 0);
+	  DefineStatusMessage(((lang==1)?"resultat stocke dans last":"result stored in last"), 1, 0, 0);
 	  //DisplayStatusArea();
 	  giac::sto(value._EQWptr->g,giac::gen("last",contextptr),contextptr);
 	  return value._EQWptr->g;
@@ -6332,11 +6353,11 @@ namespace xcas {
       if (!kbd_interrupted){
 	// clear turtle, display msg
 	clear_turtle_history(contextptr);
-	int res=confirm(lang?"Memoire remplie! Purger":"Memory full. Purge",
+	int res=confirm((lang==1)?"Memoire remplie! Purger":"Memory full. Purge",
 #ifdef NSPIRE_NEWLIB
-			lang?"enter: variable, esc: tout.":"enter: variables, esc: all",
+			(lang==1)?"enter: variable, esc: tout.":"enter: variables, esc: all",
 #else
-			lang?"EXE variable, Back: tout.":"EXE variables, Back: all",
+			(lang==1)?"EXE variable, Back: tout.":"EXE variables, Back: all",
 #endif
 			false);
 	if (res==KEY_CTRL_F1 && select_var(contextptr).type==_IDNT){
@@ -6441,7 +6462,7 @@ namespace xcas {
 
   void warn_python(int mode,bool autochange){
     if (mode==0)
-      confirm(autochange?(lang?"Source en syntaxe Xcas detecte.":"Xcas syntax source code detected."):(lang?"Syntaxe Xcas.":"Xcas syntax."),
+      confirm(autochange?((lang==1)?"Source en syntaxe Xcas detecte.":"Xcas syntax source code detected."):((lang==1)?"Syntaxe Xcas.":"Xcas syntax."),
 #ifdef NSPIRE_NEWLIB
 	      "enter: ok"
 #else
@@ -6450,27 +6471,27 @@ namespace xcas {
 	      );
     if (mode==1)
       if (autochange)
-	confirm(lang?"Source en syntaxe Python. Passage":"Python syntax source detected. Setting",
+	confirm((lang==1)?"Source en syntaxe Python. Passage":"Python syntax source detected. Setting",
 #ifdef NSPIRE_NEWLIB
-		lang?"en Python avec ^=**, enter: ok":"Python mode with ^=**, enter:ok"
+		(lang==1)?"en Python avec ^=**, enter: ok":"Python mode with ^=**, enter:ok"
 #else
-		lang?"en Python avec ^=**, OK: ok":"Python mode with ^=**, OK:ok"
+		(lang==1)?"en Python avec ^=**, OK: ok":"Python mode with ^=**, OK:ok"
 #endif
 		);
       else
-	confirm(lang?"Syntaxe Python avec ^==**, tapez":"Python syntax with ^==**, type",
+	confirm((lang==1)?"Syntaxe Python avec ^==**, tapez":"Python syntax with ^==**, type",
 #ifdef NSPIRE_NEWLIB
-		lang?"python_compat(2) pour xor. enter: ok":"python_compat(2) for xor. enter: ok"
+		(lang==1)?"python_compat(2) pour xor. enter: ok":"python_compat(2) for xor. enter: ok"
 #else
-		lang?"python_compat(2) pour xor. OK: ok":"python_compat(2) for xor. OK: ok"
+		(lang==1)?"python_compat(2) pour xor. OK: ok":"python_compat(2) for xor. OK: ok"
 #endif
 		);
     if (mode==2){
-      confirm(lang?"Syntaxe Python avec ^==xor":"Python syntax with ^==xor",
+      confirm((lang==1)?"Syntaxe Python avec ^==xor":"Python syntax with ^==xor",
 #ifdef NSPIRE_NEWLIB
-	      lang?"python_compat(1) pour **. enter: ok":"python_compat(1) for **. enter: ok"
+	      (lang==1)?"python_compat(1) pour **. enter: ok":"python_compat(1) for **. enter: ok"
 #else
-	      lang?"python_compat(1) pour **. OK: ok":"python_compat(1) for **. OK: ok"
+	      (lang==1)?"python_compat(1) pour **. OK: ok":"python_compat(1) for **. OK: ok"
 #endif	      
 	      );
     }
@@ -6550,13 +6571,13 @@ namespace xcas {
       }
       else {
 	lineerr=v.size();
-	tok=lang?"la fin":"end";
+	tok=(lang==1)?"la fin":"end";
 	pos=0;
       }
       if (pos>=0)
-	sprintf(status,lang?"Erreur ligne %i a %s":"Error line %i at %s",lineerr,tok.c_str());
+	sprintf(status,(lang==1)?"Erreur ligne %i a %s":"Error line %i at %s",lineerr,tok.c_str());
       else
-	sprintf(status,lang?"Erreur ligne %i %s":"Error line %i %s",lineerr,(pos==-2?(lang?", : manquant ?":", missing :?"):""));
+	sprintf(status,(lang==1)?"Erreur ligne %i %s":"Error line %i %s",lineerr,(pos==-2?((lang==1)?", : manquant ?":", missing :?"):""));
       DefineStatusMessage(status,1,0,0);
     }
     else {
@@ -6566,7 +6587,7 @@ namespace xcas {
       giac::ctrl_c=false;
       kbd_interrupted=giac::interrupted=false;
       check_do_graph(g,7,contextptr); // define the function
-      DefineStatusMessage((char *)(lang?"Syntaxe correcte":"Parse OK"),1,0,0);
+      DefineStatusMessage((char *)((lang==1)?"Syntaxe correcte":"Parse OK"),1,0,0);
     }
     DisplayStatusArea();    
     return lineerr;
@@ -6781,9 +6802,9 @@ namespace xcas {
 
   void search_msg(){
 #ifdef NSPIRE_NEWLIB
-    DefineStatusMessage((char *)(lang?"enter: suivant, DEL: annuler":"enter: next, DEL: cancel"),1,0,0);
+    DefineStatusMessage((char *)((lang==1)?"enter: suivant, DEL: annuler":"enter: next, DEL: cancel"),1,0,0);
 #else
-    DefineStatusMessage((char *)(lang?"enter: suivant, DEL: annuler":"enter: next, DEL: cancel"),1,0,0);
+    DefineStatusMessage((char *)((lang==1)?"enter: suivant, DEL: annuler":"enter: next, DEL: cancel"),1,0,0);
 #endif
     DisplayStatusArea();    	    
   }  
@@ -6830,9 +6851,9 @@ namespace xcas {
   bool chk_replace(textArea * text,const std::string & search,const std::string & replace){
     if (replace.size()){
 #ifdef NSPIRE_NEWLIB      
-      DefineStatusMessage((char *)(lang?"Remplacer? enter: Oui, 8 ou N: Non":"Replace? enter: Yes, 8 or N: No"),1,0,0);
+      DefineStatusMessage((char *)((lang==1)?"Remplacer? enter: Oui, 8 ou N: Non":"Replace? enter: Yes, 8 or N: No"),1,0,0);
 #else
-      DefineStatusMessage((char *)(lang?"Remplacer? EXE: Oui, 8 ou N: Non":"Replace? EXE: Yes, 8 or N: No"),1,0,0);
+      DefineStatusMessage((char *)((lang==1)?"Remplacer? EXE: Oui, 8 ou N: Non":"Replace? EXE: Yes, 8 or N: No"),1,0,0);
 #endif
     }
     else
@@ -6867,11 +6888,11 @@ namespace xcas {
 	// save or cancel?
 	std::string tmp=text->filename;
 	if (strcmp(tmp.c_str(),"temp.py")==0){
-	  if (confirm(lang?"Les modifications seront perdues":"Changes will be lost",
+	  if (confirm((lang==1)?"Les modifications seront perdues":"Changes will be lost",
 #ifdef NSPIRE_NEWLIB
-		      lang?"enter: annuler, esc: tant pis":"enter: cancel, esc: confirm"
+		      (lang==1)?"enter: annuler, esc: tant pis":"enter: cancel, esc: confirm"
 #else
-		      lang?"OK: annuler, Back: tant pis":"OK: cancel, Back: confirm"
+		      (lang==1)?"OK: annuler, Back: tant pis":"OK: cancel, Back: confirm"
 #endif
 		      )==KEY_CTRL_F1)
 	    return 2;
@@ -6879,12 +6900,12 @@ namespace xcas {
 	    return 0;
 	  }
 	}
-	tmp += lang?" a ete modifie!":" was modified!";
+	tmp += (lang==1)?" a ete modifie!":" was modified!";
 	if (confirm(tmp.c_str(),
 #ifdef NSPIRE_NEWLIB
-		    lang?"enter: sauvegarder, esc: tant pis":"enter: save, esc: discard changes"
+		    (lang==1)?"enter: sauvegarder, esc: tant pis":"enter: save, esc: discard changes"
 #else
-		    lang?"OK: sauvegarder, Back: tant pis":"OK: save, Back: discard changes"
+		    (lang==1)?"OK: sauvegarder, Back: tant pis":"OK: save, Back: discard changes"
 #endif
 		    )==KEY_CTRL_F1){
 	  save_script(text->filename.c_str(),merge_area(text->elements));
@@ -7651,9 +7672,9 @@ namespace xcas {
     handle_f5();
     string str;
 #ifdef NSPIRE_NEWLIB
-    int res=inputline(lang?"esc ou chaine vide: annulation":"esc or empty string: cancel",lang?"Nom de fichier:":"Filename:",str,false);
+    int res=inputline((lang==1)?"esc ou chaine vide: annulation":"esc or empty string: cancel",(lang==1)?"Nom de fichier:":"Filename:",str,false);
 #else
-    int res=inputline(lang?"EXIT ou chaine vide: annulation":"EXIT or empty string: cancel",lang?"Nom de fichier:":"Filename:",str,false);
+    int res=inputline((lang==1)?"EXIT ou chaine vide: annulation":"EXIT or empty string: cancel",(lang==1)?"Nom de fichier:":"Filename:",str,false);
 #endif
     if (res==KEY_CTRL_EXIT || str.empty())
       return 0;
@@ -7664,11 +7685,11 @@ namespace xcas {
     // if file already exists, warn, otherwise create
     if (!file_exists(filename))
       return 1;
-    if (confirm(lang?"  Le fichier existe!":"  File exists!",
+    if (confirm((lang==1)?"  Le fichier existe!":"  File exists!",
 #ifdef NSPIRE_NEWLIB
-		lang?"enter: ecraser, esc: annuler":"enter:overwrite, esc: cancel"
+		(lang==1)?"enter: ecraser, esc: annuler":"enter:overwrite, esc: cancel"
 #else
-		lang?"OK: ecraser,Back: annuler":"OK:overwrite, Back: cancel"
+		(lang==1)?"OK: ecraser,Back: annuler":"OK:overwrite, Back: cancel"
 #endif
 		)==KEY_CTRL_F1)
       return 1;
@@ -7701,11 +7722,11 @@ namespace xcas {
     }
     std::string msg;
     if (w.empty())
-      msg=lang?(list?"Creer nouvelle liste":"Creer nouvelle matrice"):(list?"Create new list":"Create new matrix");
+      msg=(lang==1)?(list?"Creer nouvelle liste":"Creer nouvelle matrice"):(list?"Create new list":"Create new matrix");
     else
-      msg=((lang?"Creer nouveau ou editer ":"Create new or edit ")+(w.size()==1?w.front():giac::gen(w,giac::_SEQ__VECT)).print(contextptr));
+      msg=(((lang==1)?"Creer nouveau ou editer ":"Create new or edit ")+(w.size()==1?w.front():giac::gen(w,giac::_SEQ__VECT)).print(contextptr));
     handle_f5();
-    if (inputline(msg.c_str(),(lang?"Nom de variable:":"Variable name:"),*sptr,false) && !sptr->empty() && isalpha((*sptr)[0])){
+    if (inputline(msg.c_str(),((lang==1)?"Nom de variable:":"Variable name:"),*sptr,false) && !sptr->empty() && isalpha((*sptr)[0])){
       giac::gen g(*sptr,contextptr);
       giac::gen ge(protecteval(g,1,contextptr));
       if (g.type==giac::_IDNT){
@@ -7722,16 +7743,16 @@ namespace xcas {
 	}
 	if (ge==g || confirm_overwrite()){
 	  *sptr="";
-	  if (inputline((lang?(list?"Nombre d'elements":"Nombre de lignes"):(list?"Elements number":"Line number")),"",*sptr,true)){
+	  if (inputline(((lang==1)?(list?"Nombre d'elements":"Nombre de lignes"):(list?"Elements number":"Line number")),"",*sptr,true)){
 	    int l=strtol(sptr->c_str(),0,10);
 	    if (l>0 && l<256){
 	      int c;
 	      if (list)
 		c=0;
 	      else {
-		std::string tmp(*sptr+(lang?" lignes.":" lines."));
+		std::string tmp(*sptr+((lang==1)?" lignes.":" lines."));
 		*sptr="";
-		inputline(tmp.c_str(),lang?"Colonnes:":"Columns:",*sptr,true);
+		inputline(tmp.c_str(),(lang==1)?"Colonnes:":"Columns:",*sptr,true);
 		c=strtol(sptr->c_str(),0,10);
 	      }
 	      if (c==0){
@@ -7762,20 +7783,20 @@ namespace xcas {
     std::string search;
     handle_f5();
 #ifdef NSPIRE_NEWLIB
-    int res=inputline(lang?"esc ou chaine vide: annulation":"esc or empty string: cancel",lang?"Chercher:":"Search:",search,false);
+    int res=inputline((lang==1)?"esc ou chaine vide: annulation":"esc or empty string: cancel",(lang==1)?"Chercher:":"Search:",search,false);
     if (search.empty() || res==KEY_CTRL_EXIT)
       return "";
     replace="";
-    std::string tmp=(lang?"esc: recherche seule de ":"esc: search only ")+search;
+    std::string tmp=((lang==1)?"esc: recherche seule de ":"esc: search only ")+search;
 #else
-    int res=inputline(lang?"EXIT ou chaine vide: annulation":"EXIT or empty string: cancel",lang?"Chercher:":"Search:",search,false);
+    int res=inputline((lang==1)?"EXIT ou chaine vide: annulation":"EXIT or empty string: cancel",(lang==1)?"Chercher:":"Search:",search,false);
     if (search.empty() || res==KEY_CTRL_EXIT)
       return "";
     replace="";
-    std::string tmp=(lang?"EXIT: recherche seule de ":"EXIT: search only ")+search;
+    std::string tmp=((lang==1)?"EXIT: recherche seule de ":"EXIT: search only ")+search;
 #endif
     handle_f5();
-    res=inputline(tmp.c_str(),lang?"Remplacer par:":"Replace by:",replace,false);
+    res=inputline(tmp.c_str(),(lang==1)?"Remplacer par:":"Replace by:",replace,false);
     if (res==KEY_CTRL_EXIT)
       replace="";
     return search;
@@ -7961,17 +7982,17 @@ namespace xcas {
 		adds=isex?"def f(x):\nreturn x*x*x\n":"def f(x):\n\nreturn\n";
 	    } else {
 	      if (isif)
-		adds=lang?(isex?"si x<0 alors x:=-x; fsi;":"si  alors\n\nsinon\n\nfsi;"):(isex?"if x<0 then x:=-x; fi;":"if  then\n\nelse\n\nfi;");
+		adds=(lang==1)?(isex?"si x<0 alors x:=-x; fsi;":"si  alors\n\nsinon\n\nfsi;"):(isex?"if x<0 then x:=-x; fi;":"if  then\n\nelse\n\nfi;");
 	      if (lang && iselse)
 		adds="sinon ";
 	      if (isfor)
-		adds=lang?(isex?"pour j de 1 jusque 10 faire\nprint(j*j);\nfpour;":"pour  de  jusque  faire\n\nfpour;"):(isex?"for j from 1 to 10 do\nprint(j*j);\nod;":"for  from  to  do\n\nod;");
+		adds=(lang==1)?(isex?"pour j de 1 jusque 10 faire\nprint(j*j);\nfpour;":"pour  de  jusque  faire\n\nfpour;"):(isex?"for j from 1 to 10 do\nprint(j*j);\nod;":"for  from  to  do\n\nod;");
 	      if (isforin)
-		adds=lang?(isex?"pour j in [1,4,9,16] faire\nprint(j)\nfpour;":"pour  in  faire\n\nfpour;"):(isex?"for j in [1,4,9,16] do\nprint(j);od;":"for  in  do\n\nod;");
+		adds=(lang==1)?(isex?"pour j in [1,4,9,16] faire\nprint(j)\nfpour;":"pour  in  faire\n\nfpour;"):(isex?"for j in [1,4,9,16] do\nprint(j);od;":"for  in  do\n\nod;");
 	      if (iswhile)
-		adds=lang?(isex?"a,b:=25,15;\ntantque b!=0 faire\na,b:=b,irem(a,b);\nftantque;a;":"tantque  faire\n\nftantque;"):(isex?"a,b:=25,15;\nwhile b!=0 do\na,b:=b,irem(a,b);\nod;a;":"while  do\n\nod;");
+		adds=(lang==1)?(isex?"a,b:=25,15;\ntantque b!=0 faire\na,b:=b,irem(a,b);\nftantque;a;":"tantque  faire\n\nftantque;"):(isex?"a,b:=25,15;\nwhile b!=0 do\na,b:=b,irem(a,b);\nod;a;":"while  do\n\nod;");
 	      if (isdef)
-		adds=lang?(isex?"fonction f(x)\nlocal j;\nj:=x*x;\nreturn j;\nffonction:;\n":"fonction f(x)\nlocal j;\n\nreturn ;\nffonction:;"):(isex?"function f(x)\nlocal j;\nj:=x*x;\nreturn j;\nffunction:;\n":"function f(x)\n  local j;\n\n return ;\nffunction:;");
+		adds=(lang==1)?(isex?"fonction f(x)\nlocal j;\nj:=x*x;\nreturn j;\nffonction:;\n":"fonction f(x)\nlocal j;\n\nreturn ;\nffonction:;"):(isex?"function f(x)\nlocal j;\nj:=x*x;\nreturn j;\nffunction:;\n":"function f(x)\n  local j;\n\n return ;\nffunction:;");
 	    }
 	    insert(text,adds,key!=KEY_CTRL_PASTE); // was true, but we should not indent when pasting
 	    show_status(text,search,replace);
@@ -8158,7 +8179,7 @@ namespace xcas {
 	save_script(text->filename.c_str(),merge_area(v));
 	text->changed=false;
 	char status[256];
-	sprintf(status,lang?"%s sauvegarde":"%s saved",text->filename.c_str());
+	sprintf(status,(lang==1)?"%s sauvegarde":"%s saved",text->filename.c_str());
 	DefineStatusMessage(status, 1, 0, 0);
 	DisplayStatusArea();    	    
 	continue;      
@@ -8166,7 +8187,8 @@ namespace xcas {
 	if(text->allowF1) return KEY_CTRL_F1;
 	break;
       case KEY_CTRL_MENU: case KEY_CTRL_F6:
-	// case KEY_CHAR_ANS:	
+	// case KEY_CHAR_ANS:
+	if (!text->editable) 	return TEXTAREA_RETURN_EXIT;
 	if (clipline<0 && text->editable && text->filename.size()){
 	  Menu smallmenu;
 	  smallmenu.numitems=12;
@@ -8175,20 +8197,20 @@ namespace xcas {
 	  smallmenu.height=12;
 	  smallmenu.scrollbar=0;
 	  //smallmenu.title = "KhiCAS";
-	  smallmenuitems[0].text = (char*)(lang?"Tester syntaxe":"Check syntax");
-	  smallmenuitems[1].text = (char*)(lang?"Sauvegarder":"Save");
-	  smallmenuitems[2].text = (char*)(lang?"Sauvegarder comme":"Save as");
-	  smallmenuitems[3].text = (char*)(lang?"Inserer":"Insert");
-	  smallmenuitems[4].text = (char*)(lang?"Effacer":"Clear");
-	  smallmenuitems[5].text = (char*)(lang?"Chercher,remplacer":"Search, replace");
-	  smallmenuitems[6].text = (char*)(lang?"Aller a la ligne":"Goto line");
+	  smallmenuitems[0].text = (char*)((lang==1)?"Tester syntaxe":"Check syntax");
+	  smallmenuitems[1].text = (char*)((lang==1)?"Sauvegarder":"Save");
+	  smallmenuitems[2].text = (char*)((lang==1)?"Sauvegarder comme":"Save as");
+	  smallmenuitems[3].text = (char*)((lang==1)?"Inserer":"Insert");
+	  smallmenuitems[4].text = (char*)((lang==1)?"Effacer":"Clear");
+	  smallmenuitems[5].text = (char*)((lang==1)?"Chercher,remplacer":"Search, replace");
+	  smallmenuitems[6].text = (char*)((lang==1)?"Aller a la ligne":"Goto line");
 	  smallmenuitems[7].type = MENUITEM_CHECKBOX;
 	  smallmenuitems[7].text = (char*)"Python";
 	  smallmenuitems[7].value = text->python;
-	  smallmenuitems[8].text = (char *)(lang?"Changer taille caracteres":"Change fontsize");
+	  smallmenuitems[8].text = (char *)((lang==1)?"Changer taille caracteres":"Change fontsize");
 	  smallmenuitems[9].text = (char *)aide_khicas_string;
-	  smallmenuitems[10].text = (char *)(lang?"A propos":"About");
-	  smallmenuitems[11].text = (char*)(lang?"Quitter":"Quit");
+	  smallmenuitems[10].text = (char *)((lang==1)?"A propos":"About");
+	  smallmenuitems[11].text = (char*)((lang==1)?"Quitter":"Quit");
 	  int sres = doMenu(&smallmenu);
 	  if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
 	    sres=smallmenu.selection;
@@ -8203,7 +8225,7 @@ namespace xcas {
 	      text.editable=false;
 	      text.clipline=-1;
 	      text.title = smallmenuitems[sres-1].text;
-	      add(&text,smallmenu.selection==10?(lang?shortcuts_fr_string:shortcuts_en_string):(lang?apropos_fr_string:apropos_en_string));
+	      add(&text,smallmenu.selection==10?((lang==1)?shortcuts_fr_string:shortcuts_en_string):((lang==1)?apropos_fr_string:apropos_en_string));
 	      doTextArea(&text,contextptr);
 	      continue;
 	    }
@@ -8230,7 +8252,7 @@ namespace xcas {
 	      save_script(text->filename.c_str(),merge_area(v));
 	      text->changed=false;
 	      char status[256];
-	      sprintf(status,lang?"%s sauvegarde":"%s saved",text->filename.c_str());
+	      sprintf(status,(lang==1)?"%s sauvegarde":"%s saved",text->filename.c_str());
 	      DefineStatusMessage(status, 1, 0, 0);
 	      DisplayStatusArea();    	    
 	    }
@@ -8269,7 +8291,7 @@ namespace xcas {
 	    }
 	    if (sres==7){
 	      display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
-	      int l=get_line_number(lang?"Negatif: en partant de la fin":"Negative: counted from the end",lang?"Numero de ligne:":"Line number:");
+	      int l=get_line_number((lang==1)?"Negatif: en partant de la fin":"Negative: counted from the end",(lang==1)?"Numero de ligne:":"Line number:");
 	      if (l>0)
 		text->line=l-1;
 	      if (l<0)
@@ -8409,7 +8431,7 @@ namespace xcas {
 
   void menu_setup(GIAC_CONTEXT){
     Menu smallmenu;
-    smallmenu.numitems=9;
+    smallmenu.numitems=12;
     MenuItem smallmenuitems[smallmenu.numitems];
     smallmenu.items=smallmenuitems;
     smallmenu.height=12;
@@ -8424,11 +8446,14 @@ namespace xcas {
     smallmenuitems[2].text = (char*)"Radians";
     smallmenuitems[3].type = MENUITEM_CHECKBOX;
     smallmenuitems[3].text = (char*)"Sqrt";
-    smallmenuitems[4].text = (char*)"English";
-    smallmenuitems[5].text = (char*)"Francais";
-    smallmenuitems[6].text = (char *) (lang?"Aide interface":"Shortcuts");
-    smallmenuitems[7].text = (char*) (lang?"A propos":"About");
-    smallmenuitems[8].text = (char*) "Quit";
+    smallmenuitems[4].text = (char*)"Francais";
+    smallmenuitems[5].text = (char*)"English";
+    smallmenuitems[6].text = (char*)"Spanish&English";
+    smallmenuitems[7].text = (char*)"Greek&English";
+    smallmenuitems[8].text = (char*)"Deutsch&English";
+    smallmenuitems[9].text = (char *) ((lang==1)?"Raccourcis clavier":"Shortcuts");
+    smallmenuitems[10].text = (char*) ((lang==1)?"A propos":"About");
+    smallmenuitems[11].text = (char*) "Quit";
     // smallmenuitems[2].text = (char*)(isRecording ? "Stop Recording" : "Record Script");
     while(1) {
       smallmenuitems[0].value = xthetat;
@@ -8461,19 +8486,19 @@ namespace xcas {
 	  giac::withsqrt(!giac::withsqrt(contextptr),contextptr);
 	  continue;
 	}
-	if (smallmenu.selection>=5 && smallmenu.selection<=6){
-	  lang=smallmenu.selection-5;
+	if (smallmenu.selection>=5 && smallmenu.selection<=9){
+	  lang=smallmenu.selection-4;
 	  giac::language(lang,contextptr);
 	  break;
 	}
-	if (smallmenu.selection == 9)
+	if (smallmenu.selection == 12)
 	  break;
-	if (smallmenu.selection >= 7) {
+	if (smallmenu.selection >= 10) {
 	  textArea text;
 	  text.editable=false;
 	  text.clipline=-1;
 	  text.title = smallmenuitems[smallmenu.selection-1].text;
-	  add(&text,smallmenu.selection==7?(lang?shortcuts_fr_string:shortcuts_en_string):(lang?apropos_fr_string:apropos_en_string));
+	  add(&text,smallmenu.selection==10?((lang==1)?shortcuts_fr_string:shortcuts_en_string):((lang==1)?apropos_fr_string:apropos_en_string));
 	  doTextArea(&text,contextptr);
 	  continue;
 	} 
@@ -8510,9 +8535,9 @@ namespace xcas {
     if (giac::freeze){
       giac::freeze=false;
 #ifdef NSPIRE_NEWLIB
-      DefineStatusMessage((char*)(lang?"Ecran fige. Taper esc":"Screen freezed. Press esc."), 1, 0, 0);
+      DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper esc":"Screen freezed. Press esc."), 1, 0, 0);
 #else
-      DefineStatusMessage((char*)(lang?"Ecran fige. Taper EXIT":"Screen freezed. Press EXIT."), 1, 0, 0);
+      DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper EXIT":"Screen freezed. Press EXIT."), 1, 0, 0);
 #endif
       DisplayStatusArea();
       for (;;){
@@ -8627,7 +8652,7 @@ namespace xcas {
 	  ok=false;
       }
       if (!ok){
-	confirm(lang?"Contexte trop lourd, non sauvegarde":"Context too havy, not saved.",lang?"Re-executez scripts au chargement (esc enter)":"Re-run scripts at load time (esc enter)",true,64);
+	confirm((lang==1)?"Contexte trop lourd, non sauvegarde":"Context too havy, not saved.",(lang==1)?"Re-executez scripts au chargement (esc enter)":"Re-run scripts at load time (esc enter)",true,64);
 	buf[0]=0;
       }
     }
@@ -8640,7 +8665,9 @@ namespace xcas {
       strcat(buf,");with_sqrt(");
       strcat(buf,withsqrt(contextptr)?"1":"0");
       strcat(buf,");set_language(");
-      strcat(buf,lang?"1":"0");
+      char l[]="0";
+      l[0]+=lang;
+      strcat(buf,l);
       strcat(buf,");");
     }
     return buf;
@@ -9396,11 +9423,11 @@ namespace xcas {
 
   void chk_clearscreen(){
     drawRectangle(0, 24, LCD_WIDTH_PX, LCD_HEIGHT_PX-24, COLOR_WHITE);
-    if (confirm(lang?"Effacer l'historique?":"Clear history?",
+    if (confirm((lang==1)?"Effacer l'historique?":"Clear history?",
 #ifdef NSPIRE_NEWLIB
-		lang?"enter: oui, esc: conserver":"enter: yes, esc: keep",
+		(lang==1)?"enter: oui, esc: conserver":"enter: yes, esc: keep",
 #else
-		lang?"OK: oui, Back: conserver":"OK: yes, Back: keep",
+		(lang==1)?"OK: oui, Back: conserver":"OK: yes, Back: keep",
 #endif
 		false)==KEY_CTRL_F1){
       Console_Init();
@@ -9480,23 +9507,23 @@ namespace xcas {
       PrintMini(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       y += 18;
 #ifdef NSPIRE_NEWLIB
-      PrintMini(x,y,(lang?"Taper menu plusieurs fois":"Type menu several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini(x,y,((lang==1)?"Taper menu plusieurs fois":"Type menu several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
 #else
-      PrintMini(x,y,(lang?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini(x,y,((lang==1)?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
 #endif
       y += 18;
-      PrintMini(x,y,(lang?"pour quitter KhiCAS.":"to leave KhiCAS."),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini(x,y,((lang==1)?"pour quitter KhiCAS.":"to leave KhiCAS."),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       y += 18;
-      PrintMini(x,y,lang?"Si le calcul formel est interdit":"If CAS is forbidden!",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
+      PrintMini(x,y,(lang==1)?"Si le calcul formel est interdit":"If CAS is forbidden!",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
       y += 18;
 #ifdef NSPIRE_NEWLIB
-      PrintMini(x,y,lang?"quittez Khicas (menu menu menu)":"Leave Khicas (menu menu menu)",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
+      PrintMini(x,y,(lang==1)?"quittez Khicas (menu menu menu)":"Leave Khicas (menu menu menu)",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
       if (confirm("Syntaxe?","enter: Xcas, esc: Python",false,130)==KEY_CTRL_F6)
 	python_compat(true,contextptr);
       else
 	python_compat(false,contextptr);
 #else
-      PrintMini(x,y,lang?"quittez Khicas (HOME HOME HOME)":"Leave Khicas (HOME HOME HOME)",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
+      PrintMini(x,y,(lang==1)?"quittez Khicas (HOME HOME HOME)":"Leave Khicas (HOME HOME HOME)",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
       if (confirm("Syntaxe?","OK: Xcas, Back: Python",false,130)==KEY_CTRL_F6)
 	python_compat(true,contextptr);
       else
@@ -9546,7 +9573,7 @@ namespace xcas {
   void erase_script(){
     char filename[MAX_FILENAME_SIZE+1];
     int res=giac_filebrowser(filename, "py", "Scripts");
-    if (res && do_confirm(lang?"Vraiment effacer":"Really erase?")){
+    if (res && do_confirm((lang==1)?"Vraiment effacer":"Really erase?")){
       erase_file(filename);
     }
   }
@@ -9586,7 +9613,7 @@ namespace xcas {
       string s;
       load_script(filename,s);
       if (s.empty()){
-	s=python_compat(contextptr)?(lang?"Prog. Python, sinon taper":"Python prog., for Xcas"):(lang?"Prog. Xcas, sinon taper":"Xcas prog., for Python");
+	s=python_compat(contextptr)?((lang==1)?"Prog. Python, sinon taper":"Python prog., for Xcas"):((lang==1)?"Prog. Xcas, sinon taper":"Xcas prog., for Python");
 	s += " AC F6 12";
 	int k=confirm(s.c_str(),
 #ifdef NSPIRE_NEWLIB
@@ -9627,11 +9654,11 @@ namespace xcas {
 
   void chk_restart(GIAC_CONTEXT){
     drawRectangle(0, 24, LCD_WIDTH_PX, LCD_HEIGHT_PX-24, COLOR_WHITE);
-    if (confirm(lang?"Conserver les variables?":"Keep variables?",
+    if (confirm((lang==1)?"Conserver les variables?":"Keep variables?",
 #ifdef NSPIRE_NEWLIB
-		lang?"enter: conserver, esc: effacer":"enter: keep, esc: erase"
+		(lang==1)?"enter: conserver, esc: effacer":"enter: keep, esc: erase"
 #else
-		lang?"OK: conserver, Back: effacer":"OK: keep, Back: erase"
+		(lang==1)?"OK: conserver, Back: effacer":"OK: keep, Back: erase"
 #endif
 		)==KEY_CTRL_F6)
       do_restart(contextptr);
@@ -9642,11 +9669,11 @@ namespace xcas {
     if (giac_filebrowser(filename, "xw", "Sessions")){
       if (console_changed==0 ||
 	  strcmp(session_filename,"session")==0 ||
-	  confirm(lang?"Session courante perdue?":"Current session will be lost",
+	  confirm((lang==1)?"Session courante perdue?":"Current session will be lost",
 #ifdef NSPIRE_NEWLIB
-		  lang?"enter: annul, esc: ok":"enter: cancel, esc: ok"
+		  (lang==1)?"enter: annul, esc: ok":"enter: cancel, esc: ok"
 #else
-		  lang?"OK: annul, Back: ok":"OK: cancel, Back: ok"
+		  (lang==1)?"OK: annul, Back: ok":"OK: cancel, Back: ok"
 #endif
 		  )==KEY_CTRL_F6){
 	giac::_restart(giac::gen(giac::vecteur(0),giac::_SEQ__VECT),contextptr);
@@ -9656,7 +9683,7 @@ namespace xcas {
 #ifdef NSPIRE_NEWLIB
 	static bool ctrl_r=true;
 	if (ctrl_r){
-	  confirm(lang?"Taper ctrl puis r pour executer session ":"Type ctrl then r to run session","Enter: OK");
+	  confirm((lang==1)?"Taper ctrl puis r pour executer session ":"Type ctrl then r to run session","Enter: OK");
 	  ctrl_r=false;
 	}
 #endif
@@ -9789,25 +9816,25 @@ namespace xcas {
 	while(1) {
 	  // moved inside the loop because lang might change
 	  smallmenuitems[0].text = (char*)"Applications (shift ANS)";
-	  smallmenuitems[1].text = (char *) (lang?"Enregistrer session":"Save session ");
-	  smallmenuitems[2].text = (char *) (lang?"Enregistrer sous":"Save session as");
-	  smallmenuitems[3].text = (char*) (lang?"Charger session":"Load session");
-	  smallmenuitems[4].text = (char*)(lang?"Nouvelle session":"New session");
-	  smallmenuitems[5].text = (char*)(lang?"Executer session":"Run session");
-	  smallmenuitems[6].text = (char*)(lang?"Editeur script":"Script editor");
-	  smallmenuitems[7].text = (char*)(lang?"Ouvrir script":"Open script");
-	  smallmenuitems[8].text = (char*)(lang?"Executer script":"Run script");
-	  smallmenuitems[9].text = (char*)(lang?"Effacer historique (0)":"Clear history");
-	  smallmenuitems[10].text = (char*)(lang?"Effacer script (e^)":"Clear script");
+	  smallmenuitems[1].text = (char *) ((lang==1)?"Enregistrer session":"Save session ");
+	  smallmenuitems[2].text = (char *) ((lang==1)?"Enregistrer sous":"Save session as");
+	  smallmenuitems[3].text = (char*) ((lang==1)?"Charger session":"Load session");
+	  smallmenuitems[4].text = (char*)((lang==1)?"Nouvelle session":"New session");
+	  smallmenuitems[5].text = (char*)((lang==1)?"Executer session":"Run session");
+	  smallmenuitems[6].text = (char*)((lang==1)?"Editeur script":"Script editor");
+	  smallmenuitems[7].text = (char*)((lang==1)?"Ouvrir script":"Open script");
+	  smallmenuitems[8].text = (char*)((lang==1)?"Executer script":"Run script");
+	  smallmenuitems[9].text = (char*)((lang==1)?"Effacer historique (0)":"Clear history");
+	  smallmenuitems[10].text = (char*)((lang==1)?"Effacer script (e^)":"Clear script");
 	  smallmenuitems[11].text = (char*)"Configuration (ln)";
-	  smallmenuitems[12].text = (char *) (lang?"Aide interface (log)":"Shortcuts");
-	  smallmenuitems[13].text = (char*)(lang?"Editer matrice (i)":"Matrix editor");
-	  smallmenuitems[14].text = (char*) (lang?"Creer parametre (,)":"Create slider (,)");
-	  smallmenuitems[15].text = (char*) (lang?"A propos (x^y)":"About");
+	  smallmenuitems[12].text = (char *) ((lang==1)?"Aide interface (log)":"Shortcuts");
+	  smallmenuitems[13].text = (char*)((lang==1)?"Editer matrice (i)":"Matrix editor");
+	  smallmenuitems[14].text = (char*) ((lang==1)?"Creer parametre (,)":"Create slider (,)");
+	  smallmenuitems[15].text = (char*) ((lang==1)?"A propos (x^y)":"About");
 #ifdef NSPIRE_NEWLIB
-	  smallmenuitems[16].text = (char*) (lang?"Quitter (menu)":"Quit");
+	  smallmenuitems[16].text = (char*) ((lang==1)?"Quitter (menu)":"Quit");
 #else
-	  smallmenuitems[16].text = (char*) (lang?"Quitter (HOME)":"Quit");
+	  smallmenuitems[16].text = (char*) ((lang==1)?"Quitter (HOME)":"Quit");
 #endif
 	  int sres = doMenu(&smallmenu);
 	  if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
@@ -9855,11 +9882,11 @@ namespace xcas {
 	      if (get_filename(filename,".xw")){
 		if (console_changed==0 ||
 		    strcmp(session_filename,"session")==0 ||
-		    confirm(lang?"Session courante perdue?":"Current session will be lost",
+		    confirm((lang==1)?"Session courante perdue?":"Current session will be lost",
 #ifdef NSPIRE_NEWLIB
-			    lang?"enter: annul, esc: ok":"enter: cancel, esc: ok"
+			    (lang==1)?"enter: annul, esc: ok":"enter: cancel, esc: ok"
 #else
-			    lang?"OK: annul, Back: ok":"OK: cancel, Back: ok"
+			    (lang==1)?"OK: annul, Back: ok":"OK: cancel, Back: ok"
 #endif
 			    )==KEY_CTRL_F6){
 		  clip_pasted=true;
@@ -9918,7 +9945,7 @@ namespace xcas {
 	      text.editable=false;
 	      text.clipline=-1;
 	      text.title = smallmenuitems[smallmenu.selection-1].text;
-	      add(&text,smallmenu.selection==13?(lang?shortcuts_fr_string:shortcuts_en_string):(lang?apropos_fr_string:apropos_en_string));
+	      add(&text,smallmenu.selection==13?((lang==1)?shortcuts_fr_string:shortcuts_en_string):((lang==1)?apropos_fr_string:apropos_en_string));
 	      doTextArea(&text,contextptr);
 	      continue;
 	    } 
@@ -9964,7 +9991,7 @@ namespace xcas {
 		  std::string s1; double d;
 		  if (paramenu.selection==2){
 		    handle_f5();
-		    if (inputline(menu_name,lang?"Nouvelle valeur?":"New value?",s1,false)==KEY_CTRL_EXE && s1.size()>0 && isalpha(s1[0])){
+		    if (inputline(menu_name,(lang==1)?"Nouvelle valeur?":"New value?",s1,false)==KEY_CTRL_EXE && s1.size()>0 && isalpha(s1[0])){
 		      if (s1.size()>10)
 			s1=s1.substr(0,10);
 		      strcpy(menu_name,("name "+s1).c_str());
@@ -10712,12 +10739,12 @@ namespace xcas {
   void save_session(GIAC_CONTEXT){
     if (strcmp(session_filename,"session") && console_changed){
       string tmp(session_filename);
-      tmp += lang?" a ete modifie!":" was modified!";
+      tmp += (lang==1)?" a ete modifie!":" was modified!";
       if (confirm(tmp.c_str(),
 #ifdef NSPIRE_NEWLIB
-		  lang?"enter: sauve, esc: tant pis":"enter: save, esc: discard changes"
+		  (lang==1)?"enter: sauve, esc: tant pis":"enter: save, esc: discard changes"
 #else
-		  lang?"OK: sauve, Back: tant pis":"OK: save, Back: discard changes"
+		  (lang==1)?"OK: sauve, Back: tant pis":"OK: save, Back: discard changes"
 #endif
 		  )==KEY_CTRL_F1){
 	save(session_filename,contextptr);
@@ -10764,6 +10791,10 @@ namespace xcas {
   
   int console_main(GIAC_CONTEXT){
 #ifdef NSPIRE_NEWLIB
+    // try to detect emulator or real calc
+    unsigned NSPIRE_SPEED=0x900B0000;
+    unsigned speed=*(unsigned *)NSPIRE_SPEED;
+    nspireemu= (speed==1445890);
     mkdir("Xcas",0755);
     //mkdir("/Xcas",0755);
     //mkdir("A:/Xcas",0755);
@@ -10796,11 +10827,11 @@ namespace xcas {
 	return 0;
       }
       if (strcmp((const char *)expr,"restart")==0){
-	if (confirm(lang?"Effacer variables?":"Clear variables?",
+	if (confirm((lang==1)?"Effacer variables?":"Clear variables?",
 #ifdef NSPIRE_NEWLIB
-		    lang?"enter: annul,  esc: confirmer":"enter: cancel,  esc: confirm"
+		    (lang==1)?"enter: annul,  esc: confirmer":"enter: cancel,  esc: confirm"
 #else
-		    lang?"OK: annul,  Back: confirmer":"OK: cancel,  Back: confirm"
+		    (lang==1)?"OK: annul,  Back: confirmer":"OK: cancel,  Back: confirm"
 #endif
 		    )!=KEY_CTRL_F6){
 	  Console_Output(" cancelled");

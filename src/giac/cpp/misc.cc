@@ -632,7 +632,7 @@ namespace giac {
     return sto(g,args,contextptr);
   }
   static const char _clear_s []="clear";
-  static define_unary_function_eval (__clear,&_clear,_clear_s);
+  static define_unary_function_eval_quoted (__clear,&_clear,_clear_s);
   define_unary_function_ptr5( at_clear ,alias_at_clear,&__clear,_QUOTE_ARGUMENTS,true);
 
 #ifndef KHICAS
@@ -2546,7 +2546,7 @@ namespace giac {
   static const char _input_s []="input";
 #ifdef RTOS_THREADX
   // const unary_function_eval __input(0,(const gen_op_context)_input,_input_s);
-  define_unary_function_eval(__input,(const gen_op_context)_input,_input_s);
+  define_unary_function_eval_quoted(__input,(const gen_op_context)_input,_input_s);
 #else
   unary_function_eval __input(0,(const gen_op_context)_input,_input_s);
 #endif
@@ -6426,7 +6426,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     return string2gen(caseval(args._STRNGptr->c_str()),false);
   }
   static const char _caseval_s []="caseval";
-  static define_unary_function_eval (__caseval,&_caseval,_caseval_s);
+  static define_unary_function_eval_quoted (__caseval,&_caseval,_caseval_s);
   define_unary_function_ptr5( at_caseval ,alias_at_caseval,&__caseval,_QUOTE_ARGUMENTS,true);
 
   gen scalarproduct(const vecteur & a,const vecteur & b,GIAC_CONTEXT){
@@ -7296,7 +7296,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     return eval(add_autosimplify(args,contextptr),eval_level(contextptr),contextptr);
   }
   static const char _add_autosimplify_s []="add_autosimplify";
-  static define_unary_function_eval (__add_autosimplify,&_add_autosimplify,_add_autosimplify_s);
+  static define_unary_function_eval_quoted (__add_autosimplify,&_add_autosimplify,_add_autosimplify_s);
   define_unary_function_ptr5( at_add_autosimplify ,alias_at_add_autosimplify,&__add_autosimplify,_QUOTE_ARGUMENTS,true);
 
 

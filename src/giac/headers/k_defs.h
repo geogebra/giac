@@ -1,3 +1,4 @@
+#define NSPIRE_FILEBUFFER 32768
   // Character codes
 #define KEY_CHAR_0          0x30
 #define KEY_CHAR_1          0x31
@@ -145,11 +146,16 @@
 #define KEY_SAVE 31065
 #define KEY_LOAD 31066
 #define KEY_CTRL_A 31001
+#define KEY_CTRL_D 31004
 #define KEY_CTRL_E 31005
+//#define KEY_CTRL_H 31008 // doc
+#define KEY_CTRL_N 31012 // doc
 #define KEY_CTRL_R 31018
+#define KEY_CTRL_S 31019
 #define KEY_EQW_TEMPLATE 31100
 #define KEY_AFFECT 31101
 #define KEY_FLAG 31102
+#define KEY_BOOK 31103
 
 #define KEY_PRGM_ACON 10
 #define KEY_PRGM_DOWN 37

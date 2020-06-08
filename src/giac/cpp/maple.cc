@@ -266,7 +266,7 @@ namespace giac {
     return sto(inv(eval(g,1,contextptr),contextptr),g,contextptr);
   }
   static const char _inverser_s []="inverser";
-  static define_unary_function_eval2 (__inverser,&_inverser,_inverser_s,&printastifunction);
+  static define_unary_function_eval2_quoted (__inverser,&_inverser,_inverser_s,&printastifunction);
   define_unary_function_ptr5( at_inverser ,alias_at_inverser,&__inverser,_QUOTE_ARGUMENTS,T_LOGO);
 
   static gen maple_gcdigcd(const gen & a_orig,const unary_function_ptr * u,GIAC_CONTEXT){
@@ -1151,11 +1151,11 @@ namespace giac {
     return zero;
   }
   static const char _close_s []="close";
-  static define_unary_function_eval (__close,&_close,_close_s);
+  static define_unary_function_eval_quoted (__close,&_close,_close_s);
   define_unary_function_ptr5( at_close ,alias_at_close,&__close,_QUOTE_ARGUMENTS,true);
 
   static const char _fclose_s []="fclose";
-  static define_unary_function_eval (__fclose,&_close,_fclose_s);
+  static define_unary_function_eval_quoted (__fclose,&_close,_fclose_s);
   define_unary_function_ptr5( at_fclose ,alias_at_fclose,&__fclose,_QUOTE_ARGUMENTS,true);
 
   gen _blockmatrix(const gen & g,GIAC_CONTEXT){
@@ -3945,7 +3945,7 @@ namespace giac {
     return string2gen(s,false);
   }
   static const char _cprint_s []="cprint";
-  static define_unary_function_eval (__cprint,&_cprint,_cprint_s);
+  static define_unary_function_eval_quoted (__cprint,&_cprint,_cprint_s);
   define_unary_function_ptr5( at_cprint ,alias_at_cprint,&__cprint,_QUOTE_ARGUMENTS,true);
 
 #if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
@@ -4074,7 +4074,7 @@ namespace giac {
     return 1;
   }
   static const char _cpp_s []="cpp";
-  static define_unary_function_eval (__cpp,&_cpp,_cpp_s);
+  static define_unary_function_eval_quoted (__cpp,&_cpp,_cpp_s);
   define_unary_function_ptr5( at_cpp ,alias_at_cpp,&__cpp,_QUOTE_ARGUMENTS,true);
 #endif
 

@@ -1926,7 +1926,7 @@ namespace giac {
     return res;
   }
   static const char _MAKELIST_s[]="MAKELIST";
-  static define_unary_function_eval (__MAKELIST,&_MAKELIST,_MAKELIST_s);
+  static define_unary_function_eval_quoted (__MAKELIST,&_MAKELIST,_MAKELIST_s);
   define_unary_function_ptr5( at_MAKELIST ,alias_at_MAKELIST,&__MAKELIST,_QUOTE_ARGUMENTS,T_UNARY_OP_38);
 
   gen _INT(const gen & g,GIAC_CONTEXT){
@@ -2140,7 +2140,7 @@ namespace giac {
     return _symb2poly(args0,contextptr);
   }
   static const char _POLYCOEF_s[]="POLYCOEF";
-  static define_unary_function_eval (__POLYCOEF,&_POLYCOEFF,_POLYCOEF_s);
+  static define_unary_function_eval_quoted (__POLYCOEF,&_POLYCOEFF,_POLYCOEF_s);
   define_unary_function_ptr5( at_POLYCOEF ,alias_at_POLYCOEF,&__POLYCOEF,_QUOTE_ARGUMENTS,T_UNARY_OP);
 
   gen _horner(const gen & args,GIAC_CONTEXT);
@@ -2248,7 +2248,7 @@ namespace giac {
     return res;
   }
   static const char _POLYROOT_s[]="POLYROOT";
-  static define_unary_function_eval (__POLYROOT,&_POLYROOT,_POLYROOT_s);
+  static define_unary_function_eval_quoted (__POLYROOT,&_POLYROOT,_POLYROOT_s);
   define_unary_function_ptr5( at_POLYROOT ,alias_at_POLYROOT,&__POLYROOT,_QUOTE_ARGUMENTS,T_UNARY_OP_38);
 
   gen _ISOLATE(const gen & args0,GIAC_CONTEXT){
@@ -2283,7 +2283,7 @@ namespace giac {
   define_unary_function_ptr5( at_IS_LINEAR ,alias_at_IS_LINEAR,&__IS_LINEAR,_QUOTE_ARGUMENTS,T_UNARY_OP_38);
 
   static const char _FNROOT_s[]="FNROOT";
-  static define_unary_function_eval (__FNROOT,&_fsolve,_FNROOT_s);
+  static define_unary_function_eval_quoted (__FNROOT,&_fsolve,_FNROOT_s);
   define_unary_function_ptr5( at_FNROOT ,alias_at_FNROOT,&__FNROOT,_QUOTE_ARGUMENTS,T_UNARY_OP_38);
 
   gen _SVD(const gen & args0,GIAC_CONTEXT){
@@ -3135,14 +3135,14 @@ namespace giac {
     return nsto;
   }
   static const char _EXPORT__s[]="EXPORT";
-  static define_unary_function_eval (__EXPORT_,&_EXPORT_,_EXPORT__s);
+  static define_unary_function_eval_quoted (__EXPORT_,&_EXPORT_,_EXPORT__s);
   define_unary_function_ptr5( at_EXPORT ,alias_at_EXPORT_,&__EXPORT_,_QUOTE_ARGUMENTS,T_RETURN);
   
   gen _VIEWS(const gen & args,GIAC_CONTEXT){
     return _EXPORT_(args,contextptr);
   }
   static const char _VIEWS_s[]="VIEWS";
-  static define_unary_function_eval (__VIEWS,&_VIEWS,_VIEWS_s);
+  static define_unary_function_eval_quoted (__VIEWS,&_VIEWS,_VIEWS_s);
   define_unary_function_ptr5( at_VIEWS ,alias_at_VIEWS,&__VIEWS,_QUOTE_ARGUMENTS,T_RETURN);
   
 #ifdef USE_GMP_REPLACEMENTS

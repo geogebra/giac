@@ -13453,7 +13453,7 @@ namespace giac {
     return 1;
   }
   static const char _giac_assert_s []="assert";
-  static define_unary_function_eval (__giac_assert,&_giac_assert,_giac_assert_s);
+  static define_unary_function_eval_quoted (__giac_assert,&_giac_assert,_giac_assert_s);
   define_unary_function_ptr5( at_giac_assert ,alias_at_giac_assert,&__giac_assert,_QUOTE_ARGUMENTS,T_RETURN);
 
   gen _index(const gen & args,GIAC_CONTEXT){

@@ -4294,7 +4294,7 @@ namespace giac {
     return increment(a._VECTptr->front(),a._VECTptr->back(),false,2,contextptr);
   }
   static const char _iquosto_s []="iquosto";
-  static define_unary_function_eval (__iquosto,&_iquosto,_iquosto_s);
+  static define_unary_function_eval_quoted (__iquosto,&_iquosto,_iquosto_s);
   define_unary_function_ptr5( at_iquosto ,alias_at_iquosto,&__iquosto,_QUOTE_ARGUMENTS,true);
 
   gen _iremsto(const gen & a,const context * contextptr){
@@ -4306,7 +4306,7 @@ namespace giac {
     return increment(a._VECTptr->front(),a._VECTptr->back(),false,3,contextptr);
   }
   static const char _iremsto_s []="iremsto";
-  static define_unary_function_eval (__iremsto,&_iremsto,_iremsto_s);
+  static define_unary_function_eval_quoted (__iremsto,&_iremsto,_iremsto_s);
   define_unary_function_ptr5( at_iremsto ,alias_at_iremsto,&__iremsto,_QUOTE_ARGUMENTS,true);
 
   gen _andsto(const gen & a,const context * contextptr){
@@ -4318,7 +4318,7 @@ namespace giac {
     return increment(a._VECTptr->front(),a._VECTptr->back(),false,4,contextptr);
   }
   static const char _andsto_s []="andsto";
-  static define_unary_function_eval (__andsto,&_andsto,_andsto_s);
+  static define_unary_function_eval_quoted (__andsto,&_andsto,_andsto_s);
   define_unary_function_ptr5( at_andsto ,alias_at_andsto,&__andsto,_QUOTE_ARGUMENTS,true);
 
   gen _orsto(const gen & a,const context * contextptr){
@@ -4330,7 +4330,7 @@ namespace giac {
     return increment(a._VECTptr->front(),a._VECTptr->back(),false,5,contextptr);
   }
   static const char _orsto_s []="orsto";
-  static define_unary_function_eval (__orsto,&_orsto,_orsto_s);
+  static define_unary_function_eval_quoted (__orsto,&_orsto,_orsto_s);
   define_unary_function_ptr5( at_orsto ,alias_at_orsto,&__orsto,_QUOTE_ARGUMENTS,true);
 
   gen _xorsto(const gen & a,const context * contextptr){
@@ -4342,7 +4342,7 @@ namespace giac {
     return increment(a._VECTptr->front(),a._VECTptr->back(),false,6,contextptr);
   }
   static const char _xorsto_s []="xorsto";
-  static define_unary_function_eval (__xorsto,&_xorsto,_xorsto_s);
+  static define_unary_function_eval_quoted (__xorsto,&_xorsto,_xorsto_s);
   define_unary_function_ptr5( at_xorsto ,alias_at_xorsto,&__xorsto,_QUOTE_ARGUMENTS,true);
 
   gen _shiftsto(const gen & a,const context * contextptr){
@@ -4354,7 +4354,7 @@ namespace giac {
     return increment(a._VECTptr->front(),a._VECTptr->back(),false,7,contextptr);
   }
   static const char _shiftsto_s []="shiftsto";
-  static define_unary_function_eval (__shiftsto,&_shiftsto,_shiftsto_s);
+  static define_unary_function_eval_quoted (__shiftsto,&_shiftsto,_shiftsto_s);
   define_unary_function_ptr5( at_shiftsto ,alias_at_shiftsto,&__shiftsto,_QUOTE_ARGUMENTS,true);
 
   gen _rotatesto(const gen & a,const context * contextptr){
@@ -4366,7 +4366,7 @@ namespace giac {
     return increment(a._VECTptr->front(),a._VECTptr->back(),false,8,contextptr);
   }
   static const char _rotatesto_s []="rotatesto";
-  static define_unary_function_eval (__rotatesto,&_rotatesto,_rotatesto_s);
+  static define_unary_function_eval_quoted (__rotatesto,&_rotatesto,_rotatesto_s);
   define_unary_function_ptr5( at_rotatesto ,alias_at_rotatesto,&__rotatesto,_QUOTE_ARGUMENTS,true);
 
   gen _powsto(const gen & a,const context * contextptr){
@@ -4378,7 +4378,7 @@ namespace giac {
     return increment(a._VECTptr->front(),a._VECTptr->back(),false,9,contextptr);
   }
   static const char _powsto_s []="powsto";
-  static define_unary_function_eval (__powsto,&_powsto,_powsto_s);
+  static define_unary_function_eval_quoted (__powsto,&_powsto,_powsto_s);
   define_unary_function_ptr5( at_powsto ,alias_at_powsto,&__powsto,_QUOTE_ARGUMENTS,true);
 
   bool is_assumed_real(const gen & g,GIAC_CONTEXT){
