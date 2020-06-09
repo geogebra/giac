@@ -273,6 +273,7 @@ void sync_screen(){
 
 bool nspire_shift=false;
 bool nspire_ctrl=false;
+bool nspire_select=false;
 void statusline(int mode){
   char *msg=0;
   if (nspire_ctrl){
@@ -610,7 +611,37 @@ int getkey(bool allow_suspend){
     }
     lastt=t1;
     int cursor_state=0;
-    int i=ascii_get(&cursor_state);
+    int i=0;
+    if (isKeyPressed(KEY_NSPIRE_SHIFT)){
+      while (i==0 && isKeyPressed(KEY_NSPIRE_SHIFT)){
+	if (isKeyPressed(KEY_NSPIRE_LEFT)|| isKeyPressed(KEY_NSPIRE_LEFTUP) || isKeyPressed(KEY_NSPIRE_DOWNLEFT))
+	  i=KEY_SELECT_LEFT;
+	if (isKeyPressed(KEY_NSPIRE_RIGHT)|| isKeyPressed(KEY_NSPIRE_UPRIGHT) || isKeyPressed(KEY_NSPIRE_RIGHTDOWN))
+	  i=KEY_SELECT_RIGHT;
+	if (isKeyPressed(KEY_NSPIRE_UP))
+	  i=KEY_SELECT_UP;
+	if (isKeyPressed(KEY_NSPIRE_DOWN))
+	  i=KEY_SELECT_DOWN;
+      }
+      if (i!=0){
+	nspire_select=true;
+      }
+      if (i==0){
+	nspire_shift=!nspire_shift;
+	statusline(0);
+	sync_screen();
+	i=-1;
+      }
+    }
+    else {
+      if (nspire_select){
+	nspire_select=nspire_shift=false;
+	statusline(0);
+	sync_screen();
+	continue;
+      }
+      i=ascii_get(&cursor_state);
+    }
     if (i<0){
       wait_no_key_pressed();
       continue;
@@ -624,14 +655,14 @@ int getkey(bool allow_suspend){
     }
     if ( (i>=KEY_CTRL_LEFT && i<=KEY_CTRL_RIGHT) ||
 	 (i>=KEY_UP_CTRL && i<=KEY_RIGHT_CTRL) ||
+	 (i>=KEY_SELECT_LEFT && i<=KEY_SELECT_RIGHT) ||
 	 i==KEY_CTRL_DEL){
       int delay=(lastkey==i)?1:40,j;
       for (j=0;j<delay && any_key_pressed();++j){
-#ifdef FIREBIRDEMU
-	msleep(14);
-#else // real calculator
-	msleep(1);
-#endif
+	if (nspireemu)
+	  msleep(14);
+	else
+	  msleep(1);
       }
       if (any_key_pressed())
 	lastkey=i;

@@ -7426,10 +7426,6 @@ namespace giac {
     vecteur elim=gen2vecteur((*args._VECTptr)[1]);
     if (elim.empty())
       return eqs;
-    if (elim.size()==1 && returngb!=1) {
-      *logptr(contextptr) << "1 variable to eliminate, using resultant. Run with last optional parameter gbasis if you want to force gbasis\n";
-      returngb=3; // for example for eliminate([((-((t)^(2)))*((((t)^(2))+(1))^(3)))+((((((t)^(4))+((x)*((((t)^(2))+(1))^(2))))+((6)*((t)^(2))))-(3))^(2)), (-((((t)^(2))+(1))^(3)))+((((-(8))*((t)^(3)))+((y)*((((t)^(2))+(1))^(2))))^(2))],[t])
-    }
     vecteur l(elim);
     if (args._VECTptr->size()>2 && (*args._VECTptr)[2].type==_VECT)
       lvar((*args._VECTptr)[2],l);
@@ -7464,6 +7460,10 @@ namespace giac {
 	}
       }
     }
+    if (elim.size()==1 && returngb!=1) {
+      *logptr(contextptr) << "1 variable to eliminate, using resultant. Run with last optional parameter gbasis if you want to force gbasis\n";
+      returngb=3; // for example for eliminate([((-((t)^(2)))*((((t)^(2))+(1))^(3)))+((((((t)^(4))+((x)*((((t)^(2))+(1))^(2))))+((6)*((t)^(2))))-(3))^(2)), (-((((t)^(2))+(1))^(3)))+((((-(8))*((t)^(3)))+((y)*((((t)^(2))+(1))^(2))))^(2))],[t])
+    }
     vecteur linelim;
 #ifdef GIAC_GBASISLEX
     if (returngb==3 && eqs.size()<=l.size()+3){
@@ -7491,7 +7491,7 @@ namespace giac {
 #if 1
     // check if we should eliminate linear dependency with resultant
     // to fit inside 3/11 or 7/7 or 11/3
-    if (returngb==3 && eqs.size()<=l.size()+3){
+    if (returngb==3 && neq>=2 && neq<=l.size()+3){
       bool ok=es>=1;
       if (ok){
 	*logptr(contextptr) << "Eliminating with resultant. Original equations may reduce further."<<'\n';

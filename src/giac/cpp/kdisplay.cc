@@ -7902,6 +7902,45 @@ namespace xcas {
 	    textline=err-1;
 	  continue;
 	}
+	if (key>=KEY_SELECT_LEFT && key<=KEY_SELECT_RIGHT){
+	  if (clipline<0){
+	    clipline=textline;
+	    clippos=textpos;
+	    show_status(text,search,replace);
+	  }
+	  if (key==KEY_SELECT_LEFT){
+	    if (textpos)
+	      --textpos;
+	    else {
+	      if (textline){
+		--textline;
+		textpos=v[textline].s.size();
+	      }
+	    }
+	  }
+	  if (key==KEY_SELECT_RIGHT){
+	    if (textpos<v[textline].s.size())
+	      ++textpos;
+	    else {
+	      if (textline<v.size()){
+		++textline;
+		textpos=0;
+	      }
+	    }
+	  }
+	  if (key==KEY_SELECT_UP){
+	    if (textline){
+	      --textline;
+	      textpos=giacmin(textpos,v[textline].s.size());
+	    }
+	  }
+	  if (key==KEY_SELECT_DOWN){
+	    if (textline<v.size()){
+	      ++textline;
+	      textpos=giacmin(textpos,v[textline].s.size());
+	    }
+	  }
+	}
 	if (key==KEY_CTRL_CLIP) {
 #if 1
 	  if (clipline>=0){
@@ -11197,13 +11236,13 @@ void drawAtom(uint8_t id) {
 } // namespace xcas
 #endif // ndef NO_NAMESPACE_XCAS
 
-int select_item(const char ** ptr,const char * title){
+int select_item(const char ** ptr,const char * title,bool askfor1){
   int nitems=0;
   for (const char ** p=ptr;*p;++p)
     ++nitems;
   if (nitems==0)
     return -1;
-  if (nitems==1)
+  if (!askfor1 && nitems==1)
     return 0;
   MenuItem smallmenuitems[nitems];
   for (int i=0;i<nitems;++i){

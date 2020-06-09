@@ -17,7 +17,7 @@ extern "C" {
 }
 extern int lang;
 extern bool warn_nr;
-int select_item(const char ** ptr,const char * title);
+int select_item(const char ** ptr,const char * title,bool askfor1=true);
 const char * gettext(const char * s) ;
 
 #ifndef NO_NAMESPACE_XCAS
