@@ -26,6 +26,7 @@ extern "C" {
 extern "C" {
 #include "k_csdk.h"
   void console_output(const char *,int );
+  const char * console_input(const char * msg1,const char * msg2,bool numeric,int ypos);
 }
 extern int lang;
 extern bool warn_nr;

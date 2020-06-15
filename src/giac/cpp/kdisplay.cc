@@ -8725,14 +8725,28 @@ namespace xcas {
   }
 
   const int max_lines_saved=50;
+  int xcas_python_eval=0;
 
   void run(const char * s,int do_logo_graph_eqw,GIAC_CONTEXT){
     if (strlen(s)>=2 && (s[0]=='#' ||
 			 (s[0]=='/' && (s[1]=='/' || s[1]=='*'))
 			 ))
       return;
+    if (strcmp(s,"xcas")==0){
+      xcas_python_eval=0;
+      *logptr(contextptr) << "Xcas interpreter\n";
+      return;
+    }
+    if (strcmp(s,"python")==0){
+      xcas_python_eval=1;
+      *logptr(contextptr) << "Micropython interpreter\n";
+      return;
+    }
 #ifdef MICROPY_LIB
-    micropy_eval(s);
+    if (xcas_python_eval==1){
+      micropy_eval(s);
+      return;
+    }
 #endif    
     gen g,ge;
     do_run(s,g,ge,contextptr);
@@ -11423,6 +11437,13 @@ void console_output(const char * s,int l){
   strncpy(buf,s,l);
   buf[l]=0;
   xcas::dConsolePut(buf);
+}
+
+const char * console_input(const char * msg1,const char * msg2,bool numeric,int ypos){
+  static string str;
+  if (!giac::inputline(msg1,msg2,str,numeric,ypos,context0))
+    return 0;
+  return str.c_str();
 }
 
 int select_item(const char ** ptr,const char * title,bool askfor1){
