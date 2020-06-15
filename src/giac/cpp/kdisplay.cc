@@ -2083,8 +2083,13 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   }
 
   bool inputdouble(const char * msg1,double & d,GIAC_CONTEXT){
+    int di=d;
     string s1;
-    inputline(msg1,((lang==1)?"Nouvelle valeur?":"New value?"),s1,false,65,contextptr);
+    if (di==d)
+      s1=print_INT_(di);
+    else
+      s1=print_DOUBLE_(d,3);
+    inputline(msg1,((lang==1)?"Nouvelle valeur? ":"New value? "),s1,false,65,contextptr);
     return stringtodouble(s1,d);
   }
   
@@ -6380,6 +6385,27 @@ namespace xcas {
     giac::kbd_interrupted=giac::interrupted=false;
   }
 
+#ifdef NSPIRE_LED
+#include "kled.cc"
+#else
+  void set_exam_mode(int i,GIAC_CONTEXT){
+    exam_mode=i;
+  }
+#endif
+  string print_duration(double & duration){
+    if (duration<=0)
+      return "";
+    int s=std::floor(duration+.5);
+    int h=s/3600;
+    int m=((s+30)%3600)/60;
+    char ch[6]="00h00";
+    ch[0] += h/10;
+    ch[1] += h%10;
+    ch[3] += m/10;
+    ch[4] += m%10;
+    duration=h+m/100.0;
+    return ch;
+  }
   bool islogo(const gen & g){
     if (g.type!=_VECT || g._VECTptr->empty()) return false;
     if (g.subtype==_LOGO__VECT) return true;
@@ -8239,6 +8265,7 @@ namespace xcas {
 	  smallmenuitems[0].text = (char*)((lang==1)?"Tester syntaxe":"Check syntax");
 	  smallmenuitems[1].text = (char*)((lang==1)?"Sauvegarder":"Save");
 	  smallmenuitems[2].text = (char*)((lang==1)?"Sauvegarder comme":"Save as");
+	  if (exam_mode) smallmenuitems[2].text = (char*)"";
 	  smallmenuitems[3].text = (char*)((lang==1)?"Inserer":"Insert");
 	  smallmenuitems[4].text = (char*)((lang==1)?"Effacer":"Clear");
 	  smallmenuitems[5].text = (char*)((lang==1)?"Chercher,remplacer":"Search, replace");
@@ -8280,7 +8307,7 @@ namespace xcas {
 	      if (err) // move cursor to the error line
 		textline=err-1;
 	    } 
-	    if (sres==3){
+	    if (sres==3 && exam_mode==0){
 	      char filename[MAX_FILENAME_SIZE+1];
 	      if (get_filename(filename,".py")){
 		text->filename=filename;
@@ -8466,11 +8493,74 @@ namespace xcas {
     statuslinemsg(msg.c_str());
     set_xcas_status();
     Bdisp_PutDisp_DD();
+  }
+
+  void leave_exam_mode(GIAC_CONTEXT){
+#ifdef NSPIRE_NEWLIB
+    // FIXME test USB connection instead
+    unsigned NSPIRE_RTC_ADDR=0x90090000;
+    unsigned t1= * (volatile unsigned *) NSPIRE_RTC_ADDR;
+    int chk=0;
+    if (exam_duration<=0 || (t1-exam_start<exam_duration)){
+      chk=-1;
+#if 1 // checkin the  power management addresses range
+      unsigned poweraddr=0x900b0028;
+      unsigned u=*(unsigned *)poweraddr;
+      //*logptr(contextptr) << "power " << u << '\n';
+      if ( (u&0xff0000)==0x070000) // connected 0x11070114, disconnected 0x11110114
+	chk=0;
+#endif
+#if 0 /// check connection, works only if graph link connection before
+      unsigned powermanagement_lockaddr=0x900b0018;
+      // Bit 5: #B0000000 - USB OTG controller
+      // Bit 6: #B4000000 - USB HOST controller
+      *(unsigned *)powermanagement_lockaddr=0x8400a5d;
+      unsigned HW_USBCTRL_PORTSC1=0xb0000184;
+      unsigned u=*(unsigned *) HW_USBCTRL_PORTSC1;
+      if ( (u&0xff000000)==0x11000000) // 0x11000805 vs 0x1d000004
+	chk=0;
+      // B00001A4 might be used as well: HW_USBCTRL_OTGSC 1f202d20 vs 1f3c1120
+#endif
+#if 0 // check USB does not work
+      nn_ch_t ch = NULL;
+      nn_oh_t oh = NULL;
+      nn_nh_t nh = NULL;
+      oh = TI_NN_CreateOperationHandle();
+      int ans=TI_NN_NodeEnumInit((nn_ch_t) oh);//(ch);
+      *logptr(contextptr) << "enuminit" << ans << '\n';
+      if (ans>=0){
+	ans=TI_NN_NodeEnumNext(oh, &nh);
+	*logptr(contextptr) << "enumnext" << ans << '\n';
+	if (ans>=0){
+	  ans=TI_NN_Connect(nh, 0x4060, &ch);
+	  *logptr(contextptr) << "connect" << ans << '\n';
+	  if (ans>=0){
+	    if(ch){
+	      TI_NN_Disconnect(ch);
+	      chk=0;
+	    }
+	  }
+	}
+	TI_NN_NodeEnumDone(oh);
+	TI_NN_DestroyOperationHandle(oh);
+      }
+#endif
+    }
+#else
+    int chk=0;
+#endif
+    if (chk>=0){
+      set_exam_mode(0,contextptr);
+    }
+    if (exam_mode)
+      confirm((lang==1)?"Pour arreter le mode examen":"To stop exam mode",(lang==1)?"branchez la calculatrice puis menu menu":"plug in the calculator then menu menu");
+    else
+      confirm((lang==1)?"Fin du mode examen":"End exam mode","enter: OK");
   }    
 
   void menu_setup(GIAC_CONTEXT){
     Menu smallmenu;
-    smallmenu.numitems=12;
+    smallmenu.numitems=13;
     MenuItem smallmenuitems[smallmenu.numitems];
     smallmenu.items=smallmenuitems;
     smallmenu.height=12;
@@ -8490,9 +8580,13 @@ namespace xcas {
     smallmenuitems[6].text = (char*)"Spanish&English";
     smallmenuitems[7].text = (char*)"Greek&English";
     smallmenuitems[8].text = (char*)"Deutsch&English";
-    smallmenuitems[9].text = (char *) ((lang==1)?"Raccourcis clavier":"Shortcuts");
-    smallmenuitems[10].text = (char*) ((lang==1)?"A propos":"About");
-    smallmenuitems[11].text = (char*) "Quit";
+    smallmenuitems[9].text = (char *) ((lang==1)?"Raccourcis clavier (0)":"Shortcuts (0)");
+    smallmenuitems[10].text = (char*) ((lang==1)?"Mode examen (e^x)":"Exam mode (e^x)");
+    smallmenuitems[11].text = (char*) ((lang==1)?"A propos":"About");
+    smallmenuitems[12].text = (char*) "Quit";
+    if (exam_mode)
+      smallmenuitems[12].text = (char*)((lang==1)?"Quitter le mode examen":"Quit exam mode");
+    
     // smallmenuitems[2].text = (char*)(isRecording ? "Stop Recording" : "Record Script");
     while(1) {
       smallmenuitems[0].value = xthetat;
@@ -8530,8 +8624,76 @@ namespace xcas {
 	  giac::language(lang,contextptr);
 	  break;
 	}
-	if (smallmenu.selection == 12)
+	if (smallmenu.selection == 11){
+	  if (!exam_mode && confirm((lang==1?"Verifiez que le calcul formel est autorise.":"Please check that the CAS is allowed."),(lang==1?"France: autorise au bac. Enter: ok, esc: annul":"enter: yes, esc: no"))!=KEY_CTRL_F1)
+	    break;
+	  // confirmation, duree (>=0 French indicative, else not indicative)
+	  double duration=exam_mode?absint(exam_duration):0;
+	  string msg=(lang==1)?"Compte a rebours en h.min ou 0 pour horloge":"Exam duration in h.min (0: end by pluging)";
+	  msg += print_duration(duration);
+	  if (inputdouble(msg.c_str(),duration,contextptr)){
+	    bool indicative=lang==1?duration>=0:duration<=0;
+	    if (exam_mode)
+	      indicative=exam_duration<=0;
+	    else {
+	      if (lang==1 && !indicative && confirm("Attention, mode non conforme au bac en France","enter: corriger, esc: tant pis")!=KEY_CTRL_F6)
+		indicative=true;
+	    }
+	    if (duration<0)
+	      duration=-duration;
+	    if (duration>10)
+	      duration=duration/60;
+	    else
+	      duration=std::floor(duration)+100.0/60*(duration-std::floor(duration));
+	    if (duration){
+	      msg=lang==1?"Duree compte a rebours ":"Exam duration ";
+	      double d=giacmax(duration*3600,absint(exam_duration));
+	      msg += print_duration(d);
+	    }
+	    else
+	      msg="Mode examen.";
+	    if (indicative)
+	      msg += lang==1?" Fin par branchement":" Exit by pluging";
+	    if (confirm(msg.c_str(),(lang==1?"!Blocage dans Xcas en mode exam! enter OK, esc annul":"!Trapped in Xcas in exam mode! enter OK, esc cancel."))==KEY_CTRL_F1){
+#ifdef NSPIRE_NEWLIB
+	      if (exam_mode) 
+		exam_duration=duration?giacmax(absint(exam_duration),duration*3600+30):0;
+	      else {
+		unsigned NSPIRE_RTC_ADDR=0x90090000;
+		exam_start= * (volatile unsigned *) NSPIRE_RTC_ADDR;
+		exam_duration = duration?duration*3600+30:0;
+	      }
+	      if (indicative)
+		exam_duration=-absint(exam_duration);
+#else
+	      exam_start=0;
+	      exam_duration=1;
+#endif
+	      set_exam_mode(1,contextptr);
+	      do_restart(contextptr);
+	      clear_turtle_history(contextptr);
+	      Console_Init();
+	      Console_Clear_EditLine();
+	      console_changed=0;
+	      strcpy(session_filename,"session.xw");
+	      save_session(contextptr);
+	      if (edptr){
+		edptr->elements.resize(1);
+		edptr->elements[0].s="";
+		edptr->undoelements=edptr->elements;
+		edptr->line=0;
+		edptr->pos=0;
+	      }
+	      save_script("session.py","");
+	    }
+	  }
 	  break;
+	}
+	if (smallmenu.selection == 13){
+	  if (exam_mode)
+	    leave_exam_mode(contextptr);
+	  break;
+	}
 	if (smallmenu.selection >= 10) {
 	  textArea text;
 	  text.editable=false;
@@ -8569,6 +8731,9 @@ namespace xcas {
 			 (s[0]=='/' && (s[1]=='/' || s[1]=='*'))
 			 ))
       return;
+#ifdef MICROPY_LIB
+    micropy_eval(s);
+#endif    
     gen g,ge;
     do_run(s,g,ge,contextptr);
     if (giac::freeze){
@@ -8703,6 +8868,8 @@ namespace xcas {
       strcat(buf,angle_radian(contextptr)?"1":"0");
       strcat(buf,");with_sqrt(");
       strcat(buf,withsqrt(contextptr)?"1":"0");
+      strcat(buf,");integer_format(");
+      strcat(buf,integer_format(contextptr)==16?"16":"10");
       strcat(buf,");set_language(");
       char l[]="0";
       l[0]+=lang;
@@ -9229,8 +9396,7 @@ namespace xcas {
     The following functions are used to output the string to the current line.
   */
 
-  int Console_Output(const char *str)
-  {
+  int Console_Output(const char *str)  {
     if (!Line) return 0;
     console_changed=1;
     int return_val, old_len, i;
@@ -9857,6 +10023,8 @@ namespace xcas {
 	  smallmenuitems[0].text = (char*)"Applications (shift ANS)";
 	  smallmenuitems[1].text = (char *) ((lang==1)?"Enregistrer session":"Save session ");
 	  smallmenuitems[2].text = (char *) ((lang==1)?"Enregistrer sous":"Save session as");
+	  if (exam_mode)
+	    smallmenuitems[2].text = (char *) "";
 	  smallmenuitems[3].text = (char*) ((lang==1)?"Charger session":"Load session");
 	  smallmenuitems[4].text = (char*)((lang==1)?"Nouvelle session":"New session");
 	  smallmenuitems[5].text = (char*)((lang==1)?"Executer session":"Run session");
@@ -9865,7 +10033,7 @@ namespace xcas {
 	  smallmenuitems[8].text = (char*)((lang==1)?"Executer script":"Run script");
 	  smallmenuitems[9].text = (char*)((lang==1)?"Effacer historique (0)":"Clear history");
 	  smallmenuitems[10].text = (char*)((lang==1)?"Effacer script (e^)":"Clear script");
-	  smallmenuitems[11].text = (char*)"Configuration (ln)";
+	  smallmenuitems[11].text = (char*)"Configuration/examen (ln)";
 	  smallmenuitems[12].text = (char *) ((lang==1)?"Aide interface (log)":"Shortcuts");
 	  smallmenuitems[13].text = (char*)((lang==1)?"Editer matrice (i)":"Matrix editor");
 	  smallmenuitems[14].text = (char*) ((lang==1)?"Creer parametre (,)":"Create slider (,)");
@@ -9875,10 +10043,15 @@ namespace xcas {
 #else
 	  smallmenuitems[16].text = (char*) ((lang==1)?"Quitter (HOME)":"Quit");
 #endif
+	  if (exam_mode)
+	    smallmenuitems[16].text = (char*)((lang==1)?"Quitter le mode examen":"Quit exam mode");
 	  int sres = doMenu(&smallmenu);
 	  if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
 	    if (smallmenu.selection==smallmenu.numitems){
-	      return KEY_CTRL_MENU;
+	      if (!exam_mode)
+		return KEY_CTRL_MENU;
+	      leave_exam_mode(contextptr);
+	      break;
 	    }
 	    const char * ptr=0;
 	    if (smallmenu.selection==1){
@@ -9887,13 +10060,13 @@ namespace xcas {
 	    }
 	    if (smallmenu.selection==2){
 	      if (strcmp(session_filename,"session")==0)
-		smallmenu.selection=2;
+		smallmenu.selection=3;
 	      else {
 		save(session_filename,contextptr);
 		break;
 	      }
 	    }
-	    if (smallmenu.selection==3){
+	    if (smallmenu.selection==3 && !exam_mode){
 	      char buf[270];
 	      if (get_filename(buf,".xw")){
 		save(buf,contextptr);
@@ -9916,27 +10089,36 @@ namespace xcas {
 	      break;
 	    }
 	    if (smallmenu.selection==5) {
-	      char filename[MAX_FILENAME_SIZE+1];
-	      drawRectangle(0, 0, LCD_WIDTH_PX, LCD_HEIGHT_PX, COLOR_WHITE);
-	      if (get_filename(filename,".xw")){
-		if (console_changed==0 ||
-		    strcmp(session_filename,"session")==0 ||
-		    confirm((lang==1)?"Session courante perdue?":"Current session will be lost",
-#ifdef NSPIRE_NEWLIB
-			    (lang==1)?"enter: annul, esc: ok":"enter: cancel, esc: ok"
-#else
-			    (lang==1)?"OK: annul, Back: ok":"OK: cancel, Back: ok"
-#endif
-			    )==KEY_CTRL_F6){
-		  clip_pasted=true;
+	      if (exam_mode){
+		if (do_confirm((lang==1)?"Tout effacer?":"Really clear?")){
 		  Console_Init();
 		  Console_Clear_EditLine();
 		  giac::_restart(giac::gen(giac::vecteur(0),giac::_SEQ__VECT),contextptr);
-		  std::string s(remove_path(giac::remove_extension(filename)));
-		  strcpy(session_filename,s.c_str());
-		  reload_edptr(session_filename,edptr,contextptr);
 		}
-	      }  
+	      }
+	      else {
+		char filename[MAX_FILENAME_SIZE+1];
+		drawRectangle(0, 0, LCD_WIDTH_PX, LCD_HEIGHT_PX, COLOR_WHITE);
+		if (get_filename(filename,".xw")){
+		  if (console_changed==0 ||
+		      strcmp(session_filename,"session")==0 ||
+		      confirm((lang==1)?"Session courante perdue?":"Current session will be lost",
+#ifdef NSPIRE_NEWLIB
+			      (lang==1)?"enter: annul, esc: ok":"enter: cancel, esc: ok"
+#else
+			      (lang==1)?"OK: annul, Back: ok":"OK: cancel, Back: ok"
+#endif
+			      )==KEY_CTRL_F6){
+		    clip_pasted=true;
+		    Console_Init();
+		    Console_Clear_EditLine();
+		    giac::_restart(giac::gen(giac::vecteur(0),giac::_SEQ__VECT),contextptr);
+		    std::string s(remove_path(giac::remove_extension(filename)));
+		    strcpy(session_filename,s.c_str());
+		    reload_edptr(session_filename,edptr,contextptr);
+		  }
+		}
+	      }
 	      break;
 	    }
 	    if (smallmenu.selection==6) {
@@ -11235,6 +11417,13 @@ void drawAtom(uint8_t id) {
 #ifndef NO_NAMESPACE_XCAS
 } // namespace xcas
 #endif // ndef NO_NAMESPACE_XCAS
+
+void console_output(const char * s,int l){
+  char buf[l+1];
+  strncpy(buf,s,l);
+  buf[l]=0;
+  xcas::dConsolePut(buf);
+}
 
 int select_item(const char ** ptr,const char * title,bool askfor1){
   int nitems=0;

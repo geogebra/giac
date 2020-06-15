@@ -5,6 +5,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+  extern short exam_mode;
+  extern unsigned exam_start;
+  extern int exam_duration;
   int ext_main();
   bool waitforvblank();
   bool back_key_pressed() ;

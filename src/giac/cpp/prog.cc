@@ -8263,6 +8263,10 @@ namespace giac {
       if (v.size()==2 && is_address(v.front(),addr)){
 	gen vb=eval(v.back(),1,contextptr);
 	if (vb.type==_INT_){
+#ifdef KHICAS
+	  if (exam_mode)
+	    return gensizeerr("Exam mode");
+#endif
 	  unsigned char * ptr =(unsigned char *) addr;
 	  // int res=*ptr;
 	  *ptr=vb.val;
@@ -8315,6 +8319,10 @@ namespace giac {
 
   gen _write32(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+#ifdef KHICAS
+    if (exam_mode)
+      return gensizeerr("Exam mode");
+#endif
     if (args.type==_VECT){
       vecteur v=*args._VECTptr;
       size_t addr;
@@ -8340,6 +8348,10 @@ namespace giac {
 
   gen _write16(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+#ifdef KHICAS
+    if (exam_mode)
+      return gensizeerr("Exam mode");
+#endif
     if (args.type==_VECT){
       vecteur v=*args._VECTptr;
       size_t addr;

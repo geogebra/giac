@@ -1,12 +1,29 @@
 // implementation of the minimal C SDK for KhiCAS
+short exam_mode=0;
+unsigned exam_start=0; // RTC start
+int exam_duration=0;
+// <0: indicative duration, ==0 time displayed during exam, >0 end exam_mode after
+const int exam_bg1=0x4321,exam_bg2=0x1234;
+int exam_bg(){
+  return exam_mode?(exam_duration>0?exam_bg1:exam_bg2):0x0;
+}
 
 #ifdef NSPIRE_NEWLIB
+// NB changes for the nspire cx ii
+// on_key_pressed() should be modified (returns always true)
+// https://hackspire.org/index.php?title=Memory-mapped_I/O_ports_on_CX_II#90140000_-_Power_management
+// cx ii power management 0x90140000,
+// cx 900B0018 (R/W), 900B0020 (?)
+// cx ii 90140050 (R/W): Disable bus access to peripherals. Reads will just return the last word read from anywhere in the address range, and writes will be ignored.
+// cx 900F0020 (R/W): LCD contrast/backlight. Valid range for contrast: 0x11a to 0x1ce; normal value is 0x174. However, it can range from 0x100 (backlight off) to about 0x1d0 (about max brightness).
+// -> cx ii The OS controls the LCD backlight by writing to 90130018.
 #include "os.h" // Ndless/ndless-sdk/include/os.h
 #include <unistd.h>
 #include <stdio.h>
 #include <dirent.h>
 #include <ngc.h>
 #include "k_defs.h"
+
 
 int c_rgb565to888(int c){
   c &= 0xffff;
@@ -45,6 +62,20 @@ double millis(){
 void get_hms(int *h,int *m,int *s){
   unsigned NSPIRE_RTC_ADDR=0x90090000;
   unsigned t1= * (volatile unsigned *) NSPIRE_RTC_ADDR;
+  if (exam_mode){
+    unsigned t=t1-exam_start;
+    if (exam_duration>0 && t>exam_duration){
+      ;//set_exam_mode(0);
+    }
+    else {
+      if (exam_duration>0)
+	t1=exam_duration-t;
+      else {
+	if (exam_duration<0 && t<-exam_duration)
+	  t1=-exam_duration-t;
+      }	
+    }
+  }
   unsigned d=t1/86400;
   *s=t1%86400;
   *h=*s/3600;
@@ -68,6 +99,14 @@ bool erase_file(const char * filename){
 char nspire_filebuf[NSPIRE_FILEBUFFER];
 
 const char * read_file(const char * filename){
+  if (exam_mode &&
+      (strcmp(filename,"session.xw")!=0 &&
+       strcmp(filename,"session.xw.tns")!=0 &&
+       strcmp(filename,"session.py")!=0 &&
+       strcmp(filename,"session.py.tns")!=0 
+       )
+      )
+    return 0;
   FILE * f = fopen(filename,"r");
   if (!f) return 0;
   fseek(f,0L,SEEK_END);
@@ -88,6 +127,14 @@ const char * read_file(const char * filename){
 }
 
 bool write_file(const char * filename,const char * s,size_t len){
+  if (exam_mode &&
+      (strcmp(filename,"session.xw")!=0 &&
+       strcmp(filename,"session.xw.tns")!=0 &&
+       strcmp(filename,"session.py")!=0 &&
+       strcmp(filename,"session.py.tns")!=0 
+       )
+      )
+    return false;
   FILE * f=fopen(filename,"w");
   if (!f) return false;
   if (!len) len=strlen(s);
@@ -131,6 +178,14 @@ int os_file_browser(const char ** filenames,int maxrecords,const char * extensio
       }
     }
     if (ext && strcmp(ext,extension)==0){
+      if (exam_mode &&
+	  (strcmp(s_,"session.xw")!=0 &&
+	   strcmp(s_,"session.xw.tns")!=0 &&
+	   strcmp(s_,"session.py")!=0 &&
+	   strcmp(s_,"session.py.tns")!=0 
+	   )
+	  )
+	continue;
       strcpy(os_filenames[cur],s_);
       filenames[cur]=os_filenames[cur];
       ++cur;
@@ -151,7 +206,7 @@ int os_file_browser(const char ** filenames,int maxrecords,const char * extensio
     if (finished)
       break;
   }
-  filenames[cur]=0;
+  filenames[cur]=NULL;
   return cur;
 }
 
@@ -231,9 +286,10 @@ int os_draw_string_small(int x,int y,int c,int bg,const char * s,bool fake){
 
 void statuslinemsg(const char * msg){
   get_gc();
-  gui_gc_setColor(nspire_gc,c_rgb565to888(0x0));
+  int bg=exam_bg();
+  gui_gc_setColor(nspire_gc,c_rgb565to888(bg));
   gui_gc_fillRect(nspire_gc,0,0,SCREEN_WIDTH,nspire_statusarea);
-  nspire_draw_string(0,0,0xffff,0x0,Regular9,msg,false);
+  nspire_draw_string(0,0,0xffff,bg,Regular9,msg,false);
 }
 
 void display_time(){
@@ -251,9 +307,10 @@ void display_time(){
   //msg[7] = ('0'+(s/10));
   //msg[8] = ('0'+(s%10));
   //msg[9]=0;
-  gui_gc_setColor(nspire_gc,c_rgb565to888(0x0));
+  int bg=exam_bg();
+  gui_gc_setColor(nspire_gc,c_rgb565to888(bg));
   gui_gc_fillRect(nspire_gc,270,0,SCREEN_WIDTH-270,nspire_statusarea);
-  nspire_draw_string(270,0,0xffff,0x0,Regular9,msg,false);
+  nspire_draw_string(270,0,0xffff,bg,Regular9,msg,false);
 }
 
 void sync_screen(){
@@ -288,11 +345,12 @@ void statusline(int mode){
     else
       msg="";
   }
-  gui_gc_setColor(nspire_gc,c_rgb565to888(0x0));
+  int bg=exam_bg();
+  gui_gc_setColor(nspire_gc,c_rgb565to888(bg));
   gui_gc_fillRect(nspire_gc,210,0,SCREEN_WIDTH-210,nspire_statusarea);
-  nspire_draw_string(220,0,0xffff,0x0,Regular9,msg,false);
+  nspire_draw_string(220,0,0xffff,bg,Regular9,msg,false);
   if (nspireemu)
-    nspire_draw_string(210,0,0xffff,0x0,Regular9,"e",false);
+    nspire_draw_string(210,0,0xffff,bg,Regular9,"e",false);
   display_time();
   if (mode==0)
     return;
@@ -594,8 +652,10 @@ int getkey(bool allow_suspend){
       unsigned NSPIRE_CONTRAST_ADDR=0x900f0020;
       unsigned oldval=*(volatile unsigned *)NSPIRE_CONTRAST_ADDR;
       *(volatile unsigned *)NSPIRE_CONTRAST_ADDR=0x100;
-      while (!on_key_pressed())
+      while (!on_key_pressed()){
 	msleep(100);
+	idle();
+      }
       *(volatile unsigned *)NSPIRE_CONTRAST_ADDR=oldval;
       statusline(0);
       sync_screen();
@@ -732,5 +792,9 @@ void enable_back_interrupt(){
 void disable_back_interrupt(){
   on_key_enabled=false;
 }
+#else // NSPIRE_NEWLIB
 
-#endif
+void set_exam_mode(int i){
+  exam_mode=i;
+}
+#endif // NSPIRE_NEWLIB

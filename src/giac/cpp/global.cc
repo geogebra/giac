@@ -171,7 +171,8 @@ namespace giac {
 	back_key_pressed()
 #endif
 	){ 
-      kbd_interrupted=ctrl_c=interrupted=true; 
+      kbd_interrupted=true;
+      ctrl_c=interrupted=true; 
     }
 #else
     if (caseval_unitialized!=-123454321){

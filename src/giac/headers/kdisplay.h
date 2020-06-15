@@ -12,8 +12,20 @@ extern   const int LCD_HEIGHT_PX;
 #define GIAC_HISTORY_MAX_TAILLE 32
 #define GIAC_HISTORY_SIZE 2
 
+#ifdef MICROPY_LIB
+extern "C" {
+  int do_file(const char *file);
+  char * micropy_init();
+  int micropy_eval(const char * line);
+  void  mp_deinit();
+  void mp_stack_ctrl_init();
+}
+#endif
+
+
 extern "C" {
 #include "k_csdk.h"
+  void console_output(const char *,int );
 }
 extern int lang;
 extern bool warn_nr;
@@ -23,6 +35,7 @@ const char * gettext(const char * s) ;
 #ifndef NO_NAMESPACE_XCAS
 namespace xcas {
 #endif // ndef NO_NAMESPACE_XCAS
+  void set_exam_mode(int i,const giac::context *);
   int giac_filebrowser(char * filename,const char * extension,const char * title);
   void draw_rectangle(int x,int y,int w,int h,int c);
   void draw_line(int x0,int y0,int x1,int y1,int c);
@@ -155,6 +168,7 @@ namespace xcas {
   void reload_edptr(const char * filename,textArea *edptr,const giac::context *);
   void print(int &X,int&Y,const char * buf,int color,bool revert,bool fake,bool minimini);
 
+  void save_session(const giac::context * );
 #if 1
 #define MAX_FILENAME_SIZE 63
   void save_console_state_smem(const char * filename,const giac::context *);

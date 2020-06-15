@@ -7460,7 +7460,7 @@ namespace giac {
 	}
       }
     }
-    if (elim.size()==1 && returngb!=1) {
+    if (elim.size()==1 && returngb!=1 && eqs.size()>1) {
       *logptr(contextptr) << "1 variable to eliminate, using resultant. Run with last optional parameter gbasis if you want to force gbasis\n";
       returngb=3; // for example for eliminate([((-((t)^(2)))*((((t)^(2))+(1))^(3)))+((((((t)^(4))+((x)*((((t)^(2))+(1))^(2))))+((6)*((t)^(2))))-(3))^(2)), (-((((t)^(2))+(1))^(3)))+((((-(8))*((t)^(3)))+((y)*((((t)^(2))+(1))^(2))))^(2))],[t])
     }
