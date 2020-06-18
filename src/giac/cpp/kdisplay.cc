@@ -45,6 +45,9 @@ const int LCD_WIDTH_PX=320;
 const int LCD_HEIGHT_PX=222;
 static char* original_cfg=0;
 int khicas_addins_menu(GIAC_CONTEXT); // in kadd.cc
+#ifdef MICROPY_LIB
+extern "C" const char * const * mp_vars();
+#endif
 
 // Numworks Logo commands
 #ifndef NO_NAMESPACE_GIAC
@@ -1872,6 +1875,19 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 
   gen select_var(GIAC_CONTEXT){
     kbd_interrupted=giac::ctrl_c=giac::interrupted=false;
+#ifdef MICROPY_LIB
+    if (xcas_python_eval==1){
+      const char ** tab=(const char **)mp_vars();
+      if (tab){
+	int i=select_item(tab,"VARS",true);
+	gen g=undef;
+	if (i>=0 && tab[i])
+	  g=gen(tab[i],contextptr);
+	free(tab);
+	return g;
+      }
+    }
+#endif
     gen g(_VARS(0,contextptr));
     if (g.type!=_VECT || g._VECTptr->empty()){
       confirm((lang==1)?"Pas de variables. Exemples pour en creer":"No variables. Examples to create",(lang==1)?"a=1 ou f(x):=sin(x^2)":"a=1 or f(x):=sin(x^2)",true);

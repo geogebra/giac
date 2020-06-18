@@ -41,10 +41,10 @@ extern "C" {
   int c_draw_string(int x,int y,int c,int bg,const char * s,bool fake);
   int c_draw_string_small(int x,int y,int c,int bg,const char * s,bool fake);
   int c_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake);
+  int select_item(const char ** ptr,const char * title,bool askfor1=true);
 }
 extern int lang;
 extern bool warn_nr;
-int select_item(const char ** ptr,const char * title,bool askfor1=true);
 int select_interpreter(); // 0 Xcas, 1|2 Xcas python_compat(1|2), 3 MicroPython 
 const char * gettext(const char * s) ;
 
