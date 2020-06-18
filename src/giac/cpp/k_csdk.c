@@ -394,12 +394,12 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_E)) return SHIFTCTRL('e','E',KEY_CTRL_E);
   if (isKeyPressed(KEY_NSPIRE_F)) return SHIFT('f','F');
   if (isKeyPressed(KEY_NSPIRE_G)) return SHIFT('g','G');
-  if (isKeyPressed(KEY_NSPIRE_H)) return SHIFTCTRL('h','H',KEY_CTRL_CATALOG);
+  if (isKeyPressed(KEY_NSPIRE_H)) return SHIFTCTRL('h','H',KEY_CTRL_H);
   if (isKeyPressed(KEY_NSPIRE_I)) return SHIFT('i','I');
   if (isKeyPressed(KEY_NSPIRE_J)) return SHIFT('j','J');
   if (isKeyPressed(KEY_NSPIRE_K)) return SHIFTCTRL('k','K',KEY_CTRL_AC);
   if (isKeyPressed(KEY_NSPIRE_L)) return SHIFT('l','L');
-  if (isKeyPressed(KEY_NSPIRE_M)) return SHIFT('m','M');
+  if (isKeyPressed(KEY_NSPIRE_M)) return SHIFTCTRL('m','M',KEY_CTRL_CATALOG);
   if (isKeyPressed(KEY_NSPIRE_N)) return SHIFTCTRL('n','N',KEY_CTRL_N);
   if (isKeyPressed(KEY_NSPIRE_O)) return SHIFTCTRL('o','O',KEY_SHIFT_OPTN);
   if (isKeyPressed(KEY_NSPIRE_P)) return SHIFTCTRL('p','P',KEY_CTRL_PRGM);
@@ -717,7 +717,7 @@ int getkey(bool allow_suspend){
 	 (i>=KEY_UP_CTRL && i<=KEY_RIGHT_CTRL) ||
 	 (i>=KEY_SELECT_LEFT && i<=KEY_SELECT_RIGHT) ||
 	 i==KEY_CTRL_DEL){
-      int delay=(lastkey==i)?1:40,j;
+      int delay=(lastkey==i)?5:40,j;
       for (j=0;j<delay && any_key_pressed();++j){
 	if (nspireemu)
 	  msleep(14);

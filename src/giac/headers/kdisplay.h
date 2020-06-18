@@ -19,6 +19,7 @@ extern "C" {
   int micropy_eval(const char * line);
   void  mp_deinit();
   void mp_stack_ctrl_init();
+  extern int parser_errorline,parser_errorcol;
 }
 #endif
 
@@ -27,10 +28,24 @@ extern "C" {
 #include "k_csdk.h"
   void console_output(const char *,int );
   const char * console_input(const char * msg1,const char * msg2,bool numeric,int ypos);
+  void c_draw_rectangle(int x,int y,int w,int h,int c);
+  void c_fill_rect(int x,int y,int w,int h,int c);
+  void c_draw_line(int x0,int y0,int x1,int y1,int c);
+  void c_draw_circle(int xc,int yc,int r,int color,bool q1,bool q2,bool q3,bool q4);
+  void c_draw_filled_circle(int xc,int yc,int r,int color,bool left,bool right);
+  void c_draw_polygon(int * x,int *y ,int n,int color);
+  void c_draw_filled_polygon(int * x,int *y, int n,int xmin,int xmax,int ymin,int ymax,int color);
+  void c_draw_arc(int xc,int yc,int rx,int ry,int color,double theta1, double theta2);
+  void c_draw_filled_arc(int x,int y,int rx,int ry,int theta1_deg,int theta2_deg,int color,int xmin,int xmax,int ymin,int ymax,bool segment);
+  void c_set_pixel(int x,int y,int c);
+  int c_draw_string(int x,int y,int c,int bg,const char * s,bool fake);
+  int c_draw_string_small(int x,int y,int c,int bg,const char * s,bool fake);
+  int c_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake);
 }
 extern int lang;
 extern bool warn_nr;
 int select_item(const char ** ptr,const char * title,bool askfor1=true);
+int select_interpreter(); // 0 Xcas, 1|2 Xcas python_compat(1|2), 3 MicroPython 
 const char * gettext(const char * s) ;
 
 #ifndef NO_NAMESPACE_XCAS
@@ -258,14 +273,14 @@ namespace xcas {
   int Console_Output(const char *str);
   void Console_Clear_EditLine();
   int Console_NewLine(int pre_line_type, int pre_line_readonly);
-  int Console_Backspace(void);
+  int Console_Backspace(const giac::context *);
   int Console_GetKey(const giac::context *);
-  int Console_Init(void);
+  int Console_Init(const giac::context *);
   int Console_Disp(int redraw_mode,const giac::context*ptr);
   int Console_FMenu(int key,const giac::context *);
   extern char menu_f1[8],menu_f2[8],menu_f3[8],menu_f4[8],menu_f5[8],menu_f6[8];
   const char * console_menu(int key,char* cfg,int active_app);
-  void Console_FMenu_Init(void);
+  void Console_FMenu_Init(const giac::context *);
   const char * Console_Draw_FMenu(int key, struct FMenu* menu,char * cfg_,int active_app);
   char *Console_Make_Entry(const char* str);
   char *Console_GetLine(const giac::context *);

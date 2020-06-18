@@ -38,6 +38,7 @@ int lang=1;
 bool warn_nr=true;
 bool xthetat=false;
 int esc_flag=0;
+int xcas_python_eval=0;
 using namespace std;
 using namespace giac;
 const int LCD_WIDTH_PX=320;
@@ -1443,7 +1444,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       --l;
     }
     for (;l>0;--l){
-      if (!isalphanum(buf[l-1]))
+      if (!isalphanum(buf[l-1]) && buf[l-1]!='_')
 	break;
     }
     // cmdname in buf+l
@@ -1491,6 +1492,8 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	  fbuf[i]=0;
 	  fexamples=fbuf;
 	  frelated=fbuf+i+1;
+	  while (*frelated==' ')
+	    ++frelated;
 	  for (++i;i<sizeof(fbuf);++i){
 	    if (fbuf[i]==0)
 	      break;
@@ -6521,6 +6524,15 @@ namespace xcas {
 #endif	      
 	      );
     }
+    if (mode & 4){
+      confirm((lang==1)?"Interpreteur MicroPython":"MicroPython interpreter",
+#ifdef NSPIRE_NEWLIB
+	      (lang==1)?"enter: ok":"enter: ok"
+#else
+	      (lang==1)?"OK: ok":"OK: ok"
+#endif	      
+	      );
+    }
   }
 
   void check_do_graph(giac::gen & ge,int do_logo_graph_eqw,GIAC_CONTEXT) {
@@ -6549,11 +6561,77 @@ namespace xcas {
     }
   }
 
+  void process_freeze(){
+    if (giac::freeze){
+      giac::freeze=false;
+#ifdef NSPIRE_NEWLIB
+      DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper esc":"Screen freezed. Press esc."), 1, 0, 0);
+#else
+      DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper EXIT":"Screen freezed. Press EXIT."), 1, 0, 0);
+#endif
+      DisplayStatusArea();
+      for (;;){
+	int key;
+	GetKey(&key);
+	if (key==KEY_CTRL_EXIT)
+	  break;
+      }
+    }
+  }    
+
   // called from editor, return 
-  int check_parse(const std::vector<textElement> & v,int python,GIAC_CONTEXT){
+  int check_parse(textArea * text,const std::vector<textElement> & v,int python,GIAC_CONTEXT){
     if (v.empty())
       return 0;
-    std::string s=merge_area(v);
+    char status[256];
+    for (int i=0;i<sizeof(status);++i)
+      status[i]=0;
+    int shift=0;
+    if (xcas_python_eval==1){
+#if 0
+      if (text->changed){
+	std::string tmp=text->filename;
+	tmp += (lang==1)?" a ete modifie!":" was modified!";
+	if (confirm(tmp.c_str(),
+#ifdef NSPIRE_NEWLIB
+		    (lang==1)?"enter: sauvegarder, esc: tant pis":"enter: save, esc: discard changes"
+#else
+		    (lang==1)?"OK: sauvegarder, Back: tant pis":"OK: save, Back: discard changes"
+#endif
+		    )==KEY_CTRL_F1){
+	  save_script(text->filename.c_str(),merge_area(text->elements));
+	  text->changed=false;
+	}
+      }
+      string tmp="from "+remove_extension(text->filename)+" import *"; // os error 2 ??
+      micropy_eval(tmp.c_str());
+#else
+      // newlines do not work correctly unless we cut the input
+      for (int i=0;i<=v.size();++i){
+	if (i==v.size() || (v[i].s.size() && v[i].s[0]!=' ')){
+	  string s=merge_area(vector<textElement>(v.begin()+shift,v.begin()+i));
+	  micropy_eval(s.c_str());
+	  if (parser_errorline>0){
+	    parser_errorline += shift;
+	    break;
+	  }
+	  shift=i;
+	}
+      }
+#endif
+      // should detect syntax errors here and return line number
+      if (parser_errorline>0){
+	//--parser_errorline; // ?? something strange 
+	sprintf(status,(lang==1)?"Erreur ligne %i (esc + d'info avec no de ligne decale de %i)":"Error line %i (esc more details with linenumber shifted by %i)",parser_errorline,shift);	
+      }
+      else {
+	process_freeze();
+	sprintf(status,"%s",(lang==1)?"Syntaxe correcte":"Parse OK");
+      }
+      DefineStatusMessage(status,1,0,0);
+      return parser_errorline;
+    }
+    std::string s=merge_area(v); 
     giac::python_compat(python,contextptr);
     if (python) s="@@"+s; // force Python translation
     freeze=true;
@@ -6561,9 +6639,6 @@ namespace xcas {
     freeze=false;
     int lineerr=giac::first_error_line(contextptr);
     if (lineerr){
-      char status[256];
-      for (int i=0;i<sizeof(status);++i)
-	status[i]=0;
       std::string tok=giac::error_token_name(contextptr);
       int pos=-1;
       if (lineerr>=1 && lineerr<=v.size()){
@@ -6852,8 +6927,13 @@ namespace xcas {
       status += char('0'+(minute%10));
 #endif
       if (text->editable){
+#ifndef NSPIRE_NEWLIB
 	status += (xthetat?" t":" x");
-	status += text->python?(text->python==2?" Py ^xor ":" Py ^=** "):" Xcas ";
+#endif
+	if (text->python & 4)
+	  status += " MicroPython ";
+	else
+	  status += text->python?(text->python==2?" Py ^xor ":" Py ^=** "):" Xcas ";
 	status += giac::remove_extension(text->filename.c_str());
 	status += text->changed?" * ":" - ";
 	status += giac::printint(text->line+1);
@@ -7549,7 +7629,7 @@ namespace xcas {
     if (editable){
       // waitforvblank();
       drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
-      PrintMiniMini(0,205,"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 tortue|7 matr|8 list",4,44444,giac::_BLACK);
+      PrintMiniMini(0,205,text->python?"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 tortue|7 draw|8 list":"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 tortue|7 matr|8 list",4,44444,giac::_BLACK);
       //draw_menu(1);
     }
 #ifdef SCROLLBAR
@@ -7923,7 +8003,7 @@ namespace xcas {
 	  continue;
 	}
 	if (0 && key==KEY_CHAR_ANS){ // lack of keys, ANS -> menu
-	  int err=check_parse(v,text->python,contextptr);
+	  int err=check_parse(text,v,text->python,contextptr);
 	  if (err) // move cursor to the error line
 	    textline=err-1;
 	  continue;
@@ -8000,8 +8080,10 @@ namespace xcas {
 	  if ( (key>=KEY_CTRL_F1 && key<=KEY_CTRL_F4) ||
 	       (key >= KEY_CTRL_F6 && key <= KEY_CTRL_F14)
 	       ){
-	    string le_menu=text->python?"F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\n&\nprint(\ninput(\n":"F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nlocal\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\n";
-	    le_menu += "F6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF3 draw\nset_pixel(\ndraw_line\ndraw_rectangle\nfill_rect\ndraw_polygon\ndraw_circle\ndraw_arc\ndisplay=filled\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF8 list\nmakelist(\nrange(\nseq(\nsize(\nappend(\nranv(\nsort(\napply(\nF: plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\nF= cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF> misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(";
+	    string le_menu=text->python?
+	      "F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF7 draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF9 color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\n":
+	      "F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nlocal\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\n";
+	    le_menu += "F8 list\nmakelist(\nrange(\nseq(\nsize(\nappend(\nranv(\nsort(\napply(\nF: plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\nF= cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF> misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(";
 	    const char * ptr=console_menu(key,(char*)(le_menu.c_str()),2);
 	    if (!ptr){
 	      show_status(text,search,replace);
@@ -8020,7 +8102,7 @@ namespace xcas {
 	      iselse=strcmp(adds,"else ")==0,
 	      isfor=strcmp(adds,"for ")==0,
 	      isforin=strcmp(adds,"for in")==0,
-	      isdef=strcmp(adds,"f(x):=")==0,
+	      isdef=strcmp(adds,"f(x):=")==0 || strcmp(adds,"def")==0,
 	      iswhile=strcmp(adds,"while ")==0,
 	      islist=strcmp(adds,"list ")==0,
 	      ismat=strcmp(adds,"matrix ")==0;
@@ -8130,7 +8212,7 @@ namespace xcas {
 	}
 	else {
           if (!text->OKparse) return TEXTAREA_RETURN_EXE;
-	  int err=check_parse(v,text->python,contextptr);
+	  int err=check_parse(text,v,text->python,contextptr);
 	  if (err) // move cursor to the error line
 	    textline=err-1;
 	  continue;
@@ -8270,9 +8352,17 @@ namespace xcas {
 	  smallmenuitems[4].text = (char*)((lang==1)?"Effacer":"Clear");
 	  smallmenuitems[5].text = (char*)((lang==1)?"Chercher,remplacer":"Search, replace");
 	  smallmenuitems[6].text = (char*)((lang==1)?"Aller a la ligne":"Goto line");
-	  smallmenuitems[7].type = MENUITEM_CHECKBOX;
-	  smallmenuitems[7].text = (char*)"Python";
-	  smallmenuitems[7].value = text->python;
+	  int p=python_compat(contextptr);
+	  if (p&4)
+	    smallmenuitems[7].text = (char*)"Change syntax (MicroPython)";
+	  else {
+	    if (p==0)
+	      smallmenuitems[7].text = (char*)"Change syntax (Xcas)";
+	    if (p==1)
+	      smallmenuitems[7].text = (char*)"Change syntax (Xcas comp Python ^=**)";
+	    if (p==2)
+	      smallmenuitems[7].text = (char*)"Change syntax (Xcas comp Python ^=xor)";
+	  }
 	  smallmenuitems[8].text = (char *)((lang==1)?"Changer taille caracteres":"Change fontsize");
 	  smallmenuitems[9].text = (char *)aide_khicas_string;
 	  smallmenuitems[10].text = (char *)((lang==1)?"A propos":"About");
@@ -8303,7 +8393,7 @@ namespace xcas {
 	      continue;
 	    }
 	    if (sres==1){
-	      int err=check_parse(v,text->python,contextptr);
+	      int err=check_parse(text,v,text->python,contextptr);
 	      if (err) // move cursor to the error line
 		textline=err-1;
 	    } 
@@ -8364,12 +8454,21 @@ namespace xcas {
 		text->line=v.size()+l;
 	    }
 	    if (sres==8){
-	      text->python=text->python?0:1;
-	      show_status(text,search,replace);
-	      python_compat(text->python,contextptr);
-	      warn_python(text->python,false);
-	      drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
-	      PrintMiniMini(0,205,"shift-1 test|2 loop|3 undo|4 misc|5 +- |      ",4,44444,giac::_BLACK);
+	      int c=select_interpreter();
+	      if (c>=0){
+		int p=text->python;
+		if (c==3)
+		  p |= 0x4;
+		else 
+		  p=c;
+		giac::python_compat(p,contextptr);
+		text->python=p;
+		xcas_python_eval=c==3;
+		show_status(text,search,replace);
+		warn_python(text->python,false);
+		drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
+		PrintMiniMini(0,205,"shift-1 test|2 loop|3 undo|4 misc|5 +- |      ",4,44444,giac::_BLACK);
+	      }
 	    }
 	  }
 	}
@@ -8475,13 +8574,17 @@ namespace xcas {
   void console_disp_status(GIAC_CONTEXT){
     int i=python_compat(contextptr);
     string msg;
-    if (i==0)
-      msg="Xcas";
+    if (i&4)
+      msg="MicroPython";
     else {
-      if (i==1)
-	msg="Py ^=**";
-      else
-	msg="Py ^=xor";
+      if (i==0)
+	msg="Xcas";
+      else {
+	if (i==1)
+	  msg="Py ^=**";
+	else
+	  msg="Py ^=xor";
+      }
     }
     if (angle_radian(contextptr))
       msg += " RAD ";
@@ -8569,8 +8672,7 @@ namespace xcas {
     smallmenu.title = (char*)"Config";
     smallmenuitems[0].type = MENUITEM_CHECKBOX;
     smallmenuitems[0].text = (char*)"x,n,t -> t";
-    smallmenuitems[1].type = MENUITEM_CHECKBOX;
-    smallmenuitems[1].text = (char*)"Python";
+    smallmenuitems[1].text = (char*)"Syntaxe";
     smallmenuitems[2].type = MENUITEM_CHECKBOX;
     smallmenuitems[2].text = (char*)"Radians";
     smallmenuitems[3].type = MENUITEM_CHECKBOX;
@@ -8590,7 +8692,17 @@ namespace xcas {
     // smallmenuitems[2].text = (char*)(isRecording ? "Stop Recording" : "Record Script");
     while(1) {
       smallmenuitems[0].value = xthetat;
-      smallmenuitems[1].value = giac::python_compat(contextptr);
+      int p=python_compat(contextptr);
+      if (p&4)
+	smallmenuitems[1].text = (char*)"Change syntax (MicroPython)";
+      else {
+	if (p==0)
+	  smallmenuitems[1].text = (char*)"Change syntax (Xcas)";
+	if (p==1)
+	  smallmenuitems[1].text = (char*)"Change syntax (Xcas comp Python ^=**)";
+	if (p==2)
+	  smallmenuitems[1].text = (char*)"Change syntax (Xcas comp Python ^=xor)";
+      }
       smallmenuitems[2].value = giac::angle_radian(contextptr);
       smallmenuitems[3].value = giac::withsqrt(contextptr);
       int sres = doMenu(&smallmenu);
@@ -8602,12 +8714,22 @@ namespace xcas {
 	  continue;
 	}
 	if (smallmenu.selection == 2){
-	  bool b=!giac::python_compat(contextptr);
-	  giac::python_compat(b,contextptr);
-	  warn_python(b,false);
-	  if (edptr)
-	    edptr->python=b;
-	  continue;
+	  int c=select_interpreter();
+	  if (c>=0){
+	    int p=giac::python_compat(contextptr);
+	    if (c==3)
+	      p |= 0x4;
+	    else
+	      p=c;
+	    xcas_python_eval=c==3;
+	    giac::python_compat(p,contextptr);
+	    warn_python(p,false);
+	    if (edptr)
+	      edptr->python=p;
+	    Console_FMenu_Init(contextptr);
+	    console_disp_status(contextptr);
+	    break;
+	  }
 	}
 	if (smallmenu.selection == 3){
 	  giac::angle_radian(!giac::angle_radian(contextptr),contextptr);
@@ -8672,7 +8794,7 @@ namespace xcas {
 	      set_exam_mode(1,contextptr);
 	      do_restart(contextptr);
 	      clear_turtle_history(contextptr);
-	      Console_Init();
+	      Console_Init(contextptr);
 	      Console_Clear_EditLine();
 	      console_changed=0;
 	      strcpy(session_filename,"session.xw");
@@ -8725,7 +8847,6 @@ namespace xcas {
   }
 
   const int max_lines_saved=50;
-  int xcas_python_eval=0;
 
   void run(const char * s,int do_logo_graph_eqw,GIAC_CONTEXT){
     if (strlen(s)>=2 && (s[0]=='#' ||
@@ -8734,37 +8855,36 @@ namespace xcas {
       return;
     if (strcmp(s,"xcas")==0){
       xcas_python_eval=0;
+      python_compat(python_compat(contextptr)&3,contextptr);
+      if (edptr)
+	edptr->python=0;
       *logptr(contextptr) << "Xcas interpreter\n";
+      Console_FMenu_Init(contextptr);
       return;
     }
     if (strcmp(s,"python")==0){
       xcas_python_eval=1;
+      python_compat(4|python_compat(contextptr),contextptr);
+      if (edptr)
+	edptr->python=1;
       *logptr(contextptr) << "Micropython interpreter\n";
+      Console_FMenu_Init(contextptr);
       return;
     }
-#ifdef MICROPY_LIB
-    if (xcas_python_eval==1){
-      micropy_eval(s);
-      return;
-    }
-#endif    
     gen g,ge;
-    do_run(s,g,ge,contextptr);
-    if (giac::freeze){
-      giac::freeze=false;
-#ifdef NSPIRE_NEWLIB
-      DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper esc":"Screen freezed. Press esc."), 1, 0, 0);
+#ifdef MICROPY_LIB
+    if (xcas_python_eval==1)
+      micropy_eval(s);
+    else 
+      do_run(s,g,ge,contextptr);
 #else
-      DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper EXIT":"Screen freezed. Press EXIT."), 1, 0, 0);
+    do_run(s,g,ge,contextptr);
 #endif
-      DisplayStatusArea();
-      for (;;){
-	int key;
-	GetKey(&key);
-	if (key==KEY_CTRL_EXIT)
-	  break;
-      }
-    }
+    process_freeze();
+#ifdef MICROPY_LIB
+    if (xcas_python_eval==1)
+      return;
+#endif
     int t=giac::taille(g,GIAC_HISTORY_MAX_TAILLE);  
     int te=giac::taille(ge,GIAC_HISTORY_MAX_TAILLE);
     bool do_tex=false;
@@ -8828,7 +8948,7 @@ namespace xcas {
     Line[start].str=Edit_Line;
     Edit_Line[0]=0;
     if (v.empty()) return 0;
-    //Console_Init();
+    //Console_Init(contextptr);
     for (int i=0;i<v.size();++i){
       Console_Output((const char *)v[i].c_str());
       //int j=Last_Line;
@@ -9037,7 +9157,7 @@ namespace xcas {
     }
     // read console state
     // insure parse messages are cleared
-    Console_Init();
+    Console_Init(contextptr);
     Console_Clear_EditLine();
     for (int pos=0;;++pos){
       unsigned short int l,curs;
@@ -9064,6 +9184,9 @@ namespace xcas {
 #endif
     }
     console_changed=0;
+    if (python_compat(contextptr)&4)
+      xcas_python_eval=1;
+    Console_FMenu_Init(contextptr); // insure the menus are sync-ed
     return true;
   }
 
@@ -9587,8 +9710,7 @@ namespace xcas {
     The following function is used to delete a character before the cursor.
   */
 
-  int Console_Backspace()
-  {
+  int Console_Backspace(GIAC_CONTEXT){
     console_changed=1;
     if (Last_Line>0 && Current_Line<Last_Line){
       int i=Current_Line;
@@ -9617,7 +9739,7 @@ namespace xcas {
       if (Last_Line==0 && Current_Line==0){ // workaround
 	char buf[strlen((const char*)Edit_Line)+1];
 	strcpy(buf,(const char*)Edit_Line);
-	Console_Init();
+	Console_Init(contextptr);
 	Console_Clear_EditLine();
 	if (buf[0])
 	  Console_Input((const char *)buf);
@@ -9640,7 +9762,7 @@ namespace xcas {
     The following functions are used to deal with the key.
   */
 
-  void chk_clearscreen(){
+  void chk_clearscreen(GIAC_CONTEXT){
     drawRectangle(0, 24, LCD_WIDTH_PX, LCD_HEIGHT_PX-24, COLOR_WHITE);
     if (confirm((lang==1)?"Effacer l'historique?":"Clear history?",
 #ifdef NSPIRE_NEWLIB
@@ -9649,7 +9771,7 @@ namespace xcas {
 		(lang==1)?"OK: oui, Back: conserver":"OK: yes, Back: keep",
 #endif
 		false)==KEY_CTRL_F1){
-      Console_Init();
+      Console_Init(contextptr);
       Console_Clear_EditLine();
     }    
     Console_Disp(1,0);
@@ -9737,16 +9859,16 @@ namespace xcas {
       y += 18;
 #ifdef NSPIRE_NEWLIB
       PrintMini(x,y,(lang==1)?"quittez Khicas (menu menu menu)":"Leave Khicas (menu menu menu)",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
-      if (confirm("Syntaxe?","enter: Xcas, esc: Python",false,130)==KEY_CTRL_F6)
-	python_compat(true,contextptr);
+      if (confirm("Interpreter? enter: Xcas, esc: MicroPython",(lang==1?"Peut se modifier depuis menu configuration":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6)
+	python_compat(4,contextptr);
       else
-	python_compat(false,contextptr);
+	python_compat(1,contextptr);
 #else
       PrintMini(x,y,(lang==1)?"quittez Khicas (HOME HOME HOME)":"Leave Khicas (HOME HOME HOME)",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
-      if (confirm("Syntaxe?","OK: Xcas, Back: Python",false,130)==KEY_CTRL_F6)
-	python_compat(true,contextptr);
+      if (confirm("Interpreter? OK: Xcas, Back: MicroPython",(lang==1?"Peut se modifier depuis menu configuration":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6)
+	python_compat(4,contextptr);
       else
-	python_compat(false,contextptr);
+	python_compat(1,contextptr);
 #endif
       Bdisp_AllClr_VRAM();
 #ifdef GIAC_SHOWTIME
@@ -9844,7 +9966,7 @@ namespace xcas {
 	if (k==-1)
 	  return;
 	if (k==KEY_CTRL_F6)
-	  s="\nefface;\n ";
+	  s=python_compat(contextptr)?"from turtle import *\nreset()\n":"\nefface;\n ";
 	else
 	  s=python_compat(contextptr)?"def "+extract_name(filename)+"(x):\n  \n  return x":"function "+extract_name(filename)+"(x)\nlocal j;\n  \n  return x;\nffunction";
       }
@@ -10105,7 +10227,7 @@ namespace xcas {
 	    if (smallmenu.selection==5) {
 	      if (exam_mode){
 		if (do_confirm((lang==1)?"Tout effacer?":"Really clear?")){
-		  Console_Init();
+		  Console_Init(contextptr);
 		  Console_Clear_EditLine();
 		  giac::_restart(giac::gen(giac::vecteur(0),giac::_SEQ__VECT),contextptr);
 		}
@@ -10124,7 +10246,7 @@ namespace xcas {
 #endif
 			      )==KEY_CTRL_F6){
 		    clip_pasted=true;
-		    Console_Init();
+		    Console_Init(contextptr);
 		    Console_Clear_EditLine();
 		    giac::_restart(giac::gen(giac::vecteur(0),giac::_SEQ__VECT),contextptr);
 		    std::string s(remove_path(giac::remove_extension(filename)));
@@ -10163,7 +10285,7 @@ namespace xcas {
 	    }
 	    if(smallmenu.selection == 10) {
 	      chk_restart(contextptr);
-	      Console_Init();
+	      Console_Init(contextptr);
 	      Console_Clear_EditLine();
 	      break;
 	    }
@@ -10356,7 +10478,7 @@ namespace xcas {
 	  }
 	  if (Edit_Line[0]=='\0'){
 	    //return Console_Input((const char *)"restart");
-	    chk_clearscreen();
+	    chk_clearscreen(contextptr);
 	    continue;
 	  }
 	  Edit_Line[0] = '\0';
@@ -10400,7 +10522,7 @@ namespace xcas {
 	  }
       }
       if (key == KEY_CTRL_DEL)
-	return Console_Backspace();
+	return Console_Backspace(contextptr);
       if (key == KEY_CTRL_R){
 	run_session(0,contextptr);
 	return 0;
@@ -10637,8 +10759,7 @@ namespace xcas {
     }
   }
 
-  int Console_Init()
-  {
+  int Console_Init(GIAC_CONTEXT){
     console_changed=1;
     int i;
     if (!Line){
@@ -10678,21 +10799,22 @@ namespace xcas {
       FMenu_entries[i].count = 0;
       }*/
 
-    Console_FMenu_Init();
+    Console_FMenu_Init(contextptr);
 
     return CONSOLE_SUCCEEDED;
   }
 
   const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF5  2d \nreserved\nF4 menu\nreserved\nF6 reg\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF8 list\nmakelist(\nrange(\nseq(\nsize(\nappend(\nranv(\nsort(\napply(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF: cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF> misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \nperiodic_table\n";
 
+  const char python_conf_standard[] = "F1 misc\n\"\n\'\n;\n:\ndef\nreturn\ncaseval(\"\nfrom cas import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nsign(\nsqrt(\nfrom math import *\nF3 rand\nrandint(\nrandom(\nchoice(\nfrom random import *\nF4 menu\nreserved\nF5  2d\nreserved\nF; color\n\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF7 draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\n\nF8 list\nlist(\nrange(\nsize(\nappend(\nhead(\nsort(\napply(\nF9 color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF: cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF> misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \nperiodic_table\n";
+
   // Loads the FMenus' data into memory, from a cfg file
-  void Console_FMenu_Init()
+  void Console_FMenu_Init(GIAC_CONTEXT)
   {
     char temp[32] = {'\0'};
+#if 0
     if (!original_cfg){
-#if 1
       original_cfg = (char *)conf_standard;
-#else
       std::string cfg_s;
       // Does the file exists ?
       if (load_script((char*)"FMENU.cfg",cfg_s)){
@@ -10704,11 +10826,16 @@ namespace xcas {
 	save_script((const char *)"FMENU.cfg",conf_standard);
 	original_cfg = (char *)conf_standard;
       }
-#endif
     }
-
-    char* cfg=original_cfg;
-
+#else
+    if (xcas_python_eval==1){
+      original_cfg=(char *)python_conf_standard;
+    }
+    else {
+      original_cfg=(char *)conf_standard;
+    }
+#endif
+    const char *cfg=original_cfg;
     while(*cfg) {
       //Get each line
       int i;
@@ -10934,7 +11061,7 @@ namespace xcas {
       menu += string(menu_f2);
       menu += "|3 ";
       menu += string(menu_f3);
-      menu += "|4 edit|5 2d|6 regr|7 matr|8 list|9 arit|0 C";
+      menu += xcas_python_eval==1?"|4 edit|5 2d|6 turtle|7 draw|8 list|9 color|0 C":"|4 edit|5 2d|6 regr|7 matr|8 list|9 arit|0 C";
       drawRectangle(0,205,LCD_WIDTH_PX,17,_BLACK);
       PrintMiniMini(0,205,menu.c_str(),4);
     }
@@ -11046,7 +11173,7 @@ namespace xcas {
       _efface_logo(vecteur(0),contextptr);
     }
     int key;
-    Console_Init();
+    Console_Init(contextptr);
     Bdisp_AllClr_VRAM();
     rand_seed(millis(),contextptr);
     restore_session("session",contextptr);
@@ -11446,6 +11573,72 @@ const char * console_input(const char * msg1,const char * msg2,bool numeric,int 
   return str.c_str();
 }
 
+void c_draw_rectangle(int x,int y,int w,int h,int c){
+  giac::freeze=true;
+  xcas::draw_line(x,y,x+w,y,c);
+  xcas::draw_line(x+w,y,x+w,y+h,c);
+  xcas::draw_line(x,y+h,x+w,y+h,c);
+  xcas::draw_line(x,y,x,y+h,c);
+}
+void c_draw_line(int x0,int y0,int x1,int y1,int c){
+  giac::freeze=true;
+  xcas::draw_line(x0,y0,x1,y1,c);
+}
+void c_draw_circle(int xc,int yc,int r,int color,bool q1,bool q2,bool q3,bool q4){
+  giac::freeze=true;
+  xcas::draw_circle(xc,yc,r,color,q1,q2,q3,q4);
+}
+void c_draw_filled_circle(int xc,int yc,int r,int color,bool left,bool right){
+  giac::freeze=true;
+  xcas::draw_filled_circle(xc,yc,r,color,left,right);
+}
+void c_convert(int *x,int*y,vector< vector<int> > & v){
+  for (int i=0;i<v.size();++i,++x,++y){
+    v[i].push_back(*x);
+    v[i].push_back(*y);
+  }
+}
+void c_draw_polygon(int * x,int *y ,int n,int color){
+  giac::freeze=true;
+  vector< vector<int> > v(n);
+  c_convert(x,y,v);
+  xcas::draw_polygon(v,color);
+}
+void c_draw_filled_polygon(int * x,int *y, int n,int xmin,int xmax,int ymin,int ymax,int color){
+  giac::freeze=true;
+  vector< vector<int> > v(n);
+  c_convert(x,y,v);
+  xcas::draw_filled_polygon(v,xmin,xmax,ymin,ymax,color);
+}
+void c_draw_arc(int xc,int yc,int rx,int ry,int color,double theta1, double theta2){
+  giac::freeze=true;
+  xcas::draw_arc(xc,yc,rx,ry,color,theta1,theta2);
+}
+void c_draw_filled_arc(int x,int y,int rx,int ry,int theta1_deg,int theta2_deg,int color,int xmin,int xmax,int ymin,int ymax,bool segment){
+  giac::freeze=true;
+  xcas::draw_filled_arc(x,y,rx,ry,theta1_deg,theta2_deg,color,xmin,xmax,ymin,ymax,segment);
+}
+void c_set_pixel(int x,int y,int c){
+  giac::freeze=true;
+  os_set_pixel(x,y,c);
+}
+void c_fill_rect(int x,int y,int w,int h,int c){
+  giac::freeze=true;
+  os_fill_rect(x,y,w,h,c);
+}
+int c_draw_string(int x,int y,int c,int bg,const char * s,bool fake){
+  giac::freeze=true;
+  return os_draw_string(x,y,c,bg,s,fake);
+}
+int c_draw_string_small(int x,int y,int c,int bg,const char * s,bool fake){
+  giac::freeze=true;
+  return os_draw_string_small(x,y,c,bg,s,fake);
+}
+int c_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake){
+  giac::freeze=true;
+  return os_draw_string_medium(x,y,c,bg,s,fake);
+}
+
 int select_item(const char ** ptr,const char * title,bool askfor1){
   int nitems=0;
   for (const char ** p=ptr;*p;++p)
@@ -11471,6 +11664,11 @@ int select_item(const char ** ptr,const char * title,bool askfor1){
   if (sres!=MENU_RETURN_SELECTION && sres!=KEY_CTRL_EXE)
     return -1;
   return smallmenu.selection-1;
+}
+
+int select_interpreter(){
+  const char * choix[]={"Xcas interpreter","Xcas compat Python ^=**","Xcas compat Python ^=xor","MicroPython interpreter",0};
+  return select_item(choix,"Syntax",false);
 }
 
 // string translations

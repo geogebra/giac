@@ -16162,11 +16162,13 @@ void sprint_double(char * s,double d){
       turtle();
       _efface_logo(vecteur(0),contextptr);
     }
+#ifndef NSPIRE_NEWLIB
     if (!strcmp(s,"*")){
       int res=xcas::console_main(contextptr);
       S=printint(res);
       return S.c_str();
     }
+#endif
     if (!strcmp(s,"+")){
       char buf[4096]="def f(x):\n  return x*x\n";
       if (file_exists("temp.py")){
