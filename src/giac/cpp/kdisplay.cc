@@ -2303,6 +2303,21 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     return res;
   }
 
+  int turtle_speed=0;
+  gen _speed(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if (g.type!=_INT_)
+      return gensizeerr(contextptr);
+    int i=g.val;
+    if (i<0) i=0;
+    if (i>1000) i=1000;
+    turtle_speed=i;
+    return i;
+  }  
+  static const char _speed_s []="speed";
+  static define_unary_function_eval2 (__speed,&_speed,_speed_s,&printastifunction);
+  define_unary_function_ptr5( at_speed ,alias_at_speed,&__speed,0,T_LOGO);
+
   gen _avance(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     // logo instruction
@@ -5337,6 +5352,15 @@ namespace xcas {
 	logo_turtle prec =(*turtleptr)[0];
 #endif
 	for (int k=1;k<l;++k){
+	  if (k>=2 && speed){
+	    sync_screen();
+	    for (int i=0;i<speed;++i){
+	      for (int j=0;j<1000;++j){
+		if (iskeydown(5) || iskeydown(4) || iskeydown(22))
+		  break;
+	      }
+	    }
+	  }
 #ifdef TURTLETAB
 	  logo_turtle current =(turtleptr)[k];
 #else
@@ -5606,9 +5630,9 @@ namespace xcas {
 
   void displaylogo(){
 #ifdef TURTLETAB
-    xcas::Turtle t={tablogo,0,0,1,1};
+    xcas::Turtle t={tablogo,0,0,1,1,(short) turtle_speed};
 #else
-    xcas::Turtle t={&turtle_stack(),0,0,1,1};
+    xcas::Turtle t={&turtle_stack(),0,0,1,1,(short) turtle_speed};
 #endif
 #ifdef NSPIRE_NEWLIB
     DefineStatusMessage((char*)"+-: zoom, pad: move, esc: quit", 1, 0, 0);
@@ -5616,25 +5640,31 @@ namespace xcas {
     DefineStatusMessage((char*)"+-: zoom, pad: move, EXIT: quit", 1, 0, 0);
 #endif
     DisplayStatusArea();
+    bool redraw=true;
     while (1){
       int save_ymin=clip_ymin;
       clip_ymin=24;
-      t.draw();
+      if (redraw)
+	t.draw();
+      redraw=false;
       clip_ymin=save_ymin;
       int key;
       GetKey(&key);
       if (key==KEY_CTRL_EXIT || key==KEY_CTRL_OK || key==KEY_PRGM_ACON || key==KEY_CTRL_MENU || key==KEY_CTRL_EXE || key==KEY_CTRL_VARS)
 	break;
-      if (key==KEY_CTRL_UP){ t.turtley += 10; }
-      if (key==KEY_CTRL_PAGEUP) { t.turtley += 100; }
-      if (key==KEY_CTRL_DOWN) { t.turtley -= 10; }
-      if (key==KEY_CTRL_PAGEDOWN) { t.turtley -= 100;}
-      if (key==KEY_CTRL_LEFT) { t.turtlex -= 10; }
-      if (key==KEY_SHIFT_LEFT) { t.turtlex -= 100; }
-      if (key==KEY_CTRL_RIGHT) { t.turtlex += 10; }
-      if (key==KEY_SHIFT_RIGHT) { t.turtlex += 100;}
-      if (key==KEY_CHAR_PLUS) { t.turtlezoom *= 2;}
-      if (key==KEY_CHAR_MINUS){ t.turtlezoom /= 2;  }
+      if (key==KEY_CTRL_UP){ t.turtley += 10; redraw=true; }
+      if (key==KEY_CTRL_PAGEUP) { t.turtley += 100; redraw=true;}
+      if (key==KEY_CTRL_DOWN) { t.turtley -= 10; redraw=true;}
+      if (key==KEY_CTRL_PAGEDOWN) { t.turtley -= 100;redraw=true;}
+      if (key==KEY_CTRL_LEFT) { t.turtlex -= 10; redraw=true;}
+      if (key==KEY_SHIFT_LEFT) { t.turtlex -= 100; redraw=true;}
+      if (key==KEY_CTRL_RIGHT) { t.turtlex += 10; redraw=true;}
+      if (key==KEY_SHIFT_RIGHT) { t.turtlex += 100;redraw=true;}
+      if (key==KEY_CHAR_PLUS) { t.turtlezoom *= 2;redraw=true;}
+      if (key==KEY_CHAR_MINUS){ t.turtlezoom /= 2; redraw=true; }
+      if (key==KEY_CHAR_MULT){ if (t.speed) t.speed *=2; else t.speed=10; redraw=true; }
+      if (key==KEY_CHAR_DIV){ t.speed /=2; redraw=true; }
+      if (key=='='){ redraw=true; }
     }
     os_hide_graph();
   }
@@ -11685,6 +11715,16 @@ int select_item(const char ** ptr,const char * title,bool askfor1){
 int select_interpreter(){
   const char * choix[]={"Xcas interpreter","Xcas compat Python ^=**","Xcas compat Python ^=xor","MicroPython interpreter",0};
   return select_item(choix,"Syntax",false);
+}
+
+ulonglong double2gen(double d){
+  giac::gen g(d);
+  return *(ulonglong *) &g;
+}
+
+ulonglong int2gen(int d){
+  giac::gen g(d);
+  return *(ulonglong *) &g;
 }
 
 // string translations

@@ -42,6 +42,13 @@ extern "C" {
   int c_draw_string_small(int x,int y,int c,int bg,const char * s,bool fake);
   int c_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake);
   int select_item(const char ** ptr,const char * title,bool askfor1=true);
+  // C conversion to gen from atomic data type 
+  unsigned long long c_double2gen(double); 
+  unsigned long long c_int2gen(int);
+  // linalg on double matrices
+  void c_inv(double *,int n);
+  double c_det(double *,int);
+  
 }
 extern int lang;
 extern bool warn_nr;
@@ -127,7 +134,8 @@ namespace xcas {
 #endif
     int turtlex,turtley; // Turtle translate
     double turtlezoom; // Zoom factor for turtle screen
-    int maillage; // 0 (none), 1 (square), 2 (triangle), bit3 used for printing
+    short int maillage=0; // 0 (none), 1 (square), 2 (triangle), bit3 used for printing
+    short int speed=0;
   };
   
   void displaygraph(const giac::gen & ge, const giac::context * contextptr);
