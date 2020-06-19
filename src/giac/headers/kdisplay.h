@@ -48,7 +48,7 @@ extern "C" {
   // linalg on double matrices
   void c_inv(double *,int n);
   double c_det(double *,int);
-  
+  void turtle_freeze();
 }
 extern int lang;
 extern bool warn_nr;

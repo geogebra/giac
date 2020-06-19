@@ -37,6 +37,7 @@ int clip_ymin=0;
 int lang=1;
 bool warn_nr=true;
 bool xthetat=false;
+bool freezeturtle=false;
 int esc_flag=0;
 int xcas_python_eval=0;
 using namespace std;
@@ -2193,8 +2194,12 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       turtleptr=new logo_turtle;
     return * turtleptr;
   }
-  
+
+#ifdef NSPIRE_NEWLIB
+  const int MAX_LOGO=2048; 
+#else
   const int MAX_LOGO=368; // 512;
+#endif
 
   std::vector<logo_turtle> & turtle_stack(){
     static std::vector<logo_turtle> * ans = 0;
@@ -2306,6 +2311,8 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   int turtle_speed=0;
   gen _speed(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if (g.type==_VECT && g._VECTptr->empty())
+      return turtle_speed;
     if (g.type!=_INT_)
       return gensizeerr(contextptr);
     int i=g.val;
@@ -5351,13 +5358,16 @@ namespace xcas {
 #else
 	logo_turtle prec =(*turtleptr)[0];
 #endif
+	int sp=speed;
 	for (int k=1;k<l;++k){
-	  if (k>=2 && speed){
+	  if (k>=2 && sp){
 	    sync_screen();
 	    for (int i=0;i<speed;++i){
 	      for (int j=0;j<1000;++j){
-		if (iskeydown(5) || iskeydown(4) || iskeydown(22))
+		if (iskeydown(5) || iskeydown(4) || iskeydown(22)){
+		  sp=0;
 		  break;
+		}
 	      }
 	    }
 	  }
@@ -6608,6 +6618,11 @@ namespace xcas {
   }
 
   void process_freeze(){
+    if (freezeturtle){
+      displaylogo();
+      freezeturtle=false;
+      return;
+    }
     if (giac::freeze){
       giac::freeze=false;
 #ifdef NSPIRE_NEWLIB
@@ -6652,6 +6667,7 @@ namespace xcas {
       string tmp="from "+remove_extension(text->filename)+" import *"; // os error 2 ??
       micropy_eval(tmp.c_str());
 #else
+      freezeturtle=false;
       // newlines do not work correctly unless we cut the input
       for (int i=0;i<=v.size();++i){
 	if (i==v.size() || (v[i].s.size() && v[i].s[0]!=' ')){
@@ -8919,8 +8935,10 @@ namespace xcas {
     }
     gen g,ge;
 #ifdef MICROPY_LIB
-    if (xcas_python_eval==1)
+    if (xcas_python_eval==1){
+      freezeturtle=false;
       micropy_eval(s);
+    }
     else 
       do_run(s,g,ge,contextptr);
 #else
@@ -11725,6 +11743,10 @@ ulonglong double2gen(double d){
 ulonglong int2gen(int d){
   giac::gen g(d);
   return *(ulonglong *) &g;
+}
+
+void turtle_freeze(){
+  freezeturtle=true;
 }
 
 // string translations
