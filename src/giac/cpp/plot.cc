@@ -14534,6 +14534,20 @@ gen _vers(const gen & g,GIAC_CONTEXT){
     // logo instruction
     turtle(contextptr) = logo_turtle();
     turtle_stack(contextptr).clear();
+    if (g.type==_VECT && g._VECTptr->size()==2){
+      vecteur v = *g._VECTptr;
+      int s=int(v.size());
+      v[0]=evalf_double(v[0],1,contextptr);
+      if (s>1)
+	v[1]=evalf_double(v[1],1,contextptr);
+      turtle(contextptr).mark = false;
+      turtle(contextptr).radius = 0;
+      update_turtle_state(true,contextptr);
+      set_turtle_state(v,contextptr); // baisse_crayon
+      update_turtle_state(true,contextptr);
+      turtle(contextptr).mark = true;
+      turtle(contextptr).radius = 0;
+    }
     return update_turtle_state(true,contextptr);
   }
   static const char _efface_s []="efface";

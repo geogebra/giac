@@ -2650,6 +2650,20 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     turtle_stack().clear();
 #endif
     ecristab().clear();
+    if (g.type==_VECT && g._VECTptr->size()==2){
+      vecteur v = *g._VECTptr;
+      int s=int(v.size());
+      v[0]=evalf_double(v[0],1,contextptr);
+      if (s>1)
+	v[1]=evalf_double(v[1],1,contextptr);
+      (*turtleptr).mark = false; // leve_crayon
+      (*turtleptr).radius = 0;
+      update_turtle_state(true,contextptr);
+      set_turtle_state(v,contextptr); // baisse_crayon
+      update_turtle_state(true,contextptr);
+      (*turtleptr).mark = true;
+      (*turtleptr).radius = 0;
+    }
     return update_turtle_state(true,contextptr);
   }
   static const char _efface_logo_s []="efface";
