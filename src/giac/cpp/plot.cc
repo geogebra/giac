@@ -3785,6 +3785,8 @@ namespace giac {
     if (is_undef(args)) return args;
     // inert form (since cercle return itself with a pnt__vect arg)
     if (args.type==_VECT && args.subtype==_PNT__VECT) return symbolic(at_cercle,args); 
+    if (args.type==_INT_)
+      return _rond(args,contextptr);
     vecteur v(gen2vecteur(args));
     if (v.empty())
       return gensizeerr(gettext("circle"));

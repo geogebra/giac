@@ -8254,6 +8254,9 @@ namespace giac {
 
   gen _write(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+#ifdef KHICAS
+    return _ecris(args,contextptr);
+#endif
     gen tmp=check_secure();
     if (is_undef(tmp)) return tmp;
     if (args.type==_VECT){
@@ -8299,6 +8302,10 @@ namespace giac {
     }
     if (args.type!=_STRNG)
       return symbolic(at_write,args);
+#ifndef KHICAS
+    if (turtle_stack(contextptr).size()>1)
+      return _ecris(args,contextptr);
+#endif
 #ifdef NSPIRE
     file inf(args._STRNGptr->c_str(),"w");
 #else
