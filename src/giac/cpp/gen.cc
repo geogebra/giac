@@ -6885,7 +6885,7 @@ namespace giac {
 	  else
 	    subexponent_num = subexponent_num * (*it);
 	}
-	if (superexponent.type!=_INT_)
+	if (superexponent.type!=_INT_ || absint(superexponent.val)>MAX_COMMON_ALG_EXT_ORDER_SIZE)
 	  return new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(base,exponent),_SEQ__VECT)));
 	if (subexponent_deno.type!=_INT_){
 	  if (is_one(superexponent))
