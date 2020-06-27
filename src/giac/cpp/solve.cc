@@ -2367,7 +2367,15 @@ namespace giac {
   vecteur solve(const gen & e,const identificateur & x,int isolate_mode,GIAC_CONTEXT){
     ck_isolate_mode(isolate_mode,x,contextptr);
     if (is_undef(e)) return vecteur(0);
-    gen expr(exp2pow(e,contextptr));//gen expr(e);
+    gen expr(exp2pow(e,contextptr));
+    // keep e if x is isolable inside
+    vecteur lv0(lvarx(e,x));
+    int s0=int(lv0.size());
+    if (s0==1){
+      gen xvar(lv0.front());
+      if (xvar!=x && xvar.type==_SYMB && equalposcomp(solve_fcns_tab,xvar._SYMBptr->sommet))
+	expr=e;
+    }
     gen modulo;
     if (has_mod_coeff(expr,modulo)){
       vecteur v;
