@@ -5152,9 +5152,6 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
     gen g(g_);
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     vecteur vals,names,attributs,res;
-#if defined HAVE_LIBFLTK && defined GIAC_LMCHANGES // changes by L. Marohnić
-    res.push_back(symb_equal(change_subtype(gen(_AXES),_INT_PLOT),2));
-#endif
     double largeur=.8;
     if (g.type==_VECT && g.subtype==_SEQ__VECT){
       vecteur v=*g._VECTptr;
@@ -5196,6 +5193,9 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
       t=0;
       c=attr[0].val;
     }
+    gen namesf=evalf(names,1,contextptr);
+    if (namesf.type==_VECT && !is_numericv(*namesf._VECTptr))
+      res.push_back(symb_equal(change_subtype(gen(_AXES),_INT_PLOT),2));
 #if defined HAVE_LIBFLTK && defined GIAC_LMCHANGES // changes by L. Marohnić
     vecteur allvals(0);
     for (const_iterateur it=vals.begin();it!=vals.end();++it) {
@@ -5373,10 +5373,13 @@ static define_unary_function_eval (__camembert,&_camembert,_camembert_s);
       return gensizeerr(contextptr);
     const vecteur & v=*g._VECTptr;
     gen X(symb_equal(change_subtype(_GL_X,_INT_PLOT),symb_interval(v[0],v[1])));
+    history_plot(contextptr).push_back(X);
     gen Y(symb_equal(change_subtype(_GL_Y,_INT_PLOT),symb_interval(v[2],v[3])));
+    history_plot(contextptr).push_back(Y);
     if (v.size()<6)
       return makesequence(X,Y);
     gen Z(symb_equal(change_subtype(_GL_Z,_INT_PLOT),symb_interval(v[4],v[5])));
+    history_plot(contextptr).push_back(Z);
     return makesequence(X,Y,Z);
   }
   static const char _axis_s []="axis";

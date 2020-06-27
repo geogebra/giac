@@ -46,8 +46,22 @@ extern "C" {
   unsigned long long c_double2gen(double); 
   unsigned long long c_int2gen(int);
   // linalg on double matrices
-  void c_inv(double *,int n);
-  double c_det(double *,int);
+  void doubleptr2matrice(double * x,int n,giac::matrice & m);
+  bool matrice2doubleptr(const giac::matrice &M,double *x); // x must have enough space
+  bool r_inv(double *,int n);
+  bool r_rref(double *,int n,int m);
+  double r_det(double *,int);
+  struct double_pair {
+    double r,i;
+  } ;
+  typedef struct double_pair c_complex;
+  bool matrice2c_complexptr(const giac::matrice &M,c_complex *x);
+  void c_complexptr2matrice(c_complex * x,int n,int m,giac::matrice & M);  
+  bool c_inv(c_complex *,int n);
+  bool c_rref(c_complex *,int n,int m);
+  c_complex c_det(c_complex *,int);
+  bool c_egv(c_complex * x,int n); // eigenvectors
+  bool c_eig(c_complex * x,c_complex * d,int n); // x eigenvect, d reduced mat
   void turtle_freeze();
 }
 extern int lang;

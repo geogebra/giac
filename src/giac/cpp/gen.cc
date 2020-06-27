@@ -12348,7 +12348,7 @@ void sprint_double(char * s,double d){
 }
 
   string print_DOUBLE_(double d,GIAC_CONTEXT){
-#ifdef KHICAS
+#if defined KHICAS && !defined NSPIRE_NEWLIB
     {
       char s[256];
       sprint_double(s,d);

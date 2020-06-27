@@ -1285,7 +1285,7 @@ namespace giac {
     if (!is_zero(x))
       l.push_back(x);
     lvar(g,l);
-    fraction fa(e2r(g,l,contextptr));
+    fraction fa(e2r(exact(g,contextptr),l,contextptr));
     gen n,d;
     fxnd(fa,n,d);
     vecteur v=mergevecteur(sturm(n),sturm(d));

@@ -260,7 +260,11 @@ int nspire_draw_string(int x,int y,int c,int bg,int f,const char * s,bool fake){
   int dx=gui_gc_getStringWidth(nspire_gc, f, utf16, 0, l) ;
   if (fake)
     return x+dx;
-  int dy=f==Regular9?13:17;
+  int dy=17;
+  if (f==Regular9)
+    dy=13;
+  if (f==Regular11)
+    dy=16;
   gui_gc_setColor(nspire_gc,c_rgb565to888(bg));
   gui_gc_fillRect(nspire_gc,x,y,dx,dy);
   gui_gc_setColor(nspire_gc,c_rgb565to888(c));
@@ -280,6 +284,14 @@ int os_draw_string_small(int x,int y,int c,int bg,const char * s,bool fake){
   get_gc();
   gui_gc_clipRect(nspire_gc,0,nspire_statusarea,SCREEN_WIDTH,SCREEN_HEIGHT-nspire_statusarea,GC_CRO_SET);
   int i=nspire_draw_string(x,y+nspire_statusarea,c,bg,Regular9,s,fake);
+  gui_gc_clipRect(nspire_gc,0,0,SCREEN_WIDTH,SCREEN_HEIGHT,GC_CRO_RESET);
+  return i;
+}
+
+int os_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake){
+  get_gc();
+  gui_gc_clipRect(nspire_gc,0,nspire_statusarea,SCREEN_WIDTH,SCREEN_HEIGHT-nspire_statusarea,GC_CRO_SET);
+  int i=nspire_draw_string(x,y+nspire_statusarea,c,bg,Regular11,s,fake);
   gui_gc_clipRect(nspire_gc,0,0,SCREEN_WIDTH,SCREEN_HEIGHT,GC_CRO_RESET);
   return i;
 }
@@ -391,14 +403,14 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_B)) return SHIFTCTRL('b','B',KEY_BOOK);
   if (isKeyPressed(KEY_NSPIRE_C)) return SHIFTCTRL('c','C',KEY_CTRL_CLIP);
   if (isKeyPressed(KEY_NSPIRE_D)) return SHIFTCTRL('d','D',KEY_CTRL_D);
-  if (isKeyPressed(KEY_NSPIRE_E)) return SHIFTCTRL('e','E',KEY_CTRL_E);
-  if (isKeyPressed(KEY_NSPIRE_F)) return SHIFT('f','F');
-  if (isKeyPressed(KEY_NSPIRE_G)) return SHIFT('g','G');
-  if (isKeyPressed(KEY_NSPIRE_H)) return SHIFTCTRL('h','H',KEY_CTRL_H);
-  if (isKeyPressed(KEY_NSPIRE_I)) return SHIFT('i','I');
+  if (isKeyPressed(KEY_NSPIRE_E)) return SHIFTCTRL('e','E',KEY_CTRL_F10);
+  if (isKeyPressed(KEY_NSPIRE_F)) return SHIFTCTRL('f','F',KEY_CTRL_F11);
+  if (isKeyPressed(KEY_NSPIRE_G)) return SHIFTCTRL('g','G',KEY_CTRL_F12);
+  if (isKeyPressed(KEY_NSPIRE_H)) return SHIFTCTRL('h','H',KEY_CTRL_F13);
+  if (isKeyPressed(KEY_NSPIRE_I)) return SHIFTCTRL('i','I',KEY_CTRL_F14);
   if (isKeyPressed(KEY_NSPIRE_J)) return SHIFT('j','J');
   if (isKeyPressed(KEY_NSPIRE_K)) return SHIFTCTRL('k','K',KEY_CTRL_AC);
-  if (isKeyPressed(KEY_NSPIRE_L)) return SHIFT('l','L');
+  if (isKeyPressed(KEY_NSPIRE_L)) return SHIFTCTRL('l','L',KEY_CTRL_F14);
   if (isKeyPressed(KEY_NSPIRE_M)) return SHIFTCTRL('m','M',KEY_CTRL_CATALOG);
   if (isKeyPressed(KEY_NSPIRE_N)) return SHIFTCTRL('n','N',KEY_CTRL_N);
   if (isKeyPressed(KEY_NSPIRE_O)) return SHIFTCTRL('o','O',KEY_SHIFT_OPTN);
@@ -406,8 +418,8 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_Q)) return SHIFT('q','Q');
   if (isKeyPressed(KEY_NSPIRE_R)) return SHIFTCTRL('r','R',KEY_CTRL_R);
   if (isKeyPressed(KEY_NSPIRE_S)) return SHIFTCTRL('s','S',KEY_CTRL_S);
-  if (isKeyPressed(KEY_NSPIRE_T)) return SHIFT('t','T');
-  if (isKeyPressed(KEY_NSPIRE_U)) return SHIFT('u','U');
+  if (isKeyPressed(KEY_NSPIRE_T)) return SHIFTCTRL('t','T',KEY_CTRL_F12);
+  if (isKeyPressed(KEY_NSPIRE_U)) return SHIFTCTRL('u','U',KEY_CTRL_F13);
   if (isKeyPressed(KEY_NSPIRE_V)) return SHIFTCTRL('v','V',KEY_CTRL_PASTE);
   if (isKeyPressed(KEY_NSPIRE_W)) return SHIFT('w','W');
   if (isKeyPressed(KEY_NSPIRE_X)) return SHIFTCTRL('x','X',KEY_CTRL_CUT);
