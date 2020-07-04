@@ -390,6 +390,8 @@ namespace giac {
     if (args.type!=_VECT || args._VECTptr->size()!=2)
       return gensizeerr(contextptr);
     gen a=args._VECTptr->front(),aa,b=args._VECTptr->back(),c;
+    if (a.is_symb_of_sommet(at_abs) || a.is_symb_of_sommet(at_exp))
+      return pow(a,inv(b,contextptr),contextptr);
     if (is_equal(a)){
       gen a0=a._SYMBptr->feuille[0],a1=a._SYMBptr->feuille[1];
       return symbolic(at_equal,makesequence(_surd(makesequence(a0,b),contextptr),_surd(makesequence(a1,b),contextptr)));
