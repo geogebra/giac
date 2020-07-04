@@ -8,6 +8,7 @@
 
 extern  const int LCD_WIDTH_PX;
 extern   const int LCD_HEIGHT_PX;
+extern char* fmenu_cfg;
 #define STATUS_AREA_PX 0 // 24
 #define GIAC_HISTORY_MAX_TAILLE 32
 #define GIAC_HISTORY_SIZE 2
@@ -26,6 +27,7 @@ extern "C" {
 
 extern "C" {
 #include "k_csdk.h"
+  void do_shutdown(); // auto-shutdown
   void console_output(const char *,int );
   const char * console_input(const char * msg1,const char * msg2,bool numeric,int ypos);
   void c_draw_rectangle(int x,int y,int w,int h,int c);
@@ -62,6 +64,9 @@ extern "C" {
   c_complex c_det(c_complex *,int);
   bool c_egv(c_complex * x,int n); // eigenvectors
   bool c_eig(c_complex * x,c_complex * d,int n); // x eigenvect, d reduced mat
+  bool c_proot(c_complex * x,int n); // poly root
+  bool c_pcoeff(c_complex * x,int n); // root->coeffs
+  bool c_fft(c_complex * x,int n,bool inverse); // FFT
   void turtle_freeze();
 }
 extern int lang;
@@ -322,11 +327,26 @@ namespace xcas {
 #endif
   int periodic_table(const char * & name,const char * & symbol,char * protons,char * nucleons,char * mass,char * electroneg);
 
+  struct tableur {
+    giac::matrice m,clip,undo;
+    giac::gen var;
+    int nrows,ncols;
+    int cur_row,cur_col,disp_row_begin,disp_col_begin;
+    int sel_row_begin,sel_col_begin;
+    std::string cmdline,filename;
+    int cmd_pos,cmd_row,cmd_col; // row/col of current cmdline, -1 if not active
+    bool changed,recompute,matrix_fill_cells,movedown;
+  } ;
+  extern tableur * sheetptr;
+
+  void check_do_graph(giac::gen & ge,int do_logo_graph_eqw,const giac::context *);
+  int get_filename(char * filename,const char * extension);
 
 #ifndef NO_NAMESPACE_XCAS
 } // namespace xcas
 #endif // ndef NO_NAMESPACE_XCAS
 
+giac::gen sheet(const giac::context *); // in kadd.cc
 /* ************************************************************
 **************************************************************
 ***********************************************************  */
@@ -335,6 +355,8 @@ namespace xcas {
 #ifndef NO_NAMESPACE_XCAS
 namespace giac {
 #endif // ndef NO_NAMESPACE_XCAS
+  std::string help_insert(const char * cmdline,const giac::context *);
+  void copy_clipboard(const std::string & s,bool status);
 #define TEXT_MODE_NORMAL 0
 #define TEXT_MODE_INVERT 1
 #define MENUITEM_NORMAL 0
@@ -407,6 +429,9 @@ namespace giac {
   void aide2catalogFunc(const giac::aide & a,catalogFunc & c);
 
   giac::gen select_var(const giac::context * contextptr);
+  const char * keytostring(int key,int keyflag,bool py,const giac::context * contextptr);
+  void insert(std::string & s,int pos,const char * add);
+  
   int showCatalog(char* insertText,int preselect,int menupos,const giac::context * contextptr);
   int doMenu(Menu* menu, MenuItemIcon* icontable=NULL);
   void reset_alpha();

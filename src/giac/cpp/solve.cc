@@ -2607,6 +2607,8 @@ namespace giac {
   gen _solve_uncompressed(const gen & args,GIAC_CONTEXT){
     if (args.type==_VECT && args.subtype==0 && ckmatrix(args))
       return _solve_uncompressed(change_subtype(args,_SEQ__VECT),contextptr);
+    if (args.type==_VECT && args.subtype==_SEQ__VECT && lidnt(args).empty())
+      return _linsolve(args,contextptr);
     if (args.type==_VECT && !args._VECTptr->empty() && args._VECTptr->back()==at_equal){
       int x=calc_mode(contextptr);
       calc_mode(1,contextptr);

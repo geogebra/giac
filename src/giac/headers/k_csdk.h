@@ -71,6 +71,8 @@ extern "C" {
   inline int os_draw_string_(int x,int y,const char * s){ return os_draw_string(x,y,giac::_BLACK,giac::_WHITE,s);}
   int os_draw_string_small(int x,int y,int c,int bg,const char * s,bool fake=false);
   inline int os_draw_string_small_(int x,int y,const char * s){ return os_draw_string_small(x,y,giac::_BLACK,giac::_WHITE,s);}
+  int os_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake=false);
+  inline int os_draw_string_medium_(int x,int y,const char * s){ return os_draw_string_medium(x,y,giac::_BLACK,giac::_WHITE,s);}
   void GetKey(int * key);
   int getkey(bool allow_suspend); // transformed
   void enable_back_interrupt();
@@ -91,6 +93,7 @@ extern "C" {
   void get_hms(int *h,int *m,int *s);
 #endif
 
+  extern void (*shutdown)(); // function called after 2 hours of idle
 
 #ifdef __cplusplus
 }

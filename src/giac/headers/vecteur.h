@@ -159,7 +159,7 @@ namespace giac {
   // extract submatrix
   matrice matrice_extract(const matrice & m,int insert_row,int insert_col,int nrows,int ncols);
   void makespreadsheetmatrice(matrice & m,GIAC_CONTEXT);
-  matrice extractmatricefromsheet(const matrice & m);
+  matrice extractmatricefromsheet(const matrice & m,bool value=true);
   // eval spreadsheet, compute list of dependances in lc
   void spread_eval(matrice & m,GIAC_CONTEXT);
 

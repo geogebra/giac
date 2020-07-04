@@ -113,6 +113,7 @@ namespace giac {
       lang=2;
     string s=unlocalize(cmd_name);
     int l=int(s.size());
+    if (l==0) return false;
     if ( (l>2) && (s[0]=='\'') && (s[l-1]=='\'') )
       s=s.substr(1,l-2);
 #ifdef KHICAS
@@ -146,7 +147,7 @@ namespace giac {
       items[kk]=ptr;
     }
     items[kk]=0;
-    int r=select_item(items,"Select completion");
+    int r=select_item(items,"Select completion",false);
     if (r<0)
       return false;
     cmd_name=items[r];

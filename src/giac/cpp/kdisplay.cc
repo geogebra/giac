@@ -44,7 +44,7 @@ using namespace std;
 using namespace giac;
 const int LCD_WIDTH_PX=320;
 const int LCD_HEIGHT_PX=222;
-static char* original_cfg=0;
+char* fmenu_cfg=0;
 int khicas_addins_menu(GIAC_CONTEXT); // in kadd.cc
 #ifdef MICROPY_LIB
 extern "C" const char * const * mp_vars();
@@ -75,6 +75,7 @@ namespace giac {
   }
 
   void DisplayStatusArea(){
+    sync_screen();
   }
 
   void set_xcas_status(){
@@ -6020,7 +6021,7 @@ namespace xcas {
       translate_fkey(key);
       if ( key==KEY_CTRL_F1 || key==KEY_CTRL_F2 ||
 	   (key>=KEY_CTRL_F7 && key<=KEY_CTRL_F14)){
-	adds=console_menu(key,original_cfg,1);//alph?"simplify":(keyflag==1?"factor":"partfrac");
+	adds=console_menu(key,fmenu_cfg,1);//alph?"simplify":(keyflag==1?"factor":"partfrac");
 	// workaround for infinitiy
 	if (!adds) continue;
 	if (strlen(adds)>=2 && adds[0]=='o' && adds[1]=='o')
@@ -8037,15 +8038,6 @@ namespace xcas {
       if (!editable && (key==KEY_CHAR_ANS || key==KEY_BOOK || key=='\t' || key==KEY_CTRL_EXE))
 	return key;
       if (editable){
-	if (key==KEY_BOOK){
-	  string curs=v[textline].s.substr(0,textpos);
-	  if (!curs.empty()){
-	    string adds=help_insert(curs.c_str(),contextptr);
-	    if (!adds.empty())
-	      insert(text,adds.c_str(),false);
-	  }
-	  continue;
-	}
 	if (key=='\t'){
 	  int indent=0; // indent deduced from prev line
 	  if (textline!=0){
@@ -8063,10 +8055,21 @@ namespace xcas {
 	      textpos -= diff;
 	    else
 	      textpos = 0;
+	    continue;
 	  }
 	  if (diff<0){
 	    s=string(-diff,' ')+s;
 	    textpos += -diff;
+	    continue;
+	  }
+	  key=KEY_BOOK;
+	}
+	if (key==KEY_BOOK){
+	  string curs=v[textline].s.substr(0,textpos);
+	  if (!curs.empty()){
+	    string adds=help_insert(curs.c_str(),contextptr);
+	    if (!adds.empty())
+	      insert(text,adds.c_str(),false);
 	  }
 	  continue;
 	}
@@ -8168,8 +8171,8 @@ namespace xcas {
 	       (key >= KEY_CTRL_F6 && key <= KEY_CTRL_F14)
 	       ){
 	    string le_menu=text->python?
-	      "F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF9 plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\ndot(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF: color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF= draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF> cplx\nabs(\nphase(\nreal\nimag\nconj(\npolar(\nrect(\nfrom cmath import *\n":
-	      "F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nlocal\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF: plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF= misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
+	      "F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF9 plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\nmul(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF: color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF= draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\npolar(\nrect(\nfrom cmath import *\n":
+	      "F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nlocal\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF: arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF9 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF= misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
 	    le_menu += "F8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\n";
 	    const char * ptr=console_menu(key,(char*)(le_menu.c_str()),2);
 	    if (!ptr){
@@ -9114,6 +9117,14 @@ namespace xcas {
       strcat(buf,l);
       strcat(buf,");");
     }
+    if (sheetptr){
+      string s(current_sheet(vecteur(0),contextptr).print(contextptr));
+      if (strlen(buf)+s.size()+20<bufsize){
+	strcat(buf,"current_sheet(");
+	strcat(buf,s.c_str());
+	strcat(buf,");");
+      }
+    }
     return buf;
 #else
     string s(g.print(contextptr));
@@ -10009,7 +10020,7 @@ namespace xcas {
     const char * filenames[MAX_NUMBER_OF_FILENAMES+1];
     int n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,extension);
     if (n==0) return 0;
-    int choix=select_item(filenames,"Scripts");
+    int choix=select_item(filenames,title?title:"Scripts");
     if (choix<0 || choix>=n) return 0;
     strcpy(filename,filenames[choix]);
     return choix+1;
@@ -10235,7 +10246,14 @@ namespace xcas {
 	  buf[0]=0;
 	return Console_Input((const char*)buf);
       }
-      if (key==KEY_SAVE || key==KEY_CTRL_S){
+      if (key==KEY_CTRL_S || key==KEY_CTRL_T){
+	giac::gen g=sheet(contextptr);
+	if (g.type==_VECT)
+	  return Console_Input(g.print(contextptr).c_str());
+	Console_Disp(1,contextptr);
+	continue;
+      }
+      if (key==KEY_SAVE){
 	save(session_filename,contextptr);
 	console_changed=false;
 	console_disp_status(contextptr);
@@ -10661,7 +10679,7 @@ namespace xcas {
   }
 
   int Console_FMenu(int key,GIAC_CONTEXT){
-    const char * s=console_menu(key,original_cfg,0),*ptr=0;
+    const char * s=console_menu(key,fmenu_cfg,0),*ptr=0;
     if (!s){
       //cout << "console " << unsigned(s) << endl;
       return CONSOLE_NO_EVENT;
@@ -10674,7 +10692,7 @@ namespace xcas {
   }
 
   const char * console_menu(int key,int active_app){
-    return console_menu(key,original_cfg,active_app);
+    return console_menu(key,fmenu_cfg,active_app);
   }
 
   const char * console_menu(int key,char* cfg_,int active_app){
@@ -10908,38 +10926,38 @@ namespace xcas {
     return CONSOLE_SUCCEEDED;
   }
 
-  const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF5  2d \nreserved\nF4 menu\nreserved\nF6 reg\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF= misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \nperiodic_table\n";
+  const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF5  2d \nreserved\nF4 menu\nreserved\nF6 reg\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF: arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF= misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \nperiodic_table\n";
 
-  const char python_conf_standard[] = "F1 misc\n\"\n\'\n;\n:\n[]\ndef f(x):return\ncaseval(\"\nfrom cas import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nsign(\nsqrt(\nfrom math import *\nF3 rand\nrandint(\nrandom(\nchoice(\nfrom random import *\nF4 menu\nreserved\nF5  2d\nreserved\nF; color\n\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF9 plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nmatrix(\nadd(\nsub(\ndot(\ninv(\nrref(\ntranspose(\nfrom linalg import *\nF8 list\nlist(\nrange(\nlen(\nappend(\nhead(\nsort(\napply(\nF: color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\nphase(\nreal\nimag\nconj(\npolar(\nrect(\nfrom cmath import *\nF= draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\n";
+  const char python_conf_standard[] = "F1 misc\n\"\n\'\n;\n:\n[]\ndef f(x):return\ncaseval(\"\nfrom cas import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nsign(\nsqrt(\nfrom math import *\nF3 rand\nrandint(\nrandom()\nchoice(\nfrom random import *\nF4 menu\nreserved\nF5  2d\nreserved\nF; color\n\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF9 plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nmatrix(\nadd(\nsub(\nmul(\ninv(\nrref(\ntranspose(\nfrom linalg import *\nF8 list\nlist(\nrange(\nlen(\nappend(\nhead(\nsort(\napply(\nF: color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\npolar(\nrect(\nfrom cmath import *\nF= draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\n";
 
   // Loads the FMenus' data into memory, from a cfg file
   void Console_FMenu_Init(GIAC_CONTEXT)
   {
     char temp[32] = {'\0'};
 #if 0
-    if (!original_cfg){
-      original_cfg = (char *)conf_standard;
+    if (!fmenu_cfg){
+      fmenu_cfg = (char *)conf_standard;
       std::string cfg_s;
       // Does the file exists ?
       if (load_script((char*)"FMENU.cfg",cfg_s)){
 	char * ptr=new char[cfg_s.size()+1];
 	strcpy(ptr,cfg_s.c_str());
-	original_cfg=(char *)ptr;
+	fmenu_cfg=(char *)ptr;
       }
-      if(!original_cfg) {
+      if(!fmenu_cfg) {
 	save_script((const char *)"FMENU.cfg",conf_standard);
-	original_cfg = (char *)conf_standard;
+	fmenu_cfg = (char *)conf_standard;
       }
     }
 #else
     if (xcas_python_eval==1){
-      original_cfg=(char *)python_conf_standard;
+      fmenu_cfg=(char *)python_conf_standard;
     }
     else {
-      original_cfg=(char *)conf_standard;
+      fmenu_cfg=(char *)conf_standard;
     }
 #endif
-    const char *cfg=original_cfg;
+    const char *cfg=fmenu_cfg;
     while(*cfg) {
       //Get each line
       int i;
@@ -10959,7 +10977,7 @@ namespace xcas {
       memset(temp, '\0', 20);
       cfg++;
     }
-    //free(original_cfg);
+    //free(fmenu_cfg);
   }
 
   /*
@@ -11254,8 +11272,11 @@ namespace xcas {
     return b;
   }
 #endif
-  
+
+  tableur * sheetptr=0;
   int console_main(GIAC_CONTEXT){
+    sheetptr=0;
+    shutdown=do_shutdown;
 #ifdef NSPIRE_NEWLIB
     // try to detect emulator or real calc
     unsigned NSPIRE_SPEED=0x900B0000;
@@ -11320,6 +11341,11 @@ namespace xcas {
       Console_Disp(1,contextptr);
     }
     Console_Free();
+    if (sheetptr){
+      // sheetptr->m.clear();
+      delete sheetptr;
+      sheetptr=0;
+    }
     return 0;
   }
 
@@ -11747,7 +11773,7 @@ int select_item(const char ** ptr,const char * title,bool askfor1){
   int nitems=0;
   for (const char ** p=ptr;*p;++p)
     ++nitems;
-  if (nitems==0)
+  if (nitems==0 || nitems>=256)
     return -1;
   if (!askfor1 && nitems==1)
     return 0;
@@ -11853,6 +11879,11 @@ double r_det(double *x,int n){
 void c_complexptr2matrice(c_complex * x,int n,int m,giac::matrice & M){
   M.resize(n);
   for (int i=0;i<n;++i){
+    if (m==0){
+      M[i]=gen(x->r,x->i);
+      ++x;
+      continue;
+    }
     M[i]=giac::vecteur(m);
     giac::vecteur & w=*M[i]._VECTptr;
     for (int j=0;j<m;++j){
@@ -11883,8 +11914,18 @@ c_complex gen2c_complex(giac::gen & g){
 // x must have enough space!
 bool matrice2c_complexptr(const giac::matrice &M,c_complex *x){
   int n=M.size();
-  if (n==0 || M.front().type!=giac::_VECT)
+  if (n==0)
     return false;
+  if (M.front().type!=giac::_VECT){
+    for (int i=0;i<n;++i){
+      giac::gen g =giac::evalf_double(M[i],1,giac::context0);
+      if (g.type!=giac::_DOUBLE_ && g.type!=giac::_CPLX)
+	return false;
+      *x=gen2c_complex(g);
+      ++x;
+    }
+    return true;
+  }
   int m=M.front()._VECTptr->size();
   for (int i=0;i<n;++i){
     if (M[i].type!=giac::_VECT || M[i]._VECTptr->size()!=m)
@@ -11906,6 +11947,42 @@ bool c_inv(c_complex * x,int n){
   c_complexptr2matrice(x,n,n,M);
   M=giac::minv(M,giac::context0);
   return matrice2c_complexptr(M,x);
+}
+
+bool c_proot(c_complex * x,int n){
+  giac::matrice M(n);
+  c_complexptr2matrice(x,n,0,M);
+  M=giac::proot(M);
+  return matrice2c_complexptr(M,x);
+}
+
+bool c_pcoeff(c_complex * x,int n){
+  giac::matrice M(n);
+  c_complexptr2matrice(x,n,0,M);
+  M=giac::pcoeff(M);
+  return matrice2c_complexptr(M,x);
+}
+
+bool c_fft(c_complex * x,int n,bool inverse){
+#if 1
+  complex<double> * X=(complex<double> *) x;
+  double theta=2*M_PI/n;
+  if (!inverse)
+    theta=-theta;
+  fft2(X,n,theta);
+  if (inverse){
+    for (int i=0;i<n;++i)
+      X[i]=X[i]/double(n);
+  }
+  return true;
+#else
+  giac::matrice M(n);
+  c_complexptr2matrice(x,n,0,M);
+  gen g=inverse?giac::_ifft(M,giac::context0):giac::_fft(M,giac::context0);
+  if (g.type!=_VECT)
+    return false;
+  return matrice2c_complexptr(*g._VECTptr,x);
+#endif
 }
 
 bool c_egv(c_complex * x,int n){
@@ -11943,6 +12020,11 @@ c_complex c_det(c_complex *x,int n){
   return gen2c_complex(g);
 }
 
+// auto-shutdown
+void do_shutdown(){
+  xcas::save_console_state_smem("session.xw.tns",giac::context0);
+  exit(1);
+}
 
 // string translations
 #ifdef NUMWORKS

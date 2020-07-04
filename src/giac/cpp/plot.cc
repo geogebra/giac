@@ -12004,7 +12004,7 @@ namespace giac {
   static define_unary_function_eval (__switch_axes,&_switch_axes,_switch_axes_s);
   define_unary_function_ptr5( at_switch_axes ,alias_at_switch_axes,&__switch_axes,0,true);
 
-  gen plotseq(const gen& f,const gen&x,double x0,double xmin,double xmax,int niter,const vecteur & attributs,const context * contextptr){
+gen plotseq(const gen& f,const gen&x,double x0,double xmin,double xmax,int niter,const vecteur & attributs,const context * contextptr,bool print){
     if (xmin>xmax)
       swapdouble(xmin,xmax);
     vecteur res(2*niter+1);
@@ -12013,10 +12013,12 @@ namespace giac {
     gen newx0;
     double x1;
     //gprintf("======== u_(n+1)=(%gen->%gen)(u_n), u0=%gen",makevecteur(x,f,x0),1,contextptr);
-    gprintf("======== %gen=%gen), %gen=%gen",makevecteur(symb_at(u__IDNT_e,n__IDNT_e+1,contextptr),subst(f,x,symb_at(u__IDNT_e,n__IDNT_e,contextptr),false,contextptr),symb_at(u__IDNT_e,0,contextptr),x0),1,contextptr);
+    if (print)
+      gprintf("======== %gen=%gen), %gen=%gen",makevecteur(symb_at(u__IDNT_e,n__IDNT_e+1,contextptr),subst(f,x,symb_at(u__IDNT_e,n__IDNT_e,contextptr),false,contextptr),symb_at(u__IDNT_e,0,contextptr),x0),1,contextptr);
     for (int i=0;i<niter;++i){
       newx0=subst(f,x,x0,false,contextptr).evalf2double(eval_level(contextptr),contextptr);
-      gprintf("n=%gen u_n=%gen",makevecteur(i+1,newx0),1,contextptr);
+      if (print)
+	gprintf("n=%gen u_n=%gen",makevecteur(i+1,newx0),1,contextptr);
       if (newx0.type!=_DOUBLE_)
 	return gensizeerr(gettext("Bad iteration"));
       x1=newx0._DOUBLE_val;
@@ -12039,8 +12041,13 @@ namespace giac {
     g.push_back(symb_pnt(gen(makevecteur(gen(x0,x0),gen(x0,xmin)),_VECTOR__VECT), color | _DASH_LINE,contextptr));
     return g; // gen(g,_SEQ__VECT);
   }
-  int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & xmin,double & xmax,int & niter,vecteur & attributs,GIAC_CONTEXT){
+int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & xmin,double & xmax,int & niter,vecteur & attributs,GIAC_CONTEXT,bool & print){
     vecteur v=gen2vecteur(args);
+    print=true;
+    if (v.back()==at_tableseq){
+      print=false;
+      v.pop_back();
+    }
     attributs=vecteur(1,default_color(contextptr));
     int l=read_attributs(v,attributs,contextptr);
     if (l<2)
@@ -12097,9 +12104,10 @@ namespace giac {
     double x0d,xmin,xmax;
     int niter;
     vecteur attributs;
-    if (find_plotseq_args(args,expr,var,x0d,xmin,xmax,niter,attributs,contextptr)<0)
+    bool print;
+    if (find_plotseq_args(args,expr,var,x0d,xmin,xmax,niter,attributs,contextptr,print)<0)
       return gentypeerr(contextptr);
-    return plotseq(expr,var,x0d,xmin,xmax,niter,attributs,contextptr);
+    return plotseq(expr,var,x0d,xmin,xmax,niter,attributs,contextptr,print);
   }
   static const char _plotseq_s []="plotseq";
   static define_unary_function_eval (__plotseq,&_plotseq,_plotseq_s);

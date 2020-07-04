@@ -1025,7 +1025,7 @@ namespace giac {
     return ;
   }
 
-  matrice extractmatricefromsheet(const matrice & m){
+  matrice extractmatricefromsheet(const matrice & m,bool value){
     int I=int(m.size());
     if (!I)
       return m;
@@ -1036,7 +1036,7 @@ namespace giac {
       vecteur tmp(J);
       for (int j=0;j<J;++j){
 	if ( (v[j].type==_VECT) && (v[j]._VECTptr->size()==3) )
-	  tmp[j]=(*v[j]._VECTptr)[1];
+	  tmp[j]=(*v[j]._VECTptr)[value?1:0];
 	else
 	  tmp[j]=v[j];
       }

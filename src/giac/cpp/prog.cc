@@ -8702,7 +8702,7 @@ namespace giac {
 				       _cell(makevecteur(zero,vecteur(1,zero)),contextptr),
 				       symb_equal(_cell(makevecteur(vecteur(1,-1),vecteur(1,zero)),contextptr),makevecteur(_cell(makevecteur(vecteur(1,plus_one),vecteur(1,zero)),contextptr),xmin,xmax)),
 				       //symb_equal(_cell(makevecteur(plus_one,vecteur(1,zero)),contextptr),makevecteur(_cell(makevecteur(vecteur(1,plus_one),vecteur(1,zero)),contextptr),xmin,xmax)),
-				       9),_SEQ__VECT
+				       9,at_tableseq),_SEQ__VECT
 			   )
 		       )
 	      );
@@ -9780,6 +9780,7 @@ namespace giac {
 #endif
   define_unary_function_ptr5( at_keyboard ,alias_at_keyboard,&__keyboard,0,true);
 
+#ifndef KHICAS // see kadd.cc
   gen current_sheet(const gen & g,GIAC_CONTEXT){
     if (interactive_op_tab && interactive_op_tab[5])
       return interactive_op_tab[5](g,contextptr);
@@ -9792,6 +9793,7 @@ namespace giac {
   unary_function_eval __current_sheet(1,&current_sheet,_current_sheet_s);
 #endif
   define_unary_function_ptr5( at_current_sheet ,alias_at_current_sheet,&__current_sheet,_QUOTE_ARGUMENTS,true);
+#endif
   
   static string printasmaple_lib(const gen & feuille,const char * sommetstr,GIAC_CONTEXT){
     if (feuille.type!=_VECT || feuille._VECTptr->size()!=2)
