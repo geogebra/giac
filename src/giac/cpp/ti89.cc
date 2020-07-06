@@ -2195,7 +2195,7 @@ namespace giac {
   gen _getKey(const gen & g,GIAC_CONTEXT){
 #ifdef KHICAS
     control_c();
-    int key=getkey(false);
+    int key=getkey(0);
     return key;
 #else
     if (interactive_op_tab && interactive_op_tab[4])

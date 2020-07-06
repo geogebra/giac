@@ -6,6 +6,15 @@
 #ifdef KHICAS
 #include "misc.h"
 
+#include <exception>
+
+class autoshutdown : public std::exception{
+  const char * what () const throw ()
+  {
+    return "autoshutdown";
+  }
+};
+
 extern  const int LCD_WIDTH_PX;
 extern   const int LCD_HEIGHT_PX;
 extern char* fmenu_cfg;
@@ -24,10 +33,10 @@ extern "C" {
 }
 #endif
 
+#include "k_csdk.h"
 
 extern "C" {
-#include "k_csdk.h"
-  void do_shutdown(); // auto-shutdown
+  int do_shutdown(); // auto-shutdown
   void console_output(const char *,int );
   const char * console_input(const char * msg1,const char * msg2,bool numeric,int ypos);
   void c_draw_rectangle(int x,int y,int w,int h,int c);
@@ -68,6 +77,7 @@ extern "C" {
   bool c_pcoeff(c_complex * x,int n); // root->coeffs
   bool c_fft(c_complex * x,int n,bool inverse); // FFT
   void turtle_freeze();
+  void c_sprint_double(char * s,double d);
 }
 extern int lang;
 extern bool warn_nr;
@@ -157,8 +167,8 @@ namespace xcas {
     short int speed=0;
   };
   
-  void displaygraph(const giac::gen & ge, const giac::context * contextptr);
-  void displaylogo();
+  int displaygraph(const giac::gen & ge, const giac::context * contextptr);
+  int displaylogo();
   giac::gen eqw(const giac::gen & ge,bool editable,const giac::context * contextptr);
   typedef short int color_t;
   typedef struct
@@ -339,7 +349,7 @@ namespace xcas {
   } ;
   extern tableur * sheetptr;
 
-  void check_do_graph(giac::gen & ge,int do_logo_graph_eqw,const giac::context *);
+  int check_do_graph(giac::gen & ge,int do_logo_graph_eqw,const giac::context *);
   int get_filename(char * filename,const char * extension);
 
 #ifndef NO_NAMESPACE_XCAS

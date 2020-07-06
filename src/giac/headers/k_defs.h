@@ -162,6 +162,7 @@
 #define KEY_SELECT_UP         31201
 #define KEY_SELECT_DOWN       31202
 #define KEY_SELECT_RIGHT      31203
+#define KEY_SHUTDOWN 32109
 
 #define KEY_PRGM_ACON 10
 #define KEY_PRGM_DOWN 37

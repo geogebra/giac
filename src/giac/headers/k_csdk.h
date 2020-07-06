@@ -45,7 +45,7 @@ extern "C" {
   inline void os_hide_graph(){ return numworks_hide_graph(); }
   inline void os_redraw(){ return numworks_redraw(); }
   inline void os_wait_1ms(int ms) { numworks_wait_1ms(ms); }
-  int getkey_raw(bool allow_suspend); // Numworks scan code
+  int getkey_raw(int allow_suspend); // Numworks scan code
   inline void sync_screen(){}
 #endif // NUMWORKS
 
@@ -71,10 +71,14 @@ extern "C" {
   inline int os_draw_string_(int x,int y,const char * s){ return os_draw_string(x,y,giac::_BLACK,giac::_WHITE,s);}
   int os_draw_string_small(int x,int y,int c,int bg,const char * s,bool fake=false);
   inline int os_draw_string_small_(int x,int y,const char * s){ return os_draw_string_small(x,y,giac::_BLACK,giac::_WHITE,s);}
+#ifdef NUMWORKS
+  inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake=false){ return os_draw_string_small(x,y,c,bg,s,fake);}
+#else
   int os_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake=false);
+#endif
   inline int os_draw_string_medium_(int x,int y,const char * s){ return os_draw_string_medium(x,y,giac::_BLACK,giac::_WHITE,s);}
   void GetKey(int * key);
-  int getkey(bool allow_suspend); // transformed
+  int getkey(int allow_suspend); // transformed
   void enable_back_interrupt();
   inline void set_abort(){  enable_back_interrupt(); }
   void disable_back_interrupt();
@@ -85,7 +89,12 @@ extern "C" {
   void reset_kbd();
   void statuslinemsg(const char * msg);
   void statusline(int mode=0);
-  bool iskeydown(int key); // FIXME implement on Numworks
+#ifdef NUMWORKS
+  inline bool iskeydown(int key){ return getkey(key | 0x80000000); }
+#else
+  bool iskeydown(int key);
+#endif
+  
 #if defined NSPIRE || defined NSPIRE_NEWLIB
   extern bool nspireemu;
   extern char nspire_filebuf[NSPIRE_FILEBUFFER];
@@ -93,8 +102,8 @@ extern "C" {
   void get_hms(int *h,int *m,int *s);
 #endif
 
-  extern void (*shutdown)(); // function called after 2 hours of idle
-
+  extern int (*shutdown)(); // function called after 2 hours of idle
+  extern int shutdown_state;
 #ifdef __cplusplus
 }
 #endif

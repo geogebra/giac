@@ -6942,7 +6942,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 
   // optional, call it just before exiting
   int release_globals(){
-#ifndef VISUALC
+#if !defined VISUALC && !defined KHICAS
     delete normal_sin_pi_12_ptr_();
     delete normal_cos_pi_12_ptr_();
 #endif

@@ -13,7 +13,11 @@ namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
   xcas::tableur * new_tableur(GIAC_CONTEXT){
     xcas::tableur * sheetptr=new xcas::tableur;
+#ifdef NUMWORKS
+    sheetptr->nrows=14; sheetptr->ncols=4;
+#else
     sheetptr->nrows=20; sheetptr->ncols=5;
+#endif
     gen g=vecteur(sheetptr->ncols);
     sheetptr->m=makefreematrice(vecteur(sheetptr->nrows,g));
     makespreadsheetmatrice(sheetptr->m,contextptr);
@@ -76,7 +80,7 @@ int ext_main(){
     drawRectangle(0,0,LCD_WITH_PX,LCD_HEIGHT_PX,_BLACK);
     os_draw_string(0,20,_WHITE,_BLACK,"1. Khicas shell");
     os_draw_string(0,40,_WHITE,_BLACK,"2. Epsilon (Numworks HOME)");
-    int k=getkey(true);
+    int k=getkey(1);
     if (k=='1' ) run_epsilon();
     if (k=='2') caseval("*");
   }
@@ -178,7 +182,9 @@ int mastermind(GIAC_CONTEXT){
   for (;;){
     mastermind_disp(solution,essais,essai,fulldisp,contextptr);
     // saisie du prochain coup
-    int key=getkey(true);
+    int key=getkey(1);
+    if (key==KEY_SHUTDOWN)
+      return key;
     fulldisp=false;
     if (key==KEY_CTRL_MENU)
       return key;
@@ -245,7 +251,7 @@ int fractale(GIAC_CONTEXT){
     sync_screen();
   }
   statuslinemsg("Ecran fige. Taper EXIT");
-  getkey(true);
+  getkey(1);
   return 0;
 }
 
@@ -727,7 +733,7 @@ int sheet_menu_menu(tableur & t,GIAC_CONTEXT){
   MenuItem smallmenuitems[smallmenu.numitems];
   smallmenu.items=smallmenuitems;
   smallmenu.height=12;
-  smallmenu.width=24;
+  //smallmenu.width=24;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
   smallmenu.title = (char*)(lang==1?"Esc: annule menu tableur":"Esc: cancel sheet menu");
@@ -983,7 +989,9 @@ giac::gen sheet(GIAC_CONTEXT){
     if (!status_freeze)
       sheet_status(t,contextptr);
     sheet_display(t,contextptr);
-    int key=getkey(true);
+    int key=getkey(1);
+    if (key==KEY_SHUTDOWN)
+      return key;
     status_freeze=false;
     if (key==KEY_CTRL_SETUP){
       sheet_menu_setup(t,contextptr);
@@ -1118,8 +1126,10 @@ giac::gen sheet(GIAC_CONTEXT){
       continue;
     case KEY_CTRL_EXE:
 #if 1
-      sheet_eval(t,contextptr);
-      continue;
+      if (t.cmd_row<0){
+	sheet_eval(t,contextptr);
+	continue;
+      }
 #else
       if (t.cmd_row<0){
 	int r=t.sel_row_begin;
@@ -1188,7 +1198,7 @@ giac::gen sheet(GIAC_CONTEXT){
     case KEY_CTRL_R:
       copy_right(t,contextptr);
       continue;
-    case '\t':
+    case KEY_CTRL_CATALOG: case '\t':
       {
 	if (t.cmd_pos>=0){
 	  string adds=help_insert(t.cmdline.substr(0,t.cmd_pos).c_str(),contextptr);

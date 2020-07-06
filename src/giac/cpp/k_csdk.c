@@ -1,4 +1,7 @@
 // implementation of the minimal C SDK for KhiCAS
+int (*shutdown)()=0;
+
+short shutdown_state=0;
 short exam_mode=0;
 unsigned exam_start=0; // RTC start
 int exam_duration=0;
@@ -641,11 +644,11 @@ bool iskeydown(int key){
   return isKeyPressed(t);
 }
 
-void (*shutdown)()=0;
-
 // ? see also ndless-sdk/thirdparty/nspire-io/arch-nspire/nspire.c nio_ascii_get
-int getkey(bool allow_suspend){
+int getkey(int allow_suspend){
   sync_screen();
+  if (shutdown_state)
+    return KEY_SHUTDOWN;
   int lastkey=-1;
   unsigned NSPIRE_RTC_ADDR=0x90090000;
   static unsigned lastt=0;
@@ -674,11 +677,12 @@ int getkey(bool allow_suspend){
       for (int n=0;!on_key_pressed();++n){
 	msleep(100);
 	idle();
-	if (shutdown
+	if (!exam_mode && shutdown
 	    // && n&0xff==0
 	    ){
 	  unsigned curtime=* (volatile unsigned *) NSPIRE_RTC_ADDR;
 	  if (curtime-offtime>7200){
+	    shutdown_state=1;
 	    // after 2 hours, leave KhiCAS
 	    // that way the OS will really shutdown the calc
 	    lcd_controller[6] |= 0b1;
@@ -695,10 +699,14 @@ int getkey(bool allow_suspend){
 	      msleep(100);
 	      idle();
 	    }
-	    if (m==mmax)
-	      shutdown();
-	    else
+	    if (m==mmax){
+	      if (shutdown())
+		return KEY_SHUTDOWN;
+	    }
+	    else {
+	      shutdown_state=0;
 	      break;
+	    }
 	  }
 	}
       }

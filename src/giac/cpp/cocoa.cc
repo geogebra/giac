@@ -13672,7 +13672,11 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     }
     // now try a random small integer linear combination
     if (radical!=-1){
-      for (unsigned essai=0;essai<40;++essai){
+      // 6 july 2020: # of tries 40->100 for 
+      // eqs:=[c^2 - 3, -a^14 + 85/6*a^12 - 13465/144*a^10 + 54523/144*a^8 - 20819/18*a^6 + 8831/3*a^4 - 7384*a^2 + 10800, -b^14 + 59/4*b^12 - 459/4*b^10 + 8159/16*b^8 - 11777/8*b^6 + 40395/16*b^4 - 10971/4*b^2 + 3267, -1/599040*(53136*b^14 - 692236*b^12 + 4886796*b^10 - 20593959*b^8 + 57747314*b^6 - 116274195*b^4 + 186055404*b^2 - 162887472)*(1008*a^13 - 12240*a^11 + 67325*a^9 - 218092*a^7 + 499656*a^5 - 847776*a^3 + 1063296*a) - 1/112320*(111024*a^14 - 1310760*a^12 + 7843395*a^10 - 35101603*a^8 + 158038072*a^6 - 630801328*a^4 + 1561088256*a^2 - 1489593600)*(56*b^13 - 708*b^11 + 4590*b^9 - 16318*b^7 + 35331*b^5 - 40395*b^3 + 21942*b)];
+      // pour j de 1 jusque 100 faire gb:=gbasis(eqs,[c,a,b],rur);fpour;
+      // 40 was insufficient for the 11th gbasis rur computation
+      for (unsigned essai=0;essai<100;++essai){
 	s.coord.clear(); m.clear(); M.clear();
 	int n=(3+essai/5);
 	int r=int(std_rand()*std::pow(double(n),double(d))/RAND_MAX),r1;
@@ -14282,7 +14286,8 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  }
 	  else {
 	    if (!rur_compute(gbmod,lmtmp,lmmodradical,p.val,s,rurv)){
-		  ok = false; rur = 0;
+	      CERR << CLOCK()*1e-6 << "Unable to compute modular rur\n";
+	      ok = false; rur = 0;
 	      continue;
 	    }
 	    if (debug_infolevel)
