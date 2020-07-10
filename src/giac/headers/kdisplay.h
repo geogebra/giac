@@ -25,7 +25,7 @@ extern char* fmenu_cfg;
 #ifdef MICROPY_LIB
 extern "C" {
   int do_file(const char *file);
-  char * micropy_init();
+  char * micropy_init(int stack_size,int heap_size);
   int micropy_eval(const char * line);
   void  mp_deinit();
   void mp_stack_ctrl_init();
@@ -78,6 +78,7 @@ extern "C" {
   bool c_fft(c_complex * x,int n,bool inverse); // FFT
   void turtle_freeze();
   void c_sprint_double(char * s,double d);
+  extern int python_stack_size,python_heap_size;
 }
 extern int lang;
 extern bool warn_nr;

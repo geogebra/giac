@@ -37,7 +37,7 @@ namespace giac {
     xcas::tableur & t=*xcas::sheetptr;
     if (ckmatrix(g,true)){
       t.m=*g._VECTptr;
-      //makespreadsheetmatrice(t.m,contextptr);
+      makespreadsheetmatrice(t.m,contextptr);
       t.cur_row=t.cur_col=0;
       t.nrows=t.m.size();
       t.ncols=t.m.front()._VECTptr->size();
@@ -1178,17 +1178,6 @@ giac::gen sheet(GIAC_CONTEXT){
 	textedit(buf,1024-1,contextptr );
       }
       continue;
-    case KEY_CTRL_F4: // edit
-      if (t.cmd_row<0 && t.sel_row_begin<0){
-	char buf[1024];
-	strcpy(buf,t.cmdline.substr(0,1024-1).c_str());
-	if (textedit(buf,1024-1,contextptr )){
-	  t.cmdline=buf;
-	  t.cmd_row=t.cur_row; t.cmd_col=t.cur_col;
-	  sheet_cmdline(t,contextptr);
-	}
-      }
-      continue;
     case KEY_CTRL_F6: // view graph
       sheet_graph(t,contextptr);
       continue;
@@ -1211,9 +1200,59 @@ giac::gen sheet(GIAC_CONTEXT){
     if ( (key >= KEY_CTRL_F1 && key <= KEY_CTRL_F6) ||
 	  (key >= KEY_CTRL_F7 && key <= KEY_CTRL_F14) 
 	 ){
-      const char tmenu[]= "F1 stat1d\nsum(\nmean(\nstddev(\nmedian(\nhistogram(\nbarplot(\nboxwhisker(\nF2 stat2d\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\npolygonscatterplot(\nF3 seq\nrange(\nseq(\ntableseq(\nplotseq(\ntablefunc(\nrandvector(\nrandmatrix(\nF4 edt\nreserved\nF6 graph\nreserved\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF: arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF7 real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF= misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \n\n";
+      const char tmenu[]= "F1 stat1d\nsum(\nmean(\nstddev(\nmedian(\nhistogram(\nbarplot(\nboxwhisker(\nF2 stat2d\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\npolygonscatterplot(\nF3 seq\nrange(\nseq(\ntableseq(\nplotseq(\ntablefunc(\nrandvector(\nrandmatrix(\nF4 edt\nedit_cell\ncopy_down\ncopy_right\ninsert_row\ninsert_col\nerase_row\nerase_col\nF6 graph\nreserved\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF: arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF7 real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF= misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \n\n";
       const char * s=console_menu(key,(char *)tmenu,0);
       if (s && strlen(s)){
+	if (strcmp(s,"copy_down")==0){
+	  t.cmd_pos=t.cmd_row=t.sel_row_begin=-1;
+	  copy_down(t,contextptr);
+	  continue;
+	}
+	if (strcmp(s,"copy_right")==0){
+	  t.cmd_pos=t.cmd_row=t.sel_row_begin=-1;
+	  copy_right(t,contextptr);
+	  continue;
+	}
+	if (strcmp(s,"insert_row")==0){
+	  t.cmd_pos=t.cmd_row=t.sel_row_begin=-1;
+	  change_undo(t);
+	  t.m=matrice_insert(t.m,t.cur_row,t.cur_col,1,0,makevecteur(0,0,2),contextptr);
+	  t.nrows++;
+	  continue;
+	}
+	if (strcmp(s,"insert_col")==0){
+	  t.cmd_pos=t.cmd_row=t.sel_row_begin=-1;
+	  change_undo(t);
+	  t.m=matrice_insert(t.m,t.cur_row,t.cur_col,0,1,makevecteur(0,0,2),contextptr);
+	  t.ncols++;
+	  continue;
+	}
+	if (strcmp(s,"erase_row")==0 && t.nrows>=2){
+	  t.cmd_pos=t.cmd_row=t.sel_row_begin=-1;
+	  change_undo(t);
+	  t.m=matrice_erase(t.m,t.cur_row,t.cur_col,1,0,contextptr);
+	  --t.nrows;
+	  continue;
+	}
+	if (strcmp(s,"erase_col")==0 && t.ncols>=2){
+	  t.cmd_pos=t.cmd_row=t.sel_row_begin=-1;
+	  change_undo(t);
+	  t.m=matrice_erase(t.m,t.cur_row,t.cur_col,0,1,contextptr);
+	  --t.ncols;
+	  continue;
+	}
+	if (strcmp(s,"edit_cell")==0){
+	  if (t.cmd_row<0 && t.sel_row_begin<0){
+	    char buf[1024];
+	    strcpy(buf,t.cmdline.substr(0,1024-1).c_str());
+	    if (textedit(buf,1024-1,contextptr )){
+	      t.cmdline=buf;
+	      t.cmd_row=t.cur_row; t.cmd_col=t.cur_col;
+	      sheet_cmdline(t,contextptr);
+	    }
+	  }
+	  continue;
+	}
 	if (t.cmd_row<0)
 	  t.cmdline="";
 	sheet_cmd(t,s);

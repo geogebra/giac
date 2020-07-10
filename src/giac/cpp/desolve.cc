@@ -114,7 +114,7 @@ namespace giac {
     if (!assume_t_in_ab(t,plus_inf,plus_inf,true,true,contextptr))
       return gensizeerr(contextptr);
     gen res=_integrate(makesequence(f*exp(-t*x,contextptr),x),contextptr);
-    if (lop(res,at_integrate).empty())
+    if (lop(res,at_integrate).empty() && lop(res,at_piecewise).empty() && lop(res,at_sign).empty())
       res=-_limit(makesequence(res,x,0,1),contextptr);
     else
       res=undef;

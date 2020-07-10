@@ -15246,12 +15246,12 @@ namespace giac {
   pthread_mutex_t ntl_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-#if 0
-  void ininttype2ZZ(const inttype & temp,const inttype & step,NTL::ZZ & z,const NTL::ZZ & zzstep){
+#if 0 // def __i386__
+  bool ininttype2ZZ(const inttype & temp,const inttype & step,NTL::ZZ & z,const NTL::ZZ & zzstep){
     if (temp==0){
       long j=0;
       z=j;
-      return;
+      return true;
     }
     inttype q;
     inttype rem(irem(temp,step,q));
@@ -15263,6 +15263,7 @@ namespace giac {
     NTL::ZZ zztemp;
     zztemp=longtemp;
     z=z*zzstep+zztemp;
+    return true;
   }
 #else
   bool ininttype2ZZ(const inttype & temp,const inttype & step,NTL::ZZ & z,const NTL::ZZ & zzstep){
@@ -15352,7 +15353,10 @@ namespace giac {
       return -ZZ2inttype(-z);
     inttype temp(0);
     NTL::ZZ zztemp(z);
-    inZZ2inttype(zztemp,62,temp);
+    if (sizeof(int*)==4)
+      inZZ2inttype(zztemp,30,temp);
+    else
+      inZZ2inttype(zztemp,62,temp);
     // COUT << "zz2cl_I " << z << " -> " << temp << '\n';
     return temp;
   }

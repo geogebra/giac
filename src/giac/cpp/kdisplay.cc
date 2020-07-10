@@ -40,6 +40,61 @@ bool xthetat=false;
 bool freezeturtle=false;
 int esc_flag=0;
 int xcas_python_eval=0;
+char * python_heap=0;
+#ifdef DEVICE
+int python_stack_size=10*1024,python_heap_size=40*1024;
+#else
+int python_stack_size=1e5,python_heap_size=1e6;
+#endif
+#ifdef MICROPY_LIB
+
+void python_free(){
+  if (!python_heap) return;
+  mp_deinit(); free(python_heap); python_heap=0;
+}
+
+int python_init(int stack_size,int heap_size){
+#if defined NUMWORKS && defined MICROPY_LIB
+  python_free();
+  python_heap=micropy_init(stack_size,heap_size);
+  if (!python_heap)
+    return 0;
+#endif
+  return 1;
+}
+
+int micropy_ck_eval(const char *line){
+  if (!python_heap)
+    python_init(python_stack_size,python_heap_size);
+  if (!python_heap){
+    console_output("Memory full",11);
+    return RAND_MAX;
+  }
+  return micropy_eval(line);
+  // if MP_PARSE_SINGLE_INPUT is used, split input if newline not followed by a space, return shift
+  int shift=0,nl=0;
+  const char * ptr=line;
+  for (;;++ptr){
+    if (*ptr=='\n')
+      ++nl;
+    if (*ptr==0 || (*ptr=='\n' && *(ptr+1)!=' ')){
+      int n=ptr-line;
+      char buf[n+1];
+      strncpy(buf,line,n);
+      buf[n]=0;
+      micropy_eval(buf);
+      if (parser_errorline)
+	return shift;
+      if (*ptr==0)
+	return 0;
+      line=ptr+1;
+      shift=nl;
+    }
+  }
+  return 0;
+}
+#endif
+
 using namespace std;
 using namespace giac;
 const int LCD_WIDTH_PX=320;
@@ -6703,14 +6758,18 @@ namespace xcas {
 	}
       }
       string tmp="from "+remove_extension(text->filename)+" import *"; // os error 2 ??
-      micropy_eval(tmp.c_str());
+      micropy_ck_eval(tmp.c_str());
 #else
       freezeturtle=false;
+#if 1
+      string s=merge_area(vector<textElement>(v.begin(),v.end()));
+      micropy_ck_eval(s.c_str());
+#else
       // newlines do not work correctly unless we cut the input
       for (int i=0;i<=v.size();++i){
 	if (i==v.size() || (v[i].s.size() && v[i].s[0]!=' ')){
 	  string s=merge_area(vector<textElement>(v.begin()+shift,v.begin()+i));
-	  micropy_eval(s.c_str());
+	  micropy_ck_eval(s.c_str());
 	  if (parser_errorline>0){
 	    parser_errorline += shift;
 	    break;
@@ -6719,10 +6778,11 @@ namespace xcas {
 	}
       }
 #endif
+#endif
       // should detect syntax errors here and return line number
       if (parser_errorline>0){
 	//--parser_errorline; // ?? something strange 
-	sprintf(status,(lang==1)?"Erreur ligne %i (esc + d'info avec no de ligne decale de %i)":"Error line %i (esc more details with linenumber shifted by %i)",parser_errorline,shift);	
+	sprintf(status,(lang==1)?"Erreur ligne %i":"Error line %i",parser_errorline);	
       }
       else {
 	process_freeze();
@@ -7270,6 +7330,8 @@ namespace xcas {
     if (bool(text->python)!=bool(flag)){
       text->python=flag;
       python_compat(text->python,contextptr);
+      if (text->python & 4)
+	xcas_python_eval=1;
       show_status(text,"","");
       warn_python(flag,true);
     }
@@ -8201,7 +8263,7 @@ namespace xcas {
 	       (key >= KEY_CTRL_F6 && key <= KEY_CTRL_F14)
 	       ){
 	    string le_menu=text->python?
-	      "F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF9 plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\nmul(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF: color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF= draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\npolar(\nrect(\nfrom cmath import *\n":
+	      "F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF9 plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\nmul(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF: color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\npolar(\nrect(\nfrom cmath import *\n":
 	      "F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nlocal\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF: arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF9 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF= misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
 	    le_menu += "F8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\n";
 	    const char * ptr=console_menu(key,(char*)(le_menu.c_str()),2);
@@ -8476,14 +8538,14 @@ namespace xcas {
 	  smallmenuitems[6].text = (char*)((lang==1)?"Aller a la ligne":"Goto line");
 	  int p=python_compat(contextptr);
 	  if (p&4)
-	    smallmenuitems[7].text = (char*)"Change syntax (MicroPython)";
+	    smallmenuitems[7].text = (char*)"Syntax [MicroPython]";
 	  else {
 	    if (p==0)
-	      smallmenuitems[7].text = (char*)"Change syntax (Xcas)";
+	      smallmenuitems[7].text = (char*)"Syntax [Xcas francais]";
 	    if (p==1)
-	      smallmenuitems[7].text = (char*)"Change syntax (Xcas comp Python ^=**)";
+	      smallmenuitems[7].text = (char*)"Syntax [Xcas comp Python ^=**]";
 	    if (p==2)
-	      smallmenuitems[7].text = (char*)"Change syntax (Xcas comp Python ^=xor)";
+	      smallmenuitems[7].text = (char*)"Syntax [Xcas comp Python ^=xor]";
 	  }
 	  smallmenuitems[8].text = (char *)((lang==1)?"Changer taille caracteres":"Change fontsize");
 	  smallmenuitems[9].text = (char *)aide_khicas_string;
@@ -8788,7 +8850,7 @@ namespace xcas {
 
   void menu_setup(GIAC_CONTEXT){
     Menu smallmenu;
-    smallmenu.numitems=13;
+    smallmenu.numitems=15;
     MenuItem smallmenuitems[smallmenu.numitems];
     smallmenu.items=smallmenuitems;
     smallmenu.height=12;
@@ -8812,9 +8874,9 @@ namespace xcas {
     smallmenuitems[9].text = (char *) ((lang==1)?"Raccourcis clavier (0)":"Shortcuts (0)");
     smallmenuitems[10].text = (char*) ((lang==1)?"Mode examen (e^x)":"Exam mode (e^x)");
     smallmenuitems[11].text = (char*) ((lang==1)?"A propos":"About");
-    smallmenuitems[12].text = (char*) "Quit";
+    smallmenuitems[14].text = (char*) "Quit";
     if (exam_mode)
-      smallmenuitems[12].text = (char*)((lang==1)?"Quitter le mode examen":"Quit exam mode");
+      smallmenuitems[14].text = (char*)((lang==1)?"Quitter le mode examen":"Quit exam mode");
     
     // smallmenuitems[2].text = (char*)(isRecording ? "Stop Recording" : "Record Script");
     while(1) {
@@ -8825,6 +8887,10 @@ namespace xcas {
       dig += print_INT_(decimal_digits(contextptr));
       smallmenuitems[0].text = (char*)dig.c_str();
 #endif
+      string heaps("Micropython heap "+print_INT_(python_heap_size/1024)+"K");
+      smallmenuitems[12].text = (char *) heaps.c_str();
+      string stacks("Micropython stack "+print_INT_(python_stack_size/1024)+"K");
+      smallmenuitems[13].text = (char *) stacks.c_str();
       int p=python_compat(contextptr);
       if (p&4)
 	smallmenuitems[1].text = (char*)"Change syntax (MicroPython)";
@@ -8951,7 +9017,47 @@ namespace xcas {
 	  }
 	  break;
 	}
-	if (smallmenu.selection == 13){
+	if (smallmenu.selection==13){
+	  double d=python_heap_size/1024;
+	  if (inputdouble(
+#if defined NUMWORKS && defined DEVICE
+			  "Tas MicroPython en K (10-64)?"
+#else
+			  "Tas MicroPython en K (64-4096)?"
+#endif
+			  ,d,contextptr) && d==int(d) &&
+#if defined NUMWORKS && defined DEVICE
+	      d>=10 && d<=64
+#else
+	      d>=64 && d<=4096
+#endif
+	      ){
+	    python_heap_size=d*1024;
+	    python_free();
+	  }
+	  continue;
+	}
+	if (smallmenu.selection==14){
+	  double d=python_stack_size/1024;
+	  if (inputdouble(
+#if defined NUMWORKS && defined DEVICE
+			  "Pile MicroPython en K (8-20)?"
+#else
+			  "Pile MicroPython en K (32-512)?"
+#endif
+			  ,d,contextptr) && d==int(d) &&
+#if defined NUMWORKS && defined DEVICE
+	      d>=8 && d<=20
+#else
+	      d>=32 && d<=512
+#endif
+	      ){
+	    python_stack_size=d*1024;
+	    python_free();
+	  }
+	  continue;
+	}
+	if (smallmenu.selection == 15){
 	  if (exam_mode)
 	    leave_exam_mode(contextptr);
 	  break;
@@ -9016,7 +9122,7 @@ namespace xcas {
 #ifdef MICROPY_LIB
     if (xcas_python_eval==1){
       freezeturtle=false;
-      micropy_eval(s);
+      micropy_ck_eval(s);
     }
     else 
       do_run(s,g,ge,contextptr);
@@ -9139,9 +9245,13 @@ namespace xcas {
       }
     }
     python_compat(b,contextptr);
-    if (strlen(buf)+128<bufsize){
+    if (strlen(buf)+184<bufsize){
       strcat(buf,"python_compat(");
       strcat(buf,giac::print_INT_(b).c_str());
+      strcat(buf,",");
+      strcat(buf,giac::print_INT_(python_heap_size).c_str());
+      strcat(buf,",");
+      strcat(buf,giac::print_INT_(python_stack_size).c_str());
       strcat(buf,");angle_radian(");
       strcat(buf,angle_radian(contextptr)?"1":"0");
       strcat(buf,");with_sqrt(");
@@ -9250,15 +9360,17 @@ namespace xcas {
     write_file(filename,savebuf,len);
   }
 
-  size_t Bfile_ReadFile_OS4(const char * & hf){
+  size_t Bfile_ReadFile_OS4(const char * & hf_){
+    const unsigned char * hf=(const unsigned char *)hf_;
     size_t n=(((((hf[0]<<8)+hf[1])<<8)+hf[2])<<8)+hf[3];
-    hf += 4;
+    hf_ += 4;
     return n;
   }
 
-  size_t Bfile_ReadFile_OS2(const char * & hf){
+  size_t Bfile_ReadFile_OS2(const char * & hf_){
+    const unsigned char * hf=(const unsigned char *)hf_;
     size_t n=(hf[0]<<8)+hf[1];
-    hf += 2;
+    hf_ += 2;
     return n;
   }
 
@@ -10987,7 +11099,7 @@ namespace xcas {
 
   const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF5  2d \nreserved\nF4 menu\nreserved\nF6 reg\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF= misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \nperiodic_table\n";
 
-  const char python_conf_standard[] = "F1 misc\n\"\n\'\n;\n:\n[]\ndef f(x):return\ncaseval(\"\nfrom cas import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nsign(\nsqrt(\nfrom math import *\nF3 rand\nrandint(\nrandom()\nchoice(\nfrom random import *\nF4 menu\nreserved\nF5  2d\nreserved\nF; color\n\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF9 plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nmatrix(\nadd(\nsub(\nmul(\ninv(\nrref(\ntranspose(\nfrom linalg import *\nF8 list\nlist(\nrange(\nlen(\nappend(\nhead(\nsort(\napply(\nF: color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\npolar(\nrect(\nfrom cmath import *\nF= draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\n";
+  const char python_conf_standard[] = "F1 misc\n\"\n\'\n;\n:\n[]\ndef f(x):return\ncaseval(\"\nfrom cas import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nsign(\nsqrt(\nfrom math import *\nF3 rand\nrandint(\nrandom()\nchoice(\nfrom random import *\nF4 menu\nreserved\nF5  2d\nreserved\nF; color\n\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF9 plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nmatrix(\nadd(\nsub(\nmul(\ninv(\nrref(\ntranspose(\nfrom linalg import *\nF8 list\nlist(\nrange(\nlen(\nappend(\nhead(\nsort(\napply(\nF: color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\npolar(\nrect(\nfrom cmath import *\nF; draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\n";
 
   // Loads the FMenus' data into memory, from a cfg file
   void Console_FMenu_Init(GIAC_CONTEXT)
@@ -11335,13 +11447,20 @@ namespace xcas {
 #endif
 
   tableur * sheetptr=0;
-  int console_main(GIAC_CONTEXT){
-#if defined NUMWORKS && defined MICROPY_LIB
-    mp_stack_ctrl_init();
-    char * heap=micropy_init();
-    if (!heap)
-      return 1;
+#ifdef NUMWORKS
+  extern "C" void mp_stack_ctrl_init();
+  extern "C" void mp_stack_set_top(void *);
+  extern "C" void mp_stack_set_limit(size_t);
 #endif
+  
+  int console_main(GIAC_CONTEXT){
+#ifdef NUMWORKS
+    mp_stack_ctrl_init();
+    //volatile int stackTop;
+    //mp_stack_set_top((void *)(&stackTop));
+    //mp_stack_set_limit(8192);
+#endif
+    python_heap=0;
     sheetptr=0;
     shutdown=do_shutdown;
 #ifdef NSPIRE_NEWLIB
@@ -11384,7 +11503,7 @@ namespace xcas {
 	return 0;
 #endif
 #ifdef MICROPY_LIB
-	mp_deinit(); free(heap);
+	python_free();
 #endif
 	Console_Free();
 	release_globals();
@@ -11432,7 +11551,7 @@ namespace xcas {
     Console_Free();
     release_globals();
 #ifdef MICROPY_LIB
-    mp_deinit(); free(heap);
+    python_free();
 #endif
     if (sheetptr){
       // sheetptr->m.clear();
