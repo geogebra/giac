@@ -5688,7 +5688,7 @@ static define_unary_function_eval (__simplex_reduce,&_simplex_reduce,_simplex_re
   // returns a list of n polynomials with respect to x
   // to get the value of the spline, find the right interval hence polynomial
   // and call horner(poly,value-xi)
-  // x and d are optionnal, if not precised d is 3
+  // x and d are optional, if not precised d is 3
   gen _spline(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     if (g.type!=_VECT || g._VECTptr->size()<2)

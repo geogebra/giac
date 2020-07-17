@@ -1560,7 +1560,7 @@ namespace giac {
       if (result)
 	res=pres;
       else
-	return gensizeerr(gettext("GCD not successfull"));
+	return gensizeerr(gettext("GCD not successful"));
     }
     return r2e(res,lv,contextptr);
   }

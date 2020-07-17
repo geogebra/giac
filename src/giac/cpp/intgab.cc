@@ -531,7 +531,7 @@ namespace giac {
       Tabcuv(D1,D2,R,U,V,C); // R/D=(D1*U+D2*V)/(C*D1*D2) -> V/(C*D1)
       Dp=C*D1;
       R=V; // back to integrating 2*Re(R/Dp)
-      // find R/Dp at 0, real part should be substracted
+      // find R/Dp at 0, real part should be subtracted
       vecteur Rv(polynome2poly1(R,1)),Dv(polynome2poly1(Dp,1)),Qv(polynome2poly1(Q,1));
       vecteur vX1(vX.begin()+1,vX.end());
       Rv=*r2sym(Rv,vX1,contextptr)._VECTptr;
@@ -1505,8 +1505,8 @@ namespace giac {
   static bool sumab_ps(const polynome & Q,const polynome & R,const vecteur & v,const gen & a,const gen & x,const gen & g,bool est_reel,const polynome & p,const polynome & s,gen & res,GIAC_CONTEXT){
     // p corresponds to derivation, s to integration
     // cerr << "p=" << p << " s=" << s << " Q=" << Q << " R=" << R << '\n';
-    // Q must be independant of x
-    // If R is independant of x we use the geometric series
+    // Q must be independent of x
+    // If R is independent of x we use the geometric series
     // If R=x-integer the exponential (must change bounds by integer)
     // If R=2x(2x+1) sinh/cosh etc.
     if (Q.degree(0)==0){
@@ -1560,7 +1560,7 @@ namespace giac {
 	  // hence the sum is exp(Q)*(w[0]+w[1]*Q+...)
 	  reverse(w.begin(),w.end());
 	  gen tmp1=symb_horner(w,gx)*exp(gx,contextptr),remains;
-	  // substract sum(p(n)*Q^(n-R0)/(n-R0)!,n=R0..a-1)
+	  // subtract sum(p(n)*Q^(n-R0)/(n-R0)!,n=R0..a-1)
 	  for (int n=R0.val;n<a.val;++n){
 	    tmp1 -= subst(Pg,x,n,false,contextptr)*pow(Qg,n-R0.val)/factorial(n-R0.val);
 	  }
@@ -1622,7 +1622,7 @@ namespace giac {
 	  vecteur w=divided_differences(vx,vy);
 	  reverse(w.begin(),w.end());
 	  gen tmp=symb_horner(w,gx)*exp(gx,contextptr),remains;
-	  // substract sum(...,k=0..r*a-R0-1)
+	  // subtract sum(...,k=0..r*a-R0-1)
 	  for (int k=0;k<r*a.val-r0;++k){
 	    // pow(Qg,k) replaced by pow(gx,k) for assume(x>0);somme(x^(4n+1)/(4n+1)!,n,1,inf);
 	    tmp -= subst(Pg,x,(k+R0)/r,false,contextptr)*pow(gx,k)/factorial(k);
@@ -1823,11 +1823,11 @@ namespace giac {
 	      for (int i=0;i<diffb.val;++i)
 		res += simplify(limit(g,*x._IDNTptr,trueb+1+i,0,contextptr),contextptr);
 	    }
-	    else { // b<=trueb substract sum(g,x,b+1,trueb)
+	    else { // b<=trueb subtract sum(g,x,b+1,trueb)
 	      for (int i=0;i<-diffb.val;++i)
 		res -= simplify(limit(g,*x._IDNTptr,b+1+i,0,contextptr),contextptr); 
 	    }
-	    if (diffa.val>0){ // a>truea : substract sum(g,x,truea,a-1)
+	    if (diffa.val>0){ // a>truea : subtract sum(g,x,truea,a-1)
 	      for (int i=0;i<diffa.val;++i)
 		res -= simplify(limit(g,*x._IDNTptr,truea+i,0,contextptr),contextptr);
 	    }

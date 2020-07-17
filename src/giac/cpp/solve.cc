@@ -5376,7 +5376,7 @@ namespace giac {
     swap(C,G);
   }
 
-  // first occurence in v: i<0 not found, i>=0 means v[i]==idx
+  // first occurrence in v: i<0 not found, i>=0 means v[i]==idx
   int find(const vector<index_m> & v,const index_m & idx){
     unsigned debut=0,fin=unsigned(v.size()); // search in [debut,fin[
     if (v.empty() || i_lex_is_strictly_greater(v[0],idx))
@@ -7254,7 +7254,7 @@ namespace giac {
     vectpoly rescocoa;
     if (!env.moduloon && with_cocoa && cocoa_greduce(vectpoly(1,p),eqp,order,rescocoa))
       return r2e(rescocoa.front(),l,contextptr);
-    // FIXME: get constant term, substract one to get the correct constant
+    // FIXME: get constant term, subtract one to get the correct constant
     // gen C(p.constant_term());
     // eq=eq-C+plus_one;
     // p=*eq._POLYptr;

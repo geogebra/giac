@@ -5985,7 +5985,7 @@ namespace giac {
   static define_unary_function_eval (__perimetre,&_perimetre,_perimetre_s);
   define_unary_function_ptr5( at_perimetre ,alias_at_perimetre,&__perimetre,0,true);
 
-  // angle accepts an optionnal last argument as a string
+  // angle accepts an optional last argument as a string
   // for legends, if the string has a terminal =, the value of
   // the angle is added to the legend
   gen angle(const vecteur & v1,const vecteur & v2,GIAC_CONTEXT){
@@ -6552,7 +6552,7 @@ namespace giac {
   // def_x is the definition of x as read from history
   static bool reeval_with_1arg_quoted(const gen & x,gen & res,gen & def_x,GIAC_CONTEXT){
     // CERR << x << " " << res << " " << history_in(contextptr) << '\n';
-    // find first occurence of storing something in x in the history
+    // find first occurrence of storing something in x in the history
     def_x=undef;
     const_iterateur it0=history_in(contextptr).begin()-1,itend=history_in(contextptr).end(),itpos,it;
     it=itend-1;

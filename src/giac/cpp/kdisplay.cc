@@ -44,9 +44,10 @@ char * python_heap=0;
 #ifdef DEVICE
 int python_stack_size=10*1024,python_heap_size=40*1024;
 #else
-int python_stack_size=1e5,python_heap_size=1e6;
+int python_stack_size=32*1024,python_heap_size=256*1024;
 #endif
 #ifdef MICROPY_LIB
+extern "C" int mp_token(const char * line);
 
 void python_free(){
   if (!python_heap) return;
@@ -54,7 +55,7 @@ void python_free(){
 }
 
 int python_init(int stack_size,int heap_size){
-#if defined NUMWORKS && defined MICROPY_LIB
+#if 1 // defined NUMWORKS
   python_free();
   python_heap=micropy_init(stack_size,heap_size);
   if (!python_heap)
@@ -64,12 +65,17 @@ int python_init(int stack_size,int heap_size){
 }
 
 int micropy_ck_eval(const char *line){
-  if (!python_heap)
+#if 1 // def NUMWORKS
+  if (python_heap && line[0]==0)
+    return 1;
+  if (!python_heap){
     python_init(python_stack_size,python_heap_size);
+  }
   if (!python_heap){
     console_output("Memory full",11);
     return RAND_MAX;
   }
+#endif
   return micropy_eval(line);
   // if MP_PARSE_SINGLE_INPUT is used, split input if newline not followed by a space, return shift
   int shift=0,nl=0;
@@ -702,7 +708,7 @@ namespace giac {
 #define CAT_CATEGORY_PHYS 19
 #define CAT_CATEGORY_UNIT 20
 #define CAT_CATEGORY_LOGO 21 // should be the last one
-
+#define XCAS_ONLY 0x80000000
   void init_locale(){
     lang=1;
   }
@@ -719,144 +725,144 @@ namespace giac {
     {" test si alors", "if ", "Test", "#\nif ", 0, CAT_CATEGORY_PROG},
     {" test sinon", "else ", "Clause fausse du test", 0, 0, CAT_CATEGORY_PROG},
     {" fonction def.", "f(x):=", "Definition de fonction.", "#\nf(x):=", 0, CAT_CATEGORY_PROG},
-    {" local j,k;", "local ", "Declaration de variables locales Xcas", 0, 0, CAT_CATEGORY_PROG},
+    {" local j,k;", "local ", "Declaration de variables locales Xcas", 0, 0, CAT_CATEGORY_PROG | XCAS_ONLY},
     {" range(a,b)", "in range(", "Dans l'intervalle [a,b[ (a inclus, b exclus)", "# in range(1,10)", 0, CAT_CATEGORY_PROG},
     {" return res;", "return ", "return ou retourne quitte la fonction et renvoie le resultat res", 0, 0, CAT_CATEGORY_PROG},
     {" edit list ", "list ", "Assistant creation de liste.", 0, 0, CAT_CATEGORY_LIST},
     {" edit matrix ", "matrix ", "Assistant creation de matrice.", 0, 0, CAT_CATEGORY_MATRIX},
-    {" mksa(x)", 0, "Conversion en unites MKSA", 0, 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8)},
-    {" ufactor(a,b)", 0, "Factorise l'unite b dans a", "100_J,1_kW", 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8)},
-    {" usimplify(a)", 0, "Simplifie l'unite dans a", "100_l/10_cm^2", 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8)},
+    {" mksa(x)", 0, "Conversion en unites MKSA", 0, 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8)  | XCAS_ONLY},
+    {" ufactor(a,b)", 0, "Factorise l'unite b dans a", "100_J,1_kW", 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8) | XCAS_ONLY},
+    {" usimplify(a)", 0, "Simplifie l'unite dans a", "100_l/10_cm^2", 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8) | XCAS_ONLY},
     //{"fonction def Xcas", "fonction f(x) local y;   ffonction:;", "Definition de fonction.", "#fonction f(x) local y; y:=x^2; return y; ffonction:;", 0, CAT_CATEGORY_PROG},
     {"!", "!", "Non logique (prefixe) ou factorielle de n (suffixe).", "#7!", "#!b", CAT_CATEGORY_PROGCMD},
-    {"#", "#", "Commentaire Python, en Xcas taper //. Raccourci ALPHA F2", 0, 0, CAT_CATEGORY_PROG},
+    {"#", "#", "Commentaire Python, en Xcas taper //.", 0, 0, CAT_CATEGORY_PROG},
     {"%", "%", "a % b signifie a modulo b", 0, 0, CAT_CATEGORY_ARIT | (CAT_CATEGORY_PROGCMD << 8)},
     {"&", "&", "Et logique ou +", "#1&2", 0, CAT_CATEGORY_PROGCMD},
     {":=", ":=", "Affectation vers la gauche (inverse de =>).", "#a:=3", 0, CAT_CATEGORY_PROGCMD|(CAT_CATEGORY_SOFUS<<8)},
     {"<", "<", "Inferieur strict. Raccourci SHIFT F2", 0, 0, CAT_CATEGORY_PROGCMD},
-    {"=>", "=>", "Affectation vers la droite ou conversion en (touche ->). Par exemple 5=>a ou x^4-1=>* ou (x+1)^2=>+ ou sin(x)^2=>cos.", "#5=>a", "#15_m=>_cm", CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_PHYS <<8) | (CAT_CATEGORY_UNIT << 16)},
+    {"=>", "=>", "Affectation vers la droite ou conversion en (touche ->). Par exemple 5=>a ou x^4-1=>* ou (x+1)^2=>+ ou sin(x)^2=>cos.", "#5=>a", "#15_m=>_cm", CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_PHYS <<8) | (CAT_CATEGORY_UNIT << 16) | XCAS_ONLY},
     {">", ">", "Superieur strict. Raccourci F2.", 0, 0, CAT_CATEGORY_PROGCMD},
     {"\\", "\\", "Caractere \\", 0, 0, CAT_CATEGORY_PROGCMD},
     {"_", "_", "Caractere _. Prefixe d'unites.", 0, 0, CAT_CATEGORY_PROGCMD},
-    {"_(km/h)", "_(km/h)", "Vitesse en kilometre/heure", 0, 0, CAT_CATEGORY_UNIT},
-    {"_(m/s)", "_(m/s)", "Vitesse en metre/seconde", 0, 0, CAT_CATEGORY_UNIT},
-    {"_(m/s^2)", "_(m/s^2)", "Acceleration en metre par seconde au carre", 0, 0, CAT_CATEGORY_UNIT},
-    {"_(m^2/s)", "_(m^2/s)", "Viscosite", 0, 0, CAT_CATEGORY_UNIT},
-    {"_A", 0, "Intensite electrique en Ampere", 0, 0, CAT_CATEGORY_UNIT},
-    {"_Bq", 0, "Radioactivite: Becquerel", 0, 0, CAT_CATEGORY_UNIT},
-    {"_C", 0, "Charge electrique en Coulomb", 0, 0, CAT_CATEGORY_UNIT},
-    {"_Ci", 0, "Radioactivite: Curie", 0, 0, CAT_CATEGORY_UNIT},
-    {"_F", 0, "Farad", 0, 0, CAT_CATEGORY_UNIT},
-    {"_F_", 0, "constante de Faraday (charge globale d'une mole de charges élémentaires).", 0, 0, CAT_CATEGORY_PHYS},
-    {"_G_", 0, "constante de gravitation universelle. Force=_G_*m1*m2/r^2", 0, 0, CAT_CATEGORY_PHYS},
-    {"_H", 0, "Henry", 0, 0, CAT_CATEGORY_UNIT},
-    {"_Hz", 0, "Hertz", 0, 0, CAT_CATEGORY_UNIT},
-    {"_J", 0, "Energie en Joule=kg*m^2/s^2", 0, 0, CAT_CATEGORY_UNIT},
-    {"_K", 0, "Temperature en Kelvin", 0, 0, CAT_CATEGORY_UNIT},
-    {"_Kcal", 0, "Energie en kilo-calorier", 0, 0, CAT_CATEGORY_UNIT},
-    {"_MeV", 0, "Energie en mega-electron-Volt", 0, 0, CAT_CATEGORY_UNIT},
-    {"_N", 0, "Force en Newton=kg*m/s^2", 0, 0, CAT_CATEGORY_UNIT},
-    {"_NA_", 0, "Avogadro", 0, 0, CAT_CATEGORY_PHYS},
-    {"_Ohm", 0, "Resistance electrique en Ohm", 0, 0, CAT_CATEGORY_UNIT},
-    {"_PSun_", 0, "puissance du Soleil", 0, 0, CAT_CATEGORY_PHYS},
-    {"_Pa", 0, "Pression en Pascal=kg/m/s^2", 0, 0, CAT_CATEGORY_UNIT},
-    {"_REarth_", 0, "Rayon de la Terre", 0, 0, CAT_CATEGORY_PHYS},
-    {"_RSun_", 0, "rayon du Soleil", 0, 0, CAT_CATEGORY_PHYS},
-    {"_R_", 0, "constante des gaz (de Boltzmann par mole)", 0, 0, CAT_CATEGORY_PHYS},
-    {"_S", 0, "", 0, 0, CAT_CATEGORY_UNIT},
-    {"_StdP_", 0, "Pression standard (au niveau de la mer)", 0, 0, CAT_CATEGORY_PHYS},
-    {"_StdT_", 0, "temperature standard (0 degre Celsius exprimes en Kelvins)", 0, 0, CAT_CATEGORY_PHYS},
-    {"_Sv", 0, "Radioactivite: Sievert", 0, 0, CAT_CATEGORY_UNIT},
-    {"_T", 0, "Tesla", 0, 0, CAT_CATEGORY_UNIT},
-    {"_V", 0, "Tension electrique en Volt", 0, 0, CAT_CATEGORY_UNIT},
-    {"_Vm_", 0, "Volume molaire", 0, 0, CAT_CATEGORY_PHYS},
-    {"_W", 0, "Puissance en Watt=kg*m^2/s^3", 0, 0, CAT_CATEGORY_UNIT},
-    {"_Wb", 0, "Weber", 0, 0, CAT_CATEGORY_UNIT},
-    {"_alpha_", 0, "constante de structure fine", 0, 0, CAT_CATEGORY_PHYS},
-    {"_c_", 0, "vitesse de la lumiere", 0, 0, CAT_CATEGORY_PHYS},
-    {"_cd", 0, "Luminosite en candela", 0, 0, CAT_CATEGORY_UNIT},
+    {"_(km/h)", "_(km/h)", "Vitesse en kilometre/heure", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_(m/s)", "_(m/s)", "Vitesse en metre/seconde", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_(m/s^2)", "_(m/s^2)", "Acceleration en metre par seconde au carre", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_(m^2/s)", "_(m^2/s)", "Viscosite", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_A", 0, "Intensite electrique en Ampere", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Bq", 0, "Radioactivite: Becquerel", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_C", 0, "Charge electrique en Coulomb", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Ci", 0, "Radioactivite: Curie", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_F", 0, "Farad", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_F_", 0, "constante de Faraday (charge globale d'une mole de charges élémentaires).", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_G_", 0, "constante de gravitation universelle. Force=_G_*m1*m2/r^2", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_H", 0, "Henry", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Hz", 0, "Hertz", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_J", 0, "Energie en Joule=kg*m^2/s^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_K", 0, "Temperature en Kelvin", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Kcal", 0, "Energie en kilo-calorier", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_MeV", 0, "Energie en mega-electron-Volt", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_N", 0, "Force en Newton=kg*m/s^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_NA_", 0, "Avogadro", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_Ohm", 0, "Resistance electrique en Ohm", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_PSun_", 0, "puissance du Soleil", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_Pa", 0, "Pression en Pascal=kg/m/s^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_REarth_", 0, "Rayon de la Terre", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_RSun_", 0, "rayon du Soleil", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_R_", 0, "constante des gaz (de Boltzmann par mole)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_S", 0, "", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_StdP_", 0, "Pression standard (au niveau de la mer)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_StdT_", 0, "temperature standard (0 degre Celsius exprimes en Kelvins)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_Sv", 0, "Radioactivite: Sievert", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_T", 0, "Tesla", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_V", 0, "Tension electrique en Volt", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Vm_", 0, "Volume molaire", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_W", 0, "Puissance en Watt=kg*m^2/s^3", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Wb", 0, "Weber", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_alpha_", 0, "constante de structure fine", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_c_", 0, "vitesse de la lumiere", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_cd", 0, "Luminosite en candela", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
     {"_cdf", "_cdf", "Suffixe pour obtenir une distribution cumulee. Taper F2 pour la distribution cumulee inverse.", "#_icdf", 0, CAT_CATEGORY_PROBA},
-    {"_d", 0, "Temps: jour", 0, 0, CAT_CATEGORY_UNIT},
-    {"_deg", 0, "Angle en degres", 0, 0, CAT_CATEGORY_UNIT},
-    {"_eV", 0, "Energie en electron-Volt", 0, 0, CAT_CATEGORY_UNIT},
-    {"_epsilon0_", 0, "permittivite du vide", 0, 0, CAT_CATEGORY_PHYS},
-    {"_ft", 0, "Longueur en pieds", 0, 0, CAT_CATEGORY_UNIT},
-    {"_g_", 0, "gravite au sol", 0, 0, CAT_CATEGORY_PHYS},
-    {"_grad", 0, "Angle en grades", 0, 0, CAT_CATEGORY_UNIT},
-    {"_h", 0, "Heure", 0, 0, CAT_CATEGORY_UNIT},
-    {"_h_", 0, "constante de Planck", 0, 0, CAT_CATEGORY_PHYS},
-    {"_ha", 0, "Aire en hectare", 0, 0, CAT_CATEGORY_UNIT},
-    {"_hbar_", 0, "constante de Planck/(2*pi)", 0, 0, CAT_CATEGORY_PHYS},
-    {"_inch", 0, "Longueur en pouces", 0, 0, CAT_CATEGORY_UNIT},
-    {"_kWh", 0, "Energie en kWh", 0, 0, CAT_CATEGORY_UNIT},
-    {"_k_", 0, "constante de Boltzmann", 0, 0, CAT_CATEGORY_PHYS},
-    {"_kg", 0, "Masse en kilogramme", 0, 0, CAT_CATEGORY_UNIT},
-    {"_l", 0, "Volume en litre", 0, 0, CAT_CATEGORY_UNIT},
-    {"_m", 0, "Longueur en metre", 0, 0, CAT_CATEGORY_UNIT},
-    {"_mEarth_", 0, "masse de la Terre", 0, 0, CAT_CATEGORY_PHYS},
-    {"_m^2", 0, "Aire en m^2", 0, 0, CAT_CATEGORY_UNIT},
-    {"_m^3", 0, "Volume en m^3", 0, 0, CAT_CATEGORY_UNIT},
-    {"_me_", 0, "masse electron", 0, 0, CAT_CATEGORY_PHYS},
-    {"_miUS", 0, "Longueur en miles US", 0, 0, CAT_CATEGORY_UNIT},
-    {"_mn", 0, "Temps: minute", 0, 0, CAT_CATEGORY_UNIT},
-    {"_mp_", 0, "masse proton", 0, 0, CAT_CATEGORY_PHYS},
-    {"_mpme_", 0, "ratio de masse proton/electron", 0, 0, CAT_CATEGORY_PHYS},
-    {"_mu0_", 0, "permeabilite du vide", 0, 0, CAT_CATEGORY_PHYS},
-    {"_phi_", 0, "quantum flux magnetique", 0, 0, CAT_CATEGORY_PHYS},
-    {"_plot", "_plot", "Suffixe pour obtenir le graphe d'une regression.", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];polynomial_regression_plot(X,Y,2);scatterplot(X,Y)", 0, CAT_CATEGORY_STATS},
-    {"_qe_", 0, "charge de l'electron", 0, 0, CAT_CATEGORY_PHYS},
-    {"_qme_", 0, "_q_/_me_", 0, 0, CAT_CATEGORY_PHYS},
-    {"_rad", 0, "Angle en radians", 0, 0, CAT_CATEGORY_UNIT},
-    {"_rem", 0, "Radioactivite: rem", 0, 0, CAT_CATEGORY_UNIT},
-    {"_s", 0, "Temps: seconde", 0, 0, CAT_CATEGORY_UNIT},
-    {"_sd_", 0, "Jour sideral", 0, 0, CAT_CATEGORY_PHYS},
-    {"_syr_", 0, "Annee siderale", 0, 0, CAT_CATEGORY_PHYS},
-    {"_tr", 0, "Angle en tours", 0, 0, CAT_CATEGORY_UNIT},
-    {"_yd", 0, "Longueur en yards", 0, 0, CAT_CATEGORY_UNIT},
+    {"_d", 0, "Temps: jour", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_deg", 0, "Angle en degres", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_eV", 0, "Energie en electron-Volt", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_epsilon0_", 0, "permittivite du vide", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_ft", 0, "Longueur en pieds", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_g_", 0, "gravite au sol", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_grad", 0, "Angle en grades", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_h", 0, "Heure", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_h_", 0, "constante de Planck", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_ha", 0, "Aire en hectare", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_hbar_", 0, "constante de Planck/(2*pi)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_inch", 0, "Longueur en pouces", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_kWh", 0, "Energie en kWh", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_k_", 0, "constante de Boltzmann", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_kg", 0, "Masse en kilogramme", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_l", 0, "Volume en litre", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_m", 0, "Longueur en metre", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_mEarth_", 0, "masse de la Terre", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_m^2", 0, "Aire en m^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_m^3", 0, "Volume en m^3", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_me_", 0, "masse electron", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_miUS", 0, "Longueur en miles US", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_mn", 0, "Temps: minute", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_mp_", 0, "masse proton", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_mpme_", 0, "ratio de masse proton/electron", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_mu0_", 0, "permeabilite du vide", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_phi_", 0, "quantum flux magnetique", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_plot", "_plot", "Suffixe pour obtenir le graphe d'une regression.", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];polynomial_regression_plot(X,Y,2);scatterplot(X,Y)", 0, CAT_CATEGORY_STATS| XCAS_ONLY},
+    {"_qe_", 0, "charge de l'electron", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_qme_", 0, "_q_/_me_", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_rad", 0, "Angle en radians", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_rem", 0, "Radioactivite: rem", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_s", 0, "Temps: seconde", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_sd_", 0, "Jour sideral", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_syr_", 0, "Annee siderale", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_tr", 0, "Angle en tours", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_yd", 0, "Longueur en yards", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
     {"a and b", " and ", "Et logique", 0, 0, CAT_CATEGORY_PROGCMD},
     {"a or b", " or ", "Ou logique", 0, 0, CAT_CATEGORY_PROGCMD},
-    {"abcuv(a,b,c)", 0, "Cherche 2 polynomes u,v tels que a*u+b*v=c","x+1,x^2-2,x", 0, CAT_CATEGORY_POLYNOMIAL},
+    {"abcuv(a,b,c)", 0, "Cherche 2 polynomes u,v tels que a*u+b*v=c","x+1,x^2-2,x", 0, CAT_CATEGORY_POLYNOMIAL| XCAS_ONLY},
     {"abs(x)", 0, "Valeur absolue, module ou norme de x", "-3", "[1,2,3]", CAT_CATEGORY_COMPLEXNUM | (CAT_CATEGORY_REAL<<8)},
     {"append", 0, "Ajoute un element en fin de liste l","#l.append(x)", 0, CAT_CATEGORY_LIST},
-    {"approx(x)", 0, "Valeur approchee de x. Raccourci S-D", "pi", 0, CAT_CATEGORY_REAL},
-    {"arg(z)", 0, "Argument du complexe z.", "1+i", 0, CAT_CATEGORY_COMPLEXNUM},
+    {"approx(x)", 0, "Valeur approchee de x. Raccourci S-D", "pi", 0, CAT_CATEGORY_REAL| XCAS_ONLY},
+    {"arg(z)", 0, "Argument du complexe z.", "1+i", 0, CAT_CATEGORY_COMPLEXNUM | XCAS_ONLY},
     {"asc(string)", 0, "Liste des codes ASCII d'une chaine", "\"Bonjour\"", 0, CAT_CATEGORY_ARIT},
-    {"assume(hyp)", 0, "Hypothese sur une variable.", "x>1", "x>-1 and x<1", CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_SOFUS<<8)},
+    {"assume(hyp)", 0, "Hypothese sur une variable.", "x>1", "x>-1 and x<1", CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_SOFUS<<8) | XCAS_ONLY},
     {"avance n", "avance ", "La tortue avance de n pas, par defaut n=10", "#avance 40", 0, CAT_CATEGORY_LOGO},
     {"axes", "axes", "Axes visibles ou non axes=1 ou 0", "#axes=0", "#axes=1", CAT_CATEGORY_PROGCMD << 8},
     {"baisse_crayon ", "baisse_crayon ", "La tortue se deplace en marquant son passage.", 0, 0, CAT_CATEGORY_LOGO},
-    {"barplot(list)", 0, "Diagramme en batons d'une serie statistique 1d.", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS},
-    {"binomial(n,p,k)", 0, "binomial(n,p,k) probabilite de k succes avec n essais ou p est la proba de succes d'un essai. binomial_cdf(n,p,k) est la probabilite d'obtenir au plus k succes avec n essais. binomial_icdf(n,p,t) renvoie le plus petit k tel que binomial_cdf(n,p,k)>=t", "10,.5,4", 0, CAT_CATEGORY_PROBA},
-    {"bitxor", "bitxor", "Ou exclusif", "#bitxor(1,2)", 0, CAT_CATEGORY_PROGCMD},
+    {"barplot(list)", 0, "Diagramme en batons d'une serie statistique 1d.", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS },
+    {"binomial(n,p,k)", 0, "binomial(n,p,k) probabilite de k succes avec n essais ou p est la proba de succes d'un essai. binomial_cdf(n,p,k) est la probabilite d'obtenir au plus k succes avec n essais. binomial_icdf(n,p,t) renvoie le plus petit k tel que binomial_cdf(n,p,k)>=t", "10,.5,4", 0, CAT_CATEGORY_PROBA | XCAS_ONLY},
+    {"bitxor", "bitxor", "Ou exclusif", "#bitxor(1,2)", 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
     {"black", "black", "Option d'affichage", "#display=black", 0, CAT_CATEGORY_PROGCMD},
     {"blue", "blue", "Option d'affichage", "#display=blue", 0, CAT_CATEGORY_PROGCMD},
     {"cache_tortue ", "cache_tortue ", "Cache la tortue apres avoir trace le dessin.", 0, 0, CAT_CATEGORY_LOGO},
-    {"camembert(list)", 0, "Diagramme en camembert d'une serie statistique 1d.", "[[\"France\",6],[\"Allemagne\",12],[\"Suisse\",5]]", 0, CAT_CATEGORY_STATS},
+    {"camembert(list)", 0, "Diagramme en camembert d'une serie statistique 1d.", "[[\"France\",6],[\"Allemagne\",12],[\"Suisse\",5]]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
     {"ceiling(x)", 0, "Partie entiere superieure", "1.2", 0, CAT_CATEGORY_REAL},
-    {"cercle(centre,rayon)", 0, "Cercle donne par centre et rayon ou par un diametre", "2+i,3", "1-i,1+i", CAT_CATEGORY_PROGCMD},
-    {"cfactor(p)", 0, "Factorisation sur C.", "x^4-1", 0, CAT_CATEGORY_ALGEBRA | (CAT_CATEGORY_COMPLEXNUM << 8)},
+    {"cercle(centre,rayon)", 0, "Cercle donne par centre et rayon ou par un diametre", "2+i,3", "1-i,1+i", CAT_CATEGORY_PROGCMD | XCAS_ONLY},
+    {"cfactor(p)", 0, "Factorisation sur C.", "x^4-1", 0, CAT_CATEGORY_ALGEBRA | (CAT_CATEGORY_COMPLEXNUM << 8) | XCAS_ONLY},
     {"char(liste)", 0, "Chaine donnee par une liste de code ASCII", "[97,98,99]", 0, CAT_CATEGORY_ARIT},
-    {"charpoly(M,x)", 0, "Polynome caracteristique de la matrice M en la variable x.", "[[1,2],[3,4]],x", 0, CAT_CATEGORY_MATRIX},
+    {"charpoly(M,x)", 0, "Polynome caracteristique de la matrice M en la variable x.", "[[1,2],[3,4]],x", 0, CAT_CATEGORY_MATRIX | XCAS_ONLY},
     {"clearscreen()", "clearscreen()", "Efface l'ecran.", 0, 0, CAT_CATEGORY_PROGCMD},
-    {"coeff(p,x,n)", 0, "Coefficient de x^n dans le polynome p.", "(1+x)^6,x,3", 0, CAT_CATEGORY_POLYNOMIAL},
-    {"comb(n,k)", 0, "Renvoie k parmi n.", "10,4", 0, CAT_CATEGORY_PROBA},
-    {"cond(A,[1,2,inf])", 0, "Nombre de condition d'une matrice par rapport a la norme specifiee (par defaut 1)", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
+    {"coeff(p,x,n)", 0, "Coefficient de x^n dans le polynome p.", "(1+x)^6,x,3", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
+    {"comb(n,k)", 0, "Renvoie k parmi n.", "10,4", 0, CAT_CATEGORY_PROBA | XCAS_ONLY},
+    {"cond(A,[1,2,inf])", 0, "Nombre de condition d'une matrice par rapport a la norme specifiee (par defaut 1)", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX | XCAS_ONLY},
     {"conj(z)", 0, "Conjugue complexe de z.", "1+i", 0, CAT_CATEGORY_COMPLEXNUM},
-    {"correlation(l1,l2)", 0, "Correlation listes l1 et l2", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
-    {"covariance(l1,l2)", 0, "Covariance listes l1 et l2", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
-    {"cpartfrac(p,x)", 0, "Decomposition en elements simples sur C.", "1/(x^4-1)", 0, CAT_CATEGORY_ALGEBRA | (CAT_CATEGORY_COMPLEXNUM << 8)},
+    {"correlation(l1,l2)", 0, "Correlation listes l1 et l2", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"covariance(l1,l2)", 0, "Covariance listes l1 et l2", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"cpartfrac(p,x)", 0, "Decomposition en elements simples sur C.", "1/(x^4-1)", 0, CAT_CATEGORY_ALGEBRA | (CAT_CATEGORY_COMPLEXNUM << 8) | XCAS_ONLY},
     {"crayon ", "crayon ", "Couleur de trace de la tortue", "#crayon rouge", 0, CAT_CATEGORY_LOGO},
     {"cross(u,v)", 0, "Produit vectoriel de u et v.","[1,2,3],[0,1,3]", 0, CAT_CATEGORY_LINALG},
-    {"csolve(equation,x)", 0, "Resolution exacte dans C d'une equation en x (ou d'un systeme polynomial).","x^2+x+1=0", 0, CAT_CATEGORY_SOLVE | (CAT_CATEGORY_COMPLEXNUM << 8)},
-    {"curl(u,vars)", 0, "Rotationnel du vecteur u.", "[2*x*y,x*z,y*z],[x,y,z]", 0, CAT_CATEGORY_LINALG},
+    {"csolve(equation,x)", 0, "Resolution exacte dans C d'une equation en x (ou d'un systeme polynomial).","x^2+x+1=0", 0, CAT_CATEGORY_SOLVE | (CAT_CATEGORY_COMPLEXNUM << 8) | XCAS_ONLY},
+    {"curl(u,vars)", 0, "Rotationnel du vecteur u.", "[2*x*y,x*z,y*z],[x,y,z]", 0, CAT_CATEGORY_LINALG | XCAS_ONLY},
     {"cyan", "cyan", "Option d'affichage", "#display=cyan", 0, CAT_CATEGORY_PROGCMD},
-    {"debug(f(args))", 0, "Execute la fonction f en mode pas a pas.", 0, 0, CAT_CATEGORY_PROG},
-    {"degree(p,x)", 0, "Degre du polynome p en x.", "x^4-1", 0, CAT_CATEGORY_POLYNOMIAL},
-    {"denom(x)", 0, "Denominateur de l'expression x.", "3/4", 0, CAT_CATEGORY_POLYNOMIAL},
-    {"desolve(equation,t,y)", 0, "Resolution exacte d'equation differentielle ou de systeme differentiel lineaire a coefficients constants.", "[y'+y=exp(x),y(0)=1]", "[y'=[[1,2],[2,1]]*y+[x,x+1],y(0)=[1,2]]", CAT_CATEGORY_SOLVE | (CAT_CATEGORY_CALCULUS << 8)},
-    {"det(A)", 0, "Determinant de la matrice A.", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
-    {"diff(f,var,[n])", 0, "Derivee de l'expression f par rapport a var (a l'ordre n, n=1 par defaut), par exemple diff(sin(x),x) ou diff(x^3,x,2). Pour deriver f par rapport a x, utiliser f' (raccourci F3). Pour le gradient de f, var est la liste des variables.", "sin(x),x", "sin(x^2),x,3", CAT_CATEGORY_CALCULUS},
-    {"display", "display", "Option d'affichage", "#display=red", 0, CAT_CATEGORY_PROGCMD},
+    {"debug(f(args))", 0, "Execute la fonction f en mode pas a pas.", 0, 0, CAT_CATEGORY_PROG | XCAS_ONLY},
+    {"degree(p,x)", 0, "Degre du polynome p en x.", "x^4-1", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
+    {"denom(x)", 0, "Denominateur de l'expression x.", "3/4", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
+    {"desolve(equation,t,y)", 0, "Resolution exacte d'equation differentielle ou de systeme differentiel lineaire a coefficients constants.", "[y'+y=exp(x),y(0)=1]", "[y'=[[1,2],[2,1]]*y+[x,x+1],y(0)=[1,2]]", CAT_CATEGORY_SOLVE | (CAT_CATEGORY_CALCULUS << 8) | XCAS_ONLY},
+    {"det(A)", 0, "Determinant de la matrice A.", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX | XCAS_ONLY},
+    {"diff(f,var,[n])", 0, "Derivee de l'expression f par rapport a var (a l'ordre n, n=1 par defaut), par exemple diff(sin(x),x) ou diff(x^3,x,2). Pour deriver f par rapport a x, utiliser f' (raccourci F3). Pour le gradient de f, var est la liste des variables.", "sin(x),x", "sin(x^2),x,3", CAT_CATEGORY_CALCULUS | XCAS_ONLY},
+    {"display", "display", "Option d'affichage", "#display=red", 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
     {"disque n", "disque ", "Cercle rempli tangent a la tortue, de rayon n. Utiliser disque n,theta pour remplir un morceau de camembert ou disque n,theta,segment pour remplir un segment de disque", "#disque 30", "#disque(30,90)", CAT_CATEGORY_LOGO},
     {"dot(a,b)", 0, "Produit scalaire de 2 vecteurs. Raccourci: *", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_LINALG},
     {"draw_arc(x1,y1,rx,ry,theta1,theta2,c)", 0, "Arc d'ellipse pixelise.", "100,100,60,80,0,pi,magenta", 0, CAT_CATEGORY_PROGCMD},
@@ -866,186 +872,186 @@ namespace giac {
     {"draw_polygon([[x1,y1],...],c)", 0, "Polygone pixelise.", "[[100,50],[30,20],[60,70]],red+filled", 0, CAT_CATEGORY_PROGCMD},
     {"draw_rectangle(x,y,w,h,c)", 0, "Rectangle pixelise.", "100,50,30,20,red+filled", 0, CAT_CATEGORY_PROGCMD},
     {"draw_string(s,x,y,c)", 0, "Affiche la chaine s en x,y", "\"Bonjour\",80,60", 0, CAT_CATEGORY_PROGCMD},
-    {"droite(equation)", 0, "Droite donnee par une equation ou 2 points", "y=2x+1", "1+i,2-i", CAT_CATEGORY_PROGCMD},
+    {"droite(equation)", 0, "Droite donnee par une equation ou 2 points", "y=2x+1", "1+i,2-i", CAT_CATEGORY_PROGCMD | XCAS_ONLY},
     {"ecris ", "ecris ", "Ecrire a la position de la tortue", "#ecris \"coucou\"", 0, CAT_CATEGORY_LOGO},
-    {"efface", "efface", "Remise a zero de la tortue", 0, 0, CAT_CATEGORY_LOGO},
-    {"egcd(A,B)", 0, "Cherche des polynomes U,V,D tels que A*U+B*V=D=gcd(A,B)","x^2+3x+1,x^2-5x-1", 0, CAT_CATEGORY_POLYNOMIAL},
+    {"efface", "efface", "Remise a zero de la tortue", 0, 0, CAT_CATEGORY_LOGO | XCAS_ONLY},
+    {"egcd(A,B)", 0, "Cherche des polynomes U,V,D tels que A*U+B*V=D=gcd(A,B)","x^2+3x+1,x^2-5x-1", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
     {"eigenvals(A)", 0, "Valeurs propres de la matrice A.", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
     {"eigenvects(A)", 0, "Vecteurs propres de la matrice A.", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
-    {"elif (test)", "elif", "Tests en cascade", 0, 0, CAT_CATEGORY_PROG},
+    {"elif (test)", "elif", "Tests en cascade", 0, 0, CAT_CATEGORY_PROG | XCAS_ONLY},
 				     //{"end", "end", "Fin de bloc", 0, 0, CAT_CATEGORY_PROG},
     {"erf(x)", 0, "Fonction erreur en x.", "1.2", 0, CAT_CATEGORY_PROBA},
     {"erfc(x)", 0, "Fonction erreur complementaire en x.", "1.2", 0, CAT_CATEGORY_PROBA},
     {"euler(n)",0,"Indicatrice d'Euler: nombre d'entiers < n premiers avec n","25",0,CAT_CATEGORY_ARIT},
     {"eval(f)", 0, "Evalue f.", 0, 0, CAT_CATEGORY_PROGCMD},
-    {"evalc(z)", 0, "Ecrit z=x+i*y.", "1/(1+i*sqrt(3))", 0, CAT_CATEGORY_COMPLEXNUM},
-    {"exact(x)", 0, "Convertit x en rationnel. Raccourci shift S-D", "1.2", 0, CAT_CATEGORY_REAL},
-    {"exp2trig(expr)", 0, "Conversion d'exponentielles complexes en sin/cos", "exp(i*x)", 0, CAT_CATEGORY_TRIG},
-    {"exponential_regression(Xlist,Ylist)", 0, "Regression exponentielle.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
-    {"exponential_regression_plot(Xlist,Ylist)", 0, "Graphe d'une regression exponentielle.", "#X,Y:=[1,2,3,4,5],[1,3,4,6,8];exponential_regression_plot(X,Y);", 0, CAT_CATEGORY_STATS},
-    {"exponentiald(lambda,x)", 0, "Loi exponentielle de parametre lambda. exponentiald_cdf(lambda,x) probabilite que \"loi exponentielle <=x\" par ex. exponentiald_cdf(2,3). exponentiald_icdf(lambda,t) renvoie x tel que \"loi exponentielle <=x\" vaut t, par ex. exponentiald_icdf(2,0.95) ", "5.1,3.4", 0, CAT_CATEGORY_PROBA},
-    {"extend", 0, "Concatene 2 listes. Attention a ne pas utiliser + qui effectue l'addition de 2 vecteurs.","#l1.extend(l2)", 0, CAT_CATEGORY_LIST},
-    {"factor(p,[x])", 0, "Factorisation du polynome p (utiliser ifactor pour un entier). Raccourci: p=>*", "x^4-1", "x^6+1,sqrt(3)", CAT_CATEGORY_ALGEBRA | (CAT_CATEGORY_POLYNOMIAL << 8)},
-    {"filled", "filled", "Option d'affichage", 0, 0, CAT_CATEGORY_PROGCMD},
+    {"evalc(z)", 0, "Ecrit z=x+i*y.", "1/(1+i*sqrt(3))", 0, CAT_CATEGORY_COMPLEXNUM | XCAS_ONLY},
+    {"exact(x)", 0, "Convertit x en rationnel. Raccourci shift S-D", "1.2", 0, CAT_CATEGORY_REAL | XCAS_ONLY},
+    {"exp2trig(expr)", 0, "Conversion d'exponentielles complexes en sin/cos", "exp(i*x)", 0, CAT_CATEGORY_TRIG | XCAS_ONLY},
+    {"exponential_regression(Xlist,Ylist)", 0, "Regression exponentielle.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"exponential_regression_plot(Xlist,Ylist)", 0, "Graphe d'une regression exponentielle.", "#X,Y:=[1,2,3,4,5],[1,3,4,6,8];exponential_regression_plot(X,Y);", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"exponentiald(lambda,x)", 0, "Loi exponentielle de parametre lambda. exponentiald_cdf(lambda,x) probabilite que \"loi exponentielle <=x\" par ex. exponentiald_cdf(2,3). exponentiald_icdf(lambda,t) renvoie x tel que \"loi exponentielle <=x\" vaut t, par ex. exponentiald_icdf(2,0.95) ", "5.1,3.4", 0, CAT_CATEGORY_PROBA | XCAS_ONLY},
+    {"extend", 0, "Concatene 2 listes. Attention en Xcas, ne pas utiliser + qui effectue l'addition de 2 vecteurs.","#l1.extend(l2)", 0, CAT_CATEGORY_LIST},
+    {"factor(p,[x])", 0, "Factorisation du polynome p (utiliser ifactor pour un entier). Raccourci: p=>*", "x^4-1", "x^6+1,sqrt(3)", CAT_CATEGORY_ALGEBRA | (CAT_CATEGORY_POLYNOMIAL << 8) | XCAS_ONLY},
+    {"filled", "filled", "Option d'affichage", 0, 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
     {"float(x)", 0, "Convertit x en nombre approche (flottant).", "pi", 0, CAT_CATEGORY_REAL},
     {"floor(x)", 0, "Partie entiere de x", "pi", 0, CAT_CATEGORY_REAL},
-    {"fonction f(x)", "fonction", "Definition de fonction (Xcas). Par exemple\nfonction f(x)\n local y;\ny:=x*x;\nreturn y;\nffonction", 0, 0, CAT_CATEGORY_PROG},
+    {"fonction f(x)", "fonction", "Definition de fonction (Xcas). Par exemple\nfonction f(x)\n local y;\ny:=x*x;\nreturn y;\nffonction", 0, 0, CAT_CATEGORY_PROG | XCAS_ONLY},
     {"from math/... import *", "from math import *", "Instruction pour utiliser les fonctions de maths ou des fonctions aleatoires [random] ou la tortue en anglais [turtle]. Importer math n'est pas necessaire dans KhiCAS", "#from random import *", "#from turtle import *", CAT_CATEGORY_PROG},
-    {"fsolve(equation,x=a[..b])", 0, "Resolution approchee de equation pour x dans l'intervalle a..b ou en partant de x=a.","cos(x)=x,x=0..1", "cos(x)-x,x=0.0", CAT_CATEGORY_SOLVE},
-    {"gauss(q)", 0, "Reduction de Gauss d'une forme quadratique q", "x^2+x*y+x*z,[x,y,z]", "x^2+4*x*y,[]", CAT_CATEGORY_LINALG },
+    {"fsolve(equation,x=a[..b])", 0, "Resolution approchee de equation pour x dans l'intervalle a..b ou en partant de x=a.","cos(x)=x,x=0..1", "cos(x)-x,x=0.0", CAT_CATEGORY_SOLVE | XCAS_ONLY},
+    {"gauss(q)", 0, "Reduction de Gauss d'une forme quadratique q", "x^2+x*y+x*z,[x,y,z]", "x^2+4*x*y,[]", CAT_CATEGORY_LINALG | XCAS_ONLY },
     {"gcd(a,b,...)", 0, "Plus grand commun diviseur. Voir iegcd ou egcd pour Bezout.", "23,13", "x^2-1,x^3-1", CAT_CATEGORY_ARIT | (CAT_CATEGORY_POLYNOMIAL << 8)},
-    {"gl_x", "gl_x", "Reglage graphique X gl_x=xmin..xmax", "#gl_x=0..2", 0, CAT_CATEGORY_PROGCMD << 8},
-    {"gl_y", "gl_y", "Reglage graphique Y gl_y=ymin..ymax", "#gl_y=-1..1", 0, CAT_CATEGORY_PROGCMD << 8},
+    {"gl_x", "gl_x", "Reglage graphique X gl_x=xmin..xmax", "#gl_x=0..2", 0, CAT_CATEGORY_PROGCMD << 8 | XCAS_ONLY},
+    {"gl_y", "gl_y", "Reglage graphique Y gl_y=ymin..ymax", "#gl_y=-1..1", 0, CAT_CATEGORY_PROGCMD << 8 | XCAS_ONLY},
     {"green", "green", "Option d'affichage", "#display=green", 0, CAT_CATEGORY_PROGCMD},
-    {"halftan(expr)", 0, "Exprime cos, sin, tan avec tan(angle/2).","cos(x)", 0, CAT_CATEGORY_TRIG},
-    {"hermite(n)", 0, "n-ieme polynome de Hermite", "10", "10,t", CAT_CATEGORY_POLYNOMIAL},
-    {"hilbert(n)", 0, "Matrice de Hilbert de taille n.", "4", 0, CAT_CATEGORY_MATRIX},
-    {"histogram(list,min,size)", 0, "Histogramme d'une liste de donneees, classes commencant a min de taille size.","ranv(100,uniformd,0,1),0,0.1", 0, CAT_CATEGORY_STATS},
-    {"iabcuv(a,b,c)", 0, "Cherche 2 entiers u,v tels que a*u+b*v=c","23,13,15", 0, CAT_CATEGORY_ARIT},
-    {"ichinrem([a,m],[b,n])", 0,"Restes chinois entiers de a mod m et b mod n.", "[3,13],[2,7]", 0, CAT_CATEGORY_ARIT},
+    {"halftan(expr)", 0, "Exprime cos, sin, tan avec tan(angle/2).","cos(x)", 0, CAT_CATEGORY_TRIG | XCAS_ONLY},
+    {"hermite(n)", 0, "n-ieme polynome de Hermite", "10", "10,t", CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
+    {"hilbert(n)", 0, "Matrice de Hilbert de taille n.", "4", 0, CAT_CATEGORY_MATRIX | XCAS_ONLY},
+    {"histogram(list,min,size)", 0, "Histogramme d'une liste de donneees, classes commencant a min de taille size.","ranv(100,uniformd,0,1),0,0.1", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"iabcuv(a,b,c)", 0, "Cherche 2 entiers u,v tels que a*u+b*v=c","23,13,15", 0, CAT_CATEGORY_ARIT | XCAS_ONLY},
+    {"ichinrem([a,m],[b,n])", 0,"Restes chinois entiers de a mod m et b mod n.", "[3,13],[2,7]", 0, CAT_CATEGORY_ARIT | XCAS_ONLY},
     {"idivis(n)", 0, "Liste des diviseurs d'un entier n.", "10", 0, CAT_CATEGORY_ARIT},
     {"idn(n)", 0, "matrice identite n * n", "4", 0, CAT_CATEGORY_MATRIX},
     {"iegcd(a,b)", 0, "Determine les entiers u,v,d tels que a*u+b*v=d=gcd(a,b)","23,13", 0, CAT_CATEGORY_ARIT},
     {"ifactor(n)", 0, "Factorisation d'un entier (pas trop grand!). Raccourci n=>*", "1234", 0, CAT_CATEGORY_ARIT},
-    {"ilaplace(f,s,x)", 0, "Transformee inverse de Laplace de f", "s/(s^2+1),s,x", 0, CAT_CATEGORY_CALCULUS},
-    {"im(z)", 0, "Partie imaginaire.", "1+i", 0, CAT_CATEGORY_COMPLEXNUM},
-    {"inf", "inf", "Plus l'infini. Utiliser -inf pour moins l'infini ou infinity pour l'infini complexe. Raccourci shift INS.", "-inf", "infinity", CAT_CATEGORY_CALCULUS},
+    {"ilaplace(f,s,x)", 0, "Transformee inverse de Laplace de f", "s/(s^2+1),s,x", 0, CAT_CATEGORY_CALCULUS | XCAS_ONLY},
+    {"im(z)", 0, "Partie imaginaire (z.im en Python)", "1+i", 0, CAT_CATEGORY_COMPLEXNUM},
+    {"inf", "inf", "Plus l'infini. Utiliser -inf pour moins l'infini ou infinity pour l'infini complexe. Raccourci shift INS.", "-inf", "infinity", CAT_CATEGORY_CALCULUS | XCAS_ONLY},
     {"input()", "input()", "Lire une chaine au clavier", "\"Valeur ?\"", 0, CAT_CATEGORY_PROG},
-    {"integrate(f,x,[,a,b])", 0, "Primitive de f par rapport a la variable x, par ex. integrate(x*sin(x),x). Pour calculer une integrale definie, entrer les arguments optionnels a et b, par ex. integrate(x*sin(x),x,0,pi). Raccourci SHIFT F3.", "x*sin(x),x", "cos(x)/(1+x^4),x,0,inf", CAT_CATEGORY_CALCULUS},
-    {"interp(X,Y[,interp])", 0, "Interpolation de Lagrange aux points (xi,yi) avec X la liste des xi et Y des yi. Renvoie la liste des differences divisees si interp est passe en parametre.", "[1,2,3,4,5],[0,1,3,4,4]", "[1,2,3,4,5],[0,1,3,4,4],interp", CAT_CATEGORY_POLYNOMIAL},
+    {"integrate(f,x,[,a,b])", 0, "Primitive de f par rapport a la variable x, par ex. integrate(x*sin(x),x). Pour calculer une integrale definie, entrer les arguments optionnels a et b, par ex. integrate(x*sin(x),x,0,pi). Raccourci SHIFT F3.", "x*sin(x),x", "cos(x)/(1+x^4),x,0,inf", CAT_CATEGORY_CALCULUS | XCAS_ONLY},
+    {"interp(X,Y[,interp])", 0, "Interpolation de Lagrange aux points (xi,yi) avec X la liste des xi et Y des yi. Renvoie la liste des differences divisees si interp est passe en parametre.", "[1,2,3,4,5],[0,1,3,4,4]", "[1,2,3,4,5],[0,1,3,4,4],interp", CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
     {"inv(A)", 0, "Inverse de A.", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
-    {"inverser(v)", "inverser ", "La variable v est remplacee par son inverse", "#v:=3; inverser v", 0, CAT_CATEGORY_SOFUS},
-    {"iquo(a,b)", 0, "Quotient euclidien de deux entiers.", "23,13", 0, CAT_CATEGORY_ARIT},
-    {"irem(a,b)", 0,"Reste euclidien de deux entiers", "23,13", 0, CAT_CATEGORY_ARIT},
+    {"inverser(v)", "inverser ", "La variable v est remplacee par son inverse", "#v:=3; inverser v", 0, CAT_CATEGORY_SOFUS | XCAS_ONLY},
+    {"iquo(a,b)", 0, "Quotient euclidien de deux entiers.", "23,13", 0, CAT_CATEGORY_ARIT | XCAS_ONLY},
+    {"irem(a,b)", 0,"Reste euclidien de deux entiers", "23,13", 0, CAT_CATEGORY_ARIT | XCAS_ONLY},
     {"isprime(n)", 0, "Renvoie 1 si n est premier, 0 sinon.", "11", "10", CAT_CATEGORY_ARIT},
-    {"jordan(A)", 0, "Forme normale de Jordan de la matrice A, renvoie P et D tels que P^-1*A*P=D", "[[1,2],[3,4]]", "[[1,1,-1,2,-1],[2,0,1,-4,-1],[0,1,1,1,1],[0,1,2,0,1],[0,0,-3,3,-1]]", CAT_CATEGORY_MATRIX},
-    {"laguerre(n,a,x)", 0, "n-ieme polynome de Laguerre (a=0 par defaut).", "10", 0, CAT_CATEGORY_POLYNOMIAL},
-    {"laplace(f,x,s)", 0, "Transformee de Laplace de f","sin(x),x,s", 0, CAT_CATEGORY_CALCULUS},
-    {"lcm(a,b,...)", 0, "Plus petit commun multiple.", "23,13", "x^2-1,x^3-1", CAT_CATEGORY_ARIT | (CAT_CATEGORY_POLYNOMIAL << 8)},
-    {"lcoeff(p,x)", 0, "Coefficient dominant du polynome p.", "x^4-1", 0, CAT_CATEGORY_POLYNOMIAL},
-    {"legendre(n)", 0, "n-ieme polynome de Legendre.", "10", "10,t", CAT_CATEGORY_POLYNOMIAL},
+    {"jordan(A)", 0, "Forme normale de Jordan de la matrice A, renvoie P et D tels que P^-1*A*P=D", "[[1,2],[3,4]]", "[[1,1,-1,2,-1],[2,0,1,-4,-1],[0,1,1,1,1],[0,1,2,0,1],[0,0,-3,3,-1]]", CAT_CATEGORY_MATRIX | XCAS_ONLY},
+    {"laguerre(n,a,x)", 0, "n-ieme polynome de Laguerre (a=0 par defaut).", "10", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
+    {"laplace(f,x,s)", 0, "Transformee de Laplace de f","sin(x),x,s", 0, CAT_CATEGORY_CALCULUS | XCAS_ONLY},
+    {"lcm(a,b,...)", 0, "Plus petit commun multiple.", "23,13", "x^2-1,x^3-1", CAT_CATEGORY_ARIT | (CAT_CATEGORY_POLYNOMIAL << 8) | XCAS_ONLY},
+    {"lcoeff(p,x)", 0, "Coefficient dominant du polynome p.", "x^4-1", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
+    {"legendre(n)", 0, "n-ieme polynome de Legendre.", "10", "10,t", CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
 #ifdef RELEASE
     {"len(l)", 0, "Taille d'une liste.", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_LIST},
 #endif
     {"leve_crayon ", "leve_crayon ", "La tortue se deplace sans marquer son passage", 0, 0, CAT_CATEGORY_LOGO},
-    {"limit(f,x=a)", 0, "Limite de f en x = a. Ajouter 1 ou -1 pour une limite a droite ou a gauche, limit(sin(x)/x,x=0) ou limit(abs(x)/x,x=0,1). Raccourci: SHIFT MIXEDFRAC", "sin(x)/x,x=0", "exp(-1/x),x=0,1", CAT_CATEGORY_CALCULUS},
-    {"line_width_", "line_width_", "Prefixe d'epaisseur (2 a 8)", 0, 0, CAT_CATEGORY_PROGCMD},
-    {"linear_regression(Xlist,Ylist)", 0, "Regression lineaire.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
+    {"limit(f,x=a)", 0, "Limite de f en x = a. Ajouter 1 ou -1 pour une limite a droite ou a gauche, limit(sin(x)/x,x=0) ou limit(abs(x)/x,x=0,1). Raccourci: SHIFT MIXEDFRAC", "sin(x)/x,x=0", "exp(-1/x),x=0,1", CAT_CATEGORY_CALCULUS | XCAS_ONLY},
+    {"line_width_", "line_width_", "Prefixe d'epaisseur (2 a 8)", 0, 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
+    {"linear_regression(Xlist,Ylist)", 0, "Regression lineaire.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
     {"linear_regression_plot(Xlist,Ylist)", 0, "Graphe d'une regression lineaire.", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];linear_regression_plot(X,Y);", 0, CAT_CATEGORY_STATS },
-    {"linetan(expr,x,x0)", 0, "Tangente au graphe en x=x0.", "sin(x),x,pi/2", 0, CAT_CATEGORY_PLOT},
-    {"linsolve([eq1,eq2,..],[x,y,..])", 0, "Resolution de systeme lineaire. Peut utiliser le resultat de lu pour resolution en O(n^2).","[x+y=1,x-y=2],[x,y]", "#p,l,u:=lu([[1,2],[3,4]]); linsolve(p,l,u,[5,6])", CAT_CATEGORY_SOLVE | (CAT_CATEGORY_LINALG <<8) | (CAT_CATEGORY_MATRIX << 16)},
-    {"logarithmic_regression(Xlist,Ylist)", 0, "Regression logarithmique.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
-    {"logarithmic_regression_plot(Xlist,Ylist)", 0, "Graphe d'une regression logarithmique.", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];logarithmic_regression_plot(X,Y);", 0, CAT_CATEGORY_STATS},
-    {"lu(A)", 0, "decomposition LU de la matrice A, P*A=L*U, renvoie P permutation, L et U triangulaires inferieure et superieure", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
+    {"linetan(expr,x,x0)", 0, "Tangente au graphe en x=x0.", "sin(x),x,pi/2", 0, CAT_CATEGORY_PLOT | XCAS_ONLY},
+    {"linsolve([eq1,eq2,..],[x,y,..])", 0, "Resolution de systeme lineaire. Peut utiliser le resultat de lu pour resolution en O(n^2).","[x+y=1,x-y=2],[x,y]", "#p,l,u:=lu([[1,2],[3,4]]); linsolve(p,l,u,[5,6])", CAT_CATEGORY_SOLVE | (CAT_CATEGORY_LINALG <<8) | (CAT_CATEGORY_MATRIX << 16) | XCAS_ONLY},
+    {"logarithmic_regression(Xlist,Ylist)", 0, "Regression logarithmique.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"logarithmic_regression_plot(Xlist,Ylist)", 0, "Graphe d'une regression logarithmique.", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];logarithmic_regression_plot(X,Y);", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"lu(A)", 0, "decomposition LU de la matrice A, P*A=L*U, renvoie P permutation, L et U triangulaires inferieure et superieure", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX | XCAS_ONLY},
     {"magenta", "magenta", "Option d'affichage", "#display=magenta", 0, CAT_CATEGORY_PROGCMD},
     {"map(l,f)", 0, "Applique f aux elements de la liste l.","[1,2,3],x->x^2", 0, CAT_CATEGORY_LIST},
-    {"matpow(A,n)", 0, "Renvoie A^n, la matrice A la puissance n", "[[1,2],[3,4]],n","#assume(n>=1);matpow([[0,2],[0,4]],n)", CAT_CATEGORY_MATRIX},
+    {"matpow(A,n)", 0, "Renvoie A^n, la matrice A la puissance n", "[[1,2],[3,4]],n","#assume(n>=1);matpow([[0,2],[0,4]],n)", CAT_CATEGORY_MATRIX | XCAS_ONLY},
     {"matrix(l,c,func)", 0, "Matrice de terme general donne.", "2,3,(j,k)->j^k", 0, CAT_CATEGORY_MATRIX},
-    {"mean(l)", 0, "Moyenne arithmetique liste l", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS},
-    {"median(l)", 0, "Mediane", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS},
+    {"mean(l)", 0, "Moyenne arithmetique liste l", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"median(l)", 0, "Mediane", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
     {"montre_tortue ", "montre_tortue ", "Affiche la tortue", 0, 0, CAT_CATEGORY_LOGO},
-    {"mult_c_conjugate", 0, "Multiplier par le conjugue complexe.", "1+2*i", 0,  (CAT_CATEGORY_COMPLEXNUM << 8)},
-    {"mult_conjugate", 0, "Multiplier par le conjugue (sqrt).", "sqrt(2)-sqrt(3)", 0, CAT_CATEGORY_ALGEBRA},
-    {"normald([mu,sigma],x)", 0, "Loi normale, par defaut mu=0 et sigma=1. normald_cdf([mu,sigma],x) probabilite que \"loi normale <=x\" par ex. normald_cdf(1.96). normald_icdf([mu,sigma],t) renvoie x tel que \"loi normale <=x\" vaut t, par ex. normald_icdf(0.975) ", "1.2", 0, CAT_CATEGORY_PROBA},
+    {"mult_c_conjugate", 0, "Multiplier par le conjugue complexe.", "1+2*i", 0,  (CAT_CATEGORY_COMPLEXNUM << 8) | XCAS_ONLY},
+    {"mult_conjugate", 0, "Multiplier par le conjugue (sqrt).", "sqrt(2)-sqrt(3)", 0, CAT_CATEGORY_ALGEBRA | XCAS_ONLY},
+    {"normald([mu,sigma],x)", 0, "Loi normale, par defaut mu=0 et sigma=1. normald_cdf([mu,sigma],x) probabilite que \"loi normale <=x\" par ex. normald_cdf(1.96). normald_icdf([mu,sigma],t) renvoie x tel que \"loi normale <=x\" vaut t, par ex. normald_icdf(0.975) ", "1.2", 0, CAT_CATEGORY_PROBA | XCAS_ONLY},
     {"not(x)", 0, "Non logique.", 0, 0, CAT_CATEGORY_PROGCMD},
-    {"numer(x)", 0, "Numerateur de x.", "3/4", 0, CAT_CATEGORY_POLYNOMIAL},
-    {"odesolve(f(t,y),[t,y],[t0,y0],t1)", 0, "Solution approchee d'equation differentielle y'=f(t,y) et y(t0)=y0, valeur en t1 (ajouter curve pour les valeurs intermediaires de y)", "sin(t*y),[t,y],[0,1],2", "0..pi,(t,v)->{[-v[1],v[0]]},[0,1]", CAT_CATEGORY_SOLVE},
-    {"partfrac(p,x)", 0, "Decomposition en elements simples. Raccourci p=>+", "1/(x^4-1)", 0, CAT_CATEGORY_ALGEBRA},
+    {"numer(x)", 0, "Numerateur de x.", "3/4", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
+    {"odesolve(f(t,y),[t,y],[t0,y0],t1)", 0, "Solution approchee d'equation differentielle y'=f(t,y) et y(t0)=y0, valeur en t1 (ajouter curve pour les valeurs intermediaires de y)", "sin(t*y),[t,y],[0,1],2", "0..pi,(t,v)->{[-v[1],v[0]]},[0,1]", CAT_CATEGORY_SOLVE | XCAS_ONLY},
+    {"partfrac(p,x)", 0, "Decomposition en elements simples. Raccourci p=>+", "1/(x^4-1)", 0, CAT_CATEGORY_ALGEBRA | XCAS_ONLY},
     {"pas_de_cote n", "pas_de_cote ", "Saut lateral de la tortue, par defaut n=10", "#pas_de_cote 30", 0, CAT_CATEGORY_LOGO},
-    {"plot(expr,x)", 0, "Graphe de fonction. Par exemple plot(sin(x)), plot(ln(x),x.0,5)", "ln(x),x=0..5", "1/x,x=1..5,xstep=1", CAT_CATEGORY_PLOT},
-    {"plotarea(expr,x=a..b,[n,meth])", 0, "Aire sous la courbe selon une methode d'integration.", "1/x,x=1..5,4,rectangle_gauche", 0, CAT_CATEGORY_PLOT},
-    {"plotcontour(expr,[x=xm..xM,y=ym..yM],niveaux)", 0, "Lignes de niveau de expr.", "x^2+2y^2, [x=-2..2,y=-2..2],[1,2]", 0, CAT_CATEGORY_PLOT},
-    {"plotdensity(expr,[x=xm..xM,y=ym..yM])", 0, "Representation en niveaux de couleurs d'une expression de 2 variables.", "x^2-y^2,[x=-3..3,y=-2..2]", 0, CAT_CATEGORY_PLOT},
-    {"plotfield(f(t,y), [t=tmin..tmax,y=ymin..ymax])", 0, "Champ des tangentes de y'=f(t,y), optionnellement graphe avec plotode=[t0,y0]", "sin(t*y), [t=-3..3,y=-3..3],plotode=[0,1]", "5*[-y,x], [x=-1..1,y=-1..1]", CAT_CATEGORY_PLOT},
-    {"plotlist(list)", 0, "Graphe d'une liste", "[3/2,2,1,1/2,3,2,3/2]", "[1,13],[2,10],[3,15],[4,16]", CAT_CATEGORY_PLOT},
-    {"plotode(f(t,y), [t=tmin..tmax,y],[t0,y0])", 0, "Graphe de solution d'equation differentielle y'=f(t,y), y(t0)=y0.", "sin(t*y),[t=-3..3,y],[0,1]", 0, CAT_CATEGORY_PLOT},
-    {"plotparam([x,y],t)", 0, "Graphe en parametriques. Par exemple plotparam([sin(3t),cos(2t)],t,0,pi) ou plotparam(exp(i*t),t,0,pi)", "[sin(3t),cos(2t)],t,0,pi", "[t^2,t^3],t=-1..1,tstep=0.1", CAT_CATEGORY_PLOT},
-    {"plotpolar(r,theta)", 0, "Graphe en polaire.","cos(3*x),x,0,pi", "1/(1+cos(x)),x=0..pi,xstep=0.05", CAT_CATEGORY_PLOT},
-    {"plotseq(f(x),x=[u0,m,M],n)", 0, "Trace f(x) sur [m,M] et n termes de la suite recurrente u_{n+1}=f(u_n) de 1er terme u0.","sqrt(2+x),x=[6,0,7],5", 0, CAT_CATEGORY_PLOT},
-    {"plus_point", "plus_point", "Option d'affichage", "#display=blue+plus_point", 0, CAT_CATEGORY_PROGCMD },
-    {"point(x,y)", 0, "Point", "1,2", 0, CAT_CATEGORY_PROGCMD},
-    {"polygon(list)", 0, "Polygone ferme.", "1-i,2+i,3", 0, CAT_CATEGORY_PROGCMD},
-    {"polygonscatterplot(Xlist,Ylist)", 0, "Nuage de points relies.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
-    {"polynomial_regression(Xlist,Ylist,n)", 0, "Regression polynomiale de degre <= n.", "[1,2,3,4,5],[0,1,3,4,4],2", 0, CAT_CATEGORY_STATS},
-    {"polynomial_regression_plot(Xlist,Ylist,n)", 0, "Graphe d'une regression polynomiale de degre <= n.", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];polynomial_regression_plot(X,Y,2);scatterplot(X,Y);", 0, CAT_CATEGORY_STATS},
-    {"pour (boucle Xcas)", "pour  de  to  faire  fpour;", "Boucle definie.","#pour j de 1 to 10 faire print(j,j^2); fpour;", 0, CAT_CATEGORY_PROG},
-    {"power_regression(Xlist,Ylist,n)", 0, "Regression puissance.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
-    {"power_regression_plot(Xlist,Ylist,n)", 0, "Graphe d'une regression puissance.", "#X,Y:=[1,2,3,4,5],[1,1,3,4,4];power_regression_plot(X,Y);", 0, CAT_CATEGORY_STATS},
-    {"powmod(a,n,p[,P,x])", 0, "Renvoie a^n mod p, ou a^n mod un entier p et un polynome P en x.","123,456,789", "x+1,452,19,x^4+x+1,x", CAT_CATEGORY_ARIT},
+    {"plot(expr,x)", 0, "Graphe de fonction. Par exemple plot(sin(x)), plot(ln(x),x.0,5)", "ln(x),x=0..5", "1/x,x=1..5,xstep=1", CAT_CATEGORY_PLOT | XCAS_ONLY},
+    {"plotarea(expr,x=a..b,[n,meth])", 0, "Aire sous la courbe selon une methode d'integration.", "1/x,x=1..5,4,rectangle_gauche", 0, CAT_CATEGORY_PLOT | XCAS_ONLY},
+    {"plotcontour(expr,[x=xm..xM,y=ym..yM],niveaux)", 0, "Lignes de niveau de expr.", "x^2+2y^2, [x=-2..2,y=-2..2],[1,2]", 0, CAT_CATEGORY_PLOT | XCAS_ONLY},
+    {"plotdensity(expr,[x=xm..xM,y=ym..yM])", 0, "Representation en niveaux de couleurs d'une expression de 2 variables.", "x^2-y^2,[x=-3..3,y=-2..2]", 0, CAT_CATEGORY_PLOT | XCAS_ONLY},
+    {"plotfield(f(t,y), [t=tmin..tmax,y=ymin..ymax])", 0, "Champ des tangentes de y'=f(t,y), optionnellement graphe avec plotode=[t0,y0]", "sin(t*y), [t=-3..3,y=-3..3],plotode=[0,1]", "5*[-y,x], [x=-1..1,y=-1..1]", CAT_CATEGORY_PLOT | XCAS_ONLY},
+    {"plotlist(list)", 0, "Graphe d'une liste", "[3/2,2,1,1/2,3,2,3/2]", "[1,13],[2,10],[3,15],[4,16]", CAT_CATEGORY_PLOT | XCAS_ONLY},
+    {"plotode(f(t,y), [t=tmin..tmax,y],[t0,y0])", 0, "Graphe de solution d'equation differentielle y'=f(t,y), y(t0)=y0.", "sin(t*y),[t=-3..3,y],[0,1]", 0, CAT_CATEGORY_PLOT | XCAS_ONLY},
+    {"plotparam([x,y],t)", 0, "Graphe en parametriques. Par exemple plotparam([sin(3t),cos(2t)],t,0,pi) ou plotparam(exp(i*t),t,0,pi)", "[sin(3t),cos(2t)],t,0,pi", "[t^2,t^3],t=-1..1,tstep=0.1", CAT_CATEGORY_PLOT | XCAS_ONLY},
+    {"plotpolar(r,theta)", 0, "Graphe en polaire.","cos(3*x),x,0,pi", "1/(1+cos(x)),x=0..pi,xstep=0.05", CAT_CATEGORY_PLOT | XCAS_ONLY},
+    {"plotseq(f(x),x=[u0,m,M],n)", 0, "Trace f(x) sur [m,M] et n termes de la suite recurrente u_{n+1}=f(u_n) de 1er terme u0.","sqrt(2+x),x=[6,0,7],5", 0, CAT_CATEGORY_PLOT | XCAS_ONLY},
+    {"plus_point", "plus_point", "Option d'affichage", "#display=blue+plus_point", 0, CAT_CATEGORY_PROGCMD  | XCAS_ONLY},
+    {"point(x,y)", 0, "Point", "1,2", 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
+    {"polygon(list)", 0, "Polygone ferme.", "1-i,2+i,3", 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
+    {"polygonscatterplot(Xlist,Ylist)", 0, "Nuage de points relies.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"polynomial_regression(Xlist,Ylist,n)", 0, "Regression polynomiale de degre <= n.", "[1,2,3,4,5],[0,1,3,4,4],2", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"polynomial_regression_plot(Xlist,Ylist,n)", 0, "Graphe d'une regression polynomiale de degre <= n.", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];polynomial_regression_plot(X,Y,2);scatterplot(X,Y);", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"pour (boucle Xcas)", "pour  de  to  faire  fpour;", "Boucle definie.","#pour j de 1 to 10 faire print(j,j^2); fpour;", 0, CAT_CATEGORY_PROG | XCAS_ONLY},
+    {"power_regression(Xlist,Ylist,n)", 0, "Regression puissance.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"power_regression_plot(Xlist,Ylist,n)", 0, "Graphe d'une regression puissance.", "#X,Y:=[1,2,3,4,5],[1,1,3,4,4];power_regression_plot(X,Y);", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"powmod(a,n,p[,P,x])", 0, "Renvoie a^n mod p, ou a^n mod un entier p et un polynome P en x.","123,456,789", "x+1,452,19,x^4+x+1,x", CAT_CATEGORY_ARIT | XCAS_ONLY},
     {"print(expr)", 0, "Afficher dans la console", 0, 0, CAT_CATEGORY_PROG},
     {"proot(p)", 0, "Racines reelles et complexes approchees d'un polynome. Exemple proot([1,2.1,3,4.2]) ou proot(x^3+2.1*x^2+3x+4.2)", "x^3+2.1*x^2+3x+4.2", 0, CAT_CATEGORY_POLYNOMIAL},
-    {"purge(x)", 0, "Purge le contenu de la variable x. Raccourci SHIFT-FORMAT", 0, 0, CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_SOFUS<<8)},
-    {"python(f)", 0, "Affiche la fonction f en syntaxe Python.", 0, 0, CAT_CATEGORY_PROGCMD},
-    {"python_compat(0|1|2)", 0, "python_compat(0) syntaxe Xcas, python_compat(1) syntaxe Python avec ^ interprete comme puissance, python_compat(2) ^ interprete comme ou exclusif bit a bit", "0", "1", CAT_CATEGORY_PROG},
-    {"qr(A)", 0, "Factorisation A=Q*R avec Q orthogonale et R triangulaire superieure", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
-    {"quartile1(l)", 0, "1er quartile", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS},
-    {"quartile3(l)", 0, "3eme quartile", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS},
-    {"quo(p,q,x)", 0, "Quotient de division euclidienne polynomiale en x.", 0, 0, CAT_CATEGORY_POLYNOMIAL},
-    {"quote(x)", 0, "Renvoie l'expression x non evaluee.", 0, 0, CAT_CATEGORY_ALGEBRA},
+    {"purge(x)", 0, "Purge le contenu de la variable x. Raccourci SHIFT-FORMAT", 0, 0, CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_SOFUS<<8) | XCAS_ONLY},
+    {"python(f)", 0, "Affiche la fonction f en syntaxe Python.", 0, 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
+    {"python_compat(0|1|2|4)", 0, "python_compat(0) syntaxe Xcas, python_compat(1) syntaxe Python avec ^ interprete comme puissance, python_compat(2) ^ interprete comme ou exclusif bit a bit", "0", "1", CAT_CATEGORY_PROG | XCAS_ONLY},
+    {"qr(A)", 0, "Factorisation A=Q*R avec Q orthogonale et R triangulaire superieure", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX | XCAS_ONLY},
+    {"quartile1(l)", 0, "1er quartile", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"quartile3(l)", 0, "3eme quartile", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"quo(p,q,x)", 0, "Quotient de division euclidienne polynomiale en x.", 0, 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
+    {"quote(x)", 0, "Renvoie l'expression x non evaluee.", 0, 0, CAT_CATEGORY_ALGEBRA | XCAS_ONLY},
     {"rand()", "rand()", "Reel aleatoire entre 0 et 1", 0, 0, CAT_CATEGORY_PROBA},
-    {"randint(n)", 0, "Entier aleatoire entre 1 et n ou entre a et b si on fournit 2 arguments", "6", "5,20", CAT_CATEGORY_PROBA},
+    {"randint(n)", 0, "Entier aleatoire entre 1 et n (Xcas) ou entre a et b si on fournit 2 arguments (Xcas et Python)", "6", "5,20", CAT_CATEGORY_PROBA},
     {"ranm(n,m,[loi,parametres])", 0, "Matrice aleatoire a coefficients entiers ou selon une loi de probabilites (ranv pour un vecteur). Exemples ranm(2,3), ranm(3,2,binomial,20,.3), ranm(4,2,normald,0,1)", "4,2,normald,0,1", "3,3,10", CAT_CATEGORY_MATRIX},
     {"ranv(n,[loi,parametres])", 0, "Vecteur aleatoire", "4,normald,0,1", "10,30", CAT_CATEGORY_LINALG},
-    {"ratnormal(x)", 0, "Ecrit sous forme d'une fraction irreductible.", "(x+1)/(x^2-1)^2", 0, CAT_CATEGORY_ALGEBRA},
-    {"re(z)", 0, "Partie reelle.", "1+i", 0, CAT_CATEGORY_COMPLEXNUM},
-    {"read(\"filename\")", "read(\"", "Lire un fichier. Voir aussi write", 0, 0, CAT_CATEGORY_PROGCMD},
-    {"rectangle_plein a,b", "rectangle_plein ", "Rectangle direct rempli depuis la tortue de cotes a et b (si b est omis, la tortue remplit un carre)", "#rectangle_plein 30", "#rectangle_plein(20,40)", CAT_CATEGORY_LOGO},
+    {"ratnormal(x)", 0, "Ecrit sous forme d'une fraction irreductible.", "(x+1)/(x^2-1)^2", 0, CAT_CATEGORY_ALGEBRA | XCAS_ONLY},
+    {"re(z)", 0, "Partie reelle (z.re en Python)", "1+i", 0, CAT_CATEGORY_COMPLEXNUM},
+    {"read(\"filename\")", "read(\"", "Lire un fichier. Voir aussi write", 0, 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
+    {"rectangle_plein a,b", "rectangle_plein ", "Rectangle direct rempli depuis la tortue de cotes a et b (si b est omis, la tortue remplit un carre)", "#rectangle_plein 30", "#rectangle_plein(20,40)", CAT_CATEGORY_LOGO | XCAS_ONLY},
     {"recule n", "recule ", "La tortue recule de n pas, par defaut n=10", "#recule 30", 0, CAT_CATEGORY_LOGO},
     {"red", "red", "Option d'affichage", "#display=red", 0, CAT_CATEGORY_PROGCMD},
-    {"rem(p,q,x)", 0, "Reste de division euclidienne polynomiale en x", 0, 0, CAT_CATEGORY_POLYNOMIAL},
-    {"repete(n,...)", "repete( ", "Repete plusieurs fois les instructions", "#repete(4,avance,tourne_gauche)", 0, CAT_CATEGORY_LOGO},
+    {"rem(p,q,x)", 0, "Reste de division euclidienne polynomiale en x", 0, 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
+    {"repete(n,...)", "repete( ", "Repete plusieurs fois les instructions", "#repete(4,avance,tourne_gauche)", 0, CAT_CATEGORY_LOGO | XCAS_ONLY},
 #ifdef RELEASE
-    {"residue(f(z),z,z0)", 0, "Residu de l'expression en z0.", "1/(x^2+1),x,i", 0, CAT_CATEGORY_COMPLEXNUM},
+    {"residue(f(z),z,z0)", 0, "Residu de l'expression en z0.", "1/(x^2+1),x,i", 0, CAT_CATEGORY_COMPLEXNUM | XCAS_ONLY},
 #endif
-    {"resultant(p,q,x)", 0, "Resultant en x des polynomes p et q.", "#P:=x^3+p*x+q;resultant(P,P',x);", 0, CAT_CATEGORY_POLYNOMIAL},
-    {"revert(p[,x])", 0, "Developpement de Taylor reciproque, p doit etre nul en 0","x+x^2+x^4", 0, CAT_CATEGORY_CALCULUS},
+    {"resultant(p,q,x)", 0, "Resultant en x des polynomes p et q.", "#P:=x^3+p*x+q;resultant(P,P',x);", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
+    {"revert(p[,x])", 0, "Developpement de Taylor reciproque, p doit etre nul en 0","x+x^2+x^4", 0, CAT_CATEGORY_CALCULUS | XCAS_ONLY},
     {"rgb(r,g,b)", 0, "couleur definie par niveau de rouge, vert, bleu entre 0 et 255", "255,0,255", 0, CAT_CATEGORY_PROGCMD},
-    {"rhombus_point", "rhombus_point", "Option d'affichage", "#display=magenta+rhombus_point", 0, CAT_CATEGORY_PROGCMD },
+    {"rhombus_point", "rhombus_point", "Option d'affichage", "#display=magenta+rhombus_point", 0, CAT_CATEGORY_PROGCMD  | XCAS_ONLY},
     {"rond n", "rond ", "Cercle tangent a la tortue de rayon n. Utiliser rond n,theta pour un arc de cercle.", "#rond 30", "#rond(30,90)", CAT_CATEGORY_LOGO},
-    {"rsolve(equation,u(n),[init])", 0, "Expression d'une suite donnee par une recurrence.","u(n+1)=2*u(n)+3,u(n),u(0)=1", "([u(n+1)=3*v(n)+u(n),v(n+1)=v(n)+u(n)],[u(n),v(n)],[u(0)=1,v(0)=2]", CAT_CATEGORY_SOLVE},
+    {"rsolve(equation,u(n),[init])", 0, "Expression d'une suite donnee par une recurrence.","u(n+1)=2*u(n)+3,u(n),u(0)=1", "([u(n+1)=3*v(n)+u(n),v(n+1)=v(n)+u(n)],[u(n),v(n)],[u(0)=1,v(0)=2]", CAT_CATEGORY_SOLVE | XCAS_ONLY},
     {"saute n", "saute ", "La tortue fait un saut de n pas, par defaut n=10", "#saute 30", 0, CAT_CATEGORY_LOGO},
-    {"scatterplot(Xlist,Ylist)", 0, "Nuage de points.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
-    {"segment(A,B)", 0, "Segment", "1,2+i", 0, CAT_CATEGORY_PROGCMD},
-    {"seq(expr,var,a,b[,pas])", 0, "Liste de terme general donne.","j^2,j,1,10", "j^2,j,1,10,2", CAT_CATEGORY_LIST},
-    {"si (test Xcas)", "si  alors  sinon  fsi;", "Test.", "#f(x):=si x>0 alors x; sinon -x; fsi;", 0, CAT_CATEGORY_PROG},
+    {"scatterplot(Xlist,Ylist)", 0, "Nuage de points (scatter en Python)", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
+    {"segment(A,B)", 0, "Segment", "1,2+i", 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
+    {"seq(expr,var,a,b[,pas])", 0, "Liste de terme general donne.","j^2,j,1,10", "j^2,j,1,10,2", CAT_CATEGORY_LIST | XCAS_ONLY},
+    {"si (test Xcas)", "si  alors  sinon  fsi;", "Test.", "#f(x):=si x>0 alors x; sinon -x; fsi;", 0, CAT_CATEGORY_PROG | XCAS_ONLY},
     {"sign(x)", 0, "Renvoie -1 si x est negatif, 0 si x est nul et 1 si x est positif.", 0, 0, CAT_CATEGORY_REAL},
-    {"simplify(expr)", 0, "Renvoie en general expr sous forme simplifiee. Raccourci expr=>/", "sin(3x)/sin(x)", "ln(4)-ln(2)", CAT_CATEGORY_ALGEBRA},
-    {"sin_regression(Xlist,Ylist)", 0, "Regression trigonometrique.", "[1,2,3,4,5,6,7,8,9,10,11,12,13,14],[0.1,0.5,0.8,1,0.7,0.5,0.05,-.5,-.75,-1,-.7,-.4,0.1,.5]", 0, CAT_CATEGORY_STATS},
-    {"sin_regression_plot(Xlist,Ylist)", 0, "Graphe d'une regression trigonometrique.", "#X,Y:=[1,2,3,4,5,6,7,8,9,10,11,12,13,14],[0.1,0.5,0.8,1,0.7,0.5,0.05,-.5,-.75,-1,-.7,-.4,0.1,.5];sin_regression_plot(X,Y);", 0, CAT_CATEGORY_STATS },
-    {"solve(equation,x)", 0, "Resolution exacte d'une equation en x (ou d'un systeme polynomial). Utiliser csolve pour les solutions complexes, linsolve pour un systeme lineaire. Raccourci SHIFT XthetaT", "x^2-x-1=0,x", "[x^2-y^2=0,x^2-z^2=0],[x,y,z]", CAT_CATEGORY_SOLVE},
+    {"simplify(expr)", 0, "Renvoie en general expr sous forme simplifiee. Raccourci expr=>/", "sin(3x)/sin(x)", "ln(4)-ln(2)", CAT_CATEGORY_ALGEBRA | XCAS_ONLY},
+    {"sin_regression(Xlist,Ylist)", 0, "Regression trigonometrique.", "[1,2,3,4,5,6,7,8,9,10,11,12,13,14],[0.1,0.5,0.8,1,0.7,0.5,0.05,-.5,-.75,-1,-.7,-.4,0.1,.5]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"sin_regression_plot(Xlist,Ylist)", 0, "Graphe d'une regression trigonometrique.", "#X,Y:=[1,2,3,4,5,6,7,8,9,10,11,12,13,14],[0.1,0.5,0.8,1,0.7,0.5,0.05,-.5,-.75,-1,-.7,-.4,0.1,.5];sin_regression_plot(X,Y);", 0, CAT_CATEGORY_STATS  | XCAS_ONLY},
+    {"solve(equation,x)", 0, "Xcas: resolution exacte d'une equation en x (ou d'un systeme polynomial). Utiliser csolve pour les solutions complexes, linsolve pour un systeme lineaire. Python: resolution d'un systeme de Cramer A*x=b", "x^2-x-1=0,x", "[x^2-y^2=0,x^2-z^2=0],[x,y,z]", CAT_CATEGORY_SOLVE},
     {"sort(l)", 0, "Trie une liste.","[3/2,2,1,1/2,3,2,3/2]", "[[1,2],[2,3],[4,3]],(x,y)->when(x[1]==y[1],x[0]>y[0],x[1]>y[1]", CAT_CATEGORY_LIST},
-    {"square_point", "square_point", "Option d'affichage", "#display=cyan+square_point", 0, CAT_CATEGORY_PROGCMD },
-    {"star_point", "star_point", "Option d'affichage", "#display=magenta+star_point", 0, CAT_CATEGORY_PROGCMD },
-    {"stddev(l)", 0, "Ecart-type d'une liste l", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS},
-    {"subst(a,b=c)", 0, "Remplace b par c dans a. Raccourci a(b=c). Pour faire plusieurs remplacements, saisir subst(expr,[b1,b2...],[c1,c2...])", "x^2,x=3", "x+y^2,[x,y],[1,2]", CAT_CATEGORY_ALGEBRA},
-    {"sum(f,k,m,M)", 0, "Somme de l'expression f dependant de k pour k variant de m a M. Exemple sum(k^2,k,1,n)=>*. Raccourci ALPHA F3", "k,k,1,n", "k^2,k", CAT_CATEGORY_CALCULUS},
-    {"svd(A)", 0, "Singular Value Decomposition, renvoie U orthogonale, S vecteur des valeurs singulières, Q orthogonale tels que A=U*diag(S)*tran(Q).", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
-    {"tabvar(f,[x=a..b])", 0, "Tableau de variations de l'expression f, avec arguments optionnels la variable x dans l'intervalle a..b.", "sqrt(x^2+x+1)", "[cos(2t),sin(3t)],t", CAT_CATEGORY_CALCULUS},
-    {"tantque (boucle Xcas)", "tantque  faire  ftantque;", "Boucle indefinie.", "#j:=13; tantque j!=1 faire j:=ifte(even(j),j/2,3j+1); print(j); ftantque;", 0, CAT_CATEGORY_PROG},
-    {"taylor(f,x=a,n,[polynom])", 0, "Developpement de Taylor de l'expression f en x=a a l'ordre n, ajouter le parametre polynom pour enlever le terme de reste.","sin(x),x=0,5", "sin(x),x=0,5,polynom", CAT_CATEGORY_CALCULUS},
-    {"tchebyshev1(n)", 0, "Polynome de Tchebyshev de 1ere espece: cos(n*x)=T_n(cos(x))", "10", 0, CAT_CATEGORY_POLYNOMIAL},
-    {"tchebyshev2(n)", 0, "Polynome de Tchebyshev de 2eme espece: sin((n+1)*x)=sin(x)*U_n(cos(x))", "10", 0, CAT_CATEGORY_POLYNOMIAL},
-    {"tcollect(expr)", 0, "Linearisation trigonometrique et regroupement.","sin(x)+cos(x)", 0, CAT_CATEGORY_TRIG},
-    {"texpand(expr)", 0, "Developpe les fonctions trigonometriques, exp et ln.","sin(3x)", "ln(x*y)", CAT_CATEGORY_TRIG},
+    {"square_point", "square_point", "Option d'affichage", "#display=cyan+square_point", 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY },
+    {"star_point", "star_point", "Option d'affichage", "#display=magenta+star_point", 0, CAT_CATEGORY_PROGCMD  | XCAS_ONLY},
+    {"stddev(l)", 0, "Ecart-type d'une liste l", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"subst(a,b=c)", 0, "Remplace b par c dans a. Raccourci a(b=c). Pour faire plusieurs remplacements, saisir subst(expr,[b1,b2...],[c1,c2...])", "x^2,x=3", "x+y^2,[x,y],[1,2]", CAT_CATEGORY_ALGEBRA | XCAS_ONLY},
+    {"sum(f,k,m,M)", 0, "Somme de l'expression f dependant de k pour k variant de m a M. Exemple sum(k^2,k,1,n)=>*. Raccourci ALPHA F3", "k,k,1,n", "k^2,k", CAT_CATEGORY_CALCULUS | XCAS_ONLY},
+    {"svd(A)", 0, "Singular Value Decomposition, renvoie U orthogonale, S vecteur des valeurs singulières, Q orthogonale tels que A=U*diag(S)*tran(Q).", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX | XCAS_ONLY},
+    {"tabvar(f,[x=a..b])", 0, "Tableau de variations de l'expression f, avec arguments optionnels la variable x dans l'intervalle a..b.", "sqrt(x^2+x+1)", "[cos(2t),sin(3t)],t", CAT_CATEGORY_CALCULUS | XCAS_ONLY},
+    {"tantque (boucle Xcas)", "tantque  faire  ftantque;", "Boucle indefinie.", "#j:=13; tantque j!=1 faire j:=ifte(even(j),j/2,3j+1); print(j); ftantque;", 0, CAT_CATEGORY_PROG | XCAS_ONLY},
+    {"taylor(f,x=a,n,[polynom])", 0, "Developpement de Taylor de l'expression f en x=a a l'ordre n, ajouter le parametre polynom pour enlever le terme de reste.","sin(x),x=0,5", "sin(x),x=0,5,polynom", CAT_CATEGORY_CALCULUS | XCAS_ONLY},
+    {"tchebyshev1(n)", 0, "Polynome de Tchebyshev de 1ere espece: cos(n*x)=T_n(cos(x))", "10", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
+    {"tchebyshev2(n)", 0, "Polynome de Tchebyshev de 2eme espece: sin((n+1)*x)=sin(x)*U_n(cos(x))", "10", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
+    {"tcollect(expr)", 0, "Linearisation trigonometrique et regroupement.","sin(x)+cos(x)", 0, CAT_CATEGORY_TRIG | XCAS_ONLY},
+    {"texpand(expr)", 0, "Developpe les fonctions trigonometriques, exp et ln.","sin(3x)", "ln(x*y)", CAT_CATEGORY_TRIG | XCAS_ONLY},
     {"time(cmd)", 0, "Temps pour effectuer une commande ou mise a l'heure de horloge","int(1/(x^4+1),x)","8,0", CAT_CATEGORY_PROG},
-    {"tlin(expr)", 0, "Linearisation trigonometrique de l'expression.","sin(x)^3", 0, CAT_CATEGORY_TRIG},
+    {"tlin(expr)", 0, "Linearisation trigonometrique de l'expression.","sin(x)^3", 0, CAT_CATEGORY_TRIG | XCAS_ONLY},
     {"tourne_droite n", "tourne_droite ", "La tortue tourne de n degres, par defaut n=90", "#tourne_droite 45", 0, CAT_CATEGORY_LOGO},
     {"tourne_gauche n", "tourne_gauche ", "La tortue tourne de n degres, par defaut n=90", "#tourne_gauche 45", 0, CAT_CATEGORY_LOGO},
     {"trace(A)", 0, "Trace de la matrice A.", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
     {"tran(A)", 0, "Transposee de la matrice A. Pour la transconjuguee utiliser trn(A) ou A^*.", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
-    {"triangle_point", "triangle_point", "Option d'affichage", "#display=yellow+triangle_point", 0, CAT_CATEGORY_PROGCMD},
-    {"trig2exp(expr)", 0, "Convertit les fonctions trigonometriques en exponentielles.","cos(x)^3", 0, CAT_CATEGORY_TRIG},
-    {"trigcos(expr)", 0, "Exprime sin^2 et tan^2 avec cos^2.","sin(x)^4", 0, CAT_CATEGORY_TRIG},
-    {"trigsin(expr)", 0, "Exprime cos^2 et tan^2 avec sin^2.","cos(x)^4", 0, CAT_CATEGORY_TRIG},
-    {"trigtan(expr)", 0, "Exprime cos^2 et sin^2 avec tan^2.","cos(x)^4", 0, CAT_CATEGORY_TRIG},
-    {"uniformd(a,b,x)", 0, "loi uniforme sur [a,b] de densite 1/(b-a)", 0, 0, CAT_CATEGORY_PROBA},
-    {"v augmente_de n", " augmente_de ", "La variable v augmente de n, ou de n %", "#v:=3; v augmente_de 1", 0, CAT_CATEGORY_SOFUS},
-    {"v diminue_de n", " diminue_de ", "La variable v diminue de n, ou de n %", "#v:=3; v diminue_de 1", 0, CAT_CATEGORY_SOFUS},
-    {"v est_divise_par n", " est_divise_par ", "La variable v est divisee par n", "#v:=3; v est_divise_par 2", 0, CAT_CATEGORY_SOFUS},
-    {"v est_eleve_puissance n", " est_eleve_puissance ", "La variable v est eleveee a la puissance n", "#v:=3; v est_eleve_puissance 2", 0, CAT_CATEGORY_SOFUS},
-    {"v est_multiplie_par n", " est_multiplie_par ", "La variable v est multipliee par n", "#v:=3; v est_multiplie_par 2", 0, CAT_CATEGORY_SOFUS},
+    {"triangle_point", "triangle_point", "Option d'affichage", "#display=yellow+triangle_point", 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
+    {"trig2exp(expr)", 0, "Convertit les fonctions trigonometriques en exponentielles.","cos(x)^3", 0, CAT_CATEGORY_TRIG | XCAS_ONLY},
+    {"trigcos(expr)", 0, "Exprime sin^2 et tan^2 avec cos^2.","sin(x)^4", 0, CAT_CATEGORY_TRIG | XCAS_ONLY},
+    {"trigsin(expr)", 0, "Exprime cos^2 et tan^2 avec sin^2.","cos(x)^4", 0, CAT_CATEGORY_TRIG | XCAS_ONLY},
+    {"trigtan(expr)", 0, "Exprime cos^2 et sin^2 avec tan^2.","cos(x)^4", 0, CAT_CATEGORY_TRIG | XCAS_ONLY},
+    {"uniformd(a,b,x)", 0, "loi uniforme sur [a,b] de densite 1/(b-a)", 0, 0, CAT_CATEGORY_PROBA | XCAS_ONLY},
+    {"v augmente_de n", " augmente_de ", "La variable v augmente de n, ou de n %", "#v:=3; v augmente_de 1", 0, CAT_CATEGORY_SOFUS | XCAS_ONLY},
+    {"v diminue_de n", " diminue_de ", "La variable v diminue de n, ou de n %", "#v:=3; v diminue_de 1", 0, CAT_CATEGORY_SOFUS | XCAS_ONLY},
+    {"v est_divise_par n", " est_divise_par ", "La variable v est divisee par n", "#v:=3; v est_divise_par 2", 0, CAT_CATEGORY_SOFUS | XCAS_ONLY},
+    {"v est_eleve_puissance n", " est_eleve_puissance ", "La variable v est eleveee a la puissance n", "#v:=3; v est_eleve_puissance 2", 0, CAT_CATEGORY_SOFUS | XCAS_ONLY},
+    {"v est_multiplie_par n", " est_multiplie_par ", "La variable v est multipliee par n", "#v:=3; v est_multiplie_par 2", 0, CAT_CATEGORY_SOFUS | XCAS_ONLY},
 				     //{"version", "version()", "Khicas 1.5.0, (c) B. Parisse et al. www-fourier.ujf-grenoble.fr/~parisse. License GPL version 2. Interface adaptee d'Eigenmath pour Casio, G. Maia, http://gbl08ma.com", 0, 0, CAT_CATEGORY_PROGCMD},
-    {"write(\"filename\",var)", "write(\"", "Sauvegarde une ou plusieurs variables dans un fichier. Par exemple f(x):=x^2; write(\"func_f\",f).",  0, 0, CAT_CATEGORY_PROGCMD},
+    {"write(\"filename\",var)", "write(\"", "Sauvegarde une ou plusieurs variables dans un fichier. Par exemple f(x):=x^2; write(\"func_f\",f).",  0, 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
     {"yellow", "yellow", "Option d'affichage", "#display=yellow", 0, CAT_CATEGORY_PROGCMD},
     {"|", "|", "Ou logique", "#1|2", 0, CAT_CATEGORY_PROGCMD},
     {"~", "~", "Complement", "#~7", 0, CAT_CATEGORY_PROGCMD},
@@ -1063,94 +1069,94 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   {" return res", "return ", "Leaves current function and returns res.", 0, 0, CAT_CATEGORY_PROG},
   {" edit list ", "list ", "List creation wizzard.", 0, 0, CAT_CATEGORY_LIST},
   {" edit matrix ", "matrix ", "Matrix creation wizzard.", 0, 0, CAT_CATEGORY_MATRIX},
-    {" mksa(x)", 0, "Conversion to MKSA units", 0, 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8)},
-    {" ufactor(a,b)", 0, "Factorize unit b in a", "100_J,1_kW", 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8)},
-    {" usimplify(a)", 0, "Simplify unit", "100_l/10_cm^2", 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8)},
+    {" mksa(x)", 0, "Conversion to MKSA units", 0, 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8) | XCAS_ONLY},
+    {" ufactor(a,b)", 0, "Factorize unit b in a", "100_J,1_kW", 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8) | XCAS_ONLY},
+    {" usimplify(a)", 0, "Simplify unit", "100_l/10_cm^2", 0, CAT_CATEGORY_PHYS | (CAT_CATEGORY_UNIT << 8) | XCAS_ONLY},
   {"!", "!", "Logical not (prefix) or factorial of n (suffix).", "#7!", "~!b", CAT_CATEGORY_PROGCMD},
   {"#", "#", "Python comment, for Xcas comment type //. Shortcut ALPHA F2", 0, 0, CAT_CATEGORY_PROG},
   {"%", "%", "a % b means a modulo b", 0, 0, CAT_CATEGORY_ARIT | (CAT_CATEGORY_PROGCMD << 8)},
   {"&", "&", "Logical and or +", "#1&2", 0, CAT_CATEGORY_PROGCMD},
   {":=", ":=", "Set variable value. Shortcut SHIFT F1", "#a:=3", 0, CAT_CATEGORY_PROGCMD|(CAT_CATEGORY_SOFUS<<8)},
   {"<", "<", "Shortcut SHIFT F2", 0, 0, CAT_CATEGORY_PROGCMD},
-  {"=>", "=>", "Store value in variable or conversion (touche ->). For example 5=>a or x^4-1=>* or (x+1)^2=>+ or sin(x)^2=>cos.", "#5=>a", "#15_ft=>_cm", CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_PHYS <<8) | (CAT_CATEGORY_UNIT << 16)},
+  {"=>", "=>", "Store value in variable or conversion (touche ->). For example 5=>a or x^4-1=>* or (x+1)^2=>+ or sin(x)^2=>cos.", "#5=>a", "#15_ft=>_cm", CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_PHYS <<8) | (CAT_CATEGORY_UNIT << 16) | XCAS_ONLY},
   {">", ">", "Shortcut F2.", 0, 0, CAT_CATEGORY_PROGCMD},
   {"\\", "\\", "\\ char", 0, 0, CAT_CATEGORY_PROGCMD},
   {"_", "_", "_ char, shortcut (-).", 0, 0, CAT_CATEGORY_PROGCMD},
-    {"_(km/h)", "_(km/h)", "Speed kilometer per hour", 0, 0, CAT_CATEGORY_UNIT},
-    {"_(m/s)", "_(m/s)", "Speed meter/second", 0, 0, CAT_CATEGORY_UNIT},
-    {"_(m/s^2)", "_(m/s^2)", "Acceleration", 0, 0, CAT_CATEGORY_UNIT},
-    {"_(m^2/s)", "_(m^2/s)", "Viscosity", 0, 0, CAT_CATEGORY_UNIT},
-    {"_A", 0, "Ampere", 0, 0, CAT_CATEGORY_UNIT},
-    {"_Bq", 0, "Becquerel", 0, 0, CAT_CATEGORY_UNIT},
-    {"_C", 0, "Coulomb", 0, 0, CAT_CATEGORY_UNIT},
-    {"_Ci", 0, "Curie", 0, 0, CAT_CATEGORY_UNIT},
-    {"_F", 0, "Farad", 0, 0, CAT_CATEGORY_UNIT},
-    {"_F_", 0, "Faraday constant", 0, 0, CAT_CATEGORY_PHYS},
-    {"_G_", 0, "Gravitation force=_G_*m1*m2/r^2", 0, 0, CAT_CATEGORY_PHYS},
-    {"_H", 0, "Henry", 0, 0, CAT_CATEGORY_UNIT},
-    {"_Hz", 0, "Hertz", 0, 0, CAT_CATEGORY_UNIT},
-    {"_J", 0, "Joule=kg*m^2/s^2", 0, 0, CAT_CATEGORY_UNIT},
-    {"_K", 0, "Temperature in Kelvin", 0, 0, CAT_CATEGORY_UNIT},
-    {"_Kcal", 0, "Energy kilo-calorie", 0, 0, CAT_CATEGORY_UNIT},
-    {"_MeV", 0, "Energy mega-electron-Volt", 0, 0, CAT_CATEGORY_UNIT},
-    {"_N", 0, "Force Newton=kg*m/s^2", 0, 0, CAT_CATEGORY_UNIT},
-    {"_NA_", 0, "Avogadro constant", 0, 0, CAT_CATEGORY_PHYS},
-    {"_Ohm", 0, "Ohm", 0, 0, CAT_CATEGORY_UNIT},
-    {"_PSun_", 0, "Sun power", 0, 0, CAT_CATEGORY_PHYS},
-    {"_Pa", 0, "Pressure in Pascal=kg/m/s^2", 0, 0, CAT_CATEGORY_UNIT},
-    {"_REarth_", 0, "Earth radius", 0, 0, CAT_CATEGORY_PHYS},
-    {"_RSun_", 0, "Sun radius", 0, 0, CAT_CATEGORY_PHYS},
-    {"_R_", 0, "Boltzmann constant (per mol)", 0, 0, CAT_CATEGORY_PHYS},
-    {"_S", 0, "", 0, 0, CAT_CATEGORY_UNIT},
-    {"_StdP_", 0, "Standard pressure", 0, 0, CAT_CATEGORY_PHYS},
-    {"_StdT_", 0, "Standard temperature (0 degre Celsius in Kelvins)", 0, 0, CAT_CATEGORY_PHYS},
-    {"_Sv", 0, "Sievert", 0, 0, CAT_CATEGORY_UNIT},
-    {"_T", 0, "Tesla", 0, 0, CAT_CATEGORY_UNIT},
-    {"_V", 0, "Volt", 0, 0, CAT_CATEGORY_UNIT},
-    {"_Vm_", 0, "Volume molaire", 0, 0, CAT_CATEGORY_PHYS},
-    {"_W", 0, "Watt=kg*m^2/s^3", 0, 0, CAT_CATEGORY_UNIT},
-    {"_Wb", 0, "Weber", 0, 0, CAT_CATEGORY_UNIT},
-    {"_alpha_", 0, "fine structure constant", 0, 0, CAT_CATEGORY_PHYS},
-    {"_c_", 0, "speed of light", 0, 0, CAT_CATEGORY_PHYS},
-    {"_cd", 0, "candela", 0, 0, CAT_CATEGORY_UNIT},
+    {"_(km/h)", "_(km/h)", "Speed kilometer per hour", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_(m/s)", "_(m/s)", "Speed meter/second", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_(m/s^2)", "_(m/s^2)", "Acceleration", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_(m^2/s)", "_(m^2/s)", "Viscosity", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_A", 0, "Ampere", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Bq", 0, "Becquerel", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_C", 0, "Coulomb", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Ci", 0, "Curie", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_F", 0, "Farad", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_F_", 0, "Faraday constant", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_G_", 0, "Gravitation force=_G_*m1*m2/r^2", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_H", 0, "Henry", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Hz", 0, "Hertz", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_J", 0, "Joule=kg*m^2/s^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_K", 0, "Temperature in Kelvin", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Kcal", 0, "Energy kilo-calorie", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_MeV", 0, "Energy mega-electron-Volt", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_N", 0, "Force Newton=kg*m/s^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_NA_", 0, "Avogadro constant", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_Ohm", 0, "Ohm", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_PSun_", 0, "Sun power", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_Pa", 0, "Pressure in Pascal=kg/m/s^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_REarth_", 0, "Earth radius", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_RSun_", 0, "Sun radius", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_R_", 0, "Boltzmann constant (per mol)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_S", 0, "", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_StdP_", 0, "Standard pressure", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_StdT_", 0, "Standard temperature (0 degre Celsius in Kelvins)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_Sv", 0, "Sievert", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_T", 0, "Tesla", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_V", 0, "Volt", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Vm_", 0, "Volume molaire", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_W", 0, "Watt=kg*m^2/s^3", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_Wb", 0, "Weber", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_alpha_", 0, "fine structure constant", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_c_", 0, "speed of light", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_cd", 0, "candela", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
   {"_cdf", "_cdf", "Suffix to get a cumulative distribution function. Type F2 for inverse cumulative distribution function _icdf suffix.", "#_icdf", 0, CAT_CATEGORY_PROBA},
-    {"_d", 0, "day", 0, 0, CAT_CATEGORY_UNIT},
-    {"_deg", 0, "degree", 0, 0, CAT_CATEGORY_UNIT},
-    {"_eV", 0, "electron-Volt", 0, 0, CAT_CATEGORY_UNIT},
-    {"_epsilon0_", 0, "vacuum permittivity", 0, 0, CAT_CATEGORY_PHYS},
-    {"_ft", 0, "feet", 0, 0, CAT_CATEGORY_UNIT},
-    {"_g_", 0, "Earth gravity (ground)", 0, 0, CAT_CATEGORY_PHYS},
-    {"_grad", 0, "grades (angle unit(", 0, 0, CAT_CATEGORY_UNIT},
-    {"_h", 0, "Hour", 0, 0, CAT_CATEGORY_UNIT},
-    {"_h_", 0, "Planck constant", 0, 0, CAT_CATEGORY_PHYS},
-    {"_ha", 0, "hectare", 0, 0, CAT_CATEGORY_UNIT},
-    {"_hbar_", 0, "Planck constant/(2*pi)", 0, 0, CAT_CATEGORY_PHYS},
-    {"_inch", 0, "inches", 0, 0, CAT_CATEGORY_UNIT},
-    {"_kWh", 0, "kWh", 0, 0, CAT_CATEGORY_UNIT},
-    {"_k_", 0, "Boltzmann constant", 0, 0, CAT_CATEGORY_PHYS},
-    {"_kg", 0, "kilogram", 0, 0, CAT_CATEGORY_UNIT},
-    {"_l", 0, "liter", 0, 0, CAT_CATEGORY_UNIT},
-    {"_m", 0, "meter", 0, 0, CAT_CATEGORY_UNIT},
-    {"_mEarth_", 0, "Earth mass", 0, 0, CAT_CATEGORY_PHYS},
-    {"_m^2", 0, "Area in m^2", 0, 0, CAT_CATEGORY_UNIT},
-    {"_m^3", 0, "Volume in m^3", 0, 0, CAT_CATEGORY_UNIT},
-    {"_me_", 0, "electron mass", 0, 0, CAT_CATEGORY_PHYS},
-    {"_miUS", 0, "US miles", 0, 0, CAT_CATEGORY_UNIT},
-    {"_mn", 0, "minute", 0, 0, CAT_CATEGORY_UNIT},
-    {"_mp_", 0, "proton mass", 0, 0, CAT_CATEGORY_PHYS},
-    {"_mpme_", 0, "proton/electron mass-ratio", 0, 0, CAT_CATEGORY_PHYS},
-    {"_mu0_", 0, "", 0, 0, CAT_CATEGORY_PHYS},
-    {"_phi_", 0, "magnetic flux quantum", 0, 0, CAT_CATEGORY_PHYS},
+    {"_d", 0, "day", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_deg", 0, "degree", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_eV", 0, "electron-Volt", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_epsilon0_", 0, "vacuum permittivity", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_ft", 0, "feet", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_g_", 0, "Earth gravity (ground)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_grad", 0, "grades (angle unit(", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_h", 0, "Hour", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_h_", 0, "Planck constant", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_ha", 0, "hectare", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_hbar_", 0, "Planck constant/(2*pi)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_inch", 0, "inches", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_kWh", 0, "kWh", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_k_", 0, "Boltzmann constant", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_kg", 0, "kilogram", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_l", 0, "liter", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_m", 0, "meter", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_mEarth_", 0, "Earth mass", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_m^2", 0, "Area in m^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_m^3", 0, "Volume in m^3", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_me_", 0, "electron mass", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_miUS", 0, "US miles", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_mn", 0, "minute", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_mp_", 0, "proton mass", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_mpme_", 0, "proton/electron mass-ratio", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_mu0_", 0, "", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_phi_", 0, "magnetic flux quantum", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
     {"_plot", "_plot", "Suffix for a regression graph.", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];polynomial_regression_plot(X,Y,2);scatterplot(X,Y)", 0, CAT_CATEGORY_STATS},
-    {"_qe_", 0, "electron charge", 0, 0, CAT_CATEGORY_PHYS},
-    {"_qme_", 0, "_q_/_me_", 0, 0, CAT_CATEGORY_PHYS},
-    {"_rad", 0, "radians", 0, 0, CAT_CATEGORY_UNIT},
-    {"_rem", 0, "rem", 0, 0, CAT_CATEGORY_UNIT},
-    {"_s", 0, "second", 0, 0, CAT_CATEGORY_UNIT},
-    {"_sd_", 0, "Sideral day", 0, 0, CAT_CATEGORY_PHYS},
-    {"_syr_", 0, "Siderale year", 0, 0, CAT_CATEGORY_PHYS},
-    {"_tr", 0, "tour (angle unit)", 0, 0, CAT_CATEGORY_UNIT},
-    {"_yd", 0, "yards", 0, 0, CAT_CATEGORY_UNIT},
+    {"_qe_", 0, "electron charge", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_qme_", 0, "_q_/_me_", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_rad", 0, "radians", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_rem", 0, "rem", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_s", 0, "second", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_sd_", 0, "Sideral day", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_syr_", 0, "Siderale year", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+    {"_tr", 0, "tour (angle unit)", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+    {"_yd", 0, "yards", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
   {"a and b", " and ", "Logical and", 0, 0, CAT_CATEGORY_PROGCMD},
   {"a or b", " or ", "Logical or", 0, 0, CAT_CATEGORY_PROGCMD},
   {"abcuv(a,b,c)", 0, "Find 2 polynomial u,v such that a*u+b*v=c","x+1,x^2-2,x", 0, CAT_CATEGORY_POLYNOMIAL},
@@ -1498,7 +1504,42 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     return (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9');
   }
 
-  string help_insert(const char * cmdline,GIAC_CONTEXT){
+  string remove_accents(const string & s){
+    string r;
+    for (int i=0;i<s.size();++i){
+      unsigned char ch=s[i];
+      if (ch==195 && i<s.size()-1){
+	++i;
+	switch ((unsigned char)s[i]){
+	case 160: case 161: case 162:
+	  r+='a';
+	  continue;
+	case 168: case 169: case 170:
+	  r+='e';
+	  continue;
+	case 172: case 173: case 174:
+	  r+='i';
+	  continue;
+	case 178: case 179: case 180:
+	  r += 'o';
+	  continue;
+	case 185: case 186: case 187:
+	  r+='u';
+	  continue;
+	}
+	r += '?';
+	continue;
+      }
+      r+=ch;
+    }
+    return r;
+  }
+
+  // back is the number of char that should be deleted before inserting
+  string help_insert(const char * cmdline,int & back,int exec,GIAC_CONTEXT){
+    if (exec==KEY_CTRL_OK)
+      exec=MENU_RETURN_SELECTION;
+    back=0;
     int l=strlen(cmdline);
     char buf[l+1];
     strcpy(buf,cmdline);
@@ -1517,13 +1558,16 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     // search in catalog: dichotomy would be more efficient
     // but leading spaces cmdnames would be missed
     int nfunc=(lang==1)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN;//sizeof(completeCat)/sizeof(catalogFunc);
-#ifdef NSPIRE_NEWLIB
+#if defined NSPIRE_NEWLIB || defined NUMWORKS // should match static_help[] in help.cc
     int iii=nfunc; // no search in completeCat, directly in static_help.h
+    //if (xcas_python_eval) iii=0;
 #else
     int iii=0;
 #endif
     const catalogFunc * completeCat=(lang==1)?completeCatfr:completeCaten;
     for (;iii<nfunc;++iii){
+      if (xcas_python_eval && (completeCat[iii].category & XCAS_ONLY) )
+	continue;
       const char * name=completeCat[iii].name;
       while (*name==' ')
 	++name;
@@ -1537,13 +1581,15 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     }
     const catalogFunc * catf=iii==nfunc?0:completeCat+iii;
     const char * fhowto=0,* fsyntax=0,* frelated=0,* fexamples=0;
+    string cf="";
     char fbuf[1024];
     if (iii==nfunc){
-      if (!has_static_help(cmdname,lang,fhowto,fsyntax,fexamples,frelated)){
+      if (!has_static_help(cmdname,exec?(lang==0?-2:-lang):lang,fhowto,fsyntax,fexamples,frelated)){
 	confirm("Pas d'aide disponible pour",cmdname,true);
 	return "";
       }
-      if (fexamples && fexamples[0]==0){
+      cf=frelated;
+      if (!fexamples || fexamples[0]==0){
 	fexamples=frelated;
 	frelated=0;
       }
@@ -1551,7 +1597,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       for (int i=0;i<sizeof(fbuf);++i){
 	if (fexamples[i]==0)
 	  break;
-	if (fexamples[i]==';'){
+	if (i>0 && fexamples[i]==';' && fexamples[i-1]!=' '){
 	  strcpy(fbuf,fexamples);
 	  fbuf[i]=0;
 	  fexamples=fbuf;
@@ -1572,97 +1618,127 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     }
     const char * example=catf?catf->example:fexamples;
     const char * example2=catf?catf->example2:frelated;
-    xcas::textArea text;
-    text.editable=false;
-    text.clipline=-1;
-    text.title = (char*)((lang==1)?"Aide sur la commande":"Help on command");
-    text.allowF1=true;
-    text.python=false;
-    std::vector<xcas::textElement> & elem=text.elements;
-    elem = std::vector<xcas::textElement> (example2?4:3);
-    elem[0].s = catf?catf->name:cmdname;
-    elem[0].newLine = 0;
-    //elem[0].color = COLOR_BLUE;
-    elem[1].newLine = 1;
-    elem[1].lineSpacing = 1;
-    elem[1].minimini=1;
-    std::string autoexample;
-    if (catf && catf->desc==0){
-      // if (token==T_UNARY_OP || token==T_UNARY_OP_38)
-      elem[1].s=elem[0].s+"(args)";
-    }
-    else
-      elem[1].s = catf?catf->desc:fhowto;
-#ifdef NSPIRE_NEWLIB
-    std::string ex("tab: ");
-#else
-    std::string ex("Ans: ");
-#endif
-    elem[2].newLine = 1;
-    elem[2].lineSpacing = 0;
-    //elem[2].minimini=1;
-    if (example){
-      if (example[0]=='#')
-	ex += example+1;
-      else {
-	if (iii==nfunc)
-	  ex += fexamples;
-	else {
-	  ex += insert_string(iii);
-	  ex += example;
-	  ex += ")";
-	}
-      }
-      elem[2].s = ex;
-      if (example2){
-#ifdef NSPIRE_NEWLIB
-	string ex2="ret: ";
-#else
-	string ex2="EXE: ";
-#endif
-	if (example2[0]=='#')
-	  ex2 += example2+1;
-	else {
-	  if (iii==nfunc)
-	    ex2 += example2;
-	  else {
-	    ex2 += insert_string(iii);
-	    ex2 += example2;
-	    ex2 += ")";
-	  }
-	}
-	elem[3].newLine = 1;
-	// elem[3].lineSpacing = 0;
-	//elem[3].minimini=1;
-	elem[3].s=ex2;
+    if (exec){
+      if (!fsyntax){
+	cmdname=example;
+	example=example2;
       }
     }
     else {
-      if (autoexample.size())
-	elem[2].s=ex+autoexample;
-      else
-	elem.pop_back();
+      xcas::textArea text;
+      text.editable=false;
+      text.clipline=-1;
+      text.title = (char*)((lang==1)?"Aide sur la commande":"Help on command");
+      text.allowF1=true;
+      text.python=false;
+      std::vector<xcas::textElement> & elem=text.elements;
+      elem = std::vector<xcas::textElement> (example2?5:4);
+      elem[0].s = catf?catf->name:cmdname;
+      elem[0].newLine = 0;
+      elem[1].lineSpacing = 0;
+      if (fsyntax){
+	elem[1].newLine = 1;
+	elem[1].s=(lang==1?"Syntaxe: ":"Syntax: ")+elem[0].s+"("+(strlen(fsyntax)?fsyntax:"arg")+")";
+      }
+      else {
+	elem[1].newLine = 0;
+	elem[1].s=elem[0].s;
+      }
+      if (cf.size())
+	elem[0].s += " (cf. "+cf+")";
+      if (elem[0].s.size()<16)
+	elem[0].s=string(16-elem[0].s.size()/2,' ')+elem[0].s;
+      //elem[0].color = COLOR_BLUE;
+      elem[2].newLine = 1;
+      elem[2].lineSpacing = 1;
+      elem[2].minimini=1;
+      std::string autoexample;
+      if (catf && catf->desc==0){
+	// if (token==T_UNARY_OP || token==T_UNARY_OP_38)
+	elem[2].s=elem[0].s+"(args)";
+      }
+      else {
+#ifdef NUMWORKS
+	elem[2].s = remove_accents(catf?catf->desc:fhowto);
+#else
+	elem[2].s = catf?catf->desc:fhowto;
+#endif
+      }
+#ifdef NSPIRE_NEWLIB
+      std::string ex("tab: ");
+#else
+      std::string ex("Ans: ");
+#endif
+      elem[3].newLine = 1;
+      elem[3].lineSpacing = 0;
+      //elem[2].minimini=1;
+      if (example){
+	if (example[0]=='#')
+	  ex += example+1;
+	else {
+	  if (iii==nfunc)
+	    ex += fexamples;
+	  else {
+	    ex += insert_string(iii);
+	    ex += example;
+	    ex += ")";
+	  }
+	}
+	elem[3].s = ex;
+	if (example2){
+#ifdef NSPIRE_NEWLIB
+	  string ex2="ret: ";
+#else
+	  string ex2="EXE: ";
+#endif
+	  if (example2[0]=='#')
+	    ex2 += example2+1;
+	  else {
+	    if (iii==nfunc)
+	      ex2 += example2;
+	    else {
+	      ex2 += insert_string(iii);
+	      ex2 += example2;
+	      ex2 += ")";
+	    }
+	  }
+	  elem[4].newLine = 1;
+	  // elem[3].lineSpacing = 0;
+	  //elem[3].minimini=1;
+	  elem[4].s=ex2;
+	}
+      }
+      else {
+	if (autoexample.size())
+	  elem[3].s=ex+autoexample;
+	else
+	  elem.pop_back();
+      }
+      exec=doTextArea(&text,contextptr);
     }
-    int sres=doTextArea(&text,contextptr);
-    if (sres==KEY_SHUTDOWN)
+    if (exec==KEY_SHUTDOWN)
       return "";
-    if (sres==MENU_RETURN_SELECTION){
+    if (exec==MENU_RETURN_SELECTION){
       while (*cmdname && *cmdname==*cmdnameorig){
 	++cmdname; ++cmdnameorig;
       }
       return cmdname;
     }
-    if (sres == KEY_CHAR_ANS || sres==KEY_BOOK || sres=='\t' || sres==KEY_CTRL_EXE) {
+    if (exec == KEY_CHAR_ANS || exec==KEY_BOOK || exec=='\t' || exec==KEY_CTRL_EXE) {
       reset_kbd();
       std::string s;
       const char * example=0;
-      if (sres==KEY_CHAR_ANS || sres==KEY_BOOK || sres=='\t')
+      if (exec==KEY_CHAR_ANS || exec==KEY_BOOK || exec=='\t')
 	example=catf?catf->example:fexamples;
       else
 	example=catf?catf->example2:frelated;
       if (example){
 	while (*example && *example==*cmdnameorig){
 	  ++example; ++cmdnameorig;
+	}
+	while (*cmdnameorig){
+	  ++back;
+	  ++cmdnameorig;
 	}
 	if (openpar && example[0]=='(')
 	  ++example;
@@ -1671,6 +1747,13 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	else {
 	  s += example;
 	  //if (catf && s[s.size()-1]!=')') s += ")";
+	}
+      }
+      if (python_compat(contextptr) & 4){
+	// replace := by =
+	for (int i=1;i<s.size();++i){
+	  if (s[i]=='=' && s[i-1]==':')
+	    s.erase(s.begin()+i-1);
 	}
       }
       return s;
@@ -1727,10 +1810,12 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	}
 	else {
 	  int cat=completeCat[cur].category;
-	  if ( (cat & 0xff) == category ||
+	  if (
+	      (!xcas_python_eval || !(cat & XCAS_ONLY) ) &&
+	      ((cat & 0xff) == category ||
 	       (cat & 0xff00) == (category<<8) ||
-	       (cat & 0xff0000) == (category <<16)
-	       ){
+	       (cat & 0xff0000) == (category <<16) )
+	      ){
 	    menuitems[curmi].isfolder = cur; // little hack: store index of the command in the full list in the isfolder property (unused by the menu system in this case)
 	    menuitems[curmi].text = (char *) completeCat[cur].name;
 	    curmi++;
@@ -1738,7 +1823,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	}
 	cur++;
       }
-  
+      
       Menu menu;
       menu.items=menuitems;
       menu.numitems=curmi;
@@ -1757,7 +1842,13 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 #else
 	PrintMini(0,200,(category==CAT_CATEGORY_ALL?"Toolbox help | Ans ex1 | EXE  ex2":"Toolbox help | Ans ex1 | EXE ex2"),4,33333,giac::_WHITE);
 #endif
-	int sres = doMenu(&menu);
+	int sres = 0;
+	if (curmi==0){
+	  do_confirm(lang==1?"Commandes seulement en mode Xcas":"Commands only in Xcas mode");
+	  sres=MENU_RETURN_EXIT;
+	}
+	else
+	  sres=doMenu(&menu);
 	if (sres==KEY_CTRL_F4 && category!=CAT_CATEGORY_ALL){
 	  break;
 	}
@@ -1781,6 +1872,8 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	  std::vector<xcas::textElement> & elem=text.elements;
 	  elem = std::vector<xcas::textElement> (example2?4:3);
 	  elem[0].s = index<allcmds?completeCat[index].name:menuitems[menu.selection-1].text;
+	  if (index<allcmds && (completeCat[index].category & XCAS_ONLY) )
+	    elem[0].s += lang==1?" (Xcas seulement)":" (Xcas only)";
 	  elem[0].newLine = 0;
 	  //elem[0].color = COLOR_BLUE;
 	  elem[1].newLine = 1;
@@ -1936,16 +2029,29 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     return 0;
   }
 
+  int trialpha(const void *p1,const void * p2){
+    int i=strcmp(* (char * const *) p1, * (char * const *) p2);
+    return i;
+  }
+
   gen select_var(GIAC_CONTEXT){
     kbd_interrupted=giac::ctrl_c=giac::interrupted=false;
 #ifdef MICROPY_LIB
     if (xcas_python_eval==1){
+      micropy_ck_eval("");
       const char ** tab=(const char **)mp_vars();
+      const char **ptr=tab;
+      for (;*ptr;)
+	++ptr;
+      // del at end should not be sorted
+      if (ptr-tab>=1 && strcmp(*(ptr-1),"del ")==0)
+	--ptr;
+      qsort(tab,ptr-tab,sizeof(char *),trialpha);
       if (tab){
 	int i=select_item(tab,"VARS",true);
 	gen g=undef;
 	if (i>=0 && tab[i])
-	  g=gen(tab[i],contextptr);
+	  g=string2gen(tab[i],false);
 	free(tab);
 	return g;
       }
@@ -3020,7 +3126,14 @@ namespace xcas {
     draw_rectangle(x,y,w,h,c,context0);
   }
   void draw_line(int x0,int y0,int x1,int y1,int c){
-    draw_line(x0,y0,x1,y1,c,context0);
+    if (x0==x1)
+      draw_rectangle(x0,y0,1,y1-y0+1,c);
+    else {
+      if (y0==y1)
+	draw_rectangle(x0,y0,x1-x0+1,1,c);
+      else
+	draw_line(x0,y0,x1,y1,c,context0);
+    }
   }
   void draw_circle(int xc,int yc,int r,int color,bool q1,bool q2,bool q3,bool q4){
     draw_circle(xc,yc,r,color,q1,q2,q3,q4,context0);
@@ -6563,6 +6676,9 @@ namespace xcas {
     return false;
   }
 
+  const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF5  2d \nreserved\nF4 menu\nreserved\nF6 reg\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF: misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \nperiodic_table\n";
+
+  const char python_conf_standard[] = "F1 misc\nprint(\ninput(\n;\n:\n[]\ndef f(x): return\ncaseval(\"\nfrom cas import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nsign(\nsqrt(\nfrom math import *\nF3 c&rand\nrandint(\nrandom()\nchoice(\nfrom random import *\n.real\n.imag\nphase(\nfrom cmath import *\nF4 menu\nreserved\nF5  2d\nreserved\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF7 linalg\nmatrix(\nadd(\nsub(\nmul(\ninv(\nrref(\ntranspose(\nfrom linalg import *\nF8 list\nlist(\nrange(\nlen(\nappend(\nhead(\nsort(\napply(\nF9 plot\nclf()\nplot(\ntext(\narrow(\nscatter(\nbar(\nshow()\nfrom matplotl import *\nF: color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF< prog\n|\n&\n#\nhexprint(\nbinprint(\ndebug(\npython\nxcas\nF= numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *\nF> arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\n";
   
   int eqws(char * s,bool eval,GIAC_CONTEXT){ // s buffer must be at least 512 char
     gen g,ge;
@@ -6605,7 +6721,12 @@ namespace xcas {
       if (taille(ge,256)>=256)
 	return 0;
     }
+    int xp=xcas_python_eval;
+    xcas_python_eval=0;
+    Console_FMenu_Init(contextptr);
     gen tmp=eqw(ge,true,contextptr);
+    xcas_python_eval=xp;
+    Console_FMenu_Init(contextptr);
     if (is_undef(tmp) || tmp==ge || taille(ge,64)>=64)
       return 0;
     string S(tmp.print(contextptr));
@@ -7188,7 +7309,15 @@ namespace xcas {
     return 0;
   }
 
-  void print(int &X,int&Y,const char * buf,int color,bool revert,bool fake,bool minimini){
+  void print(int &X,int&Y,const char * buf_,int color,bool revert,bool fake,bool minimini){
+    int s=strlen(buf_);
+    char buf[s+1];
+    strcpy(buf,buf_);
+    for (int i=0;i<s;++i){
+      char & ch=buf[i];
+      if (ch=='\n')
+	ch='\\';
+    }
     if(minimini) 
       X=PrintMiniMini(X, Y, buf, revert?4:0, color, COLOR_WHITE,fake);
     else
@@ -7371,15 +7500,23 @@ namespace xcas {
     }
     strncpy(buf,s,ptr-s);
     buf[ptr-s]=0;
-    if (strcmp(buf,"def")==0)
+    if (strcmp(buf,"def")==0 || strcmp(buf,"import")==0)
       return 1;
     //int pos=dichotomic_search(keywords,sizeof(keywords),buf);
     //if (pos>=0) return 1;
     gen g;
     int token=find_or_make_symbol(buf,g,0,false,contextptr);
     //*logptr(contextptr) << s << " " << buf << " " << token << " " << g << endl;
-    if (token==T_UNARY_OP || token==T_UNARY_OP_38 || token==T_LOGO)
+    if (token==T_UNARY_OP || token==T_UNARY_OP_38 || token==T_LOGO){
+#ifdef MICROPY_LIB
+      if (xcas_python_eval==1){
+	micropy_ck_eval("");
+	int token=mp_token(buf);
+	return token;
+      }
+#endif 
       return 3;
+    }
     if (token==T_NUMBER)
       return 2;
     if (token!=T_SYMBOL)
@@ -7469,7 +7606,7 @@ namespace xcas {
 #ifdef CURSOR  
     Cursor_SetFlashOff();
 #endif
-    drawRectangle(text->x, text->y, LCD_WIDTH_PX, LCD_HEIGHT_PX-text->y, COLOR_WHITE);
+    // waitforvblank(); drawRectangle(text->x, text->y, LCD_WIDTH_PX, LCD_HEIGHT_PX-text->y, COLOR_WHITE);
     bool editable=text->editable;
     int showtitle = !editable && (text->title != NULL);
     std::vector<textElement> & v=text->elements;
@@ -7526,6 +7663,7 @@ namespace xcas {
     if (!match(text,text->pos,line1,pos1,line2,pos2) && line1==-1 && line2==-1)
       match(text,text->pos-1,line1,pos1,line2,pos2);
     //char bufpos[512];  sprintf(bufpos,"%i,%i:%i,%i       ",line1,pos1,line2,pos2);  puts(bufpos);
+    bool firstrect=true;
     for (int cur=0;cur < v.size();++cur) {
       const char* src = v[cur].s.c_str();
       if (cur==0){
@@ -7540,7 +7678,7 @@ namespace xcas {
 	  change_mode(text,1,contextptr); // text->python=true;
 	//drawRectangle(text->x, text->y, text->width, LCD_HEIGHT_PX-(editable?17:0), COLOR_WHITE);
       }
-      if (cur%4==0 && textY>=(showtitle?24:0))
+      if (cur%3==0 && textY>=(showtitle?24:0) && textY<LCD_HEIGHT_PX)
 	waitforvblank();
       int textX=text->x,saveY=textY;
       if(v[cur].newLine) {
@@ -7563,8 +7701,13 @@ namespace xcas {
 	  break;
 	}
       }
-      //if (dh>0 && textY>=(showtitle?24:0))
-      //drawRectangle(textX, textY, LCD_WIDTH_PX, dh, COLOR_WHITE);
+      if (dh>0 && textY>=(showtitle?24:0)){
+	if (firstrect){
+	  drawRectangle(textX,text->y,LCD_WIDTH_PX,textY-text->y,COLOR_WHITE);
+	  firstrect=false;
+	}
+	drawRectangle(textX, textY, LCD_WIDTH_PX, dh, COLOR_WHITE);
+      }
       if (editable && textY>=(showtitle?24:0)){
 	char line_s[16];
 	sprint_int(line_s,cur+1);
@@ -7579,6 +7722,7 @@ namespace xcas {
 	  textpos=tlen;
 	if (tlen==0 && text->editable){ // cursor on empty line
 	  drawRectangle(textX,textY,3,16,COLOR_BLACK);
+	  text->cursorx=textX; text->cursory=textY;
 	}
       }
       bool chksel=false;
@@ -7705,8 +7849,13 @@ namespace xcas {
 	  //time for a new line
 	  textX=text->x+deltax;
 	  textY=textY+text->lineHeight+v[cur].lineSpacing;
-	  //if (textY>=(showtitle?24:0))
-	  //  drawRectangle(0, textY, LCD_WIDTH_PX, 18+v[cur].lineSpacing, COLOR_WHITE);
+	  if (textY>=(showtitle?24:0)){
+	    if (firstrect){
+	      drawRectangle(textX,text->y,LCD_WIDTH_PX,textY-text->y,COLOR_WHITE);
+	      firstrect=false;
+	    }
+	    drawRectangle(text->x, textY, LCD_WIDTH_PX, 18+v[cur].lineSpacing, COLOR_WHITE);
+	  }
 	  ++nlines;
 	} //else still fits, print new word normally (or just increment textX, if we are not "on stage" yet)
 	if(textY >= (showtitle?24:0) && textY < LCD_HEIGHT_PX) {
@@ -7715,7 +7864,7 @@ namespace xcas {
 	    couleur=linecomment?5:find_color(singleword,contextptr);
 	    if (couleur==1) couleur=COLOR_BLUE;
 	    if (couleur==2) couleur=COLOR_YELLOWDARK;
-	    if (couleur==3) couleur=33024;
+	    if (couleur==3) couleur=51712;//33024;
 	    if (couleur==4) couleur=COLOR_MAGENTA;
 	    if (couleur==5) couleur=COLOR_GREEN;
 	    //char ch[32];
@@ -7768,6 +7917,7 @@ namespace xcas {
 	      //drawLine(temptextX, textY+14, temptextX, textY-14, COLOR_BLACK);
 	      //drawLine(temptextX+1, textY+14, temptextX+1, textY-14, COLOR_BLACK);
 	      drawRectangle(temptextX-1,textY,3,16,COLOR_BLACK);
+	      text->cursorx=temptextX-1; text->cursory=textY;
 	    }
 	  }
 	} // end if testY visible
@@ -7792,7 +7942,7 @@ namespace xcas {
     }
     //if (editable)
     if (editable){
-      // waitforvblank();
+      waitforvblank();
       drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
       PrintMiniMini(0,205,text->python?"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 lin|8 list|9plot":"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 matr|8 list",4,44444,giac::_BLACK);
       //draw_menu(1);
@@ -8084,6 +8234,93 @@ namespace xcas {
     return search;
   }
 
+  bool tooltip(int x,int y,int pos,const char * editline,GIAC_CONTEXT){
+    char cmdline[strlen(editline)+1];
+    strcpy(cmdline,editline);
+    cmdline[pos]=0;
+    int l=strlen(cmdline);
+    char buf[l+1];
+    strcpy(buf,cmdline);
+    bool openpar=l && buf[l-1]=='(';
+    if (openpar){
+      buf[l-1]=0;
+      --l;
+    }
+    for (;l>0;--l){
+      if (!isalphanum(buf[l-1]) && buf[l-1]!='_')
+	break;
+    }
+    // cmdname in buf+l
+    const char * cmdname=buf+l,*cmdnameorig=cmdname;
+    int l1=strlen(cmdname);
+    if (l1<2)
+      return false;
+    const char * howto=0,*syntax=0,*related=0,*examples=0;
+    if (l1>0 && has_static_help(cmdname,lang | 0x100,howto,syntax,related,examples) && examples){
+      // display tooltip
+      if (x<0)
+	x=os_draw_string(0,y,_BLACK,1234,cmdline,true); // fake print -> x position
+      x+=2;
+      y+=4;
+      drawRectangle(x,y,6,10,65529);
+      draw_line(x,y,x+6,y,_BLACK);
+      draw_line(x,y,x+3,y+3,_BLACK);
+      draw_line(x+6,y,x+3,y+3,_BLACK);
+      y-=4;
+      x+=7;
+      int bg=65529; // background
+      x=os_draw_string_small(x,y,_BLACK,bg,": ",false);
+      if (howto && strlen(howto)){
+#ifdef NSPIRE_NEWLIB
+	y-=2;
+#endif
+	os_draw_string_small(x,y,_BLACK,bg,remove_accents(howto).c_str(),false);
+#ifdef NSPIRE_NEWLIB
+	y+=12;
+#else
+	y+=11;
+#endif
+      }
+      string toolt;
+      if (related && strlen(related)){
+	toolt += cmdname;
+	toolt += '(';
+	if (syntax && strlen(syntax))
+	  toolt += syntax;
+	else
+	  toolt += "arg";
+	toolt += ')';
+	toolt += ' ';
+	if (related)
+	  toolt += related;
+      }
+      else
+	toolt+=examples;
+      os_draw_string_small(x,y,_BLACK,bg,toolt.c_str(),false);
+      return true;
+    }
+    return false;
+  }
+
+  void textarea_help_insert(textArea * text,int exec,GIAC_CONTEXT){
+    string curs=text->elements[text->line].s.substr(0,text->pos);
+    if (!curs.empty()){
+      int b;
+      string adds=help_insert(curs.c_str(),b,exec,contextptr);
+      if (!adds.empty()){
+	if (b>0){
+	  std::string & s=text->elements[text->line].s;
+	  if (b>text->pos)
+	    b=text->pos;
+	  if (b>s.size())
+	    b=s.size();
+	  s=s.substr(0,text->pos-b)+s.substr(b,s.size()-b);
+	}
+	insert(text,adds.c_str(),false);
+      }
+    }
+  }
+  
   int doTextArea(textArea* text,GIAC_CONTEXT) {
     int scroll = 0;
     int isFirstDraw = 1;
@@ -8097,14 +8334,29 @@ namespace xcas {
     if (text->line>=v.size())
       text->line=0;
     display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
+    bool keytooltip=false;
     while(1) {
       if (text->line>=v.size())
 	text->line=0;
-      display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
+      if (!keytooltip)
+	display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
       if(text->type == TEXTAREATYPE_INSTANT_RETURN) return 0;
       int keyflag = GetSetupSetting( (unsigned int)0x14);
       int key;
       GetKey(&key);
+      if (keytooltip){
+	keytooltip=false;
+	if (key==KEY_CTRL_RIGHT && text->pos==text->elements[text->line].s.size())
+	  key=KEY_CTRL_OK;
+	if (key==KEY_CTRL_EXIT)
+	  continue;
+	if (key==KEY_CTRL_DOWN || key==KEY_CTRL_VARS)
+	  key=KEY_BOOK;
+	if (key==KEY_CTRL_OK || key==KEY_CHAR_ANS){
+	  textarea_help_insert(text,key,contextptr);
+	  continue;
+	}
+      }
       if (key==KEY_SHUTDOWN)
 	return key;
       if (key==KEY_CTRL_F3) // Numworks has no UNDO key
@@ -8155,12 +8407,7 @@ namespace xcas {
 	  key=KEY_BOOK;
 	}
 	if (key==KEY_BOOK){
-	  string curs=v[textline].s.substr(0,textpos);
-	  if (!curs.empty()){
-	    string adds=help_insert(curs.c_str(),contextptr);
-	    if (!adds.empty())
-	      insert(text,adds.c_str(),false);
-	  }
+	  textarea_help_insert(text,0,contextptr);
 	  continue;
 	}
 	if (key==KEY_CHAR_FRAC && clipline<0){
@@ -8264,7 +8511,7 @@ namespace xcas {
 	       ){
 	    string le_menu=text->python?
 	      "F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF9 plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\nmul(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF: color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\npolar(\nrect(\nfrom cmath import *\n":
-	      "F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nlocal\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF: arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF9 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF= misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
+	      "F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nlocal\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF= plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF: misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
 	    le_menu += "F8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\n";
 	    const char * ptr=console_menu(key,(char*)(le_menu.c_str()),2);
 	    if (!ptr){
@@ -8324,6 +8571,12 @@ namespace xcas {
 		adds=(lang==1)?(isex?"fonction f(x)\nlocal j;\nj:=x*x;\nreturn j;\nffonction:;\n":"fonction f(x)\nlocal j;\n\nreturn ;\nffonction:;"):(isex?"function f(x)\nlocal j;\nj:=x*x;\nreturn j;\nffunction:;\n":"function f(x)\n  local j;\n\n return ;\nffunction:;");
 	    }
 	    insert(text,adds,key!=KEY_CTRL_PASTE); // was true, but we should not indent when pasting
+	    display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
+	    const string & s=v[textline].s;
+	    int cx=text->cursorx,cy=text->cursory,cp=text->pos;
+	    if (tooltip(cx,cy,cp,s.substr(0,cp).c_str(),contextptr)){
+	      keytooltip=true;
+	    }
 	    show_status(text,search,replace);
 	    continue;
 	  }
@@ -9448,8 +9701,12 @@ namespace xcas {
 #endif
     }
     console_changed=0;
-    if (python_compat(contextptr)&4)
+    if (python_compat(contextptr)&4){
       xcas_python_eval=1;
+      if (edptr){
+	check_parse(edptr,edptr->elements,python_compat(contextptr),contextptr);
+      }
+    }
     Console_FMenu_Init(contextptr); // insure the menus are sync-ed
     return true;
   }
@@ -10143,6 +10400,8 @@ namespace xcas {
       }
       else {
 	python_compat(1,contextptr);
+	// fake lexer required to initialize color syntax
+	gen g("abs",contextptr);
 	*logptr(contextptr) << "Xcas interpreter, Python compatible mode\n";
       }
 #endif
@@ -10311,10 +10570,36 @@ namespace xcas {
 	// reload_edptr(session_filename,edptr);
       }     
     }
-  }    
+  }
+
+  bool Console_tooltip(GIAC_CONTEXT){
+    if (Current_Line==Last_Line && !Line[Current_Line].readonly && Current_Col>0){
+      int y=(Current_Line>10?180:Current_Line*18);
+      return tooltip(-1 /* means compute size before cursor*/,y,Cursor.x,Edit_Line,contextptr);
+    }
+    return false;
+  }
+
+  bool console_help_insert(int exec,GIAC_CONTEXT){
+    if (!Edit_Line)
+      return false;
+    char buf[strlen(Edit_Line)+1];
+    strcpy(buf,Edit_Line);
+    buf[Cursor.x]=0;
+    int back;
+    string s=help_insert(buf,back,exec,contextptr);
+    if (s.empty())
+      return false;
+    for (int i=0;i<back;++i)
+      Console_Backspace(contextptr);
+    Console_Input(s.c_str());
+    Console_Disp(1,contextptr);
+    return true;
+  }
   
   int Console_GetKey(GIAC_CONTEXT){
     int key;
+    bool keytooltip=false;
     unsigned int i, move_line, move_col;
     char tmp_str[2];
     char *tmp;
@@ -10323,6 +10608,24 @@ namespace xcas {
       GetKey(&key);
       if (key==KEY_SHUTDOWN)
 	return key;
+      if (keytooltip){
+	keytooltip=false;
+	if (key==KEY_CTRL_EXIT){
+	  Console_Disp(1,contextptr);
+	  continue;
+	}
+	if (Current_Line==Last_Line && Line[Current_Line].start_col+Cursor.x==strlen(Edit_Line) && (key==KEY_CTRL_OK || key==KEY_CHAR_ANS || key==KEY_CTRL_RIGHT)){
+	  if (key==KEY_CTRL_RIGHT)
+	    key=KEY_CTRL_OK;
+	  if (console_help_insert(key,contextptr)){
+	    Console_Disp(1,contextptr);
+	    keytooltip=Console_tooltip(contextptr);
+	    continue;
+	  }
+	}
+	if (key==KEY_CTRL_VARS)
+	  key=KEY_BOOK;	
+      }
       bool alph=alphawasactive(&key);
       if (key==KEY_PRGM_ACON)
 	Console_Disp(1,contextptr);
@@ -10371,6 +10674,8 @@ namespace xcas {
 	tmp_str[1] = '\0';
 	Console_Input(tmp_str);
 	Console_Disp(1,contextptr);
+	// tooltip
+	keytooltip=Console_tooltip(contextptr);
 	continue;
       }
       if (key == KEY_CTRL_F5 || key==KEY_EQW_TEMPLATE || key==KEY_CTRL_F4 || ( (key==KEY_CTRL_RIGHT || key==KEY_CTRL_LEFT) && Current_Line<Last_Line) ){
@@ -10711,7 +11016,10 @@ namespace xcas {
       if ( (key >= KEY_CTRL_F1 && key <= KEY_CTRL_F6) ||
 	   (key >= KEY_CTRL_F7 && key <= KEY_CTRL_F14) 
 	   ){
-	return Console_FMenu(key,contextptr);
+	Console_FMenu(key,contextptr);
+	Console_Disp(1,contextptr);
+	keytooltip=Console_tooltip(contextptr);
+	continue;
       }
       if (key == KEY_CTRL_UP)
 	return Console_MoveCursor(alph?CURSOR_ALPHA_UP:CURSOR_UP);
@@ -10720,13 +11028,8 @@ namespace xcas {
 	  || key==KEY_BOOK
 	  ){
 	if (Current_Line==Last_Line && !Line[Current_Line].readonly && Current_Col>0){
-	  char buf[strlen(Edit_Line)+1];
-	  strcpy(buf,Edit_Line);
-	  buf[Cursor.x]=0;
-	  string s=help_insert(buf,contextptr);
-	  Console_Input(s.c_str());
-	  Console_Disp(1,contextptr);
-	  Console_MoveCursor(CURSOR_SHIFT_RIGHT);
+	  console_help_insert(0,contextptr);
+	  Console_Disp(1,contextptr);	  
 	  continue;
 	}
 	return Console_MoveCursor(alph?CURSOR_ALPHA_DOWN:CURSOR_DOWN);
@@ -10814,9 +11117,13 @@ namespace xcas {
 	    return Console_NewLine(LINE_TYPE_INPUT, 1);
 	  }
       }
-      if (key == KEY_CTRL_DEL)
-	return Console_Backspace(contextptr);
-      if (key == KEY_CTRL_R){
+      if (key == KEY_CTRL_DEL){
+	Console_Backspace(contextptr);
+	Console_Disp(1,contextptr);
+	keytooltip=Console_tooltip(contextptr);
+	continue;	
+      }
+      if (key == KEY_CTRL_R && (Current_Line!=Last_Line || Cursor.x==0)){
 	run_session(0,contextptr);
 	return 0;
       }
@@ -10842,8 +11149,12 @@ namespace xcas {
 	return Console_Input(tmp);
       }
       const char * ptr=keytostring(key,keyflag,0,contextptr);
-      if (ptr)
-	return Console_Input((const char *)ptr);
+      if (ptr){
+	Console_Input((const char *)ptr);
+	Console_Disp(1,contextptr);
+	keytooltip=Console_tooltip(contextptr);
+	continue;
+      }
     
     }
     return CONSOLE_NO_EVENT;
@@ -11097,10 +11408,6 @@ namespace xcas {
     return CONSOLE_SUCCEEDED;
   }
 
-  const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF5  2d \nreserved\nF4 menu\nreserved\nF6 reg\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF= misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \nperiodic_table\n";
-
-  const char python_conf_standard[] = "F1 misc\n\"\n\'\n;\n:\n[]\ndef f(x):return\ncaseval(\"\nfrom cas import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nsign(\nsqrt(\nfrom math import *\nF3 rand\nrandint(\nrandom()\nchoice(\nfrom random import *\nF4 menu\nreserved\nF5  2d\nreserved\nF; color\n\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF9 plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nmatrix(\nadd(\nsub(\nmul(\ninv(\nrref(\ntranspose(\nfrom linalg import *\nF8 list\nlist(\nrange(\nlen(\nappend(\nhead(\nsort(\napply(\nF: color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\npolar(\nrect(\nfrom cmath import *\nF; draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\n";
-
   // Loads the FMenus' data into memory, from a cfg file
   void Console_FMenu_Init(GIAC_CONTEXT)
   {
@@ -11173,7 +11480,93 @@ namespace xcas {
     return locate(x+1,y+1);
   }
 
-  void PrintRev(const char * s,int color=TEXT_COLOR_BLACK){
+  int print_color(int print_x,int print_y,const char *s,int color,bool invert,bool minimini,GIAC_CONTEXT){
+    int python=python_compat(contextptr);
+    const char * src=s;
+    char singleword[128];
+    bool linecomment=false;
+    int couleur=color;
+    while (*src && print_y<LCD_WIDTH_PX){
+      const char * oldsrc=src;
+      if ( (python && *src=='#') ||
+	   (!python && *src=='/' && *(src+1)=='/')){
+	linecomment=true;
+	couleur=4;
+      }
+      if (linecomment)
+	src = (char*)toksplit((unsigned char*)src, ' ', (unsigned char*)singleword, minimini?50:35); //break into words; next word
+      else { // skip string (only with delimiters " ")
+	if (*src=='"'){
+	  for (++src;*src;++src){
+	    if (*src=='"' && *(src-1)!='\\')
+	      break;
+	  }
+	  if (*src=='"')
+	    ++src;
+	  int i=src-oldsrc;
+	  strncpy(singleword,oldsrc,i);
+	  singleword[i]=0;
+	}
+	else {
+	  size_t i=0;
+	  for (;*src==' ';++src){ // skip initial whitespaces
+	    ++i;
+	  }
+	  if (i==0){
+	    if (isalpha(*src)){ // skip keyword
+	      for (;isalphanum(*src) || *src=='_';++src){
+		++i;
+	      }
+	    }
+	    // go to next space or alphabetic char
+	    for (;*src;++i,++src){
+	      if (*src==' ' || (i && *src>=' ' && *src<='/') || (python && *src=='#') || (!python && *src=='/' && *(src+1)=='/')|| *src=='"' || isalpha(*src))
+		break;
+	    }
+	  }
+	  strncpy(singleword,oldsrc,i);
+	  singleword[i]=0;
+	  if (i==0){
+	    puts(src); // free(singleword);
+	    return print_x; // FIXME KEY_CTRL_F2;
+	  }
+	} // end normal case
+      } // end else linecomment case
+      couleur=linecomment?5:find_color(singleword,contextptr);
+      if (couleur==1) couleur=COLOR_BLUE;
+      if (couleur==2) couleur=COLOR_YELLOWDARK;
+      if (couleur==3) couleur=51712;//33024;
+      if (couleur==4) couleur=COLOR_MAGENTA;
+      if (couleur==5) couleur=COLOR_GREEN;
+      if (linecomment || singleword[0]=='"')
+	print(print_x,print_y,singleword,couleur,invert,/*fake*/false,minimini);
+      else { // print two parts, commandname in color and remain in black
+	char * ptr=singleword;
+	if (isalpha(*ptr)){
+	  while (isalphanum(*ptr) || *ptr=='_')
+	    ++ptr;
+	}
+	char ch=*ptr;
+	*ptr=0;
+	print(print_x,print_y,singleword,couleur,invert,/*fake*/false,minimini);
+	*ptr=ch;
+	print(print_x,print_y,ptr,COLOR_BLACK,invert,/*fake*/false,minimini);
+      }
+      // ?add a space removed from token
+      if( linecomment?*src:*src==' ' ){
+	if (*src==' ')
+	  ++src;
+	print(print_x,print_y," ",COLOR_BLACK,invert,false,minimini);
+      }
+    }
+    return print_x;
+  }    
+
+  void print_color(const char *s,int color,bool invert,bool minimini,GIAC_CONTEXT){
+    print_x=print_color(print_x,print_y,s,color,invert,minimini,contextptr);
+  }
+
+  void PrintRev(const char * s,int color,bool colorsyntax,GIAC_CONTEXT){
 #ifdef CURSOR
     Print_OS((char *)s,TEXT_MODE_INVERT,0);
 #else
@@ -11181,16 +11574,20 @@ namespace xcas {
 #endif  
   }
 
-  void Print(const char * s,int color=TEXT_COLOR_BLACK){
+  void Print(const char * s,int color,bool colorsyntax,GIAC_CONTEXT){
 #ifdef CURSOR
     Print_OS((char *)s,TEXT_MODE_NORMAL,0);
 #else
-    print(print_x,print_y,(const char *)s,color,false,false,false);
+    if (!colorsyntax || (strlen(s)==1 && (s[0]=='>' || s[0]=='<')))
+      print(print_x,print_y,(const char *)s,color,false,false,false);
+    else
+      print_color(s,color,false,false,contextptr);
 #endif
   }
 
   // redraw_mode=1 clear area
   int Console_Disp(int redraw_mode,GIAC_CONTEXT){
+    bool minimini=false;
     unsigned int* pBitmap;
     int i, alpha_shift_status;
     DISPBOX ficon;
@@ -11205,6 +11602,7 @@ namespace xcas {
     //Reading each "line" that will be printed
     for (i = 0; (i < LINE_DISP_MAX) && (i + Start_Line <= Last_Line); i++){
       console_line & curline=Line[i+Start_Line];
+      bool colorsyntax=curline.type == LINE_TYPE_INPUT;
       if (i == Cursor.y){
 	// cursor line
 	//if ((redraw_mode & 1)==0)
@@ -11215,23 +11613,23 @@ namespace xcas {
 #ifdef CURSOR
 	    Cursor_SetFlashOff();
 #endif
-	    PrintRev(curline.str + curline.start_col);
+	    PrintRev(curline.str + curline.start_col,TEXT_COLOR_BLACK,colorsyntax,contextptr);
 	  }
 	  else 
-	    Print(curline.str+curline.start_col+(Cursor.x>COL_DISP_MAX-1?1:0));
+	    Print(curline.str+curline.start_col+(Cursor.x>COL_DISP_MAX-1?1:0),TEXT_COLOR_BLACK,colorsyntax,contextptr);
 	}
 	else {
 	  locate(1, i + 1);
-	  print(print_x,print_y,(const char *)curline.str,TEXT_COLOR_BLACK,false,true/*fake*/,false);
+	  print(print_x,print_y,(const char *)curline.str,TEXT_COLOR_BLACK,false,true/*fake*/,minimini); // fake print
 	  print_x=LCD_WIDTH_PX-print_x;
 	  if (curline.readonly){
 #ifdef CURSOR
 	    Cursor_SetFlashOff();
 #endif
-	    PrintRev(curline.str);
+	    PrintRev(curline.str,TEXT_COLOR_BLACK,colorsyntax,contextptr);
 	  }
 	  else 
-	    Print(curline.str);
+	    Print(curline.str,TEXT_COLOR_BLACK,colorsyntax,contextptr);
 	}
 
 	if (
@@ -11252,11 +11650,11 @@ namespace xcas {
 #ifdef CURSOR
 	      Cursor_SetFlashOff();
 #endif
-	      PrintRev((char *)">",COLOR_MAGENTA);
+	      PrintRev((char *)">",COLOR_MAGENTA,colorsyntax,contextptr);
 	    }
 	  }
 	  else if (Cursor.x < COL_DISP_MAX-1){
-	    Print((char *)">",COLOR_MAGENTA);
+	    Print((char *)">",COLOR_MAGENTA,colorsyntax,contextptr);
 	  }
 	}
 
@@ -11266,14 +11664,73 @@ namespace xcas {
 #ifdef CURSOR
 	    Cursor_SetFlashOff();
 #endif		  
-	    PrintRev((char *)"<",COLOR_MAGENTA);
+	    PrintRev((char *)"<",COLOR_MAGENTA,colorsyntax,contextptr);
 	  }
 	  else {
-	    Print((char *)"<",COLOR_MAGENTA);
+	    Print((char *)"<",COLOR_MAGENTA,colorsyntax,contextptr);
 	  }
 	}
 
 	if (!curline.readonly){
+	  int fakestart=curline.start_col+(Cursor.x > COL_DISP_MAX-1?1:0);
+	  int fakex,fakey=Cursor.y*vfontsize;
+	  string fakes;
+	  // parenthese match
+	  const char * str=curline.str;
+	  int pos=Cursor.x+fakestart,pos2;
+	  int l=strlen(str);
+	  char ch=0;
+	  if (pos<l)
+	    ch=str[pos];
+	  int matchdirection=0,paren=0,crochet=0,accolade=0;
+	  if (ch=='(' || ch=='[' || ch=='{')
+	    matchdirection=1;
+	  if (ch=='}' || ch==']' || ch==')')
+	    matchdirection=-1;
+	  if (!matchdirection && pos){
+	    --pos;
+	    ch=str[pos];
+	    if (ch=='(' || ch=='[' || ch=='{')
+	      matchdirection=1;
+	    if (ch=='}' || ch==']' || ch==')')
+	      matchdirection=-1;
+	  }
+	  if (matchdirection){
+	    char buf[2]={0,0};
+	    bool ok=true;
+	    for (pos2=pos;ok && (pos2>=0 && pos2<l);pos2+=matchdirection){
+	      ch=str[pos2];
+	      if (ch=='(') ++paren;
+	      if (ch==')') --paren;
+	      if (ch=='[') ++crochet;
+	      if (ch==']') --crochet;
+	      if (ch=='{') ++accolade;
+	      if (ch=='}') --accolade;
+	      if (matchdirection>0 && (paren<0 || crochet<0 || accolade<0) )
+		ok=false;
+	      if (matchdirection<0 && (paren>0 || crochet>0 || accolade<0) )
+		ok=false;
+	      if (paren==0 && crochet==0 && accolade==0)
+		break;
+	    }
+	    ok = paren==0 && crochet==0 && accolade==0;
+	    if (pos>fakestart){
+	      fakex=0;
+	      buf[0]=str[pos];
+	      fakes=string((const char *)curline.str).substr(fakestart,pos-fakestart);
+	      print(fakex,fakey,fakes.c_str(),TEXT_COLOR_BLACK,false,true/* fake*/,minimini); // fake print
+	      print(fakex,fakey,buf,ok?TEXT_COLOR_GREEN:TEXT_COLOR_RED,true/* revert*/,false,minimini);
+	    }
+	    if (ok){
+	      fakex=0;
+	      if (pos2>fakestart){
+		fakes=string((const char *)curline.str).substr(fakestart,pos2-fakestart);
+		print(fakex,fakey,fakes.c_str(),TEXT_COLOR_BLACK,false,true/* fake*/,false); // fake print
+		buf[0]=str[pos2];
+		print(fakex,fakey,buf,TEXT_COLOR_GREEN,true/* revert*/,false,minimini);
+	      }
+	    }
+	  }
 #ifdef CURSOR
 	  switch(GetSetupSetting( (unsigned int)0x14)) {
 	  case 0: 
@@ -11299,10 +11756,9 @@ namespace xcas {
 	  //locate(Cursor.x+1,Cursor.y+1);
 	  //DefineStatusMessage((giac::print_DOUBLE_(Cursor.y,6)+","+giac::print_DOUBLE_(print_y,6)).c_str(),1,0,0);
 	  //DisplayStatusArea();
-	  int fakestart=curline.start_col+(Cursor.x > COL_DISP_MAX-1?1:0);
-	  string fakes=string((const char *)curline.str).substr(fakestart,Cursor.x);
-	  int fakex=0,fakey=Cursor.y*vfontsize;
-	  print(fakex,fakey,fakes.c_str(),TEXT_COLOR_BLACK,false,true/* fake*/,false);
+	  fakes=string((const char *)curline.str).substr(fakestart,Cursor.x);
+	  fakex=0;
+	  print(fakex,fakey,fakes.c_str(),TEXT_COLOR_BLACK,false,true/* fake*/,minimini); // fake print
 	  drawRectangle(fakex,fakey,2,vfontsize,COLOR_BLACK);
 	  //drawRectangle(Cursor.x*hfontsize,24+Cursor.y*vfontsize,2,vfontsize,COLOR_BLACK);
 #endif
@@ -11315,15 +11771,15 @@ namespace xcas {
 	bool bigoutput = curline.type==LINE_TYPE_OUTPUT && curline.disp_len>=COL_DISP_MAX-3;
 	locate(bigoutput?3:1,i+1);
 	if (curline.type==LINE_TYPE_INPUT || bigoutput)
-	  Print(curline.str + curline.start_col);
+	  Print(curline.str + curline.start_col,TEXT_COLOR_BLACK,colorsyntax,contextptr);
 	else {
 #ifdef CURSOR
 	  locate(COL_DISP_MAX - Line[i + Start_Line].disp_len + 1, i + 1);
 #else
-	  print(print_x,print_y,(const char *)curline.str,TEXT_COLOR_BLACK,false,true/*fake*/,false);
+	  print(print_x,print_y,(const char *)curline.str,TEXT_COLOR_BLACK,false,true/*fake*/,minimini);
 	  print_x=LCD_WIDTH_PX-print_x;
 #endif
-	  Print(curline.str);
+	  Print(curline.str,TEXT_COLOR_BLACK,colorsyntax,contextptr);
 	}
 	if (curline.disp_len - curline.start_col > COL_DISP_MAX){
 #ifdef CURSOR
@@ -11331,7 +11787,7 @@ namespace xcas {
 #else
 	  print_x=LCD_WIDTH_PX+2-hfontsize;
 #endif
-	  Print((char *)">",COLOR_BLUE);
+	  Print((char *)">",COLOR_BLUE,colorsyntax,contextptr);
 	}
 	if (curline.start_col > 0){
 #ifdef CURSOR
@@ -11339,7 +11795,7 @@ namespace xcas {
 #else
 	  print_x=0;
 #endif
-	  Print((char *)"<",COLOR_BLUE);
+	  Print((char *)"<",COLOR_BLUE,colorsyntax,contextptr);
 	}      
       } // end non cursor line
     } // end loop on all lines
@@ -11348,7 +11804,11 @@ namespace xcas {
     if ((redraw_mode & 1)==1){
       for (; (i < LINE_DISP_MAX) ; i++)
 	drawRectangle(0,i*vfontsize,LCD_WIDTH_PX,vfontsize,_WHITE);
+#if 0 // def NUMWORKS
+      string menu("shift-Ans help|1 ");
+#else
       string menu("shift-1 ");
+#endif
       menu += string(menu_f1);
       menu += "|2 ";
       menu += string(menu_f2);

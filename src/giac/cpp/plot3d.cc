@@ -822,7 +822,7 @@ namespace giac {
     gen s[12];
     gen centre=v[0],s1=v[1],s2=v[2];
     gen v1g(s1-centre),v2g(s2-centre);
-    // Icosaedre=s1+symetric of s1 with respect to center
+    // Icosaedre=s1+symmetric of s1 with respect to center
     // + 2* 5 points as a pentagon on 2 plans perpendicular to centre->s1
     // If the distance of the 2 // plans is 1 to the center
     // Then the 5 vertices are at distance 2 to the intersection axe/plan

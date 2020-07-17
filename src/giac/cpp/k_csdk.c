@@ -148,6 +148,11 @@ bool write_file(const char * filename,const char * s,size_t len){
 }
 
 #define FILENAME_MAXRECORDS 64
+  int c_trialpha(const void *p1,const void * p2){
+    int i=strcmp(* (char * const *) p1, * (char * const *) p2);
+    return i;
+  }
+
 char os_filenames[32][FILENAME_MAXRECORDS];
 int os_file_browser(const char ** filenames,int maxrecords,const char * extension){
   DIR *dp;
@@ -195,6 +200,10 @@ int os_file_browser(const char ** filenames,int maxrecords,const char * extensio
     }
   }
   closedir (dp);
+  filenames[cur]=NULL;
+#if 0
+  qsort(filenames,cur,sizeof(char *),c_trialpha);
+#else
   // qsort would be faster for large n, but here n<FILENAME_MAXRECORDS
   for (;;){
     bool finished=true;
@@ -209,7 +218,7 @@ int os_file_browser(const char ** filenames,int maxrecords,const char * extensio
     if (finished)
       break;
   }
-  filenames[cur]=NULL;
+#endif
   return cur;
 }
 

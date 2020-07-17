@@ -896,7 +896,7 @@ namespace giac {
   }
 
   // a[astart..aend[ + b[bstart..bend[ to res
-  // M==0 integer addition, M==-1 integer substraction, else gf_char2
+  // M==0 integer addition, M==-1 integer subtraction, else gf_char2
   void gf_char2_addp(const vector<int> & a,int astart,int aend,const vector<int> &b,int bstart,int bend,vector<int> & res,int M){
     res.clear();
     res.reserve(giacmax(aend-astart,bend-bstart));

@@ -1035,7 +1035,7 @@ namespace giac {
       a=a._SYMBptr->feuille[0];
       return;
     }
-    b=string2gen(gettext("Unitialized parameter ")+a.print(contextptr),false);
+    b=string2gen(gettext("Uninitialized parameter ")+a.print(contextptr),false);
     b.subtype=-1;
   }
 
@@ -3126,7 +3126,7 @@ namespace giac {
       if (it->type==_IDNT){
 	names.push_back(*it);
 #if 1
-	gen err=string2gen(gettext("Unitialized local variable ")+it->print(contextptr),false);
+	gen err=string2gen(gettext("Uninitialized local variable ")+it->print(contextptr),false);
 	err.subtype=-1;
 	values.push_back(err);
 #else
@@ -3673,7 +3673,7 @@ namespace giac {
       if (selecting)
 	return symb_select(args);
       else {
-	if (f.type==_VECT){ // remove 1st occurence of v
+	if (f.type==_VECT){ // remove 1st occurrence of v
 	  vecteur w=*f._VECTptr;
 	  for (unsigned i=0;i<w.size();++i){
 	    if (w[i]==v){

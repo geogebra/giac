@@ -104,6 +104,7 @@ inline double giac_log(double d){
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
+  int dichotomic_search(const char * const * tab,unsigned tab_size,const char * s);
   void opaque_double_copy(void * source,void * target);
   double opaque_double_val(const void * source);
 
@@ -970,7 +971,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
 
   void read_config(const std::string & name,GIAC_CONTEXT,bool verbose=true);
   void protected_read_config(GIAC_CONTEXT,bool verbose=true);
-  vecteur remove_multiples(vecteur & v); // sort v and return list without multiple occurences
+  vecteur remove_multiples(vecteur & v); // sort v and return list without multiple occurrences
   int equalposcomp(const std::vector<int> v,int i);
   int equalposcomp(const std::vector<short int> v,int i);
   int equalposcomp(int tab[],int f);

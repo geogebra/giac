@@ -31,6 +31,7 @@ extern "C" {
   void mp_stack_ctrl_init();
   extern int parser_errorline,parser_errorcol;
 }
+int micropy_ck_eval(const char *line);
 #endif
 
 #include "k_csdk.h"
@@ -79,6 +80,9 @@ extern "C" {
   void turtle_freeze();
   void c_sprint_double(char * s,double d);
   extern int python_stack_size,python_heap_size;
+  extern int xcas_python_eval;
+  extern char * python_heap;
+  int python_init(int stack_size,int heap_size);
 }
 extern int lang;
 extern bool warn_nr;
@@ -98,6 +102,10 @@ namespace xcas {
   void draw_filled_polygon(std::vector< vector<int> > &L,int xmin,int xmax,int ymin,int ymax,int color);
   void draw_arc(int xc,int yc,int rx,int ry,int color,double theta1, double theta2);
   void draw_filled_arc(int x,int y,int rx,int ry,int theta1_deg,int theta2_deg,int color,int xmin,int xmax,int ymin,int ymax,bool segment);
+
+  //syntax colored printing
+  int print_color(int print_x,int print_y,const char *s,int color,bool invert,bool minimini,const giac::context * contextptr);
+  bool tooltip(int x,int y,int pos,const char * editline,const giac::context * contextptr);
 			   
   bool textedit(char * s,int bufsize,const giac::context * contextptr);
   // maximum "size" of symbolics displayed in an Equation (pretty print)
@@ -206,6 +214,7 @@ namespace xcas {
     bool changed=false;
     int python=0;
     int type=TEXTAREATYPE_NORMAL;
+    int cursorx,cursory; // where the last cursor was displayed
   } textArea;
 
 #define TEXTAREA_RETURN_EXIT 0
@@ -346,7 +355,7 @@ namespace xcas {
     int sel_row_begin,sel_col_begin;
     std::string cmdline,filename;
     int cmd_pos,cmd_row,cmd_col; // row/col of current cmdline, -1 if not active
-    bool changed,recompute,matrix_fill_cells,movedown;
+    bool changed,recompute,matrix_fill_cells,movedown,keytooltip;
   } ;
   extern tableur * sheetptr;
 
@@ -366,7 +375,9 @@ giac::gen sheet(const giac::context *); // in kadd.cc
 #ifndef NO_NAMESPACE_XCAS
 namespace giac {
 #endif // ndef NO_NAMESPACE_XCAS
-  std::string help_insert(const char * cmdline,const giac::context *);
+  // back: number of char that should be deleted,
+  // exec=0 or MENU_RETURN_SELECTION, KEY_CHAR_ANS or KEY_CTRL_EXE
+  std::string help_insert(const char * cmdline,int & back,int exec,const giac::context *);
   void copy_clipboard(const std::string & s,bool status);
 #define TEXT_MODE_NORMAL 0
 #define TEXT_MODE_INVERT 1
@@ -434,7 +445,7 @@ namespace giac {
     const char* desc;
     const char * example;
     const char * example2;
-    int category;
+    unsigned int category;
   } catalogFunc;
 
   void aide2catalogFunc(const giac::aide & a,catalogFunc & c);

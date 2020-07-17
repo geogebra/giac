@@ -606,7 +606,7 @@ namespace giac {
 	else
 	  inplace=!is_zero((*th_it)-(*other_it));
       }
-      if (inplace){ // in-place substraction
+      if (inplace){ // in-place subtraction
 	modpoly::iterator th=new_coord.begin();
 	if (env && env->moduloon){
 	  for (;m>n;++th,--m)
@@ -2322,7 +2322,7 @@ namespace giac {
       return (modulo(*a._ZINTptr,m)-p)%m==0;
     if (a.type==_INT_)
       return (a.val-p)%m==0;
-    CERR << "Unknow type in reconstruction " << a << '\n';
+    CERR << "Unknown type in reconstruction " << a << '\n';
     return false;
   }
 

@@ -1077,9 +1077,9 @@ namespace giac {
     num=false;
     // if x_orig.type==_VECT || y_orig.type==_VECT, they should be evaled
     if (x_orig.type!=_VECT && eval(x_orig,1,contextptr)!=x_orig)
-      return gensizeerr("Independant variable assigned. Run purge("+x_orig.print(contextptr)+")\n");
+      return gensizeerr("Independent variable assigned. Run purge("+x_orig.print(contextptr)+")\n");
     if (y_orig.type!=_VECT && eval(y_orig,1,contextptr)!=y_orig)
-      return gensizeerr("Dependant variable assigned. Run purge("+y_orig.print(contextptr)+")\n");
+      return gensizeerr("Dependent variable assigned. Run purge("+y_orig.print(contextptr)+")\n");
     gen x(x_orig);
     if ( (x_orig.type==_VECT) && (x_orig._VECTptr->size()==1) )
       x=x_orig._VECTptr->front();

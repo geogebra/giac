@@ -992,7 +992,7 @@ namespace giac {
       it=r.coord.begin();
       itend=r.coord.end();
       // compute 2 terms of the quotient in one iteration,
-      // this will save one long substraction
+      // this will save one long subtraction
       tensor<T> a0(Tnextcoeff<T>(it,itend)),a1(a0.dim);
       if (exactquo && it==itend)
 	return false;

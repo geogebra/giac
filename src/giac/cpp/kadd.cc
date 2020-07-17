@@ -421,10 +421,6 @@ void sheet_status(tableur & t,GIAC_CONTEXT){
   statuslinemsg(st.c_str());
 }
 bool sheet_display(tableur &t,GIAC_CONTEXT){
-  drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
-  int y=0;
-  draw_line(0,y,LCD_WIDTH_PX,y,_BLACK);
-  y+=row_height;
   int disp_rows=LCD_HEIGHT_PX/row_height-3;
   int disp_cols=LCD_WIDTH_PX/(col_width+4)-1;
   if (t.disp_row_begin>t.cur_row)
@@ -443,23 +439,46 @@ bool sheet_display(tableur &t,GIAC_CONTEXT){
   if (sel_c>sel_C)
     swapint(sel_c,sel_C);
   bool has_cmd=t.cmd_row>=0 && t.cmd_row<t.nrows;
+  waitforvblank();
+  drawRectangle(0,0,LCD_WIDTH_PX,row_height,_WHITE); // clear column indices row
+  string s;
+  if (has_sel)
+    s=printsel(sel_r,sel_c,sel_R,sel_C);
+  else
+    s=printcell(t.cur_row,t.cur_col);
+  os_draw_string(2,1,_BLACK,_WHITE,s.c_str(),false);
+  int y=row_height;
+  int x=col_width;
+  int J=giacmin(t.ncols,t.disp_col_begin+disp_cols);
+  for (int j=t.disp_col_begin;j<J;++j){
+    draw_line(x,0,x,row_height,_BLACK);
+    char colname[3]="A"; 
+    if (j>=26){ // if we accept more than 26 cols
+      colname[0] += j/26;
+      colname[1] = 'A'+(j%26);
+      colname[2]=0;
+    }
+    else
+      colname[0] += (j % 26);
+    os_draw_string(x+col_width/2-4,2,_BLACK,_WHITE,colname);
+    x+=col_width+4;
+  }
+  int waitn=2;
   for (int i=t.disp_row_begin;i<I;++i){
-    os_draw_string(4,y,_BLACK,_WHITE,print_INT_(i).c_str());
+    if ( (i-t.disp_row_begin) % waitn==waitn-1)
+      waitforvblank();
+    drawRectangle(0,y,LCD_WIDTH_PX,row_height,_WHITE); // clear current row
+    // draw_line(0,y,LCD_WIDTH_PX,y,_BLACK);
+    os_draw_string(4,y,_BLACK,_WHITE,print_INT_(i).c_str()); // row number
     gen g=t.m[i];
     if (g.type!=_VECT)
       return false;
     vecteur & v=*g._VECTptr;
     int J=giacmin(t.ncols,v.size());
     J=giacmin(J,t.disp_col_begin+disp_cols);
-    int x=col_width;
-    bool drawcol=i==t.disp_row_begin;
+    x=col_width;
     for (int j=t.disp_col_begin;j<J;++j){
-      if (drawcol){
-	draw_line(x,0,x,(1+disp_rows)*row_height,_BLACK);
-	char colname[3]="A";
-	colname[0]+=j;
-	os_draw_string(x+col_width/2-4,2,_BLACK,_WHITE,colname);
-      }
+      draw_line(x,y,x,y+row_height,_BLACK);
       gen vj=v[j];
       if (vj.type==_VECT && vj._VECTptr->size()==3){
 	bool iscur=i==t.cur_row && j==t.cur_col;
@@ -487,43 +506,52 @@ bool sheet_display(tableur &t,GIAC_CONTEXT){
     draw_line(0,y,LCD_WIDTH_PX,y,_BLACK);
     y+=row_height;
   }
+  waitforvblank();
+  drawRectangle(0,y,LCD_WIDTH_PX,LCD_HEIGHT_PX-y,_WHITE); // clear cmdline
   draw_line(0,y,LCD_WIDTH_PX,y,_BLACK);
-  string s;
-  if (has_sel)
-    s=printsel(sel_r,sel_c,sel_R,sel_C);
-  else
-    s=printcell(t.cur_row,t.cur_col);
-  os_draw_string(2,1,_BLACK,_WHITE,s.c_str(),false);
   // commandline
   s=t.cmdline;
   int dx=os_draw_string(0,0,0,0,s.c_str(),true),xend=2; // find width
-  bool small=dx>=LCD_WIDTH_PX-50;
+  bool small=t.keytooltip || dx>=LCD_WIDTH_PX-50;
+  int sheety=LCD_HEIGHT_PX-2*row_height,xtooltip=0;
   if (t.cmd_row>=0 && t.cmd_pos>=0 && t.cmd_pos<=s.size()){
     xend=os_draw_string(xend,LCD_HEIGHT_PX-2*row_height,_BLUE,_WHITE,printcell(t.cmd_row,t.cmd_col).c_str())+5;
-    string s1=s.substr(0,t.cmd_pos)+"|";
+    string s1=s.substr(0,t.cmd_pos);
+#if 1
+    xtooltip=xend=print_color(xend,sheety,s1.c_str(),_BLACK,false,small,contextptr);
+#else
     if (small)
-      xend=os_draw_string_small(xend,LCD_HEIGHT_PX-2*row_height,_BLACK,_WHITE,s1.c_str(),false);
+      xend=os_draw_string_small(xend,sheety,_BLACK,_WHITE,s1.c_str(),false);
     else
-      xend=os_draw_string(xend,LCD_HEIGHT_PX-2*row_height,_BLACK,_WHITE,s1.c_str(),false);
+      xend=os_draw_string(xend,sheety,_BLACK,_WHITE,s1.c_str(),false);
+#endif
+    drawRectangle(xend+1,y+4,2,13,_BLACK);
+    xend+=4;
     s=s.substr(t.cmd_pos,s.size()-t.cmd_pos);
     if (has_sel){
       s1=printsel(sel_r,sel_c,sel_R,sel_C);
-      xend=os_draw_string_small(xend,LCD_HEIGHT_PX+2-2*row_height,_WHITE,_BLACK,s1.c_str(),false);
+      xend=os_draw_string_small(xend,sheety,_WHITE,_BLACK,s1.c_str(),false);
     }
     else {
       if (t.cmd_row!=t.cur_row || t.cmd_col!=t.cur_col)
-	xend=os_draw_string_small(xend,LCD_HEIGHT_PX+2-2*row_height,_WHITE,_BLACK,printcell(t.cur_row,t.cur_col).c_str(),false);
+	xend=os_draw_string_small(xend,sheety,_WHITE,_BLACK,printcell(t.cur_row,t.cur_col).c_str(),false);
     }
   } // end cmdline active
   else
-    xend=os_draw_string(xend,LCD_HEIGHT_PX-2*row_height,_BLACK,_WHITE,printcell(t.cur_row,t.cur_col).c_str())+5;    
+    xend=os_draw_string(xend,sheety,_BLACK,_WHITE,printcell(t.cur_row,t.cur_col).c_str())+5;    
   int bg=t.cmd_row>=0?_WHITE:57051;
+#if 1
+    xend=print_color(xend,sheety,s.c_str(),_BLACK,false,small,contextptr);
+#else
   if (small)
-    xend=os_draw_string_small(xend,LCD_HEIGHT_PX-2*row_height,_BLACK,bg,s.c_str(),false);
+    xend=os_draw_string_small(xend,sheety,_BLACK,bg,s.c_str(),false);
   else
-    xend=os_draw_string(xend,LCD_HEIGHT_PX-2*row_height,_BLACK,bg,s.c_str(),false);
+    xend=os_draw_string(xend,sheety,_BLACK,bg,s.c_str(),false);
+#endif
+  if (t.keytooltip)
+    t.keytooltip=tooltip(xtooltip,sheety,t.cmd_pos,t.cmdline.c_str(),contextptr);
   // fast menus
-  string menu("shift-1 stat1d|2 stat2d|3 seq|4 edit|5 view|6 graph|7 R|8 list| ");
+  string menu("shift-1 stat1d|2 2d|3 seq|4 edit|5 view|6 graph|7 R|8 list| ");
   bg=52832;
   drawRectangle(0,205,LCD_WIDTH_PX,17,bg);
   os_draw_string_small(0,205,_BLACK,bg,menu.c_str());
@@ -902,6 +930,7 @@ void sheet_cmd(tableur & t,const char * ans){
   activate_cmdline(t);
   insert(t.cmdline,t.cmd_pos,s.c_str());
   t.cmd_pos += s.size();
+  t.keytooltip=true;
 }
 
 void sheet_cmdline(tableur &t,GIAC_CONTEXT){
@@ -973,11 +1002,23 @@ void sheet_cmdline(tableur &t,GIAC_CONTEXT){
   }
 }
 
+void sheet_help_insert(tableur & t,int exec,GIAC_CONTEXT){
+  int back;
+  string adds=help_insert(t.cmdline.substr(0,t.cmd_pos).c_str(),back,exec,contextptr);
+  if (back>=t.cmd_pos){
+    t.cmdline=t.cmdline.substr(0,t.cmd_pos-back)+t.cmdline.substr(t.cmd_pos,t.cmdline.size()-t.cmd_pos);
+    t.cmd_pos-=back;
+  }
+  if (!adds.empty())
+    sheet_cmd(t,adds.c_str());
+}
+
 giac::gen sheet(GIAC_CONTEXT){
   if (!sheetptr)
     sheetptr=new_tableur(contextptr);
   tableur & t=*sheetptr;
   bool status_freeze=false;
+  t.keytooltip=false;
   for (;;){
     int R=t.cur_row,C=t.cur_col;
     if (t.cmd_row>=0){
@@ -992,6 +1033,19 @@ giac::gen sheet(GIAC_CONTEXT){
     int key=getkey(1);
     if (key==KEY_SHUTDOWN)
       return key;
+    if (t.keytooltip){
+      t.keytooltip=false;
+      if (key==KEY_CTRL_EXIT)
+	continue;
+      if (key==KEY_CTRL_RIGHT && t.cmd_pos==t.cmdline.size())
+	key=KEY_CTRL_OK;
+      if (key==KEY_CTRL_DOWN || key==KEY_CTRL_VARS)
+	key=KEY_BOOK;
+      if (key==KEY_CTRL_OK || key==KEY_CHAR_ANS){
+	sheet_help_insert(t,key,contextptr);
+	continue;
+      }
+    }
     status_freeze=false;
     if (key==KEY_CTRL_SETUP){
       sheet_menu_setup(t,contextptr);
@@ -1115,6 +1169,7 @@ giac::gen sheet(GIAC_CONTEXT){
 	if (t.cmd_pos>0){
 	  t.cmdline.erase(t.cmdline.begin()+t.cmd_pos-1);
 	  --t.cmd_pos;
+	  t.keytooltip=true;
 	}
       }
       else {
@@ -1184,16 +1239,15 @@ giac::gen sheet(GIAC_CONTEXT){
     case KEY_CTRL_D: // copy down
       copy_down(t,contextptr);
       continue;
+#ifndef NUMWORKS
     case KEY_CTRL_R:
       copy_right(t,contextptr);
       continue;
-    case KEY_CTRL_CATALOG: case '\t':
+#endif
+    case KEY_CTRL_CATALOG: case KEY_BOOK: case '\t':
       {
-	if (t.cmd_pos>=0){
-	  string adds=help_insert(t.cmdline.substr(0,t.cmd_pos).c_str(),contextptr);
-	  if (!adds.empty())
-	    sheet_cmd(t,adds.c_str());
-	}
+	if (t.cmd_pos>=0)
+	  sheet_help_insert(t,0,contextptr);
       }
       continue;
     } // end switch
@@ -1265,6 +1319,7 @@ giac::gen sheet(GIAC_CONTEXT){
       activate_cmdline(t);
       t.cmdline.insert(t.cmdline.begin()+t.cmd_pos,char(key));
       ++t.cmd_pos;
+      t.keytooltip=true;
       continue;
     }
     if (const char * ans=keytostring(key,0,false,contextptr)){

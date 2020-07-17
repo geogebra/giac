@@ -4916,7 +4916,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	if (test==prevtest && hashdivrem(p0,test,Pcof,tmprem,vars,pminmodulo,0,true)==1 && tmprem.empty()){
 	  if (hashdivrem(q0,test,Qcof,tmprem,vars,pminmodulo,0,true)==1 && tmprem.empty()){
 	    if (debug_infolevel)
-	      CERR << CLOCK() << " algmodgcd hashdivrem sucess" << '\n';
+	      CERR << CLOCK() << " algmodgcd hashdivrem success" << '\n';
 	    D=test;
 	    return 1;
 	  }

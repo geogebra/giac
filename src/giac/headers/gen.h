@@ -268,6 +268,7 @@ namespace giac {
     virtual gen divide (const gen & g,GIAC_CONTEXT) const;
     gen operator / (const gen & g) const;
     virtual gen substract (const gen & g,GIAC_CONTEXT) const;
+    gen subtract(const gen & g,GIAC_CONTEXT) const;
     virtual gen operator / (const real_object & g) const;
     gen operator - (const gen & g) const;
     virtual gen operator - (const real_object & g) const;
@@ -374,6 +375,7 @@ namespace giac {
     virtual real_interval operator * (const real_interval & g) const;
     virtual gen divide (const gen & g,GIAC_CONTEXT) const;
     virtual gen substract (const gen & g,GIAC_CONTEXT) const;
+    gen subtract(const gen & g,GIAC_CONTEXT) const;
     virtual gen operator - (const real_object & g) const;
     virtual real_interval operator - (const real_interval & g) const ;
     virtual gen operator -() const;
@@ -888,7 +890,11 @@ namespace giac {
   struct alias_ref_complex {
     ref_count_t ref_count;
     int display;
+#ifdef BIGENDIAN
+    alias_gen im,re;
+#else
     alias_gen re,im;
+#endif
   };
 
   struct ref_vecteur {
@@ -938,7 +944,11 @@ namespace giac {
   struct ref_complex {
     volatile ref_count_t ref_count;
     int display;
+#ifdef BIGENDIAN
+    gen im,re;
+#else
     gen re,im;
+#endif
     ref_complex(const std::complex<double> & c):ref_count(1),display(0),re(real(c)),im(imag(c)) {}
     ref_complex(const gen & R,const gen & I):ref_count(1),display(0),re(R),im(I) {}
     ref_complex(const gen & R,const gen & I,int display_mode):ref_count(1),display(display_mode),re(R),im(I) {}
@@ -1240,7 +1250,7 @@ namespace giac {
       return false;
     }
     virtual bool operator == (const gen_user & a) const { return (*this) == gen(a); }
-    // must redefine > AND <= since we do not have symetrical type arguments
+    // must redefine > AND <= since we do not have symmetrical type arguments
     virtual gen operator > (const gen &) const { return gensizeerr(gettext("> not redefined")); }
     virtual gen operator > (const gen_user & a) const { return superieur_strict(*this, gen(a),0); }
     virtual gen operator <= (const gen &) const { return gensizeerr(gettext("<= not redefined")); }

@@ -2944,7 +2944,7 @@ namespace giac {
       return;
     }
     vecteur::const_iterator itb=b.begin(), itbend=b.end();
-    if (&a==&res){ // in-place substract
+    if (&a==&res){ // in-place subtract
       vecteur::iterator ita=res.begin(), itaend=res.end();
       for (;(ita!=itaend)&&(itb!=itbend);++ita,++itb){
 	operator_minus_eq(*ita,*itb,context0);
@@ -5854,7 +5854,7 @@ namespace giac {
       longlong & aj=*ak;
       const int * mjk=&m[j+l][j+c];
       aj = ((aj % p) * invmod(*mjk,p)) %p;
-      // aj is now computed, substract m_jk*aj from ak for all k>j
+      // aj is now computed, subtract m_jk*aj from ak for all k>j
       for (++mjk,++ak;ak<aend;++mjk,++ak){
 	*ak -= *mjk*aj;
       }
@@ -5891,7 +5891,7 @@ namespace giac {
       a1j = ((a1j % p) * tmp) %p;
       a2j = ((a2j % p) * tmp) %p;
       a3j = ((a3j % p) * tmp) %p;
-      // aj is now computed, substract m_jk*aj from ak for all k>j
+      // aj is now computed, subtract m_jk*aj from ak for all k>j
       for (++mjk,++a0k,++a1k,++a2k,++a3k;a0k<a0end;++mjk,++a0k,++a1k,++a2k,++a3k){
 	tmp=*mjk;
 	if (!tmp) continue;
@@ -5916,7 +5916,7 @@ namespace giac {
       double & aj=*ak;
       const double * mjk=&m[j+l][j+c];
       aj = (aj) / (*mjk);
-      // aj is now computed, substract m_jk*aj from ak for all k>j
+      // aj is now computed, subtract m_jk*aj from ak for all k>j
       for (++mjk,++ak;ak<aend;++mjk,++ak){
 	*ak -= *mjk*aj;
       }
@@ -5953,7 +5953,7 @@ namespace giac {
       a1j = ((a1j) * tmp) ;
       a2j = ((a2j) * tmp) ;
       a3j = ((a3j) * tmp) ;
-      // aj is now computed, substract m_jk*aj from ak for all k>j
+      // aj is now computed, subtract m_jk*aj from ak for all k>j
       for (++mjk,++a0k,++a1k,++a2k,++a3k;a0k<a0end;++mjk,++a0k,++a1k,++a2k,++a3k){
 	tmp=*mjk;
 	if (!tmp) continue;
@@ -7856,7 +7856,7 @@ namespace giac {
       if (NL.empty()) continue;
       for (int C=c;C<cmax;++C)
 	buffer[C]=NL[C];
-      // substract lines in pivots[k].first from column pivots[k].second to cmax
+      // subtract lines in pivots[k].first from column pivots[k].second to cmax
       for (int line=lstart;line<lstart+ps;++line){
 	int col=pivots[line-lstart];
 	if (col<0) continue;
@@ -7956,7 +7956,7 @@ namespace giac {
       if (NL.empty()) continue;
       for (int C=c;C<effcmax;++C)
 	buffer[C]=NL[C];
-      // substract lines in pivots[k].first from column pivots[k].second to cmax
+      // subtract lines in pivots[k].first from column pivots[k].second to cmax
       for (int line=lstart;line<lstart+ps;++line){
 	int col=pivots[line-lstart];
 	if (col<0) continue;
@@ -8127,7 +8127,7 @@ namespace giac {
 	// copy line to a 64 bits buffer
 	for (int C=c;C<cmax;++C)
 	  buffer[C]=NL[C];
-	// substract lines in pivots[k].first from column pivots[k].second to cmax
+	// subtract lines in pivots[k].first from column pivots[k].second to cmax
 	int ps=int(pivots.size());
 	for (int k=0;k<ps;++k){
 	  int line=pivots[k].first;
@@ -8269,7 +8269,7 @@ namespace giac {
 	// copy line to a 64 bits buffer
 	for (int C=c;C<cmax;++C)
 	  buffer[C]=NL[C];
-	// substract lines in pivots[k].first from column pivots[k].second to cmax
+	// subtract lines in pivots[k].first from column pivots[k].second to cmax
 	int ps=int(pivots.size());
 	for (int k=0;k<ps;++k){
 	  int line=pivots[k].first;
@@ -8794,7 +8794,7 @@ namespace giac {
       // keep columns of U3 in lines for later use in matrix product
       // P2*C=L3*U1, hence P2^-1*L3 is determined by int_linsolve_u, replace C with P2^-1*L3
       // P2*D=L3*U3+L2*U2 -> P2*(D-P2^-1*L3*U3)=L2*U2
-      // substract P2^-1*L3*U3 from D and recursive call to lu will determine P2, L2 and U2
+      // subtract P2^-1*L3*U3 from D and recursive call to lu will determine P2, L2 and U2
       // (line swaps will replace inplace P2^-1*L3 by L3)
       int taille=giacmin(lmax-l,cmax-c)/2;
       if (debug_infolevel>2)
@@ -8878,7 +8878,7 @@ namespace giac {
 	    N[i+l+taille][c+j]=tmpptr->z[j];
 	  }	  	  
 	}	
-	// substract L3*U3 from D
+	// subtract L3*U3 from D
 	in_mmult_mod(N,tmpptr->Ainv,N,l+taille,c+taille,modulo,l+taille,lmax,c,c+taille,false);
 	// final lu decomposition
 	smallmodrref(nthreads,N,pivots,permutation,maxrankcols,idet,l+taille,lmax,c+taille,cmax,false,false,modulo,2,false,0,true,carac);
@@ -9202,7 +9202,7 @@ namespace giac {
       // keep columns of U3 in lines for later use in matrix product
       // P2*C=L3*U1, hence P2^-1*L3 is determined by int_linsolve_u, replace C with P2^-1*L3
       // P2*D=L3*U3+L2*U2 -> P2*(D-P2^-1*L3*U3)=L2*U2
-      // substract P2^-1*L3*U3 from D and recursive call to lu will determine P2, L2 and U2
+      // subtract P2^-1*L3*U3 from D and recursive call to lu will determine P2, L2 and U2
       // (line swaps will replace inplace P2^-1*L3 by L3)
       int taille=mmult_double_blocksize;
       if (debug_infolevel>2)
@@ -9251,7 +9251,7 @@ namespace giac {
 	for (int j=0;j<taille;j++)
 	  N[l+j][i+c+taille]=tmpptr->Ainv[i][j];
       }
-      // substract L3*U3 from D
+      // subtract L3*U3 from D
       in_mmult_double(N,tmpptr->Ainv,N,l+taille,c+taille,l+taille,lmax,c,c+taille,false);
       // final lu decomposition
       in_doublerref(N,pivots,permutation,maxrankcols,idet,l+taille,lmax,c+taille,cmax,false,false,eps,2,false,0);
@@ -10100,7 +10100,7 @@ namespace giac {
 		x += p.val;
 	      X[i][j] = x;
 	    }
-	    // adjust tmp by substracting A[0]*X[i]
+	    // adjust tmp by subtracting A[0]*X[i]
 	    multmatvecteur_int(A[0],X[i],tmp);
 	    subvecteur_longlong(restmp,tmp);
 	    // compute carries
@@ -12732,7 +12732,7 @@ namespace giac {
       hd=H[n1+1][n1],he=H[n1+1][n1+1],
       hh=H[n1+2][n1+1];
     gen x=hb*hd+ha*(ha-s)+p,y=hd*(he-s+ha),z=hd*hh;
-    // normalize, substract [1,0,0] and normalize again
+    // normalize, subtract [1,0,0] and normalize again
     gen xyz=sqrt(x*conj(x,contextptr)+y*conj(y,contextptr)+z*conj(z,contextptr),contextptr);
     // if x/xyz is near 1, improve precision:
     // x/xyz-1 = ((x/xyz)^2-1)/(x/xyz+1)=-((y/xyz)^2+(z/xyz)^2)/(x/xyz+1)

@@ -3516,7 +3516,7 @@ namespace giac {
   //      = 3/ data (list of values)
   // arg2 = 1/ p proportion
   //      = 2, 3/ mu population mean, or data
-  // arg3 optionnal for 2, 3/: sigma. If not given and 
+  // arg3 optional for 2, 3/: sigma. If not given and 
   //        arg1=[int,int] and arg2=p in ]0,1[, sigma is derived from p
   // nextarg < > or != alternative hypothesis 
   // nextarg optional alpha level of confidence, default value 0.05

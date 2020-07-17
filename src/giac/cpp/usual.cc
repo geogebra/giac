@@ -10568,7 +10568,11 @@ namespace giac {
   const define_alias_gen(alias_plus_one,_INT_,0,1);
   const gen & zero = *(const gen *) & alias_zero;
   const gen & plus_one = *(const gen *) & alias_plus_one;
+#ifdef BIGENDIAN
+  define_alias_ref_complex(cst_i_ref,_INT_,0,1,_INT_,0,0);
+#else
   define_alias_ref_complex(cst_i_ref,_INT_,0,0,_INT_,0,1);
+#endif
   const define_alias_gen(alias_cst_i,_CPLX,0,&cst_i_ref);
   const gen & cst_i = *(const gen *) & alias_cst_i;
 

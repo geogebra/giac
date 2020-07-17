@@ -1780,7 +1780,7 @@ namespace giac {
 	  if (!pintegrate(s,t,contextptr))
 	    return false;
 	  gen remains,primit=sparse_poly12gen(s,x,remains,false);
-	  // then compose primit at bounds and substract
+	  // then compose primit at bounds and subtract
 	  primit=subst(primit,t,tempfv[3],false,contextptr)-subst(primit,t,tempfv[2],false,contextptr);
 	  if (!series__SPOL1(primit,x,lim_point,ordre,direction,s,contextptr))
 	    return false;

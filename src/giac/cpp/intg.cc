@@ -4446,7 +4446,7 @@ namespace giac {
 *		If P=Sigma a_k x^k then write linear system for a_k
 *		Columns of the matrix of the system are lines
 *		of the Pascal triangle without the first element
-*		(since we must substract identity matrix to the triangle)
+*		(since we must subtract identity matrix to the triangle)
 *		a_1 a_2 a_3 ... a_n+1		coeff of Q
 *		1   1   1	1	X^0
 *		0   2	3	n+1	X^1

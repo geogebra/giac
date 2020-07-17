@@ -1298,7 +1298,7 @@ namespace giac {
       }
       phik.swap(phiknew);
     }
-    *logptr(contextptr) << gettext("Warning! Leaving Gauss-Seidel iterative algorithm after maximal number of iterations. Check that your matrix is symetric definite.") << '\n';
+    *logptr(contextptr) << gettext("Warning! Leaving Gauss-Seidel iterative algorithm after maximal number of iterations. Check that your matrix is symmetric definite.") << '\n';
     return phik;   
 #else
     std::vector<giac_double> b=b_orig;
@@ -1347,7 +1347,7 @@ namespace giac {
 	return xn;
       }
     }
-    *logptr(contextptr) << gettext("Warning! Leaving Gauss-Seidel iterative algorithm after maximal number of iterations. Check that your matrix is symetric definite.") << '\n';
+    *logptr(contextptr) << gettext("Warning! Leaving Gauss-Seidel iterative algorithm after maximal number of iterations. Check that your matrix is symmetric definite.") << '\n';
     return xn;   
 #endif 
   }

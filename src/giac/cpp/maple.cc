@@ -812,7 +812,7 @@ namespace giac {
     gen v((*args._VECTptr)[1]);
     gen f(args._VECTptr->front());
     if (f.type==_STRNG && v.type==_STRNG){
-      // (Python-like) count occurences of v in f
+      // (Python-like) count occurrences of v in f
       int count=0,pos=-1,s=f._STRNGptr->size();
       for (;pos<s;++count){
 	pos=f._STRNGptr->find(*v._STRNGptr,pos+1);

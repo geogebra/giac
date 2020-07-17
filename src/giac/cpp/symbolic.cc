@@ -1123,7 +1123,7 @@ namespace giac {
 	case nr_eval_vect:
 	  // end eval of vecteur, store value in res
 	  if (oldsubtype==_SET__VECT && !argl.empty()){
-	    // remove multiple occurences
+	    // remove multiple occurrences
 	    islesscomplexthanf_sort(argl.begin(),argl.end());
 	    vecteur tmp;
 	    tmp.reserve(argl.size());
