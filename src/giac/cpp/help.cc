@@ -33,8 +33,10 @@ using namespace std;
 #endif
 #ifdef KHICAS
 #include "kdisplay.h" // for select_item,
+#ifdef MICROPY_LIB
 extern "C" int xcas_python_eval;
 extern "C" int mp_token(const char * line);
+#endif
 #endif
 
 #if defined VISUALC || defined BESTA_OS
@@ -260,6 +262,7 @@ namespace giac {
     "value",
     "values",
     "write",
+    "xcas",
     "zip",
   };
 
@@ -295,18 +298,22 @@ namespace giac {
     }
     const char * items[1+static_help_size];
     kk=0;
+#ifdef MICROPY_LIB
     if (xcas_python_eval && !python_heap){
       python_init(python_stack_size,python_heap_size);
     }
+#endif
     for (;pos<static_help_size;++kk,++pos){
       const static_help_t & sh=static_help[pos];
       const char * ptr=sh.cmd_name;
+#ifdef MICROPY_LIB
       if (xcas_python_eval){
 	if (!is_python_builtin(ptr) && mp_token(ptr)==0){
 	  --kk;
 	  continue;
 	}
       }
+#endif
       if (strcmp(ptr,s.c_str())==0){
 	howto=sh.cmd_howto[lang-1];
 	if (!howto)

@@ -36,7 +36,7 @@ namespace giac {
   vecteur cocoa_in_ideal(const vectpoly & g,const vectpoly & v,const gen & ordre);
   bool cocoa_greduce(const vectpoly & r,const vectpoly & v,const gen & order,vectpoly & res);
 
-#if !defined CAS38_DISABLED && !defined FXCG
+#if !defined CAS38_DISABLED && !defined FXCG && !defined KHICAS
   // giac code for poly (fast up to 15 variables)
   struct order_t {
     short o;
@@ -46,8 +46,8 @@ namespace giac {
 
   bool gbasis8(const vectpoly & v,order_t & order,vectpoly & res,environment * env,bool modularalgo,bool modularcheck,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param);
   bool greduce8(const vectpoly & v,const vectpoly & G,order_t & order,vectpoly & res,environment * env,GIAC_CONTEXT);
-  longlong memory_usage();
 #endif
+  longlong memory_usage();
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac

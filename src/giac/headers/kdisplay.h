@@ -361,6 +361,7 @@ namespace xcas {
 
   int check_do_graph(giac::gen & ge,int do_logo_graph_eqw,const giac::context *);
   int get_filename(char * filename,const char * extension);
+  int find_color(const char * s,const giac::context *);
 
 #ifndef NO_NAMESPACE_XCAS
 } // namespace xcas

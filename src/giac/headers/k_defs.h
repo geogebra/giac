@@ -58,6 +58,8 @@
 #define KEY_CHAR_FACTOR     0xda
 #define KEY_CHAR_NORMAL     0xdb
 #define KEY_CHAR_SHIFTMINUS     0xdc
+#define KEY_CHAR_CROCHETS 0xdd
+#define KEY_CHAR_ACCOLADES 0xde
 #define KEY_CHAR_A          0x41
 #define KEY_CHAR_B          0x42
 #define KEY_CHAR_C          0x43
@@ -119,6 +121,7 @@
 #define KEY_CTRL_F12         30020
 #define KEY_CTRL_F13         30021
 #define KEY_CTRL_F14         30022
+#define KEY_CTRL_F15         30023
 #define KEY_CTRL_CATALOG    30100
 #define KEY_CTRL_CAPTURE    30055
 #define KEY_CTRL_CLIP       30050

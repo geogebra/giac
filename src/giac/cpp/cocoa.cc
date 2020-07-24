@@ -79,6 +79,19 @@ using namespace std;
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
+  longlong memory_usage(){
+#if defined HAVE_SYS_RESOURCE_H && !defined NSPIRE && !defined NSPIRE_NEWLIB
+    struct rusage r_usage;
+    getrusage(RUSAGE_SELF,&r_usage);
+#ifdef __APPLE__
+    return r_usage.ru_maxrss;
+#else
+    return r_usage.ru_maxrss*1000;
+#endif
+#endif
+    return -1;
+  }
+
   //  vecteur trim(const vecteur & p,environment * env);
 
 #ifdef HAVE_LIBCOCOA
@@ -443,7 +456,7 @@ namespace giac {
 #define BIGENDIAN
 #endif
 
-#if !defined CAS38_DISABLED && !defined FXCG
+#if !defined CAS38_DISABLED && !defined FXCG && !defined KHICAS
   //#define GBASIS_SELECT_TOTAL_DEGREE
 #if GROEBNER_VARS!=15 && !defined BIGENDIAN // double revlex ordering is not compatible with indices swapping
 #define GBASIS_SWAP 
@@ -11525,19 +11538,6 @@ template<class modint_t,class modint_u>
 		 const vector<tdeg_t> * rightshiftptr_,
 		 const order_t & o_):Bptr(Bptr_),resptr(resptr_),rightshiftptr(rightshiftptr_),leftshiftptr(leftshiftptr_),o(o_){}
   };
-
-  longlong memory_usage(){
-#if defined HAVE_SYS_RESOURCE_H && !defined NSPIRE && !defined NSPIRE_NEWLIB
-    struct rusage r_usage;
-    getrusage(RUSAGE_SELF,&r_usage);
-#ifdef __APPLE__
-    return r_usage.ru_maxrss;
-#else
-    return r_usage.ru_maxrss*1000;
-#endif
-#endif
-    return -1;
-  }
 
    // #define GIAC_CACHE2ND 1; // cache 2nd pair reduction, slower
 

@@ -7525,7 +7525,17 @@ namespace giac {
 
 
   string version(){
-    return string("giac ")+GIAC_VERSION+string(", (c) B. Parisse and R. De Graeve, Institut Fourier, Universite de Grenoble I");
+    return
+#ifdef NUMWORKS
+      string("giac for Numworks ")
+#else
+#ifdef NSPIRE_NEWLIB
+      string("giac for TI Nspire CX ")
+#else
+      string("giac ")
+#endif
+#endif
+      +GIAC_VERSION+string(", (c) B. Parisse and R. De Graeve, Institut Fourier, Universite de Grenoble I");
   }
   gen _version(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;

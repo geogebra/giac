@@ -420,7 +420,7 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_G)) return SHIFTCTRL('g','G',KEY_CTRL_F12);
   if (isKeyPressed(KEY_NSPIRE_H)) return SHIFTCTRL('h','H',KEY_CTRL_F13);
   if (isKeyPressed(KEY_NSPIRE_I)) return SHIFTCTRL('i','I',KEY_CTRL_F14);
-  if (isKeyPressed(KEY_NSPIRE_J)) return SHIFT('j','J');
+  if (isKeyPressed(KEY_NSPIRE_J)) return SHIFTCTRL('j','J',KEY_CTRL_F15);
   if (isKeyPressed(KEY_NSPIRE_K)) return SHIFTCTRL('k','K',KEY_CTRL_AC);
   if (isKeyPressed(KEY_NSPIRE_L)) return SHIFTCTRL('l','L',KEY_CTRL_F14);
   if (isKeyPressed(KEY_NSPIRE_M)) return SHIFTCTRL('m','M',KEY_CTRL_CATALOG);
@@ -470,16 +470,16 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_TENX)) return CTRL(KEY_CHAR_EXPN10,KEY_CHAR_LOG);
   if (isKeyPressed(KEY_NSPIRE_eEXP)) return CTRL(KEY_CHAR_EXPN,KEY_CHAR_LN);
   if (isKeyPressed(KEY_NSPIRE_COMMA))		return SHIFTCTRL(',',';',':');
-  if (isKeyPressed(KEY_NSPIRE_PERIOD)) 	return SHIFTCTRL('.',':',KEY_CTRL_F11);
+  if (isKeyPressed(KEY_NSPIRE_PERIOD)) 	return SHIFTCTRL('.',KEY_CTRL_F11,':');
   if (isKeyPressed(KEY_NSPIRE_COLON))		return NORMAL(':');
-  if (isKeyPressed(KEY_NSPIRE_LP))			return SHIFTCTRL('(',']','[');
-  if (isKeyPressed(KEY_NSPIRE_RP))			return SHIFTCTRL(')','}','{');
+  if (isKeyPressed(KEY_NSPIRE_LP))			return SHIFTCTRL('(',KEY_CTRL_F13,KEY_CHAR_CROCHETS);
+  if (isKeyPressed(KEY_NSPIRE_RP))			return SHIFTCTRL(')',KEY_CTRL_F14,KEY_CHAR_ACCOLADES);
   if (isKeyPressed(KEY_NSPIRE_SPACE))		return SHIFT(' ','_');
   if (isKeyPressed(KEY_NSPIRE_DIVIDE))
     return SHIFTCTRL('/','%','\\');
   if (isKeyPressed(KEY_NSPIRE_MULTIPLY))	return SHIFTCTRL('*','\'','\"');
-  if (isKeyPressed(KEY_NSPIRE_MINUS))		return SHIFTCTRL('-','<', '_');
-  if (isKeyPressed(KEY_NSPIRE_NEGATIVE))	return SHIFTCTRL('-','_',KEY_CHAR_ANS);
+  if (isKeyPressed(KEY_NSPIRE_MINUS))		return SHIFTCTRL('-','_', '<');
+  if (isKeyPressed(KEY_NSPIRE_NEGATIVE))	return SHIFTCTRL('-',KEY_CTRL_F12,KEY_CHAR_ANS);
   if (isKeyPressed(KEY_NSPIRE_PLUS))		return SHIFTCTRL('+', '>','>');
   if (isKeyPressed(KEY_NSPIRE_EQU))		return SHIFTCTRL('=', '|',KEY_CHAR_STORE);
   if (isKeyPressed(KEY_NSPIRE_LTHAN))		return NORMAL('<');
@@ -783,7 +783,7 @@ int getkey(int allow_suspend){
 	 (i>=KEY_UP_CTRL && i<=KEY_RIGHT_CTRL) ||
 	 (i>=KEY_SELECT_LEFT && i<=KEY_SELECT_RIGHT) ||
 	 i==KEY_CTRL_DEL){
-      int delay=(lastkey==i)?5:40,j;
+      int delay=(lastkey==i)?5:60,j;
       for (j=0;j<delay && any_key_pressed();++j){
 	if (nspireemu)
 	  msleep(14);
