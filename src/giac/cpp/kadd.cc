@@ -1254,9 +1254,15 @@ giac::gen sheet(GIAC_CONTEXT){
     if ( (key >= KEY_CTRL_F1 && key <= KEY_CTRL_F6) ||
 	  (key >= KEY_CTRL_F7 && key <= KEY_CTRL_F14) 
 	 ){
-      const char tmenu[]= "F1 stat1d\nsum(\nmean(\nstddev(\nmedian(\nhistogram(\nbarplot(\nboxwhisker(\nF2 stat2d\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\npolygonscatterplot(\nF3 seq\nrange(\nseq(\ntableseq(\nplotseq(\ntablefunc(\nrandvector(\nrandmatrix(\nF4 edt\nedit_cell\ncopy_down\ncopy_right\ninsert_row\ninsert_col\nerase_row\nerase_col\nF6 graph\nreserved\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF: arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF7 real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF= misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \n\n";
+      const char tmenu[]= "F1 stat1d\nsum(\nmean(\nstddev(\nmedian(\nhistogram(\nbarplot(\nboxwhisker(\nF2 stat2d\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\npolygonscatterplot(\nF3 seq\nrange(\nseq(\ntableseq(\nplotseq(\ntablefunc(\nrandvector(\nrandmatrix(\nF4 edt\nedit_cell\nundo\ncopy_down\ncopy_right\ninsert_row\ninsert_col\nerase_row\nerase_col\nF6 graph\nreserved\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF: arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF7 real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF= misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \n\n";
       const char * s=console_menu(key,(char *)tmenu,0);
       if (s && strlen(s)){
+	if (strcmp(s,"undo")==0){
+	  t.cmd_pos=t.cmd_row=t.sel_row_begin=-1;
+	  std::swap(t.m,t.undo);
+	  sheet_eval(t,contextptr);
+	  continue;
+	}
 	if (strcmp(s,"copy_down")==0){
 	  t.cmd_pos=t.cmd_row=t.sel_row_begin=-1;
 	  copy_down(t,contextptr);
@@ -1311,6 +1317,15 @@ giac::gen sheet(GIAC_CONTEXT){
 	  t.cmdline="";
 	sheet_cmd(t,s);
       }
+      continue;
+    }
+    if (key==KEY_CHAR_CROCHETS || key==KEY_CHAR_ACCOLADES){
+      if (t.cmd_row<0)
+	t.cmdline="";
+      activate_cmdline(t);
+      t.cmdline.insert(t.cmdline.begin()+t.cmd_pos,key==KEY_CHAR_CROCHETS?'[':'{');
+      ++t.cmd_pos;
+      t.cmdline.insert(t.cmdline.begin()+t.cmd_pos,key==KEY_CHAR_CROCHETS?']':'}');
       continue;
     }
     if (key>=32 && key<128){

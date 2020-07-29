@@ -234,7 +234,7 @@ namespace xcas {
   void save_session(const giac::context * );
 #if 1
 #define MAX_FILENAME_SIZE 63
-  void save_console_state_smem(const char * filename,const giac::context *);
+  void save_console_state_smem(const char * filename,bool xwaspy,const giac::context *);
   bool load_console_state_smem(const char * filename,const giac::context *);
 
   struct DISPBOX {

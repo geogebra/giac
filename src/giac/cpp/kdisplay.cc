@@ -24,6 +24,7 @@
 #include <syscall.h>
 #endif
 #ifdef KHICAS
+#define XWASPY 1 // save .xw file as _xw.py (to be recognized by Numworks workshop)
 #include "kdisplay.h"
 #include <string.h>
 #include <stdio.h>
@@ -100,9 +101,6 @@ int micropy_ck_eval(const char *line){
   }
   return 0;
 }
-#else
-void python_free(){}
-
 #endif
 
 using namespace std;
@@ -1414,11 +1412,11 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 
   const char aide_khicas_string[]="Aide Khicas";
 #ifdef NUMWORKS
-  const char shortcuts_fr_string[]="Raccourcis clavier (shell et editeur)\nshift-/: %\nalpha shift \": '\nshift--: \\\nshift-*: factor\nshift-+: normal\nshift-1 a 6: selon bandeau en bas\nshift-7: matrices\nshift-8: listes\nshift-9:arithmetique\nshift-0: polynomes\nshift-.: reels\nshift-10^: programme\nvar: liste des variables (shell) ou dessin tortue (editeur)\n\nshift-x^y (sto) renvoie =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: Editeur 2d ou graphique ou texte selon objet\nshift-6: editeur texte\n+ ou - modifie un parametre en surbrillance\n\nEditeur d'expressions\nshift-cut: defaire/refaire (1 fois)\npave directionnel: deplace la selection dans l'arborescence de l'expression\nshift-droit/gauche echange selection avec argument a droite ou a gauche\nalpha-droit/gauche dans une somme ou un produit: augmente la selection avec argument droit ou gauche\nshift-4: Editer selection, shift-5: taille police + ou - grande\nEXE: evaluer la selection\nshift-6: valeur approchee\nBackspace: supprime l'operateur racine de la selection\n\nEditeur de scripts\nEXE: passage a la ligne\nshift-CUT: defaire/refaire (1 fois)\nshift-COPY: marque le debut de la selection, deplacer le curseur vers la fin puis Backspace pour effacer ou shift-COPY pour copier sans effacer. shift-PASTE pour coller.\nHome-6 recherche seule: entrer un mot puis EXE puis EXE. Taper EXE pour l'occurence suivante, Back pour annuler.\nHome-6 remplacer: entrer un mot puis EXE puis le remplacement et EXE. Taper EXE ou Back pour remplacer ou non et passer a l'occurence suivante, AC pour annuler\nOK: tester syntaxe\n\nRaccourcis Graphes:\n+ - zoom\n(-): zoomout selon y\n*: autoscale\n/: orthonormalisation\nOPTN: axes on/off";
-  const char shortcuts_en_string[]="Keyboard shortcuts (shell and editor)\nshift-/: %\nalpha shift \": '\nshift--: \\\nshift-*: factor\nshift-+: normal\nshift-1 to 6: cf. screen bottom\nshift-7: matrices\nshift-8: lists\nshift-9:arithmetic\nshift-0: polynomials\nshift-.: reals\nshift-10^: programs\nvar: variables list (shell) or turtle screen (editor)\n\nshift-x^y (sto) returns =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: 2d editor or graph or text\nshift-6: text edit\n+ ou - modifies selected slider\n\nExpressions editor\nshift-cut: undo/redo (1 fois)\nkeypad: move selection inside expression tree\nshift-right/left exchange selection with right or left argument\nalpha-right/left: inside a sum or product: increase selection with right or left argument\nshift-4: Edit selection, shift-5: change fontsize\nEXE: eval selection\nshift-6: approx value\nBackspace: suppress selection's rootnode operator\n\nScript Editor\nEXE: newline\nshift-CUT: undo/redo (1 time)\nshift-COPY: marks selection begin, move the cursor to the end, then hit Backspace to erase or shift-COPY to copy (no erase). shift-PASTE to paste.\nHome-6 search: enter a word then EXE then again EXE. Type EXE for next occurence, Back to cancel.\nHome-6 replace: enter a word then EXE then replacement word then EXE. Type EXE or Back to replace or ignore and go to next occurence, AC to cancel\nOK: test syntax\n\nGraph shortcuts:\n+ - zoom\n(-): zoomout along y\n*: autoscale\n/: orthonormalization\nOPTN: axes on/off";
+  const char shortcuts_fr_string[]="Raccourcis clavier (shell et editeur)\nshift-/: %\nalpha shift \": '\nshift--: \\\nshift-*: factor\nshift-+: normal\nshift-1 a 6: selon bandeau en bas\nshift-7: matrices\nshift-8: complexes\nshift-9:arithmetique entiere\nshift-0: probas\nshift-.: reels\nshift-10^: polynomes\nvar: liste des variables (shell) ou dessin tortue (editeur)\n\nshift-x^y (sto) renvoie =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: Editeur 2d ou graphique ou texte selon objet\nshift-6: editeur texte\n+ ou - modifie un parametre en surbrillance\n\nEditeur d'expressions\nshift-cut: defaire/refaire (1 fois)\npave directionnel: deplace la selection dans l'arborescence de l'expression\nshift-droit/gauche echange selection avec argument a droite ou a gauche\nalpha-droit/gauche dans une somme ou un produit: augmente la selection avec argument droit ou gauche\nshift-4: Editer selection, shift-5: taille police + ou - grande\nEXE: evaluer la selection\nshift-6: valeur approchee\nBackspace: supprime l'operateur racine de la selection\n\nEditeur de scripts\nEXE: passage a la ligne\nshift-CUT: documentation\nshift COPY (ou shift et deplacement curseur simultanement): marque le debut de la selection, deplacer le curseur vers la fin puis Backspace pour effacer ou shift-COPY pour copier sans effacer. shift-PASTE pour coller.\nHome-6 recherche seule: entrer un mot puis EXE puis EXE. Taper EXE pour l'occurence suivante, Back pour annuler.\nHome-6 remplacer: entrer un mot puis EXE puis le remplacement et EXE. Taper EXE ou Back pour remplacer ou non et passer a l'occurence suivante, AC pour annuler\nOK: tester syntaxe\n\nRaccourcis Graphes:\n+ - zoom\n(-): zoomout selon y\n*: autoscale\n/: orthonormalisation\nOPTN: axes on/off";
+  const char shortcuts_en_string[]="Keyboard shortcuts (shell and editor)\nshift-/: %\nalpha shift \": '\nshift--: \\\nshift-*: factor\nshift-+: normal\nshift-1 to 6: cf. screen bottom\nshift-7: matrices\nshift-8: complexes\nshift-9:arithmetic\nshift-0: proba\nshift-.: reals\nshift-10^: polynomials\nvar: variables list (shell) or turtle screen (editor)\n\nshift-x^y (sto) returns =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: 2d editor or graph or text\nshift-6: text edit\n+ ou - modifies selected slider\n\nExpressions editor\nshift-cut: undo/redo (1 fois)\nkeypad: move selection inside expression tree\nshift-right/left exchange selection with right or left argument\nalpha-right/left: inside a sum or product: increase selection with right or left argument\nshift-4: Edit selection, shift-5: change fontsize\nEXE: eval selection\nshift-6: approx value\nBackspace: suppress selection's rootnode operator\n\nScript Editor\nEXE: newline\nshift-CUT: documentation\nshift-COPY: marks selection begin, move the cursor to the end, then hit Backspace to erase or shift-COPY to copy (no erase). shift-PASTE to paste.\nHome-6 search: enter a word then EXE then again EXE. Type EXE for next occurence, Back to cancel.\nHome-6 replace: enter a word then EXE then replacement word then EXE. Type EXE or Back to replace or ignore and go to next occurence, AC to cancel\nOK: test syntax\n\nGraph shortcuts:\n+ - zoom\n(-): zoomout along y\n*: autoscale\n/: orthonormalization\nOPTN: axes on/off";
 #else
-  const char shortcuts_fr_string[]="Raccourcis clavier (shell et editeur)\nlivre: aide/complete\ntab: complete (shell)/indente (editeur)\nshift-/: %\nshift *: '\nctrl-/: \\\nshift-1 a 6: selon bandeau en bas\nshift-7: matrices\nshift-8: listes\nshift-9:arithmetique\nshift-0: complexes\nshift-.: reels\nctrl P: programme\nvar: liste des variables (shell) ou dessin tortue (editeur)\n\nctrl-var (sto) renvoie =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: Editeur 2d ou graphique ou texte selon objet\nshift-4: editeur texte\n+ ou - modifie un parametre en surbrillance\n\nEditeur d'expressions\nctrl z: defaire/refaire (1 fois)\npave directionnel: deplace la selection dans l'arborescence de l'expression\nshift-droit/gauche echange selection avec argument a droite ou a gauche\nctrl droit/gauche dans une somme ou un produit: augmente la selection avec argument droit ou gauche\nshift-4: Editer selection, shift-5: taille police + ou - grande\nenter: evaluer la selection\nshift-6: valeur approchee\nDel: supprime l'operateur racine de la selection\n\nEditeur de scripts\nenter: passage a la ligne\nctrl z: defaire/refaire (1 fois)\nctrl c: marque le debut de la selection, deplacer le curseur vers la fin puis Del pour effacer ou ctrl c pour copier sans effacer. ctrl v pour coller.\nMenu-6 recherche seule: entrer un mot puis enter puis enter. Taper enter pour l'occurence suivante, esc pour annuler.\nMenu-6 remplacer: entrer un mot puis enter puis le remplacement et enter. Taper enter ou esc pour remplacer ou non et passer a l'occurence suivante, ctrl del pour annuler\nvalidation (a droite de U): tester syntaxe\n\nRaccourcis Graphes:\n+ - zoom\n(-): zoomout selon y\n*: autoscale\n/: orthonormalisation\nOPTN: axes on/off";
-  const char shortcuts_en_string[]="Keyboard shortcuts (shell and editor)\nbook: help or completion\ntab: completion (shell), indent (editor)\nshift-/: %\nalpha shift *: '\nctrl-/: \\\nshift-1 a 6: see at bottom\nshift-7: matrices\nshift-8: listes\nshift-9:arithmetic\nshift-0: complexes\nshift-.: reals\nctrl P: program\nvar: variables list (shell) or turtle screen (editor)\n\nctrl var (sto) returns =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: 2d editor or graph or text\nshift-4: text edit\n+ ou - modifies selected slider\n\nExpressions editor\nctrl z: undo/redo (1 fois)\nkeypad: move selection inside expression tree\nshift-right/left exchange selection with right or left argument\nalpha-right/left: inside a sum or product: increase selection with right or left argument\nshift-4: Edit selection, shift-5: change fontsize\nenter: eval selection\nshift-6: approx value\nDel: suppress selection's rootnode operator\n\nScript Editor\nenter: newline\nctrl z: undo/redo (1 time)\nctrl c: marks selection begin, move the cursor to the end, then hit Del to erase or ctrl c to copy (no erase). ctrl v to paste.\nMenu-6 search: enter a word then enter then again enter. Type enter for next occurence, esc to cancel.\nMenu-6 replace: enter a word then enter then replacement word then enter. Type enter or esc to replace or ignore and go to next occurence, AC to cancel\nOK: test syntax\n\nGraph shortcuts:\n+ - zoom\n(-): zoomout along y\n*: autoscale\n/: orthonormalization\nOPTN: axes on/off";
+  const char shortcuts_fr_string[]="Raccourcis clavier (shell et editeur)\nlivre: aide/complete\ntab: complete (shell)/indente (editeur)\nshift-/: %\nshift *: '\nctrl-/: \\\nshift-1 a 6: selon bandeau en bas\nshift-7: matrices\nshift-8: complexes\nshift-9:arithmetique\nshift-0: probas\nshift-.: reels\nctrl P: programme\nvar: liste des variables (shell) ou dessin tortue (editeur)\n\nctrl-var (sto) renvoie =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: Editeur 2d ou graphique ou texte selon objet\nshift-4: editeur texte\n+ ou - modifie un parametre en surbrillance\n\nEditeur d'expressions\nctrl z: defaire/refaire (1 fois)\npave directionnel: deplace la selection dans l'arborescence de l'expression\nshift-droit/gauche echange selection avec argument a droite ou a gauche\nctrl droit/gauche dans une somme ou un produit: augmente la selection avec argument droit ou gauche\nshift-4: Editer selection, shift-5: taille police + ou - grande\nenter: evaluer la selection\nshift-6: valeur approchee\nDel: supprime l'operateur racine de la selection\n\nEditeur de scripts\nenter: passage a la ligne\nctrl z: defaire/refaire (1 fois)\nctrl c ou shift et touche curseur simultanement: marque le debut de la selection, deplacer le curseur vers la fin puis Del pour effacer ou ctrl c pour copier sans effacer. ctrl v pour coller.\nMenu-6 recherche seule: entrer un mot puis enter puis enter. Taper enter pour l'occurence suivante, esc pour annuler.\nMenu-6 remplacer: entrer un mot puis enter puis le remplacement et enter. Taper enter ou esc pour remplacer ou non et passer a l'occurence suivante, ctrl del pour annuler\nvalidation (a droite de U): tester syntaxe\n\nRaccourcis Graphes:\n+ - zoom\n(-): zoomout selon y\n*: autoscale\n/: orthonormalisation\nOPTN: axes on/off";
+  const char shortcuts_en_string[]="Keyboard shortcuts (shell and editor)\nbook: help or completion\ntab: completion (shell), indent (editor)\nshift-/: %\nalpha shift *: '\nctrl-/: \\\nshift-1 a 6: see at bottom\nshift-7: matrices\nshift-8: complexes\nshift-9:arithmetic\nshift-0: probas\nshift-.: reals\nctrl P: program\nvar: variables list (shell) or turtle screen (editor)\n\nctrl var (sto) returns =>\n=>+: partfrac\n=>*: factor\n=>sin/cos/tan\n=>=>: solve\n\nShell:\nshift-5: 2d editor or graph or text\nshift-4: text edit\n+ ou - modifies selected slider\n\nExpressions editor\nctrl z: undo/redo (1 fois)\nkeypad: move selection inside expression tree\nshift-right/left exchange selection with right or left argument\nalpha-right/left: inside a sum or product: increase selection with right or left argument\nshift-4: Edit selection, shift-5: change fontsize\nenter: eval selection\nshift-6: approx value\nDel: suppress selection's rootnode operator\n\nScript Editor\nenter: newline\nctrl z: undo/redo (1 time)\nctrl c or shift + cursor key simultaneously: marks selection begin, move the cursor to the end, then hit Del to erase or ctrl c to copy (no erase). ctrl v to paste.\nMenu-6 search: enter a word then enter then again enter. Type enter for next occurence, esc to cancel.\nMenu-6 replace: enter a word then enter then replacement word then enter. Type enter or esc to replace or ignore and go to next occurence, AC to cancel\nOK: test syntax\n\nGraph shortcuts:\n+ - zoom\n(-): zoomout along y\n*: autoscale\n/: orthonormalization\nOPTN: axes on/off";
 #endif
   
   const char apropos_fr_string[]="Giac/Xcas 1.6.0, (c) 2020 B. Parisse et R. De Graeve, www-fourier.univ-grenoble-alpes.fr/~parisse.\nKhicas, interface pour calculatrices par B. Parisse, license GPL version 2, adaptee de l'interface d'Eigenmath pour Casio, G. Maia (http://gbl08ma.com), Mike Smith, Nemhardy, LePhenixNoir, ...\nPortage sur Numworks par Damien Nicolet. Remerciements a Jean-Baptiste Boric et Maxime Friess\nPortage sur Nspire grace a Fabian Vogt (firebird-emu, ndless...).\nTable periodique d'apres Maxime Friess\nRemerciements au site tiplanet, en particulier Xavier Andreani, Adrien Bertrand, Lionel Debroux";
@@ -9283,8 +9281,8 @@ namespace xcas {
 #ifdef MICROPY_LIB
 		if (do_confirm((lang==1)?"Effacer le tas MicroPython?":"Clear MicroPython heap?"))
 		  python_free();
-	      }
 #endif
+	      }
 	    }
 	    warn_python(p,false);
 	    Console_FMenu_Init(contextptr);
@@ -9378,6 +9376,7 @@ namespace xcas {
 	  }
 	  break;
 	}
+#ifdef MICROPY_LIB
 	if (smallmenu.selection==13){
 	  double d=python_heap_size/1024;
 	  if (inputdouble(
@@ -9419,6 +9418,7 @@ namespace xcas {
 	  }
 	  continue;
 	}
+#endif // MICROPY_LIB
 	if (smallmenu.selection == 15){
 	  if (exam_mode)
 	    leave_exam_mode(contextptr);
@@ -9468,8 +9468,10 @@ namespace xcas {
       python_compat(p,contextptr);
       if (edptr)
 	edptr->python=p;
+#ifdef MICROPY_LIB
       if (do_confirm((lang==1)?"Effacer le tas MicroPython?":"Clear MicroPython heap?"))
 	python_free();
+#endif
       *logptr(contextptr) << "Xcas interpreter\n";
       Console_FMenu_Init(contextptr);
       return 0;
@@ -9662,7 +9664,7 @@ namespace xcas {
     buf[1]= n & 0xff;
     buf += 2;
   }
-  void save_console_state_smem(const char * filename,GIAC_CONTEXT){
+  void save_console_state_smem(const char * filename,bool xwaspy,GIAC_CONTEXT){
     console_changed=0;
     string state(khicas_state(contextptr));
     int statesize=state.size();
@@ -9717,7 +9719,42 @@ namespace xcas {
     savebuf[0]=1;
 #endif
     int len=hFile-savebuf;
-    write_file(filename,savebuf,len);
+    if (
+#ifdef XWASPY
+	xwaspy && len<8192
+#else
+	0
+#endif
+	){
+      // save as an ascii file beginning with #xwaspy
+#ifdef NUMWORKS 
+      --len;
+      char * buf=savebuf+1;
+      int newlen=4*(len+2)/3+11; // 4/3 oldlen + 8(#swaspy\n) +1 + 2 for ending  zeros
+      char newbuf[newlen];
+      strcpy(newbuf,"##xwaspy\n");
+      newbuf[0]=1;
+      hFile=newbuf+9;
+#else
+      char * buf=savebuf;
+      int newlen=4*(len+2)/3+10;
+      char newbuf[newlen];
+      strcpy(newbuf,"#xwaspy\n");
+      hFile=newbuf+8;
+#endif
+      for (int i=0;i<len;i+=3,hFile+=4){
+	unsigned char a=buf[i],b=i+1<len?buf[i+1]:0,c=i+2<len?buf[i+2]:0;
+	hFile[0]=32+(a>>2);
+	hFile[1]=32+(((a&3)<<4)|(b>>4));
+	hFile[2]=32+(((b&0xf)<<2)|(c>>6));
+	hFile[3]=32+(c&0x3f);
+      }
+      hFile[0]=0; hFile[1]=0;
+      write_file(filename,newbuf,newlen);
+    }
+    else {
+      write_file(filename,savebuf,len);
+    }
   }
 
   size_t Bfile_ReadFile_OS4(const char * & hf_){
@@ -9742,6 +9779,18 @@ namespace xcas {
   bool load_console_state_smem(const char * filename,GIAC_CONTEXT){
     const char * hf=read_file(filename);
     if (!hf) return false;
+    string str;
+    if (strncmp(hf,"#xwaspy\n",8)==0){
+      hf+=8;
+      const char * source=hf;
+      for (;*source;source+=4){
+	unsigned char a=source[0]-32,b=source[1]-32,c=source[2]-32,d=source[3]-32;
+	str += (a<<2)|(b>>4);
+	str += (b<<4)|(c>>2);
+	str += (c<<6)|d;
+      }
+      hf=str.c_str();
+    }
     size_t L=Bfile_ReadFile_OS4(hf);
     char BUF[L+4];
     BUF[1]=BUF[0]='/'; // avoid trying python compat.
@@ -10448,11 +10497,19 @@ namespace xcas {
     return;
 #else
     string filename(remove_path(remove_extension(fname)));
-    filename+=".xw";
+#if defined NUMWORKS && defined XWASPY
+    bool xwaspy=filename!="session"; // xw will be saved as a fake .py file
+#else
+    bool xwaspy=false;
+#endif
+    if (xwaspy)
+      filename += "_xw.py";
+    else
+      filename+=".xw";
 #ifdef NSPIRE_NEWLIB
     filename+=".tns";
 #endif
-    save_console_state_smem(filename.c_str(),contextptr); // call before save_khicas_symbols_smem(), because this calls create_data_folder if necessary!
+    save_console_state_smem(filename.c_str(),xwaspy,contextptr); // call before save_khicas_symbols_smem(), because this calls create_data_folder if necessary!
     // save_khicas_symbols_smem(("\\\\fls0\\"+filename+".xw").c_str());
     if (edptr)
       check_leave(edptr);
@@ -10460,12 +10517,12 @@ namespace xcas {
   }
 
   int restore_session(const char * fname,GIAC_CONTEXT){
-#if 0
-    return 0;
-#else
     // cout << "0" << fname << endl; Console_Disp(1); GetKey(&key);
     string filename(remove_path(remove_extension(fname)));
-    filename+=string(".xw");
+    if (file_exists((filename+".xw").c_str()))
+      filename += ".xw";
+    else
+      filename += ".py";
 #ifdef NSPIRE_NEWLIB
     filename+=string(".tns");
 #endif
@@ -10523,7 +10580,6 @@ namespace xcas {
       return 0;
     }
     return 1;
-#endif
   }
 
   string extract_name(const char * s){
@@ -10545,9 +10601,46 @@ namespace xcas {
 
   int giac_filebrowser(char * filename,const char * extension,const char * title){
     const char * filenames[MAX_NUMBER_OF_FILENAMES+1];
+#if 1 // def XWASPY
+    int n,choix;
+    bool isxw=strcmp(extension,"xw")==0,ispy=strcmp(extension,"py")==0;
+    if (isxw || ispy){
+      n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,"py");
+      if (n==0) return 0;
+      int N=0;
+      // isxw: keep only filenames ending with _xw
+      // ispy: remove filenames ending with _xw
+      const char * fnames[MAX_NUMBER_OF_FILENAMES+1];
+      for (int i=0;i<n;++i){
+	const char * f=filenames[i];
+	f+=strlen(f)-6;
+	bool isfxw=strcmp(f,"_xw.py")==0;
+	if (isxw?isfxw:!isfxw){
+	  fnames[N]=filenames[i];
+	  ++N;
+	}
+      }
+      if (isxw){ // add regular .xw extensions
+	n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,"xw");
+	if (n+N>MAX_NUMBER_OF_FILENAMES)
+	  n=MAX_NUMBER_OF_FILENAMES-N;
+	for (int i=0;i<n;++i,++N){
+	  fnames[N]=filenames[i];
+	}
+      }
+      fnames[N]=0;
+      choix=select_item(fnames,title?title:"Scripts");
+      if (choix<0 || choix>=N) return 0;
+      strcpy(filename,fnames[choix]);
+      return choix+1;
+    }
+    else 
+      choix=select_item(filenames,title?title:"Scripts");
+#else
     int n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,extension);
     if (n==0) return 0;
     int choix=select_item(filenames,title?title:"Scripts");
+#endif
     if (choix<0 || choix>=n) return 0;
     strcpy(filename,filenames[choix]);
     return choix+1;
@@ -12818,7 +12911,7 @@ void c_sprint_double(char * s,double d){
 
 // auto-shutdown
 int do_shutdown(){
-  xcas::save_console_state_smem("session.xw.tns",giac::context0);
+  xcas::save_console_state_smem("session.xw.tns",false,giac::context0);
 #ifdef NO_STDEXCEPT
   return 1;
 #else
