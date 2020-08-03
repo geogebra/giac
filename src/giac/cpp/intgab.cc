@@ -726,14 +726,18 @@ namespace giac {
 	gen tmp=xfactint*subst(Xfact,X,expx,false,contextptr);
 	gen somme_residus;
 	int rAs=int(rA.size()),rPs=int(rP.size());
+	vecteur lrac;
 	for (int i=0;i<rAs;++i){
 	  gen rac=rA[i];
 	  // adjust imaginary part
 	  gen imrac=im(rac,contextptr);
 	  gen k=_floor(imrac/imT,contextptr);
 	  rac -= k*T;
-	  if (is_positive(k,contextptr))
+	  rac=ratnormal(rac,contextptr);
+	  if (is_positive(k,contextptr)){
+	    lrac.push_back(rac);
 	    somme_residus += residue(tmp,*x._IDNTptr,rac,contextptr);
+	  }
 	  if (is_undef(somme_residus))
 	    return false;
 	}
@@ -743,7 +747,11 @@ namespace giac {
 	  gen imrac=im(rac,contextptr);
 	  gen k=_floor(imrac/imT,contextptr);
 	  rac -= k*T;
-	  somme_residus += residue(tmp,*x._IDNTptr,rac,contextptr);
+	  rac=ratnormal(rac,contextptr);
+	  if (!equalposcomp(lrac,rac)){
+	    somme_residus += residue(tmp,*x._IDNTptr,rac,contextptr);
+	    lrac.push_back(rac);
+	  }
 	  if (is_undef(somme_residus)) return false;
 	}
 	res=normal(-2*cst_pi*cst_i*somme_residus,contextptr); 

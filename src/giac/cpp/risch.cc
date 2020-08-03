@@ -559,7 +559,7 @@ namespace giac {
     // int( ipnum/ipden*exp(a*x),x)
     int save=calc_mode(contextptr);
     calc_mode(0,contextptr);
-    prim += _integrate(gen(makevecteur(expax*r2sym(ipnum/ipden,l,contextptr),x),_SEQ__VECT),contextptr);
+    prim += _integrate(gen(makevecteur(expax*r2sym(ipnum,l,contextptr)/r2sym(ipden,l,contextptr),x),_SEQ__VECT),contextptr);
     calc_mode(save,contextptr);
     if (is_undef(prim)) return false;
     // Hermite reduction 
