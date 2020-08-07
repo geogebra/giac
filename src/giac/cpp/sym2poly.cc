@@ -3150,6 +3150,22 @@ namespace giac {
     if (is_inequation(e) && e._SYMBptr->feuille.type==_VECT){
       vecteur & v=*e._SYMBptr->feuille._VECTptr;
       unary_function_ptr u=e._SYMBptr->sommet;
+      if (calc_mode(contextptr)==1){
+	if (lidnt(v[0]).empty() && !lidnt(v[1]).empty()){
+	  gen e2=makesequence(v[1],v[0]);
+	  if (u==at_superieur_strict)
+	    return symbolic(at_inferieur_strict,e2);
+	  if (u==at_superieur_egal)
+	    return symbolic(at_inferieur_egal,e2);
+	  if (u==at_inferieur_strict)
+	    return symbolic(at_superieur_strict,e2);
+	  if (u==at_inferieur_egal)
+	    return symbolic(at_superieur_egal,e2);
+	}
+	return e;
+      }
+      if (v[0].type==_IDNT && equalposcomp(lidnt(v[1]),v[0])==0)
+	return symbolic(u,makesequence(v[0],normal(v[1],true,contextptr)));
       gen e2= v[0]-v[1];
       e2=normal(e2,true,contextptr);
       gen c=_content(e2,contextptr);
