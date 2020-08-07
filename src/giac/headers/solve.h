@@ -36,6 +36,7 @@ namespace giac {
   gen _reset_solve_counter(const gen & args,const context * contextptr);
   void set_merge(vecteur & v,const vecteur & w);
   bool is_inequation(const gen & g);
+  gen rationalize(const gen & g,const gen & x,GIAC_CONTEXT);
 
   gen equal2diff(const gen & g); // rewrite = as -
   vecteur protect_sort(const vecteur & res,GIAC_CONTEXT);
