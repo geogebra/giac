@@ -93,6 +93,7 @@ void os_wait_1ms(int ms){
 bool file_exists(const char * filename){
   if (access(filename,R_OK))
     return false;
+  return true;
 }
 
 bool erase_file(const char * filename){

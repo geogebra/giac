@@ -25,6 +25,7 @@
 #endif
 #ifdef KHICAS
 #define XWASPY 1 // save .xw file as _xw.py (to be recognized by Numworks workshop)
+const int xwaspy_shift=33; // must be between 32 and 63, reflect in xcas.js and History.cc
 #include "kdisplay.h"
 #include <string.h>
 #include <stdio.h>
@@ -6908,12 +6909,12 @@ namespace xcas {
 #ifdef NSPIRE_NEWLIB
 	DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper esc":"Screen freezed. Press esc."), 1, 0, 0);
 #else
-	DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper EXIT":"Screen freezed. Press EXIT."), 1, 0, 0);
+	DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper clear":"Screen freezed. Press clear."), 1, 0, 0);
 #endif
 	DisplayStatusArea();
 	int key;
 	GetKey(&key);
-	if (key==KEY_CTRL_EXIT)
+	if (key==KEY_CTRL_EXIT || key==KEY_CTRL_AC)
 	  break;
       }
     }
@@ -9743,14 +9744,28 @@ namespace xcas {
       hFile=newbuf+8;
 #endif
       for (int i=0;i<len;i+=3,hFile+=4){
-	unsigned char a=buf[i],b=i+1<len?buf[i+1]:0,c=i+2<len?buf[i+2]:0;
-	hFile[0]=32+(a>>2);
-	hFile[1]=32+(((a&3)<<4)|(b>>4));
-	hFile[2]=32+(((b&0xf)<<2)|(c>>6));
-	hFile[3]=32+(c&0x3f);
+	// keep space \n and a..z chars
+	char c=buf[i];
+	while (i<len && (c==' ' || c=='\n' || c=='{' || c==')' || c==';' || c==':' || c=='\n' || (c>='a' || c<='z')) ){
+	  if (c==')')
+	    c='}';
+	  if (c==':')
+	    c='~';
+	  if (c==';')
+	    c='|';
+	  ++i;
+	  *hFile=c;
+	  ++hFile;
+	}
+	unsigned char a=buf[i],b=i+1<len?buf[i+1]:0,C=i+2<len?buf[i+2]:0;
+	hFile[0]=xwaspy_shift+(a>>2);
+	hFile[1]=xwaspy_shift+(((a&3)<<4)|(b>>4));
+	hFile[2]=xwaspy_shift+(((b&0xf)<<2)|(C>>6));
+	hFile[3]=xwaspy_shift+(C&0x3f);
       }
-      hFile[0]=0; hFile[1]=0;
-      write_file(filename,newbuf,newlen);
+      *hFile=0; ++hFile; 
+      *hFile=0; ++hFile; 
+      write_file(filename,newbuf,hFile-newbuf);
     }
     else {
       write_file(filename,savebuf,len);
@@ -9784,7 +9799,20 @@ namespace xcas {
       hf+=8;
       const char * source=hf;
       for (;*source;source+=4){
-	unsigned char a=source[0]-32,b=source[1]-32,c=source[2]-32,d=source[3]-32;
+	while (*source=='\n' || *source==' ' || (*source>='a' && *source<='~')){
+	  char c=*source;
+	  if (c=='}')
+	    c=')';
+	  if (c=='|')
+	    c=';';
+	  if (c=='~')
+	    c=':';
+	  str += c;
+	  ++source;
+	}
+	if (!*source)
+	  break;
+	unsigned char a=source[0]-xwaspy_shift,b=source[1]-xwaspy_shift,c=source[2]-xwaspy_shift,d=source[3]-xwaspy_shift;
 	str += (a<<2)|(b>>4);
 	str += (b<<4)|(c>>2);
 	str += (c<<6)|d;
@@ -10519,12 +10547,16 @@ namespace xcas {
   int restore_session(const char * fname,GIAC_CONTEXT){
     // cout << "0" << fname << endl; Console_Disp(1); GetKey(&key);
     string filename(remove_path(remove_extension(fname)));
+#ifdef NSPIRE_NEWLIB
+    if (file_exists((filename+".xw.tns").c_str()))
+      filename += ".xw.tns";
+    else
+      filename += ".py.tns";
+#else
     if (file_exists((filename+".xw").c_str()))
       filename += ".xw";
     else
       filename += ".py";
-#ifdef NSPIRE_NEWLIB
-    filename+=string(".tns");
 #endif
     if (!load_console_state_smem(filename.c_str(),contextptr)){
       int x=0,y=0;
@@ -10606,7 +10638,7 @@ namespace xcas {
     bool isxw=strcmp(extension,"xw")==0,ispy=strcmp(extension,"py")==0;
     if (isxw || ispy){
       n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,"py");
-      if (n==0) return 0;
+      if (n==0 && ispy) return 0;
       int N=0;
       // isxw: keep only filenames ending with _xw
       // ispy: remove filenames ending with _xw
