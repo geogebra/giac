@@ -9958,7 +9958,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     const int bufsize=512*1024;
     buf=(char *)malloc(bufsize);
     EM_ASM_ARGS({
-	var url=Module.Pointer_stringify($0);
+	var url=UTF8ToString($0);//Module.Pointer_stringify($0);
 	console.log("url:"+url);
 	var req = new XMLHttpRequest();
 	var bufsize=$2;

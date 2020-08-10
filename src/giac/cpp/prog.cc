@@ -116,7 +116,7 @@ namespace giac {
 #ifdef EMCC
     EM_ASM_ARGS({
 	if (UI.warnpy){
-          var msg = Pointer_stringify($0); // Convert message to JS string
+          var msg = UTF8ToString($0);// Pointer_stringify($0); // Convert message to JS string
           alert(msg);                      // Use JS version of alert          
         }
       }, s.c_str());
@@ -5737,13 +5737,13 @@ namespace giac {
     // need a way to pass w to EM_ASM like environment and call HTML5 prompt
 #if 0
     EM_ASM_ARGS({
-        var msg = Pointer_stringify($0); // Convert message to JS string
+        var msg = UTF8ToString($0);//Pointer_stringify($0); // Convert message to JS string
         alert(msg);                      // Use JS version of alert          
       }, (progs+evals).c_str());
 #else
     while (1){
       int i=EM_ASM_INT({
-	  var msg = Pointer_stringify($0); // Convert message to JS string
+	  var msg = UTF8ToString($0);//Pointer_stringify($0); // Convert message to JS string
 	  var tst=prompt(msg,'n');             // Use JS version of alert
 	  if (tst==null) return -4;
 	  if (tst=='next' || tst=='n' || tst=='sst') return -1;
@@ -9794,6 +9794,34 @@ namespace giac {
 
 #ifndef KHICAS // see kadd.cc
   gen current_sheet(const gen & g,GIAC_CONTEXT){
+#if defined EMCC && !defined GIAC_GGB
+    if (ckmatrix(g,true)){
+      matrice m=*g._VECTptr;
+      int R=m.size(),C=m.front()._VECTptr->size();
+      CERR << "current1 " << R << " " << C << '\n';
+      R=giacmin(R,EM_ASM_INT({ return UI.assistant_matr_maxrows; },0));
+      C=giacmin(C,EM_ASM_INT({ return UI.assistant_matr_maxcols; },0));
+      CERR << "current2 " << R << " " << C << '\n';
+      int save_r=printcell_current_row(contextptr);
+      int save_c=printcell_current_col(contextptr);
+      for (int i=0;i<R;++i){
+	printcell_current_row(contextptr)=i;
+	for (int j=0;j<C;++j){
+	  printcell_current_col(contextptr)=j;
+	  string s=m[i][j].print(contextptr);
+	  CERR << "current3 " << s << " " << i << " " << j << '\n';
+	  EM_ASM_ARGS({
+	      var s=UTF8ToString($0);//Pointer_stringify($0);//
+	      console.log(s);
+	      UI.sheet_set_ij(s,$1,$2);
+	    },s.c_str(),i,j);
+	}
+      }
+      printcell_current_col(contextptr)=save_c;
+      printcell_current_row(contextptr)=save_r;
+      EM_ASM_ARGS({var s=' ';UI.sheet_recompute(s.substr(0,0)); UI.open_sheet(true);},0);
+    }
+#endif
     if (interactive_op_tab && interactive_op_tab[5])
       return interactive_op_tab[5](g,contextptr);
     return zero;
