@@ -6,7 +6,7 @@ project.setDescription('Giac CAS for GeoGebra')
 
 apply plugin: 'cpp'
 apply plugin: 'visual-studio'
-
+apply from: './repositories.gradle'
 /* Emscripten related settings. Currently we use version 1.37.22 to produce the WASM build and 1.34.1 for
  * the normal JavaScript version, other versions may not work correctly,
  * or may have problems in some Giac commands and results. By default, 1.34.1 will be used.
@@ -84,8 +84,7 @@ def emccCommand = emscriptenDir.collect({dir -> "${dir}/emcc"})
 
 // End of emscripten related settings. Huh.
 def java_home = org.gradle.internal.jvm.Jvm.current().javaHome
-ext.ggrev = getGeogebraRevision()
-def giacVersion = '"1.2.4-' + ext.ggrev + '"'
+def giacVersion = '"1.2.4-' + project.getProperty("revision") + '"'
 println giacVersion
 import org.apache.tools.ant.taskdefs.condition.Os
 
