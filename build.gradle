@@ -84,8 +84,9 @@ def emccCommand = emscriptenDir.collect({dir -> "${dir}/emcc"})
 
 // End of emscripten related settings. Huh.
 def java_home = org.gradle.internal.jvm.Jvm.current().javaHome
-def giacVersion = '"1.2.4-' + getGeoGebraRevision() + '"'
-
+ext.ggrev = getGeogebraRevision()
+def giacVersion = '"1.2.4-' + ext.ggrev + '"'
+println giacVersion
 import org.apache.tools.ant.taskdefs.condition.Os
 
 def exec_(String... script) {
