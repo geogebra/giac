@@ -6,6 +6,19 @@ buildscript {
 }
 
 apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+
+configurations {
+       deployerAar
+}
+
+artifacts {
+    deployerAar file("${buildDir}/outputs/aar/${project.name}-release.aar")
+}
+
+dependencies {
+    deployerAar 'org.apache.maven.wagon:wagon-ssh:3.3.2'
+}
 
 android {
     compileSdkVersion 27
@@ -44,3 +57,28 @@ task copyCrystaxSo {
         }
     }
 }
+
+uploadDeployerAar { task ->
+        gradle.taskGraph.whenReady { graph ->
+            if (graph.hasTask(task)) {
+                // check properties defined and fail early
+                mavenUser
+                mavenPassword
+                mavenUrl
+            }
+        }
+        doFirst {
+            repositories {
+                mavenDeployer {
+                        configuration = configurations.deployerAar
+                    repository(url: mavenUrl) {
+                        authentication(userName: mavenUser, password: mavenPassword)
+                    }
+                    pom {
+                        artifactId = project.name
+                        packaging = 'aar'
+                    }
+                }
+            }
+        }
+    }
