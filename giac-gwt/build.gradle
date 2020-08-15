@@ -3,6 +3,10 @@ plugins {
     id 'maven-publish'
 }
 
+repositories {
+   mavenCentral()
+}
+
 dependencies {
     compile 'com.google.gwt:gwt-dev:2.8.2',
     'com.google.gwt:gwt-user:2.8.2'
