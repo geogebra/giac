@@ -1,12 +1,18 @@
 buildscript {
+    repositories {
+        google()
+        jcenter()
+    }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.4.1'
-        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
     }
 }
 
+plugins {
+  id "com.github.dcendents.android-maven" version "2.1"
+}
+
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
 
 configurations {
        deployerAar

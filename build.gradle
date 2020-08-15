@@ -2,11 +2,16 @@
 // and Zoltan Kovacs <zoltan@geogebra.org>.
 // Based on Bernard Parisse's original Makefiles and other scripts.
 
+plugins {
+  id 'org.hidetake.ssh' version '2.10.1'
+  id 'visual-studio'
+  id 'cpp'
+  id 'de.undercouch.download' version '3.1.1'
+}
+
 project.setDescription('Giac CAS for GeoGebra')
 
-apply plugin: 'cpp'
-apply plugin: 'visual-studio'
-apply from: './repositories.gradle'
+
 /* Emscripten related settings. Currently we use version 1.37.22 to produce the WASM build and 1.34.1 for
  * the normal JavaScript version, other versions may not work correctly,
  * or may have problems in some Giac commands and results. By default, 1.34.1 will be used.
@@ -930,3 +935,5 @@ task androidAar (dependsOn: ['androidCopyCrystaxSo', 'androidCopyEabiLibjavagiac
         'androidCopyX86LibjavagiacSo', 'androidCopyX86_64LibjavagiacSo', 'androidCopyArm64LibjavagiacSo', 'giac-android:assemble']) {
     description 'Creates .aar package'
 }
+
+apply from: "deploy.gradle"

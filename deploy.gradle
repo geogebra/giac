@@ -1,0 +1,321 @@
+// GeoGebra Deployment
+// Copyright (c) 2015-2017 The GeoGebra Group
+// All rights reserved
+// @author Zoltan Kovacs <zoltan@geogebra.org>
+
+ext.workspaceUrl = 'https://deploy.geogebra.org/job/GeoGebra-build/ws/'
+
+ext.macServerSvnCommand = '/usr/local/bin/svn'
+
+ext.publDir = "$buildDir/distributions/"
+ext.webDir = file("$publDir/GeoGebraWeb")
+
+// To sign the .jar files
+// Remote file copying and remote execution (via ssh)
+ext.compileLinux32JavagiacKey = file("keys/compileLinux32JavagiacKey")
+
+ext.tubeAppletPackCreatorDir = '/var/www/GeoGebraTube/tube-live/maintenance'
+
+ssh.settings {
+  knownHosts = allowAnyHosts
+}
+
+
+def ggMavenRepoUrl = 'scp://dev.geogebra.org:22077/var/www/maven2'
+def ggMavenRepoUser = System.env.MAVEN_USR
+def ggMavenRepoPass = System.env.MAVEN_PSW
+
+def distDir = "$buildDir/distributions"
+def javagiacDir = file("$distDir/javagiac/")
+def ggbGiacJsDir = file("$distDir/giac.js/")
+def ggrev = project.getProperty("revision")
+
+remotes {
+    compileLinux32Server {
+        host = 'ggb1.idm.jku.at'
+        port = 2299
+        user = 'kovzol' // TODO: use a more general account
+        identity = compileLinux32JavagiacKey
+    }
+    testNodeWinServerBash {
+        host = '140.78.116.136'
+        port = 22078
+        user = System.env.WIN_BASH_USR
+        password = System.env.WIN_BASH_PSW
+    }
+    electronWinAutobuildServer {
+        host = '140.78.116.136'
+        port = 22077
+        user = System.env.WIN_SSH_USR
+        password = System.env.WIN_SSH_PSW
+    }
+    macServer {
+        host = '140.78.116.142'
+        port = 22
+        user = System.env.MAC_USR
+        password = System.env.MAC_PSW
+    }
+}
+
+task javagiacWin32Jar (dependsOn: ':javagiacWin32SharedLibrary', type: Jar) {
+    description 'Create the Windows 32 bit .jar package for the Java Giac library.'
+    baseName = 'javagiac-win32'
+    destinationDir = javagiacDir
+    from "${buildDir}/libs/javagiac/shared/win32"
+    include '*.dll'
+    classifier 'natives-windows-i586'
+}
+
+// Unsure if this is needed or not. Otherwise there is no .pom file for Java Giac (which is probably a problem).
+task javagiacPomJar (type: Jar) {
+    description 'Creates empty .jar package for the Java Giac library.'
+    baseName = 'javagiac'
+    destinationDir = javagiacDir
+}
+
+task testJavagiacWin32 (dependsOn: 'javagiacWin32Jar') {
+    description 'Tests the Windows 32 bit version of Java Giac. [incubating]'
+}
+
+task javagiacWin64Jar (dependsOn: ':javagiacWin64SharedLibrary', type: Jar) {
+    description 'Creates the Windows 64 bit .jar package for the Java Giac library.'
+    baseName = 'javagiac-win64'
+    destinationDir = javagiacDir
+    from "${buildDir}/libs/javagiac/shared/win64"
+    include '*.dll'
+    rename 'javagiac.dll', 'javagiac64.dll'
+    classifier 'natives-windows-amd64'
+}
+
+task testJavagiacWin64 (dependsOn: 'javagiacWin64Jar') {
+    description 'Tests the Windows 64 bit version of Java Giac. [incubating]'
+}
+
+task javagiacLinux64Jar (dependsOn: 'javagiacLinux64SharedLibrary', type: Jar) {
+    description 'Creates the Linux 64 bit .jar package for the Java Giac library.'
+    baseName = 'javagiac-linux64'
+    destinationDir = javagiacDir
+    from "${buildDir}/libs/javagiac/shared/linux64"
+    include '*.so'
+    rename 'libjavagiac.so', 'libjavagiac64.so'
+    classifier 'natives-linux-amd64'
+}
+
+task testJavagiacLinux64 (dependsOn: 'javagiacLinux64Jar') {
+    description 'Tests the Linux 64 bit version of Java Giac. [incubating]'
+}
+
+task javagiacLinux32Jar (dependsOn: 'compileLinux32MacJavagiacRemotely', type: Jar) {
+    description 'Creates the Linux 32 bit .jar package for the Java Giac library.'
+    baseName = 'javagiac-linux32'
+    destinationDir = javagiacDir
+    from "${buildDir}/libs/javagiac/shared/linux32" // FIXME: unify
+    include '*.so'
+    classifier 'natives-linux-i586'
+}
+
+task javagiacMacJar (dependsOn: 'compileLinux32MacJavagiacRemotely', type: Jar) {
+    description 'Creates the Linux 32 bit .jar package for the Java Giac library.'
+    baseName = 'javagiac-mac'
+    destinationDir = javagiacDir
+    from "${buildDir}/binaries/javagiacSharedLibrary/osx_amd64" // FIXME: unify
+    include '*.jnilib'
+    classifier 'natives-macosx-universal'
+}
+
+task testJavagiacLinux32 (dependsOn: 'javagiacLinux32Jar') {
+    description 'Tests the Linux 32 bit version of Java Giac. [incubating]'
+}
+
+task testJavagiacMac (dependsOn: 'javagiacMacJar') {
+    description 'Tests the Mac version of Java Giac. [incubating]'
+}
+
+task testJavagiacAndroidArm (dependsOn: 'javagiacAndroideabiSharedLibrary') {
+    description 'Tests the Android ARM version of Java Giac. [incubating]'
+}
+
+task testJavagiacAndroidX86 (dependsOn: 'javagiacAndroidx86SharedLibrary') {
+    description 'Tests the Android x86 version of Java Giac. [incubating]'
+}
+
+task testJavagiac (dependsOn: ['testJavagiacLinux64', 'testJavagiacLinux32',
+    'testJavagiacWin32', 'testJavagiacWin64', 'testJavagiacMac', 'testJavagiacAndroidArm', 'testJavagiacAndroidX86']) {
+    description 'Tests the Linux, Windows, Mac and Android versions of the Java Giac library. [incubating]'
+}
+
+task compileLinux32MacJavagiacRemotely () {
+    description 'Compiles the Linux 32 bit and Mac versions of the Java Giac library remotely (parallel).'
+    def outputLinux32Dir = "${buildDir}/libs/javagiac/shared/linux32" // FIXME: unify
+    def outputMacDir = "${buildDir}/binaries/javagiacSharedLibrary/osx_amd64" // FIXME: unify
+    def outputLinux32 = "$outputLinux32Dir/libjavagiac.so"
+    def outputMac = "$outputMacDir/libjavagiac.jnilib"
+    // outputs.file output // be never UP-TO-DATE
+    doLast {
+	ssh.run {
+	    session(remotes.compileLinux32Server) {
+                execute "cd geogebra; svn update --non-interactive --trust-server-cert"
+		execute "cd geogebra/giac; svn update -r$ggrev --non-interactive --trust-server-cert"
+		execute "cd geogebra/giac; ../gradlew javagiacLinux32SharedLibrary -Prevision=$ggrev"
+		file(outputLinux32Dir).mkdirs()
+		get from: "geogebra/giac/build/libs/javagiac/shared/linux32/libjavagiac.so", into: outputLinux32 // FIXME: unify
+            }
+	    session(remotes.macServer) {
+                execute "cd geogebra; $macServerSvnCommand update --non-interactive --trust-server-cert"
+		execute "cd geogebra/giac; $macServerSvnCommand update -r$ggrev --non-interactive --trust-server-cert"
+		execute "cd geogebra/giac; ../gradlew javagiacOsx_amd64SharedLibrary -Prevision=$ggrev"
+		file(outputMacDir).mkdirs()
+		get from: "geogebra/giac/build/binaries/javagiacSharedLibrary/osx_amd64/libjavagiac.jnilib", into: outputMac // FIXME: unify
+            }
+        }
+    }
+}
+
+task javagiacJars (dependsOn: ['javagiacMacJar', 'javagiacLinux32Jar', 'javagiacLinux64Jar',
+    'javagiacWin32Jar', 'javagiacWin64Jar']) {
+    description 'Creates the native .jar files for Windows, Linux and Mac for Java Giac.'
+}
+
+task testGiacJs (dependsOn: ['createGiacJs']) {
+    description 'Tests Javascript version of Giac. [incubating]'
+}
+
+task testNodeGiacWin () {
+    description 'Tests the Windows port of NodeGiac.'
+    doLast {
+        ssh.run {
+            session(remotes.electronWinAutobuildServer) {
+                execute 'cmd /c "cd giac & svn update"'
+                execute 'cmd /c "cd giac & set libdir=\"c:\\Users\\IEUser\\desktop-bundle\\ggb-electron\\dll\\MpfrMpir\\Static\\Lib32\" & \"\\Program Files (x86)\\nodejs\\node_modules\\npm\\bin\\node-gyp-bin\\node-gyp\" build"'
+            }
+        }
+        ssh.run {
+            session(remotes.testNodeWinServerBash) {
+                // It is assumed that WSL (Bash for Windows) is installed here
+                execute "cd /mnt/c/Users/IEUser/giac/src/test; ./regression -r -n"
+            }
+        }
+    }
+}
+
+task testGiac (dependsOn: ['testJavagiac', 'testGiacJs']) {
+    description 'Tests Giac. [incubating]'
+}
+
+/* Publications */
+
+// .jar files
+
+apply plugin: "maven"
+
+configurations {
+    deployerJars
+}
+
+dependencies {
+    deployerJars "org.apache.maven.wagon:wagon-ssh:3.3.2"
+}
+
+artifacts {
+    deployerJars javagiacLinux64Jar
+    deployerJars javagiacLinux32Jar
+    deployerJars javagiacWin64Jar
+    deployerJars javagiacWin32Jar
+    deployerJars javagiacMacJar
+    deployerJars javagiacPomJar
+}
+
+uploadDeployerJars {
+    repositories.mavenDeployer {
+        configuration = configurations.deployerJars
+        repository(url: ggMavenRepoUrl) {
+	    // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
+	    // you may need to manually connect to the Maven server first by running this
+	    // task manually by adding desirably the --debug option also (and enter "yes ENTER" if needed).
+	    // Jenkins' home folder is by default in /var/lib/jenkins and its workspace is
+	    // in jobs/*/workspace which is actually a standard SVN checkout folder.
+            authentication(userName: ggMavenRepoUser, password: ggMavenRepoPass)
+	    pom {
+		version = project.getProperty('revision')
+		groupId = 'fr.ujf-grenoble'
+		artifactId = 'javagiac'
+		// withXml { asNode().appendNode('description', 'Java Giac for GeoGebra') } // TODO: add description etc.
+	    }
+        }
+    }
+}
+
+def processFileInplace(file, Closure processText) {
+    def text = file.text
+    file.write(processText(text))
+}
+
+task uploadDeployerAar (dependsOn: ['androidAar', 'giac-android:uploadDeployerAar']) {
+    description 'Deploys the .aar package to GeoGebra\'s Maven repository.'
+}
+
+
+// giac.js -- taken care of by artifacts
+
+
+// node version
+
+// Recompilation is slow, and seems to be not really required, so we don't run "npm install".
+task updateNodegiacVersion () {
+    description 'Updates Node Giac version in the package.json file.'
+    doLast {
+	def packageJson = file("${project(':giac').projectDir}/package.json")
+	processFileInplace(packageJson) { line ->
+    	    def pattern = ~/"version": "(.*)"/
+    	    def matcher = (line =~ pattern)
+	    matcher.replaceAll("\"version\": \"1.23.$ggrev\"")
+	    }
+	}
+    }
+
+task updateNodegiacWebCommit (dependsOn: 'updateNodegiacVersion') {
+    description 'Commits changes of package.json to the SVN repository.'
+    doLast {
+        exec {
+	    // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
+	    // you may need to manually connect to the SVN server first by running this task manually.
+	    // Jenkins' home folder is by default in /var/lib/jenkins and its workspace is
+	    // in jobs/*/workspace which is actually a standard SVN checkout folder.
+            commandLine 'svn', 'commit', '-m', "Automatically update package.json to r$ggrev",
+		"${project(':giac').projectDir}"
+	    }
+	}
+    }
+task publishNodegiac (dependsOn: 'updateNodegiacWebCommit') {
+    description 'Publishes Node Giac to npmjs.com'
+    doLast {
+       exec {
+	    // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
+	    // you may need to manually enter the npmjs.com repository data.
+            commandLine 'npm', 'publish'
+            workingDir '../giac'
+	    }
+	}
+    }
+
+// Top level task
+task updateGiac (dependsOn: ['uploadDeployerJars', 'uploadDeployerAar']) {
+    description 'Commits all update related changes for Giac.'
+    }
+
+project('giac-gwt') {
+afterEvaluate {
+    publishing {
+        repositories {
+            maven {
+                url 'sftp://dev.geogebra.org:22077/var/www/maven2'
+                credentials {
+                    username = ggMavenRepoUser
+                    password = ggMavenRepoPass
+                }
+            }
+        }
+    }
+}
+}
+
