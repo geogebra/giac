@@ -65,20 +65,12 @@ task copyCrystaxSo {
 }
 
 uploadDeployerAar { task ->
-        gradle.taskGraph.whenReady { graph ->
-            if (graph.hasTask(task)) {
-                // check properties defined and fail early
-                mavenUser
-                mavenPassword
-                mavenUrl
-            }
-        }
         doFirst {
             repositories {
                 mavenDeployer {
                         configuration = configurations.deployerAar
-                    repository(url: mavenUrl) {
-                        authentication(userName: mavenUser, password: mavenPassword)
+                    repository(url: 'scp://dev.geogebra.org:22077/var/www/maven2') {
+                        authentication(userName: System.env.MAVEN_USR, password: System.env.MAVEN_PSW)
                     }
                     pom {
                         artifactId = project.name
