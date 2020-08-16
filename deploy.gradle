@@ -152,20 +152,20 @@ task compileLinux32MacJavagiacRemotely () {
     def outputMac = "$outputMacDir/libjavagiac.jnilib"
     // outputs.file output // be never UP-TO-DATE
     doLast {
-	ssh.run {
-	    session(remotes.compileLinux32Server) {
+        ssh.run {
+            session(remotes.compileLinux32Server) {
                 execute "cd geogebra; svn update --non-interactive --trust-server-cert"
-		execute "cd geogebra/giac; svn update -r$ggrev --non-interactive --trust-server-cert"
-		execute "cd geogebra/giac; ../gradlew javagiacLinux32SharedLibrary -Prevision=$ggrev"
-		file(outputLinux32Dir).mkdirs()
-		get from: "geogebra/giac/build/libs/javagiac/shared/linux32/libjavagiac.so", into: outputLinux32 // FIXME: unify
+                execute "cd geogebra/giac; svn update -r$ggrev --non-interactive --trust-server-cert"
+                execute "cd geogebra/giac; ../gradlew javagiacLinux32SharedLibrary -Prevision=$ggrev"
+                file(outputLinux32Dir).mkdirs()
+                get from: "geogebra/giac/build/libs/javagiac/shared/linux32/libjavagiac.so", into: outputLinux32 // FIXME: unify
             }
-	    session(remotes.macServer) {
+            session(remotes.macServer) {
                 execute "cd geogebra; $macServerSvnCommand update --non-interactive --trust-server-cert"
-		execute "cd geogebra/giac; $macServerSvnCommand update -r$ggrev --non-interactive --trust-server-cert"
-		execute "cd geogebra/giac; ../gradlew javagiacOsx_amd64SharedLibrary -Prevision=$ggrev"
-		file(outputMacDir).mkdirs()
-		get from: "geogebra/giac/build/binaries/javagiacSharedLibrary/osx_amd64/libjavagiac.jnilib", into: outputMac // FIXME: unify
+                execute "cd geogebra/giac; $macServerSvnCommand update -r$ggrev --non-interactive --trust-server-cert"
+                execute "cd geogebra/giac; ../gradlew javagiacOsx_amd64SharedLibrary -Prevision=$ggrev"
+                file(outputMacDir).mkdirs()
+                get from: "geogebra/giac/build/binaries/javagiacSharedLibrary/osx_amd64/libjavagiac.jnilib", into: outputMac // FIXME: unify
             }
         }
     }
@@ -206,8 +206,6 @@ task testGiac (dependsOn: ['testJavagiac', 'testGiacJs']) {
 
 // .jar files
 
-apply plugin: "maven"
-
 configurations {
     deployerJars
 }
@@ -229,18 +227,18 @@ uploadDeployerJars {
     repositories.mavenDeployer {
         configuration = configurations.deployerJars
         repository(url: ggMavenRepoUrl) {
-	    // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
-	    // you may need to manually connect to the Maven server first by running this
-	    // task manually by adding desirably the --debug option also (and enter "yes ENTER" if needed).
-	    // Jenkins' home folder is by default in /var/lib/jenkins and its workspace is
-	    // in jobs/*/workspace which is actually a standard SVN checkout folder.
+            // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
+            // you may need to manually connect to the Maven server first by running this
+            // task manually by adding desirably the --debug option also (and enter "yes ENTER" if needed).
+            // Jenkins' home folder is by default in /var/lib/jenkins and its workspace is
+            // in jobs/*/workspace which is actually a standard SVN checkout folder.
             authentication(userName: ggMavenRepoUser, password: ggMavenRepoPass)
-	    pom {
-		version = project.getProperty('revision')
-		groupId = 'fr.ujf-grenoble'
-		artifactId = 'javagiac'
-		// withXml { asNode().appendNode('description', 'Java Giac for GeoGebra') } // TODO: add description etc.
-	    }
+            pom {
+                version = project.getProperty('revision')
+                groupId = 'fr.ujf-grenoble'
+                artifactId = 'javagiac'
+                // withXml { asNode().appendNode('description', 'Java Giac for GeoGebra') } // TODO: add description etc.
+            }
         }
     }
 }
@@ -277,13 +275,13 @@ task updateNodegiacWebCommit (dependsOn: 'updateNodegiacVersion') {
     description 'Commits changes of package.json to the SVN repository.'
     doLast {
         exec {
-	    // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
-	    // you may need to manually connect to the SVN server first by running this task manually.
-	    // Jenkins' home folder is by default in /var/lib/jenkins and its workspace is
-	    // in jobs/*/workspace which is actually a standard SVN checkout folder.
+            // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
+            // you may need to manually connect to the SVN server first by running this task manually.
+            // Jenkins' home folder is by default in /var/lib/jenkins and its workspace is
+            // in jobs/*/workspace which is actually a standard SVN checkout folder.
             commandLine 'svn', 'commit', '-m', "Automatically update package.json to r$ggrev",
-		projectDir
-	}
+                projectDir
+        }
     }
 }
 
@@ -291,8 +289,8 @@ task publishNodegiac (dependsOn: 'updateNodegiacWebCommit') {
     description 'Publishes Node Giac to npmjs.com'
     doLast {
         exec {
-	    // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
-	    // you may need to manually enter the npmjs.com repository data.
+            // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
+            // you may need to manually enter the npmjs.com repository data.
             commandLine 'npm', 'publish'
             workingDir '../giac'
         }
@@ -302,21 +300,21 @@ task publishNodegiac (dependsOn: 'updateNodegiacWebCommit') {
 // Top level task
 task updateGiac (dependsOn: ['uploadDeployerJars', 'uploadDeployerAar']) {
     description 'Commits all update related changes for Giac.'
-    }
+}
 
 project('giac-gwt') {
-afterEvaluate {
-    publishing {
-        repositories {
-            maven {
-                url 'sftp://dev.geogebra.org:22077/var/www/maven2'
-                credentials {
-                    username = ggMavenRepoUser
-                    password = ggMavenRepoPass
+    afterEvaluate {
+        publishing {
+            repositories {
+                maven {
+                    url 'sftp://dev.geogebra.org:22077/var/www/maven2'
+                    credentials {
+                        username = ggMavenRepoUser
+                        password = ggMavenRepoPass
+                    }
                 }
             }
         }
     }
-}
 }
 
