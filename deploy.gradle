@@ -282,21 +282,22 @@ task updateNodegiacWebCommit (dependsOn: 'updateNodegiacVersion') {
 	    // Jenkins' home folder is by default in /var/lib/jenkins and its workspace is
 	    // in jobs/*/workspace which is actually a standard SVN checkout folder.
             commandLine 'svn', 'commit', '-m', "Automatically update package.json to r$ggrev",
-		"${project(':giac').projectDir}"
-	    }
+		projectDir
 	}
     }
+}
+
 task publishNodegiac (dependsOn: 'updateNodegiacWebCommit') {
     description 'Publishes Node Giac to npmjs.com'
     doLast {
-       exec {
+        exec {
 	    // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
 	    // you may need to manually enter the npmjs.com repository data.
             commandLine 'npm', 'publish'
             workingDir '../giac'
-	    }
-	}
+        }
     }
+}
 
 // Top level task
 task updateGiac (dependsOn: ['uploadDeployerJars', 'uploadDeployerAar']) {
