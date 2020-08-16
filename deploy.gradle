@@ -264,14 +264,14 @@ task uploadDeployerAar (dependsOn: ['androidAar', 'giac-android:uploadDeployerAa
 task updateNodegiacVersion () {
     description 'Updates Node Giac version in the package.json file.'
     doLast {
-	def packageJson = file("${project(':giac').projectDir}/package.json")
-	processFileInplace(packageJson) { line ->
-    	    def pattern = ~/"version": "(.*)"/
-    	    def matcher = (line =~ pattern)
-	    matcher.replaceAll("\"version\": \"1.23.$ggrev\"")
-	    }
-	}
+        def packageJson = file("$projectDir/package.json")
+        processFileInplace(packageJson) { line ->
+            def pattern = ~/"version": "(.*)"/
+            def matcher = (line =~ pattern)
+            matcher.replaceAll("\"version\": \"1.23.$ggrev\"")
+        }
     }
+}
 
 task updateNodegiacWebCommit (dependsOn: 'updateNodegiacVersion') {
     description 'Commits changes of package.json to the SVN repository.'
