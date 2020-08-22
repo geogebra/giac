@@ -24,7 +24,7 @@ using namespace std;
 #include "gen.h"
 #include "help.h"
 #include <iostream>
-#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG 
 #include <fstream>
 #endif
 #include "global.h"

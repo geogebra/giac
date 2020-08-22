@@ -16148,6 +16148,8 @@ void sprint_double(char * s,double d){
     static context * contextptr=0;
     if (!contextptr) contextptr=new context;
     context & C=*contextptr;
+    if (!strcmp(s,"caseval contextptr"))
+      return (const char *) contextptr;
     if (!strcmp(s,"shell off")){
       os_shell=false;
       return "shell off";

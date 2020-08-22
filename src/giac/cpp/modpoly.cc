@@ -4192,6 +4192,7 @@ namespace giac {
     return q%p;
   }
 
+#ifndef USE_GMP_REPLACEMENTS
   void vecteur2vector_ll(const vecteur & v,longlong m,vector<longlong> & res){
     vecteur::const_iterator it=v.begin(),itend=v.end();
     res.clear();
@@ -4208,6 +4209,7 @@ namespace giac {
       res.push_back(r);
     }
   } 
+#endif
 
   // longlong fft
   // exemple of Fourier primes (with 2^53-roots of unity)
@@ -9912,7 +9914,7 @@ namespace giac {
 #endif
       if (D!=1)
 	r=(r*longlong(invmod(smod(D,m).val,m)))%m;
-#if 1 // ndef USE_GMP_REPLACEMENTS
+#ifndef USE_GMP_REPLACEMENTS
       if (pim.type==_ZINT && res.type==_ZINT){
 	if (debug_infolevel>1)
 	  CERR << CLOCK()*1e-6 << " ichinrem start\n";
@@ -11431,11 +11433,11 @@ namespace giac {
     for (;it!=itend;){
       mpz_set(tmpqz,*it->_ZINTptr);
       mpz_set(*it->_ZINTptr,*f->_ZINTptr);
-      mpz_set(*f._ZINTptr,tmpqz);
+      mpz_set(*f->_ZINTptr,tmpqz);
       ++it; ++f;
       mpz_set(tmpqz,*itn->_ZINTptr);
       mpz_set(*itn->_ZINTptr,*f->_ZINTptr);
-      mpz_set(*f._ZINTptr,tmpqz);
+      mpz_set(*f->_ZINTptr,tmpqz);
       ++itn; ++f;
     }
 #else

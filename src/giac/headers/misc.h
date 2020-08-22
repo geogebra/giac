@@ -285,6 +285,8 @@ namespace giac {
   extern const unary_function_ptr * const  at_atan2 ;
   extern const unary_function_ptr * const  at_get_pixel ;
   gen _set_pixel(const gen & args,GIAC_CONTEXT);
+  gen _get_pixel(const gen & args,GIAC_CONTEXT);
+  gen _draw_string(const gen & a_,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_set_pixel ;
   extern const unary_function_ptr * const  at_strip ;
   extern const unary_function_ptr * const  at_lower ;

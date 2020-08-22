@@ -26,7 +26,7 @@ using namespace std;
 #else
 #include <strstream>
 #endif
-#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG 
 #include <fstream>
 #endif
 #include "gen.h"
@@ -15180,8 +15180,10 @@ namespace giac {
 	  return tailles(args._VECTptr->front());
 	return int(taille(args._VECTptr->front(),0));
       }
+#if 0 //def KHICAS
       if (s==0)
 	return tailles(*_VARS(-2,contextptr)._VECTptr);
+#endif
     }
     return s;
   }

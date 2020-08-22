@@ -1,7 +1,7 @@
 // -*- mode:C++ ; compile-command: "g++ -I.. -g -c mathml.cc  -DIN_GIAC -DHAVE_CONFIG_H" -*-
 
 #include "giacPCH.h"
-#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS 
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG 
 #include <fstream>
 #endif
 

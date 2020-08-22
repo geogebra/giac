@@ -41,7 +41,7 @@ using namespace std;
 #endif
 #include <iomanip>
 #endif
-#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG && !defined POCKETCAS
+#if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG 
 #include <fstream>
 #endif
 #include "vector.h"

@@ -9722,6 +9722,12 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     vecteur v(*a._VECTptr);
     if (v.size()<3 || v.size()>5)
       return gendimerr(contextptr);
+    if (v[2].type==_STRNG){
+      gen g=v[2];
+      v[2]=v[1];
+      v[1]=v[0];
+      v[0]=g;
+    }
     if (v[0].type!=_STRNG || !is_integral(v[1]) || !is_integral(v[2]))
       return gensizeerr(contextptr);
     gen s=v[0];

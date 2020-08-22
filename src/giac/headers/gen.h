@@ -889,10 +889,11 @@ namespace giac {
   struct alias_ref_fraction { ref_count_t ref_count; alias_gen num; alias_gen den; };
   struct alias_ref_complex {
     ref_count_t ref_count;
-    int display;
 #ifdef BIGENDIAN
     alias_gen im,re;
+    int display;
 #else
+    int display;
     alias_gen re,im;
 #endif
   };
@@ -943,10 +944,11 @@ namespace giac {
 
   struct ref_complex {
     volatile ref_count_t ref_count;
-    int display;
 #ifdef BIGENDIAN
     gen im,re;
+    int display;
 #else
+    int display;
     gen re,im;
 #endif
     ref_complex(const std::complex<double> & c):ref_count(1),display(0),re(real(c)),im(imag(c)) {}
