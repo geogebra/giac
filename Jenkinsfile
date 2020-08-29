@@ -16,10 +16,6 @@ pipeline {
   stages {
     stage('Build') {
       steps {
-        sh """
-          mkdir -p giac/keys
-          cp '$LINUX32_SSH' giac/keys/compileLinux32JavagiacKey"""
-
         sh '''cd giac
           echo "Building revision $SVN_REVISION
           cp -r ~/workspace/backup-Giac/geogebra/giac/emsdk .

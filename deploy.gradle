@@ -12,7 +12,7 @@ ext.webDir = file("$publDir/GeoGebraWeb")
 
 // To sign the .jar files
 // Remote file copying and remote execution (via ssh)
-ext.compileLinux32JavagiacKey = file("keys/compileLinux32JavagiacKey")
+ext.compileLinux32JavagiacKey = file(System.env.LINUX32_SSH)
 
 ext.tubeAppletPackCreatorDir = '/var/www/GeoGebraTube/tube-live/maintenance'
 
