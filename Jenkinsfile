@@ -3,7 +3,7 @@ def crosscompilers = '/var/lib/jenkins/cross-compilers'
 pipeline {
   agent {label 'deploy2'}
   environment {
-    PATH="$crosscompilers/x86/bin:$crosscompilers/x86_64/bin:$crosscompilers/arm/bin:$cross-compilers/arm64/bin:$PATH"
+    PATH="$crosscompilers/x86/bin:$crosscompilers/x86_64/bin:$crosscompilers/arm/bin:$crosscompilers/arm64/bin:$PATH"
     MAVEN = credentials('maven')
     MAC = credentials('mac-giac')
     WIN_BASH = credentials('win-bash')
@@ -16,13 +16,11 @@ pipeline {
   stages {
     stage('Build') {
       steps {
-        sh """cd /var/lib/jenkins/workspace/Giac/
-          svn checkout https://dev.geogebra.org/svn/trunk/geogebra/giac
-          cd giac
-          mkdir -p keys
-          cp '$LINUX32_SSH' keys/compileLinux32JavagiacKey"""
+        sh """
+          mkdir -p giac/keys
+          cp '$LINUX32_SSH' giac/keys/compileLinux32JavagiacKey"""
 
-        sh '''cd /var/lib/jenkins/workspace/Giac/giac
+        sh '''cd giac
           REVISION=`svn info . | grep Revision | sed \'s/Revision: //\' | tr \'\\n\' \'\\0\'`
           cp -r ~/workspace/backup-Giac/geogebra/giac/emsdk .
           ./gradlew :clean :giac-android:clean :giac-gwt:clean --refresh-dependencies --no-daemon -Prevision=$REVISION --info
