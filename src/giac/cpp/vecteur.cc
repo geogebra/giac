@@ -79,13 +79,7 @@ using namespace std;
 #include <f2c.h>
 #include <clapack.h>
 #ifdef POCKETCAS
-#if defined(__LP64__) && defined(__ARMv8__)
-#undef __x86_64__
-#endif
 #include <Accelerate/Accelerate.h>
-#if defined(__LP64__) && defined(__ARMv8__)
-#define __x86_64__
-#endif
 #endif // POCKETCAS
 #undef abs
 #undef min

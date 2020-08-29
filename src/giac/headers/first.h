@@ -30,7 +30,7 @@
 #endif
 //#include <stdint.h>
 
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(__arm64__)
 #define x86_64 1
 #endif
 

@@ -9745,17 +9745,17 @@ namespace xcas {
 #endif
       for (int i=0;i<len;i+=3,hFile+=4){
 	// keep space \n and a..z chars
-	char c=buf[i];
-	while (i<len && (c==' ' || c=='\n' || c=='{' || c==')' || c==';' || c==':' || c=='\n' || (c>='a' || c<='z')) ){
+	char c;
+	while (i<len && ((c=buf[i])==' ' || c=='\n' || c=='{' || c==')' || c==';' || c==':' || c=='\n' || (c>='a' && c<='z')) ){
 	  if (c==')')
 	    c='}';
 	  if (c==':')
 	    c='~';
 	  if (c==';')
 	    c='|';
-	  ++i;
 	  *hFile=c;
 	  ++hFile;
+	  ++i;
 	}
 	unsigned char a=buf[i],b=i+1<len?buf[i+1]:0,C=i+2<len?buf[i+2]:0;
 	hFile[0]=xwaspy_shift+(a>>2);
@@ -9763,8 +9763,8 @@ namespace xcas {
 	hFile[2]=xwaspy_shift+(((b&0xf)<<2)|(C>>6));
 	hFile[3]=xwaspy_shift+(C&0x3f);
       }
-      *hFile=0; ++hFile; 
-      *hFile=0; ++hFile; 
+      //*hFile=0; ++hFile; 
+      //*hFile=0; ++hFile; 
       write_file(filename,newbuf,hFile-newbuf);
     }
     else {
@@ -10782,12 +10782,14 @@ namespace xcas {
 	  strcmp(session_filename,"session")==0 ||
 	  confirm((lang==1)?"Session courante perdue?":"Current session will be lost",
 #ifdef NSPIRE_NEWLIB
-		  (lang==1)?"enter: annul, esc: ok":"enter: cancel, esc: ok"
+		  (lang==1)?"enter: ok, esc: annul":"enter: ok, esc: cancel"
 #else
-		  (lang==1)?"OK: annul, Back: ok":"OK: cancel, Back: ok"
+		  (lang==1)?"OK: ok, Back: annul":"OK: ok, Back: cancel"
 #endif
-		  )==KEY_CTRL_F6){
+		  )==KEY_CTRL_F1){
+#ifndef NUMWORKS
 	giac::_restart(giac::gen(giac::vecteur(0),giac::_SEQ__VECT),contextptr);
+#endif
 	restore_session(filename,contextptr);
 	clip_pasted=true;
 	strcpy(session_filename,remove_path(giac::remove_extension(filename)).c_str());
