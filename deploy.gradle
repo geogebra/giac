@@ -287,7 +287,6 @@ task publishNodegiac (dependsOn: 'updateNodegiacWebCommit') {
             // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
             // you may need to manually enter the npmjs.com repository data.
             commandLine 'npm', 'publish'
-            workingDir '../giac'
         }
     }
 }
