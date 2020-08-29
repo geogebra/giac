@@ -21,9 +21,9 @@ pipeline {
           cp '$LINUX32_SSH' giac/keys/compileLinux32JavagiacKey"""
 
         sh '''cd giac
-          REVISION=`svn info . | grep Revision | sed \'s/Revision: //\' | tr \'\\n\' \'\\0\'`
+          echo "Building revision $SVN_REVISION
           cp -r ~/workspace/backup-Giac/geogebra/giac/emsdk .
-          ./gradlew :clean :giac-android:clean :giac-gwt:clean --refresh-dependencies --no-daemon -Prevision=$REVISION --info
+          ./gradlew :clean :giac-android:clean :giac-gwt:clean --refresh-dependencies --no-daemon -Prevision=$SVN_REVISION --info
           ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$REVISION --info
           ./gradlew :updateGiac :publishNodegiac --no-daemon -Prevision=$REVISION --info'''
       }
