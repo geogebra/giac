@@ -10530,8 +10530,12 @@ namespace xcas {
 #else
     bool xwaspy=false;
 #endif
-    if (xwaspy)
-      filename += "_xw.py";
+    if (xwaspy){
+      if (filename.size()>3 && filename.substr(filename.size()-3,3)=="_xw")
+	filename += ".py";
+      else
+	filename += "_xw.py";
+    }
     else
       filename+=".xw";
 #ifdef NSPIRE_NEWLIB
@@ -10793,13 +10797,16 @@ namespace xcas {
 	restore_session(filename,contextptr);
 	clip_pasted=true;
 	strcpy(session_filename,remove_path(giac::remove_extension(filename)).c_str());
-#ifdef NSPIRE_NEWLIB
 	static bool ctrl_r=true;
 	if (ctrl_r){
+#ifdef NSPIRE_NEWLIB
 	  confirm((lang==1)?"Taper ctrl puis r pour executer session ":"Type ctrl then r to run session","Enter: OK");
+#endif
+#ifdef NUMWORKS
+	  confirm((lang==1)?"Taper shift puis EXE pour executer session ":"Type shift then EXE to run session","Enter: OK");
+#endif
 	  ctrl_r=false;
 	}
-#endif
 	Console_Disp(0,contextptr);
 	// reload_edptr(session_filename,edptr);
       }     
@@ -10997,7 +11004,9 @@ namespace xcas {
 	while(1) {
 	  // moved inside the loop because lang might change
 	  smallmenuitems[0].text = (char*)"Applications (shift ANS)";
-	  smallmenuitems[1].text = (char *) ((lang==1)?"Enregistrer session":"Save session ");
+	  string sess=(lang==1)?"Enregistrer ":"Save ";
+	  sess += session_filename;
+	  smallmenuitems[1].text = (char *) (sess.c_str());
 	  smallmenuitems[2].text = (char *) ((lang==1)?"Enregistrer sous":"Save session as");
 	  if (exam_mode)
 	    smallmenuitems[2].text = (char *) "";
