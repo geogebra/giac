@@ -143,7 +143,7 @@ namespace giac {
   }
 
   void set_xcas_status(){
-    statusline(1);
+    statusline(1+2*xcas_python_eval);
   }
   int GetSetupSetting(int mode){
     return 0;
@@ -9295,7 +9295,7 @@ namespace xcas {
 	if (smallmenu.selection == 3){
 	  giac::angle_radian(!giac::angle_radian(contextptr),contextptr);
 	  os_set_angle_unit(giac::angle_radian(contextptr)?0:1);
-	  statusline();
+	  statusline(2*xcas_python_eval);
 	  continue;
 	}
 	if (smallmenu.selection == 4){
