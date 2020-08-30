@@ -149,16 +149,14 @@ task compileLinux32MacJavagiacRemotely () {
     doLast {
         ssh.run {
             session(remotes.compileLinux32Server) {
-                execute "cd geogebra; svn update --non-interactive --trust-server-cert"
-                execute "cd geogebra/giac; svn update -r$ggrev --non-interactive --trust-server-cert"
-                execute "cd geogebra/giac; ../gradlew javagiacLinux32SharedLibrary -Prevision=$ggrev"
+                execute "cd giac; svn update -r$ggrev --non-interactive --trust-server-cert"
+                execute "cd giac; ../gradlew javagiacLinux32SharedLibrary -Prevision=$ggrev"
                 file(outputLinux32Dir).mkdirs()
                 get from: "geogebra/giac/build/libs/javagiac/shared/linux32/libjavagiac.so", into: outputLinux32 // FIXME: unify
             }
             session(remotes.macServer) {
-                execute "cd geogebra; $macServerSvnCommand update --non-interactive --trust-server-cert"
-                execute "cd geogebra/giac; $macServerSvnCommand update -r$ggrev --non-interactive --trust-server-cert"
-                execute "cd geogebra/giac; ../gradlew javagiacOsx_amd64SharedLibrary -Prevision=$ggrev"
+                execute "cd giac; $macServerSvnCommand update -r$ggrev --non-interactive --trust-server-cert"
+                execute "cd giac; ../gradlew javagiacOsx_amd64SharedLibrary -Prevision=$ggrev"
                 file(outputMacDir).mkdirs()
                 get from: "geogebra/giac/build/binaries/javagiacSharedLibrary/osx_amd64/libjavagiac.jnilib", into: outputMac // FIXME: unify
             }
