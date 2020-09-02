@@ -10803,7 +10803,7 @@ namespace xcas {
 	  confirm((lang==1)?"Taper ctrl puis r pour executer session ":"Type ctrl then r to run session","Enter: OK");
 #endif
 #ifdef NUMWORKS
-	  confirm((lang==1)?"Taper shift puis EXE pour executer session ":"Type shift then EXE to run session","Enter: OK");
+	  confirm((lang==1)?"Taper shift EXE pour executer session ":"Type shift then EXE to run session","Enter: OK");
 #endif
 	  ctrl_r=false;
 	}

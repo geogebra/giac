@@ -510,12 +510,14 @@ bool sheet_display(tableur &t,GIAC_CONTEXT){
   drawRectangle(0,y,LCD_WIDTH_PX,LCD_HEIGHT_PX-y,_WHITE); // clear cmdline
   draw_line(0,y,LCD_WIDTH_PX,y,_BLACK);
   // commandline
+  int p=python_compat(contextptr); python_compat(0,contextptr);
+  int xpe=xcas_python_eval; xcas_python_eval=0;
   s=t.cmdline;
   int dx=os_draw_string(0,0,0,0,s.c_str(),true),xend=2; // find width
   bool small=t.keytooltip || dx>=LCD_WIDTH_PX-50;
   int sheety=LCD_HEIGHT_PX-2*row_height,xtooltip=0;
   if (t.cmd_row>=0 && t.cmd_pos>=0 && t.cmd_pos<=s.size()){
-    xend=os_draw_string(xend,LCD_HEIGHT_PX-2*row_height,_BLUE,_WHITE,printcell(t.cmd_row,t.cmd_col).c_str())+5;
+    xend=os_draw_string(xend,sheety,_BLUE,_WHITE,printcell(t.cmd_row,t.cmd_col).c_str())+5;
     string s1=s.substr(0,t.cmd_pos);
 #if 1
     xtooltip=xend=print_color(xend,sheety,s1.c_str(),_BLACK,false,small,contextptr);
@@ -525,7 +527,7 @@ bool sheet_display(tableur &t,GIAC_CONTEXT){
     else
       xend=os_draw_string(xend,sheety,_BLACK,_WHITE,s1.c_str(),false);
 #endif
-    drawRectangle(xend+1,y+4,2,13,_BLACK);
+    drawRectangle(xend+1,sheety+2,2,small?10:13,_BLACK);
     xend+=4;
     s=s.substr(t.cmd_pos,s.size()-t.cmd_pos);
     if (has_sel){
@@ -550,6 +552,7 @@ bool sheet_display(tableur &t,GIAC_CONTEXT){
 #endif
   if (t.keytooltip)
     t.keytooltip=tooltip(xtooltip,sheety,t.cmd_pos,t.cmdline.c_str(),contextptr);
+  python_compat(p,contextptr); xcas_python_eval=xpe;
   // fast menus
   string menu("shift-1 stat1d|2 2d|3 seq|4 edit|5 view|6 graph|7 R|8 list| ");
   bg=52832;

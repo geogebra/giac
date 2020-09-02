@@ -2184,7 +2184,7 @@ namespace giac {
 	    return true;
 	  }
 #else // rtos
-#if !defined(WIN32) && defined(HAVE_PTHREAD_H)
+#if !defined(WIN32) && defined(HAVE_PTHREAD_H) && defined HAVE_LIBPTHREAD
 	  void * stackaddr;
 	  if (contextptr && (stackaddr=thread_param_ptr(contextptr)->stackaddr)){
 	    // CERR << &slevel << " " << thread_param_ptr(contextptr)->stackaddr << '\n';
@@ -11892,7 +11892,7 @@ namespace giac {
 	return 1;
       }
     }
-#if !defined(WIN32) && defined(HAVE_PTHREAD_H)
+#if !defined(WIN32) && defined(HAVE_PTHREAD_H) && defined HAVE_LIBPTHREAD
     if (contextptr && thread_param_ptr(contextptr)->stackaddr && thread_param_ptr(contextptr)->stacksize/2){
       gen er;
       short int err=s.size();

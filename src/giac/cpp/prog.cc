@@ -1494,7 +1494,7 @@ namespace giac {
       return res;
     }
 #else
-#if !defined(WIN32) && defined HAVE_PTHREAD_H
+#if !defined(WIN32) && defined HAVE_LIBPTHREAD
     if (contextptr){
       // CERR << &slevel << " " << thread_param_ptr(contextptr)->stackaddr << '\n';
       if ( ((size_t) &res) < ((size_t) thread_param_ptr(contextptr)->stackaddr)+8192){
