@@ -270,11 +270,11 @@ task publishNodegiac (dependsOn: 'updateNodegiacWebCommit') {
 }
 
 // Top level task
-task updateGiac (dependsOn: ['uploadDeployerJars', 'uploadDeployerAar']) {
+task updateGiac (dependsOn: ['publish', 'uploadDeployerAar']) {
     description 'Commits all update related changes for Giac.'
 }
 
-project('giac-gwt') {
+[project, project('giac-gwt')].each {
     afterEvaluate {
         publishing {
             repositories {
