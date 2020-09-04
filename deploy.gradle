@@ -23,7 +23,6 @@ def ggMavenRepoPass = System.env.MAVEN_PSW
 def distDir = "$buildDir/distributions"
 def javagiacDir = file("$distDir/javagiac/")
 def ggbGiacJsDir = file("$distDir/giac.js/")
-def ggrev = project.getProperty("revision")
 
 remotes {
     compileLinux32Server {
@@ -202,6 +201,7 @@ publishing {
         mavenJava(MavenPublication) {
             artifactId = 'javagiac'
             groupId = 'fr.ujf-grenoble'
+            version = ggrev
             artifact javagiacLinux64Jar
             artifact javagiacLinux32Jar
             artifact javagiacWin64Jar
@@ -270,11 +270,11 @@ task publishNodegiac (dependsOn: 'updateNodegiacWebCommit') {
 }
 
 // Top level task
-task updateGiac (dependsOn: ['publish', 'uploadDeployerAar']) {
+task updateGiac (dependsOn: [':publish', ':giac-android:publish']) {
     description 'Commits all update related changes for Giac.'
 }
 
-[project, project('giac-gwt')].each {
+allprojects {
     afterEvaluate {
         publishing {
             repositories {

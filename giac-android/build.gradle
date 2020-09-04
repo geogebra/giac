@@ -4,32 +4,18 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.4.1'
+        classpath 'com.android.tools.build:gradle:3.6.0'
     }
 }
-
 plugins {
-  id "com.github.dcendents.android-maven" version "2.1"
+    id 'maven-publish'
 }
-
 apply plugin: 'com.android.library'
 
 repositories {
    mavenCentral()
    jcenter()
    google()
-}
-
-configurations {
-       deployerAar
-}
-
-artifacts {
-    deployerAar file("${buildDir}/outputs/aar/${project.name}-release.aar")
-}
-
-dependencies {
-    deployerAar 'org.apache.maven.wagon:wagon-ssh:3.3.2'
 }
 
 android {
@@ -70,19 +56,20 @@ task copyCrystaxSo {
     }
 }
 
-uploadDeployerAar { task ->
-        doFirst {
-            repositories {
-                mavenDeployer {
-                        configuration = configurations.deployerAar
-                    repository(url: 'scp://dev.geogebra.org:22077/var/www/maven2') {
-                        authentication(userName: System.env.MAVEN_USR, password: System.env.MAVEN_PSW)
-                    }
-                    pom {
-                        artifactId = project.name
-                        packaging = 'aar'
-                    }
-                }
+afterEvaluate {
+publishing {
+    publications {
+        release(MavenPublication) {
+            artifactId = 'giac-android'
+            groupId = 'org.geogebra'
+            version = project.getParent().ggrev
+            from components.release
+            pom {
+                name = 'Giac for Android'
+                description = 'Android Giac library'
             }
         }
     }
+}
+}
+
