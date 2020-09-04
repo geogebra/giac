@@ -197,40 +197,20 @@ task testGiac (dependsOn: ['testJavagiac', 'testGiacJs']) {
 
 /* Publications */
 
-// .jar files
-
-configurations {
-    deployerJars
-}
-
-dependencies {
-    deployerJars "org.apache.maven.wagon:wagon-ssh:3.3.2"
-}
-
-artifacts {
-    deployerJars javagiacLinux64Jar
-    deployerJars javagiacLinux32Jar
-    deployerJars javagiacWin64Jar
-    deployerJars javagiacWin32Jar
-    deployerJars javagiacMacJar
-    deployerJars javagiacPomJar
-}
-
-uploadDeployerJars {
-    repositories.mavenDeployer {
-        configuration = configurations.deployerJars
-        repository(url: ggMavenRepoUrl) {
-            // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
-            // you may need to manually connect to the Maven server first by running this
-            // task manually by adding desirably the --debug option also (and enter "yes ENTER" if needed).
-            // Jenkins' home folder is by default in /var/lib/jenkins and its workspace is
-            // in jobs/*/workspace which is actually a standard SVN checkout folder.
-            authentication(userName: ggMavenRepoUser, password: ggMavenRepoPass)
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'javagiac'
+            groupId = 'fr.ujf-grenoble'
+            artifact javagiacLinux64Jar
+            artifact javagiacLinux32Jar
+            artifact javagiacWin64Jar
+            artifact javagiacWin32Jar
+            artifact javagiacMacJar
+            artifact javagiacPomJar
             pom {
-                version = project.getProperty('revision')
-                groupId = 'fr.ujf-grenoble'
-                artifactId = 'javagiac'
-                // withXml { asNode().appendNode('description', 'Java Giac for GeoGebra') } // TODO: add description etc.
+                name = 'Java Giac'
+                description = 'Java Giac for GeoGebra'
             }
         }
     }
