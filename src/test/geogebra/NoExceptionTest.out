@@ -35,7 +35,7 @@
 18>> caseval(regroup(simplify(regroup(sin(x)))))
 18<< sin(x)
 19>> caseval(regroup(regroup(integrate(sin(x),x))))
-19<< -cos(x)+c_1
+19<< -cos(x)+SOME_CONSTANT
 20>> caseval(regroup([[[ggbdivarg0:=((x)^(4))+(4)],[ggbdivarg1:=(x)^(2)]],if type(ggbdivarg0)==DOM_INT && type(ggbdivarg1)==DOM_INT then iquo(ggbdivarg0,ggbdivarg1) else quo(ggbdivarg0,ggbdivarg1,x) fi][1]))
 20<< x^2
 21>> caseval(regroup([[[ggbmodarg0:=((x)^(4))+(4)],[ggbmodarg1:=(x)^(2)]],if type(ggbmodarg0)==DOM_INT && type(ggbmodarg1)==DOM_INT then irem(ggbmodarg0,ggbmodarg1) else rem(ggbmodarg0,ggbmodarg1,x) fi][1]))
@@ -79,7 +79,7 @@
 40>> caseval(regroup(when ( type(simplify(regroup((1)/(sin(x))))=0) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve(simplify(regroup((1)/(sin(x))))=0,x))[size(assume(x),solve(simplify(regroup((1)/(sin(x))))=0,x))-1] , when ( type(simplify(regroup((1)/(sin(x))))=0) == DOM_IDENT && type(x) == DOM_SYMBOLIC && simplify(regroup((1)/(sin(x))))=0 == 'x', (assume(x),solve(simplify(regroup((1)/(sin(x))))=0=0,x))[size(assume(x),solve(simplify(regroup((1)/(sin(x))))=0=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve(simplify(regroup((1)/(sin(x))))=0,x))]))),ggbsort(normal([op(solve(simplify(regroup((1)/(sin(x))))=0,x))])) ) ) )))
 40<< []
 41>> caseval(regroup(when((-(x))[0]=='=', when (size(lname(-(x)) intersect [x]) == 0 && size(lname(-(x)) intersect [y]) == 1 && size(lname(-(x)) minus [y]) > 0,normal(map(desolve(-(x),x,y),x->y=x)[0]),normal(map(desolve(-(x)),x->y=x)[0])),normal(map(desolve(y'=-(x)),x->y=x)[0]))))
-41<< y=(-1/2*x^2+c_0)
+41<< y=(-1/2*x^2+SOME_CONSTANT)
 42>> caseval(regroup(normal(y=when(type(point(1,1))==DOM_LIST,desolve([-(x),y(xcoord(point(1,1)[0]))=ycoord(point(1,1)[0]),y(xcoord(point(1,1)[1]))=ycoord(point(1,1)[1])],x,y),desolve(when((-(x))[0]=='=',-(x),y'=-(x)),x,y,point(1,1)))[0])))
 42<< y=(-1/2*x^2+3/2)
 43>> caseval(regroup(when(is_polynomial(sin(x),x),coeff(sin(x),x),{})))
@@ -107,7 +107,7 @@
 54>> caseval(regroup(regroup(diff(cos(x),x,1))))
 54<< -sin(x)
 55>> caseval(regroup(regroup(integrate(sin(x),x))))
-55<< -cos(x)+c_2
+55<< -cos(x)+SOME_CONSTANT
 56>> caseval(regroup(when(is_polynomial(sin(x),x),coeff(sin(x),x),{})))
 56<< {}
 57>> caseval(regroup([[[ggbtrigarg:=sin((x)+(y))], [ggbsin:=tcollectsin(normal(ggbtrigarg))], [ggbcos:=tcollect(normal(ggbtrigarg))], [ggbtan:=tcollect(normal(tan2sincos(ggbtrigarg)))], [ggbsinlen:=length(""+ggbsin)],[ggbcoslen:=length(""+ggbcos)],[ggbtanlen:=length(""+ggbtan)]],when(ggbcoslen<=ggbsinlen && ggbcoslen<=ggbtanlen,ggbcos,when(ggbsinlen<=ggbtanlen,ggbsin,ggbtan))][1]))
@@ -121,7 +121,7 @@
 61>> caseval(regroup(regroup(diff(sin(x),x,0))))
 61<< sin(x)
 62>> caseval(regroup(when((-(x))[0]=='=', when (size(lname(-(x)) intersect [x]) == 0 && size(lname(-(x)) intersect [y]) == 1 && size(lname(-(x)) minus [y]) > 0,normal(map(desolve(-(x),x,y),x->y=x)[0]),normal(map(desolve(-(x)),x->y=x)[0])),normal(map(desolve(y'=-(x)),x->y=x)[0]))))
-62<< y=(-1/2*x^2+c_0)
+62<< y=(-1/2*x^2+SOME_CONSTANT)
 63>> caseval(regroup(when(is_polynomial(sin(x),x),coeff(sin(x),x),{})))
 63<< {}
 64>> caseval(regroup(tan2sincos(trigexpand(sin((x)+(y))))))

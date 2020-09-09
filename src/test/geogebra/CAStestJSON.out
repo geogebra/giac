@@ -23,43 +23,43 @@
 12>> ggb_is_zero(x):=when(x==0,true,when(type(x)=='DOM_LIST',max(flatten({x,0}))==min(flatten({x,0}))&&min(flatten({x,0}))==0,when(x[0]=='=',lhs(x)==0&&rhs(x)==0,false)))
 12<<  (x)->when((x==0),true,when(((type(x))==vector),(((max(flatten({x,0})))==(min(flatten({x,0}))))) && (((min(flatten({x,0})))==0)),when(((x[0])=='='),(((lhs(x))==0)) && (((rhs(x))==0)),false)))
 13>> caseval(regroup(when((ggbtmpvarT'=(-((12/100)))*(ggbtmpvarT))[0]=='=',normal(map(desolve(ggbtmpvarT'=(-((12/100)))*(ggbtmpvarT),ggbtmpvart,ggbtmpvarT),(type(ggbtmpvarT)==DOM_IDENT)?(x->ggbtmpvarT=x):(x->y=x))[0]),normal(map(desolve(y'=ggbtmpvarT'=(-((12/100)))*(ggbtmpvarT),ggbtmpvart,ggbtmpvarT),(type(ggbtmpvarT)==DOM_IDENT)?(x->ggbtmpvarT=x):(x->y=x))[0]))))
-13<< ggbtmpvarT=(c_0*ℯ^(-3/25*ggbtmpvart))
+13<< ggbtmpvarT=(SOME_CONSTANT*ℯ^(-3/25*ggbtmpvart))
 14>> caseval(regroup(when((y'=(y)*((2)-(y)))[0]=='=', when (size(lname(y'=(y)*((2)-(y))) intersect [x]) == 0 && size(lname(y'=(y)*((2)-(y))) intersect [y]) == 1 && size(lname(y'=(y)*((2)-(y))) minus [y]) > 0,normal(map(desolve(y'=(y)*((2)-(y)),x,y),x->y=x)[0]),normal(map(desolve(y'=(y)*((2)-(y))),x->y=x)[0])),normal(map(desolve(y'=y'=(y)*((2)-(y))),x->y=x)[0]))))
-14<< y=(-2/(c_0*ℯ^(-2*x)-1))
+14<< y=(-2/(SOME_CONSTANT*ℯ^(-2*x)-1))
 15>> caseval(regroup(when((y'=(2)*(y))[0]=='=', when (size(lname(y'=(2)*(y)) intersect [x]) == 0 && size(lname(y'=(2)*(y)) intersect [y]) == 1 && size(lname(y'=(2)*(y)) minus [y]) > 0,normal(map(desolve(y'=(2)*(y),x,y),x->y=x)[0]),normal(map(desolve(y'=(2)*(y)),x->y=x)[0])),normal(map(desolve(y'=y'=(2)*(y)),x->y=x)[0]))))
-15<< y=(c_0*ℯ^(2*x))
+15<< y=(SOME_CONSTANT*ℯ^(2*x))
 16>> caseval(regroup(when((y'=(y)*((1)-(y)))[0]=='=', when (size(lname(y'=(y)*((1)-(y))) intersect [x]) == 0 && size(lname(y'=(y)*((1)-(y))) intersect [y]) == 1 && size(lname(y'=(y)*((1)-(y))) minus [y]) > 0,normal(map(desolve(y'=(y)*((1)-(y)),x,y),x->y=x)[0]),normal(map(desolve(y'=(y)*((1)-(y))),x->y=x)[0])),normal(map(desolve(y'=y'=(y)*((1)-(y))),x->y=x)[0]))))
-16<< y=(-1/(c_0*ℯ^(-x)-1))
+16<< y=(-1/(SOME_CONSTANT*ℯ^(-x)-1))
 17>> caseval(regroup(normal(y=when(type({point(1,1), point(2,2)})==DOM_LIST,desolve([y''=x,y(xcoord({point(1,1), point(2,2)}[0]))=ycoord({point(1,1), point(2,2)}[0]),y(xcoord({point(1,1), point(2,2)}[1]))=ycoord({point(1,1), point(2,2)}[1])],x,y),desolve(when((y''=x)[0]=='=',y''=x,y'=y''=x),x,y,{point(1,1), point(2,2)}))[0])))
 17<< y=(1/6*x^3-1/6*x+1)
 18>> caseval(regroup(normal(y=when(type(point(1,1))==DOM_LIST,desolve([x,y(xcoord(point(1,1)[0]))=ycoord(point(1,1)[0]),y(xcoord(point(1,1)[1]))=ycoord(point(1,1)[1])],x,y),desolve(when((x)[0]=='=',x,y'=x),x,y,point(1,1)))[0])))
 18<< y=(1/2*x^2+1/2)
 19>> caseval(regroup(when(((y)/(x))[0]=='=',normal(map(desolve((y)/(x),x,y),(type(y)==DOM_IDENT)?(x->y=x):(x->y=x))[0]),normal(map(desolve(y'=(y)/(x),x,y),(type(y)==DOM_IDENT)?(x->y=x):(x->y=x))[0]))))
-19<< y=(c_0*x)
+19<< y=(SOME_CONSTANT*x)
 20>> caseval(regroup(when((y'=((ggbtmpvara)*(ggbtmpvark))*(y))[0]=='=',normal(map(desolve(y'=((ggbtmpvara)*(ggbtmpvark))*(y),x,y),(type(y)==DOM_IDENT)?(x->y=x):(x->y=x))[0]),normal(map(desolve(y'=y'=((ggbtmpvara)*(ggbtmpvark))*(y),x,y),(type(y)==DOM_IDENT)?(x->y=x):(x->y=x))[0]))))
-20<< y=(c_0*ℯ^(ggbtmpvara*ggbtmpvark*x))
+20<< y=(SOME_CONSTANT*ℯ^(ggbtmpvara*ggbtmpvark*x))
 21>> caseval(regroup(when((((y'')-((3)*(y')))+(2)=x)[0]=='=',normal(map(desolve(((y'')-((3)*(y')))+(2)=x,point(0,2),point(1,2)),(type(point(1,2))==DOM_IDENT)?(x->point(1,2)=x):(x->y=x))[0]),normal(map(desolve(y'=((y'')-((3)*(y')))+(2)=x,point(0,2),point(1,2)),(type(point(1,2))==DOM_IDENT)?(x->point(1,2)=x):(x->y=x))[0]))))
 21<< y=(-1/6*x^2-13/27*ℯ^3+13/27*ℯ^(3*x)+5/9*x+29/18)
 22>> caseval(regroup(normal(y=when(type(point(1,1))==DOM_LIST,desolve([y''=x,y(xcoord(point(1,1)[0]))=ycoord(point(1,1)[0]),y(xcoord(point(1,1)[1]))=ycoord(point(1,1)[1])],x,y),desolve(when((y''=x)[0]=='=',y''=x,y'=y''=x),x,y,point(1,1)))[0])))
-22<< y=(1/6*x^3-c_1*x+5/6*x+c_1)
+22<< y=(1/6*x^3-SOME_CONSTANT*x+5/6*x+SOME_CONSTANT)
 23>> caseval(regroup(when((y''=0)[0]=='=',normal(map(desolve(y''=0,point(1,3),point(0,1)),(type(point(0,1))==DOM_IDENT)?(x->point(0,1)=x):(x->y=x))[0]),normal(map(desolve(y'=y''=0,point(1,3),point(0,1)),(type(point(0,1))==DOM_IDENT)?(x->point(0,1)=x):(x->y=x))[0]))))
 23<< y=(3*x+1)
 24>> caseval(regroup(when((y'=(ggbtmpvark)*(y))[0]=='=',normal(map(desolve(y'=(ggbtmpvark)*(y),x,y),(type(y)==DOM_IDENT)?(x->y=x):(x->y=x))[0]),normal(map(desolve(y'=y'=(ggbtmpvark)*(y),x,y),(type(y)==DOM_IDENT)?(x->y=x):(x->y=x))[0]))))
-24<< y=(c_0*ℯ^(ggbtmpvark*x))
+24<< y=(SOME_CONSTANT*ℯ^(ggbtmpvark*x))
 25>> caseval(regroup(when((y'=((ggbtmpvara)*(ggbtmpvark))*(y))[0]=='=', when (size(lname(y'=((ggbtmpvara)*(ggbtmpvark))*(y)) intersect [x]) == 0 && size(lname(y'=((ggbtmpvara)*(ggbtmpvark))*(y)) intersect [y]) == 1 && size(lname(y'=((ggbtmpvara)*(ggbtmpvark))*(y)) minus [y]) > 0,normal(map(desolve(y'=((ggbtmpvara)*(ggbtmpvark))*(y),x,y),x->y=x)[0]),normal(map(desolve(y'=((ggbtmpvara)*(ggbtmpvark))*(y)),x->y=x)[0])),normal(map(desolve(y'=y'=((ggbtmpvara)*(ggbtmpvark))*(y)),x->y=x)[0]))))
-25<< y=(c_0*ℯ^(ggbtmpvara*ggbtmpvark*x))
+25<< y=(SOME_CONSTANT*ℯ^(ggbtmpvara*ggbtmpvark*x))
 26>> caseval(regroup(when((((y'')+(y'))+(((3141/1000))*(y))=0)[0]=='=', when (size(lname(((y'')+(y'))+(((3141/1000))*(y))=0) intersect [x]) == 0 && size(lname(((y'')+(y'))+(((3141/1000))*(y))=0) intersect [y]) == 1 && size(lname(((y'')+(y'))+(((3141/1000))*(y))=0) minus [y]) > 0,normal(map(desolve(((y'')+(y'))+(((3141/1000))*(y))=0,x,y),x->y=x)[0]),normal(map(desolve(((y'')+(y'))+(((3141/1000))*(y))=0),x->y=x)[0])),normal(map(desolve(y'=((y'')+(y'))+(((3141/1000))*(y))=0),x->y=x)[0]))))
-26<< y=(c_0*ℯ^(-1/2*x)*cos(7/100*√590*x)+c_1*ℯ^(-1/2*x)*sin(7/100*√590*x))
+26<< y=(SOME_CONSTANT*ℯ^(-1/2*x)*cos(7/100*√590*x)+SOME_CONSTANT*ℯ^(-1/2*x)*sin(7/100*√590*x))
 27>> caseval(regroup(when((y'=(y)/(x))[0]=='=', when (size(lname(y'=(y)/(x)) intersect [x]) == 0 && size(lname(y'=(y)/(x)) intersect [y]) == 1 && size(lname(y'=(y)/(x)) minus [y]) > 0,normal(map(desolve(y'=(y)/(x),x,y),x->y=x)[0]),normal(map(desolve(y'=(y)/(x)),x->y=x)[0])),normal(map(desolve(y'=y'=(y)/(x)),x->y=x)[0]))))
-27<< y=(c_0*x)
+27<< y=(SOME_CONSTANT*x)
 28>> caseval(regroup(when((y'=(x)/(y))[0]=='=', when (size(lname(y'=(x)/(y)) intersect [x]) == 0 && size(lname(y'=(x)/(y)) intersect [y]) == 1 && size(lname(y'=(x)/(y)) minus [y]) > 0,normal(map(desolve(y'=(x)/(y),x,y),x->y=x)[0]),normal(map(desolve(y'=(x)/(y)),x->y=x)[0])),normal(map(desolve(y'=y'=(x)/(y)),x->y=x)[0]))))
-28<< y=(√(x^2-2*c_0))
+28<< y=(√(x^2-2*SOME_CONSTANT))
 29>> caseval(regroup(when(((((13/10000))*(y))*((1000)-(y)))[0]=='=', when (size(lname((((13/10000))*(y))*((1000)-(y))) intersect [x]) == 0 && size(lname((((13/10000))*(y))*((1000)-(y))) intersect [y]) == 1 && size(lname((((13/10000))*(y))*((1000)-(y))) minus [y]) > 0,normal(map(desolve((((13/10000))*(y))*((1000)-(y)),x,y),x->y=x)[0]),normal(map(desolve((((13/10000))*(y))*((1000)-(y))),x->y=x)[0])),normal(map(desolve(y'=(((13/10000))*(y))*((1000)-(y))),x->y=x)[0]))))
-29<< y=(-1000/(c_0*ℯ^(-13/10*x)-1))
+29<< y=(-1000/(SOME_CONSTANT*ℯ^(-13/10*x)-1))
 30>> caseval(regroup(when((y'=x)[0]=='=', when (size(lname(y'=x) intersect [x]) == 0 && size(lname(y'=x) intersect [y]) == 1 && size(lname(y'=x) minus [y]) > 0,normal(map(desolve(y'=x,x,y),x->y=x)[0]),normal(map(desolve(y'=x),x->y=x)[0])),normal(map(desolve(y'=y'=x),x->y=x)[0]))))
-30<< y=(1/2*x^2+c_0)
+30<< y=(1/2*x^2+SOME_CONSTANT)
 31>> caseval(regroup(when((((y'')-((5)*(y')))+((6)*(y))=0)[0]=='=', when (size(lname(((y'')-((5)*(y')))+((6)*(y))=0) intersect [x]) == 0 && size(lname(((y'')-((5)*(y')))+((6)*(y))=0) intersect [y]) == 1 && size(lname(((y'')-((5)*(y')))+((6)*(y))=0) minus [y]) > 0,normal(map(desolve(((y'')-((5)*(y')))+((6)*(y))=0,x,y),x->y=x)[0]),normal(map(desolve(((y'')-((5)*(y')))+((6)*(y))=0),x->y=x)[0])),normal(map(desolve(y'=((y'')-((5)*(y')))+((6)*(y))=0),x->y=x)[0]))))
-31<< y=(c_0*ℯ^(3*x)+c_1*ℯ^(2*x))
+31<< y=(SOME_CONSTANT*ℯ^(3*x)+SOME_CONSTANT*ℯ^(2*x))
 32>> caseval(regroup(when((y''=0)[0]=='=',normal(map(desolve(y''=0,point(1,3),point(5,5)),(type(point(5,5))==DOM_IDENT)?(x->point(5,5)=x):(x->y=x))[0]),normal(map(desolve(y'=y''=0,point(1,3),point(5,5)),(type(point(5,5))==DOM_IDENT)?(x->point(5,5)=x):(x->y=x))[0]))))
 32<< y=(3*x-10)
 33>> caseval(regroup(when((y''=0)[0]=='=',normal(map(desolve(y''=0,point(1,3),point(0,1)),(type(point(0,1))==DOM_IDENT)?(x->point(0,1)=x):(x->y=x))[0]),normal(map(desolve(y'=y''=0,point(1,3),point(0,1)),(type(point(0,1))==DOM_IDENT)?(x->point(0,1)=x):(x->y=x))[0]))))
@@ -67,43 +67,43 @@
 34>> caseval(regroup(normal(map(desolve(((ggbtmpvarv'')-((3)*(ggbtmpvarv')))+(2)=ggbtmpvarw,ggbtmpvarw,ggbtmpvarv,point(2,3),point(1,2)),x->ggbtmpvarv=x)[0])))
 34<< ggbtmpvarv=((-32*(ℯ^3)^2+138*ℯ^3+32*ℯ^(3*ggbtmpvarw)+30*ggbtmpvarw*ℯ^3-9*ggbtmpvarw^2*ℯ^3)/(54*ℯ^3))
 35>> caseval(regroup(when((((y'')-((7)*(y')))+((12)*(y)))[0]=='=', when (size(lname(((y'')-((7)*(y')))+((12)*(y))) intersect [x]) == 0 && size(lname(((y'')-((7)*(y')))+((12)*(y))) intersect [y]) == 1 && size(lname(((y'')-((7)*(y')))+((12)*(y))) minus [y]) > 0,normal(map(desolve(((y'')-((7)*(y')))+((12)*(y)),x,y),x->y=x)[0]),normal(map(desolve(((y'')-((7)*(y')))+((12)*(y))),x->y=x)[0])),normal(map(desolve(y'=((y'')-((7)*(y')))+((12)*(y))),x->y=x)[0]))))
-35<< y=(c_0*ℯ^(6*x)+c_1*ℯ^(2*x))
+35<< y=(SOME_CONSTANT*ℯ^(6*x)+SOME_CONSTANT*ℯ^(2*x))
 36>> caseval(regroup(when((y'=(y)/(x))[0]=='=',normal(map(desolve(y'=(y)/(x),x,y,point(1,2)),x->y=x)[0]),normal(map(desolve(y'=y'=(y)/(x),x,y,point(1,2)),x->y=x)[0]))))
 36<< y=(2*x)
 37>> caseval(regroup(when(((((13/1000))*(y))*((1000)-(y)))[0]=='=', when (size(lname((((13/1000))*(y))*((1000)-(y))) intersect [x]) == 0 && size(lname((((13/1000))*(y))*((1000)-(y))) intersect [y]) == 1 && size(lname((((13/1000))*(y))*((1000)-(y))) minus [y]) > 0,normal(map(desolve((((13/1000))*(y))*((1000)-(y)),x,y),x->y=x)[0]),normal(map(desolve((((13/1000))*(y))*((1000)-(y))),x->y=x)[0])),normal(map(desolve(y'=(((13/1000))*(y))*((1000)-(y))),x->y=x)[0]))))
-37<< y=(-1000/(c_0*ℯ^(-13*x)-1))
+37<< y=(-1000/(SOME_CONSTANT*ℯ^(-13*x)-1))
 38>> caseval(regroup(normal(map(desolve(ggbtmpvarv'=(ggbtmpvarv)/(ggbtmpvarw),ggbtmpvarw,ggbtmpvarv,point(1,2),point(0,2)),x->ggbtmpvarv=x)[0])))
 38<< ggbtmpvarv=(2*ggbtmpvarw)
 39>> caseval(regroup(normal(y=when(type({point(0,1), point(1,3)})==DOM_LIST,desolve([y''=0,y(xcoord({point(0,1), point(1,3)}[0]))=ycoord({point(0,1), point(1,3)}[0]),y(xcoord({point(0,1), point(1,3)}[1]))=ycoord({point(0,1), point(1,3)}[1])],x,y),desolve(when((y''=0)[0]=='=',y''=0,y'=y''=0),x,y,{point(0,1), point(1,3)}))[0])))
 39<< y=(2*x+1)
 40>> caseval(regroup(when((y'=(2)*(y))[0]=='=',normal(map(desolve(y'=(2)*(y),x,y),(type(y)==DOM_IDENT)?(x->y=x):(x->y=x))[0]),normal(map(desolve(y'=y'=(2)*(y),x,y),(type(y)==DOM_IDENT)?(x->y=x):(x->y=x))[0]))))
-40<< y=(c_0*ℯ^(2*x))
+40<< y=(SOME_CONSTANT*ℯ^(2*x))
 41>> caseval(regroup(when((y''=cos(x))[0]=='=', when (size(lname(y''=cos(x)) intersect [x]) == 0 && size(lname(y''=cos(x)) intersect [y]) == 1 && size(lname(y''=cos(x)) minus [y]) > 0,normal(map(desolve(y''=cos(x),x,y),x->y=x)[0]),normal(map(desolve(y''=cos(x)),x->y=x)[0])),normal(map(desolve(y'=y''=cos(x)),x->y=x)[0]))))
-41<< y=(-cos(x)+c_0*x+c_1)
+41<< y=(-cos(x)+SOME_CONSTANT*x+SOME_CONSTANT)
 42>> caseval(regroup(when((ggbtmpvarv'=(ggbtmpvarv)/(ggbtmpvarw))[0]=='=',normal(map(desolve(ggbtmpvarv'=(ggbtmpvarv)/(ggbtmpvarw),ggbtmpvarw,ggbtmpvarv,point(1,2)),x->ggbtmpvarv=x)[0]),normal(map(desolve(y'=ggbtmpvarv'=(ggbtmpvarv)/(ggbtmpvarw),ggbtmpvarw,ggbtmpvarv,point(1,2)),x->ggbtmpvarv=x)[0]))))
 42<< ggbtmpvarv=(2*ggbtmpvarw)
 43>> caseval(regroup(when(((y')-((2)*(y))=3)[0]=='=', when (size(lname((y')-((2)*(y))=3) intersect [x]) == 0 && size(lname((y')-((2)*(y))=3) intersect [y]) == 1 && size(lname((y')-((2)*(y))=3) minus [y]) > 0,normal(map(desolve((y')-((2)*(y))=3,x,y),x->y=x)[0]),normal(map(desolve((y')-((2)*(y))=3),x->y=x)[0])),normal(map(desolve(y'=(y')-((2)*(y))=3),x->y=x)[0]))))
-43<< y=(c_0*ℯ^(2*x)-3/2)
+43<< y=(SOME_CONSTANT*ℯ^(2*x)-3/2)
 44>> caseval(regroup(when((((2)*(y))*(y')=(exp(x))+(2))[0]=='=', when (size(lname(((2)*(y))*(y')=(exp(x))+(2)) intersect [x]) == 0 && size(lname(((2)*(y))*(y')=(exp(x))+(2)) intersect [y]) == 1 && size(lname(((2)*(y))*(y')=(exp(x))+(2)) minus [y]) > 0,normal(map(desolve(((2)*(y))*(y')=(exp(x))+(2),x,y),x->y=x)[0]),normal(map(desolve(((2)*(y))*(y')=(exp(x))+(2)),x->y=x)[0])),normal(map(desolve(y'=((2)*(y))*(y')=(exp(x))+(2)),x->y=x)[0]))))
-44<< y=(√(ℯ^x+2*x-2*c_0))
+44<< y=(√(ℯ^x+2*x-2*SOME_CONSTANT))
 45>> caseval(regroup(when((y''=0)[0]=='=',normal(map(desolve(y''=0,point(1,3),point(0,1)),(type(point(0,1))==DOM_IDENT)?(x->point(0,1)=x):(x->y=x))[0]),normal(map(desolve(y'=y''=0,point(1,3),point(0,1)),(type(point(0,1))==DOM_IDENT)?(x->point(0,1)=x):(x->y=x))[0]))))
 45<< y=(3*x+1)
 46>> caseval(regroup(when((((y'')+(y'))+((pi)*(y))=0)[0]=='=', when (size(lname(((y'')+(y'))+((pi)*(y))=0) intersect [x]) == 0 && size(lname(((y'')+(y'))+((pi)*(y))=0) intersect [y]) == 1 && size(lname(((y'')+(y'))+((pi)*(y))=0) minus [y]) > 0,normal(map(desolve(((y'')+(y'))+((pi)*(y))=0,x,y),x->y=x)[0]),normal(map(desolve(((y'')+(y'))+((pi)*(y))=0),x->y=x)[0])),normal(map(desolve(y'=((y'')+(y'))+((pi)*(y))=0),x->y=x)[0]))))
-46<< y=(c_0*ℯ^(-1/2*x)*cos(1/2*x*√(4*pi-1))+c_1*ℯ^(-1/2*x)*sin(1/2*x*√(4*pi-1)))
+46<< y=(SOME_CONSTANT*ℯ^(-1/2*x)*cos(1/2*x*√(4*pi-1))+SOME_CONSTANT*ℯ^(-1/2*x)*sin(1/2*x*√(4*pi-1)))
 47>> caseval(regroup(when((((y'')+((2)*(y')))-((3)*(y))=exp((2)*(x)))[0]=='=', when (size(lname(((y'')+((2)*(y')))-((3)*(y))=exp((2)*(x))) intersect [x]) == 0 && size(lname(((y'')+((2)*(y')))-((3)*(y))=exp((2)*(x))) intersect [y]) == 1 && size(lname(((y'')+((2)*(y')))-((3)*(y))=exp((2)*(x))) minus [y]) > 0,normal(map(desolve(((y'')+((2)*(y')))-((3)*(y))=exp((2)*(x)),x,y),x->y=x)[0]),normal(map(desolve(((y'')+((2)*(y')))-((3)*(y))=exp((2)*(x))),x->y=x)[0])),normal(map(desolve(y'=((y'')+((2)*(y')))-((3)*(y))=exp((2)*(x))),x->y=x)[0]))))
-47<< y=(1/5*ℯ^(2*x)+c_0*ℯ^x+c_1*ℯ^(-3*x))
+47<< y=(1/5*ℯ^(2*x)+SOME_CONSTANT*ℯ^x+SOME_CONSTANT*ℯ^(-3*x))
 48>> caseval(regroup(when(((ggbtmpvara)*(y'')=0)[0]=='=', when (size(lname((ggbtmpvara)*(y'')=0) intersect [x]) == 0 && size(lname((ggbtmpvara)*(y'')=0) intersect [y]) == 1 && size(lname((ggbtmpvara)*(y'')=0) minus [y]) > 0,normal(map(desolve((ggbtmpvara)*(y'')=0,x,y),x->y=x)[0]),normal(map(desolve((ggbtmpvara)*(y'')=0),x->y=x)[0])),normal(map(desolve(y'=(ggbtmpvara)*(y'')=0),x->y=x)[0]))))
-48<< y=(c_0*x+c_1)
+48<< y=(SOME_CONSTANT*x+SOME_CONSTANT)
 49>> caseval(regroup(when((y'=(-((12/100)))*(y))[0]=='=',normal(map(desolve(y'=(-((12/100)))*(y),ggbtmpvart,y),(type(y)==DOM_IDENT)?(x->y=x):(x->y=x))[0]),normal(map(desolve(y'=y'=(-((12/100)))*(y),ggbtmpvart,y),(type(y)==DOM_IDENT)?(x->y=x):(x->y=x))[0]))))
-49<< y=(c_0*ℯ^(-3/25*ggbtmpvart))
+49<< y=(SOME_CONSTANT*ℯ^(-3/25*ggbtmpvart))
 50>> caseval(regroup(when((ggbtmpvarw'=(2)*(ggbtmpvarw))[0]=='=',normal(map(desolve(ggbtmpvarw'=(2)*(ggbtmpvarw),x,ggbtmpvarw,point(0,1)),x->ggbtmpvarw=x)[0]),normal(map(desolve(y'=ggbtmpvarw'=(2)*(ggbtmpvarw),x,ggbtmpvarw,point(0,1)),x->ggbtmpvarw=x)[0]))))
 50<< ggbtmpvarw=(ℯ^(2*x))
 51>> caseval(regroup(when((ggbtmpvarv'=(ggbtmpvarv)/(ggbtmpvarw))[0]=='=',normal(map(desolve(ggbtmpvarv'=(ggbtmpvarv)/(ggbtmpvarw),ggbtmpvarw,ggbtmpvarv,point(1,2)),x->ggbtmpvarv=x)[0]),normal(map(desolve(y'=ggbtmpvarv'=(ggbtmpvarv)/(ggbtmpvarw),ggbtmpvarw,ggbtmpvarv,point(1,2)),x->ggbtmpvarv=x)[0]))))
 51<< ggbtmpvarv=(2*ggbtmpvarw)
 52>> caseval(regroup(when((y''=(2)-(exp(-(x))))[0]=='=', when (size(lname(y''=(2)-(exp(-(x)))) intersect [x]) == 0 && size(lname(y''=(2)-(exp(-(x)))) intersect [y]) == 1 && size(lname(y''=(2)-(exp(-(x)))) minus [y]) > 0,normal(map(desolve(y''=(2)-(exp(-(x))),x,y),x->y=x)[0]),normal(map(desolve(y''=(2)-(exp(-(x)))),x->y=x)[0])),normal(map(desolve(y'=y''=(2)-(exp(-(x)))),x->y=x)[0]))))
-52<< y=(x^2-ℯ^(-x)+c_0*x+c_1)
+52<< y=(x^2-ℯ^(-x)+SOME_CONSTANT*x+SOME_CONSTANT)
 53>> caseval(regroup(when(((pi)*(y'')=0)[0]=='=', when (size(lname((pi)*(y'')=0) intersect [x]) == 0 && size(lname((pi)*(y'')=0) intersect [y]) == 1 && size(lname((pi)*(y'')=0) minus [y]) > 0,normal(map(desolve((pi)*(y'')=0,x,y),x->y=x)[0]),normal(map(desolve((pi)*(y'')=0),x->y=x)[0])),normal(map(desolve(y'=(pi)*(y'')=0),x->y=x)[0]))))
-53<< y=(c_0*x+c_1)
+53<< y=(SOME_CONSTANT*x+SOME_CONSTANT)
 54>> caseval(regroup(normal(y=when(type(point(1,1))==DOM_LIST,desolve([y'=sqrt(y),y(xcoord(point(1,1)[0]))=ycoord(point(1,1)[0]),y(xcoord(point(1,1)[1]))=ycoord(point(1,1)[1])],x,y),desolve(when((y'=sqrt(y))[0]=='=',y'=sqrt(y),y'=y'=sqrt(y)),x,y,point(1,1)))[0])))
 54<< y=(1/4*x^2+1/2*x+1/4)
 55>> caseval(regroup(normal(y=when(type(point(1,2))==DOM_LIST,desolve([y'=(y)/(x),y(xcoord(point(1,2)[0]))=ycoord(point(1,2)[0]),y(xcoord(point(1,2)[1]))=ycoord(point(1,2)[1])],x,y),desolve(when((y'=(y)/(x))[0]=='=',y'=(y)/(x),y'=y'=(y)/(x)),x,y,point(1,2)))[0])))
@@ -111,17 +111,17 @@
 56>> caseval(regroup(when((y''=0)[0]=='=',normal(map(desolve(y''=0,point(1,3),point(0,1)),(type(point(0,1))==DOM_IDENT)?(x->point(0,1)=x):(x->y=x))[0]),normal(map(desolve(y'=y''=0,point(1,3),point(0,1)),(type(point(0,1))==DOM_IDENT)?(x->point(0,1)=x):(x->y=x))[0]))))
 56<< y=(3*x+1)
 57>> caseval(regroup(when(((5)*(y'')=0)[0]=='=', when (size(lname((5)*(y'')=0) intersect [x]) == 0 && size(lname((5)*(y'')=0) intersect [y]) == 1 && size(lname((5)*(y'')=0) minus [y]) > 0,normal(map(desolve((5)*(y'')=0,x,y),x->y=x)[0]),normal(map(desolve((5)*(y'')=0),x->y=x)[0])),normal(map(desolve(y'=(5)*(y'')=0),x->y=x)[0]))))
-57<< y=(c_0*x+c_1)
+57<< y=(SOME_CONSTANT*x+SOME_CONSTANT)
 58>> caseval(regroup(when((y'=(ggbtmpvark)*(y))[0]=='=', when (size(lname(y'=(ggbtmpvark)*(y)) intersect [x]) == 0 && size(lname(y'=(ggbtmpvark)*(y)) intersect [y]) == 1 && size(lname(y'=(ggbtmpvark)*(y)) minus [y]) > 0,normal(map(desolve(y'=(ggbtmpvark)*(y),x,y),x->y=x)[0]),normal(map(desolve(y'=(ggbtmpvark)*(y)),x->y=x)[0])),normal(map(desolve(y'=y'=(ggbtmpvark)*(y)),x->y=x)[0]))))
-58<< y=(c_0*ℯ^(ggbtmpvark*x))
+58<< y=(SOME_CONSTANT*ℯ^(ggbtmpvark*x))
 59>> caseval(regroup(normal(y=when(type(point(0,5))==DOM_LIST,desolve([(y')-((4)*(y))=8,y(xcoord(point(0,5)[0]))=ycoord(point(0,5)[0]),y(xcoord(point(0,5)[1]))=ycoord(point(0,5)[1])],x,y),desolve(when(((y')-((4)*(y))=8)[0]=='=',(y')-((4)*(y))=8,y'=(y')-((4)*(y))=8),x,y,point(0,5)))[0])))
 59<< y=(7*ℯ^(4*x)-2)
 60>> caseval(regroup(when((ggbtmpvarv'=(ggbtmpvarv)/(ggbtmpvarw))[0]=='=',normal(map(desolve(ggbtmpvarv'=(ggbtmpvarv)/(ggbtmpvarw),ggbtmpvarw,ggbtmpvarv),(type(ggbtmpvarv)==DOM_IDENT)?(x->ggbtmpvarv=x):(x->y=x))[0]),normal(map(desolve(y'=ggbtmpvarv'=(ggbtmpvarv)/(ggbtmpvarw),ggbtmpvarw,ggbtmpvarv),(type(ggbtmpvarv)==DOM_IDENT)?(x->ggbtmpvarv=x):(x->y=x))[0]))))
-60<< ggbtmpvarv=(c_0*ggbtmpvarw)
+60<< ggbtmpvarv=(SOME_CONSTANT*ggbtmpvarw)
 61>> caseval(regroup(when((y''=0)[0]=='=',normal(map(desolve(y''=0,point(1,3),point(0,1)),(type(point(0,1))==DOM_IDENT)?(x->point(0,1)=x):(x->y=x))[0]),normal(map(desolve(y'=y''=0,point(1,3),point(0,1)),(type(point(0,1))==DOM_IDENT)?(x->point(0,1)=x):(x->y=x))[0]))))
 61<< y=(3*x+1)
 62>> caseval(regroup(when(((y')*(sqrt(y))=(6)*((x)^(2)))[0]=='=', when (size(lname((y')*(sqrt(y))=(6)*((x)^(2))) intersect [x]) == 0 && size(lname((y')*(sqrt(y))=(6)*((x)^(2))) intersect [y]) == 1 && size(lname((y')*(sqrt(y))=(6)*((x)^(2))) minus [y]) > 0,normal(map(desolve((y')*(sqrt(y))=(6)*((x)^(2)),x,y),x->y=x)[0]),normal(map(desolve((y')*(sqrt(y))=(6)*((x)^(2))),x->y=x)[0])),normal(map(desolve(y'=(y')*(sqrt(y))=(6)*((x)^(2))),x->y=x)[0]))))
-62<< y=(1/4*(12^(1/3))^2*((2*x^3-c_0)^(1/3))^2)
+62<< y=(1/4*(12^(1/3))^2*((2*x^3-SOME_CONSTANT)^(1/3))^2)
 63>> caseval(regroup(simplify(binomial(ggbtmpvarn,(ggbtmpvarn)-(3)))))
 63<< 1/6*(ggbtmpvarn^3-3*ggbtmpvarn^2+2*ggbtmpvarn)
 64>> caseval(regroup(simplify(binomial(52,13))))
@@ -973,7 +973,7 @@
 487>> caseval(regroup(when ( type(((x)+(y)=5 && (x)-(y)=1)) == DOM_SYMBOLIC && type({x, y}) == DOM_SYMBOLIC , (assume({x, y}),solve(((x)+(y)=5 && (x)-(y)=1),x))[size(assume({x, y}),solve(((x)+(y)=5 && (x)-(y)=1),x))-1] , when ( type(((x)+(y)=5 && (x)-(y)=1)) == DOM_IDENT && type({x, y}) == DOM_SYMBOLIC && ((x)+(y)=5 && (x)-(y)=1) == 'x', (assume({x, y}),solve(((x)+(y)=5 && (x)-(y)=1)=0,x))[size(assume({x, y}),solve(((x)+(y)=5 && (x)-(y)=1)=0,x))-1] ,when ( size({x, y}) == 1,flatten1(ggbsort(normal([op(solve(((x)+(y)=5 && (x)-(y)=1),{x, y}))]))),ggbsort(normal([op(solve(((x)+(y)=5 && (x)-(y)=1),{x, y}))])) ) ) )))
 487<< {{x=3,y=2}}
 488>> caseval(regroup(when ( type((((-((15/100)))*((x)^(2)))+((48)*(x)))-(2000) > 0) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve((((-((15/100)))*((x)^(2)))+((48)*(x)))-(2000) > 0,x))[size(assume(x),solve((((-((15/100)))*((x)^(2)))+((48)*(x)))-(2000) > 0,x))-1] , when ( type((((-((15/100)))*((x)^(2)))+((48)*(x)))-(2000) > 0) == DOM_IDENT && type(x) == DOM_SYMBOLIC && (((-((15/100)))*((x)^(2)))+((48)*(x)))-(2000) > 0 == 'x', (assume(x),solve((((-((15/100)))*((x)^(2)))+((48)*(x)))-(2000) > 0=0,x))[size(assume(x),solve((((-((15/100)))*((x)^(2)))+((48)*(x)))-(2000) > 0=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve((((-((15/100)))*((x)^(2)))+((48)*(x)))-(2000) > 0,x))]))),ggbsort(normal([op(solve((((-((15/100)))*((x)^(2)))+((48)*(x)))-(2000) > 0,x))])) ) ) )))
-488<< {(x>(-(40*√69-480)/3)) && ((-(-40*√69-480)/3)>x)}
+488<< {(x>((-40*√69+480)/3)) && (((40*√69+480)/3)>x)}
 489>> caseval(regroup(when ( type(((2)*(x))+(3)=(4)+((1)/(3))) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve(((2)*(x))+(3)=(4)+((1)/(3)),x))[size(assume(x),solve(((2)*(x))+(3)=(4)+((1)/(3)),x))-1] , when ( type(((2)*(x))+(3)=(4)+((1)/(3))) == DOM_IDENT && type(x) == DOM_SYMBOLIC && ((2)*(x))+(3)=(4)+((1)/(3)) == 'x', (assume(x),solve(((2)*(x))+(3)=(4)+((1)/(3))=0,x))[size(assume(x),solve(((2)*(x))+(3)=(4)+((1)/(3))=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve(((2)*(x))+(3)=(4)+((1)/(3)),x))]))),ggbsort(normal([op(solve(((2)*(x))+(3)=(4)+((1)/(3)),x))])) ) ) )))
 489<< {x=(2/3)}
 490>> caseval(regroup(when ( type((((2)*(x))-(6))*((x)-(2))  <  0) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve((((2)*(x))-(6))*((x)-(2))  <  0,x))[size(assume(x),solve((((2)*(x))-(6))*((x)-(2))  <  0,x))-1] , when ( type((((2)*(x))-(6))*((x)-(2))  <  0) == DOM_IDENT && type(x) == DOM_SYMBOLIC && (((2)*(x))-(6))*((x)-(2))  <  0 == 'x', (assume(x),solve((((2)*(x))-(6))*((x)-(2))  <  0=0,x))[size(assume(x),solve((((2)*(x))-(6))*((x)-(2))  <  0=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve((((2)*(x))-(6))*((x)-(2))  <  0,x))]))),ggbsort(normal([op(solve((((2)*(x))-(6))*((x)-(2))  <  0,x))])) ) ) )))
@@ -983,9 +983,9 @@
 492>> caseval(regroup(when ( type((((2)*(x))+(1))/(x)=(((18)/(5))*(x))+(5)) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve((((2)*(x))+(1))/(x)=(((18)/(5))*(x))+(5),x))[size(assume(x),solve((((2)*(x))+(1))/(x)=(((18)/(5))*(x))+(5),x))-1] , when ( type((((2)*(x))+(1))/(x)=(((18)/(5))*(x))+(5)) == DOM_IDENT && type(x) == DOM_SYMBOLIC && (((2)*(x))+(1))/(x)=(((18)/(5))*(x))+(5) == 'x', (assume(x),solve((((2)*(x))+(1))/(x)=(((18)/(5))*(x))+(5)=0,x))[size(assume(x),solve((((2)*(x))+(1))/(x)=(((18)/(5))*(x))+(5)=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve((((2)*(x))+(1))/(x)=(((18)/(5))*(x))+(5),x))]))),ggbsort(normal([op(solve((((2)*(x))+(1))/(x)=(((18)/(5))*(x))+(5),x))])) ) ) )))
 492<< {x=(1/12*(-√65-5)),x=(1/12*(√65-5))}
 493>> caseval(regroup(when ( type({(ggbtmpvart)^(2) <= ggbtmpvarp}) == DOM_SYMBOLIC && type(ggbtmpvarp) == DOM_SYMBOLIC , (assume(ggbtmpvarp),solve({(ggbtmpvart)^(2) <= ggbtmpvarp},x))[size(assume(ggbtmpvarp),solve({(ggbtmpvart)^(2) <= ggbtmpvarp},x))-1] , when ( type({(ggbtmpvart)^(2) <= ggbtmpvarp}) == DOM_IDENT && type(ggbtmpvarp) == DOM_SYMBOLIC && {(ggbtmpvart)^(2) <= ggbtmpvarp} == 'x', (assume(ggbtmpvarp),solve({(ggbtmpvart)^(2) <= ggbtmpvarp}=0,x))[size(assume(ggbtmpvarp),solve({(ggbtmpvart)^(2) <= ggbtmpvarp}=0,x))-1] ,when ( size(ggbtmpvarp) == 1,flatten1(ggbsort(normal([op(solve({(ggbtmpvart)^(2) <= ggbtmpvarp},ggbtmpvarp))]))),ggbsort(normal([op(solve({(ggbtmpvart)^(2) <= ggbtmpvarp},ggbtmpvarp))])) ) ) )))
-493<< {(ggbtmpvarp-ggbtmpvart^2)>=0}
+493<< {ggbtmpvarp>=(ggbtmpvart^2)}
 494>> caseval(regroup(when ( type((log((x)+(2)))+(1) > -(4)) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve((log((x)+(2)))+(1) > -(4),x))[size(assume(x),solve((log((x)+(2)))+(1) > -(4),x))-1] , when ( type((log((x)+(2)))+(1) > -(4)) == DOM_IDENT && type(x) == DOM_SYMBOLIC && (log((x)+(2)))+(1) > -(4) == 'x', (assume(x),solve((log((x)+(2)))+(1) > -(4)=0,x))[size(assume(x),solve((log((x)+(2)))+(1) > -(4)=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve((log((x)+(2)))+(1) > -(4),x))]))),ggbsort(normal([op(solve((log((x)+(2)))+(1) > -(4),x))])) ) ) )))
-494<< {((x*ℯ^5+2*ℯ^5-1)/ℯ^5)>0}
+494<< {x>((-2*ℯ^5+1)/ℯ^5)}
 495>> caseval(regroup(when ( type((5)*((2)^(x))=(3)^(x)) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve((5)*((2)^(x))=(3)^(x),x))[size(assume(x),solve((5)*((2)^(x))=(3)^(x),x))-1] , when ( type((5)*((2)^(x))=(3)^(x)) == DOM_IDENT && type(x) == DOM_SYMBOLIC && (5)*((2)^(x))=(3)^(x) == 'x', (assume(x),solve((5)*((2)^(x))=(3)^(x)=0,x))[size(assume(x),solve((5)*((2)^(x))=(3)^(x)=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve((5)*((2)^(x))=(3)^(x),x))]))),ggbsort(normal([op(solve((5)*((2)^(x))=(3)^(x),x))])) ) ) )))
 495<< {x=(-ln(5)/(ln(2)-ln(3)))}
 496>> caseval(regroup(when ( type((((log10(x))^(2))-((4)*(log10(x))))+(3)=0) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve((((log10(x))^(2))-((4)*(log10(x))))+(3)=0,x))[size(assume(x),solve((((log10(x))^(2))-((4)*(log10(x))))+(3)=0,x))-1] , when ( type((((log10(x))^(2))-((4)*(log10(x))))+(3)=0) == DOM_IDENT && type(x) == DOM_SYMBOLIC && (((log10(x))^(2))-((4)*(log10(x))))+(3)=0 == 'x', (assume(x),solve((((log10(x))^(2))-((4)*(log10(x))))+(3)=0=0,x))[size(assume(x),solve((((log10(x))^(2))-((4)*(log10(x))))+(3)=0=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve((((log10(x))^(2))-((4)*(log10(x))))+(3)=0,x))]))),ggbsort(normal([op(solve((((log10(x))^(2))-((4)*(log10(x))))+(3)=0,x))])) ) ) )))
@@ -1015,7 +1015,7 @@
 508>> caseval(regroup(when ( type((x  <  1 && x <= 1)) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve((x  <  1 && x <= 1),x))[size(assume(x),solve((x  <  1 && x <= 1),x))-1] , when ( type((x  <  1 && x <= 1)) == DOM_IDENT && type(x) == DOM_SYMBOLIC && (x  <  1 && x <= 1) == 'x', (assume(x),solve((x  <  1 && x <= 1)=0,x))[size(assume(x),solve((x  <  1 && x <= 1)=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve((x  <  1 && x <= 1),x))]))),ggbsort(normal([op(solve((x  <  1 && x <= 1),x))])) ) ) )))
 508<< {x<1}
 509>> caseval(regroup(when ( type((((2)^((x)+(3)))+((2)^((x)+(2))))+((2)^(x)) <= 52) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve((((2)^((x)+(3)))+((2)^((x)+(2))))+((2)^(x)) <= 52,x))[size(assume(x),solve((((2)^((x)+(3)))+((2)^((x)+(2))))+((2)^(x)) <= 52,x))-1] , when ( type((((2)^((x)+(3)))+((2)^((x)+(2))))+((2)^(x)) <= 52) == DOM_IDENT && type(x) == DOM_SYMBOLIC && (((2)^((x)+(3)))+((2)^((x)+(2))))+((2)^(x)) <= 52 == 'x', (assume(x),solve((((2)^((x)+(3)))+((2)^((x)+(2))))+((2)^(x)) <= 52=0,x))[size(assume(x),solve((((2)^((x)+(3)))+((2)^((x)+(2))))+((2)^(x)) <= 52=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve((((2)^((x)+(3)))+((2)^((x)+(2))))+((2)^(x)) <= 52,x))]))),ggbsort(normal([op(solve((((2)^((x)+(3)))+((2)^((x)+(2))))+((2)^(x)) <= 52,x))])) ) ) )))
-509<< {((x*ln(2)-ln(4))/ln(2))<=0}
+509<< {x<=(ln(4)/ln(2))}
 510>> caseval(regroup(when ( type(((exp(x))+((2)*(exp(-(x)))))-(3)=0) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve(((exp(x))+((2)*(exp(-(x)))))-(3)=0,x))[size(assume(x),solve(((exp(x))+((2)*(exp(-(x)))))-(3)=0,x))-1] , when ( type(((exp(x))+((2)*(exp(-(x)))))-(3)=0) == DOM_IDENT && type(x) == DOM_SYMBOLIC && ((exp(x))+((2)*(exp(-(x)))))-(3)=0 == 'x', (assume(x),solve(((exp(x))+((2)*(exp(-(x)))))-(3)=0=0,x))[size(assume(x),solve(((exp(x))+((2)*(exp(-(x)))))-(3)=0=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve(((exp(x))+((2)*(exp(-(x)))))-(3)=0,x))]))),ggbsort(normal([op(solve(((exp(x))+((2)*(exp(-(x)))))-(3)=0,x))])) ) ) )))
 510<< {x=0,x=(ln(2))}
 511>> caseval(regroup(when ( type(((2)*((x)^(2)))+(x) <= 6) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve(((2)*((x)^(2)))+(x) <= 6,x))[size(assume(x),solve(((2)*((x)^(2)))+(x) <= 6,x))-1] , when ( type(((2)*((x)^(2)))+(x) <= 6) == DOM_IDENT && type(x) == DOM_SYMBOLIC && ((2)*((x)^(2)))+(x) <= 6 == 'x', (assume(x),solve(((2)*((x)^(2)))+(x) <= 6=0,x))[size(assume(x),solve(((2)*((x)^(2)))+(x) <= 6=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve(((2)*((x)^(2)))+(x) <= 6,x))]))),ggbsort(normal([op(solve(((2)*((x)^(2)))+(x) <= 6,x))])) ) ) )))
@@ -1153,7 +1153,7 @@
 577>> caseval(regroup(when ( type((normal(ggbabs(x)))+(normal(ggbabs((1)/(x)))) <= -(3)) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve((normal(ggbabs(x)))+(normal(ggbabs((1)/(x)))) <= -(3),x))[size(assume(x),solve((normal(ggbabs(x)))+(normal(ggbabs((1)/(x)))) <= -(3),x))-1] , when ( type((normal(ggbabs(x)))+(normal(ggbabs((1)/(x)))) <= -(3)) == DOM_IDENT && type(x) == DOM_SYMBOLIC && (normal(ggbabs(x)))+(normal(ggbabs((1)/(x)))) <= -(3) == 'x', (assume(x),solve((normal(ggbabs(x)))+(normal(ggbabs((1)/(x)))) <= -(3)=0,x))[size(assume(x),solve((normal(ggbabs(x)))+(normal(ggbabs((1)/(x)))) <= -(3)=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve((normal(ggbabs(x)))+(normal(ggbabs((1)/(x)))) <= -(3),x))]))),ggbsort(normal([op(solve((normal(ggbabs(x)))+(normal(ggbabs((1)/(x)))) <= -(3),x))])) ) ) )))
 577<< {}
 578>> caseval(regroup(when ( type((7)*((3)^(x))  <  (3)*((5)^(x))) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve((7)*((3)^(x))  <  (3)*((5)^(x)),x))[size(assume(x),solve((7)*((3)^(x))  <  (3)*((5)^(x)),x))-1] , when ( type((7)*((3)^(x))  <  (3)*((5)^(x))) == DOM_IDENT && type(x) == DOM_SYMBOLIC && (7)*((3)^(x))  <  (3)*((5)^(x)) == 'x', (assume(x),solve((7)*((3)^(x))  <  (3)*((5)^(x))=0,x))[size(assume(x),solve((7)*((3)^(x))  <  (3)*((5)^(x))=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve((7)*((3)^(x))  <  (3)*((5)^(x)),x))]))),ggbsort(normal([op(solve((7)*((3)^(x))  <  (3)*((5)^(x)),x))])) ) ) )))
-578<< {((x*ln(3)-x*ln(5)-ln(3)+ln(7))/(ln(3)-ln(5)))>0}
+578<< {x>((ln(3)-ln(7))/(ln(3)-ln(5)))}
 579>> caseval(regroup(when ( type(((x)^(2))-(1)) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve(((x)^(2))-(1),x))[size(assume(x),solve(((x)^(2))-(1),x))-1] , when ( type(((x)^(2))-(1)) == DOM_IDENT && type(x) == DOM_SYMBOLIC && ((x)^(2))-(1) == 'x', (assume(x),solve(((x)^(2))-(1)=0,x))[size(assume(x),solve(((x)^(2))-(1)=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve(((x)^(2))-(1),x))]))),ggbsort(normal([op(solve(((x)^(2))-(1),x))])) ) ) )))
 579<< {x=-1,x=1}
 580>> caseval(regroup(when ( type((sqrt((x)+(1)))+(sqrt((x)-(1)))=1) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve((sqrt((x)+(1)))+(sqrt((x)-(1)))=1,x))[size(assume(x),solve((sqrt((x)+(1)))+(sqrt((x)-(1)))=1,x))-1] , when ( type((sqrt((x)+(1)))+(sqrt((x)-(1)))=1) == DOM_IDENT && type(x) == DOM_SYMBOLIC && (sqrt((x)+(1)))+(sqrt((x)-(1)))=1 == 'x', (assume(x),solve((sqrt((x)+(1)))+(sqrt((x)-(1)))=1=0,x))[size(assume(x),solve((sqrt((x)+(1)))+(sqrt((x)-(1)))=1=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve((sqrt((x)+(1)))+(sqrt((x)-(1)))=1,x))]))),ggbsort(normal([op(solve((sqrt((x)+(1)))+(sqrt((x)-(1)))=1,x))])) ) ) )))
@@ -1637,15 +1637,15 @@
 819>> caseval(regroup(ggbsort(normal(zeros((x)^(2)=(4)*(x),x)))))
 819<< {0,4}
 820>> caseval(regroup(when((y''=(1)/(x))[0]=='=', when (size(lname(y''=(1)/(x)) intersect [x]) == 0 && size(lname(y''=(1)/(x)) intersect [y]) == 1 && size(lname(y''=(1)/(x)) minus [y]) > 0,normal(map(desolve(y''=(1)/(x),x,y),x->y=x)[0]),normal(map(desolve(y''=(1)/(x)),x->y=x)[0])),normal(map(desolve(y'=y''=(1)/(x)),x->y=x)[0]))))
-820<< y=(c_0*x+x*ln(abs(x))-x+c_1)
+820<< y=(SOME_CONSTANT*x+x*ln(abs(x))-x+SOME_CONSTANT)
 821>> caseval(regroup(when((((y'')+(y'))+((ggbtmpvara)*(y))=0)[0]=='=', when (size(lname(((y'')+(y'))+((ggbtmpvara)*(y))=0) intersect [x]) == 0 && size(lname(((y'')+(y'))+((ggbtmpvara)*(y))=0) intersect [y]) == 1 && size(lname(((y'')+(y'))+((ggbtmpvara)*(y))=0) minus [y]) > 0,normal(map(desolve(((y'')+(y'))+((ggbtmpvara)*(y))=0,x,y),x->y=x)[0]),normal(map(desolve(((y'')+(y'))+((ggbtmpvara)*(y))=0),x->y=x)[0])),normal(map(desolve(y'=((y'')+(y'))+((ggbtmpvara)*(y))=0),x->y=x)[0]))))
-821<< y=(c_0*ℯ^(1/2*(x*√(-4*ggbtmpvara+1)-x))+c_1*ℯ^(1/2*(-x*√(-4*ggbtmpvara+1)-x)))
+821<< y=(SOME_CONSTANT*ℯ^(1/2*(x*√(-4*ggbtmpvara+1)-x))+SOME_CONSTANT*ℯ^(1/2*(-x*√(-4*ggbtmpvara+1)-x)))
 822>> caseval(regroup(when((y''=(1)/((x)^(2)))[0]=='=', when (size(lname(y''=(1)/((x)^(2))) intersect [x]) == 0 && size(lname(y''=(1)/((x)^(2))) intersect [y]) == 1 && size(lname(y''=(1)/((x)^(2))) minus [y]) > 0,normal(map(desolve(y''=(1)/((x)^(2)),x,y),x->y=x)[0]),normal(map(desolve(y''=(1)/((x)^(2))),x->y=x)[0])),normal(map(desolve(y'=y''=(1)/((x)^(2))),x->y=x)[0]))))
-822<< y=(-ln(abs(x))+c_0*x+c_1-1)
+822<< y=(-ln(abs(x))+SOME_CONSTANT*x+SOME_CONSTANT-1)
 823>> caseval(regroup(when((((y'')+(y'))+((ggbtmpvara)*(y))=0)[0]=='=',normal(map(desolve(((y'')+(y'))+((ggbtmpvara)*(y))=0,x,y),(type(y)==DOM_IDENT)?(x->y=x):(x->y=x))[0]),normal(map(desolve(y'=((y'')+(y'))+((ggbtmpvara)*(y))=0,x,y),(type(y)==DOM_IDENT)?(x->y=x):(x->y=x))[0]))))
-823<< y=(c_0*ℯ^(1/2*(x*√(-4*ggbtmpvara+1)-x))+c_1*ℯ^(1/2*(-x*√(-4*ggbtmpvara+1)-x)))
+823<< y=(SOME_CONSTANT*ℯ^(1/2*(x*√(-4*ggbtmpvara+1)-x))+SOME_CONSTANT*ℯ^(1/2*(-x*√(-4*ggbtmpvara+1)-x)))
 824>> caseval(regroup(when ( type(sin(x)=cos(x)) == DOM_SYMBOLIC && type(x) == DOM_SYMBOLIC , (assume(x),solve(sin(x)=cos(x),x))[size(assume(x),solve(sin(x)=cos(x),x))-1] , when ( type(sin(x)=cos(x)) == DOM_IDENT && type(x) == DOM_SYMBOLIC && sin(x)=cos(x) == 'x', (assume(x),solve(sin(x)=cos(x)=0,x))[size(assume(x),solve(sin(x)=cos(x)=0,x))-1] ,when ( size(x) == 1,flatten1(ggbsort(normal([op(solve(sin(x)=cos(x),x))]))),ggbsort(normal([op(solve(sin(x)=cos(x),x))])) ) ) )))
-824<< {x=(2*n_36*pi+1/4*pi),x=(2*n_37*pi-3/4*pi)}
+824<< {x=(SOME_CONSTANT*pi+1/4*pi)}
 825>> caseval(regroup(normal(cZeros(((x)^(3))-(1),x))))
 825<< {1,1/2*(ί*√3-1),1/2*((-ί)*√3-1)}
 826>> caseval(regroup([[[ggbevalarg:=im((17)+((3)*(i)))],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
@@ -1859,7 +1859,7 @@
 930>> caseval(regroup([[[ggbevalarg:=({{1, 0, 0}, {0, 1, 0}, {0, 0, 1}})*(x)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 930<< {{x,0,0},{0,x,0},{0,0,x}}
 931>> caseval(regroup([[[ggbevalarg:=(3)*(x)<=(3)*(2)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
-931<< x<=2
+931<< (3*x)<=6
 932>> caseval(regroup([[[ggbevalarg:=(tan((x)/(2)))-((sin(x))/((1)+(cos(x))))],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 932<< tan(1/2*x)-sin(x)/(cos(x)+1)
 933>> caseval(regroup([[[ggbevalarg:={x > 3}],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
@@ -1897,7 +1897,7 @@
 949>> caseval(regroup([[[ggbevalarg:={x=?}],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 949<< {x=?}
 950>> caseval(regroup([[[ggbevalarg:=(x > 1)-(x)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
-950<< x>1
+950<< (1-x)<0
 951>> caseval(regroup([[[ggbevalarg:=0],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 951<< 0
 952>> caseval(regroup([[[ggbevalarg:=(true && true)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
@@ -1985,7 +1985,7 @@
 993>> caseval(regroup([[[ggbevalarg:=tan((pi)/(7))],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 993<< tan(1/7*pi)
 994>> caseval(regroup([[[ggbevalarg:=(ggbtmpvaraa > ggbtmpvarb)+(ggbtmpvarc)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
-994<< (ggbtmpvaraa-ggbtmpvarb)>0
+994<< (ggbtmpvaraa+ggbtmpvarc)>(ggbtmpvarb+ggbtmpvarc)
 995>> caseval(regroup([[[ggbevalarg:=point(point((1)*cos(1),(1)*sin(1))+point(1,1))],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 995<< (cos(1)+1,sin(1)+1)
 996>> caseval(regroup([[[ggbevalarg:=({1, 2, 3}).^(3)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
@@ -2059,7 +2059,7 @@
 1030>> caseval(regroup([[[ggbevalarg:=((((15)+(9))*((35/10)))-((2)*((5/10))))/(4)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 1030<< 83/4
 1031>> caseval(regroup([[[ggbevalarg:=(-(3))*(x >= 2)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
-1031<< x>=2
+1031<< (-3*x)<=-6
 1032>> caseval(regroup([[[ggbevalarg:=point(point((1)*cos(1),(1)*sin(1))+point((1)*cos(1),(1)*sin(1)))],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 1032<< (2*cos(1),2*sin(1))
 1033>> caseval(regroup([[[ggbevalarg:=ggbalt(point(1,2,3))],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
@@ -2067,7 +2067,7 @@
 1034>> caseval(regroup([[[ggbevalarg:=ceiling(((37/10))+(((32/10))*(i)))],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 1034<< 4+4*ί
 1035>> caseval(regroup([[[ggbevalarg:=(3)*(x)>(3)*(2)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
-1035<< x>2
+1035<< (3*x)>6
 1036>> caseval(regroup([[[ggbevalarg:=when(({1, 2, 3}) union ({1, 2, 3})==({1, 2, 3}) union {},true,false)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 1036<< true
 1037>> caseval(regroup([[[ggbevalarg:=when(x  <  3,(x)+((1)/(x)),undef)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
@@ -2075,7 +2075,7 @@
 1038>> caseval(regroup([[[ggbevalarg:=(false && true)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 1038<< false
 1039>> caseval(regroup([[[ggbevalarg:=(x > 1)-(2)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
-1039<< x>1
+1039<< (x-2)>-1
 1040>> caseval(regroup([[[ggbevalarg:=map({10, 11, 12},ggx->1-ggx)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 1040<< {-9,-10,-11}
 1041>> caseval(regroup([[[ggbevalarg:=when(ggb_is_zero(simplify({1, 1, 3}-({1, 3, 1}))),true,false)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
@@ -2083,7 +2083,7 @@
 1042>> caseval(regroup([[[ggbevalarg:=(3)+(4)=(10)-(2)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 1042<< 7=8
 1043>> caseval(regroup([[[ggbevalarg:=(3)*(x)<(3)*(2)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
-1043<< x<2
+1043<< (3*x)<6
 1044>> caseval(regroup([[[ggbevalarg:=((1)/(x))-(((x)-(1))/(x((x)-(1))))],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 1044<< 0
 1045>> caseval(regroup([[[ggbevalarg:=(12345678901234568/100000000000000000)],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
@@ -2529,9 +2529,9 @@
 1265>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(normal(ggbabs(x)),(27/10),-((27/10)))]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1265<< -729/100
 1266>> caseval(regroup(laplace(sin(ggbtmpvart), ggbtmpvart, ggbtmpvars)))
-1266<< (-c_2*ggbtmpvars^2-c_2+1)/(ggbtmpvars^2+1)
+1266<< 1/(ggbtmpvars^2+1)
 1267>> caseval(regroup(regroup(integrate((1)/((2)+(cos(x))),x))))
-1267<< 4*1/2*(atan((sin(x)-√3*sin(x))/(√3-cos(x)+√3*cos(x)+1))+1/2*x)/√3+c_3
+1267<< 4*1/2*(atan((sin(x)-√3*sin(x))/(√3-cos(x)+√3*cos(x)+1))+1/2*x)/√3+SOME_CONSTANT
 1268>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(cos(x),-inf,inf)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1268<< ?
 1269>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)^(2),0,inf)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
@@ -2539,13 +2539,13 @@
 1270>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(((sqrt((x)-((5/10))))+(1))^(2),(1)/(2),ggbtmpvarb)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1270<< 1/24*(12*ggbtmpvarb^2+16*√2*ggbtmpvarb*√(2*ggbtmpvarb-1)-8*√2*√(2*ggbtmpvarb-1)+12*ggbtmpvarb-9)
 1271>> caseval(regroup(regroup(integrate(((((z)*((ggbtmpvarr)^(2)))*((2)/((ggbtmpvarh)^(2))))*(((2)*(z))-(ggbtmpvarh)))*(surd((z)*((ggbtmpvarh)-(z)),2)^(1)),z))))
-1271<< 2*ggbtmpvarr^2*(2*√(-z^2+ggbtmpvarh*z)*(-1/64*ggbtmpvarh^3+z*(-1/96*ggbtmpvarh^2+z*(-5/24*ggbtmpvarh+1/4*z)))-1/64*ggbtmpvarh^4*asin((ggbtmpvarh-2*z)/ggbtmpvarh)*sign(ggbtmpvarh))/ggbtmpvarh^2+c_4
+1271<< 2*ggbtmpvarr^2*(2*√(-z^2+ggbtmpvarh*z)*(-1/64*ggbtmpvarh^3+z*(-1/96*ggbtmpvarh^2+z*(-5/24*ggbtmpvarh+1/4*z)))-1/64*ggbtmpvarh^4*asin((ggbtmpvarh-2*z)/ggbtmpvarh)*sign(ggbtmpvarh))/ggbtmpvarh^2+SOME_CONSTANT
 1272>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(tan(x),-inf,inf)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1272<< ?
 1273>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)^(3),0,inf)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1273<< +infinity
 1274>> caseval(regroup(regroup(integrate(normal(ggbabs(x)),x))))
-1274<< 1/2*x^2*sign(x)+c_5
+1274<< 1/2*x^2*sign(x)+SOME_CONSTANT
 1275>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(surd(x,3)^(-(2)),0,1)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1275<< 3
 1276>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(((5)-(x))^(2),x,0,5)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
@@ -2553,11 +2553,11 @@
 1277>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)^(1),-inf,0)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1277<< -infinity
 1278>> caseval(regroup(regroup(integrate((sin(x))/(x)))))
-1278<< Si(x)+c_6
+1278<< Si(x)+SOME_CONSTANT
 1279>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)^(4),-inf,0)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1279<< +infinity
 1280>> caseval(regroup(regroup(integrate((x)^(2)))))
-1280<< 1/3*x^3+c_7
+1280<< 1/3*x^3+SOME_CONSTANT
 1281>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(surd(x,3)^(-(2)),-(1),1)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1281<< 6
 1282>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(cos(ggbtmpvart),ggbtmpvart,ggbtmpvara,ggbtmpvarb)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
@@ -2581,7 +2581,7 @@
 1291>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(exp(x),0,inf)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1291<< +infinity
 1292>> caseval(regroup(regroup(integrate(((x)+(1))^(10)))))
-1292<< 1/11*(x+1)^11+c_8
+1292<< 1/11*(x+1)^11+SOME_CONSTANT
 1293>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((((x)-(2))*((x)-(3)))^(2),2,3)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1293<< 1/30
 1294>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)^(2),0,1)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
@@ -2591,21 +2591,21 @@
 1296>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(normald_cdf(0,(9/100),x),-(1),1)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1296<< 1/2*erf(-50/9*√2)+1/2*erf(50/9*√2)+1
 1297>> caseval(regroup(regroup(integrate(((1)/(x))*(log((1)/((1)/((x)^(2)))))))))
-1297<< 1/4*ln(x^2)^2+c_9
+1297<< 1/4*ln(x^2)^2+SOME_CONSTANT
 1298>> caseval(regroup(regroup(integrate((exp(x))/(x)))))
-1298<< Ei(x)+c_10
+1298<< Ei(x)+SOME_CONSTANT
 1299>> caseval(regroup(regroup(integrate((ggbtmpvart)^(2),ggbtmpvart))))
-1299<< 1/3*ggbtmpvart^3+c_11
+1299<< 1/3*ggbtmpvart^3+SOME_CONSTANT
 1300>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)^(2),1,2)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1300<< 7/3
 1301>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(normal(ggbabs((((x)^(2))-((7)*(x)))+(12))),2,5)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1301<< 11/6
 1302>> caseval(regroup(regroup(integrate((y)^(2)))))
-1302<< 1/3*y^3+c_12
+1302<< 1/3*y^3+SOME_CONSTANT
 1303>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)/(((x)^(2))-(1)),-(3),-(2))]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1303<< 1/2*ln(3/8)
 1304>> caseval(regroup(laplace(sin(ggbtmpvart), ggbtmpvart)))
-1304<< (-c_13*ggbtmpvart^2-c_13+1)/(ggbtmpvart^2+1)
+1304<< 1/(ggbtmpvart^2+1)
 1305>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)^(2),-inf,0)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1305<< +infinity
 1306>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)^(4),0,inf)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
@@ -2617,7 +2617,7 @@
 1309>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)*(exp((x)^(2))),x,-(10),10)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1309<< 0
 1310>> caseval(regroup(regroup(integrate((ggbtmpvart)^(2)))))
-1310<< 1/3*ggbtmpvart^3+c_14
+1310<< 1/3*ggbtmpvart^3+SOME_CONSTANT
 1311>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate([[[ggbnormarg0:=0],[ggbnormarg1:=1],[ggbnormarg2:=x]],if false=true then normald_cdf(ggbnormarg0,ggbnormarg1,ggbnormarg2) else (1/sqrt(2*pi*((ggbnormarg1)^2))) * exp(-((ggbnormarg2-(ggbnormarg0))^2) / (2*((ggbnormarg1)^2))) fi][1],-(1000),0)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1311<< -1/2*erf(-500*√2)
 1312>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(sin(x),-inf,0)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
@@ -2625,7 +2625,7 @@
 1313>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(normal(ggbabs(((x)^(3))-((4)*(x)))),-(3),2)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1313<< 57/4
 1314>> caseval(regroup(regroup(integrate(y'))))
-1314<< y+c_15
+1314<< y+SOME_CONSTANT
 1315>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)^(2),-inf,inf)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1315<< +infinity
 1316>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)*(exp(-(x))),1,2)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
@@ -2641,19 +2641,19 @@
 1321>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((1)/(x),-(1),1)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1321<< ?
 1322>> caseval(regroup(regroup(integrate((1)/(normal(ggbabs(x))),x))))
-1322<< ln(abs(x))/sign(x)+c_16
+1322<< ln(abs(x))/sign(x)+SOME_CONSTANT
 1323>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)^(-(2)),x,-(3),2)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1323<< +infinity
 1324>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)/(((x)^(2))-(1)),-(3),-(1))]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1324<< -infinity
 1325>> caseval(regroup(regroup(integrate(((1)/(x))*(log((1)/((x)^(2))))))))
-1325<< -1/4*ln(x^2)^2+c_17
+1325<< -1/4*ln(x^2)^2+SOME_CONSTANT
 1326>> caseval(regroup(regroup(integrate(acos((x)-(1))))))
-1326<< -√(-(x-1)^2+1)+acos(x-1)*(x-1)+c_18
+1326<< -√(-(x-1)^2+1)+acos(x-1)*(x-1)+SOME_CONSTANT
 1327>> caseval(regroup(regroup(integrate(exp(-((x)^(2)))))))
-1327<< 1/2*√pi*erf(x)+c_19
+1327<< 1/2*√pi*erf(x)+SOME_CONSTANT
 1328>> caseval(regroup(regroup(integrate((1)/(sqrt(x))))))
-1328<< 2*√x+c_20
+1328<< 2*√x+SOME_CONSTANT
 1329>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)^(4),-inf,inf)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1329<< +infinity
 1330>> caseval(regroup([[ggblaparg0:=(1)/((1)+((ggbtmpvart)^(2)))],when(lname(ggblaparg0)[0]=ggbtmpvars, ilaplace(ggblaparg0, ggbtmpvars, ggbtmpvart), ilaplace(ggblaparg0, lname(ggblaparg0)[0]))][1]))
@@ -2669,7 +2669,7 @@
 1335>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)^(3),-inf,inf)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1335<< ?
 1336>> caseval(regroup(regroup(integrate((1)/(x)))))
-1336<< ln(abs(x))+c_21
+1336<< ln(abs(x))+SOME_CONSTANT
 1337>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((x)^(3),-inf,0)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1337<< -infinity
 1338>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((pi)*((x)^(4)),1,2)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
@@ -2683,15 +2683,15 @@
 1342>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(exp(-((x)^(2))),-inf,inf)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1342<< √pi
 1343>> caseval(regroup([[ggblaparg0:=sin(ggbtmpvars)],when(lname(ggblaparg0)[0]=ggbtmpvart, laplace(ggblaparg0, ggbtmpvart, ggbtmpvars), laplace(ggblaparg0, lname(ggblaparg0)[0]))][1]))
-1343<< (-c_22*ggbtmpvars^2-c_22+1)/(ggbtmpvars^2+1)
+1343<< 1/(ggbtmpvars^2+1)
 1344>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(cos(x),x,ggbtmpvara,ggbtmpvarb)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1344<< -sin(ggbtmpvara)+sin(ggbtmpvarb)
 1345>> caseval(regroup(regroup(integrate((1)/(surd(x,3))))))
-1345<< 3/2*x*surd(x,-3)+c_23
+1345<< 3/2*x*surd(x,-3)+SOME_CONSTANT
 1346>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(log(x),-inf,0)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1346<< ?
 1347>> caseval(regroup([[ggblaparg0:=sin(ggbtmpvart)],when(lname(ggblaparg0)[0]=ggbtmpvart, laplace(ggblaparg0, ggbtmpvart, ggbtmpvars), laplace(ggblaparg0, lname(ggblaparg0)[0]))][1]))
-1347<< (-c_24*ggbtmpvars^2-c_24+1)/(ggbtmpvars^2+1)
+1347<< 1/(ggbtmpvars^2+1)
 1348>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((1)/(((((x)+(1))*((x)+(2)))*((x)+(3)))*((x)+(4))),-((15/10)),-((16/10)))]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1348<< -5/6*ln(2)-1/2*ln(3)+1/6*ln(5)+1/2*ln(7)
 1349>> caseval(regroup(ilaplace((1)/((1)+((ggbtmpvart)^(2))), ggbtmpvart)))
@@ -2703,17 +2703,17 @@
 1352>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((y)^(2),1,2)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1352<< 7/3
 1353>> caseval(regroup(regroup(integrate(surd(x,3)))))
-1353<< 3/4*x*surd(x,3)+c_25
+1353<< 3/4*x*surd(x,3)+SOME_CONSTANT
 1354>> caseval(regroup(regroup(integrate(sqrt(x)))))
-1354<< 2/3*√x*x+c_26
+1354<< 2/3*√x*x+SOME_CONSTANT
 1355>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate(log(x),-inf,inf)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1355<< ?
 1356>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((1)/(((((x)+(1))*((x)+(2)))*((x)+(3)))*((x)+(4))),-((15/10)),-((25/10)))]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1356<< ?
 1357>> caseval(regroup(regroup(integrate(sec(x)))))
-1357<< 2*(1/8*ln(abs(1/sin(x)+sin(x)+2))-1/8*ln(abs(1/sin(x)+sin(x)-2)))+c_27
+1357<< 2*(1/8*ln(abs(1/sin(x)+sin(x)+2))-1/8*ln(abs(1/sin(x)+sin(x)-2)))+SOME_CONSTANT
 1358>> caseval(regroup(regroup(integrate((cos(x))/(x)))))
-1358<< Ci(x)+c_28
+1358<< Ci(x)+SOME_CONSTANT
 1359>> caseval(regroup([[[ggbintans:=0/0],[ggbintans:=integrate((surd((2)*(pi),2)^(-(1)))*(exp(((-(1))/(2))*((x)^(2)))),-inf,0)]],normal(when(type(ggbintans)==DOM_LIST,ggbintans[0],simplify(ggbintans)))][1]))
 1359<< 1/2
 1360>> caseval(regroup(normal(covariance({point(ggbtmpvarn,ggbtmpvarn), point((2)*(ggbtmpvarn),(3)*(ggbtmpvarn)), point((3)*(ggbtmpvarn),(4)+((2)*(ggbtmpvarn)))}))))
