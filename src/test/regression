@@ -1,5 +1,5 @@
 #!/bin/sh
-# Creates *.out files from *.in files or runs a regression test.
+# Create *.out files from *.in files or run a regression test.
 # @author Zoltan Kovacs <zoltan@geogebra.org>
 
 MINIGIAC=../../build/install/minigiac/linux64/minigiac # FIXME, this is hardcoded
@@ -19,7 +19,7 @@ log() {
  }
 
 usage() {
- echo "$0 - creates .out files from .in files or runs a regression test."
+ echo "$0 - create .out files from .in files or runs a regression test."
  echo "Usage:"
  echo " $0 [options]"
  echo "  where options can be as follows (defaults in parentheses):"
@@ -134,6 +134,11 @@ find $FOLDER -name '*.in' | while read IN; do
     fi
    if [ "$REGRESSION" = 1 ]; then
     TESTOK=1
+    # Normalize constants:
+    for EDITFILE in $OUT $SAVEDIR/$OUT; do
+     sed -i 's/c_[0-9]\+/SOME_CONSTANT/g' $EDITFILE
+     sed -i 's/n_[0-9]\+/SOME_CONSTANT/g' $EDITFILE
+     done
     diff -U 1 $OUT $SAVEDIR/$OUT > $SAVEDIR/$OUT.diff
     if [ -s $SAVEDIR/$OUT.diff ]; then
     # intelligent diff (via $MINIGIAC)
