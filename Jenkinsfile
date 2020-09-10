@@ -18,15 +18,14 @@ pipeline {
       steps {
         sh '''
           cp -r ~/workspace/backup-Giac/geogebra/giac/emsdk .
-          ./gradlew :clean :giac-android:clean :giac-gwt:clean --refresh-dependencies --no-daemon -Prevision=$SVN_REVISION --info
-          ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --info
+          ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --info --refresh-dependencies
           ./gradlew :updateGiac :publishNodegiac --no-daemon -Prevision=$SVN_REVISION --info'''
       }
     }
   }
   post {
     always {
-      echo 'cleanAndNotify()'
+      cleanAndNotify()
     }
   }
 }
