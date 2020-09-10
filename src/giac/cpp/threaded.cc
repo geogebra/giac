@@ -2647,6 +2647,8 @@ mpz_class smod(const mpz_class & a,int reduce){
 	  smallmult(qcofactor,q,qcofactor,modulo,0);
 	  smallmult(smod(longlong(q_orig.front().g)*invmod(qcofactor.front().g,modulo),modulo),qcofactor,qcofactor,modulo);
 	}
+	if (pqswap)
+	  swap(pcofactor,qcofactor);
 	return true;
       }
       if (!essai){ // 1st gcd test

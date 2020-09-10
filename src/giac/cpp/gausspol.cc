@@ -3340,6 +3340,14 @@ namespace giac {
     return true;
   }
 
+  vecteur vranmnot0(int dim){
+    for (;;){
+      vecteur r=vranm(dim,0,0);
+      if (!is_zero(r))
+	return r;
+    }
+  }
+
   // p_orig and q_orig are primitive with respect to the main variable
   // p(x1,...,xn) q(x1,...,xn) viewed as p(x1) and q(x1) 
   // d must be the same
@@ -3394,7 +3402,7 @@ namespace giac {
       vecteur b(p.dim-1);
       for (int essai=0;essai<2;++essai){
 	if (essai)
-	  b=vranm(p.dim-1,0,0); // find another random point
+	  b=vranmnot0(p.dim-1); // find another random point
 	polynome Fb(1),Gb(1);
 	// Fb and Gb are p and q where x2,...,xn are evaluated at b
 	if (!find_good_eval(p,q,Fb,Gb,b,(debug_infolevel>=2),modulo))
@@ -4411,7 +4419,7 @@ namespace giac {
 	gen essaimod=30013; // 30011; // mod 4 = 3
 	for (int essai=0;essai<2;++essai){
 	  if (essai)
-	    b=vranm(p_simp.dim-1,0,0); // find another random point
+	    b=vranmnot0(p_simp.dim-1); // find another random point
 	  // essaimod was est_reel?essaimod:0
 	  for (;!find_good_eval(p_simp,q_simp,Fb,Gb,b,debug_infolevel >= 20-p_simp.dim,essaimod);){
 	    for (;;){
@@ -4698,7 +4706,7 @@ namespace giac {
       polynome Fb(1),Gb(1),Db(1);
       for (int essai=0;essai<2;++essai){
 	if (essai)
-	  b=vranm(p.dim-1,0,0); // find another random point
+	  b=vranmnot0(p.dim-1); // find another random point
 	find_good_eval(p,q,Fb,Gb,b,debug_infolevel >= 20-p.dim);
 	Db=gcd(Fb,Gb);
 	int Dbdeg=Db.lexsorted_degree();
@@ -6623,7 +6631,7 @@ namespace giac {
       int essai,nfactbound=RAND_MAX;
       for (essai=0;essai<2;++essai){
 	if (essai)
-	  b=vranm(pcur.dim-1,0,0); // find another random point
+	  b=vranmnot0(pcur.dim-1); // find another random point
 	find_good_eval(pcur,pcur,Fb,Gb,b,(debug_infolevel>=2));
 	factor(Fb,Gb,v,false,false,false,1,extra_div);
 	if (!essai){
