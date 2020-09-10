@@ -8577,7 +8577,7 @@ namespace giac {
     if (n<-1)
       return gensizeerr(contextptr);
     if (n==-1)
-      return Gamma(x,contextptr);
+      return ln(Gamma(x,contextptr),contextptr);
     if (n==0)
       return Psi(x,contextptr);
     if (is_integer(x) && is_positive(-x,contextptr))

@@ -31,11 +31,15 @@ using namespace std;
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
+#if defined MICROPY_LIB || defined LIBHAVE_MICROPYTHON
+extern "C" int mp_token(const char * line);
+#endif
+
 #ifdef KHICAS
 #include "kdisplay.h" // for select_item,
-#ifdef MICROPY_LIB
+#if defined MICROPY_LIB || defined LIBHAVE_MICROPYTHON
 extern "C" int xcas_python_eval;
-extern "C" int mp_token(const char * line);
 #endif
 #endif
 
@@ -104,34 +108,33 @@ namespace giac {
     return a.second>b.second;
   }
 
+  const char * python_keywords[] = {   // List of known giac keywords...
+    "False",
+    "None",
+    "True",
+    "and",
+    "break",
+    "continue",
+    "def",
+    "default",
+    "elif",
+    "else",
+    "except",
+    "for",
+    "from",
+    "global",
+    "if",
+    "import",
+    "not",
+    "or",
+    "return",
+    "try",
+    "while",
+    "xor",
+    "yield",
+  };
   const char * const python_builtins[]={
-    "ArithmeticError",
-    "AssertionError",
-    "AttributeError",
-    "BaseException",
-    "EOFError",
-    "Ellipsis",
-    "Exception",
-    "GeneratorExit",
-    "ImportError",
-    "IndentationError",
-    "IndexError",
-    "KeyError",
-    "KeyboardInterrupt",
-    "LookupError",
-    "MemoryError",
-    "NameError",
     "NoneType",
-    "NotImplementedError",
-    "OSError",
-    "OverflowError",
-    "RuntimeError",
-    "StopIteration",
-    "SyntaxError",
-    "SystemExit",
-    "TypeError",
-    "ValueError",
-    "ZeroDivisionError",
     "__call__",
     "__class__",
     "__delitem__",
@@ -266,6 +269,10 @@ namespace giac {
     "zip",
   };
 
+  bool is_python_keyword(const char * s){
+    return dichotomic_search(python_keywords,sizeof(python_keywords)/sizeof(char*),s)!=-1;
+  }
+  
   bool is_python_builtin(const char * s){
     return dichotomic_search(python_builtins,sizeof(python_builtins)/sizeof(char*),s)!=-1;
   }

@@ -9891,6 +9891,8 @@ namespace xcas {
 	check_parse(edptr,edptr->elements,python_compat(contextptr),contextptr);
       }
     }
+    else
+      xcas_python_eval=0;
     Console_FMenu_Init(contextptr); // insure the menus are sync-ed
     return true;
   }
