@@ -6222,6 +6222,20 @@ namespace giac {
     return gen2vecteur(g);
   }
 
+  // Max number of attempt to find a random separation form in rur computation
+  int rur_separate_max_tries=100;
+  gen _rur_separate_max_tries(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG &&  g.subtype==-1) return  g;
+    if (g.type==_VECT && g._VECTptr->empty())
+      return rur_separate_max_tries;
+    if (g.type==_INT_ && g.val>0)
+      return rur_separate_max_tries=g.val;
+    return gensizeerr(contextptr);
+  }
+  static const char _rur_separate_max_tries_s []="rur_separate_max_tries";
+  static define_unary_function_eval2 (__rur_separate_max_tries,&_rur_separate_max_tries,_rur_separate_max_tries_s,&printasDigits);
+  define_unary_function_ptr5( at_rur_separate_max_tries ,alias_at_rur_separate_max_tries ,&__rur_separate_max_tries,0,true);
+
   vecteur gsolve(const vecteur & eq_orig,const vecteur & var_orig,bool complexmode,int evalf_after,GIAC_CONTEXT){
     // replace variables in var_orig by true identificators
     vecteur var(var_orig);
