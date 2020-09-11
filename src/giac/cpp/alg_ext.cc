@@ -883,8 +883,8 @@ namespace giac {
 	  // IMPROVE: using context and *l look for assumptions
 	  if (params.type==_VECT){
 	    vecteur paramv=*params._VECTptr;
-	    int nessais=3*paramv.size();
-	    for (int essai=0;essai<nessais;++essai){
+	    int nessais=5*paramv.size(),essai=0;
+	    for (;essai<nessais;++essai){
 	      for (unsigned j=0;j<paramv.size() && j<vb.size();++j){
 		gen p=paramv[j];
 		if (p.type!=_IDNT)
@@ -924,10 +924,20 @@ namespace giac {
 		} // end g2 assume_vect
 	      } // end for j
 	      vecteur vb0=vb;
-	      find_good_eval(px,pb,vb); 
+	      find_good_eval(px,pb,vb); // additional check, a must be sqrfree
+	      gen A=eval(r2sym(a,vb,contextptr),1,contextptr);
+	      if (A.type==_VECT){
+		vecteur V,V1=*A._VECTptr,V2=derivative(V1);
+		V=gcd(V1,V2,0);
+		//if (is_zero(vb)) cout << V1 << V2 << V << endl;
+		if (V.size()>1)
+		  continue;
+	      }
 	      if (vb0==vb)
 		break;
 	    } // end trying to find a good eval point satisfying assumptions
+	    if (essai==nessais)
+	      return gensizeerr("Too many attempts to find a good evaluation point");
 	  } // end params.type==_VECT
 	}
 	vecteur vb0=vb;
