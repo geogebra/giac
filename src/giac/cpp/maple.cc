@@ -79,6 +79,9 @@ using namespace std;
 #ifdef KHICAS
 int time_shift;
 #ifdef NUMWORKS
+#ifdef DEVICE
+extern "C" unsigned long long millis();
+#else
 namespace Ion {
   namespace Timing {
     
@@ -94,6 +97,7 @@ namespace Ion {
 double millis(){
   return double(Ion::Timing::millis()); // RTC_GetTicks();
 }
+#endif
 #else
 extern "C" double millis();
 #endif
@@ -400,7 +404,7 @@ namespace giac {
 #endif
 	return 1;
       }
-      return millis();
+      return (double) millis();
     }
     double delta;
     int ntimes=1,i=0;

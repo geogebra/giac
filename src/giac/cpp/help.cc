@@ -32,13 +32,13 @@ using namespace std;
 #include <unistd.h>
 #endif
 
-#if defined MICROPY_LIB || defined LIBHAVE_MICROPYTHON
+#if defined MICROPY_LIB || defined HAVE_LIBMICROPYTHON
 extern "C" int mp_token(const char * line);
 #endif
 
 #ifdef KHICAS
 #include "kdisplay.h" // for select_item,
-#if defined MICROPY_LIB || defined LIBHAVE_MICROPYTHON
+#if defined MICROPY_LIB || defined HAVE_LIBMICROPYTHON
 extern "C" int xcas_python_eval;
 #endif
 #endif

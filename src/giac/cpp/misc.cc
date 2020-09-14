@@ -635,7 +635,11 @@ namespace giac {
   static define_unary_function_eval_quoted (__clear,&_clear,_clear_s);
   define_unary_function_ptr5( at_clear ,alias_at_clear,&__clear,_QUOTE_ARGUMENTS,true);
 
-#ifndef KHICAS
+#ifdef KHICAS
+  gen _show_pixels(const gen & args,GIAC_CONTEXT){
+    return undef;
+  }
+#else
   gen _show_pixels(const gen & args,GIAC_CONTEXT){
 #ifdef GIAC_HAS_STO_38
     static gen FREEZE(identificateur("FREEZE"));
@@ -645,13 +649,13 @@ namespace giac {
     return pixel_v();
 #else
     return makesequence(symb_equal(change_subtype(_AXES,_INT_PLOT),0),pixel_v());
-#endif
-#endif
+#endif // EMCC
+#endif // STO_38
   }
+#endif // KHICAS
   static const char _show_pixels_s []="show_pixels";
   static define_unary_function_eval (__show_pixels,&_show_pixels,_show_pixels_s);
   define_unary_function_ptr5( at_show_pixels ,alias_at_show_pixels,&__show_pixels,0,true);
-#endif
 
   gen _show(const gen & args,GIAC_CONTEXT){
     return history_plot(contextptr);

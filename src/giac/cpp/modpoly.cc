@@ -5495,6 +5495,10 @@ namespace giac {
     int s=a.size();
     res.resize(s);
     for (int i=0;i<s;++i){
+      if (a[i]==0){
+	res[i]=0;
+	continue;
+      }
       int bi=invmod(b[i],p);
       bi += (bi>>31)&p;
       res[i]=(longlong(a[i])*bi)%p;

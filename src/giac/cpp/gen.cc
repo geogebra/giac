@@ -7562,7 +7562,10 @@ namespace giac {
   gen pow(unsigned long int base, unsigned long int exponent){
     ref_mpz_t *e=new ref_mpz_t;
 #ifdef EMCC
-    if (base==int(base)){
+    mpz_set_si(e->z,base);
+    mpz_pow_ui(e->z,e->z,exponent);
+    return e;
+    if (base==int(base)){ // too slow!
       mpz_set_si(e->z,1);
       for (unsigned long int i=0;i<exponent;++i){
 	mpz_mul_ui(e->z,e->z,int(base));

@@ -92,6 +92,11 @@ using namespace std;
 #include <stdio.h>
 #include <stdarg.h>
 
+#ifdef HAVE_LIBMICROPYTHON
+std::string python_console;
+#endif
+bool freezeturtle=false;
+
 #if defined(FIR)
 extern "C" int firvsprintf(char*,const char*, va_list);
 #endif
@@ -121,9 +126,17 @@ int my_sprintf(char * s, const char * format, ...){
     return z;
 }
 
+  int ctrl_c_interrupted(){
+    if (!giac::ctrl_c && !giac::interrupted)
+      return 0;
+    giac::ctrl_c=giac::interrupted=0;
+    return 1;
+  }
+
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
+  const context * python_contextptr=0;
   void opaque_double_copy(void * source,void * target){
     *((double *) target) = * ((double *) source);
   }

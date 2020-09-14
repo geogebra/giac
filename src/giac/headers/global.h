@@ -101,6 +101,15 @@ inline double giac_log(double d){
 #include "tinymt32.h"
 #endif
 
+extern "C" int ctrl_c_interrupted();
+#ifdef HAVE_LIBMICROPYTHON
+#include <string>
+// giac interface to micropython modules
+extern std::string python_console;
+#endif
+
+extern bool freezeturtle;
+
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
@@ -408,6 +417,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
   vecteur * keywords_vecteur_ptr(); // idnt assigned to a commandname for localization, like mediatrice for perpen_bissector
 
   class context;
+  extern const giac::context * python_contextptr;
   
   struct debug_struct {
     int indent_spaces;

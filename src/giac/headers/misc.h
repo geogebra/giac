@@ -305,6 +305,7 @@ namespace giac {
   int rgb888to565(int c);
   int rgb565to888(int c);
 
+  gen _show_pixels(const gen & args,GIAC_CONTEXT);
   gen _rgb(const gen & args,GIAC_CONTEXT);
   gen _charpoly(const gen & args,GIAC_CONTEXT);
   extern bool freeze;
