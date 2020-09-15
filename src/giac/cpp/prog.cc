@@ -63,7 +63,6 @@ extern "C" {
 #include "csturm.h"
 #include "sparse.h"
 #include "giacintl.h"
-#include "Python.h"
 // #include "input_parser.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -6260,9 +6259,10 @@ namespace giac {
     return g;
   }
 
+  int (*micropy_ptr) (cstcharptr)=0;
   gen _python(const gen & args,GIAC_CONTEXT){
 #if defined MICROPY_LIB || defined HAVE_LIBMICROPYTHON
-    if (args.type==_VECT && args._VECTptr->size()==2){
+    if (micropy_ptr && args.type==_VECT && args._VECTptr->size()==2){
       gen a=args._VECTptr->front(),b=args._VECTptr->back();
       if (a.type==_STRNG && b==at_python){
 	const char * ptr=a._STRNGptr->c_str();
@@ -6275,8 +6275,9 @@ namespace giac {
 	python_contextptr=contextptr;
 	python_console="";
 	gen g;
-	if (!gr && !xc && !turt && !pix )
-	  micropy_ck_eval(ptr);
+	if (!gr && !xc && !turt && !pix ){
+	  (*micropy_ptr)(ptr);
+	}
 	context * cascontextptr=(context *)caseval("caseval contextptr");
 	if (freezeturtle || turt){
 	  // copy caseval turtle to this context
