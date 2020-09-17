@@ -8,6 +8,11 @@
 #include <ecm.h>
 #endif
 
+#ifdef HAVE_LIBBERNMM
+#include <bern_modp.h>
+#include <bern_rat.h>
+#endif
+
 #include "path.h"
 /*
  *  Copyright (C) 2003,14 R. De Graeve & B. Parisse, 
@@ -4687,6 +4692,72 @@ namespace giac {
   static const char _fxnd_s []="fxnd";
   static define_unary_function_eval (__fxnd,&_fxnd,_fxnd_s);
   define_unary_function_ptr5( at_fxnd ,alias_at_fxnd,&__fxnd,0,true); 
+
+  // p assumed to be prime, find a generator of (Z/pZ^*,*)
+  int generator(int p){
+    vecteur v=ifactors(p-1,context0);
+    vector<int> w;
+    for (int i=0;i<v.size();i+=2){
+      if (v[i].type!=_INT_)
+	return 0;
+      w.push_back((p-1)/v[i].val);
+    }
+    for (int a=2;a<p;++a){
+      int r=0;
+      for (int i=0;i<w.size();i++){
+	r=powmod(a,w[i],p);
+	if (r==1)
+	  break;
+      }
+      if (r!=1)
+	return a;
+    }
+    return 0; // p is not prime!
+  }
+
+  // Harvey algorithm for Bernoulli numbers
+  // https://arxiv.org/pdf/0807.1347.pdf
+  // k must be even and p prime
+  // https://web.maths.unsw.edu.au/~davidharvey/code/bernmm/index.html
+  // is much faster but does not compile with latest NTL...
+  int bernoulli_mod(int k,int p){
+#ifdef HAVE_LIBBERNMM
+    return bernmm::bern_modp(p,k);
+#endif
+    if (k>p-3){
+      int m=k % (p-1); // now m<p-1 is even therefore <=p-3
+      int bm=bernoulli_mod(m,p);
+      // bk/k=bm/m mod p
+      return ( ( (longlong(bm)*k) %p)*invmod(m,p) )%p;
+    }
+    int g=generator(p),r=powmod(g,k-1,p),u;
+    if (g%2)
+      u=(g-1)/2;
+    else
+      u=(longlong(g-1)*invmod(2,p))%p;
+    int S=0,X=1,Y=r;
+    for (int i=1;i<=p/2;i++){
+      int q=(longlong(g)*X)/p;
+      S=(S+(longlong(u)-q)*Y) % p;
+      X=(longlong(g)*X) % p;
+      Y=(longlong(r)*Y) % p;
+    }
+    int res=(2*longlong(k)*S)%p;
+    res=(longlong(res)*invmod(1-powmod(g,k,p),p))%p;
+    return res;
+  }
+
+  gen _bernoulli_mod(const gen & args,GIAC_CONTEXT){
+    if (args.type!=_VECT || args._VECTptr->size()!=2)
+      return gensizeerr(contextptr);
+    gen k=args._VECTptr->front(),p=args._VECTptr->back();
+    if (k.type!=_INT_ || k.val<2 || k.val%2 || p.type!=_INT_  || !is_probab_prime_p(p) )
+      return gentypeerr(contextptr);
+    return bernoulli_mod(k.val,p.val);
+  }
+  static const char _bernoulli_mod_s []="bernoulli_mod";
+  static define_unary_function_eval (__bernoulli_mod,&_bernoulli_mod,_bernoulli_mod_s);
+  define_unary_function_ptr5( at_bernoulli_mod ,alias_at_bernoulli_mod,&__bernoulli_mod,0,true); 
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac

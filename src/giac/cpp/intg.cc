@@ -58,6 +58,10 @@ using namespace std;
 #include <gsl/gsl_errno.h>
 #endif
 
+#ifdef HAVE_LIBBERNMM
+#include <bern_rat.h>
+#endif
+
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
@@ -5512,6 +5516,19 @@ namespace giac {
     }
     if (x.type!=_INT_)
       return gensizeerr(gettext("bernoulli"));
+#ifdef HAVE_LIBBERNMM
+    mpq_t resq;
+    mpq_init(resq);
+    bernmm::bern_rat(resq,x.val,1);
+    mpz_t num,den;
+    mpz_init(num); mpz_init(den);
+    mpq_get_num(num,resq);
+    mpq_get_den(den,resq);
+    mpq_clear(resq);
+    gen numer(num),denom(den);
+    mpz_clear(num); mpz_clear(den);
+    return numer/denom;
+#endif
     bool all=x.val<0;
     int n=absint(x.val);
     if (!n)
