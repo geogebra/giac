@@ -219,7 +219,7 @@ namespace giac {
     v.reserve(itend-it);
     for (;it!=itend;++it){
       gen tmp=f(*it,contextptr);
-      if (is_undef(tmp))
+      if (tmp.type>=_IDNT && is_undef(tmp))
 	return gen2vecteur(tmp);
       v.push_back(tmp);
     }
@@ -235,7 +235,7 @@ namespace giac {
     v.reserve(itend-it);
     for (;it!=itend;++it){
       gen tmp=(*f)(*it,contextptr);
-      if (is_undef(tmp))
+      if (tmp.type>=_IDNT && is_undef(tmp))
 	return gen2vecteur(tmp);
       v.push_back(tmp);
     }
@@ -250,7 +250,7 @@ namespace giac {
     v.reserve(itend-it);
     for (;it!=itend;++it){
       gen tmp=f(*it);
-      if (is_undef(tmp))
+      if (tmp.type>=_IDNT && is_undef(tmp))
 	return gen2vecteur(tmp);
       v.push_back(tmp);
     }
@@ -272,7 +272,7 @@ namespace giac {
     v.reserve(itend-it);
     for (;it!=itend;++it){
       gen tmp=f(*it,contextptr);
-      if (is_undef(tmp))
+      if (tmp.type>=_IDNT && is_undef(tmp))
 	return gen2vecteur(tmp);
       v.push_back(tmp);
     }
@@ -288,7 +288,7 @@ namespace giac {
       v.reserve(itend-it);
       for (;it!=itend;++it){
 	gen tmp=f(e1,*it);
-	if (is_undef(tmp))
+	if (tmp.type>=_IDNT && is_undef(tmp))
 	  return gen2vecteur(tmp);
 	v.push_back(tmp);
       }
@@ -300,7 +300,7 @@ namespace giac {
       v.reserve(itend-it);
       for (;it!=itend;++it){
 	gen tmp=f(*it,e2);
-	if (is_undef(tmp))
+	if (tmp.type>=_IDNT && is_undef(tmp))
 	  return gen2vecteur(tmp);
 	v.push_back(tmp);
       }
@@ -313,7 +313,7 @@ namespace giac {
     v.reserve(it1end-it1);
     for (;it1!=it1end && it2!=it2end;++it1,++it2){
       gen tmp=f(*it1,*it2);
-      if (is_undef(tmp))
+      if (tmp.type>=_IDNT && is_undef(tmp))
 	return gen2vecteur(tmp);
       v.push_back(tmp);
     }
@@ -335,7 +335,7 @@ namespace giac {
     v.reserve(itend-it);
     for (;it!=itend;++it){
       gen tmp=f(*it,contextptr);
-      if (is_undef(tmp))
+      if (tmp.type>=_IDNT && is_undef(tmp))
 	return gen2vecteur(tmp);
       v.push_back(tmp);
     }
@@ -351,7 +351,7 @@ namespace giac {
       v.reserve(itend-it);
       for (;it!=itend;++it){
 	gen tmp=f(e1,*it,contextptr);
-	if (is_undef(tmp))
+	if (tmp.type>=_IDNT && is_undef(tmp))
 	  return gen2vecteur(tmp);
 	v.push_back(tmp);
       }
@@ -363,7 +363,7 @@ namespace giac {
       v.reserve(itend-it);
       for (;it!=itend;++it){
 	gen tmp=f(*it,e2,contextptr);
-	if (is_undef(tmp))
+	if (tmp.type>=_IDNT && is_undef(tmp))
 	  return gen2vecteur(tmp);
 	v.push_back(tmp);
       }
@@ -376,7 +376,7 @@ namespace giac {
     v.reserve(it1end-it1);
     for (;it1!=it1end && it2!=it2end;++it1,++it2){
       gen tmp=f(*it1,*it2,contextptr);
-      if (is_undef(tmp))
+      if (tmp.type>=_IDNT && is_undef(tmp))
 	return gen2vecteur(tmp);
       v.push_back(tmp);
     }
@@ -393,7 +393,7 @@ namespace giac {
     v.reserve(itend-it);
     for (;it!=itend;++it){
       gen tmp=f(*it,e2);
-      if (is_undef(tmp))
+      if (tmp.type>=_IDNT && is_undef(tmp))
 	return gen2vecteur(tmp);
       v.push_back(tmp);
     }
@@ -410,7 +410,7 @@ namespace giac {
     v.reserve(itend-it);
     for (;it!=itend;++it){
       gen tmp=f(*it,e2,contextptr);
-      if (is_undef(tmp))
+      if (tmp.type>=_IDNT && is_undef(tmp))
 	return gen2vecteur(tmp);
       v.push_back(tmp);
     }
@@ -427,7 +427,7 @@ namespace giac {
     v.reserve(itend-it);
     for (;it!=itend;++it){
       gen tmp=f(e1,*it);
-      if (is_undef(tmp))
+      if (tmp.type>=_IDNT && is_undef(tmp))
 	return gen2vecteur(tmp);
       v.push_back(tmp);
     }
@@ -444,7 +444,7 @@ namespace giac {
     v.reserve(itend-it);
     for (;it!=itend;++it){
       gen tmp=f(e1,*it,contextptr);
-      if (is_undef(tmp))
+      if (tmp.type>=_IDNT && is_undef(tmp))
 	return gen2vecteur(tmp);
       v.push_back(tmp);
     }

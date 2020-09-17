@@ -4043,7 +4043,7 @@ namespace giac {
 	  vecteur2vector_int(B,m.val,b);
 	  return makemod(resultant_int(a,b,tmp1,tmp2,m.val),m);
 	}
-#ifdef INT128
+#if defined INT128 && !defined USE_GMP_REPLACEMENTS
 	if (m.type==_ZINT && sizeinbase2(m)<61){
 	  longlong p=mpz_get_si(*m._ZINTptr);
 	  int n=giacmax(A.size(),B.size());

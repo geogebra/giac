@@ -7240,6 +7240,7 @@ namespace giac {
   }
   gen _simplifier(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
+    if (g.type<_IDNT) return g;
     if (is_equal(g))
       return apply_to_equal(g,_simplifier,contextptr);
     if (g.type!=_VECT)
@@ -12991,7 +12992,8 @@ namespace giac {
   // Create an operator with a given syntax
   vector<unary_function_ptr> user_operator_list;   // GLOBAL VAR
   gen user_operator(const gen & g,GIAC_CONTEXT){
-    if (g.type!=_VECT || g._VECTptr->size()<3)
+    int nargs=0;
+    if (g.type!=_VECT || (nargs=g._VECTptr->size())<2)
       return gensizeerr(contextptr);
     vecteur & v=*g._VECTptr;
     // int s=signed(v.size());
@@ -13009,12 +13011,22 @@ namespace giac {
       const unary_function_user * ptr=dynamic_cast<const unary_function_user *>(ptr0);
       if (!ptr)
 	return zero;
-      if (ptr->f==v[1]){
-	// if (v[2].type==_INT_ && v[2].subtype==_INT_MUPADOPERATOR && v[2].val==_DELETE_OPERATOR) user_operator_list.erase(it); // does not work...
-	return plus_one;
+      if ( (nargs==3 && ptr->f==v[1] && v[2].type==_INT_ && v[2].subtype==_INT_MUPADOPERATOR && v[2].val==_DELETE_OPERATOR) ||
+	   (nargs==2 && v[1].type==_INT_ && v[1].subtype==_INT_MUPADOPERATOR && v[1].val==_DELETE_OPERATOR) ){
+	map_charptr_gen::const_iterator i,iend;
+	bool ok=true;
+	i = lexer_functions().find(v[0]._STRNGptr->c_str());
+	iend=lexer_functions().end();
+	if (i==iend)
+	  ok=false;
+	else
+	  lexer_functions().erase(v[0]._STRNGptr->c_str());
+	user_operator_list.erase(it); 
       }
-      return zero;
+      return plus_one;
     }
+    if (nargs<3)
+      return 1;
     if (v[2].type==_INT_){ 
       int token_value=v[2].val;
       unary_function_user * uf;

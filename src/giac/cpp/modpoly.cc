@@ -8494,8 +8494,8 @@ namespace giac {
     d=gcd(a,b,0);
     if (d.size()>1){
       modpoly D;
-      bool b=egcd_z(a/d,b/d,u,v,D,deterministic);
-      if (!b) return false;
+      bool bb=egcd_z(a/d,b/d,u,v,D,deterministic);
+      if (!bb) return false;
       u=u*d;
       v=v*d;
       d=D*d;
@@ -9851,7 +9851,7 @@ namespace giac {
       // CERR << CLOCK()*1e-6 << " " << m << "\n";
       if (m && (is_multiple(P0,m)||is_multiple(Q0,m)))
 	continue;
-#ifdef INT128
+#if defined INT128 && !defined USE_GMP_REPLACEMENTS
       if (m<(1<<30) 
 	  && m!=p3
 	  ){

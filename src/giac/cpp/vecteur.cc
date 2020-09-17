@@ -79,6 +79,8 @@ using namespace std;
 #include <f2c.h>
 #include <clapack.h>
 #ifdef POCKETCAS
+#include "f2c.h"
+#include "clapack.h"
 #include <Accelerate/Accelerate.h>
 #endif // POCKETCAS
 #undef abs
