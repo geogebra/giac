@@ -1747,7 +1747,7 @@ namespace giac {
     return (pow(qtmp,m)/pow(h,m-1))*(res*T(sign));
   }
 
-  // Bézout identity
+  // BÃ©zout identity
   // given p and q, find u and v s.t. u*p+v*q=d where d=gcd(p,q) using PSR algo
   // Iterative algorithm to find u and d, then q=(d-u*p)/v
   template<class T>
@@ -1951,7 +1951,7 @@ namespace giac {
     }
   }
 
-  // utility for Bézout identity solving
+  // utility for BÃ©zout identity solving
   template<class T>
   void Tegcdtoabcuv(const tensor<T> & a,const tensor<T> &b, const tensor<T> &c, tensor<T> &u,tensor<T> &v, tensor<T> & d, tensor<T> & C){
     tensor<T> d0(Tfirstcoeff(d));

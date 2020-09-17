@@ -823,7 +823,7 @@ namespace giac {
     // a dense poly of deg. aa and d variables has binomial(aa+d,d) monomials
     // we need to reserve at most asize*bsize
     // but less for dense polynomials since 
-    // binomial(aa+d,d)*binomial(bb+d,d) > binomial(aa+bb+d,d)
+    // binomial(aa+d,d)*binomial(bb+d,d) > binomial(aa+bb+d,d)
     int aa=total_degree(ita_begin->index),bb=total_degree(itb_begin->index);
     double r;
     double factoriald=std::lgamma(d+1);
