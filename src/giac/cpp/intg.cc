@@ -5533,17 +5533,28 @@ namespace giac {
       if (0)
 	return bernoulli_rat(n);
 #ifdef HAVE_LIBBERNMM
-      mpq_t resq;
-      mpq_init(resq);
-      bernmm::bern_rat(resq,x.val,threads);
-      mpz_t num,den;
-      mpz_init(num); mpz_init(den);
-      mpq_get_num(num,resq);
-      mpq_get_den(den,resq);
-      mpq_clear(resq);
-      gen numer(num),denom(den);
-      mpz_clear(num); mpz_clear(den);
-      return numer/denom;
+      if (n>=
+#ifdef HAVE_LIBPARI
+	  1e5
+#else
+	  0
+#endif
+	  ){
+	mpq_t resq;
+	mpq_init(resq);
+	bernmm::bern_rat(resq,x.val,threads);
+	mpz_t num,den;
+	mpz_init(num); mpz_init(den);
+	mpq_get_num(num,resq);
+	mpq_get_den(den,resq);
+	mpq_clear(resq);
+	gen numer(num),denom(den);
+	mpz_clear(num); mpz_clear(den);
+	return numer/denom;
+      }
+#endif
+#ifdef HAVE_LIBPARI
+      return _pari(makesequence(string2gen("bernfrac",false),n),context0);
 #endif
       return bernoulli_rat(n);
     }

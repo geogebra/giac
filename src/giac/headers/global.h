@@ -101,7 +101,7 @@ inline double giac_log(double d){
 #include "tinymt32.h"
 #endif
 
-extern "C" int ctrl_c_interrupted();
+extern "C" int ctrl_c_interrupted(int exception);
 #ifdef HAVE_LIBMICROPYTHON
 #include <string>
 // giac interface to micropython modules

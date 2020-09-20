@@ -126,10 +126,14 @@ int my_sprintf(char * s, const char * format, ...){
     return z;
 }
 
-  int ctrl_c_interrupted(){
+  int ctrl_c_interrupted(int exception){
     if (!giac::ctrl_c && !giac::interrupted)
       return 0;
     giac::ctrl_c=giac::interrupted=0;
+#ifndef NO_STD_EXCEPT
+    if (exception)
+      giac::setsizeerr("Interrupted");
+#endif
     return 1;
   }
 

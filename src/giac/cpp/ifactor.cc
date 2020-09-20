@@ -4719,13 +4719,27 @@ namespace giac {
     return generator(p,v);
   }
 
-  int zn_order(int k,int p,const vecteur & v){
+  gen _znprimroot(const gen & p,GIAC_CONTEXT){
+#ifdef HAVE_LIBPARI
+    if (!is_integer(p))
+      return gentypeerr(contextptr);
+    return _pari(makesequence(string2gen("znprimroot",false),p),contextptr);
+#endif
+    if (p.type!=_INT_ || !is_probab_prime_p(p))
+      return gentypeerr("PARI not compiled in => currently, znprimroot(k) expects a prime<2^31");
+    return makemod(generator(p.val),p);
+  }
+  static const char _znprimroot_s []="znprimroot";
+  static define_unary_function_eval (__znprimroot,&_znprimroot,_znprimroot_s);
+  define_unary_function_ptr5( at_znprimroot ,alias_at_znprimroot,&__znprimroot,0,true); 
+
+  int znorder(int k,int p,int phi,const vecteur & v){
     int o=1;
     for (int i=0;i<v.size();i+=2){
       int pi=v[i].val;
       int mi=v[i+1].val;
       int pimi=pow((unsigned) pi,(unsigned) mi).val;
-      int a=powmod(k,(p-1)/pimi,p);
+      int a=powmod(k,phi/pimi,p);
       while (a!=1){
 	o *= pi;
 	a=powmod(a,pi,p);
@@ -4734,10 +4748,35 @@ namespace giac {
     return o;
   }
 
-  int zn_order(int k,int p){
-    vecteur v=ifactors(p-1,context0);
-    return zn_order(k,p,v);
+  int znorder(int k,int p){
+    k %= p;
+    if (gcd(k,p)!=1)
+      return 0;
+    if (k==1)
+      return 1;
+    int phi=euler(p,context0).val;
+    vecteur v=ifactors(phi,context0);
+    return znorder(k,p,phi,v);
   }
+
+  gen _znorder(const gen & args,GIAC_CONTEXT){
+    if (args.type==_MOD)
+      return _znorder(makevecteur(*args._MODptr,*(args._MODptr+1)),contextptr);
+    if (args.type!=_VECT || args._VECTptr->size()!=2)
+      return gensizeerr(contextptr);
+    gen k=args._VECTptr->front(),p=args._VECTptr->back();
+#ifdef HAVE_LIBPARI
+    if (gcd(p,k)!=1)
+      return 0;
+    return _pari(makesequence(string2gen("znorder",false),makemod(k,p)),contextptr);
+#endif
+    if (k.type!=_INT_ || p.type!=_INT_  || p.val<2)
+      return gentypeerr("PARI not compiled in => currently, znorder(k,p) expects integers<2^31");
+    return znorder(k.val,p.val);
+  }
+  static const char _znorder_s []="znorder";
+  static define_unary_function_eval (__znorder,&_znorder,_znorder_s);
+  define_unary_function_ptr5( at_znorder ,alias_at_znorder,&__znorder,0,true); 
 
   // b1 *= m mod p
   //  m += (m>>31) &p;
@@ -4766,9 +4805,9 @@ namespace giac {
     }
     vecteur v=ifactors(p-1,context0);
     int g=generator(p,v),r=powmod(g,k-1,p),u;
-    int N=p>11?zn_order(2,p,v):0;
+    int N=p>11?znorder(2,p,p-1,v):0;
     if (debug_infolevel)
-      CERR << CLOCK()*1e-6 << " end generator/zn_order \n";
+      CERR << CLOCK()*1e-6 << " end generator/znorder \n";
     if (N>4 && k%N){
       // faster summation is possible
       int n=(N%2)?N:N/2;
@@ -4932,6 +4971,7 @@ namespace giac {
   static const char _bernoulli_mod_s []="bernoulli_mod";
   static define_unary_function_eval (__bernoulli_mod,&_bernoulli_mod,_bernoulli_mod_s);
   define_unary_function_ptr5( at_bernoulli_mod ,alias_at_bernoulli_mod,&__bernoulli_mod,0,true); 
+
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac
