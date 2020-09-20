@@ -4693,9 +4693,7 @@ namespace giac {
   static define_unary_function_eval (__fxnd,&_fxnd,_fxnd_s);
   define_unary_function_ptr5( at_fxnd ,alias_at_fxnd,&__fxnd,0,true); 
 
-  // p assumed to be prime, find a generator of (Z/pZ^*,*)
-  int generator(int p){
-    vecteur v=ifactors(p-1,context0);
+  int generator(int p,const vecteur & v){
     vector<int> w;
     for (int i=0;i<v.size();i+=2){
       if (v[i].type!=_INT_)
@@ -4715,11 +4713,47 @@ namespace giac {
     return 0; // p is not prime!
   }
 
+  // p assumed to be prime, find a generator of (Z/pZ^*,*)
+  int generator(int p){
+    vecteur v=ifactors(p-1,context0);
+    return generator(p,v);
+  }
+
+  int zn_order(int k,int p,const vecteur & v){
+    int o=1;
+    for (int i=0;i<v.size();i+=2){
+      int pi=v[i].val;
+      int mi=v[i+1].val;
+      int pimi=pow((unsigned) pi,(unsigned) mi).val;
+      int a=powmod(k,(p-1)/pimi,p);
+      while (a!=1){
+	o *= pi;
+	a=powmod(a,pi,p);
+      }
+    }
+    return o;
+  }
+
+  int zn_order(int k,int p){
+    vecteur v=ifactors(p-1,context0);
+    return zn_order(k,p,v);
+  }
+
+  // b1 *= m mod p
+  //  m += (m>>31) &p;
+  //  int msurp=((1LL<<31)*m)/p+1;
+  inline int precond_mulmod31(int b1,int m,int p,int msurp){
+    // b1 += (b1>>31) &p;
+    int t=longlong(b1)*m-((longlong(b1)*msurp)>>31)*p;
+    // t += (t>>31)&p; // t positive (or at least t-p is valid)
+    return t;
+  }
+
   // Harvey algorithm for Bernoulli numbers
   // https://arxiv.org/pdf/0807.1347.pdf
   // k must be even and p prime
   // https://web.maths.unsw.edu.au/~davidharvey/code/bernmm/index.html
-  // is much faster but does not compile with latest NTL...
+  // bernmm lib
   int bernoulli_mod(int k,int p){
 #ifdef HAVE_LIBBERNMM
     return bernmm::bern_modp(p,k);
@@ -4730,7 +4764,60 @@ namespace giac {
       // bk/k=bm/m mod p
       return ( ( (longlong(bm)*k) %p)*invmod(m,p) )%p;
     }
-    int g=generator(p),r=powmod(g,k-1,p),u;
+    vecteur v=ifactors(p-1,context0);
+    int g=generator(p,v),r=powmod(g,k-1,p),u;
+    int N=p>11?zn_order(2,p,v):0;
+    if (debug_infolevel)
+      CERR << CLOCK()*1e-6 << " end generator/zn_order \n";
+    if (N>4 && k%N){
+      // faster summation is possible
+      int n=(N%2)?N:N/2;
+      int m=(p-1)/2/n;
+      // twokm1=2^(k-1), gi=g^i, gkm1i=(g^(k-1))^i
+      longlong S=0,twokm1=powmod(2,(k-1)%N,p),gi=1,gkm1i=1;
+      int msurp=((1LL<<31)*twokm1)/p+1;
+      for (int i=0;i<m;++i){
+	longlong s=0,pow2=1;
+	int gi2j=gi; // g^i*2^j
+	for (int j=0;j<n;++j){
+#if 1
+	  gi2j = (gi2j<<1) -p;
+	  s -= (1+ ((gi2j>>31)<<1))*pow2;// (2*(1+(gi2j>>31))-1)*pow2;
+	  gi2j -= (gi2j>>31)*p;
+	  pow2=precond_mulmod31(pow2,twokm1,p,msurp);// (pow2*twokm1)%p;
+#else	  
+	  gi2j <<= 1;
+	  if (gi2j>=p){
+	    gi2j -= p;
+	    // f=-1
+	    s -= pow2;
+	    if (s<0)
+	      s += p;
+	  }
+	  else {
+	    // f=1
+	    s += pow2;
+	    if (s>=p)
+	      s -= p;
+	  }
+	  pow2=(pow2*twokm1)%p;
+#endif
+	}
+	// update g^i for next i iteration
+	gi=(gi*g)%p;
+	// s*(g^(k-1))^i
+	s=((s%p)*gkm1i)%p;
+	S += s;
+	if (S>=p)
+	  S -=p;
+	// update (g^(k-1))^i for next i iteration
+	gkm1i=(gkm1i*r)%p;
+      }
+      // final answer k/(2^(-(k-1))-2)*S
+      S=(S*k)%p;
+      S=(S*invmod(invmod(twokm1,p)-2,p))%p;
+      return S;
+    }
     if (g%2)
       u=(g-1)/2;
     else
@@ -4747,6 +4834,93 @@ namespace giac {
     return res;
   }
 
+#ifndef USE_GMP_REPLACEMENTS
+  void ichinrem_inplace(int r,int m,gen & res,const gen & pim,int & proba,mpz_t & tmpz){
+    if (pim.type==_ZINT && res.type==_ZINT){
+      longlong amodm=mpz_fdiv_ui(*res._ZINTptr,m);
+      if (amodm!=r){
+	gen u,v,d; longlong U;
+	egcd(pim,m,u,v,d);
+	if (u.type==_ZINT)
+	  U=mpz_fdiv_ui(*u._ZINTptr,m);
+	else
+	  U=u.val;
+	if (d==-1){ U=-U; v=-v; d=1; }
+	mpz_mul_si(tmpz,*pim._ZINTptr,(U*(r-amodm))%m);
+	mpz_add(*res._ZINTptr,*res._ZINTptr,tmpz);
+	proba=0;
+      }
+      else ++proba;
+    }
+  }
+#endif
+
+
+  // Inspired by David Harvey code (bernmm)
+  gen bernoulli_rat(int k){
+    long bound1 = (long) std::ceil((k + 0.5) * std::log(double(k)) /M_LN2);
+    if (bound1<37)
+      bound1=37;
+    // Computes the denominator of B_k using Clausen/von Staudt.
+    // loop through factors of k
+    gen D=1;
+    for (int f=1; f*f<=k; f++){
+      // if f divides k....
+      if (k % f == 0){
+	// ... then both f + 1 and k/f + 1 are candidates for primes
+	// dividing the denominator of B_k
+	if (is_probab_prime_p(f+1))
+	  D = (f+1)*D; 
+	if (f*f != k){
+	  int tmp=k/f+1;
+	  if (is_probab_prime_p(tmp))
+	    D = tmp*D;
+	}
+      }
+    }
+    double bits= (k+0.5)*std::log(double(k))/M_LN2 - 4.094*k + 2.470 +
+      std::log(evalf_double(D,1,context0)._DOUBLE_val)/M_LN2 ;
+    gen res(0.0),pip=1;
+    mpz_t tmpz; mpz_init(tmpz);
+    for (int p = 5; ; p = nextprime(p+1).val){
+      if (k % (p-1) == 0)
+	continue;
+      if (debug_infolevel)
+	COUT << CLOCK()*1e-6 << " start bernoulli_mod " << p << '\n';
+      int cur=bernoulli_mod(k,p);
+      if (debug_infolevel)
+	COUT << CLOCK()*1e-6 << " end bernoulli_mod " << p << '\n';
+      if (res.type==_DOUBLE_)
+	res=cur;
+      else {
+#ifndef USE_GMP_REPLACEMENTS
+	if (res.type==_ZINT && pip.type==_ZINT){
+	  int proba=0; // not used
+	  ichinrem_inplace(cur,p,res,pip,proba,tmpz);
+	} else
+#endif
+	  res=ichinrem(gen(cur),res,gen(p),pip);
+      }
+      pip = p*pip;
+      bits -= std::log(p)/M_LN2;
+      if (bits<-1)
+	break;
+    }
+    mpz_clear(tmpz);
+    res=smod(res*D,pip);
+    int s=fastsign(res,context0);
+    if (k%4==2){
+      if (s==-1)
+	res += pip;
+    }
+    else {
+      if (s==1)
+	res -= pip;
+    }
+    //COUT << _evalf(makesequence(res/pip,30),context0) << '\n';
+    return res/D;
+  }
+  
   gen _bernoulli_mod(const gen & args,GIAC_CONTEXT){
     if (args.type!=_VECT || args._VECTptr->size()!=2)
       return gensizeerr(contextptr);

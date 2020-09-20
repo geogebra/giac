@@ -89,6 +89,7 @@ namespace giac {
   extern const unary_function_ptr * const  at_fxnd ;
 
   extern const unary_function_ptr * const  at_ithprime ;
+  gen bernoulli_rat(int k);
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac

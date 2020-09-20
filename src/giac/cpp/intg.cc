@@ -5516,19 +5516,6 @@ namespace giac {
     }
     if (x.type!=_INT_)
       return gensizeerr(gettext("bernoulli"));
-#ifdef HAVE_LIBBERNMM
-    mpq_t resq;
-    mpq_init(resq);
-    bernmm::bern_rat(resq,x.val,1);
-    mpz_t num,den;
-    mpz_init(num); mpz_init(den);
-    mpq_get_num(num,resq);
-    mpq_get_den(den,resq);
-    mpq_clear(resq);
-    gen numer(num),denom(den);
-    mpz_clear(num); mpz_clear(den);
-    return numer/denom;
-#endif
     bool all=x.val<0;
     int n=absint(x.val);
     if (!n)
@@ -5539,6 +5526,26 @@ namespace giac {
       if (!all)
 	return zero;
       --n;
+    }
+    if (!all){
+      if (n==2)
+	return inv(6,context0);
+      if (0)
+	return bernoulli_rat(n);
+#ifdef HAVE_LIBBERNMM
+      mpq_t resq;
+      mpq_init(resq);
+      bernmm::bern_rat(resq,x.val,threads);
+      mpz_t num,den;
+      mpz_init(num); mpz_init(den);
+      mpq_get_num(num,resq);
+      mpq_get_den(den,resq);
+      mpq_clear(resq);
+      gen numer(num),denom(den);
+      mpz_clear(num); mpz_clear(den);
+      return numer/denom;
+#endif
+      return bernoulli_rat(n);
     }
     gen a(plus_one);
     gen b(rdiv(1-n,plus_two,context0));
