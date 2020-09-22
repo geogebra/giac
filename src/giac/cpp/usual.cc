@@ -223,6 +223,7 @@ namespace giac {
     }
 #endif
     for (char c='a';c<='z';c++){
+      if (c=='e') continue; // skip exp(1)
       purgenoassume(gen(string(1,c),contextptr),contextptr);
     }
     return args;
@@ -10260,7 +10261,14 @@ namespace giac {
   }
   gen _Ei(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    if (args.type==_VECT) return apply(args,_Ei,contextptr);
+    if (args.type==_VECT){
+      if (args.subtype==_SEQ__VECT){
+	if (args._VECTptr->size()!=2 || args._VECTptr->back().type!=_INT_)
+	  return gentypeerr(contextptr);
+	return Ei(args._VECTptr->front(),args._VECTptr->back().val,contextptr);
+      }
+      return apply(args,_Ei,contextptr);
+    }
     if (args.type==_FLOAT_)
       return evalf2bcd(_Ei(get_double(args._FLOAT_val),contextptr),1,contextptr);
     if (args.type!=_VECT){

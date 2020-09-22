@@ -7459,6 +7459,13 @@ namespace giac {
     read_gbargs(*args._VECTptr,2,int(args._VECTptr->size()),o,with_cocoa,with_f5,modular,gbasis_param);
     vecteur eqs=gen2vecteur(remove_equal(args._VECTptr->front()));
     vecteur elim=gen2vecteur((*args._VECTptr)[1]);
+    vecteur eqsidnt=lidnt(eqs);
+    for (int i=0;i<elim.size();++i){
+      if (!equalposcomp(eqsidnt,elim[i])){
+	elim.erase(elim.begin()+i);
+	--i;
+      }
+    }
     if (elim.empty())
       return eqs;
     vecteur l(elim);

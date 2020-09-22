@@ -5425,6 +5425,13 @@ namespace giac {
   static define_unary_function_eval_quoted (__Sum,&_Sum,_Sum_s);
   define_unary_function_ptr5( at_Sum ,alias_at_Sum,&__Sum,_QUOTE_ARGUMENTS,true);
 
+  void fourier_assume(const gen &n,GIAC_CONTEXT){
+    if (n.type==_IDNT && eval(n,1,contextptr)==n){
+      *logptr(contextptr) << "Running assume(" << n << ",integer)" << '\n';
+      sto(gen(makevecteur(change_subtype(2,1)),_ASSUME__VECT),n,contextptr);
+    }
+  }
+
   gen _wz_certificate(const gen & args,GIAC_CONTEXT) {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     gen F,dF,G,n(n__IDNT_e),k(k__IDNT_e);
@@ -5439,6 +5446,8 @@ namespace giac {
     }
     else
       F=args;
+    fourier_assume(n,contextptr);
+    fourier_assume(k,contextptr);
     dF=simplify(subst(F,n,n+1,false,contextptr)-F,contextptr);
     G=_sum(makesequence(dF,k),contextptr);
     if (lop(G,at_sum).empty()){
@@ -6223,13 +6232,6 @@ namespace giac {
   static const char _ibpdv_s []="ibpdv";
   static define_unary_function_eval (__ibpdv,&_ibpdv,_ibpdv_s);
   define_unary_function_ptr5( at_ibpdv ,alias_at_ibpdv,&__ibpdv,0,true);
-
-  void fourier_assume(const gen &n,GIAC_CONTEXT){
-    if (n.type==_IDNT && eval(n,1,contextptr)==n){
-      *logptr(contextptr) << "Running assume(" << n << ",integer)" << '\n';
-      sto(gen(makevecteur(change_subtype(2,1)),_ASSUME__VECT),n,contextptr);
-    }
-  }
 
   gen fourier_an(const gen & f,const gen & x,const gen & T,const gen & n,const gen & a,GIAC_CONTEXT){
     gen primi,iT=inv(T,contextptr);
