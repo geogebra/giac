@@ -11442,17 +11442,17 @@ namespace giac {
 #ifndef NO_STDEXCEPT
       settypeerr(gettext("is_probab_prime_p"));
 #endif
-      return false;
+      return 0;
     }
     if (a.type==_INT_ && a.val<2)
-      return false;
+      return 0;
     if (a.type==_INT_ && a.val<(1<<20)){
       for (int i=0;;++i){
 	int p=giac_primes[i];
 	if (p*p>a.val)
-	  return true;
+	  return 2;
 	if (a.val%p==0)
-	  return false;
+	  return 0;
       }
     }
     ref_mpz_t *aptr;
