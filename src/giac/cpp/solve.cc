@@ -7466,8 +7466,14 @@ namespace giac {
 	--i;
       }
     }
-    if (elim.empty())
+    if (elim.empty()){
+      for (int i=0;i<eqs.size();++i){
+	if (eqs[i].type<_POLY)
+	  eqs[i]=1;
+      }
+      comprim(eqs);
       return eqs;
+    }
     vecteur l(elim);
     if (args._VECTptr->size()>2 && (*args._VECTptr)[2].type==_VECT)
       lvar((*args._VECTptr)[2],l);
