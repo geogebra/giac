@@ -395,9 +395,9 @@ void save_sheet(tableur & t,GIAC_CONTEXT){
 void sheet_status(tableur & t,GIAC_CONTEXT){
   string st;
   if (python_compat(contextptr))
-    st="Py ";
+    st="tabl Py ";
   else
-    st="Xcas ";
+    st="tabl Xcas ";
   if (t.var.type==_IDNT)
     st += t.var.print(contextptr);
   else

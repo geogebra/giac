@@ -18,6 +18,9 @@
  */
 
 using namespace std;
+#ifdef HAVE_UNISTD_H
+#include <dirent.h>
+#endif
 #include <fstream>
 #include <string>
 #include "misc.h"
@@ -9925,6 +9928,59 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   static const char _modf_s []="modf";
   static define_unary_function_eval (__modf,&_modf,_modf_s);
   define_unary_function_ptr5( at_modf ,alias_at_modf,&__modf,0,true);
+
+#ifdef HAVE_UNISTD_H
+  void locate_files(const char * dirname,const char * ext_,vector<string> & v,GIAC_CONTEXT){
+    DIR *dp;
+    struct dirent *ep;
+    string ext(".");
+    ext += ext_;
+    int taille=ext.size();
+    dp = opendir (dirname);
+    if (dp != NULL){
+      string s;
+      int t;
+      while ( (ep = readdir (dp)) ){
+	s=ep->d_name;
+	t=s.size();
+	if (s=="." || s=="..")
+	  continue;
+	s=dirname+("/"+s);
+#ifdef NSPIRE_NEWLIB
+	if (t<4 || s.substr(t-4,4)!=".tns")
+	  locate_files(s.c_str(),ext_,v,contextptr);
+#else
+	if (ep->d_type==DT_DIR)
+	  locate_files(s.c_str(),ext_,v,contextptr);
+#endif
+	*logptr(contextptr) << s << '\n';
+	if (taille==1 || (t>taille && s.substr(t-taille,taille)==ext))
+	  v.push_back(s);
+      }
+      closedir (dp);
+    }
+  }
+
+  gen _locate(const gen & args,GIAC_CONTEXT){
+    vector<string> v;
+    if (args.type!=_STRNG)
+      locate_files("..","",v,contextptr);
+    else
+      locate_files("..",args._STRNGptr->c_str(),v,contextptr);
+    return args;
+  }
+  static const char _locate_s []="locate";
+  static define_unary_function_eval (__locate,&_locate,_locate_s);
+  define_unary_function_ptr5( at_locate ,alias_at_locate,&__locate,0,true);
+#else
+  gen _locate(const gen & args,GIAC_CONTEXT){
+    return undef;
+  }
+  static const char _locate_s []="locate";
+  static define_unary_function_eval (__locate,&_locate,_locate_s);
+  define_unary_function_ptr5( at_locate ,alias_at_locate,&__locate,0,true);
+
+#endif // UNISTD
 
 #ifdef EMCC
 #ifdef EMCC_FETCH

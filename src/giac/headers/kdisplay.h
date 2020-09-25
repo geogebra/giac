@@ -343,7 +343,7 @@ namespace xcas {
   // void draw_menu(int editor); // 0 console, 1 editor
   int get_set_session_setting(int value);
   void menu_setup(const giac::context *);
-  int console_main(const giac::context *);
+  int console_main(const giac::context *,const char * sessionname="session");
 #endif
   int periodic_table(const char * & name,const char * & symbol,char * protons,char * nucleons,char * mass,char * electroneg);
 

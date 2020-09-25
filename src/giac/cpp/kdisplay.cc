@@ -7267,7 +7267,7 @@ namespace xcas {
     if (text->editable && text->clipline>=0)
       DefineStatusMessage((char *)"PAD: select, COPY: copy, DEL: cut",1,0,0);
     else {
-      std::string status;
+      std::string status("edit ");
 #ifdef GIAC_SHOWTIME
       int d=(int(millis()/60000) +time_shift) % (24*60); // minutes
       int heure=d/60;
@@ -8338,7 +8338,7 @@ namespace xcas {
     if (l1>0 && has_static_help(cmdname,lang | 0x100,howto,syntax,related,examples) && examples){
       // display tooltip
       if (x<0)
-	x=os_draw_string(0,y,_BLACK,1234,cmdline,true); // fake print -> x position
+	x=os_draw_string(0,y,_BLACK,1234,editline,true); // fake print -> x position // replaced cmdline by editline so that tooltip is at end
       x+=2;
       y+=4;
       drawRectangle(x,y,6,10,65529);
@@ -9100,17 +9100,17 @@ namespace xcas {
 
   void console_disp_status(GIAC_CONTEXT){
     int i=python_compat(contextptr);
-    string msg;
+    string msg("shell ");
     if (i&4)
-      msg="MicroPython";
+      msg+="MicroPython";
     else {
       if (i==0)
-	msg="Xcas";
+	msg+="Xcas";
       else {
 	if (i==1)
-	  msg="Py ^=**";
+	  msg+="Py ^=**";
 	else
-	  msg="Py ^=xor";
+	  msg+="Py ^=xor";
       }
     }
     if (angle_radian(contextptr))
@@ -12169,7 +12169,7 @@ namespace xcas {
   extern "C" void mp_stack_set_limit(size_t);
 #endif
   
-  int console_main(GIAC_CONTEXT){
+  int console_main(GIAC_CONTEXT,const char * sessionname){
 #ifdef NUMWORKS
     mp_stack_ctrl_init();
     //volatile int stackTop;
@@ -12204,7 +12204,7 @@ namespace xcas {
     Console_Init(contextptr);
     Bdisp_AllClr_VRAM();
     rand_seed(millis(),contextptr);
-    restore_session("session",contextptr);
+    restore_session(sessionname,contextptr);
     giac::angle_radian(os_get_angle_unit()==0,contextptr);
     //GetKey(&key);
     Console_Disp(1,contextptr);

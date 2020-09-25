@@ -188,7 +188,11 @@ namespace giac {
   }
 
   gen check_secure(){
-    if (secure_run)
+    if (secure_run
+#ifdef KHICAS
+	|| exam_mode
+#endif
+	)
       return gensizeerr(gettext("Running in secure mode"));
     return 0;
   }
@@ -8243,16 +8247,21 @@ namespace giac {
   }
   bool is_address(const gen & g,size_t & addr){
     if (g.type==_INT_){
-      addr=g.val;
+      addr=(g.val/4)*4; // align
       return true;
     }
     if (g.type!=_ZINT)
       return false;
     addr = modulo(*g._ZINTptr,(unsigned)0x80000000);
+    addr = (addr/4)*4;
     addr += 0x80000000;
     return true;
   }
   gen _read(const gen & args,GIAC_CONTEXT){
+#ifdef KHICAS
+    if (exam_mode)
+      return gensizeerr("Exam mode");
+#endif
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     size_t addr;
     if (is_address(args,addr))
@@ -8294,6 +8303,17 @@ namespace giac {
   gen _read32(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     size_t addr;
+    if (args.type==_VECT && args._VECTptr->size()==2 && args._VECTptr->back().type==_INT_){
+      int n=args._VECTptr->back().val;
+      if (n<=0 || !is_address(args._VECTptr->front(),addr)) 
+	return undef;
+      vecteur res;
+      for (int i=0;i<n;++i){
+	res.push_back(makevecteur((longlong) addr,(longlong) *(unsigned *) addr));
+	addr += 4;
+      }
+      return res;
+    }
     if (is_address(args,addr))
       return (longlong) *(unsigned *) addr;
     return gensizeerr(contextptr);
@@ -8380,6 +8400,8 @@ namespace giac {
     if (exam_mode)
       return gensizeerr("Exam mode");
 #endif
+    if (args.type!=_VECT)
+      return _read32(args,contextptr);
     if (args.type==_VECT){
       vecteur v=*args._VECTptr;
       size_t addr;

@@ -654,6 +654,14 @@ bool iskeydown(int key){
   return isKeyPressed(t);
 }
 
+double loopsleep(int ms){
+  double n=ms*(is_cx2?3000:1000),j=0.0;
+  for (double i=0;i<n;++i){
+    j+=i;
+  }
+  return j;
+}
+
 // ? see also ndless-sdk/thirdparty/nspire-io/arch-nspire/nspire.c nio_ascii_get
 int getkey(int allow_suspend){
   sync_screen();
@@ -671,21 +679,21 @@ int getkey(int allow_suspend){
       sync_screen();
     }
     bool autosuspend=(t1-lastt>=100);
-    if (allow_suspend && (autosuspend || (nspire_ctrl && on_key_pressed()))){
+    if (!is_cx2 && allow_suspend && (autosuspend || (nspire_ctrl && on_key_pressed()))){
       nspire_ctrl=nspire_shift=false;
       while (!autosuspend && on_key_pressed())
-	msleep(10);
+	loopsleep(10);
       // somewhat OFF by setting LCD to 0
-      unsigned NSPIRE_CONTRAST_ADDR=0x900f0020;
+      unsigned NSPIRE_CONTRAST_ADDR=is_cx2?0x90130018:0x900f0020;
       unsigned oldval=*(volatile unsigned *)NSPIRE_CONTRAST_ADDR;
       *(volatile unsigned *)NSPIRE_CONTRAST_ADDR=0x100;
       static volatile uint32_t *lcd_controller = (volatile uint32_t*) 0xC0000000;
       lcd_controller[6] &= ~(0b1 << 11);
-      msleep(20);
+      loopsleep(20);
       lcd_controller[6] &= ~ 0b1;
       unsigned offtime=* (volatile unsigned *) NSPIRE_RTC_ADDR;
       for (int n=0;!on_key_pressed();++n){
-	msleep(100);
+	loopsleep(100);
 	idle();
 	if (!exam_mode && shutdown
 	    // && n&0xff==0
@@ -696,7 +704,7 @@ int getkey(int allow_suspend){
 	    // after 2 hours, leave KhiCAS
 	    // that way the OS will really shutdown the calc
 	    lcd_controller[6] |= 0b1;
-	    msleep(20);
+	    loopsleep(20);
 	    lcd_controller[6]|= 0b1 << 11;
 	    *(volatile unsigned *)NSPIRE_CONTRAST_ADDR=oldval;
 	    statuslinemsg("Press ON to disable KhiCAS auto shutdown");
@@ -706,7 +714,7 @@ int getkey(int allow_suspend){
 	    for (;m<mmax;++m){
 	      if (on_key_pressed())
 		break;
-	      msleep(100);
+	      loopsleep(100);
 	      idle();
 	    }
 	    if (m==mmax){
@@ -721,7 +729,7 @@ int getkey(int allow_suspend){
 	}
       }
       lcd_controller[6] |= 0b1;
-      msleep(20);
+      loopsleep(20);
       lcd_controller[6]|= 0b1 << 11;
       *(volatile unsigned *)NSPIRE_CONTRAST_ADDR=oldval;
       statusline(0);

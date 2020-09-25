@@ -223,7 +223,7 @@ namespace giac {
     }
 #endif
     for (char c='a';c<='z';c++){
-      if (c=='e') continue; // skip exp(1)
+      if (c=='e' || c=='i') continue; // skip exp(1) and sqrt(-1)
       purgenoassume(gen(string(1,c),contextptr),contextptr);
     }
     return args;
