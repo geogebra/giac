@@ -1024,7 +1024,7 @@ namespace giac {
     if (need) res += ')';
     res += '/';
     gen f=feuille._VECTptr->back();
-    if ( (f.type==_SYMB && ( f._SYMBptr->sommet==at_plus || f._SYMBptr->sommet==at_prod || f._SYMBptr->sommet==at_division || f._SYMBptr->sommet==at_inv  || need_parenthesis(f._SYMBptr->sommet) )) || (f.type==_CPLX) || (f.type==_MOD)){
+    if ( (f.type==_SYMB && ( f._SYMBptr->sommet==at_plus || f._SYMBptr->sommet==at_prod || f._SYMBptr->sommet==at_division || f._SYMBptr->sommet==at_inv  || need_parenthesis(f._SYMBptr->sommet) )) || (f.type==_CPLX) || (f.type==_MOD) || (f.type==_FRAC)){
       res += '(';
       res += f.print(contextptr);
       res += ')';
