@@ -6265,7 +6265,17 @@ namespace giac {
 
   int (*micropy_ptr) (cstcharptr)=0;
   gen _python(const gen & args,GIAC_CONTEXT){
-#if defined MICROPY_LIB || defined HAVE_LIBMICROPYTHON
+#if defined MICROPY_LIB
+    if (micropy_ptr && args.type==_VECT && args._VECTptr->size()==2){
+      gen a=args._VECTptr->front(),b=args._VECTptr->back();
+      if (a.type==_STRNG && b==at_python){
+	const char * ptr=a._STRNGptr->c_str();
+	(*micropy_ptr)(ptr);
+	return string2gen("Done",false);
+      }
+    }
+#endif
+#if defined HAVE_LIBMICROPYTHON
     if (micropy_ptr && args.type==_VECT && args._VECTptr->size()==2){
       gen a=args._VECTptr->front(),b=args._VECTptr->back();
       if (a.type==_STRNG && b==at_python){

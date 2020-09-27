@@ -6746,7 +6746,7 @@ namespace xcas {
 
   const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF5  2d \nreserved\nF4 menu\nreserved\nF6 reg\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF< poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF: misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \nperiodic_table\n";
 
-  const char python_conf_standard[] = "F1 misc\nprint(\ninput(\n;\n:\n[]\ndef f(x): return \ntime()\nfrom time import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nabs(\nsqrt(\nfrom math import *\nF3 c&rand\nrandint(\nrandom()\nchoice(\nfrom random import *\n.real\n.imag\nphase(\nfrom cmath import *;i=1j\nF4 menu\nreserved\nF5  2d\nreserved\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF7 linalg\nmatrix(\nadd(\nsub(\nmul(\ninv(\nrref(\ntranspose(\nfrom linalg import *;i=1j\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *;i=1j\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF: plot\nclf()\nplot(\ntext(\narrow(\nscatter(\nbar(\nshow()\nfrom matplotl import *\nF= list\nlist(\nrange(\nlen(\nappend(\nzip(\nsorted(\nmap(\nreversed(\nF> prog\n|\n&\n#\nhex(\nbin(\ndebug(\ncaseval(\"\")\nfrom cas import *\n";
+  const char python_conf_standard[] = "F1 misc\nprint(\ninput(\n;\n:\n[]\ndef f(x): return \ntime()\nfrom time import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nabs(\nsqrt(\nfrom math import *\nF3 c&rand\nrandint(\nrandom()\nchoice(\nfrom random import *\n.real\n.imag\nphase(\nfrom cmath import *;i=1j\nF4 menu\nreserved\nF5  2d\nreserved\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF7 linalg\nmatrix(\nadd(\nsub(\nmul(\ninv(\nrref(\ntranspose(\nfrom linalg import *;i=1j\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *;i=1j\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF: plot\nclf()\nplot(\ntext(\narrow(\nscatter(\nbar(\nshow()\nfrom matplotl import *\nF= list\nlist(\nrange(\nlen(\nappend(\nzip(\nsorted(\nmap(\nreversed(\nF> prog\n|\n&\n#\nhex(\nbin(\ndebug(\nfrom cas import *\ncaseval(\"\")\n";
   
   int eqws(char * s,bool eval,GIAC_CONTEXT){ // s buffer must be at least 512 char
     gen g,ge;
@@ -10551,19 +10551,71 @@ namespace xcas {
 #endif
   }
 
+  int restore_script(string &filename,bool msg,GIAC_CONTEXT){
+    // it's not a session, but a script, restore last session settings and load script
+#ifdef NSPIRE_NEWLIB
+    const char sessionname[]="session.xw.tns";
+#else
+    const char sessionname[]="session.xw";
+#endif 
+    if (file_exists(sessionname)){
+      load_console_state_smem(sessionname,contextptr);
+      Console_Init(contextptr);
+      Console_Clear_EditLine();
+    }
+    else python_compat(1,contextptr);
+    //return 1;
+    string s;
+    filename=remove_path(remove_extension(filename));
+    if (msg && filename!="session"){
+      *logptr(contextptr) << (lang==1?"shift ) 8 ou python/xcas pour changer d'interpreteur\n":"shift ) 8 or python/xcas to change interpreter\n");
+      *logptr(contextptr) << (lang==1?"Taper esc pour editeur ou avec Micropython executez\n":"Press esc for editor or in MicroPython exec\n");
+      *logptr(contextptr) << "from "+filename+" import *\n";
+    }
+#ifdef NSPIRE_NEWLIB
+    filename += ".py.tns";
+#else
+    filename += ".py";
+#endif
+    load_script(filename.c_str(),s);
+    if (s.empty())
+      s="\n";
+    if (edptr==0)
+      edptr=new textArea;
+    edptr->filename=filename;
+    edptr->editable=true;
+    edptr->changed=false;
+    edptr->python=python_compat(contextptr);
+    edptr->elements.clear();
+    edptr->y=7;
+    add(edptr,s);
+    edptr->line=0;
+    edptr->pos=0;
+    return 2;
+  }
+
   int restore_session(const char * fname,GIAC_CONTEXT){
     // cout << "0" << fname << endl; Console_Disp(1); GetKey(&key);
-    string filename(remove_path(remove_extension(fname)));
+    string filename(fname); //filename="mandel.py.tns";
+    if (filename.size()>4 && filename.substr(filename.size()-4,4)==".tns")
+      filename=filename.substr(0,filename.size()-4);
+    if (filename.size()>3 && filename.substr(filename.size()-3,3)==".py")
+      return restore_script(filename,true,contextptr);
+    filename=remove_path(remove_extension(fname));
 #ifdef NSPIRE_NEWLIB
-    if (file_exists((filename+".xw.tns").c_str()))
+    if (file_exists((filename+".xw.tns").c_str())){
+      strcpy(session_filename,filename.c_str());
       filename += ".xw.tns";
+    }
     else
-      filename += ".py.tns";
+      return restore_script(filename,true,contextptr);
 #else
-    if (file_exists((filename+".xw").c_str()))
+    if (file_exists((filename+".xw").c_str())){
+      strcpy(session_filename,filename.c_str());
       filename += ".xw";
+    }
     else
-      filename += ".py";
+      return restore_script(filename,true,contextptr);
 #endif
     if (!load_console_state_smem(filename.c_str(),contextptr)){
       int x=0,y=0;
@@ -10609,7 +10661,7 @@ namespace xcas {
       }
 #endif
       Bdisp_AllClr_VRAM();
-#ifdef GIAC_SHOWTIME
+#if defined GIAC_SHOWTIME || defined NSPIRE_NEWLIB
       Console_Output("Reglage de l'heure, exemple");
       Console_NewLine(LINE_TYPE_OUTPUT, 1);          
       Console_Output("12,37=>,");
@@ -12176,6 +12228,7 @@ namespace xcas {
     //mp_stack_set_top((void *)(&stackTop));
     //mp_stack_set_limit(24*1024);
 #endif
+    giac::micropy_ptr=micropy_ck_eval;
     python_heap=0;
     sheetptr=0;
     shutdown=do_shutdown;

@@ -102,7 +102,7 @@ inline double giac_log(double d){
 #endif
 
 extern "C" int ctrl_c_interrupted(int exception);
-#ifdef HAVE_LIBMICROPYTHON
+#if defined HAVE_LIBMICROPYTHON
 #include <string>
 // giac interface to micropython modules
 extern std::string python_console;
