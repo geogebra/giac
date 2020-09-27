@@ -2953,6 +2953,12 @@ namespace giac {
       f=subst(it->_SYMBptr->feuille,faster_var,faster_var_subst,false,contextptr);
       faster_var_subst.push_back(pow(w,c,contextptr)*exp(normal(f-c*g,contextptr),contextptr));
     }
+    // add original variable in faster_var/faster_var_subst
+    // otherwise we might miss replacements
+    if (faster_var.front().is_symb_of_sommet(at_exp) && faster_var.front()._SYMBptr->feuille==x){
+      faster_var.push_back(x);
+      faster_var_subst.push_back(ln(faster_var_subst.front(),contextptr));
+    }
     // subst in original expression and make the asymptotic expansion
     double ordre=begin_ordre;
     f=subst(ecopy,faster_var,faster_var_subst,false,contextptr);
