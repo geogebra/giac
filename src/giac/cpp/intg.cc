@@ -3455,7 +3455,10 @@ namespace giac {
 	  return neg?-res:res;
 	}
 	if (is_greater(b,a,contextptr)){
-	  giac_assume(symb_and(symb_superieur_egal(x,a),symb_inferieur_egal(x,b)),contextptr);
+	  if (x==b)
+	    giac_assume(symb_superieur_egal(x,a),contextptr);
+	  else
+	    giac_assume(symb_and(symb_superieur_egal(x,a),symb_inferieur_egal(x,b)),contextptr);
 	  v.push_back(at_assume);
 	  gen res=protect_integrate(gen(v,_SEQ__VECT),contextptr);
 	  restorepurge(xval,x,contextptr);

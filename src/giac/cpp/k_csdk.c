@@ -8,7 +8,7 @@ int exam_duration=0;
 // <0: indicative duration, ==0 time displayed during exam, >0 end exam_mode after
 const int exam_bg1=0x4321,exam_bg2=0x1234;
 int exam_bg(){
-  return exam_mode?(exam_duration>0?exam_bg1:exam_bg2):0x0;
+  return exam_mode?(exam_duration>0?exam_bg1:exam_bg2):0x50719;
 }
 
 #ifdef NSPIRE_NEWLIB
@@ -86,8 +86,23 @@ void get_hms(int *h,int *m,int *s){
   *s%=60;
 }
 
+// #define is_cx2 false
+
+double loopsleep(int ms){
+  double n=ms*(is_cx2?3000:1000),j=0.0;
+  for (double i=0;i<n;++i){
+    j+=i;
+  }
+  return j;
+}
+
+void ck_msleep(int ms){
+  //msleep(ms);
+  loopsleep(ms);
+}
+
 void os_wait_1ms(int ms){
-  msleep(ms);
+  ck_msleep(ms);
 }
 
 bool file_exists(const char * filename){
@@ -225,6 +240,14 @@ int os_file_browser(const char ** filenames,int maxrecords,const char * extensio
 
 Gc nspire_gc=0;
 
+void reset_gc(){
+  if (nspire_gc){
+    gui_gc_finish(nspire_gc);
+    //gui_gc_free(nspire_gc);
+  }
+  nspire_gc=0;
+}
+
 Gc * get_gc(){
   if (!nspire_gc){
     nspire_gc=gui_gc_global_GC();
@@ -314,7 +337,7 @@ void statuslinemsg(const char * msg){
   int bg=exam_bg();
   gui_gc_setColor(nspire_gc,c_rgb565to888(bg));
   gui_gc_fillRect(nspire_gc,0,0,SCREEN_WIDTH,nspire_statusarea);
-  nspire_draw_string(0,0,0xffff,bg,Regular9,msg,false);
+  nspire_draw_string(0,0,exam_mode?0xffff:0,bg,Regular9,msg,false);
 }
 
 void display_time(){
@@ -335,14 +358,14 @@ void display_time(){
   int bg=exam_bg();
   gui_gc_setColor(nspire_gc,c_rgb565to888(bg));
   gui_gc_fillRect(nspire_gc,270,0,SCREEN_WIDTH-270,nspire_statusarea);
-  nspire_draw_string(270,0,0xffff,bg,Regular9,msg,false);
+  nspire_draw_string(270,0,exam_mode?0xffff:0,bg,Regular9,msg,false);
 }
 
 void sync_screen(){
   get_gc();
   //gui_gc_finish(nspire_gc);
   gui_gc_blit_to_screen(nspire_gc);
-  msleep(10);
+  ck_msleep(10);
   //nspire_gc=0;
   // gui_gc_begin(nspire_gc);
 }
@@ -373,9 +396,9 @@ void statusline(int mode){
   int bg=exam_bg();
   gui_gc_setColor(nspire_gc,c_rgb565to888(bg));
   gui_gc_fillRect(nspire_gc,210,0,SCREEN_WIDTH-210,nspire_statusarea);
-  nspire_draw_string(220,0,0xffff,bg,Regular9,msg,false);
+  nspire_draw_string(220,0,exam_mode?0xffff:0,bg,Regular9,msg,false);
   if (nspireemu)
-    nspire_draw_string(210,0,0xffff,bg,Regular9,"e",false);
+    nspire_draw_string(210,0,exam_mode?0xffff:0,bg,Regular9,"emu",false);
   display_time();
   if (mode==0)
     return;
@@ -475,7 +498,7 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_COLON))		return NORMAL(':');
   if (isKeyPressed(KEY_NSPIRE_LP))			return SHIFTCTRL('(',KEY_CTRL_F13,KEY_CHAR_CROCHETS);
   if (isKeyPressed(KEY_NSPIRE_RP))			return SHIFTCTRL(')',KEY_CTRL_F14,KEY_CHAR_ACCOLADES);
-  if (isKeyPressed(KEY_NSPIRE_SPACE))		return SHIFT(' ','_');
+  if (isKeyPressed(KEY_NSPIRE_SPACE))		return SHIFTCTRL(' ','_','_');
   if (isKeyPressed(KEY_NSPIRE_DIVIDE))
     return SHIFTCTRL('/','%','\\');
   if (isKeyPressed(KEY_NSPIRE_MULTIPLY))	return SHIFTCTRL('*','\'','\"');
@@ -654,13 +677,6 @@ bool iskeydown(int key){
   return isKeyPressed(t);
 }
 
-double loopsleep(int ms){
-  double n=ms*(is_cx2?3000:1000),j=0.0;
-  for (double i=0;i<n;++i){
-    j+=i;
-  }
-  return j;
-}
 
 // ? see also ndless-sdk/thirdparty/nspire-io/arch-nspire/nspire.c nio_ascii_get
 int getkey(int allow_suspend){
@@ -679,6 +695,13 @@ int getkey(int allow_suspend){
       sync_screen();
     }
     bool autosuspend=(t1-lastt>=100);
+    if (is_cx2 && nspire_ctrl && on_key_pressed()){
+      os_fill_rect(50,90,200,40,0x1234);
+      nspire_draw_string(60,120,0,0xffff,Regular12,"Quit KhiCAS to shutdown",false);
+      nspire_ctrl=false;
+      statusline(1);
+      continue;
+    }
     if (!is_cx2 && allow_suspend && (autosuspend || (nspire_ctrl && on_key_pressed()))){
       nspire_ctrl=nspire_shift=false;
       while (!autosuspend && on_key_pressed())
@@ -739,9 +762,9 @@ int getkey(int allow_suspend){
     }
     if (!any_key_pressed()){
       if (nspireemu)
-	msleep(50); // 100?
+	ck_msleep(50); // 100?
       else // real calculator
-	msleep(1);
+	ck_msleep(1);
       continue;
     }
     lastt=t1;
@@ -795,9 +818,9 @@ int getkey(int allow_suspend){
       int delay=(lastkey==i)?5:60,j;
       for (j=0;j<delay && any_key_pressed();++j){
 	if (nspireemu)
-	  msleep(14);
+	  ck_msleep(14);
 	else
-	  msleep(1);
+	  ck_msleep(1);
       }
       if (any_key_pressed())
 	lastkey=i;

@@ -6089,7 +6089,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	alertcmath=false;
 	alert(gettext("Assigning phase, j, J and rect."),contextptr);
       }
-      cur += "phase:=arg:;j:=i:;J:=i:;rect(r,theta):=r*exp(i*theta):;";
+      cur += "phase:=arg:;j:=i:;J:=i:;";
       posmath=poscmath;
     }
     if (posmath>=0 && posmath<cs){
@@ -6791,7 +6791,9 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
     }
     if (pythonmode){
       char ch;
-      while ((ch=s[s.size()-1])==';' || (ch=='\n'))
+      while (s.size()>1 && 
+	     ( ((ch=s[s.size()-1])==';' && s[s.size()-2]!=':') || (ch=='\n'))
+	     )
 	s=s.substr(0,s.size()-1);
       // replace ;) by )
       for (int i=s.size()-1;i>=2;--i){
@@ -6804,7 +6806,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	s += ":;";
       else {
 	int pos=s.find('\n');
-	if (pos>=0 && pos<s.size())
+	if (pos>=0 && pos<s.size() && s[s.size()-1]!=';')
 	  s += ";";
       }
       if (debug_infolevel)

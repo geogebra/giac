@@ -30,6 +30,7 @@ extern "C" {
   void  mp_deinit();
   void mp_stack_ctrl_init();
   extern int parser_errorline,parser_errorcol;
+  void python_free();
 }
 int micropy_ck_eval(const char *line);
 #endif
@@ -85,6 +86,7 @@ extern "C" {
   int python_init(int stack_size,int heap_size);
 }
 extern int lang;
+extern short int nspirelua;
 extern bool warn_nr;
 int select_interpreter(); // 0 Xcas, 1|2 Xcas python_compat(1|2), 3 MicroPython 
 const char * gettext(const char * s) ;
@@ -107,6 +109,7 @@ namespace xcas {
   int print_color(int print_x,int print_y,const char *s,int color,bool invert,bool minimini,const giac::context * contextptr);
   bool tooltip(int x,int y,int pos,const char * editline,const giac::context * contextptr);
 			   
+  bool textedit(char * s,int bufsize,bool OKparse,const giac::context * contextptr,const char * filename=0);
   bool textedit(char * s,int bufsize,const giac::context * contextptr);
   // maximum "size" of symbolics displayed in an Equation (pretty print)
   extern unsigned max_prettyprint_equation;
@@ -176,6 +179,7 @@ namespace xcas {
     short int speed=0;
   };
   
+  int run(const char * s,int do_logo_graph_eqw,const giac::context * contextptr);
   int displaygraph(const giac::gen & ge, const giac::context * contextptr);
   int displaylogo();
   giac::gen eqw(const giac::gen & ge,bool editable,const giac::context * contextptr);
@@ -323,6 +327,7 @@ namespace xcas {
   int Console_Backspace(const giac::context *);
   int Console_GetKey(const giac::context *);
   int Console_Init(const giac::context *);
+  void Console_Free();
   int Console_Disp(int redraw_mode,const giac::context*ptr);
   int Console_FMenu(int key,const giac::context *);
   extern char menu_f1[8],menu_f2[8],menu_f3[8],menu_f4[8],menu_f5[8],menu_f6[8];
@@ -467,8 +472,10 @@ namespace giac {
   extern const char apropos_en_string[];
   void init_locale();
 
+  gen _efface_logo(const gen & g,GIAC_CONTEXT);
   gen turtle_state(const giac::context * contextptr);
   int inputline(const char * msg1,const char * msg2,std::string & s,bool numeric,int ypos=65,const giac::context *contextptr=0);
+  extern logo_turtle * turtleptr;
   bool inputdouble(const char * msg1,double & d,const giac::context *contextptr);
   bool do_confirm(const char * s);
   int confirm(const char * msg1,const char * msg2,bool acexit=false,int y=40);

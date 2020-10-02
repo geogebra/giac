@@ -100,6 +100,7 @@ extern "C" {
   extern char nspire_filebuf[NSPIRE_FILEBUFFER];
   extern bool on_key_enabled;
   void get_hms(int *h,int *m,int *s);
+  void reset_gc();  
 #endif
 
   extern int (*shutdown)(); // function called after 2 hours of idle

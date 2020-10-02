@@ -9,6 +9,10 @@ size_t stackptr=0xffffffffffffffff;
 #endif
 #endif
 
+#ifdef NSPIRE_NEWLIB
+#include <os.h>
+#endif
+
 /*
  *  Copyright (C) 2001,14 B. Parisse, Institut Fourier, 38402 St Martin d'Heres
  *
@@ -16174,25 +16178,51 @@ void sprint_double(char * s,double d){
       turtle();
       _efface_logo(vecteur(0),contextptr);
     }
-#ifndef NSPIRE_NEWLIB
     if (!strcmp(s,"*")){
+#ifdef NSPIRE_NEWLIB
+      if (nspirelua==1){
+	nspirelua=2;
+	*logptr(contextptr) << (lang?"menu menu: quitte le shell\n":"menu menu : leave the shell\n");
+	while (1){
+	  xcas::Console_Disp(1,contextptr);
+	  const char * expr =xcas::Console_GetLine(contextptr);
+	  if (!expr || expr[0]==4 || strcmp(expr,"exit")==0)
+	    break;
+	  xcas::run(expr,7,contextptr);
+	  xcas::Console_NewLine(xcas::LINE_TYPE_OUTPUT,1);
+	}
+	nspirelua=1;
+      }
+      return "Done";
+#else
       int res=xcas::console_main(contextptr);
       S=printint(res);
       return S.c_str();
-    }
 #endif
-    if (!strcmp(s,"+")){
+    }
+    if (!strcmp(s,"+"))
+      s="+\"temp\"";
+    if (!strncmp(s,"+\"",2)){
+      char filename[256];
+      strcpy(filename,s+2);
+      filename[strlen(filename)-1]=0;
+#ifdef NSPIRE_NEWLIB
+      strcat(filename,".py.tns");
+#else
+      strcat(filename,".py");
+#endif
       char buf[4096]="def f(x):\n  return x*x\n";
-      if (file_exists("temp.py")){
-	const char * ch=read_file("temp.py");
+      if (file_exists(filename)){
+	const char * ch=read_file(filename);
 	S=ch;
 	if (S.size()>sizeof(buf))
 	  S=S.substr(0,sizeof(buf)-1);
 	strcpy(buf,S.c_str());
       }
-      xcas::textedit(buf,sizeof(buf),contextptr);
-      S=buf;
-      return S.c_str();
+      xcas::textedit(buf,sizeof(buf),true,contextptr,filename);
+      s=buf;
+      //S=buf;
+      //return S.c_str();      
     }
     if (!strcmp(s,"toolbox menu")){
       char buf[1024]="";
@@ -16393,7 +16423,7 @@ void sprint_double(char * s,double d){
 	  last=tmp;
       }
       if (last.is_symb_of_sommet(at_pnt)){
-	if (os_shell)
+	if (os_shell || nspirelua)
 	  xcas::displaygraph(g,&C);
 	S="Graphic_object";
       }

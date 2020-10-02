@@ -555,7 +555,7 @@ bool sheet_display(tableur &t,GIAC_CONTEXT){
   python_compat(p,contextptr); xcas_python_eval=xpe;
   // fast menus
   string menu("shift-1 stat1d|2 2d|3 seq|4 edit|5 view|6 graph|7 R|8 list| ");
-  bg=52832;
+  bg=65039;// bg=52832;
   drawRectangle(0,205,LCD_WIDTH_PX,17,bg);
   os_draw_string_small(0,205,_BLACK,bg,menu.c_str());
   return true;
@@ -723,9 +723,9 @@ void sheet_menu_setup(tableur & t,GIAC_CONTEXT){
 	continue;
       }
       if (smallmenu.selection == 3){
-	double d=t.nrows;
-	if (inputdouble((lang==1?"Nombre de lignes?":"Rows?"),d,contextptr) && d==int(d) && d>0){
-	  t.nrows=d;
+	double d=t.ncols;
+	if (inputdouble((lang==1?"Nombre de colonnes?":"Colonnes?"),d,contextptr) && d==int(d) && d>0){
+	  t.ncols=d;
 	}
 	continue;
       }
