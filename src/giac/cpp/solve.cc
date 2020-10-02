@@ -1313,7 +1313,7 @@ namespace giac {
 	  )
 	symb_inf=symb_superieur_strict(x,lsymb);
       else {
-	if (equalposcomp(excluded_not_singu,l) || (test!=1 && equalposcomp(singu,l)))
+	if (is_undef(testeq) || equalposcomp(excluded_not_singu,l) || (test!=1 && equalposcomp(singu,l)))
 	  symb_inf=symb_superieur_strict(x,lsymb);
 	else
 	  symb_inf=symb_superieur_egal(x,lsymb);
@@ -1347,7 +1347,7 @@ namespace giac {
 	  )
 	symb_sup=symb_inferieur_strict(x,msymb);
       else {
-	if (equalposcomp(excluded_not_singu,m) || (test!=1 && equalposcomp(singu,m)))
+	if (is_undef(testeq) || equalposcomp(excluded_not_singu,m) || (test!=1 && equalposcomp(singu,m)))
 	  symb_sup=symb_inferieur_strict(x,msymb);
 	else
 	  symb_sup=symb_inferieur_egal(x,msymb);
