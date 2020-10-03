@@ -1891,7 +1891,7 @@
 946>> caseval(regroup([[[ggbevalarg:=((((6)*(ggbtmpvara))*(3))*(ggbtmpvarb))-((((5)*(ggbtmpvara))*(ggbtmpvarb))+(((ggbtmpvarb)*(2))*(ggbtmpvara)))],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 946<< 11*ggbtmpvara*ggbtmpvarb
 947>> caseval(regroup(ggbsort(normal(zeros(((4)-((x)^(2)))/((((x)^(2))-((3)*(x)))+(2)) <= 0,x)))))
-947<< {x<=-2,(x>1) && (2>=x),x>=2}
+947<< {x<=-2,(x>1) && (2>x),x>2}
 948>> caseval(regroup([[[ggbevalarg:=(1)-(sqrt((2)-(sqrt((3)-(x))))) >= 0],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
 948<< (1-√(2-√(3-x)))>=0
 949>> caseval(regroup([[[ggbevalarg:={x=?}],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]], when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1]))
