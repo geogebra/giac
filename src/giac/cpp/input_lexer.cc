@@ -5706,6 +5706,13 @@ void giac_yyfree (void * ptr , yyscan_t yyscanner)
 	string ss;
 	ss.reserve(s.size()*1.1);
 	for (int i=0;i<l;++i){
+#if 0
+	  if (i>0 && s[i-1]=='^' && i<l-3 && s[i]=='(' && s[i+1]>='0' && s[i+1]<='9' && s[i+2]==')'){ // suppress () for things like 2x^(2) (sent from TI nspire lua UI)
+	    ss += s[i+1];
+	    i+=2;
+	    continue;
+	  }
+#endif
 	  if (s[i]=='\\' && s[i+1]=='\n'){
 	    ++i;
 	    continue;

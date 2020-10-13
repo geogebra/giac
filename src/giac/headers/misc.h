@@ -303,6 +303,11 @@ namespace giac {
   extern const unary_function_ptr * const  at_sin_regression;
   extern const unary_function_ptr * const  at_sin_regression_plot;
   extern const unary_function_ptr * const  at_locate ;
+  extern const unary_function_ptr * const  at_ls ;
+  extern const unary_function_ptr * const  at_more ;
+  extern const unary_function_ptr * const  at_cp ;
+  extern const unary_function_ptr * const  at_mkdir ;
+  extern const unary_function_ptr * const  at_rm ;
   int rgb888to565(int c);
   int rgb565to888(int c);
 

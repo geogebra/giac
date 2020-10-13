@@ -207,6 +207,7 @@ correct_input : exp T_END_INPUT { $$=vecteur(1,$1); }
 exp	: T_NUMBER		{$$ = $1;}
 	| T_NUMBER symbol_or_literal %prec T_IMPMULT	{if (is_one($1)) $$=$2; else $$=symbolic(at_prod,gen(makevecteur($1,$2),_SEQ__VECT));}
 	| T_NUMBER symbol_or_literal T_POW T_NUMBER %prec T_IMPMULT	{if (is_one($1)) $$=symb_pow($2,$4); else $$=symbolic(at_prod,gen(makevecteur($1,symb_pow($2,$4)),_SEQ__VECT));}
+	| T_NUMBER symbol_or_literal T_POW T_BEGIN_PAR T_NUMBER T_END_PAR %prec T_IMPMULT	{if (is_one($1)) $$=symb_pow($2,$5); else $$=symbolic(at_prod,gen(makevecteur($1,symb_pow($2,$5)),_SEQ__VECT));}
 	| T_NUMBER symbol_or_literal T_SQ %prec T_IMPMULT	{$$=symbolic(at_prod,gen(makevecteur($1,symb_pow($2,$3)) ,_SEQ__VECT));}
 	| T_NUMBER T_UNARY_OP T_BEGIN_PAR exp T_END_PAR	{ $$ =$1*symbolic(*$2._FUNCptr,python_compat(giac_yyget_extra(scanner))?denest_sto(os_nary_workaround($4)):os_nary_workaround($4)); }
 	| T_NUMBER T_UNARY_OP T_BEGIN_PAR exp T_END_PAR T_POW T_NUMBER	{ $$ =$1*symb_pow(symbolic(*$2._FUNCptr,python_compat(giac_yyget_extra(scanner))?denest_sto(os_nary_workaround($4)):os_nary_workaround($4)),$7); }

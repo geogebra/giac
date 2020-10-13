@@ -2,7 +2,7 @@
 int (*shutdown)()=0;
 
 short shutdown_state=0;
-short exam_mode=0;
+short exam_mode=0,nspire_exam_mode=0;
 unsigned exam_start=0; // RTC start
 int exam_duration=0;
 // <0: indicative duration, ==0 time displayed during exam, >0 end exam_mode after
@@ -695,21 +695,27 @@ int getkey(int allow_suspend){
       sync_screen();
     }
     bool autosuspend=(t1-lastt>=100);
-    if (is_cx2 && nspire_ctrl && on_key_pressed()){
+    if (//0 &&
+	is_cx2 && nspire_ctrl && on_key_pressed()){
       os_fill_rect(50,90,200,40,0x1234);
       nspire_draw_string(60,120,0,0xffff,Regular12,"Quit KhiCAS to shutdown",false);
       nspire_ctrl=false;
       statusline(1);
       continue;
     }
-    if (!is_cx2 && allow_suspend && (autosuspend || (nspire_ctrl && on_key_pressed()))){
+    if (!is_cx2 &&
+	allow_suspend && (autosuspend || (nspire_ctrl && on_key_pressed()))){
       nspire_ctrl=nspire_shift=false;
       while (!autosuspend && on_key_pressed())
 	loopsleep(10);
       // somewhat OFF by setting LCD to 0
-      unsigned NSPIRE_CONTRAST_ADDR=is_cx2?0x90130018:0x900f0020;
-      unsigned oldval=*(volatile unsigned *)NSPIRE_CONTRAST_ADDR;
-      *(volatile unsigned *)NSPIRE_CONTRAST_ADDR=0x100;
+      unsigned NSPIRE_CONTRAST_ADDR=is_cx2?0x90130014:0x900f0020;
+      unsigned oldval=*(volatile unsigned *)NSPIRE_CONTRAST_ADDR,oldval2;
+      if (is_cx2){
+	oldval2=*(volatile unsigned *) (NSPIRE_CONTRAST_ADDR+4);
+	*(volatile unsigned *) (NSPIRE_CONTRAST_ADDR+4)=0xffff;
+      }
+      *(volatile unsigned *)NSPIRE_CONTRAST_ADDR=is_cx2?0xffff:0x100;
       static volatile uint32_t *lcd_controller = (volatile uint32_t*) 0xC0000000;
       lcd_controller[6] &= ~(0b1 << 11);
       loopsleep(20);
@@ -729,6 +735,8 @@ int getkey(int allow_suspend){
 	    lcd_controller[6] |= 0b1;
 	    loopsleep(20);
 	    lcd_controller[6]|= 0b1 << 11;
+	    if (is_cx2)
+	      *(volatile unsigned *)(NSPIRE_CONTRAST_ADDR+4)=oldval2;
 	    *(volatile unsigned *)NSPIRE_CONTRAST_ADDR=oldval;
 	    statuslinemsg("Press ON to disable KhiCAS auto shutdown");
 	    //os_fill_rect(0,0,320,222,0xffff);
@@ -754,6 +762,8 @@ int getkey(int allow_suspend){
       lcd_controller[6] |= 0b1;
       loopsleep(20);
       lcd_controller[6]|= 0b1 << 11;
+      if (is_cx2)
+	*(volatile unsigned *)(NSPIRE_CONTRAST_ADDR+4)=oldval2;
       *(volatile unsigned *)NSPIRE_CONTRAST_ADDR=oldval;
       statusline(0);
       sync_screen();

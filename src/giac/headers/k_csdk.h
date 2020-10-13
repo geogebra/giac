@@ -5,7 +5,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  extern short exam_mode;
+  extern short exam_mode,nspire_exam_mode;
+  // nspire_exam_mode==0 normal mode
+  // ==1 led are blinking
+  // ==2 OS exam mode is on but led are not blinking
+  // Set the Nspire in normal exam mode at home, transfer ndless and khicas
+  // activate khicas: will detect led blinking (mode ==1)
+  // prepare exam mode with Khicas menu item (clear led, mode==2),
+  // in that mode menu menu will not leave KhiCAS anymore but
+  // will clean data and do a hardware reset (launch again exam mode and leds)
   extern unsigned exam_start;
   extern int exam_duration;
   int ext_main();

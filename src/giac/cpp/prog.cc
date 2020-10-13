@@ -190,7 +190,7 @@ namespace giac {
   gen check_secure(){
     if (secure_run
 #ifdef KHICAS
-	|| exam_mode
+	|| exam_mode || nspire_exam_mode
 #endif
 	)
       return gensizeerr(gettext("Running in secure mode"));
@@ -8269,7 +8269,7 @@ namespace giac {
   }
   gen _read(const gen & args,GIAC_CONTEXT){
 #ifdef KHICAS
-    if (exam_mode)
+    if (exam_mode || nspire_exam_mode)
       return gensizeerr("Exam mode");
 #endif
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
@@ -8304,6 +8304,38 @@ namespace giac {
     size_t addr;
     if (is_address(args,addr))
       return (int) *(unsigned short *) addr;
+    if (args.type==_STRNG){
+#ifdef KHICAS
+      if (exam_mode || nspire_exam_mode)
+	return gensizeerr("Exam mode");
+#endif
+      FILE * f=fopen(args._STRNGptr->c_str(),"r");
+      if (!f)
+	return undef;
+      vecteur v,l; char buf[9]; buf[8]=0; int i;
+      for (i=0;;++i){
+	unsigned char c=fgetc(f);
+	buf[i&7]=(c>=32 && c<=127)?c:'.';
+	if (feof(f))
+	  break;
+	l.push_back(c);
+	if ((i&0x7)==0x7){
+	  l.insert(l.begin(),string2gen(buf,false));
+	  l.insert(l.begin(),i-7);
+	  v.push_back(l);
+	  l.clear();
+	}
+      }
+      if (!l.empty()){
+	for (int j=l.size();j<8;++j)
+	  l.push_back(-1);
+	l.insert(l.begin(),string2gen(buf,false));
+	l.insert(l.begin(),int(i&0xfffffff8));
+	v.push_back(l);
+      }
+      fclose(f);
+      return v;
+    }
     return gensizeerr(contextptr);
   }
   static const char _read16_s []="read16";
@@ -8407,7 +8439,7 @@ namespace giac {
   gen _write32(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
 #ifdef KHICAS
-    if (exam_mode)
+    if (exam_mode || nspire_exam_mode)
       return gensizeerr("Exam mode");
 #endif
     if (args.type!=_VECT)
@@ -8438,7 +8470,7 @@ namespace giac {
   gen _write16(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
 #ifdef KHICAS
-    if (exam_mode)
+    if (exam_mode || nspire_exam_mode)
       return gensizeerr("Exam mode");
 #endif
     if (args.type==_VECT){
