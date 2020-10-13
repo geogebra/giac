@@ -57,6 +57,8 @@ task copyCrystaxSo {
 }
 
 afterEvaluate {
+tasks['preBuild'].dependsOn(['copyCrystaxSo', ':androidCopyEabiLibjavagiacSo',
+        ':androidCopyX86LibjavagiacSo', ':androidCopyX86_64LibjavagiacSo', ':androidCopyArm64LibjavagiacSo'])
 publishing {
     publications {
         release(MavenPublication) {
