@@ -750,6 +750,29 @@ namespace giac {
       int s=int(v.size());
       if (!s)
 	return minus_inf;
+      if (s==2 && is_integer(v[0]) && is_integer(v[1])){
+	if (is_zero(v[0]))
+	  return plus_inf;
+	mpz_t a,b,q,r;
+	mpz_init(q); mpz_init(r);
+	if (v[0].type==_INT_)
+	  mpz_init_set_si(a,v[0].val);
+	else
+	  mpz_init_set(a,*v[0]._ZINTptr);
+	if (v[1].type==_INT_)
+	  mpz_init_set_si(b,v[1].val);
+	else
+	  mpz_init_set(b,*v[1]._ZINTptr);
+	int res=0;
+	for (;;++res){
+	  mpz_fdiv_qr(q,r,a,b);
+	  if (mpz_cmp_si(r,0)!=0){
+	    mpz_clear(r); mpz_clear(q); mpz_clear(a); mpz_clear(b);
+	    return res;
+	  }
+	  mpz_set(a,q);
+	}
+      }
       if ( (args.subtype==_POLY1__VECT) || (s!=2) || (v[1].type!=_IDNT) ){
 	int j=s;
 	for (;j;--j){

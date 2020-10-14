@@ -1220,6 +1220,8 @@ namespace giac {
       return mys.sommet.ptr()->texprint(feu,mys.sommet.ptr()->s,contextptr);
     if (mys.sommet==at_abs)
       return '|'+gen2tex(feu,contextptr)+'|';
+    if (mys.sommet==at_unit)
+      return texprintsommetasoperator(feu,"\\_",contextptr);
     string opstring=idnt2tex(mys.sommet.ptr()->print(contextptr));
     if ( (feu.type==_VECT) && (feu._VECTptr->empty()) )
       return opstring+string("()");
