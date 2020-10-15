@@ -2050,6 +2050,7 @@ namespace giac {
 	continue;
       vecteur res;
       gen ee=subst(expr,*itla,g,false,contextptr);
+      ee=simplifier(ee,contextptr);
       vecteur v1=solve(ee,x,isolate_mode,contextptr);
       const_iterateur it=v1.begin(),itend=v1.end();
       for (;it!=itend;++it){
