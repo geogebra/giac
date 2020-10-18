@@ -8705,6 +8705,8 @@ namespace giac {
   // compute an approx value of sum((-1)^k*a(k),k,0,+infinity)
   // using Chebychev polynomials
   gen alternate_series(const gen & a,const gen & x,int n,GIAC_CONTEXT){
+    if (n>1e6)
+      return gensizeerr(contextptr);
     gen d=normal((pow(3+2*sqrt(2,contextptr),n)+pow(3-2*sqrt(2,contextptr),n))/2,contextptr);
     gen p=1;
     gen c=d-p;
@@ -8745,6 +8747,8 @@ namespace giac {
       double y=absdouble(ix._DOUBLE_val);
       int ndigits=16; // FIXME? use decimal_digits;
       double n=(std::log10(3*(1+2*y)*std::exp(y*M_PI/2))+ndigits)/std::log10(3.+std::sqrt(8.));
+      if (is_inf(n))
+	return gensizeerr(contextptr);
       identificateur idx(" ");
       gen x(idx);
       gen res=alternate_series(inv(pow(idx+1,s,contextptr),contextptr)*pow(-ln(idx+1,contextptr),ndiff,contextptr),idx,int(std::ceil(n)),contextptr);

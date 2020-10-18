@@ -21,11 +21,15 @@
 #include <dirent.h>
 #endif
 #ifdef NSPIRE_NEWLIB
+#include <libndls.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <os.h>
 #include <syscall.h>
 #include "sha256.h"
+#endif
+#ifndef is_cx2
+#define is_cx2 false
 #endif
 #ifdef KHICAS
 #define XWASPY 1 // save .xw file as _xw.py (to be recognized by Numworks workshop)
@@ -9131,8 +9135,6 @@ namespace xcas {
     Bdisp_PutDisp_DD();
   }
 
-  // #define is_cx2 false
-  
   void leave_exam_mode(GIAC_CONTEXT){
 #ifdef NSPIRE_NEWLIB
     // FIXME test USB connection instead
@@ -9565,13 +9567,20 @@ namespace xcas {
 	  if (nspire_exam_mode==1){
 	    if (confirm((lang==1?"Quitter Xcas pour relancer le mode examen":"Leave Xcas to re-enter exam mode"),(lang==1?"!enter OK, esc annul":"enter OK, esc cancel."))!=KEY_CTRL_F1)
 	      break;
+	    do_restart(contextptr);
+	    clear_turtle_history(contextptr);
+	    Console_Init(contextptr);
+	    Console_Clear_EditLine();
+	    console_changed=0;
 	    nspire_clear_data(contextptr);
 	    nspire_exam_mode=2;
 	    set_exam_mode(0,contextptr);
 	    break;
 	  }
 	  else {
-	    if (is_cx2){
+	    if (0
+		|| is_cx2
+		){
 	      textArea text;
 	      text.editable=false;
 	      text.clipline=-1;
@@ -9579,8 +9588,8 @@ namespace xcas {
 	      add(&text,(lang==1)?
 		  "Attention, verifiez que le calcul formel est autorise avant d'utiliser KhiCAS en mode examen. En France, c'est en principe autorise lorsque la calculatrice graphique l'est (par exemple au bac)":
 		  "Warning! Check that CAS is allowed before running KhiCAS in exam mode.");
-	      const char exam_mode_fr_string[]="Pour utiliser KhiCAS en mode examen, il faut effectuer une preparation chez soi quelques heures avant avec une connection PC ou quelques minutes avant l'examen avec un autre etudiant ayant une Nspire CX ou CX II.\nLancer le mode examen sur la calculatrice cible (esc-on), recopier ndless et khicas.tns (ou luagiac.luax.tns et khicaslua.tns) sur la calculatrice cible en mode examen. Avec 2 calculatrices, recommencez sur l'autre calculatrice (mettre l'autre calculatrice en mode examen et copiez dessus ndless et khicas).\nActiver ndless puis lancez KhiCAS puis touche calculatrice (en-dessous de esc) puis selectionner l'item 11. mode examen, valider : ceci va effacer les donnees et desactiver le clignotement des leds.\n\nAu debut de l'examen, lorsque le surveillant demande d'activer le mode examen, quittez KhiCAS en tapant menu menu (ou appuyez sur reset), le mode examen sera a nouveau actif et les leds clignoteront. Vous pouvez activer ndless et lancez KhiCAS.\nPour les institutions n'acceptant pas KhiCAS en mode examen: demandez a vos etudiants de redemarrer la calculatrice, puis faire esc-on et reinitialiser le mode examen.";
-	      const char exam_mode_en_string[]="Running KhiCAS in exam mode requires preparation at home with a PC or a few minutes with another student having a Nspire CX/CXII.\nActivate exam mode on the target calculator (esc-on), connect the PC or the other calculator, copy ndless and khicas.tns (or luagiac.luax.tns and khicaslua.tns) to the target calc (kept in exam mode). With 2 calculators, repeat on the other calculator.\n Activate ndless and run KhiCAS. Type the calculator key below esc then select 11. Exam mode. This will desactivate leds blinking and clear data. When exam begins, quit KhiCAS (menu menu) or press reset, exam mode will be active again and leds will blink. Activate ndless and run KhiCAS.\n\nFor institutions who do not want to allow KhiCAS, ask your students to reset their calculator, press esc-on and restart exam mode, this will clear ndless and KhiCAS.";
+	      const char exam_mode_fr_string[]="Pour utiliser KhiCAS en mode examen, il faut effectuer une preparation chez soi quelques heures avant avec une connection PC ou quelques minutes avant l'examen avec un autre etudiant ayant une Nspire CX ou CX II.\nLancer le mode examen sur la calculatrice cible (esc-on), recopier ndless et khicas.tns (ou luagiac.luax.tns et khicaslua.tns) sur la calculatrice cible en mode examen. Avec 2 calculatrices, recommencez sur l'autre calculatrice (mettre l'autre calculatrice en mode examen et copiez dessus ndless et khicas).\nActiver ndless (cable debranche) puis lancez KhiCAS puis touche calculatrice (en-dessous de esc) puis selectionner l'item 11. mode examen, valider : ceci va effacer les donnees et desactiver le clignotement des leds.\n\nAu debut de l'examen, lorsque le surveillant demande d'activer le mode examen, quittez KhiCAS en tapant menu menu (ou appuyez sur reset), le mode examen sera a nouveau actif et les leds clignoteront. Vous pouvez activer ndless et lancez KhiCAS.\nPour les institutions n'acceptant pas KhiCAS en mode examen: demandez a vos etudiants de redemarrer la calculatrice, puis faire esc-on et reinitialiser le mode examen.";
+	      const char exam_mode_en_string[]="Running KhiCAS in exam mode requires preparation at home with a PC or a few minutes with another student having a Nspire CX/CXII.\nActivate exam mode on the target calculator (esc-on), connect the PC or the other calculator, copy ndless and khicas.tns (or luagiac.luax.tns and khicaslua.tns) to the target calc (kept in exam mode). With 2 calculators, repeat on the other calculator.\n Activate ndless (disconnect the link) and run KhiCAS. Type the calculator key below esc then select 11. Exam mode. This will desactivate leds blinking and clear data. When exam begins, quit KhiCAS (menu menu) or press reset, exam mode will be active again and leds will blink. Activate ndless and run KhiCAS.\n\nFor institutions who do not want to allow KhiCAS, ask your students to reset their calculator, press esc-on and restart exam mode, this will clear ndless and KhiCAS.";
 	      add(&text,(lang==1)?exam_mode_fr_string:exam_mode_en_string);
 	      if (doTextArea(&text,contextptr)==KEY_SHUTDOWN)
 		return ;
@@ -9637,13 +9646,13 @@ namespace xcas {
 	      exam_start=0;
 	      exam_duration=1;
 #endif
-	      set_exam_mode(1,contextptr);
 	      do_restart(contextptr);
 	      clear_turtle_history(contextptr);
 	      Console_Init(contextptr);
 	      Console_Clear_EditLine();
-	      console_changed=0;
+	      set_exam_mode(1,contextptr);
 	      strcpy(session_filename,"session.xw");
+	      console_changed=0;
 	      save_session(contextptr);
 	      if (edptr){
 		edptr->elements.resize(1);
@@ -11178,13 +11187,16 @@ namespace xcas {
     return true;
   }
   
-  void check_nspire_exam_mode(){
+  void check_nspire_exam_mode(GIAC_CONTEXT){
     if (nspire_exam_mode==2){
       // reset
       if (is_cx2)
 	*(unsigned *) 0x90140020=8*16;
       else
 	*(unsigned *) 0x900a0008=2;
+    }
+    if (nspire_exam_mode==1){
+      set_exam_mode(3,contextptr); exam_mode=0;
     }
   }
 
@@ -11389,7 +11401,7 @@ namespace xcas {
 	  if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
 	    if (smallmenu.selection==smallmenu.numitems){
 	      if (nspire_exam_mode==2)
-		check_nspire_exam_mode();
+		check_nspire_exam_mode(contextptr);
 	      if (!exam_mode)
 		return KEY_CTRL_MENU;
 	      leave_exam_mode(contextptr);
@@ -12540,8 +12552,11 @@ namespace xcas {
     // detect if leds are blinking
     unsigned green=*(unsigned *) 0x90110b04;
     unsigned red=*(unsigned *) 0x90110b0c;
-    if (green || red)
-      nspire_exam_mode=1; 
+    if (green || red){
+      nspire_exam_mode=1;
+    }
+    // CX and CX II we should modify the led colors to match CAS exam mode
+    // red value should be the same as green value -> yellow
     // try to detect emulator or real calc
     unsigned NSPIRE_SPEED=0x900B0000;
     unsigned speed=*(unsigned *)NSPIRE_SPEED;
@@ -12570,6 +12585,9 @@ namespace xcas {
     giac::angle_radian(os_get_angle_unit()==0,contextptr);
     //GetKey(&key);
     Console_Disp(1,contextptr);
+    if (nspire_exam_mode){ // must save LED state for restoration at end
+      set_exam_mode(2,contextptr); exam_mode=0;
+    }
     // GetKey(&key);
     char *expr=0;
 #ifndef NO_STDEXCEPT
@@ -12581,6 +12599,7 @@ namespace xcas {
 #ifdef NUMWORKS
 	return 0;
 #endif
+	check_nspire_exam_mode(contextptr);
 #ifdef MICROPY_LIB
 	python_free();
 #endif
@@ -12591,7 +12610,6 @@ namespace xcas {
 	  delete sheetptr;
 	  sheetptr=0;
 	}
-	check_nspire_exam_mode();
 	return 0;
       }
       if (strcmp((const char *)expr,"restart")==0){
@@ -12628,6 +12646,7 @@ namespace xcas {
 #ifdef NUMWORKS
     return 0;
 #endif
+    check_nspire_exam_mode(contextptr);
     Console_Free();
     release_globals();
 #ifdef MICROPY_LIB
@@ -12638,7 +12657,6 @@ namespace xcas {
       delete sheetptr;
       sheetptr=0;
     }
-    check_nspire_exam_mode();
     return 0;
   }
 
