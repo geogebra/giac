@@ -25,6 +25,7 @@ using namespace std;
 #include <cmath>
 #include "pari.h"
 #include "gen.h"
+#include "quater.h"
 
 // uncomment to remove NTL factorization
 // #undef HAVE_LIBNTL
@@ -1401,6 +1402,73 @@ namespace giac {
 
 
 #endif // ndef HAVE_LIBNTL
+
+  gen _is_irreducible(const gen & args,GIAC_CONTEXT){
+    gen arg;
+    if (args.type!=_VECT)
+      arg=makesequence(args,ggb_var(args));
+    else
+      arg=args;
+    vecteur v;
+    v=*arg._VECTptr;
+    if (!lidnt(v).empty()){
+      if (v.size()!=2)
+	return gentypeerr(contextptr);
+      gen f=v[0],x=v[1];
+      f=_symb2poly(makesequence(f,x),contextptr);
+      if (f.type==_FRAC)
+	f=f._FRACptr->num;
+      if (f.type!=_VECT)
+	return gentypeerr(contextptr);
+      v=*f._VECTptr;
+    }
+    if (v.size()==1)
+      return 0;
+    if (v.size()==2)
+      return 1;
+    // coeff type
+    gen coeff;
+    int t=coefftype(v,coeff);
+    if (t==_MOD){
+      v=*unmod(v)._VECTptr;
+      vecteur vmin;
+      if (is_irreducible_primitive(v,*(coeff._MODptr+1),vmin,2,contextptr))
+	return 1;
+      return 0;
+    }
+    gen g=_poly2symb(makesequence(v,vx_var),contextptr);
+    coeff=_factors(g,contextptr);
+    if (coeff.type!=_VECT)
+      return undef;
+    v=*coeff._VECTptr;
+    if (v.size()>4)
+      return 0;
+    if (v.size()==2)
+      return 1;
+    if (v[0].type<_IDNT || v[0].type==_MOD || v[0].type==_USER)
+      return 1;
+    if (v[2].type<_IDNT || v[2].type==_MOD || v[2].type==_USER)
+      return 1;
+    return 0;
+  }
+  static const char _is_irreducible_s []="is_irreducible";
+  static define_unary_function_eval (__is_irreducible,&_is_irreducible,_is_irreducible_s);
+  define_unary_function_ptr5( at_is_irreducible ,alias_at_is_irreducible,&__is_irreducible,0,true);
+
+  gen _max_alg_ext_order_size(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if (g.type==_VECT && g._VECTptr->empty())
+      return MAX_ALG_EXT_ORDER_SIZE;
+    if (g.type!=_INT_ || g.val<0)
+      return gensizeerr(contextptr);
+    if (g.val>0)
+      MAX_ALG_EXT_ORDER_SIZE=g.val;
+    return MAX_ALG_EXT_ORDER_SIZE;
+  }
+  static const char _max_alg_ext_order_size_s []="max_alg_ext_order_size";
+  static define_unary_function_eval (__max_alg_ext_order_size,&_max_alg_ext_order_size,_max_alg_ext_order_size_s);
+  define_unary_function_ptr5( at_max_alg_ext_order_size ,alias_at_max_alg_ext_order_size,&__max_alg_ext_order_size,0,true);
+
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac

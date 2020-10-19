@@ -86,7 +86,7 @@ namespace giac {
 
   // Is the polynomial v irreducible and primitive modulo p?
   // If it is only irreducible, returns 2 and sets vmin to a primitive poly mod p if primitive is true
-  int is_irreducible_primitive(const modpoly & v,const gen & p,modpoly & vmin,bool primitive,GIAC_CONTEXT){
+  int is_irreducible_primitive(const modpoly & v,const gen & p,modpoly & vmin,int primitive,GIAC_CONTEXT){
     vmin=v;
     int m=int(v.size())-1;
     if (m<2)
@@ -110,8 +110,9 @@ namespace giac {
 	return 0;
       }
     }
-    if (!primitive){
-      *logptr(contextptr) << gettext("Warning, minimal polynomial is only irreducible, not necessarily primitive") << '\n';
+    if (primitive!=1){
+      if (primitive==0)
+	*logptr(contextptr) << gettext("Warning, minimal polynomial is only irreducible, not necessarily primitive") << '\n';
       return 3;
     }
     // Primi: must not divide x^[(p^m-1)/d]-1 for any prime divisor d of p^m-1
@@ -214,7 +215,7 @@ namespace giac {
 	  test[j]=giac_rand(contextptr)%p;
       }
       // *logptr(contextptr) << test << '\n';
-      if (is_irreducible_primitive(test,p,test2,primitive,contextptr))
+      if (is_irreducible_primitive(test,p,test2,primitive?1:0,contextptr))
 	return test2;
     }
     *logptr(contextptr) << gettext("Warning, random search for irreducible polynomial did not work, starting exhaustive search") << '\n';
@@ -228,7 +229,7 @@ namespace giac {
 	test[j]=k1%p;
 	k1/=p;
       }
-      if (is_irreducible_primitive(test,p,test2,primitive,contextptr))
+      if (is_irreducible_primitive(test,p,test2,primitive?1:0,contextptr))
 	return test2;
     }
     return vecteur(1,gensizeerr(gettext("No irreducible primitive polynomial found")));
@@ -340,7 +341,7 @@ namespace giac {
 	  gen P=unmod(_e2r(makesequence(v[1],v[2]),contextptr));
 	  if (P.type==_VECT){
 	    vecteur vmin; // not used
-	    int res=is_irreducible_primitive(*P._VECTptr,v[0],vmin,false,contextptr);
+	    int res=is_irreducible_primitive(*P._VECTptr,v[0],vmin,0,contextptr);
 	    if (res==0)
 	      return gensizeerr("Polynomial "+v[1].print(contextptr)+" is not irreducible modulo "+v[0].print(contextptr));
 	    fieldvalue=galois_field(v[0],smod(P,v[0]),v[2],undef);
@@ -386,7 +387,7 @@ namespace giac {
     if (v[1].type!=_VECT)
       return gensizeerr();
     if (is_undef(v[3])){
-      int res=is_irreducible_primitive(*v[1]._VECTptr,v[0],vmin,primitive,contextptr);
+      int res=is_irreducible_primitive(*v[1]._VECTptr,v[0],vmin,primitive?1:0,contextptr);
       if (!res)
 	return gensizeerr(gettext("Not irreducible or not primitive polynomial")+args.print());
       if (res==2)
