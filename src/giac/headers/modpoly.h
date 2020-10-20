@@ -198,6 +198,7 @@ namespace giac {
   void gcdsmallmodpoly(const modpoly &p,const modpoly & q,int m,modpoly & d);
   void DivRem(const std::vector<int> & th, const std::vector<int> & other,int m,std::vector<int> & quo, std::vector<int> & rem,bool ck_exactquo=false);
   modpoly gcd(const modpoly & a,const modpoly &b,environment * env,bool call_ntl=false); 
+  void euclide_gcd(const modpoly &p,const modpoly & q,environment * env,modpoly &a);
   // n-var modular gcd
   bool gcd_modular(const polynome &p_orig, const polynome & q_orig, polynome & pgcd,polynome & pcofactor,polynome & qcofactor,bool compute_cofactors);
 

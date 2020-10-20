@@ -6687,6 +6687,22 @@ namespace giac {
     }
   }
 
+  void euclide_gcd(const modpoly &p,const modpoly & q,environment * env,modpoly &a){
+    a=p;
+    modpoly b(q);
+    modpoly quo,rem;
+    while (!b.empty()){
+      gen s=b.front();
+      mulmodpoly(b,invenv(s,env),env,b);
+      DivRem(a,b,env,quo,rem);
+      // COUT << "a:" << a << "b:" << b << "q:" << quo << "r:" << rem << '\n';
+      swap(a,b); // newa=b,  
+      swap(b,rem); // newb=rem
+    }
+    if (!a.empty())
+      mulmodpoly(a,invenv(a.front(),env),env,a);
+  }
+
   bool gcdmodpoly(const modpoly &p,const modpoly & q,environment * env,modpoly &a){
     if (!env){
 #ifndef NO_STDEXCEPT
@@ -6753,19 +6769,7 @@ namespace giac {
 	return true;
     }
 #endif
-    a=p;
-    modpoly b(q);
-    modpoly quo,rem;
-    while (!b.empty()){
-      gen s=b.front();
-      mulmodpoly(b,invenv(s,env),env,b);
-      DivRem(a,b,env,quo,rem);
-      // COUT << "a:" << a << "b:" << b << "q:" << quo << "r:" << rem << '\n';
-      swap(a,b); // newa=b,  
-      swap(b,rem); // newb=rem
-    }
-    if (!a.empty())
-      mulmodpoly(a,invenv(a.front(),env),env,a);
+    euclide_gcd(p,q,env,a);
     return true;
   }
 

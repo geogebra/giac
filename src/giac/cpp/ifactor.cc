@@ -4720,6 +4720,8 @@ namespace giac {
   }
 
   gen _znprimroot(const gen & p,GIAC_CONTEXT){
+    if (p.type==_INT_ && is_probab_prime_p(p))
+      return makemod(generator(p.val),p);
 #ifdef HAVE_LIBPARI
     if (!is_integer(p))
       return gentypeerr(contextptr);

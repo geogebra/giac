@@ -102,6 +102,7 @@ namespace giac {
   // if primitive==0 or 2 does not compute vmin 
   // issues a warning if primitive==0
   int is_irreducible_primitive(const vecteur & v,const gen & p,vecteur & vmin,int primitive,GIAC_CONTEXT);
+  int is_irreducible(const vecteur &v,const gen &g);
   vecteur find_irreducible_primitive(const gen & p,int m,int primitive,GIAC_CONTEXT);
   gen _galois_field(const gen & args,GIAC_CONTEXT);
 

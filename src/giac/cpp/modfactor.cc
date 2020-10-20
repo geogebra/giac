@@ -1426,6 +1426,12 @@ namespace giac {
       return 0;
     if (v.size()==2)
       return 1;
+    vecteur w=derivative(v);
+    vecteur d=gcd(v,w,0,false);
+    if (d.size()>1
+	//&& d.size()<v.size()
+	)
+      return 0;
     // coeff type
     gen coeff;
     int t=coefftype(v,coeff);
@@ -1436,6 +1442,10 @@ namespace giac {
 	return 1;
       return 0;
     }
+#ifndef NO_RTTI
+    if (coeff.type==_USER)
+      return is_irreducible(v,coeff);
+#endif
     gen g=_poly2symb(makesequence(v,vx_var),contextptr);
     coeff=_factors(g,contextptr);
     if (coeff.type!=_VECT)

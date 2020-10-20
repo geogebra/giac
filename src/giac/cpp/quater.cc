@@ -1930,6 +1930,42 @@ namespace giac {
     return 0;
   }
 
+  int is_irreducible(const vecteur & v,const gen &g){
+    if (v.size()<2) return 0;
+    if (v.size()==2) return 1;
+    gen card;
+    environment env;
+    if (g.type==_MOD){
+      card=*(g._MODptr+1);
+    }
+    else {
+      if (g.type!=_USER)
+	return -1;
+      if (galois_field * gf=dynamic_cast<galois_field *>(g._USERptr)){
+	env.modulo=gf->p;
+	env.coeff=g;
+	card=pow(gf->p,gfsize(gf->P),context0);
+      }
+    }
+    env.modulo=card;
+    env.moduloon=true;
+    gen un(pow(g,0,context0));
+    for (int i=1;i<=(v.size()-1)/2;i++){
+      modpoly xpi(powmod(makevecteur(un,1),pow(card,i,context0)-1,v,&env)),G;
+      if (xpi.empty())
+	xpi.push_back(-un);
+      else {
+	xpi.back()-=un;
+	if (xpi.size()==1 && is_zero(xpi.back()))
+	  xpi.clear();
+      }
+      euclide_gcd(v,xpi,&env,G);
+      if (G.size()>1)
+	return 0;
+    }
+    return 1;
+  }
+
   gen galois_field::makegen(int i) const {
     if (p.type==_ZINT)
       return galois_field(p,P,x,vecteur(1,i));
