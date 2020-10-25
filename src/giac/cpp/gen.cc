@@ -3164,7 +3164,7 @@ namespace giac {
 	  }
 	}
       }
-      if (equalposcomp(plot_sommets,_SYMBptr->sommet) || equalposcomp(analytic_sommets,_SYMBptr->sommet) || _SYMBptr->sommet==at_surd || _SYMBptr->sommet==at_erf)
+      if (equalposcomp(plot_sommets,_SYMBptr->sommet) || equalposcomp(analytic_sommets,_SYMBptr->sommet) || _SYMBptr->sommet==at_surd || _SYMBptr->sommet==at_erf || _SYMBptr->sommet==at_division)
 	return new_ref_symbolic(symbolic(_SYMBptr->sommet,_SYMBptr->feuille.conj(contextptr)));
       else
 	return new_ref_symbolic(symbolic(at_conj,*this));

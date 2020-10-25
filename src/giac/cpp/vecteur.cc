@@ -998,6 +998,9 @@ namespace giac {
 	g=vecteur(nc,g);
       vecteur & v=*g._VECTptr;
       for (int j=0;j<nc;++j){
+	if (v[j].type<_IDNT) {
+	  continue;
+	}
 	vecteur w;
 	if ((v[j].type==_VECT) && (v[j].subtype==0))
 	  w=*v[j]._VECTptr;
@@ -1109,7 +1112,10 @@ namespace giac {
       *logptr(contextptr) << gettext("Interrupted ") << m_row << " " << m_col << '\n';
       return undef;
     }
-    const gen & g=m[m_row][m_col][0];
+    const gen &g1=m[m_row][m_col];
+    if (g1.type!=_VECT)
+      return g1;
+    const gen & g=g1[0];
     if (g.type!=_SYMB && g.type!=_VECT)
       return protecteval(g,eval_level(contextptr),contextptr);
     int & mr =spread_Row(contextptr);
@@ -1165,6 +1171,11 @@ namespace giac {
 	if ( i>=0 && i<ms ){
 	  vecteur & w=*m[i]._VECTptr;
 	  if ( j>=0 && j<signed(w.size()) ){
+	    if (w[j].type!=_VECT){
+	      sub_in.push_back(*it);
+	      sub_out.push_back(w[j]);
+	      continue;
+	    }
 	    vecteur & wj=*w[j]._VECTptr;
 	    if (wj.back().val==1)
 	      return string2gen("Recursive eval",false);
@@ -1211,7 +1222,10 @@ namespace giac {
     for (int i=0;i<nr;++i){
       vecteur & v=*m[i]._VECTptr;
       for (int j=0;j<nc;++j){
-	vecteur & w=*v[j]._VECTptr;
+	gen & vj=v[j];
+	if (vj.type!=_VECT)
+	  continue;
+	vecteur & w=*vj._VECTptr;
 	if (w.front().type<=_POLY){
 	  w[1]=w[0];
 	  w[2].val=2;
@@ -1225,7 +1239,10 @@ namespace giac {
     for (int i=0;!interrupted && i<nr;++i){
       vecteur & v=*m[i]._VECTptr;
       for (int j=0;!interrupted && j<nc;++j){
-	vecteur & w=*v[j]._VECTptr;
+	gen & vj=v[j];
+	if (vj.type!=_VECT)
+	  continue;
+	vecteur & w=*vj._VECTptr;
 	if (w[2].val==2)
 	  continue;
 	w[2].val=1;

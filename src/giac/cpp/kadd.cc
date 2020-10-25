@@ -480,6 +480,8 @@ bool sheet_display(tableur &t,GIAC_CONTEXT){
     for (int j=t.disp_col_begin;j<J;++j){
       draw_line(x,y,x,y+row_height,_BLACK);
       gen vj=v[j];
+      if (vj.type<_IDNT)
+	vj=makevecteur(vj,vj,0);
       if (vj.type==_VECT && vj._VECTptr->size()==3){
 	bool iscur=i==t.cur_row && j==t.cur_col;
 	string s;

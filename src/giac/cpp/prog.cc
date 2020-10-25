@@ -935,7 +935,8 @@ namespace giac {
       if (xcas_mode(contextptr)==3)
 	return res+":Func "+fb.print(contextptr)+"\n:EndFunc\n";
       if (fb.is_symb_of_sommet(at_local)){
-	gen fb0=fb._SYMBptr->feuille[0][0];
+	gen fb0=fb._SYMBptr->feuille[0];
+	//fb0=fb0[0];
 	if (fb0.type==_VECT && fb0._VECTptr->empty())
 	  return res+'{'+fb.print(contextptr)+'}';
       }
@@ -6532,7 +6533,7 @@ namespace giac {
       args=int(g._DOUBLE_val);    
     if (args.type!=_INT_)
       return eval_level(contextptr);
-    eval_level(contextptr)=args.val;
+    eval_level(contextptr)=giacmax(args.val,1);
     DEFAULT_EVAL_LEVEL=args.val;
     return args;
   }

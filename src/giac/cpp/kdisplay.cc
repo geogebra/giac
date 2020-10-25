@@ -12554,6 +12554,10 @@ namespace xcas {
     unsigned red=*(unsigned *) 0x90110b0c;
     if (green || red){
       nspire_exam_mode=1;
+      if (is_cx2){
+	if (!do_confirm(lang?"Le CAS est-il autorise en examen?":"Is CAS allowed during exam?"))
+	  return 0;
+      }
     }
     // CX and CX II we should modify the led colors to match CAS exam mode
     // red value should be the same as green value -> yellow

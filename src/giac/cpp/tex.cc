@@ -1319,11 +1319,12 @@ namespace giac {
     }
   }
 
+  bool legacy=false;
   // assume math mode enabled
   string gen2tex(const gen & e,GIAC_CONTEXT){
     string s;
 #if 1 //ndef S390X
-    if (has_improved_latex_export(e,s,false,contextptr))
+    if (!legacy && has_improved_latex_export(e,s,false,contextptr))
       return s;
 #endif
     switch (e.type){
@@ -1390,6 +1391,11 @@ namespace giac {
 #endif
   gen _latex(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if (g.type==_VECT && g._VECTptr->size()==2 && g._VECTptr->front().type==_STRNG && *g._VECTptr->front()._STRNGptr=="legacy"){
+      bool b=is_zero(g._VECTptr->back());
+      legacy=!b;
+      return legacy;
+    }
 #if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38 && !defined KHICAS && !defined NSPIRE_NEWLIB
     if (!secure_run && g.type==_VECT && g.subtype==_SEQ__VECT && g._VECTptr->size()==2 && (*g._VECTptr)[1].type==_STRNG){
       ofstream of((*g._VECTptr)[1]._STRNGptr->c_str());
@@ -1398,7 +1404,7 @@ namespace giac {
     }
 #endif
     string s;
-    if (!has_improved_latex_export(g,s,true,contextptr))
+    if (legacy || !has_improved_latex_export(g,s,true,contextptr))
       s=gen2tex(g,contextptr);
     return string2gen(s,false);
   }

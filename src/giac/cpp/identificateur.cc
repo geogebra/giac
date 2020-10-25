@@ -990,7 +990,7 @@ namespace giac {
 #endif
 
   gen identificateur::eval(int level,const gen & orig,const context * contextptr) {
-    if (!ref_count)
+    if (!ref_count && !contextptr)
       return orig;
     gen evaled;
     // cerr << "idnt::eval " << *this << " " << level << '\n';
