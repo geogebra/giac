@@ -6306,7 +6306,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	  break;
 	for (int pos2=pos-1;pos2>=0;--pos2){
 	  ch=res[pos2];
-	  if (ch!=' ' && ch!=9){
+	  if (ch!=' ' && ch!=9 && ch!='\r'){
 	    if (ch=='{' || ch=='[' || ch==',' || ch=='-' || ch=='+' ||  ch=='/')
 	      cherche=true;
 	    break;
@@ -6314,7 +6314,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	}
 	for (size_t pos2=pos+1;pos2<res.size();++pos2){
 	  ch=res[pos2];
-	  if (ch!=' ' && ch!=9){
+	  if (ch!=' ' && ch!=9 && ch!='\r'){
 	    if (ch==']' || ch=='}' || ch==')')
 	      cherche=true;
 	    break;
@@ -6332,7 +6332,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
       bool instring=false,chkfrom=true;
       for (pos=0;pos<int(cur.size());++pos){
 	char ch=cur[pos];
-	if (ch==' ' || ch==char(9))
+	if (ch==' ' || ch==char(9) || ch=='\r')
 	  continue;
 	if (!instring && pythoncompat && ch=='{' && (pos==0 || cur[pos-1]!='\\')){
 	  // find matching }, counting : and , and ;
@@ -6511,7 +6511,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
       }
       // detect : at end of line
       for (pos=int(cur.size())-1;pos>=0;--pos){
-	if (cur[pos]!=' ' && cur[pos]!=char(9))
+	if (cur[pos]!=' ' && cur[pos]!=char(9) && cur[pos]!='\r')
 	  break;
       }
       if (pos<0){ 
@@ -6575,7 +6575,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	    convert_python(cur,contextptr);
 	    // no fi if there is an else or elif
 	    for (p=0;p<int(res.size());++p){
-	      if (res[p]!=' ' && res[p]!=char(9))
+	      if (res[p]!=' ' && res[p]!=char(9) && res[p]!='\r')
 		break;
 	    }
 	    if (p<res.size()+5 && (res.substr(p,4)=="else" || res.substr(p,4)=="elif")){
@@ -6620,7 +6620,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
       int ws=0;
       int cs=cur.size();
       for (ws=0;ws<cs;++ws){
-	if (cur[ws]!=' ' && cur[ws]!=char(9))
+	if (cur[ws]!=' ' && cur[ws]!=char(9) && cur[ws]!='\r')
 	  break;
       }
       if (cur[pos]==':'){

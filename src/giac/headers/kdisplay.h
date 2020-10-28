@@ -280,13 +280,14 @@ namespace xcas {
   };
 
   enum CONSOLE_SCREEN_SPEC {
-			    _LINE_MAX = 48,
-			    LINE_DISP_MAX = 11,
 #ifdef NSPIRE_NEWLIB
+			    _LINE_MAX = 128,
 			    COL_DISP_MAX = 32,
 #else
+			    _LINE_MAX = 48,
 			    COL_DISP_MAX = 30,//32
 #endif
+			    LINE_DISP_MAX = 11,
 			    EDIT_LINE_MAX = 2048
   };
   

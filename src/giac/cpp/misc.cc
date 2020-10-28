@@ -19,7 +19,9 @@
 
 using namespace std;
 #ifdef HAVE_UNISTD_H
+#ifndef NUMWORKS
 #include <dirent.h>
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 #endif
@@ -9954,7 +9956,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   static define_unary_function_eval (__modf,&_modf,_modf_s);
   define_unary_function_ptr5( at_modf ,alias_at_modf,&__modf,0,true);
 
-#ifdef HAVE_UNISTD_H
+#if defined HAVE_UNISTD_H && !defined NUMWORKS
   void locate_files(const char * dirname,const char * ext_,vector<string> & v,bool recurse,GIAC_CONTEXT){
     DIR *dp;
     struct dirent *ep;

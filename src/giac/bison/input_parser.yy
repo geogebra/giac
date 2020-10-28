@@ -67,8 +67,13 @@ namespace giac {
 // instead of 200
 // Feel free to change if you need but then readjust YYMAXDEPTH
 #if defined RTOS_THREADX || defined NSPIRE || defined NSPIRE_NEWLIB || defined NUMWORKS
+#ifdef RTOS_THREADX
 #define YYINITDEPTH 100
 #define YYMAXDEPTH 101
+#else
+#define YYINITDEPTH 200
+#define YYMAXDEPTH 201
+#endif
 #else // RTOS_THREADX
 // Note that the compilation by bison with -v option generates a file y.output
 // to debug the grammar, compile input_parser.yy with bison
