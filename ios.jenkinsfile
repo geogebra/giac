@@ -1,5 +1,6 @@
 // This file will be deleted and merged into Jenkinsfile
 pipeline {
+  agent any
   stages {
     stage('Build') {
       steps {
