@@ -636,7 +636,7 @@ task cocoapodsZip(dependsOn: ['createFatIosStaticLibrary'], type: Zip) {
     destinationDir = file("${buildDir}/cocoapods/")
 }
 
-task publishPodspec(dependsOn: ['createPodspec', 'publishMavenZipPublicationToMavenRepository'], type: Exec) {
+task publishPodspec(dependsOn: ['installGems', 'createPodspec', 'publishMavenZipPublicationToMavenRepository'], type: Exec) {
     commandLine 'bundle', 'exec', 'pod', 'repo', 'push', 'geogebra-specs', "${buildDir}/cocoapods/Giac.podspec", '--allow-warnings'
 }
 
