@@ -280,7 +280,7 @@ task publishNodegiac (dependsOn: 'updateNodegiacWebCommit') {
 }
 
 // Top level task
-task updateGiac (dependsOn: [':publish', ':giac-android:publish']) {
+task updateGiac (dependsOn: [':publishMavenJavaPublicationToMavenRepository', ':giac-android:publish']) {
     description 'Commits all update related changes for Giac.'
 }
 
