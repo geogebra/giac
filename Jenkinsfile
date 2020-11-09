@@ -20,6 +20,18 @@ pipeline {
           cp -r ~/workspace/backup-Giac/geogebra/giac/emsdk .
           ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --info --refresh-dependencies
           ./gradlew :updateGiac :publishNodegiac --no-daemon -Prevision=$SVN_REVISION --info'''
+        node('mac') {
+          checkout([$class: 'SubversionSCM', 
+            locations: [[cancelProcessOnExternalsFail: true, 
+              credentialsId: 'svn', 
+              depthOption: 'infinity', 
+              ignoreExternalsOption: true, 
+              local: '.', 
+              remote: 'https://dev.geogebra.org/svn/trunk/geogebra/giac']], 
+            quietOperation: true, 
+            workspaceUpdater: [$class: 'UpdateUpdater']])
+          sh './gradlew publishPodspec -Prevision=$SVN_REVISION'
+        }
       }
     }
   }
