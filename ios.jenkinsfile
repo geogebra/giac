@@ -1,6 +1,9 @@
 // This file will be deleted and merged into Jenkinsfile
 pipeline {
   agent any
+  environment {
+    MAVEN = credentials('maven')
+  }
   stages {
     stage('Build') {
       steps {
@@ -14,6 +17,7 @@ pipeline {
               remote: 'https://dev.geogebra.org/svn/trunk/geogebra/giac']], 
             quietOperation: true, 
             workspaceUpdater: [$class: 'UpdateUpdater']])
+          sh './gradlew giac:publishPodspec -Prevision=$SVN_REVISION'
         }
       }
     }

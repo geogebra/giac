@@ -128,7 +128,7 @@ if (clangBin.length() > 0) {
 def iphoneosSdk = exec_("xcrun", "--sdk", "iphoneos", "--show-sdk-path")
 def iphonesimulatorSdk = exec_("xcrun", "--sdk", "iphonesimulator", "--show-sdk-path")
 def iphoneosPlatform = exec_("xcrun", "--sdk", "iphoneos", "--show-sdk-platform-path")
-def minIosVersion = '9.0'
+def minIosVersion = '11.0'
 
 def iosClangCompilerArgs(args, sdk, arch, minIosVersion) {
     for (int i = args.size() - 1; i >= 0; i--) { 
@@ -584,6 +584,18 @@ task giacIosStaticLibrary(dependsOn: [
     'giacIos_x86_64StaticLibrary'
 ])
 
+task configBundle(type: Exec) {
+    executable 'bundle'
+    args 'config', 'set', 'path', './.gems'
+    workingDir rootDir
+}
+
+task installGems(type: Exec, dependsOn: 'configBundle') {
+    executable 'bundle'
+    args 'install'
+    workingDir rootDir
+}
+
 task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'giacIosStaticLibrary']) {
     doLast {
         def output = "build/libs/lipo"
@@ -594,18 +606,38 @@ task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'g
     }
 }
 
-task zipIosLibrary(dependsOn: 'createFatIosStaticLibrary', type: Zip) {
+task createPodspec() {
+    inputs.file "src/simpleInterface/pod/Giac.podspec"
+    outputs.file "${buildDir}/cocoapods/Giac.podspec"
+    doLast {
+        def posdpec = inputs.files.singleFile
+        def engine = new groovy.text.SimpleTemplateEngine()
+        def binding = [version: ggrev]
+        def template = engine.createTemplate(posdpec).make(binding)
+        def outputFile = outputs.files.singleFile
+        outputFile.parentFile.mkdirs()
+        outputFile.write template.toString()
+    }
+}
+
+task cocoapodsZip(dependsOn: ['createFatIosStaticLibrary'], type: Zip) {
     baseName 'Giac'
     from("src/simpleInterface/headers") {
         include "*.hpp"
-        into("headers")
+        into("Giac/headers")
     }
     from("${buildDir}/libs/lipo") {
         include "libsimpleInterface.a", "libgiac.a", "libgmp.a", "libmpfr.a"
-        into("libs")
+        into("Giac/libs")
     }
-    from("src/simpleInterface/pod/Giac.podspec")
-    destinationDir = file("${buildDir}/archives/")
+    from("src/simpleInterface/pod/LICENSE") {
+        into("Giac")
+    }
+    destinationDir = file("${buildDir}/cocoapods/")
+}
+
+task publishPodspec(dependsOn: ['createPodspec', 'publishMavenZipPublicationToMavenRepository'], type: Exec) {
+    commandLine 'bundle', 'exec', 'pod', 'repo', 'push', 'geogebra-specs', "${buildDir}/cocoapods/Giac.podspec", '--allow-warnings'
 }
 
 task installMinigiacExecutable (dependsOn: 'installMinigiacLinux64Executable')

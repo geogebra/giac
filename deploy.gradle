@@ -213,6 +213,16 @@ publishing {
                 description = 'Java Giac for GeoGebra'
             }
         }
+        mavenZip(MavenPublication) {
+            artifactId = 'javagiac'
+            groupId = 'fr.ujf-grenoble'
+            version = ggrev
+            artifact cocoapodsZip
+            pom {
+                name = 'iOS Cocoapods Zip'
+                packaging = 'zip'
+            }
+        }
     }
 }
 
