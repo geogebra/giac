@@ -574,6 +574,77 @@ namespace giac {
   static define_unary_function_eval (__suppress,&_suppress,_suppress_s);
   define_unary_function_ptr5( at_suppress ,alias_at_suppress,&__suppress,0,true);
 
+  void adjust_pixels_dim(const vecteur & V,int & I,int &J){
+    const_iterateur it=V.begin(),itend=V.end();
+    for (;it!=itend;++it){
+      gen g=remove_at_pnt(*it);
+      if (g.is_symb_of_sommet(at_pixon) && g._SYMBptr->feuille.type==_VECT){
+	vecteur &v=*g._SYMBptr->feuille._VECTptr;
+	if (v[0].type!=_INT_ || v[1].type!=_INT_)
+	  continue;
+	int psx=0,psy=0;
+	if (v.size()>3 && v[3].type==_INT_){
+	  if (v[3].val>0) psy=v[3].val; else psx=-v[3].val;
+	}
+	if (I<v[0].val+psx)
+	  I=v[0].val+psx;
+	if (J<v[1].val+psy)
+	  J=v[1].val+psy;
+      }
+    }
+    ++I; ++J;
+  }
+
+  void cleanup_pixels(vecteur & V){
+    V=merge_pixon(V);
+    // find dimensions
+    int I=screen_w,J=screen_h;
+    adjust_pixels_dim(V,I,J);
+    vector<bool> used(I*J);
+    for (int i=screen_w;i<I;++i){
+      for (int j=screen_h;j<J;++j)
+	used[i*J+j]=true;
+    }
+    vecteur W;
+    iterateur it=V.end(),itend=V.begin();
+    for (--it;it>=itend;--it){
+      W.push_back(*it);
+      gen g=remove_at_pnt(*it);
+      if (g.is_symb_of_sommet(at_pixon) && g._SYMBptr->feuille.type==_VECT){
+	vecteur &v=*g._SYMBptr->feuille._VECTptr;
+	if (v[0].type!=_INT_ || v[1].type!=_INT_)
+	  continue;
+	int psx=0,psy=0;
+	if (v.size()>3 && v[3].type==_INT_){
+	  if (v[3].val>0) psy=v[3].val; else psx=-v[3].val;
+	}
+	// look if pixels are already in use
+	int di=v[0].val,dj=v[1].val,i,j;
+	for (i=giacmax(di,0);i<=di+psx;++i){
+	  for (j=giacmax(dj,0);j<=dj+psy;++j){
+	    bool b=used[i*J+j];
+	    if (!b)
+	      break;
+	  }
+	  if (j<=dj+psy)
+	    break;
+	}
+	if (i>di+psx) // all pixels were already used, clean up this pixel
+	  W.pop_back();
+	else {
+	  // mark pixels
+	  for (i=giacmax(di,0);i<=di+psx;++i){
+	    for (j=giacmax(dj,0);j<=dj+psy;++j){
+	      used[i*J+j]=true;
+	    }
+	  }
+	}
+      }
+    }
+    reverse(W.begin(),W.end());
+    V.swap(W);
+  }
+
 #if defined GIAC_HAS_STO_38 || defined FXCG || defined NSPIRE
   const int pixel_lines=1; // 320; // calculator screen 307K
   const int pixel_cols=1; // 240;
@@ -589,6 +660,9 @@ namespace giac {
 #ifdef KHICAS
   void clear_pixel_buffer(){
   }
+  vecteur get_pixel_v(){
+    return vecteur(0);
+  }
 #else
   int pixel_buffer[pixel_lines][pixel_cols]; 
   void clear_pixel_buffer(){
@@ -600,6 +674,7 @@ namespace giac {
       }
     }
   }
+
   static gen & pixel_v(){
     static gen * ptr=0;
     if (ptr==0){
@@ -607,6 +682,21 @@ namespace giac {
       ptr=new gen(makevecteur(0));
     }
     return *ptr;
+  }
+
+  vecteur get_pixel_v(){
+    return *pixel_v()._VECTptr;
+  }
+
+  void pixel_v_clear(){
+    pixel_v()._VECTptr->clear();
+  }
+
+  void cleanup_pixel_v(){
+    cleanup_pixels(*pixel_v()._VECTptr);
+  }
+  void pixel_v_push_back(const gen & b){
+    pixel_v()._VECTptr->push_back(b);
   }
 #endif
   gen _clear(const gen & args,GIAC_CONTEXT){
@@ -621,7 +711,7 @@ namespace giac {
 #else
       clear_pixel_buffer();
 #endif // else HP
-      pixel_v()._VECTptr->clear();
+      pixel_v_clear();
       history_plot(contextptr).clear();
 #endif // else KHICAS
       return 1;
@@ -653,9 +743,9 @@ namespace giac {
     return _of(makesequence(FREEZE,args),contextptr);
 #else
 #ifdef EMCC
-    return pixel_v();
+    return get_pixel_v();
 #else
-    return makesequence(symb_equal(change_subtype(_AXES,_INT_PLOT),0),pixel_v());
+    return makesequence(symb_equal(change_subtype(_AXES,_INT_PLOT),0),get_pixel_v());
 #endif // EMCC
 #endif // STO_38
   }
@@ -9155,12 +9245,28 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     freeze=true;
     gen a(a_);
     if (a.type==_STRNG && a.subtype==-1) return  a;
-#ifdef KHICAS
     if (a.type==_VECT && a._VECTptr->empty()){
+#ifdef KHICAS
       sync_screen();
+#else 
+      cleanup_pixel_v();
+#endif
+      // cleanup_pixels(history_plot(contextptr));
+      // should also cleanup_pixels Xcas_DispG->plot_instructions
       return 1;
     }
+    if (a.type==_INT_)
+      a=evalf_double(a,1,contextptr);
+    if (a.type==_DOUBLE_){
+      // display getKey window and pause
+#ifdef KHICAS
+      sync_screen();
+      usleep(a._DOUBLE_val);
+#else 
+      cleanup_pixel_v();
+      return __getKey.op(a,contextptr);
 #endif
+    }
 #if defined GIAC_HAS_STO_38 || defined KHICAS
     if (a.type!=_VECT || a._VECTptr->size()<2)
       return gentypeerr(contextptr);
@@ -9187,9 +9293,9 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     //return _of(makesequence(PIXEL,a_),contextptr);
 #else // HP && KHICAS
     if (a.type==_VECT && a._VECTptr->empty())
-      return pixel_v();
+      return get_pixel_v();
     if (is_integral(a)){
-      pixel_v()._VECTptr->clear();
+      pixel_v_clear();
       if (a==0) a=vecteur(0);
       return _pixon(a,contextptr);
     }
@@ -9200,7 +9306,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       if (a.type!=_VECT || a._VECTptr->size()<2 || !is_integer_vecteur(v))
 	return 0;
       gen b(v,_SEQ__VECT);
-      pixel_v()._VECTptr->push_back(_pixon(b,contextptr));
+      pixel_v_push_back(_pixon(b,contextptr));
       size_t vs=v.size();
       if (vs>=2){
 	const gen & x=v.front();
@@ -9210,7 +9316,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	}
       }
     }
-    return pixel_v();
+    return 1;
 #endif // else HP && KHICAS
   }
 #ifdef KHICAS
@@ -9231,6 +9337,24 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   static const char _set_pixel_s []="set_pixel";
   static define_unary_function_eval (__set_pixel,&_set_pixel,_set_pixel_s);
   define_unary_function_ptr5( at_set_pixel ,alias_at_set_pixel,&__set_pixel,0,true);
+
+  int screen_w=320,screen_h=240;
+  gen _set_screen(const gen & g,GIAC_CONTEXT){
+    if (g.type!=_VECT)
+      return gensizeerr(contextptr);
+    if (g._VECTptr->empty())
+      return makevecteur(screen_w,screen_h);
+    if (g._VECTptr->size()!=2)
+      return gensizeerr(contextptr);
+    gen w=g._VECTptr->front(),h=g._VECTptr->back();
+    if (!is_integral(w) || !is_integral(h))
+      return gensizeerr(contextptr);
+    screen_w=giacmax(1,w.val);
+    screen_h=giacmax(1,h.val);
+  }
+  static const char _set_screen_s []="set_screen";
+  static define_unary_function_eval (__set_screen,&_set_screen,_set_screen_s);
+  define_unary_function_ptr5( at_set_screen ,alias_at_set_screen,&__set_screen,0,true);
 
   static const char _draw_pixel_s []="draw_pixel";
   static define_unary_function_eval (__draw_pixel,&_set_pixel,_draw_pixel_s);
@@ -9619,7 +9743,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     }
   }
   
-  gen _draw_arc(const gen & a_,bool arc,GIAC_CONTEXT){
+  gen _draw_arc(const gen & a_,int arc,GIAC_CONTEXT){
     freeze=true;
     gen a(a_);
     if (a.type==_STRNG && a.subtype==-1) return  a;
@@ -9627,7 +9751,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       return gentypeerr(contextptr);
     const vecteur & v=*a._VECTptr;
     size_t vs=v.size();
-    if (arc && vs<6)
+    if ( (arc&1) && vs<6)
       return gendimerr(contextptr);
     if (vs>=3){
       gen x0=v.front();
@@ -9639,20 +9763,20 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	y0=int(y0._DOUBLE_val+.5);
       if (r.type==_DOUBLE_)
 	r=int(r._DOUBLE_val+.5);
-      int attr=vs==(arc?6:3)?0:remove_at_display(v.back(),contextptr).val;
+      int attr=vs==( (arc&1) ?6:3)?0:remove_at_display(v.back(),contextptr).val;
       if (x0.type==_INT_ &&  y0.type==_INT_ && r.type==_INT_){
-	if (arc){
+	if (arc & 1){
 	  gen ry=v[3];
 	  if (ry.type==_DOUBLE_)
 	    ry=int(ry._DOUBLE_val+.5);
 	  gen theta1=evalf_double(v[4],1,contextptr);
 	  gen theta2=evalf_double(v[5],1,contextptr);
-	  if (attr & 0x40000000)
+	  if ((arc &2) || (attr & 0x40000000))
 	    draw_filled_arc(x0.val,y0.val,r.val,ry.val,int(theta1._DOUBLE_val*180/M_PI+.5),int(theta2._DOUBLE_val*180/M_PI+.5),attr & 0xffff,0,pixel_cols,0,pixel_lines,false,contextptr);
 	  draw_arc(x0.val,y0.val,r.val,ry.val,attr & 0xffff,theta1._DOUBLE_val,theta2._DOUBLE_val,contextptr);
 	}
 	else {
-	  if (attr & 0x40000000)
+	  if ((arc&2) ||(attr & 0x40000000))
 	    draw_filled_circle(x0.val,y0.val,r.val,attr &0xffff,true,true,contextptr);
 	  else
 	    draw_circle(x0.val,y0.val,r.val,attr & 0xffff,true,true,true,true,contextptr);
@@ -9665,18 +9789,32 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     //return _of(makesequence(PIXEL,a_),contextptr);
   }
   gen _draw_circle(const gen & a_,GIAC_CONTEXT){
-    return _draw_arc(a_,false,contextptr);
+    return _draw_arc(a_,0,contextptr);
   }
   static const char _draw_circle_s []="draw_circle";
   static define_unary_function_eval (__draw_circle,&_draw_circle,_draw_circle_s);
   define_unary_function_ptr5( at_draw_circle ,alias_at_draw_circle,&__draw_circle,0,true);
 
+  gen _draw_filled_circle(const gen & a_,GIAC_CONTEXT){
+    return _draw_arc(a_,2,contextptr);
+  }
+  static const char _draw_filled_circle_s []="draw_filled_circle";
+  static define_unary_function_eval (__draw_filled_circle,&_draw_filled_circle,_draw_filled_circle_s);
+  define_unary_function_ptr5( at_draw_filled_circle ,alias_at_draw_filled_circle,&__draw_filled_circle,0,true);
+
   gen _draw_arc(const gen & a_,GIAC_CONTEXT){
-    return _draw_arc(a_,true,contextptr);
+    return _draw_arc(a_,1,contextptr);
   }
   static const char _draw_arc_s []="draw_arc";
   static define_unary_function_eval (__draw_arc,&_draw_arc,_draw_arc_s);
   define_unary_function_ptr5( at_draw_arc ,alias_at_draw_arc,&__draw_arc,0,true);
+
+  gen _draw_filled_arc(const gen & a_,GIAC_CONTEXT){
+    return _draw_arc(a_,3,contextptr);
+  }
+  static const char _draw_filled_arc_s []="draw_filled_arc";
+  static define_unary_function_eval (__draw_filled_arc,&_draw_filled_arc,_draw_filled_arc_s);
+  define_unary_function_ptr5( at_draw_filled_arc ,alias_at_draw_filled_arc,&__draw_filled_arc,0,true);
 
   gen draw_line_or_rectangle(const gen & a_,GIAC_CONTEXT,int rect){
     gen a(a_);
@@ -9771,8 +9909,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 #else
     v.erase(v.begin());
     v.push_back(s);
-    pixel_v()._VECTptr->push_back(_pixon(gen(v,_SEQ__VECT),contextptr));
-    return pixel_v();
+    pixel_v_push_back(_pixon(gen(v,_SEQ__VECT),contextptr));
+    return 1;
 #endif // KHICAS
 #endif // HP
   }
@@ -9806,7 +9944,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 #ifdef KHICAS
     return undef;
 #else // KHICAS
-    const vecteur v= *pixel_v()._VECTptr;
+    const vecteur v= get_pixel_v();
     for (size_t i=0;i<v.size();++i){
       const gen & vi_=v[i];
       const gen * vi=&vi_;

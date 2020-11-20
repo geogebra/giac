@@ -154,6 +154,7 @@ namespace giac {
 #ifndef RTOS_THREADX
 #ifndef BESTA_OS
   extern unary_function_eval __getKey;
+  extern unary_function_eval __get_key;
 #endif
 #endif
   extern const unary_function_ptr * const  at_getKey;

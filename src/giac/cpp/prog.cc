@@ -8747,6 +8747,9 @@ namespace giac {
     gen graphe=symbolic(at_plotfunc,
 			gen(makevecteur(_cell(makevecteur(vecteur(1,minus_one),vecteur(1,zero)),contextptr),
 					symb_equal(_cell(makevecteur(vecteur(1,minus_one),vecteur(1,minus_one)),contextptr),symb_interval(xstart,xmax))
+#ifdef NUMWORKS
+					,symb_equal(change_subtype(_NSTEP,_INT_PLOT),100)
+#endif
 				    ),_SEQ__VECT));
     graphe.subtype=_SPREAD__SYMB;
     vecteur l1(makevecteur(step,graphe));
@@ -9272,7 +9275,7 @@ namespace giac {
   // Eval everything except IDNT and symbolics with
   vecteur inputform_pre_analysis(const gen & g,GIAC_CONTEXT){
     vecteur v(gen2vecteur(g));
-    if (python_compat(contextptr)){
+    if (python_compat(contextptr) && (v.empty() || v.front()!=at_getKey)){
       gen g_=eval(g,1,contextptr);
       if (g_.type!=_STRNG)
 	g_=string2gen(g_.print(contextptr),false);

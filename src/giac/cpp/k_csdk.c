@@ -435,7 +435,7 @@ int ascii_get(int* adaptive_cursor_state){
 	
   if (isKeyPressed(KEY_NSPIRE_ESC)) return KEY_CTRL_EXIT ;
   if (isKeyPressed(KEY_NSPIRE_HOME)) return KEY_CTRL_MENU ;
-  if (isKeyPressed(KEY_NSPIRE_MENU)) return KEY_CTRL_MENU ;
+  if (isKeyPressed(KEY_NSPIRE_MENU)) return KEY_CTRL_CATALOG ;
   
   // Characters
   if (isKeyPressed(KEY_NSPIRE_A)) return SHIFTCTRL('a','A',KEY_CTRL_A);
@@ -526,7 +526,7 @@ int ascii_get(int* adaptive_cursor_state){
   // Special chars
   if (isKeyPressed(KEY_NSPIRE_SCRATCHPAD)) return SHIFTCTRL(KEY_CTRL_SETUP,KEY_LOAD,KEY_SAVE);
   if (isKeyPressed(KEY_NSPIRE_VAR)) return CTRL(KEY_CTRL_VARS,KEY_CHAR_STORE);
-  if (isKeyPressed(KEY_NSPIRE_DOC))		return KEY_CTRL_CATALOG;
+  if (isKeyPressed(KEY_NSPIRE_DOC))		return KEY_CTRL_MENU;
   if (isKeyPressed(KEY_NSPIRE_CAT))		return KEY_BOOK;
   if (isKeyPressed(KEY_NSPIRE_DEL))		return SHIFTCTRL(KEY_CTRL_DEL,KEY_CTRL_DEL,KEY_CTRL_AC);
   if (isKeyPressed(KEY_NSPIRE_RET))		return KEY_CTRL_EXE;

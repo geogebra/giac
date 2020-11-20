@@ -875,7 +875,7 @@ namespace giac {
 	}
 	gen g=m[i][j];
 	// find all cells in g
-	vecteur sub_in(lcell(g[0])),sub_out;
+	vecteur sub_in(lcell(g.type==_VECT?g[0]:g)),sub_out;
 	if (sub_in.empty()){
 	  tmp.push_back(g);
 	  continue;

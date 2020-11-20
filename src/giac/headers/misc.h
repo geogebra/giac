@@ -283,7 +283,10 @@ namespace giac {
   extern const unary_function_ptr * const  at_pop;
   extern const unary_function_ptr * const  at_coth ;
   extern const unary_function_ptr * const  at_atan2 ;
+  vecteur get_pixel_v();
+  void adjust_pixels_dim(const vecteur & V,int & I,int &J);
   extern const unary_function_ptr * const  at_get_pixel ;
+  extern int screen_w,screen_h;
   gen _set_pixel(const gen & args,GIAC_CONTEXT);
   gen _get_pixel(const gen & args,GIAC_CONTEXT);
   gen _draw_string(const gen & a_,GIAC_CONTEXT);
@@ -295,6 +298,8 @@ namespace giac {
   extern const unary_function_ptr * const  at_isfinite ;
   extern const unary_function_ptr * const  at_isnan ;
   extern const unary_function_ptr * const  at_draw_string ;
+  extern const unary_function_ptr * const  at_draw_filled_circle ;
+  extern const unary_function_ptr * const  at_draw_filled_arc ;
   extern const unary_function_ptr * const  at_dtype ;
   extern const unary_function_ptr * const  at_rgb ;
   extern const unary_function_ptr * const  at_prediction;
