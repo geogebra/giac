@@ -1319,7 +1319,7 @@
 660>> caseval(regroup(evalfa([[[ggbfitpans:=0/0],[ggbvar:=x],[ggbinput:={point(-(1),-(1)), point(0,1), point(1,1), point(2,5)}],[ggborder:=3],when(ggborder+1==size(ggbinput),[[xvals := [seq(evalf(xcoord(ggbinput[j])),j=0..size(ggbinput)-1)]],[yvals := [seq(evalf(ycoord(ggbinput[j])),j=0..size(ggbinput)-1)]],[ggbfitpans := normal(lagrange(xvals,yvals,x))]],[ggbfitpans:=normal(evalf(horner(polynomial_regression({point(-(1),-(1)), point(0,1), point(1,1), point(2,5)},3),x)))])],ggbfitpans][1])))
 660<< x^3-x^2+1.0
 661>> caseval(regroup(evalfa(regroup(integrate(sqrt((((-(x))/(sqrt(((ggbtmpvarr)^(2))-((x)^(2)))))^(2))+(1)))))))
-661<< -ggbtmpvarr*atan(√(ggbtmpvarr^2*(1/x)^2-1))/sign(ggbtmpvarr^3*(1/x)^5-ggbtmpvarr*(1/x)^3)+SOME_CONSTANT
+661<< ggbtmpvarr^2*asin(x/ggbtmpvarr)*sign(ggbtmpvarr^3)*sign(ggbtmpvarr^2-x^2)/abs(ggbtmpvarr)+SOME_CONSTANT
 662>> caseval(regroup(evalfa([[ggbderivarg0127:=(x)*(log(x))],regroup(regroup(diff(ggbderivarg0127,when(length(lname(ggbderivarg0127))==0,x,when(count_eq(x,lname(ggbderivarg0127))==0,lname(ggbderivarg0127)[0],x)))))][1])))
 662<< ln(x)+1
 663>> caseval(regroup(evalfa([[[ggbevalarg:=fPart((6)/(5))],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]],when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1])))
