@@ -491,16 +491,16 @@ bool sheet_display(tableur &t,GIAC_CONTEXT){
 	}
 	bool rev=has_sel?(sel_r<=i && i<=sel_R && sel_c<=j && j<=sel_C):iscur;
 	if (rev)
-	  drawRectangle(x,y,col_width+4,row_height,_BLACK);	  
+	  drawRectangle(x+1,y,col_width+4,row_height,color_gris);	  
 	s=(*vj._VECTptr)[1].print(contextptr);
 	int dx=os_draw_string(0,0,0,0,s.c_str(),true); // find width
 	if (dx<col_width)
-	  os_draw_string(x+2,y,rev?_WHITE:_BLACK,rev?_BLACK:_WHITE,s.c_str(),false); // draw
+	  os_draw_string(x+2,y,_BLACK,rev?color_gris:_WHITE,s.c_str(),false); // draw
 	else {
 	  if (iscur && !has_sel && t.cmd_row<0)
 	    statuslinemsg(s.c_str());
 	  s=s.substr(0,8)+"...";
-	  os_draw_string_small(x+2,y,rev?_WHITE:_BLACK,rev?_BLACK:_WHITE,s.c_str(),false); // draw
+	  os_draw_string_small(x+2,y,_BLACK,rev?color_gris:_WHITE,s.c_str(),false); // draw
 	}
       }
       x+=col_width+4;
@@ -534,11 +534,11 @@ bool sheet_display(tableur &t,GIAC_CONTEXT){
     s=s.substr(t.cmd_pos,s.size()-t.cmd_pos);
     if (has_sel){
       s1=printsel(sel_r,sel_c,sel_R,sel_C);
-      xend=os_draw_string_small(xend,sheety,_WHITE,_BLACK,s1.c_str(),false);
+      xend=os_draw_string_small(xend,sheety,_BLACK,color_gris,s1.c_str(),false);
     }
     else {
       if (t.cmd_row!=t.cur_row || t.cmd_col!=t.cur_col)
-	xend=os_draw_string_small(xend,sheety,_WHITE,_BLACK,printcell(t.cur_row,t.cur_col).c_str(),false);
+	xend=os_draw_string_small(xend,sheety,_BLACK,color_gris,printcell(t.cur_row,t.cur_col).c_str(),false);
     }
   } // end cmdline active
   else

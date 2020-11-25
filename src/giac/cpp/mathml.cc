@@ -752,7 +752,7 @@ namespace giac {
 
   // before making a user transformation on the frame, 
   // collect pixon instructions in g
-  string svg_preamble_pixel(const gen &g,double svg_width_cm, double svg_height_cm,double xmin,double xmax,double ymin,double ymax,bool ortho,bool xml){
+  string svg_preamble_pixel(const gen &g,double svg_width_cm, double svg_height_cm,double xmin,double xmax,double ymin,double ymax,bool ortho,bool xml,int color){
     double svg_width=xmax-xmin;
     double svg_height=ymax-ymin;
     double x_scale=(xmax-xmin)/10;
@@ -806,6 +806,8 @@ namespace giac {
       // sortie << "\n<g transform=\"translate(0,"<<svg_height+2*ymin<<") scale(1,-1)\">\n";
     }
     pos=buffer+strlen(buffer);
+    // sprintf(pos,"<rect fill=\"white\" fill-opacity=\"0.5\" x=\"%.5g\" y=\"%.5g\" width=\"%.5g\" height=\"%.5g\" />\n",xmin-x_scale,ymin-y_scale,svg_width+2*x_scale,svg_height+2*y_scale);
+    pos=buffer+strlen(buffer);
     // calibrage des graduations
     double  dx, dy;
     svg_dx_dy(svg_width, svg_height, dx, dy);
@@ -818,10 +820,12 @@ namespace giac {
     double x,y;
     double xthickness((xmax-xmin)/svg_epaisseur1/3),ythickness((ymax-ymin)/svg_epaisseur1/3);
     // double thickness((xmax+ymax-xmin-ymin)/2000);
-    
+    // special grid cutting a little bit the upper part (magnet in tableaunoir)
+    bool cutupper=color==7;
+    double ymax2=cutupper?0.9*ymax+0.1*ymin:ymax;
     for (i=(int) i_min_x; i*dx<=xmax; i++){
       x=i*dx;
-      sprintf(pos,"<line x1=\"%.5g\" y1=\"%.5g\" x2=\"%.5g\" y2=\"%.5g\"",x,ymin,x,ymax);
+      sprintf(pos,"<line x1=\"%.5g\" y1=\"%.5g\" x2=\"%.5g\" y2=\"%.5g\"",x,ymin,x,ymax2);
       pos=buffer+strlen(buffer);
       // sortie<<"<line x1=\""<<x <<"\" y1=\""<<ymin <<"\" x2=\""<<x <<"\" y2=\""<<ymax << "\" ";
       if(i%5==0){
@@ -834,7 +838,7 @@ namespace giac {
       }
       pos=buffer+strlen(buffer);
     }
-    for (i=(int) i_min_y; i*dy<=ymax; i++){
+    for (i=(int) i_min_y; i*dy<=ymax2; i++){
       y=i*dy;
       sprintf(pos,"<line x1=\"%.5g\" y1=\"%.5g\" x2=\"%.5g\" y2=\"%.5g\"",xmin,y,xmax,y);
       pos=buffer+strlen(buffer);
@@ -850,27 +854,28 @@ namespace giac {
       pos=buffer+strlen(buffer);
     }
     //cadre
-    sprintf(pos,"<rect stroke=\"black\" stroke-width=\"%.5g\" fill=\"none\" x=\"%.5g\" y=\"%.5g\" width=\"%.5g\" height=\"%.5g\" />",2*std::min(xthickness,ythickness),xmin,ymin,svg_width,svg_height);
+    if (!cutupper)
+      sprintf(pos,"<rect stroke=\"%s\" stroke-width=\"%.5g\" fill=\"none\" x=\"%.5g\" y=\"%.5g\" width=\"%.5g\" height=\"%.5g\" />",color_string(color).c_str(),2*std::min(xthickness,ythickness),xmin,ymin,svg_width,svg_height);
     pos=buffer+strlen(buffer);
     // sortie<<"<rect stroke=\""<<"black"<<"\"  stroke-width=\""<<2*thickness<<"\" fill=\"none\" x=\""<<xmin<<"\" y=\""<<ymin<<"\" width=\""<<svg_width<<"\" height=\""<<svg_height<<"\" />"<<'\n';  
     // string s=sortie.str();
     return buffer;
   }
 
-  string svg_preamble_pixel(const gen &g,double svg_width_cm, double svg_height_cm,bool xml){
-    return svg_preamble_pixel(g,svg_width_cm,svg_height_cm,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,true,xml);
+  string svg_preamble_pixel(const gen &g,double svg_width_cm, double svg_height_cm,bool xml,int color){
+    return svg_preamble_pixel(g,svg_width_cm,svg_height_cm,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,true,xml,color);
   }
 
-  string svg_preamble(double svg_width_cm, double svg_height_cm,bool xml){
-    return svg_preamble_pixel(0,svg_width_cm, svg_height_cm, xml);
+  string svg_preamble(double svg_width_cm, double svg_height_cm,bool xml,int color){
+    return svg_preamble_pixel(0,svg_width_cm, svg_height_cm, xml,color);
   }
 
-  string svg_preamble(double svg_width_cm, double svg_height_cm,double xmin,double xmax,double ymin,double ymax,bool ortho,bool xml){
-    return svg_preamble_pixel(0,svg_width_cm,svg_height_cm,xmin,xmax,ymin,ymax,ortho,xml);
+  string svg_preamble(double svg_width_cm, double svg_height_cm,double xmin,double xmax,double ymin,double ymax,bool ortho,bool xml,int color){
+    return svg_preamble_pixel(0,svg_width_cm,svg_height_cm,xmin,xmax,ymin,ymax,ortho,xml,color);
   }
   
-  string svg_grid(){
-    return svg_grid(gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax);
+  string svg_grid(int color){
+    return svg_grid(gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,color);
   }
 
   static string greek(const string & s){
@@ -892,7 +897,9 @@ namespace giac {
     return cur;
   }
   
-  string svg_grid(double xmin,double xmax,double ymin,double ymax,const plot_attr & p){
+  string svg_grid(double xmin,double xmax,double ymin,double ymax,const plot_attr & p,int color){
+    string color_S=color_string(color);
+    const char * color_s=color_S.c_str();
     double svg_width=xmax-xmin;
     double svg_height=ymax-ymin;
 #ifdef HAVE_SSTREAM
@@ -938,40 +945,40 @@ namespace giac {
     if (xleg) i_min_x++;
     for (i=(int) i_min_x;  i*dx<=xmax ; ++i){
       x=i*dx;
-      sprintf(pos,"<text x=\"%.5g\" y=\"%.5g\" transform=\"scale(%.5g,%.5g)\" style=\"font-size:%.5gpt; text-anchor:middle;\">%.4g</text>\n",x/fontscale,(ymax+0.6*y_scale)/ratio/fontscale,fontscale,ratio*fontscale,0.67,x);
+      sprintf(pos,"<text fill=\"%s\" x=\"%.5g\" y=\"%.5g\" transform=\"scale(%.5g,%.5g)\" style=\"font-size:%.5gpt; text-anchor:middle;\">%.4g</text>\n",color_s,x/fontscale,(ymax+0.6*y_scale)/ratio/fontscale,fontscale,ratio*fontscale,0.67,x);
       pos = buffer+strlen(buffer);
       // sortie << setprecision(5)<<"<text x=\""<<x<<"\" y=\""<<ymax+0.6*y_scale<<"\" ";
       // sortie <<" style=\"font-size:"<<fontscale<<"pt; text-anchor:middle;\"";
       // sortie << ">" << (float)x <<"</text>"<<'\n';
     } 
     if (xleg){
-      sprintf(pos,"<text x=\"%.5g\" y=\"%.5g\" transform=\"scale(%.5g,%.5g)\" style=\"font-size:%.5gpt; text-anchor:start;\">%s</text>\n",xmin/fontscale,(ymax+0.6*y_scale)/ratio/fontscale,fontscale,ratio*fontscale,0.67,greek(p.xlegende).c_str());
+      sprintf(pos,"<text  fill=\"%s\" x=\"%.5g\" y=\"%.5g\" transform=\"scale(%.5g,%.5g)\" style=\"font-size:%.5gpt; text-anchor:start;\">%s</text>\n",color_s,xmin/fontscale,(ymax+0.6*y_scale)/ratio/fontscale,fontscale,ratio*fontscale,0.67,greek(p.xlegende).c_str());
       pos = buffer+strlen(buffer);
     }
     // graduations verticales
     for (i=(int) i_min_y;  i*dy<=ymax ; ++i){
       y=i*dy;
       if (yleg && y<=ymin+0.15*y_scale) continue;
-      sprintf(pos,"<text x=\"%.5g\" y=\"%.5g\" transform=\"scale(%.5g,%.5g)\" style=\"font-size:%.5gpt; text-anchor:end;\">%.4g</text>\n",(xmax+0.6*x_scale)/fontscale,(ymax+ymin-y+0.1*y_scale)/ratio/fontscale,fontscale,ratio*fontscale,0.67,y);
+      sprintf(pos,"<text fill=\"%s\" x=\"%.5g\" y=\"%.5g\" transform=\"scale(%.5g,%.5g)\" style=\"font-size:%.5gpt; text-anchor:end;\">%.4g</text>\n",color_s,(xmax+0.6*x_scale)/fontscale,(ymax+ymin-y+0.1*y_scale)/ratio/fontscale,fontscale,ratio*fontscale,0.67,y);
       pos = buffer+strlen(buffer);
       // sortie<<setprecision(5)<<"<text x=\""<<xmax+0.2*x_scale<<"\" y=\""<<ymax+ymin-y+0.1*y_scale << "\" ";
       // sortie <<"style=\"font-size:"<<fontscale<<"pt\"";
       // sortie << ">" << (float)y<<"</text>"<<'\n';
     }
     if (yleg){
-      sprintf(pos,"<text x=\"%.5g\" y=\"%.5g\" transform=\"scale(%.5g,%.5g)\" style=\"font-size:%.5gpt; text-anchor:end;\">%s</text>\n",(xmax)/fontscale,(ymin+0.0*y_scale)/ratio/fontscale,fontscale,ratio*fontscale,0.67,greek(p.ylegende).c_str());
+      sprintf(pos,"<text fill=\"%s\" x=\"%.5g\" y=\"%.5g\" transform=\"scale(%.5g,%.5g)\" style=\"font-size:%.5gpt; text-anchor:end;\">%s</text>\n",color_s,(xmax)/fontscale,(ymin+0.0*y_scale)/ratio/fontscale,fontscale,ratio*fontscale,0.67,greek(p.ylegende).c_str());
       pos = buffer+strlen(buffer);
     }
     if (p.title.size()){
-      sprintf(pos,"<text x=\"%.5g\" y=\"%.5g\" transform=\"scale(%.5g,%.5g)\" style=\"font-size:%.5gpt; text-anchor:middle;\">%s</text>\n",(0.5*xmax+0.5*xmin)/fontscale,(ymin+0.0*y_scale)/ratio/fontscale,fontscale,ratio*fontscale,0.67,greek(p.title).c_str());
+      sprintf(pos,"<text fill=\"%s\" x=\"%.5g\" y=\"%.5g\" transform=\"scale(%.5g,%.5g)\" style=\"font-size:%.5gpt; text-anchor:middle;\">%s</text>\n",color_s,(0.5*xmax+0.5*xmin)/fontscale,(ymin+0.0*y_scale)/ratio/fontscale,fontscale,ratio*fontscale,0.67,greek(p.title).c_str());
       pos = buffer+strlen(buffer);
     }
     return buffer;
   }
 
-  string svg_grid(double xmin,double xmax,double ymin,double ymax){
+  string svg_grid(double xmin,double xmax,double ymin,double ymax,int color){
     plot_attr P;
-    return svg_grid(xmin,xmax,ymin,ymax,P);
+    return svg_grid(xmin,xmax,ymin,ymax,P,color);
   }
 
   static inline string color_string(svg_attribut attr){
@@ -1502,7 +1509,7 @@ namespace giac {
   string gen2svg(const gen &e,double xmin,double xmax,double ymin,double ymax,double ysurx,GIAC_CONTEXT,bool withpreamble){
     string s;
     if (withpreamble)
-      s=svg_preamble_pixel(e,10,6,false);
+      s=svg_preamble_pixel(e,10,6,false,default_color(contextptr));
     if (e.type== _SYMB)
       return s+symbolic2svg(*e._SYMBptr,xmin,xmax,ymin,ymax,ysurx,contextptr);
     if (e.type==_VECT){
@@ -1546,7 +1553,7 @@ namespace giac {
 	autoscaleminmax(vx,window_xmin,window_xmax,false);
 	autoscaleminmax(vy,window_ymin,window_ymax,false /* fullview */);	
 	bool axes=overwrite_viewbox(g,window_xmin,window_xmax,window_ymin,window_ymax,window_zmin,window_zmax);
-	s = s+ svg_grid(window_xmin,window_xmax,window_ymin,window_ymax,p);
+	s = s+ svg_grid(window_xmin,window_xmax,window_ymin,window_ymax,p,default_color(contextptr));
 	return string2gen(s,false);
       }
       return string2gen(gen2svg(g,contextptr,true),false);

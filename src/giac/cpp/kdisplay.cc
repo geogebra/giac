@@ -293,22 +293,34 @@ namespace giac {
   void PrintXY(int x,int y,const char * s,int mode,int c=giac::_BLACK,int bg=giac::_WHITE){
     if (mode==TEXT_MODE_NORMAL)
       os_draw_string(x,y,c,bg,s);
-    else
-      os_draw_string(x,y,bg,c,s);
+    else {
+      if (c==giac::_BLACK && bg==giac::_WHITE)
+	os_draw_string(x,y,c,color_gris,s);
+      else
+	os_draw_string(x,y,bg,c,s);
+    }
   }
 
   int PrintMiniMini(int x,int y,const char * s,int mode,int c=giac::_BLACK,int bg=giac::_WHITE,bool fake=false){
     if (mode==TEXT_MODE_NORMAL)
       return os_draw_string_small(x,y,c,bg,s,fake);
-    else
-      return os_draw_string_small(x,y,bg,c,s,fake);
+    else {
+      if (c==giac::_BLACK && bg==giac::_WHITE)
+	return os_draw_string_small(x,y,c,color_gris,s,fake);
+      else
+	return os_draw_string_small(x,y,bg,c,s,fake);	
+    }
   }
   
   int PrintMini(int x,int y,const char * s,int mode,int c=giac::_BLACK,int bg=giac::_WHITE,bool fake=false){
     if (mode==TEXT_MODE_NORMAL)
       return os_draw_string(x,y,c,bg,s,fake);
-    else
-      return os_draw_string(x,y,bg,c,s,fake);
+    else {
+      if (c==giac::_BLACK && bg==giac::_WHITE)
+	return os_draw_string(x,y,c,color_gris,s,fake);
+      else
+	return os_draw_string(x,y,bg,c,s,fake);
+    }
   }
   
   void printCentered(const char* text, int y) {
@@ -387,7 +399,7 @@ namespace giac {
 	      int fillerRequired = menu->width - MB_ElementCount(menu->items[curitem].text) - (menu->type == MENUTYPE_MULTISELECT ? 2 : 3);
 	      for(int i = 0; i < fillerRequired; i++)
 		strcat(menuitem, " ");
-	      drawRectangle(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),C10*menu->width,C24,(menu->selection == curitem+1 ? _BLACK : _WHITE));
+	      drawRectangle(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),C10*menu->width,C24,(menu->selection == curitem+1 ? color_gris : _WHITE));
 	      PrintXY(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),menuitem, (menu->selection == curitem+1 ? TEXT_MODE_INVERT : TEXT_MODE_NORMAL));
 	    } else {
 	      /*int textX = (menu->startX-1) * C18;
@@ -3470,6 +3482,10 @@ namespace xcas {
   void text_print(int fontsize,const char * s,int x,int y,int c=COLOR_BLACK,int bg=COLOR_WHITE,int mode=0){
     // *logptr(contextptr) << x << " " << y << " " << fontsize << " " << s << endl; return;
     c=(unsigned short) c;
+    if (mode==4 && c==COLOR_BLACK && bg==COLOR_WHITE){
+      bg=color_gris;
+      mode=0;
+    }
     if (x>LCD_WIDTH_PX) return;
     int ss=strlen(s);
     if (ss==1 && s[0]==0x1e){ // arrow for limit
@@ -4351,12 +4367,12 @@ namespace xcas {
     int background=w.eqw_attributs.background;
     int text_color=w.eqw_attributs.text_color;
     int mode=selected?4:0;
-    int draw_line_color=selected?background:text_color;
+    int draw_line_color=text_color; // selected?background:text_color;
     int x0=w.x;
     int y0=w.y; // lower coordinate of the master vector
     int y1=y0+w.dy; // upper coordinate of the master vector
     if (selected)
-      drawRectangle(eqx+w.x-x,eqy+y-w.y-w.dy+1,w.dx,w.dy+1,text_color);
+      drawRectangle(eqx+w.x-x,eqy+y-w.y-w.dy+1,w.dx,w.dy+1,color_gris); // text_color);
     // draw arguments of v
     const_iterateur it=v.begin(),itend=v.end()-1;
     if (oper==at_expr && v.size()==3){
@@ -6057,7 +6073,7 @@ namespace xcas {
       menu += string(menu_f2);
       menu += "|3 undo|4 edt|5 +-|6 approx";
       drawRectangle(0,205,LCD_WIDTH_PX,17,22222);
-      PrintMiniMini(0,205,menu.c_str(),4,22222,giac::_BLACK);
+      PrintMiniMini(0,205,menu.c_str(),0,giac::_BLACK,22222);
 #endif
       //draw_menu(2);
       clip_ymin=save_clip_ymin;

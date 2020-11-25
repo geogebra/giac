@@ -18,6 +18,7 @@ class autoshutdown : public std::exception{
 extern  const int LCD_WIDTH_PX;
 extern   const int LCD_HEIGHT_PX;
 extern char* fmenu_cfg;
+#define color_gris 57083
 #define STATUS_AREA_PX 0 // 24
 #define GIAC_HISTORY_MAX_TAILLE 32
 #define GIAC_HISTORY_SIZE 2
