@@ -2073,7 +2073,7 @@ namespace giac {
 	if ( (g1f.type==_DOUBLE_ || g1f.type==_FLOAT_ || g1f.type==_REAL) && is_positive(g1,contextptr))
 	  res.push_back(*it);
 	else {
-	  if (normal(abs(g1,contextptr)-g1,contextptr)==0) // was ratnormal, but insufficient
+	  if (fastsign(simplifier(g1,contextptr),contextptr)==1 || normal(abs(g1,contextptr)-g1,contextptr)==0) // was ratnormal, but insufficient
 	    res.push_back(*it);
 	}
       }

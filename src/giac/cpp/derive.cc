@@ -654,9 +654,9 @@ namespace giac {
     if (args.type==_VECT)
       v=plotpreprocess(gen(*args._VECTptr,_SEQ__VECT),contextptr);
     else {
-      if (args==vx_var){ // special handling for x(t):=t^2; x'
+      if (args.type==_IDNT){ // special handling for x(t):=t^2; x'
 	gen tmp=eval(args,1,contextptr);
-	if (tmp!=vx_var)
+	if (tmp!=args)
 	  return _derive(tmp,contextptr);
       }
       v=plotpreprocess(makesequence(args,vx_var),contextptr);
@@ -949,7 +949,10 @@ namespace giac {
     if (lop(dg,at_derive).empty()){
       identificateur tmpi(" x");
       gen tmp(tmpi);
-      gen res=symb_program(tmp,zero,quotesubst(dg,_tmp,tmp,contextptr),contextptr);
+      _tmp=quotesubst(dg,_tmp,tmp,contextptr);
+      if (dg.type==_VECT)
+	_tmp=makevecteur(_tmp);
+      gen res=symb_program(tmp,zero,_tmp,contextptr);
       return res;
     }
     return symbolic(at_function_diff,g);

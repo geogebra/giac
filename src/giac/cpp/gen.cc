@@ -3891,6 +3891,15 @@ namespace giac {
     return res;
   }
 
+  static gen linfnorm(const vecteur & a,GIAC_CONTEXT){
+    gen res(0);
+    vecteur::const_iterator it=a.begin(), itend=a.end();
+    for (;it!=itend;++it){
+      res=max(res,linfnorm(*it,contextptr),contextptr);
+    }
+    return res;
+  }
+
   static gen real_abs(const gen & s,GIAC_CONTEXT){
     gen tmp=evalf_double(s,1,contextptr);
     if (tmp.type==_DOUBLE_){
@@ -4004,23 +4013,21 @@ namespace giac {
       return a._REALptr->abs();
     case _CPLX:
 #ifdef GIAC_HAS_STO_38
-      {
-        if (a._CPLXptr->type==_FLOAT_ && (a._CPLXptr+1)->type==_FLOAT_)
+      if (a._CPLXptr->type==_FLOAT_ && (a._CPLXptr+1)->type==_FLOAT_)
         {
           HP_gen r;
           cAbs_g(gen2HP(*a._CPLXptr), gen2HP(*(a._CPLXptr+1)), &r);
           return HP2gen(r);
         }
-        return sqrt(sq(*a._CPLXptr)+sq(*(a._CPLXptr+1)),contextptr) ;
-      }
-#else
+#endif
       if (a.subtype==3){
 	gen * aptr=a._CPLXptr;
 	double ar=aptr->_DOUBLE_val,ai=(aptr+1)->_DOUBLE_val;
-	return gen(std::sqrt(ar*ar+ai*ai));
+	double z=std::abs(ar)+std::abs(ai); ar/=z; ai/=z;
+	return z*std::sqrt(ar*ar+ai*ai);
+	// return gen(std::sqrt(ar*ar+ai*ai));
       }
       return sqrt(sq(*a._CPLXptr)+sq(*(a._CPLXptr+1)),contextptr) ;
-#endif
     case _DOUBLE_:
       return fabs(a._DOUBLE_val);
     case _FLOAT_:
@@ -7775,6 +7782,8 @@ namespace giac {
       else
 	return rdivsimp(a,b);
     case _CPLX__CPLX: 
+      if (a.subtype==3 || b.subtype==3)
+	return a*inv(b,contextptr);
       return adjust_complex_display(rdiv(a*conj(b,contextptr),b.squarenorm(contextptr),contextptr),a,b);
     case _DOUBLE___CPLX: case _FLOAT___CPLX: case _INT___CPLX: case _ZINT__CPLX: case _REAL__CPLX:
       if (is_one(a))
@@ -12881,6 +12890,8 @@ void sprint_double(char * s,double d){
 #ifndef GIAC_GGB
     gwidth=EM_ASM_DOUBLE_V({
 	var hw=window.innerWidth;
+	if (typeof(svgwidth)!="undefined")
+	  return svgwidth*1.0;
 	if (hw>=1000)
 	  return 9.0*hw/1000.0;
 	else
@@ -12909,11 +12920,11 @@ void sprint_double(char * s,double d){
     ratio=yscale/xscale;
     //COUT << window_xmin << " " << window_xmax << " " << window_ymin << " " << window_ymax << '\n';
     //g=_symetrie(makesequence(_droite(makesequence(0,1),contextptr),g),contextptr);
-    //S='"'+svg_preamble(7,7,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,ortho,false)+gen2svg(g,contextptr)+svg_grid(gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax)+"</svg>\"";
-    S='"'+svg_preamble_pixel(g,gwidth,gwidth*gratio,window_xmin,window_xmax,window_ymin,window_ymax,ortho,false);
+    //S='"'+svg_preamble(7,7,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,ortho,false,default_color(contextptr))+gen2svg(g,contextptr)+svg_grid(gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,default_color(contextptr))+"</svg>\"";
+    S='"'+svg_preamble_pixel(g,gwidth,gwidth*gratio,window_xmin,window_xmax,window_ymin,window_ymax,ortho,false,default_color(contextptr));
     plot_attr P;
     title_legende(g,P);
-    S= S+(gen2svg(g,window_xmin,window_xmax,window_ymin,window_ymax,ratio/gratio,contextptr,false)+(axes?svg_grid(window_xmin,window_xmax,window_ymin,window_ymax,P)+"</svg>\"":""));
+    S= S+(gen2svg(g,window_xmin,window_xmax,window_ymin,window_ymax,ratio/gratio,contextptr,false)+(axes?svg_grid(window_xmin,window_xmax,window_ymin,window_ymax,P,default_color(contextptr))+"</svg>\"":""));
 #endif
     return S.c_str();
   }

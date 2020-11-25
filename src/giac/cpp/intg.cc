@@ -2220,7 +2220,8 @@ namespace giac {
 	      gen c=vfu[0]/pow(vu[0],n/m,contextptr);
 	      vfx[N/M-n/m]=c;
 	      vecteur vtmp;
-	      submodpoly(vfu,*_symb2poly(makesequence(c*pow(u,n/m),gen_x),contextptr)._VECTptr,vtmp);
+	      gen cunm=_symb2poly(makesequence(c*pow(u,n/m),gen_x),contextptr);
+	      submodpoly(vfu,gen2vecteur(cunm),vtmp);
 	      vfu=*normal(vtmp,contextptr)._VECTptr;
 	      trim(vfu,0);
 	    }
