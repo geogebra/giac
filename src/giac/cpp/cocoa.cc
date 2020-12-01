@@ -465,8 +465,7 @@ namespace giac {
 #ifdef __APPLE__
   #define GBASISF4_BUCHBERGER 0 // temp. disabled on mac
 #else
-//  #define GBASISF4_BUCHBERGER 4
-  #define GBASISF4_BUCHBERGER 0 // attempt to disable it to speed up geom. offset computations
+  #define GBASISF4_BUCHBERGER 4
 #endif
 
 #define GBASIS_POSTF4BUCHBERGER 0 // 0 means final simplification at the end, 1 at each loop
