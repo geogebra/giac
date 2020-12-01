@@ -16397,11 +16397,14 @@ void sprint_double(char * s,double d){
     if (calc_mode(&C)!=1 && (last.is_symb_of_sommet(at_pnt) || last.is_symb_of_sommet(at_pixon))){
 #if !defined(GIAC_GGB) && defined(EMCC)
       if (is3d(last)){
-	bool worker=false;
+	int worker=0;
 	worker=EM_ASM_INT_V({
+	    if (typeof(UI.disable3d) !== 'undefined' && UI.disable3d)
+	      return UI.disable3d;
 	    if (Module.worker) return 1; else return 0;
 	});
-	if (worker) return "3d not supported if workers are enabled";
+	if (worker==-1) return "gl3d_not_supported";
+	if (worker) return "gl3d_not_supported_if_workers_are_enabled";
 	//giac_renderer(last.print(&C).c_str());
 	int n=giac_gen_renderer(g,&C);
 	S="gl3d "+print_INT_(n);

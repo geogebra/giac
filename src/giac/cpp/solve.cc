@@ -7478,10 +7478,12 @@ namespace giac {
     }
     if (elim.empty()){
       for (int i=0;i<eqs.size();++i){
-	if (eqs[i].type<_POLY)
+	if (eqs[i].type<_POLY && !is_zero(eqs[i]))
 	  eqs[i]=1;
       }
       comprim(eqs);
+      if (eqs.size()==1 && is_zero(eqs[0]))
+	eqs.clear();
       return eqs;
     }
     vecteur l(elim);
@@ -7566,6 +7568,7 @@ namespace giac {
 	  if (tdeg<curdeg){
 	    curdeg=tdeg;
 	    pos=vector<int>(1,i);
+	    continue;
 	  }
 	  pos.push_back(i);
 	}
@@ -7589,7 +7592,10 @@ namespace giac {
 	    }
 	  }
 	}
-	if (1 || curdeg==1){
+	if (poselim.empty()) // do not call resultant, var is not there
+	  returngb=0;
+	else if (1 || curdeg==1
+		 ){
 	  // Choose lowest number of dependant equations in poselim
 	  gen besteq(0),bestvar(0); int bestpos=-1,n0deps=-1;
 	  for (int i=0;i<int(poselim.size());++i){

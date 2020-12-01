@@ -753,6 +753,7 @@ namespace giac {
   // before making a user transformation on the frame, 
   // collect pixon instructions in g
   string svg_preamble_pixel(const gen &g,double svg_width_cm, double svg_height_cm,double xmin,double xmax,double ymin,double ymax,bool ortho,bool xml,int color){
+    bool cutupper=color==7;
     double svg_width=xmax-xmin;
     double svg_height=ymax-ymin;
     double x_scale=(xmax-xmin)/10;
@@ -821,8 +822,7 @@ namespace giac {
     double xthickness((xmax-xmin)/svg_epaisseur1/3),ythickness((ymax-ymin)/svg_epaisseur1/3);
     // double thickness((xmax+ymax-xmin-ymin)/2000);
     // special grid cutting a little bit the upper part (magnet in tableaunoir)
-    bool cutupper=color==7;
-    double ymax2=cutupper?0.9*ymax+0.1*ymin:ymax;
+    double ymax2=ymax; // ymax2=cutupper?0.9*ymax+0.1*ymin:ymax;
     for (i=(int) i_min_x; i*dx<=xmax; i++){
       x=i*dx;
       sprintf(pos,"<line x1=\"%.5g\" y1=\"%.5g\" x2=\"%.5g\" y2=\"%.5g\"",x,ymin,x,ymax2);
