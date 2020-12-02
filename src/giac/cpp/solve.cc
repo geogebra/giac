@@ -7626,6 +7626,12 @@ namespace giac {
 	    if (a.type!=_VECT || a._VECTptr->size()!=2)
 	      return gensizeerr(contextptr);
 	    gen r=_resultant(makesequence(a._VECTptr->front(),a._VECTptr->back(),bestvar),contextptr);
+	    vecteur vr(lidnt(r));
+	    if (!vr.empty()){
+	      gen dr=_diff(makesequence(r,vr[0]),contextptr);
+	      dr=_gcd(makesequence(r,dr),contextptr);
+	      r=_quo(makesequence(r,dr,vr[0]),contextptr);
+	    }
 	    vecteur rv=lvar(r);
 	    r=_primpart(makesequence(r,rv),contextptr);
 	    neweq.push_back(r);
