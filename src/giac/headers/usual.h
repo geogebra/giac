@@ -542,7 +542,8 @@ namespace giac {
   extern const gen minus_one;
   extern const gen plus_two;
   extern const gen plus_three;
-  extern const gen cst_i;
+#define cst_i gen(0,1)
+  //extern const gen cst_i;
 #else
   extern const alias_gen alias_zero;
   extern const gen & zero;

@@ -4367,9 +4367,17 @@ int python_stack_size=64*1024,python_heap_size=256*1024;
 #endif
 #ifdef MICROPY_LIB
 extern "C" {
-  int do_file(const char *file);
-  char * micropy_init(int stack_size,int heap_size);
-  int micropy_eval(const char * line);
+  int do_file(const char *file){
+    return 0;
+  }
+  char * mp_js_init(int heap_size);
+  char * micropy_init(int stack_size,int heap_size){
+    return mp_js_init(heap_size);
+  }
+  int mp_js_do_str(const char *code);
+  int micropy_eval(const char * line){
+    return mp_js_do_str(line);
+  }
   void  mp_deinit();
   void mp_stack_ctrl_init();
   extern int parser_errorline,parser_errorcol;
@@ -4408,6 +4416,7 @@ int micropy_ck_eval(const char *line){
   return micropy_eval(line);
 }
 #endif
+
 
 #endif // GIAC_GGB
 #endif // EMCC
