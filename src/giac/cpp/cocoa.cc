@@ -462,8 +462,8 @@ namespace giac {
 #define GBASIS_SWAP 
 #endif
   // minimal numbers of pair to reduce simultaneously with f4buchberger
-#ifdef __APPLE__
-  #define GBASISF4_BUCHBERGER 0 // temp. disabled on mac
+#if 1 // def __APPLE__
+  #define GBASISF4_BUCHBERGER 0 // disabled
 #else
   #define GBASISF4_BUCHBERGER 3
 #endif
