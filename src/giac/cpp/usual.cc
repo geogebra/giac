@@ -10584,7 +10584,9 @@ namespace giac {
   const gen plus_two(2);
   const gen plus_three(3);
   const gen minus_one(-1);
-  //const gen cst_i(0,1);
+#ifndef EMCC
+  const gen cst_i(0,1);
+#endif
 #else
   const define_alias_gen(alias_zero,_INT_,0,0);
   const define_alias_gen(alias_plus_one,_INT_,0,1);

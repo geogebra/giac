@@ -221,9 +221,9 @@ exp	: T_NUMBER		{$$ = $1;}
 	| T_EXPRESSION		{ if ($1.type==_FUNC) $$=symbolic(*$1._FUNCptr,gen(vecteur(0),_SEQ__VECT)); else $$=$1; }
 	/* | T_COMMENT		{ $$=symb_comment($1); }
 	| T_COMMENT exp		{ $$=$2; } */
-	| symbol T_BEGIN_PAR suite T_END_PAR T_AFFECT bloc {$$ = symb_program_sto($3,$3*zero,$6,$1,false,giac_yyget_extra(scanner));}
-	| symbol T_BEGIN_PAR suite T_END_PAR T_AFFECT exp {if (is_array_index($1,$3,giac_yyget_extra(scanner)) || (abs_calc_mode(giac_yyget_extra(scanner))==38 && $1.type==_IDNT && strlen($1._IDNTptr->id_name)==2 && check_vect_38($1._IDNTptr->id_name))) $$=symbolic(at_sto,gen(makevecteur($6,symbolic(at_of,gen(makevecteur($1,$3) ,_SEQ__VECT))) ,_SEQ__VECT)); else { $$ = symb_program_sto($3,$3*zero,$6,$1,true,giac_yyget_extra(scanner)); $$._SYMBptr->feuille.subtype=_SORTED__VECT;  } }
-	| exp TI_STO symbol T_BEGIN_PAR suite T_END_PAR {if (is_array_index($3,$5,giac_yyget_extra(scanner)) || (abs_calc_mode(giac_yyget_extra(scanner))==38 && $3.type==_IDNT && check_vect_38($3._IDNTptr->id_name))) $$=symbolic(at_sto,gen(makevecteur($1,symbolic(at_of,gen(makevecteur($3,$5) ,_SEQ__VECT))) ,_SEQ__VECT)); else $$ = symb_program_sto($5,$5*zero,$1,$3,false,giac_yyget_extra(scanner));}
+	| symbol T_BEGIN_PAR suite T_END_PAR T_AFFECT bloc {$$ = symb_program_sto($3,$3*gen_zero,$6,$1,false,giac_yyget_extra(scanner));}
+	| symbol T_BEGIN_PAR suite T_END_PAR T_AFFECT exp {if (is_array_index($1,$3,giac_yyget_extra(scanner)) || (abs_calc_mode(giac_yyget_extra(scanner))==38 && $1.type==_IDNT && strlen($1._IDNTptr->id_name)==2 && check_vect_38($1._IDNTptr->id_name))) $$=symbolic(at_sto,gen(makevecteur($6,symbolic(at_of,gen(makevecteur($1,$3) ,_SEQ__VECT))) ,_SEQ__VECT)); else { $$ = symb_program_sto($3,$3*gen_zero,$6,$1,true,giac_yyget_extra(scanner)); $$._SYMBptr->feuille.subtype=_SORTED__VECT;  } }
+	| exp TI_STO symbol T_BEGIN_PAR suite T_END_PAR {if (is_array_index($3,$5,giac_yyget_extra(scanner)) || (abs_calc_mode(giac_yyget_extra(scanner))==38 && $3.type==_IDNT && check_vect_38($3._IDNTptr->id_name))) $$=symbolic(at_sto,gen(makevecteur($1,symbolic(at_of,gen(makevecteur($3,$5) ,_SEQ__VECT))) ,_SEQ__VECT)); else $$ = symb_program_sto($5,$5*gen_zero,$1,$3,false,giac_yyget_extra(scanner));}
 	| exp TI_STO symbol T_INDEX_BEGIN exp T_VECT_END { 
          const giac::context * contextptr = giac_yyget_extra(scanner);
          gen g=symb_at($3,$5,contextptr); $$=parser_symb_sto($1,g); 
@@ -239,7 +239,7 @@ exp	: T_NUMBER		{$$ = $1;}
 	| exp TI_STO T_DIV { $$=symbolic(at_convert,gen(makevecteur($1,$3) ,_SEQ__VECT)); }
 	| exp TI_STO T_VIRGULE { $$=symbolic(at_time,$1);}
 	| exp TI_STO TI_STO { if ($1==16 || $1==10 || $1==8 || $1==2) $$=symbolic(at_integer_format,$1); else $$=symbolic(at_solve,symb_equal($1,0));}
-	| exp TI_STO T_UNIT exp { $$=symbolic(at_convert,gen(makevecteur($1,symb_unit(plus_one,$4,giac_yyget_extra(scanner))),_SEQ__VECT)); opened_quote(giac_yyget_extra(scanner)) &= 0x7ffffffd;}	
+	| exp TI_STO T_UNIT exp { $$=symbolic(at_convert,gen(makevecteur($1,symb_unit(gen(1),$4,giac_yyget_extra(scanner))),_SEQ__VECT)); opened_quote(giac_yyget_extra(scanner)) &= 0x7ffffffd;}	
 	| symbol T_BEGIN_PAR suite T_END_PAR {$$ = check_symb_of($1,python_compat(giac_yyget_extra(scanner))?denest_sto(os_nary_workaround($3)):os_nary_workaround($3),giac_yyget_extra(scanner));}
 	| exp T_BEGIN_PAR suite T_END_PAR {$$ = check_symb_of($1,python_compat(giac_yyget_extra(scanner))?denest_sto(os_nary_workaround($3)):os_nary_workaround($3),giac_yyget_extra(scanner));}
 	| symbol 		{$$ = $1;}  
@@ -296,7 +296,7 @@ exp	: T_NUMBER		{$$ = $1;}
              $$ = algebraic_EXTension($2._SYMBptr->feuille._VECTptr->front(),$2._SYMBptr->feuille._VECTptr->back());
            else $$=$2;
         }
-	/* | T_ROOTOF_BEGIN exp T_VIRGULE exp T_ROOTOF_END {if ($2.type==_VECT) $$ = real_complex_rootof(*$2._VECTptr,$4); else $$=zero;} */
+	/* | T_ROOTOF_BEGIN exp T_VIRGULE exp T_ROOTOF_END {if ($2.type==_VECT) $$ = real_complex_rootof(*$2._VECTptr,$4); else $$=gen_zero;} */
 	| T_OF { $$=gen(at_of,2); }
 	| exp T_AFFECT exp 		{if ($1.type==_FUNC) *logptr(giac_yyget_extra(scanner))<< ("Warning: "+$1.print(context0)+" is a reserved word")<<'\n'; if ($1.type==_INT_) $$=symb_equal($1,$3); else {$$ = parser_symb_sto($3,$1,$2==at_array_sto); if ($3.is_symb_of_sommet(at_program)) *logptr(giac_yyget_extra(scanner))<<"// End defining "<<$1<<'\n';}}
 	| T_NOT exp	{ $$ = symbolic(*$1._FUNCptr,$2);}
@@ -350,14 +350,14 @@ exp	: T_NUMBER		{$$ = $1;}
 	| T_PROGRAM {$$ = gen(at_program,3);}
 	| exp T_MAPSTO bloc	{
           const giac::context * contextptr = giac_yyget_extra(scanner);
-         $$ = symb_program($1,zero*$1,$3,contextptr);
+         $$ = symb_program($1,gen_zero*$1,$3,contextptr);
         }
 	| exp T_MAPSTO exp	{
           const giac::context * contextptr = giac_yyget_extra(scanner);
              if ($3.type==_VECT) 
-                $$ = symb_program($1,zero*$1,symb_bloc(makevecteur(at_nop,$3)),contextptr); 
+                $$ = symb_program($1,gen_zero*$1,symb_bloc(makevecteur(at_nop,$3)),contextptr); 
              else 
-                $$ = symb_program($1,zero*$1,$3,contextptr);
+                $$ = symb_program($1,gen_zero*$1,$3,contextptr);
 		}
 	| T_BLOC T_BEGIN_PAR exp T_END_PAR	{$$ = symb_bloc($3);}
 	| T_BLOC {$$ = at_bloc;}
@@ -367,15 +367,15 @@ exp	: T_NUMBER		{$$ = $1;}
 	| T_RETURN {$$ = gen(*$1._FUNCptr,0);} 
 	| T_QUOTE T_RETURN T_QUOTE { $$=$2;}
 	/* | T_RETURN T_SEMI {$$ = gen(*$1._FUNCptr,0);}  */
-	| T_BREAK	{$$ = symbolic(at_break,zero);}
-	| T_CONTINUE	{$$ = symbolic(at_continue,zero);}
+	| T_BREAK	{$$ = symbolic(at_break,gen_zero);}
+	| T_CONTINUE	{$$ = symbolic(at_continue,gen_zero);}
 	| T_FOR symbol_for T_IN exp T_DO prg_suite T_BLOC_END { 
 	/*
 	  gen kk(identificateur("index"));
 	  vecteur v(*$6._VECTptr);
           const giac::context * contextptr = giac_yyget_extra(scanner);
 	  v.insert(v.begin(),symb_sto(symb_at($4,kk,contextptr),$2));
-	  $$=symbolic(*$1._FUNCptr,makevecteur(symb_sto(xcas_mode(contextptr)!=0,kk),symb_inferieur_strict(kk,symb_size($4)+(xcas_mode(contextptr)!=0)),symb_sto(symb_plus(kk,plus_one),kk),symb_bloc(v))); 
+	  $$=symbolic(*$1._FUNCptr,makevecteur(symb_sto(xcas_mode(contextptr)!=0,kk),symb_inferieur_strict(kk,symb_size($4)+(xcas_mode(contextptr)!=0)),symb_sto(symb_plus(kk,gen(1)),kk),symb_bloc(v))); 
           */
           if ($7.type==_INT_ && $7.val && $7.val!=2 && $7.val!=9)
 	    giac_yyerror(scanner,"missing loop end delimiter");
@@ -427,7 +427,7 @@ exp	: T_NUMBER		{$$ = $1;}
         } 
 	| T_FOR symbol from step T_DO prg_suite T_BLOC_END { 
           if ($7.type==_INT_ && $7.val && $7.val!=2 && $7.val!=9) giac_yyerror(scanner,"missing loop end delimiter");
-          $$=symbolic(*$1._FUNCptr,makevecteur(symb_sto($3,$2),plus_one,symb_sto(symb_plus($2,$4),$2),symb_bloc($6))); 
+          $$=symbolic(*$1._FUNCptr,makevecteur(symb_sto($3,$2),gen(1),symb_sto(symb_plus($2,$4),$2),symb_bloc($6))); 
         }
 	| T_FOR symbol from step T_MUPMAP_WHILE exp T_DO prg_suite T_BLOC_END { 
           if ($9.type==_INT_ && $9.val && $9.val!=2 && $9.val!=9 && $9.val!=8) giac_yyerror(scanner,"missing loop end delimiter");
@@ -436,18 +436,18 @@ exp	: T_NUMBER		{$$ = $1;}
 	| T_FOR {$$ = gen(*$1._FUNCptr,4);}
 	/* | T_DO prg_suite T_BLOC_END { 
           if ($3.type==_INT_ && $3.val && $3.val!=2 && $3.val!=9) giac_yyerror(scanner,"missing loop end delimiter");
-           vecteur v=makevecteur(zero,plus_one,zero,symb_bloc($2)); $$=symbolic(*$1._FUNCptr,v); 
+           vecteur v=makevecteur(gen_zero,gen(1),gen_zero,symb_bloc($2)); $$=symbolic(*$1._FUNCptr,v); 
          } */
 	| T_REPEAT prg_suite T_UNTIL exp { 
         vecteur v=gen2vecteur($2);
-        v.push_back(symb_ifte(equaltosame($4),symbolic(at_break,zero),0));
-	$$=symbolic(*$1._FUNCptr,makevecteur(zero,1,zero,symb_bloc(v))); 
+        v.push_back(symb_ifte(equaltosame($4),symbolic(at_break,gen_zero),0));
+	$$=symbolic(*$1._FUNCptr,makevecteur(gen_zero,1,gen_zero,symb_bloc(v))); 
 	}
 	| T_REPEAT prg_suite T_UNTIL exp T_BLOC_END { 
         if ($5.type==_INT_ && $5.val && $5.val!=2 && $5.val!=9) giac_yyerror(scanner,"missing loop end delimiter");
         vecteur v=gen2vecteur($2);
-        v.push_back(symb_ifte(equaltosame($4),symbolic(at_break,zero),0));
-	$$=symbolic(*$1._FUNCptr,makevecteur(zero,1,zero,symb_bloc(v))); 
+        v.push_back(symb_ifte(equaltosame($4),symbolic(at_break,gen_zero),0));
+	$$=symbolic(*$1._FUNCptr,makevecteur(gen_zero,1,gen_zero,symb_bloc(v))); 
 	}
 	| T_IFERR prg_suite T_THEN prg_suite T_ELSE prg_suite T_BLOC_END {
           if ($7.type==_INT_ && $7.val && $7.val!=4) giac_yyerror(scanner,"missing iferr end delimiter");
@@ -539,7 +539,7 @@ $$ = symbolic(*$2._FUNCptr,gen(makevecteur($1,python_compat(giac_yyget_extra(sca
 	| exp T_INTERROGATION exp { $$=symb_interrogation($1,$3); }
 	| T_UNIT exp {
           const giac::context * contextptr = giac_yyget_extra(scanner);
-          $$=symb_unit(plus_one,$2,contextptr); 
+          $$=symb_unit(gen(1),$2,contextptr); 
           opened_quote(giac_yyget_extra(scanner)) &= 0x7ffffffd;	
         }
 	| exp T_UNIT exp {
@@ -579,37 +579,37 @@ $$ = symbolic(*$2._FUNCptr,gen(makevecteur($1,python_compat(giac_yyget_extra(sca
 	| T_PROC T_BEGIN_PAR suite T_END_PAR entete prg_suite T_BLOC_END { 
           if ($7.type==_INT_ && $7.val && $7.val!=3) giac_yyerror(scanner,"missing func/prog/proc end delimiter");
           const giac::context * contextptr = giac_yyget_extra(scanner);
-           $$=symb_program($3,zero*$3,symb_local($5,$6,contextptr),contextptr); 
+           $$=symb_program($3,gen_zero*$3,symb_local($5,$6,contextptr),contextptr); 
         }
 	| T_PROC symbol T_BEGIN_PAR suite T_END_PAR entete prg_suite T_BLOC_END { 
           if ($8.type==_INT_ && $8.val && $8.val!=3) giac_yyerror(scanner,"missing func/prog/proc end delimiter");
           const giac::context * contextptr = giac_yyget_extra(scanner);
-           $$=symb_program_sto($4,zero*$4,symb_local($6,$7,contextptr),$2,false,contextptr); 
+           $$=symb_program_sto($4,gen_zero*$4,symb_local($6,$7,contextptr),$2,false,contextptr); 
         }
 	| T_PROC symbol T_BEGIN_PAR suite T_END_PAR prg_suite T_BLOC_END { 
           if ($7.type==_INT_ && $7.val && $7.val!=3) giac_yyerror(scanner,"missing func/prog/proc end delimiter");
           const giac::context * contextptr = giac_yyget_extra(scanner);
-           $$=symb_program_sto($4,zero*$4,symb_bloc($6),$2,false,contextptr); 
+           $$=symb_program_sto($4,gen_zero*$4,symb_bloc($6),$2,false,contextptr); 
         }
 	| T_PROC symbol T_BEGIN_PAR suite T_END_PAR T_BLOC_BEGIN entete prg_suite T_BLOC_END { 
           if ($9.type==_INT_ && $9.val && $9.val!=3) giac_yyerror(scanner,"missing func/prog/proc end delimiter");
           const giac::context * contextptr = giac_yyget_extra(scanner);
-           $$=symb_program_sto($4,zero*$4,symb_local($7,$8,contextptr),$2,false,contextptr); 
+           $$=symb_program_sto($4,gen_zero*$4,symb_local($7,$8,contextptr),$2,false,contextptr); 
         }
 	| T_PROC T_BEGIN_PAR suite T_END_PAR entete T_BLOC_BEGIN prg_suite T_BLOC_END { 
           if ($8.type==_INT_ && $8.val && $8.val!=3) giac_yyerror(scanner,"missing func/prog/proc end delimiter");
           const giac::context * contextptr = giac_yyget_extra(scanner);
-         $$=symb_program($3,zero*$3,symb_local($5,$7,contextptr),contextptr); 
+         $$=symb_program($3,gen_zero*$3,symb_local($5,$7,contextptr),contextptr); 
         } 
 	| symbol T_BEGIN_PAR suite T_END_PAR T_PROC entete prg_suite T_BLOC_END { 
           if ($8.type==_INT_ && $8.val && $8.val!=3) giac_yyerror(scanner,"missing func/prog/proc end delimiter");
           const giac::context * contextptr = giac_yyget_extra(scanner);
-           $$=symb_program_sto($3,zero*$3,symb_local($6,$7,contextptr),$1,false,contextptr); 
+           $$=symb_program_sto($3,gen_zero*$3,symb_local($6,$7,contextptr),$1,false,contextptr); 
         }
 	| symbol T_BEGIN_PAR suite T_END_PAR T_AFFECT T_PROC entete prg_suite T_BLOC_END { 
           if ($9.type==_INT_ && $9.val && $9.val!=3) giac_yyerror(scanner,"missing func/prog/proc end delimiter");
           const giac::context * contextptr = giac_yyget_extra(scanner);
-           $$=symb_program_sto($3,zero*$3,symb_local($7,$8,contextptr),$1,false,contextptr); 
+           $$=symb_program_sto($3,gen_zero*$3,symb_local($7,$8,contextptr),$1,false,contextptr); 
         }
 	| T_FOR T_BEGIN_PAR exp_or_empty T_SEMI exp_or_empty T_SEMI exp_or_empty T_END_PAR bloc  {$$ = symbolic(*$1._FUNCptr,makevecteur($3,equaltosame($5),$7,symb_bloc($9)));}
 	| T_FOR T_BEGIN_PAR exp_or_empty T_SEMI exp_or_empty T_SEMI exp_or_empty T_END_PAR exp T_SEMI  {$$ = symbolic(*$1._FUNCptr,makevecteur($3,equaltosame($5),$7,$9));}
@@ -619,19 +619,19 @@ $$ = symbolic(*$2._FUNCptr,gen(makevecteur($1,python_compat(giac_yyget_extra(sca
 	| T_VECT_DISPATCH exp T_FOR suite_symbol T_IN exp T_VECT_END { $$=symbolic(at_apply,makesequence(symbolic(at_program,makesequence($4,0*$4,vecteur(1,$2))),$6)); if ($1==_TABLE__VECT) $$=symbolic(at_table,$$);}
 	| T_VECT_DISPATCH exp T_FOR suite_symbol T_IN exp T_IF exp T_VECT_END { $$=symbolic(at_apply,symbolic(at_program,makesequence($4,0*$4,vecteur(1,$2))),symbolic(at_select,makesequence(symbolic(at_program,makesequence($4,0*$4,$8)),$6))); if ($1==_TABLE__VECT) $$=symbolic(at_table,$$);}
 	| T_WHILE T_BEGIN_PAR exp T_END_PAR bloc { 
-	vecteur v=makevecteur(zero,equaltosame($3),zero,symb_bloc($5));
+	vecteur v=makevecteur(gen_zero,equaltosame($3),gen_zero,symb_bloc($5));
 	$$=symbolic(*$1._FUNCptr,v); 
 	}
 	| T_WHILE T_BEGIN_PAR exp T_END_PAR exp T_SEMI { 
-	$$=symbolic(*$1._FUNCptr,makevecteur(zero,equaltosame($3),zero,$5)); 
+	$$=symbolic(*$1._FUNCptr,makevecteur(gen_zero,equaltosame($3),gen_zero,$5)); 
 	}
 	| T_WHILE exp T_DO prg_suite T_BLOC_END { 
           if ($5.type==_INT_ && $5.val && $5.val!=9 && $5.val!=8) giac_yyerror(scanner,"missing loop end delimiter");
-	  $$=symbolic(*$1._FUNCptr,makevecteur(zero,equaltosame($2),zero,symb_bloc($4))); 
+	  $$=symbolic(*$1._FUNCptr,makevecteur(gen_zero,equaltosame($2),gen_zero,symb_bloc($4))); 
         }
 	| T_MUPMAP_WHILE exp T_DO prg_suite T_BLOC_END { 
           if ($5.type==_INT_ && $5.val && $5.val!=9 && $5.val!=8) giac_yyerror(scanner,"missing loop end delimiter");
-          $$=symbolic(*$1._FUNCptr,makevecteur(zero,equaltosame($2),zero,symb_bloc($4))); 
+          $$=symbolic(*$1._FUNCptr,makevecteur(gen_zero,equaltosame($2),gen_zero,symb_bloc($4))); 
         }
 	| T_TRY bloc T_CATCH T_BEGIN_PAR exp T_END_PAR bloc { $$=symb_try_catch(makevecteur(symb_bloc($2),$5,symb_bloc($7)));}
 	| T_TRY_CATCH T_BEGIN_PAR exp T_END_PAR {$$=symb_try_catch(gen2vecteur($3));}
@@ -642,7 +642,7 @@ $$ = symbolic(*$2._FUNCptr,gen(makevecteur($1,python_compat(giac_yyget_extra(sca
 	| T_ACCENTGRAVE rpn_token T_ACCENTGRAVE { $$=$2; }
 	| T_RPN_OP { $$=$1; }	   
 	| T_RETURN TI_DEUXPOINTS {$$ = gen(*$1._FUNCptr,0);} 
-	| TI_LOOP prg_suite ti_bloc_end { $$=symbolic(*$1._FUNCptr,makevecteur(zero,plus_one,zero,symb_bloc($2))); }
+	| TI_LOOP prg_suite ti_bloc_end { $$=symbolic(*$1._FUNCptr,makevecteur(gen_zero,gen(1),gen_zero,symb_bloc($2))); }
  	| T_IF exp TI_DEUXPOINTS exp {$$ = symbolic(*$1._FUNCptr,makevecteur(equaltosame($2),$4,0));} 
 	| TI_TRY prg_suite T_ELSE prg_suite ti_bloc_end { $$=symb_try_catch(makevecteur(symb_bloc($2),at_break,symb_bloc($4))); } 
 	| TI_TRY prg_suite T_ELSE ti_bloc_end { $$=symb_try_catch(makevecteur(symb_bloc($2),at_break,0)); } 
@@ -651,28 +651,28 @@ $$ = symbolic(*$2._FUNCptr,gen(makevecteur($1,python_compat(giac_yyget_extra(sca
 	| exp TI_SEMI exp           { vecteur v1(gen2vecteur($1)),v3(gen2vecteur($3)); $$=symbolic(at_ti_semi,makevecteur(v1,v3)); }
 	| TI_DEUXPOINTS symbol T_BEGIN_PAR suite T_END_PAR TI_PRGM prg_suite TI_DEUXPOINTS TI_LOCAL suite TI_DEUXPOINTS prg_suite ti_bloc_end { 
           const giac::context * contextptr = giac_yyget_extra(scanner);
-          $$=symb_program_sto($4,$4*zero,symb_local($10,mergevecteur(*$7._VECTptr,*$12._VECTptr),contextptr),$2,false,contextptr); 
+          $$=symb_program_sto($4,$4*gen_zero,symb_local($10,mergevecteur(*$7._VECTptr,*$12._VECTptr),contextptr),$2,false,contextptr); 
 	}
 	| TI_DEUXPOINTS symbol T_BEGIN_PAR suite T_END_PAR TI_PRGM prg_suite TI_LOCAL suite TI_DEUXPOINTS prg_suite ti_bloc_end { 
           const giac::context * contextptr = giac_yyget_extra(scanner);
-	$$=symb_program_sto($4,$4*zero,symb_local($9,mergevecteur(*$7._VECTptr,*$11._VECTptr),contextptr),$2,false,contextptr); 
+	$$=symb_program_sto($4,$4*gen_zero,symb_local($9,mergevecteur(*$7._VECTptr,*$11._VECTptr),contextptr),$2,false,contextptr); 
 	}
 	| TI_DEUXPOINTS symbol T_BEGIN_PAR suite T_END_PAR TI_PRGM TI_DEUXPOINTS TI_LOCAL suite TI_DEUXPOINTS prg_suite ti_bloc_end { 
           const giac::context * contextptr = giac_yyget_extra(scanner);
-	$$=symb_program_sto($4,$4*zero,symb_local($9,$11,contextptr),$2,false,contextptr); 
+	$$=symb_program_sto($4,$4*gen_zero,symb_local($9,$11,contextptr),$2,false,contextptr); 
 	}
 	| TI_DEUXPOINTS symbol T_BEGIN_PAR suite T_END_PAR TI_PRGM prg_suite ti_bloc_end { 
-	$$=symb_program_sto($4,$4*zero,symb_bloc($7),$2,false,giac_yyget_extra(scanner)); 
+	$$=symb_program_sto($4,$4*gen_zero,symb_bloc($7),$2,false,giac_yyget_extra(scanner)); 
 	}
 	| TI_DIALOG prg_suite ti_bloc_end { $$=symbolic(*$1._FUNCptr,$2); }
 	| TI_DIALOG bloc { $$=symbolic(*$1._FUNCptr,$2); }
 	| TI_DEUXPOINTS exp { $$=$2; }
-	| TI_DEFINE symbol T_BEGIN_PAR suite T_END_PAR T_EQUAL exp { $$=symb_program_sto($4,$4*zero,$7,$2,false,giac_yyget_extra(scanner));}
+	| TI_DEFINE symbol T_BEGIN_PAR suite T_END_PAR T_EQUAL exp { $$=symb_program_sto($4,$4*gen_zero,$7,$2,false,giac_yyget_extra(scanner));}
 	| TI_DEFINE symbol T_BEGIN_PAR suite T_END_PAR T_EQUAL TI_PRGM TI_DEUXPOINTS TI_LOCAL suite TI_DEUXPOINTS prg_suite ti_bloc_end { 
           const giac::context * contextptr = giac_yyget_extra(scanner);
-          $$=symb_program_sto($4,$4*zero,symb_local($10,$12,contextptr),$2,false,contextptr);
+          $$=symb_program_sto($4,$4*gen_zero,symb_local($10,$12,contextptr),$2,false,contextptr);
         }
-	| TI_DEFINE symbol T_BEGIN_PAR suite T_END_PAR T_EQUAL TI_PRGM prg_suite ti_bloc_end { $$=symb_program_sto($4,$4*zero,symb_bloc($8),$2,false,giac_yyget_extra(scanner)); }
+	| TI_DEFINE symbol T_BEGIN_PAR suite T_END_PAR T_EQUAL TI_PRGM prg_suite ti_bloc_end { $$=symb_program_sto($4,$4*gen_zero,symb_bloc($8),$2,false,giac_yyget_extra(scanner)); }
 	| TI_FOR suite TI_DEUXPOINTS prg_suite ti_bloc_end {
            vecteur & v=*$2._VECTptr;
            if ( (v.size()<3) || v[0].type!=_IDNT){
@@ -680,7 +680,7 @@ $$ = symbolic(*$2._FUNCptr,gen(makevecteur($1,python_compat(giac_yyget_extra(sca
              $$=undef;
            }
            else {
-             gen pas(plus_one);
+             gen pas(gen(1));
              if (v.size()==4)
                pas=v[3];
              gen condition;
@@ -693,7 +693,7 @@ $$ = symbolic(*$2._FUNCptr,gen(makevecteur($1,python_compat(giac_yyget_extra(sca
            }
 	}
 	| TI_WHILE exp TI_DEUXPOINTS prg_suite ti_bloc_end { 
-	vecteur v=makevecteur(zero,equaltosame($2),zero,symb_bloc($4));
+	vecteur v=makevecteur(gen_zero,equaltosame($2),gen_zero,symb_bloc($4));
 	$$=symbolic(*$1._FUNCptr,v); 
 	}
 	/*
@@ -791,7 +791,7 @@ affectable_symbol : symbol { $$=$1; }
 }
 	     ;
 
-exp_or_empty: /* empty */ { $$=plus_one;}
+exp_or_empty: /* empty */ { $$=gen(1);}
 	| exp	{ $$=$1; }
 	;
 
@@ -823,7 +823,7 @@ rpn_token  : T_UNARY_OP { $$=$1; }
 	   | T_STRING	{ $$=$1; }
 	   | T_UNIT rpn_token { 
             const giac::context * contextptr = giac_yyget_extra(scanner);
-            $$=symb_unit(plus_one,$2,contextptr);
+            $$=symb_unit(gen(1),$2,contextptr);
            }
 	   | T_NUMBER T_UNIT rpn_token { 
              const giac::context * contextptr = giac_yyget_extra(scanner);
@@ -854,10 +854,10 @@ rpn_token  : T_UNARY_OP { $$=$1; }
 	   | T_IFTE {$$ = gen(at_IFTE,3);}
 	   | T_RPN_IF rpn_suite T_THEN rpn_suite T_BLOC_END { $$=symb_IFTE(makevecteur($2,$4,symb_NOP(vecteur(0)))); }
 	   | T_RPN_IF rpn_suite T_THEN rpn_suite T_ELSE rpn_suite T_BLOC_END { $$=symb_IFTE(makevecteur($2,$4,$6)); }
-	   | T_START rpn_suite T_BY { vecteur v=*$2._VECTptr; gen step(plus_one); if (!v.empty()) { step=v.back(); v.pop_back();} $$=symb_RPN_FOR(makevecteur(identificateur(" j"),step),gen(v,_RPN_FUNC__VECT)); }
-	   | T_START rpn_suite T_CONTINUE { $$=symb_RPN_FOR(makevecteur(identificateur(" j"),plus_one),$2); }
-	   | T_FOR symbol rpn_suite T_BY { vecteur v=*$3._VECTptr; gen step(plus_one); if (!v.empty()) { step=v.back(); v.pop_back();} $$=symb_RPN_FOR(makevecteur($2,step),gen(v,_RPN_FUNC__VECT)); }
-	   | T_FOR symbol rpn_suite T_CONTINUE { $$=symb_RPN_FOR(makevecteur($2,plus_one),$3); }
+	   | T_START rpn_suite T_BY { vecteur v=*$2._VECTptr; gen step(gen(1)); if (!v.empty()) { step=v.back(); v.pop_back();} $$=symb_RPN_FOR(makevecteur(identificateur(" j"),step),gen(v,_RPN_FUNC__VECT)); }
+	   | T_START rpn_suite T_CONTINUE { $$=symb_RPN_FOR(makevecteur(identificateur(" j"),gen(1)),$2); }
+	   | T_FOR symbol rpn_suite T_BY { vecteur v=*$3._VECTptr; gen step(gen(1)); if (!v.empty()) { step=v.back(); v.pop_back();} $$=symb_RPN_FOR(makevecteur($2,step),gen(v,_RPN_FUNC__VECT)); }
+	   | T_FOR symbol rpn_suite T_CONTINUE { $$=symb_RPN_FOR(makevecteur($2,gen(1)),$3); }
 	   | T_RPN_WHILE rpn_suite T_REPEAT rpn_suite T_BLOC_END { $$=symb_RPN_WHILE($2,$4);}
 	   | T_DO rpn_suite T_UNTIL rpn_suite T_BLOC_END { $$=symb_RPN_UNTIL($2,$4); }
 	   | T_MAPSTO symbol_suite rpn_sub_prog { $$=symb_RPN_LOCAL($2,$3); }
@@ -884,17 +884,17 @@ rpn_case: { $$=vecteur(0); }
 
    end rpn_token comment to save space */
 
-step:	/* empty */ { $$=plus_one; }
+step:	/* empty */ { $$=gen(1); }
 	| T_BY exp { $$=$2; }
 	;
 
-from:	/* empty */ { $$=plus_one; }
+from:	/* empty */ { $$=gen(1); }
 	| T_AFFECT exp { $$=$2; }
 	| T_EQUAL exp { $$=$2; }
 	| T_FROM exp { $$=$2; }
 	;
 
-loop38_do: T_SEMI { $$=plus_one; }
+loop38_do: T_SEMI { $$=gen(1); }
 	| T_DO { $$=$1; }
 	;
 
