@@ -2180,7 +2180,7 @@ namespace giac {
 	      continue;
 	    }
 	    if (is_undef(tmp)){
-#ifdef EMCC // computation takes too long in emscripten, accept the solution without check
+#if defined(EMCC) || defined(EMCC2) // computation takes too long in emscripten, accept the solution without check
 	      tmp=0;
 	      *logptr(contextptr) << "Warning, " << *it << " not checked" << '\n';
 #else

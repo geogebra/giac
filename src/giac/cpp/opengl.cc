@@ -58,7 +58,7 @@
 using namespace std;
 using namespace giac;
 
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
 // missing from emscripten
 void glPointSize(GLint){ }
 void glColorMaterial(GLenum,GLint){}
@@ -2133,7 +2133,7 @@ namespace giac {
     }
     else 
       glDisable(GL_COLOR_MATERIAL);
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
     GLfloat tab[4]={0,0,0,1};
     glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,tab);
     glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,50);
@@ -4314,7 +4314,7 @@ int giac_renderer(const char * ch){
 } // namespace giac
 #endif // ndef NO_NAMESPACE_GIAC
 
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
 #ifdef GIAC_GGB
 const char * gettext(const char * s) { 
   return s;

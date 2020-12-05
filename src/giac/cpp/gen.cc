@@ -80,7 +80,7 @@ extern "C" uint32_t mainThreadStack[];
 #include <emscripten/bind.h>  
 #endif
 
-#if defined EMCC && !defined GIAC_GGB
+#if (defined EMCC || defined EMCC2) && !defined GIAC_GGB
 
 #if 0 // def EMCC_GLUT
 #include <GL/glut.h>
@@ -281,7 +281,7 @@ namespace giac {
 #ifdef NSPIRE
     dtostr(d,8,ch); // FIXME!
 #else
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     sprintf(ch,format,d);
 #else
     my_sprintf(ch,format,d);
@@ -453,7 +453,7 @@ namespace giac {
 #endif // NO_STDEXCEPT
 
   gen undeferr(const string & s){
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     CERR << s << '\n';
 #endif
 #if defined NSPIRE || defined FXCG
@@ -4417,7 +4417,7 @@ namespace giac {
   }
 
   gen & operator_plus_eq(gen &a,const gen & b,GIAC_CONTEXT){
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     a=operator_plus(a,b,contextptr);
     return a;
 #endif
@@ -5217,7 +5217,7 @@ namespace giac {
   }
 
   gen & operator_minus_eq (gen & a,const gen & b,GIAC_CONTEXT){
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     a=operator_minus(a,b,contextptr);
     return a;
 #endif
@@ -5782,7 +5782,7 @@ namespace giac {
   // a*b -> tmp, modifies tmp in place
   void type_operator_times(const gen & a,const gen &b,gen & tmp){
     register unsigned t=(a.type<< _DECALAGE) | b.type;
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
     if (tmp.type==_DOUBLE_ && t==_DOUBLE___DOUBLE_){
 #ifdef DOUBLEVAL
       tmp._DOUBLE_val=a._DOUBLE_val*b._DOUBLE_val;
@@ -5846,7 +5846,7 @@ namespace giac {
 
   void type_operator_plus_times(const gen & a,const gen & b,gen & c){
     register unsigned t=(a.type<< _DECALAGE) | b.type;
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
     if (c.type==_DOUBLE_ && t==_DOUBLE___DOUBLE_){
 #ifdef DOUBLEVAL
       c._DOUBLE_val += a._DOUBLE_val*b._DOUBLE_val;
@@ -5926,7 +5926,7 @@ namespace giac {
 
   void type_operator_minus_times(const gen & a,const gen & b,gen & c){
     register unsigned t=(a.type<< _DECALAGE) | b.type;
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
     if (c.type==_DOUBLE_ && t==_DOUBLE___DOUBLE_){
 #ifdef DOUBLEVAL
       c._DOUBLE_val -= a._DOUBLE_val*b._DOUBLE_val;
@@ -7572,7 +7572,7 @@ namespace giac {
 
   gen pow(unsigned long int base, unsigned long int exponent){
     ref_mpz_t *e=new ref_mpz_t;
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     mpz_set_si(e->z,base);
     mpz_pow_ui(e->z,e->z,exponent);
     return e;
@@ -10404,7 +10404,7 @@ namespace giac {
     return absint(a);
   }
 
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
   void my_mpz_gcd(mpz_t &z,const mpz_t & A,const mpz_t & B){
     mpz_t a,b;
     mpz_init_set(a,A);
@@ -11681,7 +11681,7 @@ namespace giac {
     // val = 0;
     if (!*s)
       return res;
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     int base=10;
 #else
     int base=(abs_calc_mode(contextptr)==38 || calc_mode(contextptr)==1)?10:0;
@@ -12767,7 +12767,7 @@ void sprint_double(char * s,double d){
     case _GGBVECT:
       s=(calc_mode(contextptr)==1?"ggbvect(":"ggbvect[");
       break;
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
     case _LOGO__VECT:
       s="logo[";
       break;
@@ -12877,7 +12877,7 @@ void sprint_double(char * s,double d){
   }
 
   const char * svg2doutput(const gen & g,string & S,GIAC_CONTEXT){
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     bool fullview=true;
     vector<double> vx,vy,vz;
     double window_xmin,window_xmax,window_ymin,window_ymax,window_zmin,window_zmax;
@@ -12962,7 +12962,7 @@ void sprint_double(char * s,double d){
 #endif
     string s;
     if (subtype==_SPREAD__VECT && !v.empty() && v.front().type==_VECT){
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
       bool add_quotes=true;
       s = "[";
 #else
@@ -15990,7 +15990,7 @@ void sprint_double(char * s,double d){
       return negatif?"-infinity":"+infinity";
     mp_exp_t expo;
     int dd=mpfr_get_prec(inf);
-#ifdef EMCC // workaround: mpfr_set_prec or get_prec has problems with emcc
+#if defined(EMCC) || defined(EMCC2) // workaround: mpfr_set_prec or get_prec has problems with emcc
     if (dd==53)
       dd=100;
 #endif
@@ -16380,7 +16380,7 @@ void sprint_double(char * s,double d){
       // COUT << "hout " << g << '\n';
     }
 #endif
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     // compile with -s LEGACY_GL_EMULATION=1
     gen last=g;
     while (last.type==_VECT && last.subtype!=_LOGO__VECT && !last._VECTptr->empty()){
@@ -16395,7 +16395,7 @@ void sprint_double(char * s,double d){
       return S.c_str();
     }
     if (calc_mode(&C)!=1 && (last.is_symb_of_sommet(at_pnt) || last.is_symb_of_sommet(at_pixon))){
-#if !defined(GIAC_GGB) && defined(EMCC)
+#if !defined(GIAC_GGB) && (defined(EMCC) || defined EMCC2)
       if (is3d(last)){
 	int worker=0;
 	worker=EM_ASM_INT_V({

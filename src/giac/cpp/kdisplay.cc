@@ -2538,7 +2538,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     turtle_stack().push_back((*turtleptr));
 #endif
     gen res=turtle_state(contextptr);
-#ifdef EMCC // should directly interact with canvas
+#if defined EMCC || defined (EMCC2) // should directly interact with canvas
     return gen(turtlevect2vecteur(turtle_stack()),_LOGO__VECT);
 #endif
     return res;

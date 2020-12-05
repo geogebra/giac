@@ -89,7 +89,7 @@ extern "C" uint32_t mainThreadStack[];
 #endif
 #endif
 
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
 #include <emscripten.h>
 #endif
 
@@ -113,7 +113,7 @@ namespace giac {
 #endif
 
   void alert(const string & s,GIAC_CONTEXT){
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     EM_ASM_ARGS({
 	if (UI.warnpy){
           var msg = UTF8ToString($0);// Pointer_stringify($0); // Convert message to JS string
@@ -5643,7 +5643,7 @@ namespace giac {
     } // end while(1)
   }
 #else // KHICAS
-#if defined EMCC && !defined GIAC_GGB
+#if (defined EMCC || defined EMCC2 ) && !defined GIAC_GGB
   void debug_loop(gen &res,GIAC_CONTEXT){
     if (!debug_ptr(contextptr)->debug_allowed || (!debug_ptr(contextptr)->sst_mode && !equalposcomp(debug_ptr(contextptr)->sst_at,debug_ptr(contextptr)->current_instruction)) )
       return;
@@ -8187,7 +8187,7 @@ namespace giac {
     gen g(s,contextptr);
     return g;
 #else // KHICAS
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     string s=fetch(fichier);
     return gen(s,contextptr);
 #endif
@@ -8596,7 +8596,7 @@ namespace giac {
 #endif
     const char *cmdname=argss.c_str(),* howto=0, * syntax=0, * related=0, *examples=0;
     if (has_static_help(cmdname,lang,howto,syntax,examples,related)){
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
       if (argss.size()>2 && argss[0]=='\'' && argss[argss.size()-1]=='\'')
 	argss=argss.substr(1,argss.size()-2);
       // should split related at commas, and display buttons
@@ -9646,7 +9646,7 @@ namespace giac {
 #ifdef FXCG
     return RTC_GetTicks();
 #else
-#if defined __APPLE__ || defined EMCC || !defined HAVE_LIBRT
+#if defined __APPLE__ || defined EMCC || defined EMCC2 || !defined HAVE_LIBRT
     return (int) clock();
 #else
     timespec t;
@@ -9900,7 +9900,7 @@ namespace giac {
 
 #ifndef KHICAS // see kadd.cc
   gen current_sheet(const gen & g,GIAC_CONTEXT){
-#if defined EMCC && !defined GIAC_GGB
+#if (defined EMCC || defined EMCC2 ) && !defined GIAC_GGB
     if (ckmatrix(g,true)){
       matrice m=*g._VECTptr;
       int R=m.size(),C=m.front()._VECTptr->size();

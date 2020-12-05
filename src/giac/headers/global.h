@@ -292,7 +292,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   extern volatile bool ctrl_c,interrupted,kbd_interrupted;
   void ctrl_c_signal_handler(int signum);
 #ifdef TIMEOUT
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
   double time(int );
 #endif
   extern time_t caseval_begin,caseval_current;

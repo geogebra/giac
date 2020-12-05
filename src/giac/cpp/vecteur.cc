@@ -2366,7 +2366,7 @@ namespace giac {
     }
     int epsbits=-std::log(eps)/std::log(2.);
     if (precis && int(crystalball.size())==deg 
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
 	&& dkw(v_accurate,crystalball,nbits,eps)
 #endif
 	){
@@ -3393,7 +3393,7 @@ namespace giac {
     int c=c2>c1?c2-c1:it->size(); // ncols of a = rows of res
     res.resize(c);
     // find begin of each row
-#if defined( VISUALC ) || defined( BESTA_OS ) || defined(EMCC) || defined(__clang__)
+#if defined( VISUALC ) || defined( BESTA_OS ) || defined(EMCC) || defined EMCC2 || defined(__clang__)
     vector<int>::const_iterator * itr=(vector<int>::const_iterator *)alloca(ncolres*sizeof(vector<int>::const_iterator));
 #else
     vector<int>::const_iterator itr[ncolres];
@@ -16952,7 +16952,7 @@ namespace giac {
       return gensizeerr(gettext("Expecting file name to convert"));
     string file=*gs._STRNGptr;
     if (isfile){
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
       istringstream i(fetch(file));
       return csv2gen(i,sep,nl,decsep,eof,contextptr);
 #else
@@ -19111,7 +19111,7 @@ namespace giac {
   }
 
   double complex_abs(const complex_double & c){
-#if defined EMCC || defined FXCG
+#if defined EMCC || defined EMCC2 || defined FXCG
     double r=c.real(),i=c.imag();
     r=std::sqrt(r*r+i*i);
     return r;
@@ -19121,7 +19121,7 @@ namespace giac {
   }
 
   double complex_long_abs(const complex_long_double & c){
-#if defined EMCC || defined FXCG
+#if defined EMCC || defined EMCC2 || defined FXCG
     long_double r=c.real(),i=c.imag();
     r=std::sqrt(r*r+i*i);
     return r;
@@ -19258,7 +19258,7 @@ namespace giac {
 	complex_double delta=a*a-2.0*a*d+d*d+4.0*b*c;
 	if (debug_infolevel>2)
 	  CERR << "delta " << delta << '\n';
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
 	delta=std::exp(std::log(delta)/2.0);
 #else
 	delta=sqrt(delta);

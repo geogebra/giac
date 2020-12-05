@@ -1632,7 +1632,7 @@ namespace giac {
     return false;
   }
 
-#if !defined(RTOS_THREADX) && !defined(EMCC)
+#if !defined(RTOS_THREADX) && !defined(EMCC) //&& !defined(EMCC2)
   // 3-d implicit surface using the marching cube algorithm
     /* Adapted from http://astronomy.swin.edu.au/~pbourke/modelling/ 
        by Paul Bourke

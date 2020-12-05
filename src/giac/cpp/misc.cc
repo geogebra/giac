@@ -742,7 +742,7 @@ namespace giac {
     static gen FREEZE(identificateur("FREEZE"));
     return _of(makesequence(FREEZE,args),contextptr);
 #else
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     return get_pixel_v();
 #else
     return makesequence(symb_equal(change_subtype(_AXES,_INT_PLOT),0),get_pixel_v());
@@ -8172,7 +8172,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     gly=symb_equal(gly,symb_interval(ymin-yscale/2,ymax+yscale/2));
     poi.insert(poi.begin(),gly);
     gprintf(gettext("Variations (%gen,%gen)\n%gen"),makevecteur(f,g,tvi),1,contextptr);
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
     if (printtvi && step_infolevel(contextptr)==0)
       *logptr(contextptr) << tvi << '\n';
 #endif
@@ -8708,7 +8708,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     gly=symb_equal(gly,symb_interval(ymin-yscale/2,ymax+yscale/2));
     poi.insert(poi.begin(),gly);
     gprintf(gettext(do_inflex_tabsign==2?"Sign %gen\n%gen":"Variations %gen\n%gen"),makevecteur(f,tvi),1,contextptr);
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
     if (printtvi && step_infolevel(contextptr)==0)
       *logptr(contextptr) << tvi << '\n';
 #endif
@@ -8741,7 +8741,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     vecteur v(g.type==_VECT && g.subtype==_SEQ__VECT?*g._VECTptr:vecteur(1,g));
     int s=int(v.size());
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     int plot=1;
 #else
     int plot=0;
@@ -10321,7 +10321,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   
 #endif // UNISTD
 
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
 #ifdef EMCC_FETCH
   // with emscripten 1.37.28, it does not work
 #include <emscripten/fetch.h>

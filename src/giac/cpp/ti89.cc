@@ -2172,7 +2172,7 @@ namespace giac {
 
   gen _ClrIO(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     return _print(_char(12,contextptr),contextptr);
 #endif
     return __interactive.op(symbolic(at_ClrIO,0),contextptr);
@@ -2667,7 +2667,7 @@ namespace giac {
 #ifndef FXCG
   gen _RandSeed(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
-#if defined(NSPIRE_NEWLIB) || defined KHICAS || defined(VISUALC) || defined(__MINGW_H) || defined BESTA_OS || defined EMCC || defined NSPIRE 
+#if defined(NSPIRE_NEWLIB) || defined KHICAS || defined(VISUALC) || defined(__MINGW_H) || defined BESTA_OS || defined EMCC || defined EMCC2 || defined NSPIRE 
     srand(g.val);
 #else
 #ifndef GNUWINCE
@@ -3173,7 +3173,7 @@ namespace giac {
   static define_unary_function_eval_quoted (__fonction,&_for,_fonction_s);
   define_unary_function_ptr5( at_fonction ,alias_at_fonction,&__fonction,_QUOTE_ARGUMENTS,T_PROC);
 
-#if defined RTOS_THREADX || defined BESTA_OS || defined EMCC || defined __MINGW_H || defined KHICAS
+#if defined RTOS_THREADX || defined BESTA_OS || defined EMCC || defined EMCC2 || defined __MINGW_H || defined KHICAS
 
   gen _unarchive_ti(const gen & g,GIAC_CONTEXT){
     return undef;

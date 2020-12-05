@@ -163,7 +163,7 @@ namespace giac {
   double global_window_xmin(gnuplot_xmin),global_window_xmax(gnuplot_xmax),global_window_ymin(gnuplot_ymin),global_window_ymax(gnuplot_ymax);
   double x_tick(1.0),y_tick(1.0);
   double class_minimum(0.0),class_size(1.0);
-#if defined RTOS_THREADX || defined EMCC || defined KHICAS
+#if defined RTOS_THREADX || defined EMCC || defined EMCC2 || defined KHICAS
   int gnuplot_pixels_per_eval=128;
 #else
   int gnuplot_pixels_per_eval=401;
@@ -1484,7 +1484,7 @@ namespace giac {
 	local_sto_double(i,*vars._IDNTptr,newcontextptr);
 	// vars._IDNTptr->localvalue->back()._DOUBLE_val =i;
 	yy=y.evalf2double(eval_level(contextptr),newcontextptr);
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
 	if (yy.is_symb_of_sommet(at_neg))
 	  yy=-yy._SYMBptr->feuille.evalf2double(eval_level(contextptr),newcontextptr);
 #endif
@@ -2127,7 +2127,7 @@ namespace giac {
     if (s<1)
       return gensizeerr(contextptr);
     gen e1=vargs[1];
-#if 0 // ?#ifdef EMCC
+#if 0 // ?#if defined(EMCC) || defined(EMCC2)
     if (!densityplot && e1.type==_IDNT){
       gen m=minus_inf,M=plus_inf;
       vecteur poi,tvi;
@@ -2432,7 +2432,7 @@ namespace giac {
 	++lastxmax;
 	continue;
       }
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
       if (lastcolor!=-1){
 	if (lastxmax==lastxmin){
 	  if (lastymax==lastymin)
@@ -2574,7 +2574,7 @@ namespace giac {
       return gensizeerr(contextptr);
     }
     if (s>=3){
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
       return symbolic(at_pixon,a);
 #else
       // return symbolic(at_pnt,gen(makevecteur(symbolic(at_pixon,a),0),_PNT__VECT));
@@ -6307,7 +6307,7 @@ namespace giac {
     else
       return vecteur(1,args);
   }
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
 #include <emscripten.h>  
 #endif
   // user input sent back to the parent process
@@ -6327,7 +6327,7 @@ namespace giac {
     if (vs>1)
       v[1]=eval(v[1],contextptr);
     gen res;
-#if defined EMCC && !defined GIAC_GGB
+#if (defined EMCC || defined EMCC2 ) && !defined GIAC_GGB
     string mesg="Input\n";
     mesg += v[0].type==_STRNG?*v[0]._STRNGptr:v[0].print(contextptr);
     int i=EM_ASM_INT({
@@ -8491,7 +8491,7 @@ namespace giac {
       }
       else 
 	reim(fg,r,i,contextptr);
-#if 0 // ? #ifdef EMCC
+#if 0 // ? #if defined(EMCC) || defined(EMCC2)
       if (step_param(r,i,t,m,M,poi,tvi,true,false,contextptr)){
 	gen scale=(gnuplot_tmax-gnuplot_tmin)/5.0;
 	if (is_inf(m))
@@ -14180,7 +14180,7 @@ gen _vers(const gen & g,GIAC_CONTEXT){
     turtle(contextptr).theta = turtle(contextptr).theta - floor(turtle(contextptr).theta/360)*360;
     turtle_stack(contextptr).push_back(turtle(contextptr));
     gen res=turtle_state(contextptr);
-#ifdef EMCC // should directly interact with canvas
+#if defined(EMCC) || defined(EMCC2) // should directly interact with canvas
     return gen(turtlevect2vecteur(turtle_stack(contextptr)),_LOGO__VECT);
 #endif
     // update parent turtle state

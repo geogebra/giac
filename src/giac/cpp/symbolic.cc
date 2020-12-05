@@ -361,7 +361,7 @@ namespace giac {
     }
 #endif
     bool argpar = ( (arg.type>_CPLX && arg.type!=_FLOAT_) || !is_positive(arg,contextptr)) && arg.type!=_IDNT ;
-#if defined EMCC || defined GIAC_GGB 
+#if defined EMCC || defined EMCC2 || defined GIAC_GGB 
     bool need=need_parenthesis(arg) || arg.type==_SYMB;
     if (pui==plus_one_half){
 #ifdef KHICAS // inactive code
@@ -543,7 +543,7 @@ namespace giac {
     if (g.sommet==at_inv)
       return add_print_inv(s,g.feuille,contextptr);
     if (g.sommet==at_exp 
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
 	&& (calc_mode(contextptr)==1 || abs_calc_mode(contextptr)==38)
 #endif
 	){
@@ -603,7 +603,7 @@ namespace giac {
 	s += "=";
       return add_print_symbolic(s,*g._SYMBptr,contextptr);
     }
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     const string tmp=g.print(contextptr);
 #else
     const string & tmp=g.print(contextptr);

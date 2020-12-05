@@ -536,7 +536,7 @@ namespace giac {
   gen _Heaviside(const gen & args,GIAC_CONTEXT);
   gen _Dirac(const gen & args,GIAC_CONTEXT);
 
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
 #define gen_zero gen(0)
 #else
 #define gen_zero zero
@@ -548,7 +548,7 @@ namespace giac {
   extern const gen minus_one;
   extern const gen plus_two;
   extern const gen plus_three;
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
 #define cst_i gen(0,1)
 #else
   extern const gen cst_i;

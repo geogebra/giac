@@ -1394,7 +1394,7 @@ namespace giac {
     return "vect2svg error";
   }
 
-#if defined EMCC && !defined GIAC_GGB
+#if (defined EMCC || defined (EMCC2)) && !defined GIAC_GGB
 #include <emscripten.h>
 #endif
 
@@ -1426,7 +1426,7 @@ namespace giac {
       color         =(ensemble_attributs & 0x0000ffff);
       epaisseur_point += 2;
       bool ie=false; // detect here if we are using IE
-#if defined EMCC && !defined GIAC_GGB
+#if (defined EMCC || defined (EMCC2)) && !defined GIAC_GGB
       ie=EM_ASM_INT_V({
 	  if (Module.worker) return 0;
 	  var ua = window.navigator.userAgent;
@@ -1750,7 +1750,7 @@ namespace giac {
     return gen2mathml(e, svg,contextptr);
   }
 
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
   static string mathml_split(const string & s,int slicesize){
     if (s.size()<=slicesize)
       return s;
@@ -1955,7 +1955,7 @@ namespace giac {
   unsigned max_prettyprint_equation=5000;
   gen _mathml(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
     if (g.type==_VECT && g.subtype==_SEQ__VECT && g._VECTptr->size()>1 && (*g._VECTptr)[1].type==_STRNG && *((*g._VECTptr)[1]._STRNGptr)!="Done"){
       ofstream of((*g._VECTptr)[1]._STRNGptr->c_str());
       of << gen2mathmlfull(g._VECTptr->front(),contextptr) << '\n';

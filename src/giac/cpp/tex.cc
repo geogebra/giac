@@ -1382,7 +1382,7 @@ namespace giac {
     }
     return 0;
   }
-#if defined USE_GMP_REPLACEMENTS || defined GIAC_GGB || defined EMCC || defined KHICAS || defined NSPIRE_NEWLIB
+#if defined USE_GMP_REPLACEMENTS || defined GIAC_GGB || defined EMCC || defined EMCC2 || defined KHICAS || defined NSPIRE_NEWLIB
   bool has_improved_latex_export(const gen &g,string &s,bool override_texmacs,GIAC_CONTEXT){
     return false;
   }

@@ -382,7 +382,7 @@ namespace giac {
 	examples=nullstring;
       return true;
     }
-#if defined EMCC
+#if defined EMCC || defined EMCC2
     // Find closest string
     syntax=nullstring;
     related=nullstring;
@@ -944,7 +944,7 @@ namespace giac {
     return result;
   }
 
-#if !defined(NSPIRE_NEWLIB) && !defined(RTOS_THREADX) && !defined(EMCC) &&!defined(NSPIRE) && !defined FXCG && !defined(KHICAS) && !defined GIAC_HAS_STO_38
+#if !defined(NSPIRE_NEWLIB) && !defined(RTOS_THREADX) && !defined(EMCC) && !defined(EMCC2) &&!defined(NSPIRE) && !defined FXCG && !defined(KHICAS) && !defined GIAC_HAS_STO_38
   multimap<string,string> html_mtt,html_mall;
   std::vector<std::string> html_vtt,html_vall;
 
@@ -1224,7 +1224,7 @@ namespace giac {
 #endif // visualc
 
   void find_all_index(const std::string & subdir,multimap<std::string,std::string> & mtt,multimap<std::string,std::string> & mall){
-#if defined GNUWINCE || defined __MINGW_H || defined __ANDROID__ || defined EMCC || defined NSPIRE_NEWLIB || defined FXCG || defined KHICAS
+#if defined GNUWINCE || defined __MINGW_H || defined __ANDROID__ || defined EMCC|| defined EMCC2 || defined NSPIRE_NEWLIB || defined FXCG || defined KHICAS
     return;
 #else
     // cerr << "HTML help Scanning " << subdir << endl;

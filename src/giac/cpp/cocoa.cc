@@ -463,9 +463,10 @@ namespace giac {
 #endif
   // minimal numbers of pair to reduce simultaneously with f4buchberger
 #if 1 // def __APPLE__
-  #define GBASISF4_BUCHBERGER 0 // disabled
+#define GBASISF4_BUCHBERGER 0 // disabled
 #else
-  #define GBASISF4_BUCHBERGER 3
+#define GBASISF4_BUCHBERGER 1 
+// insure same pairs, if >1 the pairs are reduced one by one (more iteration)
 #endif
 
 #define GBASIS_POSTF4BUCHBERGER 0 // 0 means final simplification at the end, 1 at each loop
@@ -11767,7 +11768,7 @@ template<class modint_t,class modint_u>
 	  firstcol=giacmin(firstcol,indexes[effi].front());
 	// zcopycoeff(res[bk.first],subcoeff1,1);zadd(v64,subcoeff1,indexes[i]);
 	if (
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
 	    env>(1<<24) && env<=94906249
 #else
 	    0
@@ -12921,7 +12922,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	}
 	if (smallposv.empty()) smallposv.resize(B.size());
 	if (debug_infolevel>1)
-	  CERR << CLOCK()*1e-6 << " zpairs min " << (seldeg?"total degree":"elimination degree ") << firstdeg << " #pairs " << smallposv.size() << '\n';
+	  CERR << CLOCK()*1e-6 << " zpairs min " << (seldeg?"total degree ":"elimination degree ") << firstdeg << " #pairs " << smallposv.size() << '\n';
 	if ( seldeg && (smallposv.size()<giacmin(order.o,3))
 	    ){
 	  ++sel1;
@@ -13050,7 +13051,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  }
 	}
 	continue;
-      } // end if smallposp.size() small
+      } // end if smallposp.size() small (<=GBASISF4_BUCHBERGER)
       unsigned np=smallposv.size();
       if (np==B.size() && np<=max_pairs_by_iteration){
 	swap(smallposp,B);
@@ -13990,7 +13991,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     vectpoly8<tdeg_t> current,current_orig,current_gbasis,vtmp,afewpolys;
     vectpolymod<tdeg_t> resmod,gbmod;
     poly8<tdeg_t> poly8tmp;
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     // use smaller primes
     gen p=94906249-_floor(giac_rand(contextptr)/32e3,contextptr);
     // gen p=(1<<24)-_floor(giac_rand(contextptr)/32e3,contextptr);
@@ -14051,7 +14052,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	th=giacmin(th,63);
 	parallel=nthreads/(th+1);
       }
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
       if (count==1 && p.val<(1<<24)){
 #ifdef PSEUDO_MOD
 	p=(1<<29)-1;

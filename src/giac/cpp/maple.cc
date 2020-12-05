@@ -67,7 +67,7 @@ using namespace std;
 #include <unistd.h>
 #endif
 
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
 #include <emscripten.h>
 #endif
 
@@ -104,7 +104,7 @@ extern "C" double millis();
 #endif
 
 
-#if defined(EMCC) && !defined(PNACL)
+#if (defined(EMCC) || defined (EMCC2)) && !defined(PNACL)
 extern "C" double emcctime();
 // definition of emcctime should be added in emscripten directory src/library.js
 // search for _time definition, and return only Date.now() for _emcctime
@@ -433,7 +433,7 @@ namespace giac {
 #ifdef GIAC_HAS_STO_38
       return PrimeGetNow()/1000.;
 #endif
-#if 0 && defined(EMCC) && !defined(GIAC_GGB)
+#if 0 && (defined(EMCC) || defined (EMCC2)) && !defined(GIAC_GGB)
       double res;
       res=EM_ASM_DOUBLE_V({
 	  var hw=Date.now();
@@ -442,7 +442,7 @@ namespace giac {
       return res*1e-6;
 #endif // GIAC_GGB
 
-#if defined(EMCC) && !defined(PNACL)
+#if (defined(EMCC) || defined (EMCC2)) && !defined(PNACL)
       return emcctime()/1e6;
 #endif
       return total_time(contextptr);
@@ -462,7 +462,7 @@ namespace giac {
     }
     return 0.0;
 #endif
-#if 0 && defined(EMCC) && !defined(GIAC_GGB)
+#if 0 && (defined(EMCC) || defined (EMCC2)) && !defined(GIAC_GGB)
     double T1=EM_ASM_DOUBLE_V({
 	var hw=Date.now();
 	return hw;
@@ -474,7 +474,7 @@ namespace giac {
       });
     return (T2-T1)*1e-6;
 #endif // GIAC_GGB
-#if defined(EMCC) && !defined(PNACL)
+#if (defined(EMCC) || defined (EMCC2)) && !defined(PNACL)
     // time_t t1,t2;
     // time(&t1);
     // eval(a,level,contextptr);
@@ -1062,7 +1062,7 @@ namespace giac {
   // open a file, returns a FD
   gen _open(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
-#if defined(VISUALC) || defined(__MINGW_H) || defined (FIR) || defined(FXCG) || defined(NSPIRE) || defined(__ANDROID__) || defined(NSPIRE_NEWLIB) || defined(EMCC) || defined(GIAC_GGB) || defined KHICAS
+#if defined(VISUALC) || defined(__MINGW_H) || defined (FIR) || defined(FXCG) || defined(NSPIRE) || defined(__ANDROID__) || defined(NSPIRE_NEWLIB) || defined(EMCC) || defined (EMCC2) || defined(GIAC_GGB) || defined KHICAS
     return gensizeerr(gettext("not implemented"));
 #else
     gen tmp=check_secure();
@@ -1882,7 +1882,7 @@ namespace giac {
   static define_unary_function_eval (__playsnd,&_playsnd,_playsnd_s);
   define_unary_function_ptr5( at_playsnd ,alias_at_playsnd,&__playsnd,0,true);
 #else
-#if !defined GIAC_GGB && defined EMCC // must have EM_ASM code javascript inlined (emscripten 1.30.4 at least?)
+#if !defined GIAC_GGB && (defined EMCC || defined (EMCC2))// must have EM_ASM code javascript inlined (emscripten 1.30.4 at least?)
 #include <emscripten.h>
   gen _playsnd(const gen & args,GIAC_CONTEXT){
     if (args.type==_STRNG){

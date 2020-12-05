@@ -1258,7 +1258,7 @@ namespace giac {
 #ifdef _SOFTMATH_H
 	return std::giac_gnuwince_sqrt(gen2complex_d(e));
 #else
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
 	return std::exp(std::log(gen2complex_d(e))/2.0);
 #else
 	return std::sqrt(gen2complex_d(e));
@@ -10584,7 +10584,7 @@ namespace giac {
   const gen plus_two(2);
   const gen plus_three(3);
   const gen minus_one(-1);
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
   const gen cst_i(0,1);
 #endif
 #else

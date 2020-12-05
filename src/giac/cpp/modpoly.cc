@@ -38,7 +38,7 @@ using namespace std;
 #ifdef HAVE_SYS_TIME_H
 #include <time.h>
 #else
-#if !defined BESTA_OS && !defined EMCC
+#if !defined BESTA_OS && !defined EMCC && !defined EMCC2
 #define clock_t int
 #define CLOCK() 0
 #endif
@@ -6757,7 +6757,7 @@ namespace giac {
       return b;
     }
 #endif
-#ifndef EMCC
+#if !defined(EMCC) && !defined(EMCC2)
     if (env->moduloon && is_zero(env->coeff) && !env->complexe && env->modulo.type==_INT_ && env->modulo.val < (1 << 15) ){
       gcdsmallmodpoly(p,q,env->modulo.val,a);
       return true;
@@ -11923,7 +11923,7 @@ namespace giac {
   // inplace fft with positive representant
   static inline int addmod(int a, int b, int p) { 
     int t=(a-p)+b;
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     if (t<0) return t+p; else return t;
 #else
     t += (t>>31)&p;
@@ -11932,7 +11932,7 @@ namespace giac {
   }
   static inline int submod(int a, int b, int p) { 
     int t=a-b;
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     if (t<0) return t+p; else return t;
 #else
     t += (t>>31)&p;

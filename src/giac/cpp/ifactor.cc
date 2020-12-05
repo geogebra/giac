@@ -423,10 +423,10 @@ namespace giac {
   typedef unsigned short int short_t;
 #endif
 
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
 #include <map>
 #endif
-#if (defined EMCC || defined(HASH_MAP_NAMESPACE)) && defined(PRIMES32)
+#if (defined EMCC || defined EMCC2 || defined(HASH_MAP_NAMESPACE)) && defined(PRIMES32)
 #define ADDITIONAL_PRIMES_HASHMAP
 #endif
 #endif // RTOS_THREADX || BESTA_OS
@@ -462,7 +462,7 @@ namespace giac {
 #endif
 
 #ifdef ADDITIONAL_PRIMES_HASHMAP
-#ifdef EMCC // container does not seem to be important for <= 70 digits
+#if defined(EMCC) || defined(EMCC2) // container does not seem to be important for <= 70 digits
   typedef map<unsigned,axbinv> additional_map_t;
 #else
   typedef HASH_MAP_NAMESPACE::hash_map<unsigned,axbinv,hash_function_unsigned_object > additional_map_t ;
@@ -2201,7 +2201,7 @@ namespace giac {
     vecteur sqrtavals,bvals;
 #ifdef GIAC_ADDITIONAL_PRIMES
 #ifdef ADDITIONAL_PRIMES_HASHMAP
-#ifdef EMCC
+#if defined(EMCC) || defined(EMCC2)
     additional_map_t additional_primes_map;
 #else
     additional_map_t additional_primes_map(8*bs);
@@ -3759,7 +3759,7 @@ namespace giac {
     return b;
   }
   static gen pollardsieve(const gen &a,gen k,bool & do_pollard,GIAC_CONTEXT){
-#if defined( GIAC_HAS_STO_38) || defined(EMCC) || defined NSPIRE
+#if defined( GIAC_HAS_STO_38) || defined(EMCC) || defined(EMCC2) || defined NSPIRE
     int debug_infolevel_=debug_infolevel;
 #if defined RTOS_THREADX || defined NSPIRE
     debug_infolevel=2;
@@ -3770,7 +3770,7 @@ namespace giac {
 #endif
 #endif
     gen res=inpollardsieve(a,k,do_pollard,contextptr);
-#if defined( GIAC_HAS_STO_38) || defined(EMCC) || defined NSPIRE
+#if defined( GIAC_HAS_STO_38) || defined(EMCC) || defined (EMCC2) || defined NSPIRE
     debug_infolevel=debug_infolevel_;
 #ifdef GIAC_HAS_STO_38
     Calc->Terminal.MakeUnvisible();
