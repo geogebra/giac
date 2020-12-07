@@ -7625,7 +7625,7 @@ namespace giac {
 	    gen a=_simp2(makesequence(eqs[i],besteq),contextptr);
 	    if (a.type!=_VECT || a._VECTptr->size()!=2)
 	      return gensizeerr(contextptr);
-	    gen r=_resultant(makesequence(a._VECTptr->front(),a._VECTptr->back(),bestvar),contextptr);
+	    gen r=_resultant(makesequence(a._VECTptr->front(),a._VECTptr->back(),bestvar),contextptr)*_gcd(makesequence(eqs[i],besteq),contextptr);;
 	    vecteur vr(lidnt(r));
 	    if (!vr.empty()){
 	      gen dr=_diff(makesequence(r,vr[0]),contextptr);
@@ -7637,6 +7637,8 @@ namespace giac {
 	    neweq.push_back(r);
 	  }
 	  vecteur newelim;
+	  if (contains(lidnt(neweq),bestvar))
+	    newelim.push_back(bestvar);
 	  for (int i=0;i<int(elim.size());++i){
 	    if (elim[i]!=bestvar)
 	      newelim.push_back(elim[i]);
@@ -7741,7 +7743,7 @@ namespace giac {
 	  eqpr=gbasis(eqp,makevecteur(order,lexvars),false,modular,&env,rur,contextptr,gbasis_param);
 	vectpoly::const_iterator it=eqpr.begin(),itend=eqpr.end();
 	gb.reserve(itend-it);
-	if (returngb){
+	if (returngb && returngb!=3){
 	  for (;it!=itend;++it){
 	    gb.push_back(r2e(*it,l,contextptr));
 	  }
