@@ -262,8 +262,10 @@ task updateNodegiacWebCommit (dependsOn: 'updateNodegiacVersion') {
             // you may need to manually connect to the SVN server first by running this task manually.
             // Jenkins' home folder is by default in /var/lib/jenkins and its workspace is
             // in jobs/*/workspace which is actually a standard SVN checkout folder.
-            commandLine 'svn', 'commit', '-m', "Automatically update package.json to r$ggrev",
-                projectDir
+            commandLine 'svn', 'commit', '--username', System.env.MAVEN_USR,
+                    '--password', System.env.MAVEN_PSW,
+                    '-m', "Automatically update package.json to r$ggrev",
+                    projectDir
         }
     }
 }

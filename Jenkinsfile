@@ -17,7 +17,7 @@ pipeline {
     stage('Build') {
       steps {
         sh '''
-          cp -r ~/workspace/backup-Giac/geogebra/giac/emsdk .
+          cp -r /data/backup-Giac/geogebra/giac/emsdk .
           ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --info --refresh-dependencies
           ./gradlew :updateGiac :publishNodegiac --no-daemon -Prevision=$SVN_REVISION --info'''
         node('mac') {
