@@ -6,6 +6,7 @@ pipeline {
     PATH="$crosscompilers/x86/bin:$crosscompilers/x86_64/bin:$crosscompilers/arm/bin:$crosscompilers/arm64/bin:$PATH"
     MAVEN = credentials('maven')
     MAC = credentials('mac-giac')
+    NPM = credentials('npm-registry')
     WIN_BASH = credentials('win-bash')
     WIN_SSH=credentials('win-ssh')
     LINUX32_SSH=credentials('linux32-ssh-key')
