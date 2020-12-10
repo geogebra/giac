@@ -273,8 +273,6 @@ task updateNodegiacWebCommit (dependsOn: 'updateNodegiacVersion') {
 task publishNodegiac (dependsOn: 'updateNodegiacWebCommit') {
     description 'Publishes Node Giac to npmjs.com'
     doLast {
-        file("${System.env.HOME}/.npmrc").text =
-            "_auth = ${System.env.NPM_PSW}\nemail = ${System.env.NPM_USR}"
         exec {
             commandLine 'npm', 'publish'
         }
