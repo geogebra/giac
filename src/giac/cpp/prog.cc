@@ -76,6 +76,10 @@ extern "C" {
 #undef HAVE_LIBPARI
 #endif
 
+#ifdef NSPIRE_NEWLIB
+#include <os.h>
+#endif
+
 //#ifdef BESTA_OS
 //unsigned int PrimeGetNow(); 
 //#endif
@@ -8364,6 +8368,41 @@ namespace giac {
   static const char _read32_s []="read32";
   static define_unary_function_eval (__read32,&_read32,_read32_s);
   define_unary_function_ptr5( at_read32 ,alias_at_read32 ,&__read32,0,true);
+
+#ifdef NSPIRE_NEWLIB
+  gen _read_nand(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG &&  args.subtype==-1)
+      return  args;
+    size_t addr;
+    if (args.type==_VECT && args._VECTptr->size()==2 && args._VECTptr->back().type==_INT_){
+      int n=args._VECTptr->back().val;
+      if (n<=0 || !is_address(args._VECTptr->front(),addr)) 
+	return undef;
+      // void read_nandd(void* dest, int size, int nand_offset, int unknown, int percent_max, void* progress_cb); // terminer par (...,0,0,NULL)
+      char * dest=(char *)malloc(4*n);
+      read_nand(dest,4*n,addr,0,0,NULL);
+      char buf[5]="aaaa";
+      vecteur res;
+      for (int i=0;i<n;++i,addr+=4,dest+=4){
+	strncpy(buf,dest,4);
+	res.push_back(makevecteur((longlong) addr,int(*dest),int(*(dest+1)),int(*(dest+2)),int(*(dest+3)),string2gen(buf,false)));
+      }
+      free(dest-4*n);
+      return res;
+    }
+    if (is_address(args,addr))
+      return _read_nand(makesequence(args,1),contextptr);
+    return gensizeerr(contextptr);
+  }
+#else
+  gen _read_nand(const gen & args,GIAC_CONTEXT){
+    return undef;
+  }
+#endif
+  static const char _read_nand_s []="read_nand";
+  static define_unary_function_eval (__read_nand,&_read_nand,_read_nand_s);
+  define_unary_function_ptr5( at_read_nand ,alias_at_read_nand ,&__read_nand,0,true);
+
 
   gen _write(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;

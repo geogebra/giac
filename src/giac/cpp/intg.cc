@@ -3082,8 +3082,14 @@ namespace giac {
 	}
       } // end if (trig_fraction)
     }
-    if (trig_fraction)
-      return integrate_trig_fraction(e,gen_x,var,coeff_trig,trig_fraction,remains_to_integrate,intmode,contextptr);
+    if (trig_fraction){
+      bool b=do_lnabs(contextptr);
+      if (has_i(e))
+	do_lnabs(false,contextptr);
+      res=integrate_trig_fraction(e,gen_x,var,coeff_trig,trig_fraction,remains_to_integrate,intmode,contextptr);
+      do_lnabs(b,contextptr);
+      return res;
+    }
     if (!do_risch){
       remains_to_integrate=e;
       return 0;

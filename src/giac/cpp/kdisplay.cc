@@ -6916,6 +6916,34 @@ namespace xcas {
     }
     return false;
   }
+
+  void nspire_copy_data(int nkeys,BYTE hash[][SHA256_BLOCK_SIZE],GIAC_CONTEXT){
+    const char * dirname="/documents/ndless";
+    const char * targetdirname="/exammode/usr/ndless";
+    DIR *dp;
+    dp = opendir(targetdirname);
+    if (!dp)
+      mkdir(targetdirname,0755);
+    else
+      closedir(dp);
+    struct dirent *ep;
+    dp = opendir (dirname);
+    if (!dp)
+      return ;
+    while ( (ep = readdir (dp)) ){
+      string s=ep->d_name;
+      int t=s.size();
+      if (t<4 || s.substr(t-4,4)!=".tns")
+	continue;
+      if ( (s=="khicas.tns" || s=="luagiac.luax.tns" || s=="khicaslua.tns" || s=="ptt.tns" || s.substr(0,17)=="ndless_installer_" || s=="ndless_resources.tns" || s=="ndless.cfg.tns")){
+	string ss=dirname+("/"+s);
+	*logptr(contextptr) << "copy " << s << " to exammode directory\n" ; //" " << ss << " " << (targetdirname+("/"+s)) << '\n';
+	if (sha_check(ss.c_str(),nkeys,hash)){
+	  cp(ss.c_str(),(targetdirname+("/"+s)).c_str());
+	}
+      }
+    }     
+  }
   
   DIR * nspire_clear_data(const char * dirname,int nkeys,BYTE hash[][SHA256_BLOCK_SIZE],GIAC_CONTEXT){
     bool toplevel=strcmp(dirname,"/exammode/usr")==0;
@@ -6965,7 +6993,7 @@ namespace xcas {
     return dp;
   }
   
-  void nspire_clear_data(GIAC_CONTEXT){
+  void nspire_clear_data(GIAC_CONTEXT,bool copy){
     int maxkeys=32;
     BYTE hash[maxkeys][SHA256_BLOCK_SIZE]={
     };
@@ -6981,10 +7009,15 @@ namespace xcas {
       for (int j=0;j<SHA256_BLOCK_SIZE;j++){
 	*logptr(contextptr) << hash[i][j] <<",";
       }
-      *logptr(contextptr) << (lang==1?"Teste et efface les fichiers non autorisess\n":"}\nChecking and clearing non secure files\n");
+      *logptr(contextptr) << "}\n";
     }
+    *logptr(contextptr) << (lang==1?"Teste et efface les fichiers non autorises\n":"Checking and clearing non secure files\n");
     nspire_clear_data("/exammode/usr",nkeys,hash,contextptr);
-    *logptr(contextptr) << (lang==1?"Fichiers non autorises effaces\nTapez doc doc pour relancer le mode examen\n":"Filesystem checked.\nPress doc doc to restart exam mode\n");
+    *logptr(contextptr) << (lang==1?"Fichiers non autorises effaces\n":"Filesystem checked.\n");
+    if (copy)
+      nspire_copy_data(nkeys,hash,contextptr);
+    else
+      *logptr(contextptr) << (lang==1?"Tapez doc doc pour relancer le mode examen\n":"Press doc doc to restart exam mode\n");
   }
 #endif
 
@@ -7000,21 +7033,31 @@ namespace xcas {
     gen n=tabunsignedchar2gen(rsa_n_tab,sizeof(rsa_n_tab));
     gen key=powmod(longlong(t1),65537,n);
     key.uncoerce();
-    // char exec[]="/documents/ndless/ptt.tns";
-    char exec[]="/exammode/usr/ndless/ptt.tns";
+    const char * exec=0;
+    if (i==-1)
+      exec="/documents/ndless/ptt.tns";
+    else
+      exec="/exammode/usr/ndless/ptt.tns";
     char clef[]="/documents/rtc.tns";
-    char mode[2]="0";
-    char * args[]={clef,mode};
+    char mode[3]="0";
     mode[0] += i;
+    if (i==-1){
+      mode[0]='-';
+      mode[1]='1';
+      mode[2]=0;
+    }
+    char * args[]={clef,mode,0};
     FILE * f=fopen(clef,"w");
     mpz_out_str(f,10,*key._ZINTptr);
     fclose(f);
     // main_ptt(1,0);
     int res=nl_exec(exec,2,args);
+    //*logptr(contextptr) << "exam mode " << res << '\n';
     //int res=nl_exec(exec,1,0);
     // int res=nl_exec("/documents/ndless/ptt.tns",1,filenames);
     unlink(clef);
-    exam_mode=i;
+    if (i!=-1)
+      exam_mode=i;
   }
 #else
   void set_exam_mode(int i,GIAC_CONTEXT){
@@ -9617,7 +9660,9 @@ namespace xcas {
 	}
 	if (smallmenu.selection == 11){
 #ifdef NSPIRE_NEWLIB
-	  if (nspire_exam_mode==1){
+	  if (nspire_exam_mode==1
+	      && !is_cx2
+	      ){
 	    if (confirm((lang==1?"Quitter Xcas pour relancer le mode examen":"Leave Xcas to re-enter exam mode"),(lang==1?"!enter OK, esc annul":"enter OK, esc cancel."))!=KEY_CTRL_F1)
 	      break;
 	    do_restart(contextptr);
@@ -9625,14 +9670,25 @@ namespace xcas {
 	    Console_Init(contextptr);
 	    Console_Clear_EditLine();
 	    console_changed=0;
-	    nspire_clear_data(contextptr);
+	    nspire_clear_data(contextptr,false);
 	    nspire_exam_mode=2;
 	    set_exam_mode(0,contextptr);
 	    break;
 	  }
 	  else {
-	    //nspire_clear_data(contextptr);
-	    //set_exam_mode(0,contextptr);
+	    if (//1 ||
+		!is_cx2){
+	      if (do_confirm((lang==1)?"Lancer le mode examen avec CAS?":"Run exam mode with CAS?")){
+		rm("/exammode/usr/ndless");
+		nspire_clear_data(contextptr,true);
+		set_exam_mode(-1,contextptr); // end up with reset()
+	      }
+	      break;
+	    }
+	    else {
+	      confirm((lang==1)?"Desole. Le mode examen de KhiCAS":"Sorry, KhiCAS exam mode",(lang==1)?"ne fonctionne pas sur Nspire CX II":"is not supported on Nspire CX II");
+	      break;
+	    }
 	    if (1
 		|| is_cx2
 		){
@@ -11253,7 +11309,9 @@ namespace xcas {
 	*(unsigned *) 0x900a0008=2;
     }
     if (nspire_exam_mode==1){
-      set_exam_mode(3,contextptr); exam_mode=0;
+      // disabled: restore LED state
+      // set_exam_mode(3,contextptr);
+      exam_mode=0;
     }
   }
 #else
@@ -12626,10 +12684,6 @@ namespace xcas {
     unsigned red=*(unsigned *) 0x90110b0c;
     if (green || red){
       nspire_exam_mode=1;
-      if (1 || is_cx2){
-	if (!do_confirm(lang?"Le CAS est-il autorise en examen?":"Is CAS allowed during exam?"))
-	  return 0;
-      }
     }
     // CX and CX II we should modify the led colors to match CAS exam mode
     // red value should be the same as green value -> yellow
@@ -12648,22 +12702,28 @@ namespace xcas {
     lang=b?1:0;
 #endif
     // SetQuitHandler(save_session); // automatically save session when exiting
+    int key;
+    Console_Init(contextptr);
     if (!turtleptr){
       turtle();
       _efface_logo(vecteur(0),contextptr);
     }
     caseval("floor"); // init xcas parser for Python syntax coloration (!)
-    int key;
-    Console_Init(contextptr);
     Bdisp_AllClr_VRAM();
     rand_seed(millis(),contextptr);
+    if (nspire_exam_mode){ // disabled: save LED state for restoration at end
+      // set_exam_mode(2,contextptr);
+      exam_mode=0;
+      if (1 || is_cx2){
+	if (!do_confirm(lang?"Le CAS est-il autorise en examen?":"Is CAS allowed during exam?"))
+	  return 0;
+	Bdisp_AllClr_VRAM();
+      }
+    }
     restore_session(sessionname,contextptr);
     giac::angle_radian(os_get_angle_unit()==0,contextptr);
     //GetKey(&key);
     Console_Disp(1,contextptr);
-    if (nspire_exam_mode){ // must save LED state for restoration at end
-      set_exam_mode(2,contextptr); exam_mode=0;
-    }
     // GetKey(&key);
     char *expr=0;
 #ifndef NO_STDEXCEPT

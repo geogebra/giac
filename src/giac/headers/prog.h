@@ -395,6 +395,7 @@ namespace giac {
   extern const unary_function_ptr * const  at_read;
   extern const unary_function_ptr * const  at_read16;
   extern const unary_function_ptr * const  at_read32;
+  extern const unary_function_ptr * const  at_read_nand;
 
   gen _write(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_write;

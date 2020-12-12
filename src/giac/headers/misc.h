@@ -315,6 +315,10 @@ namespace giac {
   extern const unary_function_ptr * const  at_rm ;
   int rgb888to565(int c);
   int rgb565to888(int c);
+#if defined HAVE_UNISTD_H && !defined NUMWORKS
+  int cp(const char * sourcename,const char * targetname);
+  int rm(const char * filename);
+#endif
 
   gen _show_pixels(const gen & args,GIAC_CONTEXT);
   gen _rgb(const gen & args,GIAC_CONTEXT);

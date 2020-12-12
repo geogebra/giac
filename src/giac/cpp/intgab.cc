@@ -1341,7 +1341,7 @@ namespace giac {
 	      vecteur vout=makevecteur((ln(x,contextptr)-beta)/alpha);
 	      // check for essential singularities
 	      vecteur v2=lop(recursive_normal(rlvarx(subst(v,vin,vout,false,contextptr),x),contextptr),at_exp);
-	      vecteur w2=singular(v2,x,contextptr);
+	      vecteur w2=singular(exp2pow(v2,contextptr),x,contextptr);
 	      unsigned w2i=0;
 	      for (;w2i<w2.size();++w2i){
 		if (is_greater(radius,w2[w2i],contextptr))

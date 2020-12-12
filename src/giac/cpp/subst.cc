@@ -2240,9 +2240,27 @@ namespace giac {
     f=subst(f,l1,l2,false,contextptr);
     return f;
   }
+  
+  gen expnegtoinvexp(const gen & g,GIAC_CONTEXT){
+    if (g.is_symb_of_sommet(at_neg))
+      return symbolic(at_inv,symbolic(at_exp,g._SYMBptr->feuille));
+    if (g.is_symb_of_sommet(at_prod) && g._SYMBptr->feuille.type==_VECT ){
+      vecteur v=*g._SYMBptr->feuille._VECTptr;
+      if (!v.empty() && is_integer(v.front()) && ck_is_positive(-v.front(),contextptr)){
+	v[0]=-v[0];
+	gen arg=symbolic(at_prod,gen(v,_SEQ__VECT));
+	return symbolic(at_inv,symbolic(at_exp,arg));
+      }
+    }
+    return symbolic(at_exp,g);
+  }
 
   gen powneg2invpow(const gen & e,GIAC_CONTEXT){
-    return subst(e,pow_tab,powneg2invpow_tab,false,contextptr);
+    gen res=subst(e,pow_tab,powneg2invpow_tab,false,contextptr);
+    const vector< const unary_function_ptr *> exp_v(1,at_exp);
+    const vector< gen_op_context > expneg2invexp_v(1,expnegtoinvexp);
+    res=subst(res,exp_v,expneg2invexp_v,false,contextptr);
+    return res;
   }
 
   gen ataninvtoatan(const gen &g,GIAC_CONTEXT){
