@@ -6938,7 +6938,7 @@ namespace xcas {
       if ( (s=="khicas.tns" || s=="luagiac.luax.tns" || s=="khicaslua.tns" || s=="ptt.tns" || s.substr(0,17)=="ndless_installer_" || s=="ndless_resources.tns" || s=="ndless.cfg.tns")){
 	string ss=dirname+("/"+s);
 	*logptr(contextptr) << "copy " << s << " to exammode directory\n" ; //" " << ss << " " << (targetdirname+("/"+s)) << '\n';
-	if (sha_check(ss.c_str(),nkeys,hash)){
+	if (1 || sha_check(ss.c_str(),nkeys,hash)){ // check done when setting exam mode
 	  cp(ss.c_str(),(targetdirname+("/"+s)).c_str());
 	}
       }
@@ -7004,6 +7004,7 @@ namespace xcas {
       *logptr(contextptr) << "Il y a " << nkeys << " empreintes cryptees de fichiers autorises\n";
     else
       *logptr(contextptr) << "Found " << nkeys << " valid crypted keys of secure files\n";
+#if 0
     for (int i=0;i<nkeys;++i){
       *logptr(contextptr) << "{";
       for (int j=0;j<SHA256_BLOCK_SIZE;j++){
@@ -7011,6 +7012,7 @@ namespace xcas {
       }
       *logptr(contextptr) << "}\n";
     }
+#endif
     *logptr(contextptr) << (lang==1?"Teste et efface les fichiers non autorises\n":"Checking and clearing non secure files\n");
     nspire_clear_data("/exammode/usr",nkeys,hash,contextptr);
     *logptr(contextptr) << (lang==1?"Fichiers non autorises effaces\n":"Filesystem checked.\n");
@@ -9670,17 +9672,25 @@ namespace xcas {
 	    Console_Init(contextptr);
 	    Console_Clear_EditLine();
 	    console_changed=0;
-	    nspire_clear_data(contextptr,false);
+	    *logptr(contextptr) << (lang==1?"Nettoyage du repertoire du mode examen\n":"Cleaning exam mode directory.\n");
+	    *logptr(contextptr) << (lang==1?"Patientez environ 30 secondes\n":"Please wait about 30 secondes\n");
+	    // nspire_clear_data(contextptr,false); // done by set_exam_mode
 	    nspire_exam_mode=2;
 	    set_exam_mode(0,contextptr);
+	    *logptr(contextptr) << (lang==1?"Leds eteintes. Mode restreint (pas d'acces aux fichiers).\n":"Leds off. Restricted mode (no file access).\n");
+	    *logptr(contextptr) << (lang==1?"Quittez KhiCAS (doc doc) pour rebooter le mode examen\n":"Leave KhiCAS (doc doc) to reboot in exam mode.\n");
 	    break;
 	  }
 	  else {
 	    if (//1 ||
 		!is_cx2){
-	      if (do_confirm((lang==1)?"Lancer le mode examen avec CAS?":"Run exam mode with CAS?")){
+	      if (do_confirm((lang==1)?"Lancer le mode examen avec CAS ?":"Run exam mode with CAS?")){
+		*logptr(contextptr) << (lang==1?"Patientez environ 2 minutes\n":"Please wait about 2 minutes\n");
+		*logptr(contextptr) << (lang==1?"Verifie et recopie les ressources necessaires\n":"Check and copy required ressources\n");
 		rm("/exammode/usr/ndless");
 		nspire_clear_data(contextptr,true);
+		*logptr(contextptr) << (lang==1?"Verification finale puis reboot en mode examen\n":"Final check then reboot in exam mode\n");
+		*logptr(contextptr) << (lang==1?"Patientez 30 secondes environ\n":"Please wait about 30 secondes\n");
 		set_exam_mode(-1,contextptr); // end up with reset()
 	      }
 	      break;

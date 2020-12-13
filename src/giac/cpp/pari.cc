@@ -193,28 +193,6 @@ namespace giac {
 #endif
   }
 
-  static gen t_REAL2gen(const GEN & G){
-    long Gs=signe(G);
-    if (!Gs)
-      return 0.0;
-    long n=lg(G);
-    gen res;
-    for (int i=2;i<n;++i){
-#ifdef x86_64 // FIXME make a gen constructor from ulonglong
-      unsigned long u=G[i];
-      res=res*pow2sizeof_long;
-      if (u%2)
-	res += 1;
-      res += 2*gen(longlong(u>>1));
-#else
-      res=res*pow2sizeof_long+longlong(unsigned(G[i]));
-#endif
-    }
-    res=res*pow(plus_two,int(expo(G)+1-bit_accuracy(n)));
-    res=_evalf(makesequence(res,int(n/3.3)),context0);
-    return Gs<0?-res:res;
-  }
-
   static gen t_POL2gen(const GEN & G,const vecteur & vars){
     if (!signe(G))
       return 0;
@@ -226,11 +204,11 @@ namespace giac {
     reverse(res.begin(),res.end());
     long vn=varn(G);
     gen x;
-    if (vn<long(vars.size())){
+    if (vn<(long)(vars.size())){
       x=vars[vn];
       return symb_horner(res,x);
     }
-    if (!vars.empty() && vn==long(vars.size())){
+    if (!vars.empty() && vn==(long)(vars.size())){
       x=vars[vn-1];
       return symb_horner(res,x);
     }
@@ -325,6 +303,31 @@ namespace giac {
       return string2gen(s,false);
     }
     return g;
+  }
+
+  static gen t_REAL2gen(const GEN & G){
+#ifdef __APPLE__
+    return default2gen(G);
+#endif
+    long Gs=signe(G);
+    if (!Gs)
+      return 0.0;
+    long n=lg(G);
+    gen res;
+    for (int i=2;i<n;++i){
+#ifdef x86_64 // FIXME make a gen constructor from ulonglong
+      unsigned long u=G[i];
+      res=res*pow2sizeof_long;
+      if (u%2)
+	res += 1;
+      res += 2*gen(longlong(u>>1));
+#else
+      res=res*pow2sizeof_long+longlong(unsigned(G[i]));
+#endif
+    }
+    res=res*pow(plus_two,int(expo(G)+1-bit_accuracy(n)));
+    res=_evalf(makesequence(res,int(n/3.3)),context0);
+    return Gs<0?-res:res;
   }
 
   gen GEN2gen(const GEN & G,const vecteur & vars){

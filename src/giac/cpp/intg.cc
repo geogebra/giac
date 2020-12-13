@@ -2844,9 +2844,14 @@ namespace giac {
 	fx=cst*fx;
 	if ( (intmode & 2)==0)
 	  gprintf(step_fuuprime,gettext("Integration of %gen: f(u)*u' where f=%gen->%gen and u=%gen"),makevecteur(e,gen_x,fx,u),contextptr);
-	e=linear_integrate_nostep(fx,gen_x,tmprem,intmode,contextptr);
+	gen e1=linear_integrate_nostep(fx,gen_x,tmprem,intmode,contextptr);
+#if 1 // changed 2020 dec 13 for integrate(exp(t)*(t+1)^-2,t);
+	if (is_zero(tmprem))
+	  return complex_subst(e1,gen_x,u,contextptr);
+#else
 	remains_to_integrate=remains_to_integrate+complex_subst(tmprem,gen_x,u,contextptr)*derive(u,gen_x,contextptr);
-	return complex_subst(e,gen_x,u,contextptr);
+	return complex_subst(e1,gen_x,u,contextptr);
+#endif
       }
       if (vt->is_symb_of_sommet(at_pow)){
 	gen vtbase=vt->_SYMBptr->feuille[0],vtexpo=vt->_SYMBptr->feuille[1];

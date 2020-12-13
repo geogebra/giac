@@ -772,6 +772,7 @@ int sheet_menu_menu(tableur & t,GIAC_CONTEXT){
   smallmenu.title = (char*)(lang==1?"Esc: annule menu tableur":"Esc: cancel sheet menu");
   smallmenuitems[0].text = (char *)(lang==1?"Sauvegarder tableur":"Save sheet");
   smallmenuitems[1].text = (char *)(lang==1?"Sauvegarder tableur comme":"Save sheet as");
+  if (nspire_exam_mode==2) smallmenuitems[1].text=smallmenuitems[0].text = (char*)(lang==1?"Sauvegarde desactivee":"Saving disabled");
   smallmenuitems[2].text = (char*)(lang==1?"Charger":"Load");
   string cell=(lang==1?"Editer cellule ":"Edit cell ")+printcell(t.cur_row,t.cur_col);
   smallmenuitems[3].text = (char*)cell.c_str();

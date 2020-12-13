@@ -10118,9 +10118,16 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	if (recurse && (t<4 || s.substr(t-4,4)!=".tns") )
 	  locate_files(s.c_str(),ext_,v,recurse,contextptr);
 #else
+#ifdef _DIRENT_HAVE_D_TYPE
 	if (recurse && ep->d_type==DT_DIR)
 	  locate_files(s.c_str(),ext_,v,recurse,contextptr);
+#else
+	  struct stat stbuf;
+	stat(ep->d_name, &stbuf);
+	if (recurse && S_ISDIR(stbuf.st_mode))
+	  locate_files(s.c_str(),ext_,v,recurse,contextptr);
 #endif
+#endif // NSPIRE_NEWLIB
 	// *logptr(contextptr) << s << '\n';
 	if (taille==1 || (t>taille && s.substr(t-taille,taille)==ext))
 	  v.push_back(s);
@@ -10196,7 +10203,11 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     FILE * target=fopen(targetname,"w");
     if (!target){ // make path and try again
       string path=get_path(targetname);
+#ifdef _WIN32
+      mkdir(path.c_str());
+#else
       mkdir(path.c_str(),0755);
+#endif
       target=fopen(targetname,"w");
     }
     if (target){
@@ -10286,7 +10297,11 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     if (args.type!=_STRNG)
       return gensizeerr(contextptr);
     string s=args._STRNGptr->c_str();
+#ifdef _WIN32
+    return !mkdir(s.c_str());
+#else
     return !mkdir(s.c_str(),0755);
+#endif
   }
   static const char _mkdir_s []="mkdir";
   static define_unary_function_eval (__mkdir,&_mkdir,_mkdir_s);
