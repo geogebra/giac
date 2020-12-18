@@ -7596,7 +7596,7 @@ namespace giac {
 	  returngb=0;
 	else if (1 || curdeg==1
 		 ){
-	  // Choose lowest number of dependant equations in poselim
+	  // Choose lowest number of dependent equations in poselim
 	  gen besteq(0),bestvar(0); int bestpos=-1,n0deps=-1;
 	  for (int i=0;i<int(poselim.size());++i){
 	    gen curvar=elim[poselim[i]];

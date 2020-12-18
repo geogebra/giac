@@ -8978,12 +8978,12 @@ namespace giac {
       }
       pivotline=l;
       pivotcol=c;
-      if (!pivot){ // scan current line
+      if (gcd(pivot,modulo)!=1){ // scan current line
 	noswap=false;
 	if (l<dont_swap_below){ 
 	  for (int ctemp=c+1;ctemp<cmax;++ctemp){
 	    temp = N[l].empty()?0:(N[l][ctemp] %= modulo);
-	    if (temp){
+	    if (temp && gcd(temp,modulo)==1){
 	      pivot=smod(temp,modulo);
 	      pivotcol=ctemp;
 	      break;
@@ -8995,7 +8995,7 @@ namespace giac {
 	    temp = N[ltemp].empty()?0:(N[ltemp][c] %= modulo);
 	    if (debug_infolevel>2)
 	      print_debug_info(temp);
-	    if (temp){
+	    if (temp && gcd(temp,modulo)==1){
 	      pivot=smod(temp,modulo);
 	      pivotline=ltemp;
 	      break;
@@ -9003,7 +9003,7 @@ namespace giac {
 	  }
 	}
       } // end if is_zero(pivot), true pivot found on line or column
-      if (pivot){
+      if (gcd(pivot,modulo)==1){
 	if (debug_infolevel>1){
 	  if (l%10==9){ CERR << "+"; CERR.flush();}
 	  if (l%500==499){ CERR << CLOCK()*1e-6 << " remaining " << lmax-l << '\n'; }
@@ -9085,7 +9085,7 @@ namespace giac {
 	++l;	  
       } // end if (!is_zero(pivot)
       else { // if pivot is 0 increment either the line or the col
-	idet = 0;
+	idet = 0; // warning: this is wrong for non prime modulo
 	if (rref_or_det_or_lu==1){
 	  if (!workptr && tmpptr)
 	    delete tmpptr;
@@ -9523,7 +9523,7 @@ namespace giac {
 	}
 	return true;
       }
-      CERR << "Non prime modulo. Reduction mail fail" << '\n';
+      CERR << "Non prime modulo. Reduction may fail" << '\n';
     }
     if (modulo.type==_INT_ && 
 #if 0 // ndef _I386_

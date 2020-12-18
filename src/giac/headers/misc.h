@@ -27,6 +27,11 @@
 #include <sys/time.h>
 #endif
 
+#ifdef __MINGW_H
+int setenv(const char *name, const char *value, int overwrite){ return 0;}
+inline int unsetenv(const char *name){return 0;}
+#endif
+
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC

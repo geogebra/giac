@@ -5900,7 +5900,7 @@ namespace giac {
 					     &t, t1, &h,
 					     y);
 	if (status != GSL_SUCCESS)
-	  return gensizeerr(gettext("RK8 evolve not successfull"));
+	  return gensizeerr(gettext("RK8 evolve not successful"));
 	if (debug_infolevel>5)
 	  CERR << nstep << ":" << t << ",y5=" << double2vecteur(y,dim) << '\n';
 	if (return_curve)  {

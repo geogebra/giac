@@ -1084,7 +1084,7 @@ namespace giac {
 	  break;
 	}
 	if (s>8 && tmp.substr(s-8,8)=="</B></A>"){
-	  // Find backward the first occurence of <A
+	  // Find backward the first occurrence of <A
 	  int l=s-8;
 	  for (;l>0;--l){
 	    if (tmp[l]=='<' && tmp[l+1]=='A')
