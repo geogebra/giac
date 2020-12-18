@@ -9711,6 +9711,12 @@ namespace giac {
       gen db=monomial_degree(b);
       if (da!=db)
 	return increasing_power(contextptr)?is_greater(db,da,contextptr):is_greater(da,db,contextptr);
+      bool apow=a.is_symb_of_sommet(at_pow);
+      bool bpow=b.is_symb_of_sommet(at_pow);
+      if (apow && !bpow)
+	return true;
+      if (bpow && !apow)
+	return false;
     }
     if (a.type==b.type)
       return a.islesscomplexthan(b);
