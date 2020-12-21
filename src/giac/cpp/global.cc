@@ -75,6 +75,8 @@ using namespace std;
 #ifndef VISUALC
 #if !defined(GNUWINCE) && !defined(__MINGW_H)
 #include <sys/cygwin.h>
+#endif
+#if !defined(GNUWINCE) 
 #include <windows.h>
 #endif // ndef gnuwince
 #endif // ndef visualc
@@ -2806,7 +2808,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   string giac_aide_dir(){
-#if defined __MINGW_H || defined NSPIRE || defined FXCG
+#if defined NSPIRE || defined FXCG
     return xcasroot();
 #else
     if (!access((xcasroot()+"aide_cas").c_str(),R_OK)){
@@ -2920,7 +2922,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   bool is_file_available(const char * ch){
     if (!ch)
       return false;
-#if !defined __MINGW_H && !defined NSPIRE && !defined FXCG
+#if !defined NSPIRE && !defined FXCG
     if (access(ch,R_OK))
       return false;
 #endif
@@ -2974,7 +2976,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   string browser_command(const string & orig_file){
-#if defined __MINGW_H || defined NSPIRE || defined FXCG
+#if defined NSPIRE || defined FXCG
     return "";
 #else
     string file=orig_file;
@@ -3148,10 +3150,21 @@ extern "C" void Sleep(unsigned int miliSecond);
 #endif
     }
     CERR << res << '\n';
-#if !defined VISUALC && !defined __MINGW_H && !defined NSPIRE && !defined FXCG
+#if !defined VISUALC && !defined NSPIRE && !defined FXCG
+#ifdef __MINGW_H
+    while (res.size()>=2 && res.substr(0,2)=="./")
+      res=res.substr(2,res.size()-2);
+    if (res.size()<4 || res.substr(0,4)!="http")
+      res = "file:///c:/xcaswin/"+res;
+    CERR << "running open on " << res << '\n';
+    //ShellExecute(NULL,"open","file:///c:/xcaswin/doc/fr/cascmd_fr/index.html",\
+NULL,NULL,SW_SHOWNORMAL);
+    ShellExecute(NULL,"open",res.c_str(),NULL,NULL,SW_SHOWNORMAL);
+#else
     // FIXME: works under visualc but not using /UNICODE flag
     // find correct flag
     ShellExecute(NULL,NULL,res.c_str(),NULL,NULL,1);
+#endif
 #endif
     return true;
 #else
@@ -3469,7 +3482,7 @@ extern "C" void Sleep(unsigned int miliSecond);
     if (getenv("LANG"))
       s=getenv("LANG");
     else { // __APPLE__ workaround
-#if !defined VISUALC && !defined __MINGW_H && !defined NSPIRE && !defined FXCG
+#if !defined VISUALC && !defined NSPIRE && !defined FXCG
       if (!strcmp(gettext("File"),"Fich")){
 	setenv("LANG","fr_FR.UTF8",1);
 	s="fr_FR.UTF8";
