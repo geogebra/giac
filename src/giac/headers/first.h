@@ -32,6 +32,10 @@
 
 #if defined(__x86_64__) || defined(__arm64__)
 #define x86_64 1
+#else
+#ifdef __MINGW_H
+#define MINGW32
+#endif
 #endif
 
 // Thanks to Jason Papadopoulos, author of msieve

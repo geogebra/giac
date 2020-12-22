@@ -2808,7 +2808,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   string giac_aide_dir(){
-#if defined NSPIRE || defined FXCG
+#if defined NSPIRE || defined FXCG || defined MINGW32
     return xcasroot();
 #else
     if (!access((xcasroot()+"aide_cas").c_str(),R_OK)){
@@ -2922,7 +2922,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   bool is_file_available(const char * ch){
     if (!ch)
       return false;
-#if !defined NSPIRE && !defined FXCG
+#if !defined NSPIRE && !defined FXCG && !defined MINGW32
     if (access(ch,R_OK))
       return false;
 #endif
@@ -2976,7 +2976,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   string browser_command(const string & orig_file){
-#if defined NSPIRE || defined FXCG
+#if defined NSPIRE || defined FXCG || defined MINGW32
     return "";
 #else
     string file=orig_file;
@@ -3490,6 +3490,10 @@ NULL,NULL,SW_SHOWNORMAL);
       else {
 	s="en_US.UTF8";
 	setenv("LANG",s.c_str(),1);
+      }
+      if (!strcmp(gettext("File"),"Datei")){
+	setenv("LANG","de_DE.UTF8",1);
+	s="de_DE.UTF8";
       }
 #endif
     }
