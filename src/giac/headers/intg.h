@@ -26,6 +26,9 @@ namespace giac {
   class gen;
   class identificateur;
   struct unary_function_ptr;
+  void restorepurge(const gen & xval,const gen & x,GIAC_CONTEXT);
+  gen assumeeval(const gen & x,GIAC_CONTEXT);
+
   gen complex_subst(const gen & e,const vecteur & substin,const vecteur & substout,GIAC_CONTEXT);
   gen complex_subst(const gen & e,const gen & x,const gen & newx,GIAC_CONTEXT);
   vecteur lvarxwithinv(const gen &e,const gen & x,GIAC_CONTEXT);

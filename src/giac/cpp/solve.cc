@@ -2818,8 +2818,16 @@ namespace giac {
 	      gen res2=_solve(makesequence(symb_equal(ratnormal(a1/a12,contextptr),ratnormal(a2/a12,contextptr)),v.back()),contextptr);
 	      return gen(mergevecteur(gen2vecteur(res1),gen2vecteur(res2)),res1.subtype);
 	    }
-	    arg1=ln(simplify(a1,contextptr),contextptr)-ln(simplify(a2,contextptr),contextptr);
-	    if (lvarx(arg1,v.back()).size()>1){
+	    bool doit=false;
+	    if (is_positive(a1,contextptr) && is_positive(a2,contextptr)){
+	      doit=true;
+	      arg1=ln(simplify(a1,contextptr),contextptr)-ln(simplify(a2,contextptr),contextptr);
+	    }
+	    if (is_positive(-a1,contextptr) && is_positive(-a2,contextptr)){
+	      doit=true;
+	      arg1=ln(simplify(-a1,contextptr),contextptr)-ln(simplify(-a2,contextptr),contextptr);
+	    }	    
+	    if (doit && lvarx(arg1,v.back()).size()>1){
 	      arg1=lnexpand(arg1,contextptr);
 	      if (!lop(arg1,at_pow).empty()){ 
 		arg1=lnexpand(a1-a2,contextptr);
@@ -6858,7 +6866,10 @@ namespace giac {
       gen g(r2e(*jt,l,contextptr));
       const_iterateur st=sols.begin(),stend=sols.end();
       for (;st!=stend;++st){
-	int foundvars=int(st->_VECTptr->size());
+	vecteur & stv = *st->_VECTptr;
+	if (equalposcomp(lidnt(stv),undef))
+	  continue;
+	int foundvars=int(stv.size());
 	gen curgf=_factors(ratnormal(ratnormal(subst(g,vecteur(var.end()-foundvars,var.end()),*st,false,contextptr),contextptr),contextptr),contextptr);
 	if (curgf.type!=_VECT) return vecteur(1,gensizeerr(contextptr));
 	const_iterateur curgfit=curgf._VECTptr->begin(),curgfend=curgf._VECTptr->end();
@@ -6894,7 +6905,21 @@ namespace giac {
 	  const_iterateur xt=xsol.begin(),xtend=xsol.end();
 	  for (;xt!=xtend;++xt){
 	    // current[xpos]=*xt;
-	    newsols.push_back(subst(current,*x._IDNTptr,*xt,false,contextptr));
+	    if (is_inequation(*xt)){ // FIXME is_inequation
+	      gen id=lidnt(*xt);
+	      if (id.type==_VECT && id._VECTptr->size()==1){
+		id=id._VECTptr->front();
+		gen idval=assumeeval(id,contextptr);
+		giac_assume(*xt,contextptr);
+		gen curval=eval(recursive_normal(current,contextptr),1,contextptr);
+		restorepurge(idval,id,contextptr);
+		newsols.push_back(curval);
+	      }
+	      else
+		newsols.push_back(current);
+	    }
+	    else
+	      newsols.push_back(subst(current,*x._IDNTptr,*xt,false,contextptr));
 	  }
 	} // end for curfit!=curfitend
       } // end for (;st!=stend;)
