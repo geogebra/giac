@@ -461,6 +461,7 @@ model {
                 if (targetPlatform.operatingSystem.name == 'windows') {
                     cppCompiler.define 'GIAC_MPQS'
                     cppCompiler.define '__MINGW_H'
+                    cppCompiler.define 'MINGW32'
                     cppCompiler.define 'HAVE_NO_SYS_TIMES_H'
                     cppCompiler.define 'HAVE_NO_SYS_RESOURCE_WAIT_H'
                     cppCompiler.define 'HAVE_NO_PWD_H'
