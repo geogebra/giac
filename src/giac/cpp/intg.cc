@@ -3325,6 +3325,18 @@ namespace giac {
     return res;
   }
 #endif
+  gen integrate_chknum(const gen & v0,const gen & x,gen & rem,GIAC_CONTEXT){
+    gen primitive;
+    if (has_num_coeff(v0)){
+      primitive=integrate0(exact(v0,contextptr),*x._IDNTptr,rem,contextptr);
+      primitive=evalf(primitive,1,contextptr);
+      rem=evalf(rem,1,contextptr);
+    }
+    else 
+      primitive=integrate0(v0,*x._IDNTptr,rem,contextptr);
+    return primitive;
+  }
+
   // "unary" version
   gen _integrate(const gen & args,GIAC_CONTEXT){
     if (complex_variables(contextptr))
@@ -3726,18 +3738,12 @@ namespace giac {
 	}
       }
     }
-    if (has_num_coeff(v[0])){
-      primitive=integrate0(exact(v[0],contextptr),*x._IDNTptr,rem,contextptr);
-      primitive=evalf(primitive,1,contextptr);
-      rem=evalf(rem,1,contextptr);
-    }
-    else 
-      primitive=integrate0(v[0],*x._IDNTptr,rem,contextptr);
-    if (s==2 && calc_mode(contextptr)==1){
-      ++ggb_intcounter;
-      primitive += diffeq_constante(ggb_intcounter,contextptr);
-    }
     if (s==2){
+      primitive=integrate_chknum(v[0],x,rem,contextptr);
+      if (calc_mode(contextptr)==1){
+	++ggb_intcounter;
+	primitive += diffeq_constante(ggb_intcounter,contextptr);
+      }
       if (is_zero(rem))
 	return primitive;
       return primitive + symbolic(at_integrate,gen(makevecteur(rem,x),_SEQ__VECT));
@@ -3749,6 +3755,7 @@ namespace giac {
     if (ordonne){
       gen xval=assumeeval(x,contextptr);
       giac_assume(symb_and(symb_superieur_egal(x,borne_inf),symb_inferieur_egal(x,borne_sup)),contextptr);
+      primitive=integrate_chknum(v[0],x,rem,contextptr);
       primitive=eval(primitive,1,contextptr);
       restorepurge(xval,x,contextptr);
       res=limit(primitive,*x._IDNTptr,borne_sup,-1,contextptr)-limit(primitive,*x._IDNTptr,borne_inf,1,contextptr);
@@ -3757,17 +3764,22 @@ namespace giac {
       if ( (desordonne=is_greater(borne_inf,borne_sup,contextptr) )){
 	gen xval=assumeeval(x,contextptr);
 	giac_assume(symb_and(symb_superieur_egal(x,borne_sup),symb_inferieur_egal(x,borne_inf)),contextptr);
+	primitive=integrate_chknum(v[0],x,rem,contextptr);
+	primitive=eval(primitive,1,contextptr);
 	restorepurge(xval,x,contextptr);
 	res=limit(primitive,*x._IDNTptr,borne_sup,1,contextptr)-limit(primitive,*x._IDNTptr,borne_inf,-1,contextptr) ;
       }
-      else
+      else {
+	primitive=integrate_chknum(v[0],x,rem,contextptr)l
 	res=limit(primitive,*x._IDNTptr,borne_sup,0,contextptr)-limit(primitive,*x._IDNTptr,borne_inf,0,contextptr);
+      }
     }
 #else
     try {
       if (ordonne){
 	gen xval=assumeeval(x,contextptr);
 	giac_assume(symb_and(symb_superieur_egal(x,borne_inf),symb_inferieur_egal(x,borne_sup)),contextptr);
+	primitive=integrate_chknum(v[0],x,rem,contextptr);
 	primitive=eval(primitive,1,contextptr);
 	restorepurge(xval,x,contextptr);
 	gen rs=limit(primitive,*x._IDNTptr,borne_sup,-1,contextptr);
@@ -3778,11 +3790,15 @@ namespace giac {
 	if ( (desordonne=is_greater(borne_inf,borne_sup,contextptr) )){
 	  gen xval=assumeeval(x,contextptr);
 	  giac_assume(symb_and(symb_superieur_egal(x,borne_sup),symb_inferieur_egal(x,borne_inf)),contextptr);
+	  primitive=integrate_chknum(v[0],x,rem,contextptr);
+	  primitive=eval(primitive,1,contextptr);
 	  restorepurge(xval,x,contextptr);
 	  res=limit(primitive,*x._IDNTptr,borne_sup,1,contextptr)-limit(primitive,*x._IDNTptr,borne_inf,-1,contextptr) ;
 	}
-	else
+	else {
+	  primitive=integrate_chknum(v[0],x,rem,contextptr);
 	  res=limit(primitive,*x._IDNTptr,borne_sup,0,contextptr)-limit(primitive,*x._IDNTptr,borne_inf,0,contextptr);
+	}
       }
     } catch (std::runtime_error & e){
       last_evaled_argptr(contextptr)=NULL;

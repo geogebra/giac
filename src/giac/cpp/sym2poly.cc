@@ -2793,6 +2793,9 @@ namespace giac {
       }
       // Extract integer content of s
       gen cont=Tppz<gen>(s);
+      if (s.dim==0 && !s.coord.empty() && is_positive(-s.coord[0].value,contextptr)){
+	cont=-cont; s=-s;
+      }	
       gen simpl,doubl; bool pos;
       zint2simpldoublpos(cont,simpl,doubl,pos,2,contextptr);
       if (!pos) simpl=-simpl;
