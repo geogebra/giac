@@ -3770,7 +3770,7 @@ namespace giac {
 	res=limit(primitive,*x._IDNTptr,borne_sup,1,contextptr)-limit(primitive,*x._IDNTptr,borne_inf,-1,contextptr) ;
       }
       else {
-	primitive=integrate_chknum(v[0],x,rem,contextptr)l
+	primitive=integrate_chknum(v[0],x,rem,contextptr);
 	res=limit(primitive,*x._IDNTptr,borne_sup,0,contextptr)-limit(primitive,*x._IDNTptr,borne_inf,0,contextptr);
       }
     }
