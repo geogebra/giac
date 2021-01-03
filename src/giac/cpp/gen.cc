@@ -3947,7 +3947,10 @@ namespace giac {
     if (is_zero(i,contextptr))
       return real_abs(s,contextptr);
     else {
-      if (i.type==_SYMB && i._SYMBptr->sommet==at_im && !lop(r,at_re).empty())
+      if (i.type==_SYMB  
+	  && !lop(i,at_im).empty() // was i._SYMBptr->sommet==at_im, changed 3 jan 2021 for abs(2*(sqrt(x+sqrt(x))-(sqrt(x)))-1); 
+	  && !lop(r,at_re).empty()
+	  )
 	return new_ref_symbolic(symbolic(at_abs,s));
       gen r2i2=pow(r,2)+pow(i,2);
       if (has_op(r2i2,*at_cos) || has_op(r2i2,*at_sin)){

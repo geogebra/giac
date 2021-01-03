@@ -10747,25 +10747,19 @@ namespace giac {
 
 #ifndef USE_GMP_REPLACEMENTS
   static int randvar_count=0;
-
   gen find_randvars(const gen &g,gen_map &rv,GIAC_CONTEXT) {
-    stringstream ss;
     if (g.type==_IDNT) {
       if (rv.find(g)!=rv.end())
         return rv[g];
-      ss << " var" << randvar_count;
-      identificateur v(ss.str().c_str());
+      identificateur v((string(" var")+printint(randvar_count)).c_str());
       rv[g]=v;
       ++randvar_count;
       return v;
     }
 #ifndef USE_GMP_REPLACEMENTS
     if (g.is_symb_of_sommet(at_discreted) || is_distribution(g)>0) {
-      ss << " tmp" << randvar_count;
-      identificateur t(ss.str().c_str());
-      ss.str("");
-      ss << " var" << randvar_count;
-      identificateur v(ss.str().c_str());
+      identificateur t((string(" tmp")+printint(randvar_count)).c_str());
+      identificateur v((string(" var")+printint(randvar_count)).c_str());
       _eval(symbolic(at_sto,makesequence(g,t)),contextptr);
       rv[t]=v;
       ++randvar_count;
@@ -10948,15 +10942,17 @@ namespace giac {
       }
     }
     if (f.is_symb_of_sommet(at_exp) || f.is_symb_of_sommet(at_EXP) || f.is_symb_of_sommet(at_randexp) || f.is_symb_of_sommet(at_exponential) || f.is_symb_of_sommet(at_exponentiald)){
-      f=evalf_double(f._SYMBptr->feuille,1,contextptr);
-      if (f.type!=_DOUBLE_ || f._DOUBLE_val<=0){
-	res=vecteur(1,gensizeerr(contextptr));
-	return;
+      gen lc=evalf_double(f._SYMBptr->feuille,1,contextptr);
+      if (lc.type==_DOUBLE_){
+        double lambda=lc._DOUBLE_val;
+        if (lambda<=0){
+          res=vecteur(1,gensizeerr(contextptr));
+          return;
+        }
+        for (int i=0;i<n;++i)
+          res.push_back(gen(-std::log(1-giac_rand(contextptr)/(rand_max2+1.0))/lambda));
+        return;
       }
-      double lambda=f._DOUBLE_val;
-      for (int i=0;i<n;++i)
-	res.push_back(gen(-std::log(1-giac_rand(contextptr)/(rand_max2+1.0))/lambda));
-      return;     
     }
     if (f.is_symb_of_sommet(at_geometric) || f.is_symb_of_sommet(at_randgeometric)){
       f=evalf_double(f._SYMBptr->feuille,1,contextptr);

@@ -516,7 +516,8 @@ namespace giac {
       of << "," << endl;
     }
     cmds << "]" << endl;
-    of << endl;
+    of << endl; 
+    of.close();
     ofstream ofw("static_help_w.h");
     ofstream ofwindex("index_w.h");
     ofwindex << "const TChooseItem index_w[]={" << endl;

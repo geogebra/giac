@@ -1828,7 +1828,11 @@ extern "C" void Sleep(unsigned int miliSecond);
 #endif
   int printprog=0;
 #if defined __APPLE__ || defined VISUALC || defined __MINGW_H || defined BESTA_OS || defined NSPIRE || defined FXCG || defined NSPIRE_NEWLIB || defined KHICAS
+#ifdef _WIN32
+  int threads=atoi(getenv("NUMBER_OF_PROCESSORS"));
+#else
   int threads=1;
+#endif
 #else
   int threads=sysconf (_SC_NPROCESSORS_ONLN);
 #endif

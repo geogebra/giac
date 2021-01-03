@@ -3178,7 +3178,7 @@ void freeglutStrokeCharacter( int character )
     }
     glShadeModel((display_mode & 0x10)?GL_FLAT:GL_SMOOTH);
     bool lighting=display_mode & 0x8;
-    if (lighting)
+    if (lighting || default_color(contextptr)==FL_WHITE)
       glClearColor(0, 0, 0, 0);
     else
       glClearColor(1, 1, 1, 1);

@@ -4244,7 +4244,7 @@ namespace giac {
   gen _sample(const gen & args,GIAC_CONTEXT){
     if (args.is_symb_of_sommet(at_discreted) || is_distribution(args)>0)
       return _rand(args,contextptr);
-    if (args.type==_SYMB)
+    if (args.type==_SYMB || args.type==_IDNT)
       return _randvector(makesequence(1,args),contextptr)._VECTptr->front();
     if (args.type!=_VECT || args._VECTptr->size()<2)
       return gensizeerr(contextptr);
@@ -4262,7 +4262,7 @@ namespace giac {
     }
     if (args._VECTptr->size()!=2 || !is_integral(b) || b.type==_ZINT || b.val<0)
       return gensizeerr(contextptr);
-    if (a.is_symb_of_sommet(at_discreted) || is_distribution(a)>0 || a.type==_SYMB)
+    if (a.is_symb_of_sommet(at_discreted) || is_distribution(a)>0 || a.type==_SYMB || a.type==_IDNT)
       return _randvector(makesequence(b,a),contextptr);
     if (a.type!=_VECT)
       return gensizeerr(contextptr);
@@ -8657,7 +8657,27 @@ namespace giac {
       COUT << "Examples: " << examples << '\n';
       return 1;
 #else
-      return string2gen(string(howto?howto:"")+'\n'+string(syntax)+'\n'+string(related)+'\n'+string(examples),false);
+      string related_str(related);
+      for (int i=related_str.size();i-->0;) {
+	if (related_str[i]==',')
+	  related_str.insert(related_str.begin()+i+1,' ');
+      }
+      string examples_str(examples);
+      for (int i=examples_str.size();i-->0;) {
+	if (i>0 && examples_str.substr(i-1,2)==";\\")
+	  examples_str.replace(i-1,2,"\n");
+      }
+      string helptext;
+      if (howto!=NULL && strlen(howto)>0)
+        helptext = string("Description: ") + howto + "\n";
+      if (strlen(syntax)>0)
+        helptext += "Usage: " + string(cmdname).substr(1,strlen(cmdname)-2) + "(" + syntax + ")\n";
+      if (related_str.size()>0)
+        helptext += "Related: " + related_str + "\n";
+      if (examples_str.size()>0)
+        helptext += "Examples:\n" + examples_str;
+      return string2gen(helptext,false);
+      // return string2gen(string(howto?howto:"")+'\n'+string(syntax)+'\n'+string(related)+'\n'+string(examples),false);
 #endif
     }
 #ifndef GIAC_HAS_STO_38

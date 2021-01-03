@@ -2104,7 +2104,7 @@ namespace giac {
     gen laur=_series(makesequence(r,x,inf,1,_POLY1__VECT),contextptr);
     bool success=false;
     if (kovacic_iscase1(poles,dinf)) {
-      cerr << "Case 1 of Kovacic algorithm" << '\n';
+      //cerr << "Case 1 of Kovacic algorithm" << '\n';
       /* step 1 */
       gen_map alpha_plus,alpha_minus,sqrt_r;
       gen alpha_inf_plus,alpha_inf_minus;
@@ -2205,7 +2205,7 @@ namespace giac {
       }
     }
     if (!success && kovacic_iscase2(poles)) {
-      cerr << "Case 2 of Kovacic algorithm" << '\n';
+      //cerr << "Case 2 of Kovacic algorithm" << '\n';
       /* step 1 */
       gen_map E;
       for (const_iterateur it=poles.begin();it!=poles.end();++it) {
@@ -2298,7 +2298,7 @@ namespace giac {
       }
     }
     if (!success && kovacic_iscase3(cpfr,x,poles,dinf,contextptr)) {
-      cerr << "Case 3 of Kovacic algorithm" << '\n';
+      //cerr << "Case 3 of Kovacic algorithm" << '\n';
       vector<int> nv=vecteur_2_vector_int(makevecteur(4,6,12));
       for (vector<int>::const_iterator nt=nv.begin();nt!=nv.end();++nt) {
 	int n=*nt;
@@ -2385,7 +2385,7 @@ namespace giac {
 	    for (int i=0;i<=n;++i) {
 	      ac[i]=_collect(pow(S,i)*P[i+1]/_factorial(n-i,contextptr),contextptr);
 	    }
-	    *logptr(contextptr) << "Warning: outputting the algebraic expression for ω" << '\n';
+        //*logptr(contextptr) << "Warning: outputting the algebraic expression for ω" << '\n';
 	    ac=strip_gcd(ac,contextptr);
 	    gen omg=pow(w,4)*ac[4]+pow(w,3)*ac[3]+pow(w,2)*ac[2]+w*ac[1]+ac[0];
 	    if (!is_zero(dy_coeff)) {
