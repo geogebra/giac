@@ -51,6 +51,7 @@ namespace giac {
   };
   gen _quaternion(const gen & args,GIAC_CONTEXT);
 
+  gen char2_uncoerce(const gen & a);
   class galois_field : public gen_user {
   public:
     gen p; // F_p^m, characteristic of the field

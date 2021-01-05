@@ -1820,15 +1820,16 @@ namespace giac {
     if (g.type==_USER){
 #ifndef NO_RTTI
       if (galois_field * gf=dynamic_cast<galois_field *>(g._USERptr)){
-	if (gf->a.type!=_VECT || gf->P.type!=_VECT || !is_integer(gf->p))
+	gen gfa=char2_uncoerce(gf->a),gfP=char2_uncoerce(gf->P);
+	if (gfa.type!=_VECT || gfP.type!=_VECT || !is_integer(gf->p))
 	  return gensizeerr("Bad GF element");
 	environment env;
 	env.modulo=gf->p;
 	env.pn=env.modulo;
 	env.moduloon=true;
 	// compute 1,a,a^2,...,a^n in lines then transpose and find ker
-	int n=int(gf->P._VECTptr->size())-1;
-	vecteur & A=*gf->a._VECTptr;
+	int n=int(gfP._VECTptr->size())-1;
+	vecteur & A=*gfa._VECTptr;
 	vecteur current(1,1),suivant,temp;
 	matrice m(n+1);
 	m[0]=vecteur(n);
@@ -1836,7 +1837,7 @@ namespace giac {
 	// put constant term in first column (row) to avoid cancellation problems
 	for (int i=1;i<=n;++i){
 	  mulmodpoly(current,A,&env,temp);
-	  suivant=operator_mod(temp,*gf->P._VECTptr,&env);
+	  suivant=operator_mod(temp,*gfP._VECTptr,&env);
 	  m[i]=new ref_vecteur(n);
 	  for (unsigned j=0;j<suivant.size();++j){
 	    (*m[i]._VECTptr)[j]=makemod(suivant[suivant.size()-1-j],gf->p);

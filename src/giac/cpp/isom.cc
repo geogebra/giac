@@ -45,16 +45,13 @@ namespace giac {
     //I.push_back(li);
     //}
     I=midn(n);
-    gen b;
-    if (recursive_normal(mtran(M)*M,contextptr)==I){
+    gen b=mmult(mtran(M),M);
+    b=b-I;
+    if (is_zero(recursive_normal(b,contextptr))){
       b=mdet(M,contextptr);
     } 
-    else {
-      b=gen(0);
-    }
-    if (is_zero(b)) { 
-      return(makevecteur(b));
-    }
+    else 
+      return makevecteur(b);
     if (M==-I) {
       //on a une symetrie centrale
       return(makevecteur(cst_pi,b));

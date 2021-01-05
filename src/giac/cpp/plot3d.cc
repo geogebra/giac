@@ -1599,7 +1599,7 @@ namespace giac {
       // conique
       gen x0,y0,z0,equation_reduite;
       vecteur V0,V1,V2,param_curves,propre,centre;
-      quadrique_reduite(f,M,vxyz,x0,y0,z0,V0,V1,V2,propre,equation_reduite,param_curves,centre,numeric,contextptr);
+      if (!quadrique_reduite(f,M,vxyz,x0,y0,z0,V0,V1,V2,propre,equation_reduite,param_curves,centre,numeric,contextptr)) return false;
       vecteur res;
       int n=int(param_curves.size());
       for (int i=0;i<n;++i){

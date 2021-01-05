@@ -1427,7 +1427,7 @@ namespace giac {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     int n;
     gen a,x;
-    if (args.type==_VECT && args._VECTptr->size()==2 && is_integer(args._VECTptr->front()))
+    if (args.type==_VECT && args._VECTptr->size()==2 && is_integer(args._VECTptr->front()) && args._VECTptr->back().type!=_IDNT)
       return tchebyshev_eval(args._VECTptr->front(),args._VECTptr->back(),makevecteur(1,args._VECTptr->back()),contextptr);
     if (!find_n_x(args,n,x,a))
       return gensizeerr(contextptr);
@@ -1452,8 +1452,8 @@ namespace giac {
   }
   gen _tchebyshev2(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    if (args.type==_VECT && args._VECTptr->size()==2 && is_integer(args._VECTptr->front()))
-      return tchebyshev_eval(args._VECTptr->front(),args._VECTptr->back(),makevecteur(0,1),contextptr);
+    if (args.type==_VECT && args._VECTptr->size()==2 && is_integer(args._VECTptr->front()) && args._VECTptr->back().type!=_IDNT)
+      return tchebyshev_eval(args._VECTptr->front()+1,args._VECTptr->back(),makevecteur(0,1),contextptr);
     int n;
     gen a,x;
     if (!find_n_x(args,n,x,a))

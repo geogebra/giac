@@ -781,8 +781,10 @@ namespace giac {
       if (!is_zero(s2)){
 	if (!is_zero(s3)){
 	  gen tmp=normal(-c1/s1*u-c2/s2*v-c3/s3*w,contextptr);
-	  if (tmp.type!=_VECT || tmp._VECTptr->size()!=3)
+	  if (tmp.type!=_VECT)
 	    return false;
+	  while (tmp._VECTptr->size()<3)
+	    tmp._VECTptr->insert(tmp._VECTptr->begin(),0);
 	  centre=*tmp._VECTptr;
 	  d=normal(subst(q,vxyz,centre,false,contextptr),contextptr);
 	  equation_reduite=s1*pow(x,2)+s2*pow(y,2)+s3*pow(z,2)+d;
