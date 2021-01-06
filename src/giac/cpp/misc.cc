@@ -4290,6 +4290,8 @@ static define_unary_function_eval (__polynomial_regression_plot,&_polynomial_reg
       return gendimerr(contextptr);
     gen a=res._VECTptr->front(),b=res._VECTptr->back(),urr=-b/a;
     *logptr(contextptr) << gettext("Pinstant=") << a << gettext("*Pcumul+") << b << '\n' << gettext("Correlation ") << r << gettext(", Estimated total P=") << urr << '\n' << gettext("Returning estimated Pcumul, Pinstant, Ptotal, Pinstantmax, tmax, R")<< '\n';
+    if (is_positive(-urr,contextptr))
+      return gensizeerr(gettext("Data not suited for logistic regression (instant production should be a decreasing function of cumulated production)"));
     // y'/y=a*y+b -> y=urr/[1+exp(-b*(t-t0))]
     // urr/y-1=exp(-b*(t-t0))
     // -> -b*(t-t0) = ln(urr/y-1)

@@ -443,22 +443,30 @@ namespace giac {
 
   string galois_field::texprint(GIAC_CONTEXT) const {
     gen xid(x);
+    gen A(a);
+    if (a.type==_INT_){
+      int ai=a.val;
+      if (!ai)
+	return "0";
+      // if (ai==1) return "1";
+      A=char2_uncoerce(a);
+    }
     if (x.type==_VECT && x._VECTptr->size()>=2){
       xid=x._VECTptr->front();
       if (!is_undef(a)){
-	if (x._VECTptr->size()==3 && a.type==_VECT){
-	  if (a._VECTptr->size()==1)
-	    return makemod(a._VECTptr->front(),p).print(contextptr);
-	  gen tmp=symb_horner(*a._VECTptr,x._VECTptr->back());
+	if (x._VECTptr->size()==3 && A.type==_VECT){
+	  if (A._VECTptr->size()==1)
+	    return makemod(A._VECTptr->front(),p).print(contextptr);
+	  gen tmp=symb_horner(*A._VECTptr,x._VECTptr->back());
 	  if (tmp.is_symb_of_sommet(at_plus))
 	    return '('+gen2tex(tmp,contextptr)+')';
 	  else
 	    return gen2tex(tmp,contextptr);
 	}
-	return gen2tex(x._VECTptr->back(),contextptr)+"("+gen2tex(r2e(a,xid,contextptr),contextptr)+")";      
+	return gen2tex(x._VECTptr->back(),contextptr)+"("+gen2tex(r2e(A,xid,contextptr),contextptr)+")";      
       }
     }
-    return string(_galois_field_s)+"("+gen2tex(p,contextptr)+","+gen2tex(r2e(P,xid,contextptr),contextptr)+","+gen2tex(x,contextptr)+","+gen2tex(r2e(a,xid,contextptr),contextptr)+")";
+    return string(_galois_field_s)+"("+gen2tex(p,contextptr)+","+gen2tex(r2e(P,xid,contextptr),contextptr)+","+gen2tex(x,contextptr)+","+gen2tex(r2e(A,xid,contextptr),contextptr)+")";
   }
 
   galois_field::galois_field(const gen & g,bool primitive,GIAC_CONTEXT){
