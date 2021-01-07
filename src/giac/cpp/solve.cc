@@ -2819,14 +2819,18 @@ namespace giac {
 	      return gen(mergevecteur(gen2vecteur(res1),gen2vecteur(res2)),res1.subtype);
 	    }
 	    bool doit=false;
-	    if (is_positive(a1,contextptr) && is_positive(a2,contextptr)){
-	      doit=true;
-	      arg1=ln(simplify(a1,contextptr),contextptr)-ln(simplify(a2,contextptr),contextptr);
+	    if (a1.is_symb_of_sommet(at_ln) || a2.is_symb_of_sommet(at_ln))
+	      ;
+	    else {
+	      if (is_positive(-a1,contextptr) && is_positive(-a2,contextptr)){
+		doit=true;
+		arg1=ln(simplify(-a1,contextptr),contextptr)-ln(simplify(-a2,contextptr),contextptr);
+	      }	    
+	      if (!is_positive(-a1*a2,contextptr)){
+		doit=true;
+		arg1=ln(simplify(a1,contextptr),contextptr)-ln(simplify(a2,contextptr),contextptr);
+	      }
 	    }
-	    if (is_positive(-a1,contextptr) && is_positive(-a2,contextptr)){
-	      doit=true;
-	      arg1=ln(simplify(-a1,contextptr),contextptr)-ln(simplify(-a2,contextptr),contextptr);
-	    }	    
 	    if (doit && lvarx(arg1,v.back()).size()>1){
 	      arg1=lnexpand(arg1,contextptr);
 	      if (!lop(arg1,at_pow).empty()){ 
