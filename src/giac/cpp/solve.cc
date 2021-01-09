@@ -2851,11 +2851,12 @@ namespace giac {
 	    }
 	    bool doit=false;
 	    bool a1ln=a1.is_symb_of_sommet(at_ln),a2ln=a2.is_symb_of_sommet(at_ln);
+	    if (a1ln && a2ln){
+	      a1=a1._SYMBptr->feuille;
+	      a2=a2._SYMBptr->feuille;
+	      a1ln=a1.is_symb_of_sommet(at_ln);a2ln=a2.is_symb_of_sommet(at_ln);
+	    }
 	    if (a1ln || a2ln){
-	      if (a1ln && a2ln){
-		a1=a1._SYMBptr->feuille;
-		a2=a2._SYMBptr->feuille;
-	      }
 	    }
 	    else {
 	      if (is_positive(-a1,contextptr) && is_positive(-a2,contextptr)){
