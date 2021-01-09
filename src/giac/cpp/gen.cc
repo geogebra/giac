@@ -16483,8 +16483,15 @@ void sprint_double(char * s,double d){
       S=g.print(&C);
 #if !defined GIAC_GGB 
       if (g.type==_FRAC || g.type==_ZINT){
-	S += "=";	  
-	S += evalf_double(g,1,&C).print(&C);
+	double fracadd=EM_ASM_DOUBLE_V({
+	    if (typeof(UI.frac_add)!="undefined")
+	      return UI.frac_add*1.0;
+	    return 1.0;
+	  });
+	if (fracadd){
+	  S += "=";	  
+	  S += evalf_double(g,1,&C).print(&C);
+	}
       }
       if (g.type==_SYMB){
 	g=evalf_double(g,1,&C);
