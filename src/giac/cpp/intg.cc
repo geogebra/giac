@@ -2223,7 +2223,7 @@ namespace giac {
 	      gen cunm=_symb2poly(makesequence(c*pow(u,n/m),gen_x),contextptr);
 	      submodpoly(vfu,gen2vecteur(cunm),vtmp);
 	      vfu=*normal(vtmp,contextptr)._VECTptr;
-	      trim(vfu,0);
+	      vfu=trim(vfu,0);
 	    }
 	    if (vfu.empty()){
 	      fx=_poly2symb(makesequence(vfx,gen_x),contextptr);
