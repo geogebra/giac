@@ -16483,7 +16483,7 @@ void sprint_double(char * s,double d){
       S=g.print(&C);
 #if !defined GIAC_GGB 
       if (g.type==_FRAC || g.type==_ZINT){
-#ifdef EMCC
+#if defined EMCC || defined EMCC2
 	double fracadd=EM_ASM_DOUBLE_V({
 	    if (typeof(UI.frac_add)!="undefined")
 	      return UI.frac_add*1.0;

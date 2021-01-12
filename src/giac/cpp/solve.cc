@@ -954,7 +954,12 @@ namespace giac {
       }
       int n=is_cyclotomic(w,epsilon(contextptr));
       if (!n){
-	if (calc_mode(contextptr)!=1 && abs_calc_mode(contextptr)!=38 && d==3 && lv_.size()==1){
+	if (
+#ifdef GIAC_GGB
+	    0 &&
+#endif
+	    calc_mode(contextptr)!=1 && abs_calc_mode(contextptr)!=38 && d==3 && lv_.size()==1
+	    ){
 	  gen W=r2sym(num,lv_,contextptr);
 #if 1
 	  // ALT: alpha*x^3+beta*x^2+gamma*x+delta
