@@ -6395,10 +6395,11 @@ namespace giac {
     factorization f=Tsqff_char0<gen>(p);
     // take care of cst coefficients
     if (!p.coord.empty()){
-      gen p0=p.coord.front().value;
+      gen p0=p.coord.front().value,p1(1);
       for (unsigned i=0;i<f.size();++i){
-	p0=p0/pow(f[i].fact.coord.front().value,f[i].mult,context0);
+	p1=p1*pow(f[i].fact.coord.front().value,f[i].mult,context0);
       }
+      p0=p0/p1;
       if (!is_one(p0)){
 	if (f.empty() || f[0].mult!=1)
 	  f.insert(f.begin(),facteur<polynome>(polynome(p0,p.dim),1));

@@ -7161,6 +7161,20 @@ namespace giac {
     }
     if (b.is_symb_of_sommet(at_neg))
       return -operator_times(a,b._SYMBptr->feuille,contextptr);
+    if (a.type==_POLY && b.is_symb_of_sommet(at_inv) && b._SYMBptr->feuille.type==_POLY){
+      polynome & A=*a._POLYptr;
+      polynome & B=*b._SYMBptr->feuille._POLYptr;
+      polynome Q ,R;
+      if (A.TDivRem(B,Q,R) && R.coord.empty())
+	return Q;
+    }
+    if (b.type==_POLY && a.is_symb_of_sommet(at_inv) && a._SYMBptr->feuille.type==_POLY){
+      polynome & A=*b._POLYptr;
+      polynome & B=*a._SYMBptr->feuille._POLYptr;
+      polynome Q ,R;
+      if (A.TDivRem(B,Q,R) && R.coord.empty())
+	return Q;
+    }
     if (a.type==_FRAC){
       if (b.is_symb_of_sommet(at_inv) && is_cinteger(b._SYMBptr->feuille))
 	return (*a._FRACptr)*fraction(1,b._SYMBptr->feuille);

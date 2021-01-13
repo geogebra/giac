@@ -1893,7 +1893,8 @@ namespace giac {
     l.front()=lf;
     // l.front()._VECTptr->front()=xvar;
     polynome p_content(lgcd(den));
-    factorization vden(sqff(den/p_content)); // first square-free factorization
+    polynome primden(den/p_content);
+    factorization vden(sqff(primden)); // first square-free factorization
     vector< pf<gen> > pfdecomp;
     polynome ipnum(s),ipden(s),temp(s),tmp(s);
     partfrac(num,den,vden,pfdecomp,ipnum,ipden);
