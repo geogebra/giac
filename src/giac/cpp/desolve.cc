@@ -847,9 +847,9 @@ namespace giac {
 	      bool b=calc_mode(contextptr)==1;
 	      if (b)
 		calc_mode(0,contextptr);
-	      gen tmp=_lin(c[i]*exp(-rac[i]*x,contextptr),contextptr);
+	      gen tmp=_lin(makesequence(c[i]*exp(-rac[i]*x,contextptr),at_sqrt),contextptr);
 	      tmp = _integrate(makesequence(tmp,x),contextptr);
-	      part += _lin(tmp*exp(rac[i]*x,contextptr),contextptr);
+	      part += _lin(makesequence(tmp*exp(rac[i]*x,contextptr),at_sqrt),contextptr);
 	      if (b)
 		calc_mode(1,contextptr);
 	    }
@@ -2367,7 +2367,7 @@ namespace giac {
 	  v=vecteur(vars.begin(),vars.begin()+deg);
 	  for (int i=0;i<deg;++i) P[n+1]-=v[i]*pow(x,i);
 	  P[n+1]-=pow(x,deg);
-	  P[n]=-S*(_derive(makesequence(P[n+1],x),contextptr)+th*P[n+1]),contextptr;
+	  P[n]=-S*(_derive(makesequence(P[n+1],x),contextptr)+th*P[n+1]);
 	  if (P[n].type==_SYMB) P[n]=_collect(P[n],contextptr);
 	  for (int i=n;i-->0;) {
 	    P[i]=-S*_derive(makesequence(P[i+1],x),contextptr)+((n-i)*dS-S*th)*P[i+1]-(n-i)*(i+1)*sq(S)*r*P[i+2];
