@@ -847,7 +847,12 @@ extern "C" void Sleep(unsigned int miliSecond);
       _rpn_mode_=b;
   }
 
+#ifdef __MINGW_H
+  static bool _ntl_on_=false; 
+#else
   static bool _ntl_on_=true; 
+#endif
+
   bool & ntl_on(GIAC_CONTEXT){
     if (contextptr && contextptr->globalptr )
       return contextptr->globalptr->_ntl_on_;
@@ -3310,7 +3315,7 @@ NULL,NULL,SW_SHOWNORMAL);
 	// add locale command description
 	int count;
 	string filename=giac_aide_dir()+find_doc_prefix(i)+"aide_cas";
-	readhelp(*vector_aide_ptr(),filename.c_str(),count,true);
+	readhelp(*vector_aide_ptr(),filename.c_str(),count,false);
 	// add synonyms
 	multimap<string,localized_string>::iterator it,backend=back_lexer_localization_map().end(),itend;
 	vector<aide>::iterator jt = vector_aide_ptr()->begin(),jtend=vector_aide_ptr()->end();
@@ -4080,8 +4085,12 @@ NULL,NULL,SW_SHOWNORMAL);
 		     _withsqrt_(true), 
 		     _show_point_(true),  _io_graph_(true),
 		     _all_trig_sol_(false),
-#ifdef WITH_MYOSTREAM
+#ifdef __MINGW_H
+		     _ntl_on_(false),
+#else
 		     _ntl_on_(true),
+#endif
+#ifdef WITH_MYOSTREAM
 		     _lexer_close_parenthesis_(true),_rpn_mode_(false),_try_parse_i_(true),_specialtexprint_double_(false),_atan_tan_no_floor_(false),_keep_acosh_asinh_(false),_keep_algext_(false),
 #ifdef KHICAS
 		     _python_compat_(true),
@@ -4096,7 +4105,6 @@ NULL,NULL,SW_SHOWNORMAL);
 #endif
 		     _total_time_(0),_evaled_table_(0),_extra_ptr_(0),_series_variable_name_('h'),_series_default_order_(5),
 #else
-		     _ntl_on_(true),
 		     _lexer_close_parenthesis_(true),_rpn_mode_(false),_try_parse_i_(true),_specialtexprint_double_(false),_atan_tan_no_floor_(false),_keep_acosh_asinh_(false),_keep_algext_(false),
 #ifdef KHICAS
 		     _python_compat_(true),

@@ -8196,7 +8196,8 @@ int cobyla(int n, int m, double *x, double rhobeg, double rhoend, int iprint,
   int icon, isim, isigb, idatm, iveta, isimi, ivsig, iwork, ia, idx, mpp, rc;
   int *iact;
   double *w;
-
+  if (rhobeg<0) rhobeg=-rhobeg;
+  if (rhobeg<100*rhoend) rhobeg=100*rhoend;
 /*
  * This subroutine minimizes an objective function F(X) subject to M
  * inequality constraints on X, where X is a vector of variables that has 

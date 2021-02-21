@@ -954,6 +954,9 @@ namespace giac {
   }
 
   bool pari_polroots(const vecteur & p,vecteur & res,long prec,GIAC_CONTEXT){
+#ifdef __MINGW_H
+    return false;
+#endif
     gen tmp;
     ensure_pari_is_ready now;
     long av=avma;

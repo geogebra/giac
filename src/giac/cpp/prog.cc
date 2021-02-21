@@ -3431,6 +3431,15 @@ namespace giac {
 	return feuille_(args._VECTptr->front(),args._VECTptr->back(),contextptr);
       return gen(*args._VECTptr,_SEQ__VECT);
     }
+    if (args.type==_MAP){
+      const gen_map & m=*args._MAPptr;
+      gen_map::const_iterator it=m.begin(),itend=m.end();
+      vecteur res;
+      for (;it!=itend;++it){
+	res.push_back(makevecteur(it->first,it->second));
+      }
+      return res;
+    }
     if (args.type!=_SYMB)
       return args;
     gen tmp=args._SYMBptr->feuille;

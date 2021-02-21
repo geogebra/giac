@@ -41,6 +41,9 @@ extern size_t stackptr;
 #include "config.h"
 #endif
 #include "first.h"
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 
 // #include <gmp.h>
 #ifdef USE_GMP_REPLACEMENTS

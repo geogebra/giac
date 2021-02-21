@@ -4042,7 +4042,7 @@ namespace giac {
 	modpoly B=unmod(*v[1]._VECTptr,m);
 	gen res;
 	if (ntlresultant(A,B,m,res))
-	  return res;
+	  return makemod(res,m);
 	if (m.type==_INT_){
 	  vector<int> a,b,tmp1,tmp2;
 	  vecteur2vector_int(A,m.val,a);
