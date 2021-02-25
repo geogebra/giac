@@ -1141,6 +1141,10 @@ namespace giac {
 	    vecteur & w=*m[i]._VECTptr;
 	    ws=int(w.size());
 	    for (j=y;j<ws && j<=Y;++j){
+	      if (w[j].type!=_VECT){
+		w[j]=makevecteur(w[j],w[j],2);
+		continue;
+	      }
 	      vecteur & wj=*w[j]._VECTptr;
 	      if (wj.back().val==1)
 		return string2gen("Recursive eval",false);
@@ -3210,7 +3214,7 @@ namespace giac {
   // ***   Matrices    ***
   // *********************
 
-  bool ckmatrix(const matrice & a,bool allow_embedded_vect){
+  bool ckmatrix(const matrice & a,bool allow_embedded_vect,bool ckundef){
     vecteur::const_iterator it=a.begin(),itend=a.end();
     if (itend==it)
       return false;
@@ -3229,9 +3233,11 @@ namespace giac {
 	  return false;
 	if (s && (it->_VECTptr->front().type==_VECT && it->_VECTptr->front().subtype!=_POLY1__VECT) && !allow_embedded_vect)
 	  return false;
-	for (int i=0;i<s;++i)
-	  if (is_undef((*it->_VECTptr)[i]))
-	    return false;
+	if (ckundef){
+	  for (int i=0;i<s;++i)
+	    if (is_undef((*it->_VECTptr)[i]))
+	      return false;
+	}
       }
     }
     return true;
@@ -3312,8 +3318,8 @@ namespace giac {
     }
   }
 
-  void mtran(const matrice & a,matrice & res,int ncolres){
-    if (!ckmatrix(a,true)){
+  void mtran(const matrice & a,matrice & res,int ncolres,bool ckundef){
+    if (!ckmatrix(a,true,ckundef)){
       res=vecteur(1,vecteur(ncolres,gensizeerr("Unable to tranpose")));
       return;
     }

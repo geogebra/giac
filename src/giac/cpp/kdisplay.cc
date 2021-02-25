@@ -1583,7 +1583,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   }
 
   // back is the number of char that should be deleted before inserting
-  string help_insert(const char * cmdline,int & back,int exec,GIAC_CONTEXT){
+  string help_insert(const char * cmdline,int & back,int exec,GIAC_CONTEXT,bool warn){
     if (exec==KEY_CTRL_OK)
       exec=MENU_RETURN_SELECTION;
     back=0;
@@ -1633,7 +1633,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     char fbuf[1024];
     if (iii==nfunc){
       if (!has_static_help(cmdname,exec?(lang==0?-2:-lang):lang,fhowto,fsyntax,fexamples,frelated)){
-	confirm("Pas d'aide disponible pour",cmdname,true);
+	if (warn) confirm("Pas d'aide disponible pour",cmdname,true);
 	return "";
       }
       cf=frelated;
@@ -11296,14 +11296,14 @@ namespace xcas {
     return false;
   }
 
-  bool console_help_insert(int exec,GIAC_CONTEXT){
+  bool console_help_insert(int exec,GIAC_CONTEXT,bool warn=true){
     if (!Edit_Line)
       return false;
     char buf[strlen(Edit_Line)+1];
     strcpy(buf,Edit_Line);
-    buf[Cursor.x]=0;
+    buf[Line[Current_Line].start_col+Cursor.x]=0;
     int back;
-    string s=help_insert(buf,back,exec,contextptr);
+    string s=help_insert(buf,back,exec,contextptr,warn);
     if (s.empty())
       return false;
     for (int i=0;i<back;++i)
@@ -11353,9 +11353,7 @@ namespace xcas {
 	  continue;
 	}
 	if (Current_Line==Last_Line && Line[Current_Line].start_col+Cursor.x==strlen(Edit_Line) && (key==KEY_CTRL_OK || key==KEY_CHAR_ANS || key==KEY_CTRL_RIGHT)){
-	  if (key==KEY_CTRL_RIGHT)
-	    key=KEY_CTRL_OK;
-	  if (console_help_insert(key,contextptr)){
+	  if (console_help_insert(key==KEY_CTRL_RIGHT?KEY_CTRL_OK:key,contextptr,false)){
 	    Console_Disp(1,contextptr);
 	    keytooltip=Console_tooltip(contextptr);
 	    continue;

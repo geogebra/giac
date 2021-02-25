@@ -209,7 +209,7 @@ namespace giac {
   bool iszero(const std::vector<int> & p);
   
   // matrice related functions
-  bool ckmatrix(const matrice & a,bool allow_embedded_vect);
+  bool ckmatrix(const matrice & a,bool allow_embedded_vect,bool ckundef=true);
   bool ckmatrix(const matrice & a);
   bool ckmatrix(const gen & a);
   bool ckmatrix(const gen & a,bool);
@@ -223,7 +223,7 @@ namespace giac {
   int mrows(const matrice & a);
   int mcols(const matrice & a);
   void mdims(const matrice &m,int & r,int & c);
-  void mtran(const matrice & a,matrice & res,int ncolres=0);
+  void mtran(const matrice & a,matrice & res,int ncolres=0,bool ckundef=true);
   matrice mtran(const matrice & a);
   gen _tran(const gen & a,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_tran ;

@@ -66,6 +66,11 @@ inline giac::gen _graph_charpoly(const giac::gen &g,const giac::context *){ retu
 const char * mp_hal_input(const char * prompt) ;
 #endif
 
+#ifdef HAVE_LIBCURL
+#include <curl/curl.h>
+#include <curl/easy.h>
+#endif
+
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
@@ -10410,8 +10415,6 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     
 #else // EMCC
 #ifdef HAVE_LIBCURL
-#include <curl/curl.h>
-#include <curl/easy.h>
   //#include <curl/curlbuild.h>
   size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) {
     string data((const char*) ptr, (size_t) size * nmemb);

@@ -385,7 +385,7 @@ namespace giac {
 #endif // ndef NO_NAMESPACE_XCAS
   // back: number of char that should be deleted,
   // exec=0 or MENU_RETURN_SELECTION, KEY_CHAR_ANS or KEY_CTRL_EXE
-  std::string help_insert(const char * cmdline,int & back,int exec,const giac::context *);
+  std::string help_insert(const char * cmdline,int & back,int exec,const giac::context *,bool warn=true);
   void copy_clipboard(const std::string & s,bool status);
 #define TEXT_MODE_NORMAL 0
 #define TEXT_MODE_INVERT 1

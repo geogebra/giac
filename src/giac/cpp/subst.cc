@@ -772,9 +772,9 @@ namespace giac {
     // set same size, required for mrv substition in series.cc
     for (int j=int(newi.size());j<is;++j)
       newi.push_back(i[j]);
-    matrice atrier=mtran(makevecteur(i,newi));
+    matrice atrier,tmp; mtran(makevecteur(i,newi),atrier,0,false);
     gen_sort_f(atrier.begin(),atrier.end(),first_sort);
-    atrier=mtran(atrier);
+    mtran(atrier,tmp,0,false); atrier=tmp;
     i=*atrier[0]._VECTptr;
     newi=*atrier[1]._VECTptr;
   }

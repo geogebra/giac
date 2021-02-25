@@ -2497,7 +2497,10 @@ namespace giac {
 	      purgenoassume(x,contextptr);
 	    }
 	    else { 
-	      if (is_zero(normal(subst(*it,x,*jt,true,contextptr),1,contextptr),contextptr))
+	      gen tst=subst(*it,x,*jt,true,contextptr);
+	      tst=eval(tst,1,contextptr);
+	      tst=normal(tst,1,contextptr);
+	      if (is_zero(tst,contextptr))
 		newres.push_back(*jt);
 	    }
 	  } // end for (;jt!=jtend;++jt) loop on previous solutions
@@ -8110,6 +8113,7 @@ namespace giac {
       res[i]=x[i];
     if (cres==0)
       return res;
+    return makevecteur(string2gen(gettext("Unable to minimize at given precision, last value "),false),res); // changed 2021/feb/22 to be able to process the result further
     *logptr(contextptr) << gettext("Unable to minimize at given precision, last value ") << res << '\n';
     return undef;
   }
