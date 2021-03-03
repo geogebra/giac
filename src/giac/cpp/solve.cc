@@ -4198,7 +4198,23 @@ namespace giac {
     A=sxa(sl,x,contextptr);
     vecteur B,R(x);
     gen rep;
-    B=mrref(A,contextptr);
+    if (A.size()==2 && x.size()==2){
+      gen a00=A[0][0];
+      if (is_zero(a00,contextptr))
+	B=makevecteur(A[1],A[0]);
+      else 
+	B=makevecteur(A[0],subvecteur(multvecteur(a00,*A[1]._VECTptr),multvecteur(A[1][0],*A[0]._VECTptr)));
+      B[1]._VECTptr->front()=0;
+      gen b11=(*B[1]._VECTptr)[1];
+      b11=simplify(b11,contextptr);
+      (*B[1]._VECTptr)[1]=b11;
+      if (!is_zero(b11)){
+	B=makevecteur(subvecteur(multvecteur(b11,*B[0]._VECTptr),multvecteur(B[0][1],*B[1]._VECTptr)),B[1]);
+	(*B[0]._VECTptr)[1]=0;
+      }
+    }
+    else
+      B=mrref(A,contextptr);
     //COUT<<B<<'\n';
     int d=int(x.size());
     int de=int(sl.size());
