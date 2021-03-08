@@ -115,6 +115,12 @@ extern "C" int KeyPressed( void );
 #include <libndls.h>
 #endif
 
+#ifdef NUMWORKS
+size_t pythonjs_stack_size=30*1024,pythonjs_heap_size=40*1024,
+#else
+  size_t pythonjs_stack_size=64*1024,pythonjs_heap_size=1024*1024;
+#endif
+
 int my_sprintf(char * s, const char * format, ...){
     int z;
     va_list ap;
@@ -128,21 +134,53 @@ int my_sprintf(char * s, const char * format, ...){
     return z;
 }
 
-  int ctrl_c_interrupted(int exception){
-    if (!giac::ctrl_c && !giac::interrupted)
-      return 0;
-    giac::ctrl_c=giac::interrupted=0;
+int ctrl_c_interrupted(int exception){
+  if (!giac::ctrl_c && !giac::interrupted)
+    return 0;
+  giac::ctrl_c=giac::interrupted=0;
 #ifndef NO_STD_EXCEPT
-    if (exception)
-      giac::setsizeerr("Interrupted");
+  if (exception)
+    giac::setsizeerr("Interrupted");
 #endif
-    return 1;
-  }
+  return 1;
+}
+
+void console_print(const char * s){
+  *logptr(giac::python_contextptr) << s;
+}
+
+const char * console_prompt(const char * s){
+  static string S;
+  giac::gen g=giac::_input(giac::string2gen(s?s:"?",false),giac::python_contextptr);
+  S=g.print(giac::python_contextptr);
+  return S.c_str();
+}
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
+
+  int js_token(const char * list,const char * buf){
+    int bufl=strlen(buf);
+    for (const char * p=list;*p;){
+      if (p[0]=='\'')
+	++p;
+      if (strncmp(p,buf,bufl)==0 && 
+	  (p[bufl]==0 || p[bufl]==' ' || p[bufl]=='\'')){
+	return (p[bufl]=='\'')?3:2;
+      }
+      // skip to next keyword in p
+      for (;*p;++p){
+	if (*p==' '){
+	  ++p; break;
+	}
+      }
+    }
+    return 0;
+  }
+
   const context * python_contextptr=0;
+
   void opaque_double_copy(void * source,void * target){
     *((double *) target) = * ((double *) source);
   }

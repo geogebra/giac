@@ -347,7 +347,7 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 \xa1                    index_status(yyextra)=1; (*yylval) = cst_i; return T_LITERAL;
   /* \xef\xbd\x89            index_status(yyextra)=1; (*yylval) = cst_i; return T_LITERAL; */
 \xe2\x81\xb1            index_status(yyextra)=1; (*yylval) = cst_i; return T_LITERAL;
-"I"                     index_status(yyextra)=1; if (xcas_mode(yyextra)==0 || xcas_mode(yyextra)==3 || rpn_mode(yyextra)) { return find_or_make_symbol(yytext,(*yylval),yyscanner,true,yyextra); } else { (*yylval) = cst_i; return T_LITERAL; };
+"I"                     index_status(yyextra)=1; if (python_compat(yyextra)>=0 && (xcas_mode(yyextra)==0 || xcas_mode(yyextra)==3 || rpn_mode(yyextra)) ) { return find_or_make_symbol(yytext,(*yylval),yyscanner,true,yyextra); } else { (*yylval) = cst_i; return T_LITERAL; };
 "%i"			index_status(yyextra)=1; (*yylval) = cst_i; return T_LITERAL;
 "%e"			index_status(yyextra)=1; (*yylval) = symbolic(at_exp,1); return T_LITERAL;
 "%pi"			index_status(yyextra)=1; (*yylval) = cst_pi; return T_LITERAL;
@@ -475,7 +475,7 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 "►"                    index_status(yyextra)=0; (*yylval)=gen(at_sto,2); return TI_STO;
 "▶"                index_status(yyextra)=0; (*yylval)=gen(at_sto,2); return TI_STO;
 "→"                    index_status(yyextra)=0; if (xcas_mode(yyextra)==3){ (*yylval)=gen(at_sto,2); return TI_STO; } else return T_MAPSTO;
-"=>"                    index_status(yyextra)=0; (*yylval)=gen(at_sto,2); return TI_STO;
+"=>"                    index_status(yyextra)=0; (*yylval)=gen(at_sto,2); if (python_compat(yyextra)<0) return T_MAPSTO; return TI_STO;
 "=%"                    index_status(yyextra)=0; (*yylval)=gen(at_sto,2); return TI_STO;
 "=<"                    index_status(yyextra)=0; (*yylval)=gen(at_array_sto,2); return T_AFFECT;
 "=&lt;"                  index_status(yyextra)=0; (*yylval)=gen(at_array_sto,2); return T_AFFECT;
@@ -498,6 +498,7 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 "'or'"                  index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_QUOTED_BINARY;
 "_or"                  index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_QUOTED_BINARY;
 "OR"                    index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_AND_OP;
+"^^"                    index_status(yyextra)=0; (*yylval)=gen(at_bitxor,2); return T_AND_OP;
 "xor"                    index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_AND_OP;
 "_xor"                  index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_QUOTED_BINARY;
 "'xor'"                  index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_QUOTED_BINARY;

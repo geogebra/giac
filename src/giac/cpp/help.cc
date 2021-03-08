@@ -307,7 +307,7 @@ namespace giac {
     kk=0;
 #ifdef MICROPY_LIB
     if (xcas_python_eval && !python_heap){
-      python_init(python_stack_size,python_heap_size);
+      python_init(pythonjs_stack_size,pythonjs_heap_size);
     }
 #endif
     for (;pos<static_help_size;++kk,++pos){

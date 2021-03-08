@@ -4360,11 +4360,6 @@ const char * gettext(const char * s) {
 
 int xcas_python_eval=0;
 char * python_heap=0;
-#ifdef DEVICE
-int python_stack_size=30*1024,python_heap_size=40*1024;
-#else
-int python_stack_size=64*1024,python_heap_size=256*1024;
-#endif
 #ifdef MICROPY_LIB
 extern "C" {
   int do_file(const char *file){
@@ -4406,7 +4401,7 @@ int micropy_ck_eval(const char *line){
   if (python_heap && line[0]==0)
     return 1;
   if (!python_heap){
-    python_init(python_stack_size,python_heap_size);
+    python_init(pythonjs_stack_size,pythonjs_heap_size);
   }
   if (!python_heap){
     console_output("Memory full",11);

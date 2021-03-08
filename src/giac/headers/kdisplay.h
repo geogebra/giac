@@ -39,6 +39,7 @@ int micropy_ck_eval(const char *line);
 #include "k_csdk.h"
 
 extern "C" {
+  void process_freeze();
   int do_shutdown(); // auto-shutdown
   void console_output(const char *,int );
   const char * console_input(const char * msg1,const char * msg2,bool numeric,int ypos);
@@ -80,6 +81,7 @@ extern "C" {
   bool c_pcoeff(c_complex * x,int n); // root->coeffs
   bool c_fft(c_complex * x,int n,bool inverse); // FFT
   void turtle_freeze();
+  void console_freeze();
   void c_sprint_double(char * s,double d);
   extern int python_stack_size,python_heap_size;
   extern int xcas_python_eval;
@@ -89,7 +91,7 @@ extern "C" {
 extern int lang;
 extern short int nspirelua;
 extern bool warn_nr;
-int select_interpreter(); // 0 Xcas, 1|2 Xcas python_compat(1|2), 3 MicroPython 
+int select_interpreter(); // 0 Xcas, 1|2 Xcas python_compat(1|2), 3 MicroPython, 4 QuickJS 
 const char * gettext(const char * s) ;
 
 #ifndef NO_NAMESPACE_XCAS

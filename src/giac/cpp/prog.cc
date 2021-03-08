@@ -6525,8 +6525,8 @@ namespace giac {
       if (is_integral(a) && is_integral(b) && is_integral(c)){
 	python_compat(a.val,contextptr) ;
 #ifdef KHICAS
-	python_heap_size=giacmax(absint(b.val),16*1024);
-	python_stack_size=giacmax(absint(c.val),8*1024);
+	pythonjs_heap_size=giacmax(absint(b.val),16*1024);
+	pythonjs_stack_size=giacmax(absint(c.val),8*1024);
 #endif
 	return p;
       }

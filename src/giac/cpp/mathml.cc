@@ -42,7 +42,7 @@ using namespace std;
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined FXCG || defined(KHICAS)
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined FXCG || defined(KHICAS) || defined USE_GMP_REPLACEMENTS
   std::string gen2mathml(const gen & g,GIAC_CONTEXT){
     return gettext("No mathml support");
   }

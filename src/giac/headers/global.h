@@ -106,6 +106,9 @@ inline double giac_log(double d){
 #endif
 
 extern "C" int ctrl_c_interrupted(int exception);
+extern "C" void console_print(const char * s);
+extern "C" const char * console_prompt(const char * s);
+
 #if defined HAVE_LIBMICROPYTHON
 #include <string>
 // giac interface to micropython modules
@@ -113,10 +116,14 @@ extern std::string python_console;
 #endif
 
 extern bool freezeturtle;
+extern "C" size_t pythonjs_stack_size,pythonjs_heap_size;
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
+  // 3 or 1 if a list of space separated commandnames includes buf
+  int js_token(const char * list,const char * buf);
+
   int dichotomic_search(const char * const * tab,unsigned tab_size,const char * s);
   void opaque_double_copy(void * source,void * target);
   double opaque_double_val(const void * source);

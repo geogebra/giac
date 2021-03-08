@@ -3998,11 +3998,25 @@ namespace giac {
       return vecteur(0);
     if (_isprime(n0,contextptr)!=0)
       return makevecteur(n0,1);
+#if 1 // set to 0 to disable ecm and pari, using giac sieve only
+    bool ifactor_pari=true;
 #ifdef HAVE_LIBECM
     int res;
     gen F(1LL<<33);
     double B1=1e6;
-    for (int i=0;i<ECM_MAXITER;++i){
+    int nbits=sizeinbase2(n0);
+    int maxiter=ECM_MAXITER;
+    if (nbits<242)
+      maxiter = 32;
+    else if (nbits<244)
+      maxiter = 64;
+    else if (nbits<246)
+      maxiter = 128;
+    else if (nbits<248)
+      maxiter = 256;
+    else if (nbits<250)
+      maxiter = 512;
+    for (int i=0;i<maxiter;++i){
       res=ecm_factor(*F._ZINTptr, *n0._ZINTptr, B1, 0);
       if (res!=0) break;
     }
@@ -4012,24 +4026,28 @@ namespace giac {
       tmp.push_back(1);
       return tmp;
     }
+    ifactor_pari=nbits>=256;
 #endif
 #ifdef HAVE_LIBPARI
+    if (ifactor_pari){
 #ifdef __APPLE__
-    return vecteur(1,gensizeerr(gettext("(Mac OS) Large number, you can try pari(); pari_factor(")+n0.print(contextptr)+")"));
+      return vecteur(1,gensizeerr(gettext("(Mac OS) Large number, you can try pari(); pari_factor(")+n0.print(contextptr)+")"));
 #endif
-    gen g(pari_ifactor(n0),contextptr); 
-    if (g.type==_VECT){
-      matrice m(mtran(*g._VECTptr));
-      vecteur res;
-      const_iterateur it=m.begin(),itend=m.end();
-      for (;it!=itend;++it){
-	if (it->type!=_VECT) return vecteur(1,gensizeerr(gettext("ifactor.cc/ifactors")));
-	res.push_back(it->_VECTptr->front());
-	res.push_back(it->_VECTptr->back());
+      gen g(pari_ifactor(n0),contextptr); 
+      if (g.type==_VECT){
+	matrice m(mtran(*g._VECTptr));
+	vecteur res;
+	const_iterateur it=m.begin(),itend=m.end();
+	for (;it!=itend;++it){
+	  if (it->type!=_VECT) return vecteur(1,gensizeerr(gettext("ifactor.cc/ifactors")));
+	  res.push_back(it->_VECTptr->front());
+	  res.push_back(it->_VECTptr->back());
+	}
+	return res;
       }
-      return res;
     }
 #endif // LIBPARI
+#endif
     return giac_ifactors(n0,contextptr);
   }
 

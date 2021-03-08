@@ -13183,6 +13183,8 @@ void sprint_double(char * s,double d){
 
   const char * printi(GIAC_CONTEXT){
 #ifdef KHICAS
+    if (python_compat(contextptr)<0)
+      return "I";
     return os_shell?"i":"𝐢";
 #endif
     if (calc_mode(contextptr)==1)
@@ -13191,7 +13193,7 @@ void sprint_double(char * s,double d){
       return ""; // "\xe2\x81\xb1";
     if (xcas_mode(contextptr)==3)
       return "\xa1";
-    if (xcas_mode(contextptr)>0)
+    if (xcas_mode(contextptr)>0 || python_compat(contextptr)<0)
       return "I";
     else
       return "i";
@@ -16508,7 +16510,7 @@ void sprint_double(char * s,double d){
 	    return 0.0;
 	  });
 #else
-	double add_evalf=true,js_bigint=false;
+	double add_evalf=false,js_bigint=false;
 #endif
       if (g.type==_FRAC || g.type==_ZINT){
 	if (add_evalf){

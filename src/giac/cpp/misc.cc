@@ -9231,6 +9231,10 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   define_unary_function_ptr5( at_python_list ,alias_at_python_list,&__python_list,0,true);
 
   bool freeze=false;
+  void console_freeze(){
+    giac::freeze=true;
+  }
+
   int rgb565to888(int c){
     c &= 0xffff;
     int r=(c>>11)&0x1f,g=(c>>5)&0x3f,b=c&0x1f;
@@ -9338,6 +9342,9 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   void set_pixel(int x,int y,int c,GIAC_CONTEXT){
     _set_pixel(makesequence(x,y,c),contextptr);
   }
+  void set_pixel(int x,int y,int c){
+    _set_pixel(makesequence(x,y,c),context0);
+  }
   void set_pixel(double x,double y,int c,GIAC_CONTEXT){
     _set_pixel(makesequence(int(x+.5),int(y+.5),c),contextptr);
   }
@@ -9359,6 +9366,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       return gensizeerr(contextptr);
     screen_w=giacmax(1,w.val);
     screen_h=giacmax(1,h.val);
+    return 1;
   }
   static const char _set_screen_s []="set_screen";
   static define_unary_function_eval (__set_screen,&_set_screen,_set_screen_s);

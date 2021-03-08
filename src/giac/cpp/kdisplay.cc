@@ -59,11 +59,20 @@ bool global_show_axes=true;
 int esc_flag=0;
 int xcas_python_eval=0;
 char * python_heap=0;
-#ifdef DEVICE
-int python_stack_size=30*1024,python_heap_size=40*1024;
-#else
-int python_stack_size=64*1024,python_heap_size=256*1024;
+
+#ifdef QUICKJS
+#include "qjs.h"
+string js_vars;
+void update_js_vars(){
+  const char VARS[]="function f(){let res=''; for(var b in globalThis) { let prop=globalThis[b]; if (globalThis.hasOwnProperty(b)) res+=b+' ';} return res;}; f()";
+  char * names=js_ck_eval(VARS,&global_js_context);
+  if (names){
+    js_vars=names;
+    free(names);
+  }
+}
 #endif
+
 #ifdef MICROPY_LIB
 extern "C" int mp_token(const char * line);
 
@@ -88,7 +97,7 @@ int micropy_ck_eval(const char *line){
   if (python_heap && line[0]==0)
     return 1;
   if (!python_heap){
-    python_init(python_stack_size,python_heap_size);
+    python_init(pythonjs_stack_size,pythonjs_heap_size);
   }
   if (!python_heap){
     console_output("Memory full",11);
@@ -1795,7 +1804,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	  //if (catf && s[s.size()-1]!=')') s += ")";
 	}
       }
-      if (python_compat(contextptr) & 4){
+      if (python_compat(contextptr)<0 || (python_compat(contextptr) & 4)){
 	// replace := by =
 	for (int i=1;i<s.size();++i){
 	  if (s[i]=='=' && s[i-1]==':')
@@ -1826,7 +1835,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 #endif
       int cur = 0,curmi = 0,i=0;
 #ifdef MICROPY_LIB
-      if (xcas_python_eval)
+      if (xcas_python_eval==1)
 	micropy_ck_eval("1");
 #endif
       gen g;
@@ -1836,7 +1845,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	if (isall || isopt) {
 	  const char * text=isall?(builtin_lexer_functions_begin()+cur)->first:(lexer_tab_int_values_begin+curmi)->keyword;
 #ifdef MICROPY_LIB
-	  if (xcas_python_eval && xcas::find_color(text,contextptr)!=3){
+	  if (xcas_python_eval==1 && xcas::find_color(text,contextptr)!=3){
 	    ++cur;
 	    continue;
 	  }
@@ -4276,7 +4285,7 @@ namespace xcas {
       int x=0;
       int h=a.fontsize;
       int y=0;
-      bool py=python_compat(contextptr);
+      int py=python_compat(contextptr);
       int modsize=int(text_width(a.fontsize,(py?" mod":"%")))+4;
       bool paren=is_positive(-*g._MODptr,contextptr);
       int llp=int(text_width(a.fontsize,("(")));
@@ -6665,12 +6674,26 @@ namespace xcas {
 
   void switch_to_micropy(GIAC_CONTEXT){
     xcas_python_eval=1;
-    python_compat(4|python_compat(contextptr),contextptr);
+    int p=python_compat(contextptr);
+    if (p<0) p=0;
+    python_compat(4|p,contextptr);
     if (edptr)
       edptr->python=1;
     if (do_confirm((lang==1)?"Effacer les variables Xcas?":"Clear Xcas variables?"))
       do_restart(contextptr);
     *logptr(contextptr) << "Micropython interpreter\n";
+    Console_FMenu_Init(contextptr);
+  }
+
+  void switch_to_js(GIAC_CONTEXT){
+    //js_ck_eval("1",&global_js_context);
+    xcas_python_eval=-1;
+    python_compat(-1,contextptr);
+    if (edptr)
+      edptr->python=-1;
+    if (do_confirm((lang==1)?"Effacer les variables Xcas?":"Clear Xcas variables?"))
+      do_restart(contextptr);
+    *logptr(contextptr) << "QuickJS interpreter\n";
     Console_FMenu_Init(contextptr);
   }
 
@@ -6937,7 +6960,7 @@ namespace xcas {
 	continue;
       if ( (s=="khicas.tns" || s=="luagiac.luax.tns" || s=="khicaslua.tns" || s=="ptt.tns" || s.substr(0,17)=="ndless_installer_" || s=="ndless_resources.tns" || s=="ndless.cfg.tns")){
 	string ss=dirname+("/"+s);
-	*logptr(contextptr) << "copy " << s << " to exammode directory\n" ; //" " << ss << " " << (targetdirname+("/"+s)) << '\n';
+	*logptr(contextptr) << "processing " << s << "\n" ; //" " << ss << " " << (targetdirname+("/"+s)) << '\n';
 	if (1 || sha_check(ss.c_str(),nkeys,hash)){ // check done when setting exam mode
 	  cp(ss.c_str(),(targetdirname+("/"+s)).c_str());
 	}
@@ -7172,6 +7195,16 @@ namespace xcas {
   }
 
   void warn_python(int mode,bool autochange){
+    if (mode==-1){
+      confirm((lang==1)?"Interpreteur Javascript":"Javascript interpreter",
+#ifdef NSPIRE_NEWLIB
+	      (lang==1)?"enter: ok":"enter: ok"
+#else
+	      (lang==1)?"OK: ok":"OK: ok"
+#endif	      
+	      );
+      return;
+    }
     if (mode==0)
       confirm(autochange?((lang==1)?"Source en syntaxe Xcas detecte.":"Xcas syntax source code detected."):((lang==1)?"Syntaxe Xcas.":"Xcas syntax."),
 #ifdef NSPIRE_NEWLIB
@@ -7248,29 +7281,6 @@ namespace xcas {
     return 0;
   }
 
-  void process_freeze(){
-    if (freezeturtle){
-      displaylogo();
-      freezeturtle=false;
-      return;
-    }
-    if (giac::freeze){
-      giac::freeze=false;
-      for (;;){
-#ifdef NSPIRE_NEWLIB
-	DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper esc":"Screen freezed. Press esc."), 1, 0, 0);
-#else
-	DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper clear":"Screen freezed. Press clear."), 1, 0, 0);
-#endif
-	DisplayStatusArea();
-	int key;
-	GetKey(&key);
-	if (key==KEY_CTRL_EXIT || key==KEY_CTRL_AC)
-	  break;
-      }
-    }
-  }    
-
   // called from editor, return 
   int check_parse(textArea * text,const std::vector<textElement> & v,int python,GIAC_CONTEXT){
     if (v.empty())
@@ -7279,6 +7289,25 @@ namespace xcas {
     for (int i=0;i<sizeof(status);++i)
       status[i]=0;
     int shift=0;
+#ifdef QUICKJS
+    if (xcas_python_eval==-1){
+      string s="\"use math\";"+merge_area(vector<textElement>(v.begin(),v.end()));
+      char * js=js_ck_eval(s.c_str(),&global_js_context);
+      if (js){
+	s=js;
+	free(js);
+	process_freeze();
+	update_js_vars();
+      }
+      else
+	s="Error";
+      if (s.size()>=sizeof(status))
+	s=s.substr(0,sizeof(status)-5)+"...";
+      sprintf(status,"%s",s.c_str());
+      DefineStatusMessage(status,1,0,0);
+      return 0;
+    }
+#endif
 #ifdef MICROPY_LIB
     if (xcas_python_eval==1){
 #if 0
@@ -7333,7 +7362,7 @@ namespace xcas {
 #endif
     std::string s=merge_area(v); 
     giac::python_compat(python,contextptr);
-    if (python) s="@@"+s; // force Python translation
+    if (python>0) s="@@"+s; // force Python translation
     freeze=true;
     giac::gen g(s,contextptr);
     freeze=false;
@@ -7346,7 +7375,7 @@ namespace xcas {
 	const std::string & err=v[lineerr-1].s;
 	if (pos>=err.size())
 	  pos=-1;
-	if (python){
+	if (python>0){
 	  // find 1st token, check if it's def/if/elseif/for/while
 	  size_t i=0,j=0;
 	  for (;i<err.size();++i){
@@ -7419,6 +7448,10 @@ namespace xcas {
 	if (ptr[i]==':' || ptr[i]=='{')
 	  return 1;
 	if (ptr[i]=='}')
+	  return -1;
+	if (i && ptr[i]==';' && ptr[i-1]=='}')
+	  return -1;
+	if (i>=2 && ptr[i]==';' && ptr[i-1]==':' && ptr[i-2]=='}')
 	  return -1;
 	break;
       }
@@ -7632,10 +7665,15 @@ namespace xcas {
 #ifndef NSPIRE_NEWLIB
 	status += (xthetat?" t":" x");
 #endif
-	if (text->python & 4)
-	  status += " MicroPython ";
-	else
-	  status += text->python?(text->python==2?" Py ^xor ":" Py ^=** "):" Xcas ";
+	if (text->python<0){
+	  status += " QuickJS ";
+	}
+	else {
+	  if (text->python & 4)
+	    status += " MicroPython ";
+	  else
+	    status += text->python?(text->python==2?" Py ^xor ":" Py ^=** "):" Xcas ";
+	}
 	status += giac::remove_extension(text->filename.c_str());
 	status += text->changed?" * ":" - ";
 	status += giac::printint(text->line+1);
@@ -7876,10 +7914,14 @@ namespace xcas {
   }
 
   void change_mode(textArea * text,int flag,GIAC_CONTEXT){
-    if (bool(text->python)!=bool(flag)){
+    if (text->python==-1 || text->python==4)
+      return;
+    if (text->python!=flag){
       text->python=flag;
       python_compat(text->python,contextptr);
-      if (text->python & 4)
+      if (text->python<0)
+	xcas_python_eval=-1;
+      else if (text->python & 4)
 	xcas_python_eval=1;
       show_status(text,"","");
       warn_python(flag,true);
@@ -7920,7 +7962,7 @@ namespace xcas {
     }
     strncpy(buf,s,ptr-s);
     buf[ptr-s]=0;
-    if (strcmp(buf,"def")==0 || strcmp(buf,"import")==0)
+    if (xcas_python_eval>=0 && (strcmp(buf,"def")==0 || strcmp(buf,"import")==0))
       return 1;
 #ifdef MICROPY_LIB
     if (is_python_builtin(buf))
@@ -7931,7 +7973,26 @@ namespace xcas {
     gen g;
     int token=find_or_make_symbol(buf,g,0,false,contextptr);
     //*logptr(contextptr) << s << " " << buf << " " << token << " " << g << endl;
- #ifdef MICROPY_LIB
+#ifdef QUICKJS
+    if (xcas_python_eval==-1){
+      const char *jskwds[]={ 
+	"if", "while","with","else", "do", "try", "finally",
+	"return", "break", "continue", "new", "delete", "throw", "debugger",
+	"var", "const", "let",
+	"function", "catch",
+	"for", "switch", "case", "default",
+	"in", "typeof", "instanceof",
+	"true", "false", "null", "undefined", "NaN", "Infinity",
+	"this", "module", "class", "super",
+	"yield", "export", "import", "extends",};
+      for (int i=0;i<sizeof(jskwds)/sizeof(const char *);++i){
+	if (strcmp(buf,jskwds[i])==0)
+	  return 1;
+      }
+      return js_token(js_vars.c_str(),buf);
+    }
+#endif
+#ifdef MICROPY_LIB
     if (xcas_python_eval==1){
       micropy_ck_eval("");
       int tok=mp_token(buf);
@@ -8192,8 +8253,8 @@ namespace xcas {
       bool linecomment=false;
       while (*src){
 	const char * oldsrc=src;
-	if ( (text->python && *src=='#') ||
-	     (!text->python && *src=='/' && *(src+1)=='/')){
+	if ( (text->python>0 && *src=='#') ||
+	     (text->python<=0 && *src=='/' && *(src+1)=='/')){
 	  linecomment=true;
 	  couleur=4;
 	}
@@ -8224,7 +8285,7 @@ namespace xcas {
 	      }
 	      // go to next space or alphabetic char
 	      for (;*src;++i,++src){
-		if (*src==' ' || (i && *src>=' ' && *src<='/') || (text->python && *src=='#') || (!text->python && *src=='/' && *(src+1)=='/')|| *src=='"' || isalpha(*src))
+		if (*src==' ' || (i && *src>=' ' && *src<='/') || (text->python>0 && *src=='#') || (text->python<=0 && *src=='/' && *(src+1)=='/')|| *src=='"' || isalpha(*src))
 		  break;
 	      }
 	    }
@@ -8294,7 +8355,7 @@ namespace xcas {
 	  if (editable){
 	    couleur=linecomment?5:find_color(singleword,contextptr);
 	    if (couleur==1) couleur=COLOR_BLUE;
-	    if (couleur==2) couleur=COLOR_YELLOWDARK;
+	    if (couleur==2) couleur=49432; //was COLOR_YELLOWDARK;
 	    if (couleur==3) couleur=51712;//33024;
 	    if (couleur==4) couleur=COLOR_MAGENTA;
 	    if (couleur==5) couleur=COLOR_GREEN;
@@ -8375,7 +8436,7 @@ namespace xcas {
     if (editable){
       waitforvblank();
       drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
-      PrintMiniMini(0,205,text->python?"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 lin|8 list|9arit":"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 matr|8 cplx",4,44444,giac::_BLACK);
+      PrintMiniMini(0,205,text->python>0?"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 lin|8 list|9arit":"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 matr|8 cplx",4,44444,giac::_BLACK);
       //draw_menu(1);
     }
 #ifdef SCROLLBAR
@@ -8481,7 +8542,7 @@ namespace xcas {
     ta.changed=false;
     ta.filename=filename?filename:"temp.py";
     ta.y=0;
-    ta.python=true;
+    ta.python=python_compat(contextptr);
     ta.allowEXE=false;//true; // set back to true later
     ta.OKparse=OKparse;
     bool str=s[0]=='"' && s[ss-1]=='"';
@@ -8554,8 +8615,8 @@ namespace xcas {
 #endif
 
   const char * input_matrix(const gen &g,gen & ge,GIAC_CONTEXT){
-#ifdef MICROPY_LIB
-    if (xcas_python_eval==1){
+#if defined MICROPY_LIB || defined QUICKJS
+    if (xcas_python_eval){
       if (ge.type==_VECT)
 	ge.subtype=0;
       static string input_matrix_s=g.print(contextptr)+'='+ge.print(contextptr);
@@ -8763,6 +8824,9 @@ namespace xcas {
   }
   
   int doTextArea(textArea* text,GIAC_CONTEXT) {
+#ifdef QUICKJS
+    update_js_vars();
+#endif
     int scroll = 0;
     int isFirstDraw = 1;
     int totalTextY = 0,textY=0;
@@ -8942,10 +9006,13 @@ namespace xcas {
 	  if ( (key>=KEY_CTRL_F1 && key<=KEY_CTRL_F4) ||
 	       (key >= KEY_CTRL_F6 && key <= KEY_CTRL_F14)
 	       ){
-	    string le_menu=xcas_python_eval?//text->python?
-	      "F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF: plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\nmul(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\n":
-	      "F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nlocal\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF< plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF: misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
-	    le_menu += "F= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\n";
+	    string le_menu;
+	    if (xcas_python_eval==1)//text->python?
+	      le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF: plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\nmul(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\n";
+	    if (xcas_python_eval<=0)
+	      le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nvar\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF< plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF: misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
+	    if (xcas_python_eval>=0)
+	      le_menu += "F= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\n";
 	    const char * ptr=console_menu(key,(char*)(le_menu.c_str()),2);
 	    if (!ptr){
 	      show_status(text,search,replace);
@@ -8976,7 +9043,7 @@ namespace xcas {
 	      input_matrix(false,contextptr);
 	      continue;
 	    }
-	    if (text->python){
+	    if (text->python>0){
 	      if (isif)
 		adds=isex?"if x<0:\nx=-x":"if :\n";
 	      if (iselse)
@@ -8991,17 +9058,17 @@ namespace xcas {
 		adds=isex?"def f(x):\nreturn x*x*x\n":"def f(x):\n\nreturn\n";
 	    } else {
 	      if (isif)
-		adds=(lang==1)?(isex?"si x<0 alors x:=-x; fsi;":"si  alors\n\nsinon\n\nfsi;"):(isex?"if x<0 then x:=-x; fi;":"if  then\n\nelse\n\nfi;");
-	      if (lang && iselse)
+		adds=(lang==1 && text->python==0)?(isex?"si x<0 alors x:=-x; fsi;":"si  alors\n\nsinon\n\nfsi;"):(isex?"if (x<0) { x:=-x;}":"if (){\n\n} else {\n\n}");
+	      if (lang==1 && text->python==0 && iselse)
 		adds="sinon ";
 	      if (isfor)
-		adds=(lang==1)?(isex?"pour j de 1 jusque 10 faire\nprint(j*j);\nfpour;":"pour  de  jusque  faire\n\nfpour;"):(isex?"for j from 1 to 10 do\nprint(j*j);\nod;":"for  from  to  do\n\nod;");
+		adds=(lang==1 && text->python==0)?(isex?"pour j de 1 jusque 10 faire\nprint(j*j);\nfpour;":"pour  de  jusque  faire\n\nfpour;"):(isex?"for (j=1;j<=10;j++){ \nprint(j*j);\n}":"for(;;){\n\n};");
 	      if (isforin)
-		adds=(lang==1)?(isex?"pour j in [1,4,9,16] faire\nprint(j)\nfpour;":"pour  in  faire\n\nfpour;"):(isex?"for j in [1,4,9,16] do\nprint(j);od;":"for  in  do\n\nod;");
+		adds=(lang==1 && text->python==0)?(isex?"pour j in [1,4,9,16] faire\nprint(j)\nfpour;":"pour  in  faire\n\nfpour;"):(isex?"for j in [1,4,9,16] do\nprint(j);od;":"for  in  do\n\nod;");
 	      if (iswhile)
-		adds=(lang==1)?(isex?"a,b:=25,15;\ntantque b!=0 faire\na,b:=b,irem(a,b);\nftantque;a;":"tantque  faire\n\nftantque;"):(isex?"a,b:=25,15;\nwhile b!=0 do\na,b:=b,irem(a,b);\nod;a;":"while  do\n\nod;");
+		adds=(lang==1 && text->python==0)?(isex?"a,b:=25,15;\ntantque b!=0 faire\na,b:=b,irem(a,b);\nftantque;a;":"tantque  faire\n\nftantque;"):(isex?"a,b:=25,15;\nwhile (b!=0) {\na,b=b,irem(a,b);\n}\na;":"while () {\n\n}");
 	      if (isdef)
-		adds=(lang==1)?(isex?"fonction f(x)\nlocal j;\nj:=x*x;\nreturn j;\nffonction:;\n":"fonction f(x)\nlocal j;\n\nreturn ;\nffonction:;"):(isex?"function f(x)\nlocal j;\nj:=x*x;\nreturn j;\nffunction:;\n":"function f(x)\n  local j;\n\n return ;\nffunction:;");
+		adds=(lang==1 && text->python==0)?(isex?"fonction f(x)\nlocal j;\nj:=x*x;\nreturn j;\nffonction:;\n":"fonction f(x)\nlocal j;\n\nreturn ;\nffonction:;"):(isex?"function f(x){\nvar j;\nj=x*x;\nreturn j;\n}\n":"function f(x){\n  var j;\n\n return ;\n};");
 	    }
 	    insert(text,adds,key!=KEY_CTRL_PASTE); // was true, but we should not indent when pasting
 	    display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
@@ -9228,15 +9295,19 @@ namespace xcas {
 	  smallmenuitems[5].text = (char*)((lang==1)?"Chercher,remplacer":"Search, replace");
 	  smallmenuitems[6].text = (char*)((lang==1)?"Aller a la ligne":"Goto line");
 	  int p=python_compat(contextptr);
-	  if (p&4)
-	    smallmenuitems[7].text = (char*)"Syntax [MicroPython]";
-	  else {
-	    if (p==0)
-	      smallmenuitems[7].text = (char*)"Syntax [Xcas francais]";
-	    if (p==1)
-	      smallmenuitems[7].text = (char*)"Syntax [Xcas comp Python ^=**]";
-	    if (p==2)
-	      smallmenuitems[7].text = (char*)"Syntax [Xcas comp Python ^=xor]";
+	  if (p<0){
+	      smallmenuitems[7].text = (char*)"Syntax [QuickJS]";
+	  } else  {
+	    if (p&4)
+	      smallmenuitems[7].text = (char*)"Syntax [MicroPython]";
+	    else {
+	      if (p==0)
+		smallmenuitems[7].text = (char*)"Syntax [Xcas francais]";
+	      if (p==1)
+		smallmenuitems[7].text = (char*)"Syntax [Xcas comp Python ^=**]";
+	      if (p==2)
+		smallmenuitems[7].text = (char*)"Syntax [Xcas comp Python ^=xor]";
+	    }
 	  }
 	  smallmenuitems[8].text = (char *)((lang==1)?"Changer taille caracteres":"Change fontsize");
 	  smallmenuitems[9].text = (char *)aide_khicas_string;
@@ -9335,13 +9406,17 @@ namespace xcas {
 	      int c=select_interpreter();
 	      if (c>=0){
 		int p=text->python;
-		if (c==3)
-		  p |= 0x4;
-		else 
-		  p=c;
+		if (c==4)
+		  p=-1;
+		else {
+		  if (c==3)
+		    p |= 0x4;
+		  else 
+		    p=c;
+		}
 		giac::python_compat(p,contextptr);
 		text->python=p;
-		xcas_python_eval=c==3;
+		xcas_python_eval=(c==3?1:(c==4?-1:0));
 		show_status(text,search,replace);
 		warn_python(text->python,false);
 		drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
@@ -9352,7 +9427,7 @@ namespace xcas {
 	}
 	break;
       case KEY_CTRL_SETUP: // inactive
-	text->python=text->python?0:1;
+	text->python=text->python?0:1; // FIXME QUICKJS
 	show_status(text,search,replace);
 	python_compat(text->python,contextptr);
 	warn_python(text->python,false);
@@ -9452,16 +9527,20 @@ namespace xcas {
   void console_disp_status(GIAC_CONTEXT){
     int i=python_compat(contextptr);
     string msg("shell ");
-    if (i&4)
-      msg+="MicroPython";
+    if (i<0)
+      msg += "QuickJS";
     else {
-      if (i==0)
-	msg+="Xcas";
+      if (i&4)
+	msg+="MicroPython";
       else {
-	if (i==1)
-	  msg+="Py ^=**";
-	else
-	  msg+="Py ^=xor";
+	if (i==0)
+	  msg+="Xcas";
+	else {
+	  if (i==1)
+	    msg+="Py ^=**";
+	  else
+	    msg+="Py ^=xor";
+	}
       }
     }
     if (angle_radian(contextptr))
@@ -9553,7 +9632,7 @@ namespace xcas {
     smallmenuitems[0].type = MENUITEM_CHECKBOX;
     smallmenuitems[0].text = (char*)"x,n,t -> t";
 #endif
-    smallmenuitems[1].text = (char*)"Syntaxe (Xcas/Python)";
+    smallmenuitems[1].text = (char*)"Syntaxe (Xcas/Py/JS)";
     smallmenuitems[2].type = MENUITEM_CHECKBOX;
     smallmenuitems[2].text = (char*)"Radians (in Xcas)";
     smallmenuitems[3].type = MENUITEM_CHECKBOX;
@@ -9579,21 +9658,25 @@ namespace xcas {
       dig += print_INT_(decimal_digits(contextptr));
       smallmenuitems[0].text = (char*)dig.c_str();
 #endif
-      string heaps("Micropython heap "+print_INT_(python_heap_size/1024)+"K");
+      string heaps("Micropy/JS heap "+print_INT_(pythonjs_heap_size/1024)+"K");
       smallmenuitems[12].text = (char *) heaps.c_str();
       string stacks("-------------");
-      // string stacks("Micropython stack "+print_INT_(python_stack_size/1024)+"K"); // enable in micropython mpconfig.h + call to pystack_init + remove continue below
+      // string stacks("Micropython stack "+print_INT_(pythonjs_stack_size/1024)+"K"); // enable in micropython mpconfig.h + call to pystack_init + remove continue below
       smallmenuitems[13].text = (char *) stacks.c_str();
       int p=python_compat(contextptr);
-      if (p&4)
-	smallmenuitems[1].text = (char*)"Change syntax (MicroPython)";
-      else {
-	if (p==0)
-	  smallmenuitems[1].text = (char*)"Change syntax (Xcas)";
-	if (p==1)
-	  smallmenuitems[1].text = (char*)"Change syntax (Xcas comp Python ^=**)";
-	if (p==2)
-	  smallmenuitems[1].text = (char*)"Change syntax (Xcas comp Python ^=xor)";
+      if (p<0){
+	smallmenuitems[1].text = (char*)"Change syntax (QuickJS)";
+      } else {
+	if (p&4)
+	  smallmenuitems[1].text = (char*)"Change syntax (MicroPython)";
+	else {
+	  if (p==0)
+	    smallmenuitems[1].text = (char*)"Change syntax (Xcas)";
+	  if (p==1)
+	    smallmenuitems[1].text = (char*)"Change syntax (Xcas comp Python ^=**)";
+	  if (p==2)
+	    smallmenuitems[1].text = (char*)"Change syntax (Xcas comp Python ^=xor)";
+	}
       }
       smallmenuitems[2].value = giac::angle_radian(contextptr);
       smallmenuitems[3].value = giac::withsqrt(contextptr);
@@ -9612,32 +9695,37 @@ namespace xcas {
 #endif
 	  continue;
 	}
-#ifdef MICROPY_LIB
+#if defined MICROPY_LIB || defined QUICKJS
 	if (smallmenu.selection == 2){
 	  int c=select_interpreter();
 	  if (c>=0){
 	    int p=giac::python_compat(contextptr);
-	    if (c==3)
-	      p |= 0x4;
-	    else
-	      p=c;
+	    if (c==4){
+	      p=-1;
+	    } else {
+	      if (c==3)
+		p |= 0x4;
+	      else
+		p=c;
+	    }
 	    int old_xcas_python_eval=xcas_python_eval;
-	    xcas_python_eval=c==3;
-	    giac::python_compat(p,contextptr);
+	    xcas_python_eval=c<0?c:(c==3?1:0);
+	    giac::python_compat(p<0?0:p,contextptr);
 	    if (edptr)
 	      edptr->python=p;
 	    if (xcas_python_eval!=old_xcas_python_eval){
-	      if (xcas_python_eval){
-		if (do_confirm((lang==1)?"Effacer les variables Xcas?":"Clear Xcas variables?"))
-		  do_restart(contextptr);
-	      }
-	      else {
-#ifdef MICROPY_LIB
-		if (do_confirm((lang==1)?"Effacer le tas MicroPython?":"Clear MicroPython heap?"))
-		  python_free();
-#endif
-	      }
+	      if (old_xcas_python_eval==0 &&
+		  do_confirm((lang==1)?"Effacer les variables Xcas?":"Clear Xcas variables?"))
+		do_restart(contextptr);
 	    }
+#ifdef MICROPY_LIB
+	    if (old_xcas_python_eval==1 && do_confirm((lang==1)?"Effacer le tas MicroPython?":"Clear MicroPython heap?"))
+	      python_free();
+#endif
+#ifdef QUICKKS
+	    if (old_xcas_python_eval==-1 && do_confirm((lang==1)?"Effacer le tas QuickJS?":"Clear QuickJS heap?"))
+	      js_end(global_js_context);
+#endif
 	    warn_python(p,false);
 	    Console_FMenu_Init(contextptr);
 	    console_disp_status(contextptr);
@@ -9787,14 +9875,14 @@ namespace xcas {
 	  }
 	  break;
 	}
-#ifdef MICROPY_LIB
+#if defined MICROPY_LIB || defined QUICKJS
 	if (smallmenu.selection==13){
-	  double d=python_heap_size/1024;
+	  double d=pythonjs_heap_size/1024;
 	  if (inputdouble(
 #if defined NUMWORKS && defined DEVICE
-			  "Tas MicroPython en K (16-64)?"
+			  "Tas MicroPy/JS en K (16-64)?"
 #else
-			  "Tas MicroPython en K (64-4096)?"
+			  "Tas MicroPy/JS en K (64-4096)?"
 #endif
 			  ,d,contextptr) && d==int(d) &&
 #if defined NUMWORKS && defined DEVICE
@@ -9803,19 +9891,24 @@ namespace xcas {
 	      d>=64 && d<=4096
 #endif
 	      ){
-	    python_heap_size=d*1024;
+	    pythonjs_heap_size=d*1024;
+#ifdef MICROPY_LIB
 	    python_free();
+#endif
+#ifdef QUICKJS
+	    js_end(global_js_context);
+#endif
 	  }
 	  continue;
 	}
 	if (smallmenu.selection==14){
 	  continue;
-	  double d=python_stack_size/1024;
+	  double d=pythonjs_stack_size/1024;
 	  if (inputdouble(
 #if defined NUMWORKS && defined DEVICE
-			  "Pile MicroPython en K (8-20)?"
+			  "Pile MicroPy/JS en K (8-20)?"
 #else
-			  "Pile MicroPython en K (32-512)?"
+			  "Pile MicroPy/JS en K (32-512)?"
 #endif
 			  ,d,contextptr) && d==int(d) &&
 #if defined NUMWORKS && defined DEVICE
@@ -9824,8 +9917,13 @@ namespace xcas {
 	      d>=32 && d<=512
 #endif
 	      ){
-	    python_stack_size=d*1024;
+	    pythonjs_stack_size=d*1024;
+#ifdef MICROPY_LIB
 	    python_free();
+#endif
+#ifdef QUICKJS
+	    js_end(global_js_context);
+#endif
 	  }
 	  continue;
 	}
@@ -9875,12 +9973,16 @@ namespace xcas {
       return 0;
     if (strcmp(s,"caseval(\"\")")==0 || strcmp(s,"eval_expr(\"\")")==0 || (strlen(s)>=4 && strlen(s)<6 && strncmp(s,"xcas",4)==0)){
       xcas_python_eval=0;
-      int p=python_compat(contextptr)&3;
-      python_compat(p,contextptr);
+      int p=python_compat(contextptr);
+      python_compat(p>0?p&3:0,contextptr);
       if (edptr)
-	edptr->python=p;
+	edptr->python=p>0?p&3:0;
 #ifdef MICROPY_LIB
-      if (do_confirm((lang==1)?"Effacer le tas MicroPython?":"Clear MicroPython heap?"))
+      if (p==4 && do_confirm((lang==1)?"Effacer le tas MicroPython?":"Clear MicroPython heap?"))
+	python_free();
+#endif
+#ifdef QUICKJS
+      if (p==-1 && do_confirm((lang==1)?"Effacer le tas QuickJS?":"Clear QuickJS heap?"))
 	python_free();
 #endif
       *logptr(contextptr) << "Xcas interpreter\n";
@@ -9888,6 +9990,25 @@ namespace xcas {
       return 0;
     }
     gen g,ge;
+#ifdef QUICKJS
+    if (strlen(s)>=2 && strlen(s)<4 && strncmp(s,"js",2)==0){
+      switch_to_js(contextptr);
+      return 0;
+    }
+    if (xcas_python_eval==-1){
+      string S(s); S="\"use math\";"+S+'\n';
+      char * js=js_ck_eval(S.c_str(),&global_js_context);
+      if (js){
+	S=js;
+	free(js);
+	process_freeze();
+	update_js_vars();
+      }
+      else S="Error";
+      Console_Output(S.c_str());
+      return 0;
+    }
+#endif
 #ifdef MICROPY_LIB
     if (strlen(s)>=6 && strlen(s)<8 && strncmp(s,"python",6)==0){
       switch_to_micropy(contextptr);
@@ -9905,6 +10026,10 @@ namespace xcas {
     process_freeze();
 #ifdef MICROPY_LIB
     if (xcas_python_eval==1)
+      return 0;
+#endif
+#ifdef QUICKJS
+    if (xcas_python_eval==-1)
       return 0;
 #endif
     int t=giac::taille(g,GIAC_HISTORY_MAX_TAILLE);  
@@ -10022,9 +10147,9 @@ namespace xcas {
       strcat(buf,"python_compat(");
       strcat(buf,giac::print_INT_(b).c_str());
       strcat(buf,",");
-      strcat(buf,giac::print_INT_(python_heap_size).c_str());
+      strcat(buf,giac::print_INT_(pythonjs_heap_size).c_str());
       strcat(buf,",");
-      strcat(buf,giac::print_INT_(python_stack_size).c_str());
+      strcat(buf,giac::print_INT_(pythonjs_stack_size).c_str());
       strcat(buf,");angle_radian(");
       strcat(buf,angle_radian(contextptr)?"1":"0");
       strcat(buf,");with_sqrt(");
@@ -10295,14 +10420,20 @@ namespace xcas {
 #endif
     }
     console_changed=0;
-    if (python_compat(contextptr)&4){
+    int p=python_compat(contextptr);
+    if (p>=0 && p&4){
       xcas_python_eval=1;
       if (edptr){
 	check_parse(edptr,edptr->elements,python_compat(contextptr),contextptr);
       }
     }
     else
-      xcas_python_eval=0;
+      xcas_python_eval=p<0?-1:0;
+    if (p==-1){
+      //js_ck_eval("1",&global_js_context);
+      if (edptr)
+	check_parse(edptr,edptr->elements,-1,contextptr);
+    }
     Console_FMenu_Init(contextptr); // insure the menus are sync-ed
     return true;
   }
@@ -11214,7 +11345,7 @@ namespace xcas {
 	if (k==KEY_CTRL_F6)
 	  s=python_compat(contextptr)?"from turtle import *\nreset()\n":"\nefface;\n ";
 	else
-	  s=python_compat(contextptr)?"def "+extract_name(filename)+"(x):\n  \n  return x":"function "+extract_name(filename)+"(x)\nlocal j;\n  \n  return x;\nffunction";
+	  s=python_compat(contextptr)?"def "+extract_name(filename)+"(x):\n  \n  return x":"function "+extract_name(filename)+"(x)\nvar j;\n  \n  return x;\nffunction";
       }
       // split s at newlines
       if (edptr==0)
@@ -12297,7 +12428,7 @@ namespace xcas {
       } // end else linecomment case
       couleur=linecomment?5:find_color(singleword,contextptr);
       if (couleur==1) couleur=COLOR_BLUE;
-      if (couleur==2) couleur=COLOR_YELLOWDARK;
+      if (couleur==2) couleur=49432; //was COLOR_YELLOWDARK;
       if (couleur==3) couleur=51712;//33024;
       if (couleur==4) couleur=COLOR_MAGENTA;
       if (couleur==5) couleur=COLOR_GREEN;
@@ -12578,8 +12709,8 @@ namespace xcas {
       menu += "|3 ";
       menu += string(menu_f3);
       menu += xcas_python_eval==1?"|4 edt|5 2d|6 logo|7 lin|8 matr|9arit|0 plt":"|4 edt|5 2d|6 regr|7 matr|8 cplx|9 arit|0 rand";
-      int xcas_color=65055,python_color=52832;
-      int interp_color=xcas_python_eval?python_color:xcas_color;
+      int xcas_color=65055,python_color=52832,js_color=63048;
+      int interp_color=xcas_python_eval==-1?js_color:(xcas_python_eval==1?python_color:xcas_color);
       drawRectangle(0,205,LCD_WIDTH_PX,17,interp_color);
       PrintMiniMini(0,205,menu.c_str(),0,giac::_BLACK,interp_color);
     }
@@ -13259,7 +13390,7 @@ int select_item(const char ** ptr,const char * title,bool askfor1){
 }
 
 int select_interpreter(){
-  const char * choix[]={"Xcas interpreter","Xcas compat Python ^=**","Xcas compat Python ^=xor","MicroPython interpreter",0};
+  const char * choix[]={"Xcas interpreter","Xcas compat Python ^=**","Xcas compat Python ^=xor","MicroPython interpreter","Javascript (QuickJS)",0};
   return select_item(choix,"Syntax",false);
 }
 
@@ -13537,5 +13668,28 @@ const char * gettext(const char * s) {
   }
   return s;
 }
+
+  void process_freeze(){
+    if (freezeturtle){
+      xcas::displaylogo();
+      freezeturtle=false;
+      return;
+    }
+    if (giac::freeze){
+      giac::freeze=false;
+      for (;;){
+#ifdef NSPIRE_NEWLIB
+	DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper esc":"Screen freezed. Press esc."), 1, 0, 0);
+#else
+	DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper clear":"Screen freezed. Press clear."), 1, 0, 0);
+#endif
+	DisplayStatusArea();
+	int key;
+	GetKey(&key);
+	if (key==KEY_CTRL_EXIT || key==KEY_CTRL_AC)
+	  break;
+      }
+    }
+  }    
 
 #endif // KHICAS
