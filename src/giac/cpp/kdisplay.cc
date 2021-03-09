@@ -62,12 +62,11 @@ char * python_heap=0;
 
 #ifdef QUICKJS
 #include "qjs.h"
-string js_vars;
 void update_js_vars(){
   const char VARS[]="function f(){let res=''; for(var b in globalThis) { let prop=globalThis[b]; if (globalThis.hasOwnProperty(b)) res+=b+' ';} return res;}; f()";
   char * names=js_ck_eval(VARS,&global_js_context);
   if (names){
-    js_vars=names;
+    giac::js_vars=names;
     free(names);
   }
 }
@@ -1623,7 +1622,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 #endif
     const catalogFunc * completeCat=(lang==1)?completeCatfr:completeCaten;
     for (;iii<nfunc;++iii){
-      if (xcas_python_eval && (completeCat[iii].category & XCAS_ONLY) )
+      if (xcas_python_eval>0 && (completeCat[iii].category & XCAS_ONLY) )
 	continue;
       const char * name=completeCat[iii].name;
       while (*name==' ')
@@ -1876,7 +1875,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	else {
 	  int cat=completeCat[cur].category;
 	  if (
-	      (!xcas_python_eval || !(cat & XCAS_ONLY) ) &&
+	      (xcas_python_eval>0 || !(cat & XCAS_ONLY) ) &&
 	      ((cat & 0xff) == category ||
 	       (cat & 0xff00) == (category<<8) ||
 	       (cat & 0xff0000) == (category <<16) )
@@ -2101,6 +2100,35 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 
   gen select_var(GIAC_CONTEXT){
     kbd_interrupted=giac::ctrl_c=giac::interrupted=false;
+#ifdef QUICKJS
+    if (xcas_python_eval<0){
+      update_js_vars();
+      size_t vs=js_vars.size();
+      char s[vs+1];
+      strcpy(s,js_vars.c_str());
+      unsigned n=0,N=0;
+      for (size_t i=0;i<vs;++i){
+	if (s[i]==' ') 
+	  ++N;
+      }
+      const char * tab[N+1];
+      tab[0]=s;
+      for (size_t i=0;i<js_vars.size();++i){
+	if (s[i]==' '){
+	  s[i]=0;
+	  ++i; ++n;
+	  tab[n]=s+i;
+	}
+      }
+      tab[N]=0;
+      qsort(tab,N,sizeof(char *),trialpha);
+      int i=select_item(tab,"VARS",true);
+      gen g=undef;
+      if (i>=0 && tab[i])
+	g=string2gen(tab[i],false);
+      return g;
+    }
+#endif
 #ifdef MICROPY_LIB
     if (xcas_python_eval==1){
       micropy_ck_eval("");

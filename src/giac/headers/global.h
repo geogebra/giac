@@ -123,6 +123,8 @@ namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
   // 3 or 1 if a list of space separated commandnames includes buf
   int js_token(const char * list,const char * buf);
+  extern std::string js_vars;
+  int js_token(const char * buf);
 
   int dichotomic_search(const char * const * tab,unsigned tab_size,const char * s);
   void opaque_double_copy(void * source,void * target);

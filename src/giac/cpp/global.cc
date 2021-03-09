@@ -179,6 +179,11 @@ namespace giac {
     return 0;
   }
 
+  string js_vars;
+  int js_token(const char * buf){
+    return js_token(js_vars.c_str(),buf);
+  }
+
   const context * python_contextptr=0;
 
   void opaque_double_copy(void * source,void * target){

@@ -313,8 +313,16 @@ namespace giac {
     for (;pos<static_help_size;++kk,++pos){
       const static_help_t & sh=static_help[pos];
       const char * ptr=sh.cmd_name;
+#ifdef QUICKJS
+      if (xcas_python_eval<0){
+	if (!js_token(ptr)){
+	  --kk;
+	  continue;
+	}
+      }
+#endif
 #ifdef MICROPY_LIB
-      if (xcas_python_eval){
+      if (xcas_python_eval>0){
 	if (!is_python_builtin(ptr) && mp_token(ptr)==0){
 	  --kk;
 	  continue;

@@ -12808,8 +12808,9 @@ void sprint_double(char * s,double d){
       if (calc_mode(contextptr)==1)
 	s="{";
       else {
+	int pyc=python_compat(contextptr);
 	// s="matrix[";
-	if (!os_shell)
+	if (!os_shell || pyc<0)
 	  s="[";
 	else
 	  s=abs_calc_mode(contextptr)==38?"[":"matrix[";
@@ -16193,6 +16194,7 @@ void sprint_double(char * s,double d){
     context & C=*contextptr;
     if (!strcmp(s,"caseval contextptr"))
       return (const char *) contextptr;
+    history_plot(contextptr).clear();
     if (!strcmp(s,"shell off")){
       os_shell=false;
       return "shell off";
@@ -16452,7 +16454,6 @@ void sprint_double(char * s,double d){
       S="GIAC_ERROR: "+S;
     }
     else {
-#ifdef KHICAS // replace ],[ by ][
       gen last=g;
       while (last.type==_VECT && last.subtype!=_LOGO__VECT && !last._VECTptr->empty()){
 	gen tmp=last._VECTptr->back();
@@ -16461,6 +16462,7 @@ void sprint_double(char * s,double d){
 	else
 	  last=tmp;
       }
+#ifdef KHICAS // replace ],[ by ][
       if (last.is_symb_of_sommet(at_pnt)){
 	if (os_shell || nspirelua)
 	  xcas::displaygraph(g,&C);
@@ -16496,7 +16498,10 @@ void sprint_double(char * s,double d){
 	  S='['+S+']'; // vector/list not allowed in Numworks calc app
       }
 #else
-      S=g.print(&C);
+      if (last.is_symb_of_sommet(at_pnt))
+	S="Graphic_object";
+      else
+	S=g.print(&C);
 #if !defined GIAC_GGB 
 #if defined EMCC || defined EMCC2
 	double add_evalf=EM_ASM_DOUBLE_V({
