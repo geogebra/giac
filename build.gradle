@@ -99,9 +99,10 @@ ext.ggrev = project.findProperty("revision") ?: "SNAPSHOT"
 def giacVersion = '"1.2.4-' + ggrev + '"'
 println giacVersion
 import org.apache.tools.ant.taskdefs.condition.Os
+def isMac = Os.isFamily(Os.FAMILY_MAC)
 
 def exec_(String... script) {
-    if (!Os.isFamily(Os.FAMILY_MAC)) {
+    if (!isMac) {
         return ""
     }
     def retVal
@@ -475,8 +476,10 @@ model {
             targetPlatform 'ios_arm64'
             targetPlatform 'ios_i386'
             targetPlatform 'ios_x86_64'
-            targetPlatform 'osx_amd64'
-            targetPlatform 'osx_arm64'
+            if (isMac) {
+                targetPlatform 'osx_amd64'
+                targetPlatform 'osx_arm64'
+            }
             targetPlatform 'rpi'
 
             binaries.all {
@@ -541,7 +544,7 @@ model {
             targetPlatform 'win64'
             targetPlatform 'linux32' // this will be fixed in Gradle 2.4 (-> linux32)
             targetPlatform 'linux64'
-            if (Os.isFamily(Os.FAMILY_MAC)) {
+            if (isMac) {
                 targetPlatform 'osx_amd64'
             }
             targetPlatform 'androideabi'
@@ -575,8 +578,10 @@ model {
         }
 
         GeoGebraCASDemo(NativeExecutableSpec) {
-            targetPlatform 'osx_amd64'
-            targetPlatform 'osx_arm64'
+            if (isMac) {
+                targetPlatform 'osx_amd64'
+                targetPlatform 'osx_arm64'    
+            }
 
             binaries.all {
                 lib library: 'GeoGebraCAS', linkage: 'shared'
@@ -608,8 +613,10 @@ model {
         }
 
         GeoGebraCAS(NativeLibrarySpec) {
-            targetPlatform 'osx_amd64'
-            targetPlatform 'osx_arm64'
+            if (isMac) {
+                targetPlatform 'osx_amd64'
+                targetPlatform 'osx_arm64'    
+            }
 
             sources.cpp {
                 source {
