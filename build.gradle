@@ -102,7 +102,7 @@ import org.apache.tools.ant.taskdefs.condition.Os
 def isMac = Os.isFamily(Os.FAMILY_MAC)
 
 def exec_(String... script) {
-    if (!isMac) {
+    if (!Os.isFamily(Os.FAMILY_MAC)) {
         return ""
     }
     def retVal
