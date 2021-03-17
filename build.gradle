@@ -709,6 +709,7 @@ task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'g
 
 task createPodspec() {
     inputs.file "src/simpleInterface/pod/Giac.podspec"
+    inputs.property "version", ggrev
     outputs.file "${buildDir}/cocoapods/Giac.podspec"
     doLast {
         def posdpec = inputs.files.singleFile
