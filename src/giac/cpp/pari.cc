@@ -34,7 +34,7 @@ using namespace std;
 #include "input_lexer.h"
 #include "modpoly.h"
 #include "giacintl.h"
-#if defined USE_GMP_REPLACEMENTS || defined BF2GMP_H
+#if defined USE_GMP_REPLACEMENTS 
 #undef HAVE_LIBPARI
 #endif
 
@@ -168,7 +168,7 @@ namespace giac {
     long Gpl=lgefint(G)-2;
     // use one of the following code depending how pari codes long integers
     // Code 1
-#if !defined(__APPLE__) && !defined(WIN32) || defined(WIN64)
+#if !defined BF2GMP_H && !defined(__APPLE__) && !defined(WIN32) || defined(WIN64)
     ref_mpz_t * mz = new ref_mpz_t;
     mpz_realloc2(mz->z,32*Gpl);
     mpz_import(mz->z,Gpl,-1,sizeof(GEN),0,0,&G[2]);

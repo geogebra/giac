@@ -4120,7 +4120,7 @@ namespace giac {
     trim_inplace(res,env);
   }
 
-  void smod2N(mpz_t & z,unsigned long expoN,mpz_t tmpqz,bool do_smod=false){
+  void smod2N(mpz_t & z,unsigned long expoN,mpz_t & tmpqz,bool do_smod=false){
     mpz_tdiv_q_2exp(tmpqz,z,expoN);
     if (mpz_cmp_si(tmpqz,0)){
       mpz_tdiv_r_2exp(z,z,expoN);

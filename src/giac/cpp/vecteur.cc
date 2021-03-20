@@ -10183,7 +10183,7 @@ namespace giac {
 	if (debug_infolevel>2)
 	  CERR << CLOCK()*1e-6 << " padic adjust y step " << i << '\n';
 	subvecteur(y,tmp,y);
-#ifdef USE_GMP_REPLACEMENTS
+#if defined USE_GMP_REPLACEMENTS || defined BF2GMP_H
 	divvecteur(y,p,y); 
 #else
 	iterateur it=y.begin(),itend=y.end();

@@ -10,6 +10,10 @@
 #ifdef HAVE_LIBPTHREAD
 #endif
 
+#ifdef BF2GMP_H
+#define USE_GMP_REPLACEMENTS
+#endif
+
 #if defined(USE_GMP_REPLACEMENTS) || defined(GIAC_VECTOR)
 #undef HAVE_LIBCOCOA
 #endif
