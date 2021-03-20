@@ -276,6 +276,52 @@ namespace giac {
   bool is_python_builtin(const char * s){
     return dichotomic_search(python_builtins,sizeof(python_builtins)/sizeof(char*),s)!=-1;
   }
+  const char *js_keywords[]={ 
+    "Infinity",
+    "NaN", 
+    "break", 
+    "case", 
+    "catch",
+    "class", 
+    "const", 
+    "continue", 
+    "debugger",
+    "default",
+    "delete", 
+    "do", 
+    "else", 
+    "export", 
+    "extends",
+    "false", 
+    "finally",
+    "for", 
+    "function", 
+    "if", 
+    "import", 
+    "in", 
+    "instanceof",
+    "let",
+    "module", 
+    "new", 
+    "null", 
+    "return", 
+    "super",
+    "switch", 
+    "this", 
+    "throw", 
+    "true", 
+    "try", 
+    "typeof", 
+    "undefined", 
+    "var", 
+    "while",
+    "with",
+    "yield", 
+  };
+  bool is_js_keyword(const char * s){
+    return dichotomic_search(js_keywords,sizeof(js_keywords)/sizeof(char*),s)!=-1;
+  }
+
   
   // NB: cmd_name may be localized but related is not localized
   bool has_static_help(const char * & cmd_name,int lang,const char * & howto,const char * & syntax,const char * & related,const char * & examples){

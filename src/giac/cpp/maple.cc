@@ -3229,6 +3229,9 @@ namespace giac {
     }
     if (is_greater(0,g,context0))
       return -cpp_convert_2(-g,contextptr);
+#ifdef BF2GMP_H
+    return mpz_get_ui(*h._ZINTptr);
+#else
     unsigned int lo, hi;
     mpz_t tmp;
     mpz_init( tmp );
@@ -3239,7 +3242,8 @@ namespace giac {
     mpz_clear( tmp );
     longlong i=(((unsigned long long)hi) << 32) + lo;
     return i;
-#endif
+#endif // BF2GMP
+#endif // GMP_REPLACEMENTS
   }
 
   double cpp_convert_1(const gen & g,GIAC_CONTEXT){

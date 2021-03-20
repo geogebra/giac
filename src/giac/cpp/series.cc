@@ -775,7 +775,7 @@ namespace giac {
       w.push_back(num);
       w.push_back(den);
       // replace common by lcm of common and den
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
       if (common.type==_ZINT && common.ref_count()==1 && is_integer(den)){
 	if (den.type==_ZINT)
 	  mpz_lcm(*common._ZINTptr,*common._ZINTptr,*den._ZINTptr);

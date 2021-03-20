@@ -93,6 +93,42 @@ using namespace std;
 
 #include <stdio.h>
 #include <stdarg.h>
+#ifdef QUICKJS
+#include "qjs.h"
+string js_vars;
+void update_js_vars(){
+  const char VARS[]="function update_js_vars(){let res=''; for(var b in globalThis) { let prop=globalThis[b]; if (globalThis.hasOwnProperty(b)) res+=b+' ';} return res;}; update_js_vars()";
+  char * names=js_ck_eval(VARS,&global_js_context);
+  if (names){
+    js_vars=names;
+    free(names);
+  }
+}
+#else // QUICKJS
+void update_js_vars(){}
+#endif
+int js_token(const char * list,const char * buf){
+  int bufl=strlen(buf);
+  for (const char * p=list;*p;){
+    if (p[0]=='\'')
+      ++p;
+    if (strncmp(p,buf,bufl)==0 && 
+	(p[bufl]==0 || p[bufl]==' ' || p[bufl]=='\'')){
+      return (p[bufl]=='\'')?3:2;
+    }
+    // skip to next keyword in p
+    for (;*p;++p){
+      if (*p==' '){
+	++p; break;
+      }
+    }
+  }
+  return 0;
+}
+
+int js_token(const char * buf){
+  return js_token(js_vars.c_str(),buf);
+}
 
 #ifdef HAVE_LIBMICROPYTHON
 std::string python_console;
@@ -118,8 +154,9 @@ extern "C" int KeyPressed( void );
 #ifdef NUMWORKS
 size_t pythonjs_stack_size=30*1024,pythonjs_heap_size=40*1024,
 #else
-  size_t pythonjs_stack_size=64*1024,pythonjs_heap_size=1024*1024;
+  size_t pythonjs_stack_size=128*1024,pythonjs_heap_size=2*1024*1024;
 #endif
+void * bf_ctx_ptr=0;
 
 int my_sprintf(char * s, const char * format, ...){
     int z;
@@ -159,30 +196,6 @@ const char * console_prompt(const char * s){
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
-
-  int js_token(const char * list,const char * buf){
-    int bufl=strlen(buf);
-    for (const char * p=list;*p;){
-      if (p[0]=='\'')
-	++p;
-      if (strncmp(p,buf,bufl)==0 && 
-	  (p[bufl]==0 || p[bufl]==' ' || p[bufl]=='\'')){
-	return (p[bufl]=='\'')?3:2;
-      }
-      // skip to next keyword in p
-      for (;*p;++p){
-	if (*p==' '){
-	  ++p; break;
-	}
-      }
-    }
-    return 0;
-  }
-
-  string js_vars;
-  int js_token(const char * buf){
-    return js_token(js_vars.c_str(),buf);
-  }
 
   const context * python_contextptr=0;
 

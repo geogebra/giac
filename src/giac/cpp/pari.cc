@@ -34,7 +34,7 @@ using namespace std;
 #include "input_lexer.h"
 #include "modpoly.h"
 #include "giacintl.h"
-#ifdef USE_GMP_REPLACEMENTS
+#if defined USE_GMP_REPLACEMENTS || defined BF2GMP_H
 #undef HAVE_LIBPARI
 #endif
 

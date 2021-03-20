@@ -330,6 +330,7 @@ namespace giac {
   gen _charpoly(const gen & args,GIAC_CONTEXT);
   extern bool freeze;
   extern "C" void console_freeze();
+  extern "C" void sync_screen();
   void draw_rectangle(int x, int y, int width, int height, unsigned short color,GIAC_CONTEXT);
   void draw_polygon(std::vector< std::vector<int> > & v1,int color,GIAC_CONTEXT);
   void draw_filled_polygon(std::vector< std::vector<int> > &L,int xmin,int xmax,int ymin,int ymax,int color,GIAC_CONTEXT);

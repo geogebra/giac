@@ -58,7 +58,7 @@ using namespace std;
 #include <gsl/gsl_errno.h>
 #endif
 
-#ifdef HAVE_LIBBERNMM
+#if defined HAVE_LIBBERNMM && !defined BF2GMP_H
 #include <bern_rat.h>
 #endif
 
@@ -2773,6 +2773,10 @@ namespace giac {
 	  continue;
 	df=derive(f,gen_x,contextptr);
 	fu=ratnormal(rdiv(e,df,contextptr),contextptr);
+	// if rvarsize==2 and f=(a*gen_x+b)/(c*gen_x+d), make the change of var
+	// inf recurs will not happen, e=RAT(gen_x,function(RAT[gen_x]))
+	// will be replaced with RAT(RAT[f],function(f))*RAT[f]
+	// a simpler integral
 	if (is_rewritable_as_f_of(fu,f,fx,gen_x,contextptr)){
 	  if ( (intmode & 2)==0)
 	    gprintf(step_fuuprime,gettext("Integration of %gen: f(u)*u' where f=%gen->%gen and u=%gen"),makevecteur(e,gen_x,fx,f),contextptr);
@@ -3289,7 +3293,7 @@ namespace giac {
       sto(xval,x,contextptr);
   }
 
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
   // small utility for ggb floats looking like fractions
   void ggb_num_coeff(gen & g){
     if (g.type!=_FRAC || g._FRACptr->den.type!=_ZINT)
@@ -5573,7 +5577,7 @@ namespace giac {
 	return inv(6,context0);
       if (0)
 	return bernoulli_rat(n);
-#ifdef HAVE_LIBBERNMM
+#if defined HAVE_LIBBERNMM && !defined BF2GMP_H
       if (n>=
 #ifdef HAVE_LIBPARI
 	  1e5

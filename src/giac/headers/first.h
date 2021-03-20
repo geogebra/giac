@@ -317,7 +317,7 @@ inline void swap_giac_double(double & a,double & b){ double c=a; a=b; b=c; }
 #define swap_giac_double(a,b) std::swap<giac_double>(a,b)
 #endif
 
-#if defined WIN32 && defined x86_64
+#if defined x86_64
 typedef longlong ref_count_t;
 #else
 typedef int ref_count_t;
@@ -363,7 +363,14 @@ typedef int ref_count_t;
 #include "gmp_replacements.h"
 #else
 #include <cstddef>
+#ifdef BF2GMP
+#include "bf2gmp.h"
+#undef HAVE_LIBMPFR // to be replaced by defined later
+#undef HAVE_LIBMPFI // to be replaced by defined later
+#undef HAVE_GMPXX_H
+#else
 #include "gmp.h"
+#endif // BF2GMP
 #endif // USE_GMP_REPLACEMENTS
 
 #ifndef FXCG

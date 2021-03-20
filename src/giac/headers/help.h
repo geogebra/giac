@@ -37,6 +37,8 @@ namespace giac {
   bool is_python_keyword(const char * s);
   extern const char * python_keywords[];
   extern const char * const python_builtins[];
+  extern const char * js_keywords[];
+  bool is_js_keyword(const char * s);
 
   // search if cmd_name has static describing help
   // NB: cmd_name may be localized but related is not localized

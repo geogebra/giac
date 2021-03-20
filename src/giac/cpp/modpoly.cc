@@ -2115,7 +2115,7 @@ namespace giac {
 
   void iquo(modpoly & th,const gen & fact){
     modpoly::iterator it=th.begin(),itend=th.end();
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
     if (fact.type==_INT_ && fact.val<0){
       iquo(th,-fact);
       negmodpoly(th,th);
@@ -4192,7 +4192,7 @@ namespace giac {
     return q%p;
   }
 
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
   void vecteur2vector_ll(const vecteur & v,longlong m,vector<longlong> & res){
     vecteur::const_iterator it=v.begin(),itend=v.end();
     res.clear();
@@ -9855,7 +9855,7 @@ namespace giac {
       // CERR << CLOCK()*1e-6 << " " << m << "\n";
       if (m && (is_multiple(P0,m)||is_multiple(Q0,m)))
 	continue;
-#if defined INT128 && !defined USE_GMP_REPLACEMENTS
+#if defined INT128 && !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
       if (m<(1<<30) 
 	  && m!=p3
 	  ){
@@ -9943,7 +9943,7 @@ namespace giac {
 #endif
 	res=ichinrem(res,r,pim,m);
       pim=m*pim;
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
       if (res.type==_ZINT && niter==1)
 	mpz_realloc2(*res._ZINTptr,h);
 #endif
@@ -13978,7 +13978,7 @@ namespace giac {
   }
 
   // valid values for nbits=24 or 16, zsize>=2
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
   static void zsplit(const vecteur & p, int zsize,int nbits,vector<int> & pz){
     size_t s=p.size();
     int * target=&pz[0];
@@ -14035,7 +14035,7 @@ namespace giac {
   }
 #endif
 
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
   // pz is not const because we modify it in place for sign/carries handling
   static void zbuild(vector<longlong> & pz,int zsize,int nbits,vecteur & p){
     size_t s=pz.size()/zsize;
@@ -14660,7 +14660,7 @@ namespace giac {
     PQ=evalf_double(P*Q,1,context0);
     unsigned long bound=pPQ.bindigits()+1; // 2^bound=smod bound on coeff of p*q
     unsigned long r=(bound >> l)+1;
-#ifdef INT128
+#if defined INT128 
     // probably useful for very large degree not supported by p1 and p2
     // otherwise the condition is almost the same as for p1*p2
     // p1*p2=3647915701995307009, that's 0.4*p5
@@ -14854,7 +14854,7 @@ namespace giac {
       gen Bound=2*(mindeg+1)*P*Q;
       int nbits=256;
       int nthreads=threads_allowed?threads:1;
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
       if (Bound.type==_ZINT)
 	nbits=(mpz_sizeinbase(*Bound._ZINTptr,2)/64+1)*64;
       int nbytes=3;
@@ -15292,9 +15292,18 @@ namespace giac {
     inttype g(*temp._ZINTptr),r(*temp._ZINTptr);
     if (step.type==_INT_){
       mpz_t & z=*g._ZINTptr;
+#ifdef BF2GMP_H
+      mpz_t tmp; mpz_init(tmp);
+      for (;mpz_cmp_si(z,0)!=0;){
+	ecriture.push_back(mpz_tdiv_qr_ui(tmp,*r._ZINTptr,z,step.val));
+	mpz_set(z,tmp);
+      }
+      mpz_clear(tmp);
+#else
       for (;mpz_cmp_si(z,0)!=0;){
 	ecriture.push_back(mpz_tdiv_qr_ui(z,*r._ZINTptr,z,step.val));
       }
+#endif
     }
     else {
       for (;g!=0;){

@@ -255,7 +255,7 @@ namespace giac {
   }
 
 
-#ifdef HAVE_GMPXX_H
+#if defined HAVE_GMPXX_H && !defined BF2GMP_H
   template <class U>
   bool convert_myint(const polynome & p,const index_t & deg,std::vector< T_unsigned<mpz_class,U> >  & v){
     typename std::vector< monomial<gen> >::const_iterator it=p.coord.begin(),itend=p.coord.end();

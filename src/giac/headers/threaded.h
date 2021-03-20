@@ -56,7 +56,7 @@
 #undef HAVE_LIBMPFR
 #endif
 
-#ifdef HAVE_GMPXX_H
+#if defined HAVE_GMPXX_H && !defined BF2GMP_H
 #include <gmpxx.h>
 #endif
 
@@ -101,7 +101,7 @@ namespace giac {
   typedef unsigned long long hashgcd_U; 
   //typedef unsigned int hashgcd_U; // replace with ulonglong for large index capacity on 32 bit CPU
 
-#ifdef HAVE_GMPXX_H
+#if defined HAVE_GMPXX_H && !defined BF2GMP_H
 
   inline bool is_zero(const mpz_class & a){
     return a==0;
@@ -258,6 +258,9 @@ namespace giac {
 
   // tmp is an allocated mpz_t 
   inline void mpz2longlong(mpz_t * ptr,mpz_t * tmp,longlong & ans){
+#if 0 // def BF2GMP_H
+    bf_get_int64(&ans,ptr,BF_GET_INT_MOD);
+#else
     int i=mpz_sgn(*ptr);
     if (i<0)
       mpz_neg(*ptr,*ptr);
@@ -270,6 +273,7 @@ namespace giac {
       mpz_neg(*ptr,*ptr);
       ans = -ans;
     }
+#endif
   }
 
 #ifdef INT128
@@ -2608,7 +2612,7 @@ namespace giac {
   
   inline bool hashdivrem_finish_later(const gen & a){return true;}
   inline bool hashdivrem_finish_later(const my_mpz & a){return true;}
-#ifdef HAVE_GMPXX_H
+#if defined HAVE_GMPXX_H && !defined BF2GMP_H
   inline bool hashdivrem_finish_later(const mpz_class & a){return true;}
 #endif
 

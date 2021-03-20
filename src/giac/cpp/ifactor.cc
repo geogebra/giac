@@ -4,11 +4,16 @@
 #define GIAC_MPQS // define if you want to use giac for sieving 
 #endif
 
-#ifdef HAVE_LIBECM
+#ifdef BF2GMP_H
+#undef HAVE_LIBECM
+#undef HAVE_LIBBERNMM
+#endif
+
+#if defined HAVE_LIBECM 
 #include <ecm.h>
 #endif
 
-#ifdef HAVE_LIBBERNMM
+#if defined HAVE_LIBBERNMM 
 #include <bern_modp.h>
 #include <bern_rat.h>
 #endif
@@ -3627,7 +3632,7 @@ namespace giac {
 
   bool is_divisible_by(const gen & n,unsigned long a){
     if (n.type==_ZINT){
-#ifdef USE_GMP_REPLACEMENTS
+#if defined USE_GMP_REPLACEMENTS 
       mp_digit c;
       mp_mod_d(n._ZINTptr, a, &c);
       return c==0;

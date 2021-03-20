@@ -4659,7 +4659,7 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
       double inf,sup; // delta=h._DOUBLE_val-g._DOUBLE_val;
       it=v.begin();
       //  int nclass=itend-it;
-#if defined HAVE_LIBFLTK && defined GIAC_LMCHANGES // changes by L. Marohnić
+#if defined GIAC_LMCHANGES // changes by L. Marohnić
       vecteur res(1,symb_equal(change_subtype(gen(_AXES),_INT_PLOT),3));
 #else
       vecteur res;
@@ -4706,7 +4706,7 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
     double kbegin=std::floor((w1.front()-class_minimum)/class_size);
     double kend=std::floor((w1.back()-class_minimum)/class_size);
     vector<double>::const_iterator it=w1.begin(),itend=w1.end();
-#if defined HAVE_LIBFLTK && defined GIAC_LMCHANGES // changes by L. Marohnić
+#if defined GIAC_LMCHANGES // changes by L. Marohnić
     vecteur res(1,symb_equal(change_subtype(gen(_AXES),_INT_PLOT),3));
 #else
     vecteur res;
@@ -4753,7 +4753,7 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
     vecteur args;
     if (g.subtype==_SEQ__VECT)
       args=*g._VECTptr;
-#if defined HAVE_LIBFLTK && defined GIAC_LMCHANGES // changes by L. Marohnić
+#if defined GIAC_LMCHANGES // changes by L. Marohnić
     vecteur attributs(1,int(FL_DARK1));
     int s=read_attributs(args,attributs,contextptr);
     int col=attributs[0].val;
@@ -6029,7 +6029,7 @@ static define_unary_function_eval (__bitxor,&_bitxor,_bitxor_s);
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     if (g.type==_INT_)
       return ~g.val;
-#if !defined(USE_GMP_REPLACEMENTS)
+#if !defined(USE_GMP_REPLACEMENTS) && !defined(BF2GMP_H)
     if (g.type==_ZINT){
       ref_mpz_t *  e = new ref_mpz_t;
       mpz_com(e->z,*g._ZINTptr);
@@ -9252,6 +9252,10 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     }
     return rgb(g,contextptr);
   }
+
+#ifndef KHICAS
+void sync_screen(){}
+#endif
 
   gen _set_pixel(const gen & a_,GIAC_CONTEXT){
     freeze=true;

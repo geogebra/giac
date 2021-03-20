@@ -62,14 +62,6 @@ char * python_heap=0;
 
 #ifdef QUICKJS
 #include "qjs.h"
-void update_js_vars(){
-  const char VARS[]="function f(){let res=''; for(var b in globalThis) { let prop=globalThis[b]; if (globalThis.hasOwnProperty(b)) res+=b+' ';} return res;}; f()";
-  char * names=js_ck_eval(VARS,&global_js_context);
-  if (names){
-    giac::js_vars=names;
-    free(names);
-  }
-}
 #endif
 
 #ifdef MICROPY_LIB
@@ -7319,7 +7311,11 @@ namespace xcas {
     int shift=0;
 #ifdef QUICKJS
     if (xcas_python_eval==-1){
-      string s="\"use math\";"+merge_area(vector<textElement>(v.begin(),v.end()));
+      string s=merge_area(vector<textElement>(v.begin(),v.end()));
+      if (s.size() && s[0]=='@')
+	s=s.substr(1,s.size()-1);
+      else
+	s="\"use math\";"+s;
       char * js=js_ck_eval(s.c_str(),&global_js_context);
       if (js){
 	s=js;
@@ -8003,20 +7999,8 @@ namespace xcas {
     //*logptr(contextptr) << s << " " << buf << " " << token << " " << g << endl;
 #ifdef QUICKJS
     if (xcas_python_eval==-1){
-      const char *jskwds[]={ 
-	"if", "while","with","else", "do", "try", "finally",
-	"return", "break", "continue", "new", "delete", "throw", "debugger",
-	"var", "const", "let",
-	"function", "catch",
-	"for", "switch", "case", "default",
-	"in", "typeof", "instanceof",
-	"true", "false", "null", "undefined", "NaN", "Infinity",
-	"this", "module", "class", "super",
-	"yield", "export", "import", "extends",};
-      for (int i=0;i<sizeof(jskwds)/sizeof(const char *);++i){
-	if (strcmp(buf,jskwds[i])==0)
-	  return 1;
-      }
+      if (is_js_keyword(buf))
+	return 1;
       return js_token(js_vars.c_str(),buf);
     }
 #endif
@@ -10024,7 +10008,12 @@ namespace xcas {
       return 0;
     }
     if (xcas_python_eval==-1){
-      string S(s); S="\"use math\";"+S+'\n';
+      string S(s); 
+      if (S.size() && S[0]=='@')
+	S=S.substr(1,S.size()-1);
+      else
+	S="\"use math\";"+S;
+      S+='\n';
       char * js=js_ck_eval(S.c_str(),&global_js_context);
       if (js){
 	S=js;

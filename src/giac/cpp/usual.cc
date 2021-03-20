@@ -989,7 +989,7 @@ namespace giac {
     else
       e_copy=e;
     vecteur u;
-#ifdef USE_GMP_REPLACEMENTS
+#if defined USE_GMP_REPLACEMENTS || defined BF2GMP_H
     bool trial=true;
 #else
     bool trial=false;
@@ -1041,7 +1041,7 @@ namespace giac {
       f=*it;
       ++it;
       m=it->val;
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
       if (f.type==_ZINT && mpz_perfect_power_p(*f._ZINTptr)){
 	int nbits=mpz_sizeinbase(*f._ZINTptr,2);
 	gen h=accurate_evalf(f,nbits);
@@ -6907,10 +6907,11 @@ namespace giac {
     if (!is_integral(args))
       return gentypeerr(contextptr);
 #ifdef HAVE_LIBPARI
-    return pari_isprime(args,certif);
-#else
-    return is_probab_prime_p(args);
+    gen res=pari_isprime(args,certif);
+    if (res.type!=_STRNG)
+      return res;
 #endif
+    return is_probab_prime_p(args);
   }
   static const char _is_prime_s []="is_prime";
   static define_unary_function_eval (__is_prime,&_is_prime,_is_prime_s);

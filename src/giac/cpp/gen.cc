@@ -741,7 +741,7 @@ namespace giac {
       bool signe=(i<0);
       if (signe)
 	i=-i;
-#if !defined(USE_GMP_REPLACEMENTS)
+#if !defined(USE_GMP_REPLACEMENTS) && !defined BF2GMP_H
       mpz_import(*_ZINTptr,4/* count*/,-1/*1 for least significant first*/,4/* sizeof unsigned*/,0,0,&i);
       // CERR << gen(*_ZINTptr) ;
 #else
@@ -5986,7 +5986,7 @@ namespace giac {
       // (ax+i*ay)*(bx+i*by)=ax*bx-ay*by+i*(ax*by+ay*bx)
       // imaginary part is also (ax+ay)*(bx+by)-ax*bx-ay*by, Karatsuba trick
       mpz_t axbx,ayby,r;
-#ifdef USE_GMP_REPLACEMENTS
+#if defined USE_GMP_REPLACEMENTS || defined BF2GMP_H
       mpz_init(axbx); mpz_init(ayby); mpz_init(r);
 #else
       int n1=mpz_size(ax)+mpz_size(bx),n2=mpz_size(ay)+mpz_size(by);
@@ -10763,7 +10763,7 @@ namespace giac {
       else
 	return is_positive(a,contextptr)?a:-a;
     case _ZINT__ZINT: 
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
       {
 	int test=mpz_cmp(*a._ZINTptr,*b._ZINTptr);
 	if (test==0 || (test>0 && mpz_divisible_p(*a._ZINTptr,*b._ZINTptr)))
@@ -11473,6 +11473,26 @@ namespace giac {
     return res;
   }
 
+  bool miller_rabin(const gen & a,const gen & p){
+    gen p1=p-1,q,s(p1),r;
+    int t=0;
+    // p-1=2^t*s
+    for (;;++t){
+      gen Q;
+      r=irem(s,2,Q);
+      if (r!=0)
+	break;
+      s=Q;
+    }
+    gen A(powmod(a,s,p));
+    if (A==1 || A==p1) return true;
+    for (int i=0;i<t;++i){
+      A=irem(A*A,p,q);
+      if (A==p1) return true;
+    }
+    return false;
+  }
+
   int is_probab_prime_p(const gen & a){
     if ( (a.type!=_INT_) && (a.type!=_ZINT)){
 #ifndef NO_STDEXCEPT
@@ -11491,6 +11511,14 @@ namespace giac {
 	  return 0;
       }
     }
+#ifdef BF2GMP_H
+    for (int i=0;i<TEST_PROBAB_PRIME;++i){
+      int A=giac_rand(context0);
+      if (!miller_rabin(A,a))
+	return 0;
+    }
+    return 1;
+#else // BF2GMP
     ref_mpz_t *aptr;
     if (a.type!=_INT_)
 #ifdef SMARTPTR64
@@ -11506,6 +11534,7 @@ namespace giac {
     if (a.type==_INT_)
       delete aptr;
     return res;
+#endif // BF2GMP
   }
 
   gen nextprime(const gen & a){
@@ -11666,11 +11695,12 @@ namespace giac {
     mpz_set_ui(e->z,1);
     for (unsigned long int k=i;k>i-j;--k)
       mpz_mul_ui(e->z,e->z,k);
-    mpz_t tmp;
-    mpz_init(tmp);
+    mpz_t tmp,tmp1;
+    mpz_init(tmp); mpz_init(tmp1);
     mpz_fac_ui(tmp,j);
-    mpz_fdiv_q(e->z,e->z,tmp);
-    mpz_clear(tmp);
+    mpz_fdiv_q(tmp1,e->z,tmp);
+    mpz_set(e->z,tmp1);
+    mpz_clear(tmp); mpz_clear(tmp1);
 #endif
     return e;
   }
@@ -12559,7 +12589,7 @@ void sprint_double(char * s,double d){
   }
 
   std::string printmpf_t(const mpf_t & inf,GIAC_CONTEXT){
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
 #ifdef VISUALC
     char * ptr=new char[decimal_digits(contextptr)+30];
 #else
@@ -13326,7 +13356,7 @@ void sprint_double(char * s,double d){
       }
     }
     if (subtype==_INT_BOOLEAN){
-      if (python_compat(contextptr)){
+      if (python_compat(contextptr)>0){
 	if (val)
 	  return "True";
 	else
@@ -16500,6 +16530,8 @@ void sprint_double(char * s,double d){
 #else
       if (last.is_symb_of_sommet(at_pnt))
 	S="Graphic_object";
+      else if (islogo(g))
+	S="Logo_turtle";
       else
 	S=g.print(&C);
 #if !defined GIAC_GGB 

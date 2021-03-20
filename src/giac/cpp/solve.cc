@@ -5493,7 +5493,7 @@ namespace giac {
   }
 
   void inplace_division(gen & a,const gen & b){
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
     if (a.type==_ZINT && a.ref_count()==1){
       if (b.type==_INT_ && mpz_divisible_ui_p(*a._ZINTptr,b.val)){
 	if (b.val>0)

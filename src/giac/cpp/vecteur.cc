@@ -3098,7 +3098,7 @@ namespace giac {
 	  divvecteur(*it->_VECTptr,a,*it->_VECTptr);
 	}
 	else {
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
 	  if (it->type==_ZINT && a.type==_ZINT && it->ref_count()==1){
 	    my_mpz_gcd(tmpz,*it->_ZINTptr,*a._ZINTptr);
 	    if (mpz_cmp_ui(tmpz,1)==0)
@@ -3523,7 +3523,7 @@ namespace giac {
   }
 
   void smod_inplace(matrice & res,const gen & pi_p){
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
     if (pi_p.type==_ZINT && ckmatrix(res)){
       mpz_t tmpz;
       mpz_init(tmpz);
@@ -4994,7 +4994,7 @@ namespace giac {
 	    t=0;
 	}
 	for (;jt1!=it1end;++jt1,++it2){
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
 	  if (t==_ZINT && jt1->type==_ZINT && c.type==_ZINT && it2->type==_ZINT && jt1->ref_count()==1){
 	    mpz_mul(*jt1->_ZINTptr,*jt1->_ZINTptr,*c1._ZINTptr);
 	    mpz_addmul(*jt1->_ZINTptr,*it2->_ZINTptr,*c2._ZINTptr);
@@ -9763,7 +9763,7 @@ namespace giac {
     mpz_set_ui(e->z,0);
     gen tmp;
     for (;(ita!=itaend)&&(itb!=itbend);++ita,++itb){
-#ifdef USE_GMP_REPLACEMENTS
+#if defined USE_GMP_REPLACEMENTS || defined BF2GMP_H
       type_operator_times(*ita,*itb,tmp);
       if (tmp.type==_INT_){
 	if (tmp.val<0)
@@ -10038,7 +10038,7 @@ namespace giac {
 	if (binf.type==_INT_)
 	  smallint=3;
       }
-#if !defined(USE_GMP_REPLACEMENTS) 
+#if !defined(USE_GMP_REPLACEMENTS) && !defined BF2GMP_H
       if (ainf.type==_ZINT
 	  // && binf.type==_INT_ && binf.val<p.val // FIXME: temporary workaround
 	  ){

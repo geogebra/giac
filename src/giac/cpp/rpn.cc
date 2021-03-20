@@ -3150,6 +3150,11 @@ namespace giac {
     return 0; // FIXME!!!!
   }
 #else
+#ifdef BF2GMP_H
+  unsigned long long mpz_get_ull(mpz_t n){
+    return mpz_get_ui(n);
+  }
+#else
   unsigned long long mpz_get_ull(mpz_t n){
     unsigned int lo, hi;
     mpz_t tmp;
@@ -3165,6 +3170,7 @@ namespace giac {
 
     return (((unsigned long long)hi) << 32) + lo;
   }
+#endif
 #endif
 
   gen _pointer(const gen & args,GIAC_CONTEXT){

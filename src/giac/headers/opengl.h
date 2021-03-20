@@ -3,11 +3,7 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#ifndef IN_GIAC
-#include <giac/giac.h>
-#else
 #include "giac.h"
-#endif
 #include <fstream>
 #include <string>
 #include <stdio.h>

@@ -1479,7 +1479,7 @@ namespace giac {
 
   // like (ln(n/d)+shift*ln2)/expo, but faster for large integers
   gen LMQ_evalf(const gen & n,const gen & d,double shift,int expo,GIAC_CONTEXT){
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
     if (is_integer(n) && is_integer(d)){
       long int nexp=0,dexp=0;
       double nmant,dmant;
@@ -1511,7 +1511,7 @@ namespace giac {
       long int expo=0;
       if (is_integer(cl[i])){
 	if (cl[i].type==_ZINT){
-#ifdef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS || !defined BF2GMP_H
 	  mant=evalf_double(cl[i],1,contextptr)._DOUBLE_val;
 #else
 	  mant=mpz_get_d_2exp (&expo,*cl[i]._ZINTptr);
