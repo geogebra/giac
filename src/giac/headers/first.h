@@ -365,7 +365,7 @@ typedef int ref_count_t;
 #include <cstddef>
 #ifdef BF2GMP
 #include "bf2gmp.h"
-#undef HAVE_LIBMPFR // to be replaced by defined later
+// #undef HAVE_LIBMPFR // to be replaced by defined later
 #undef HAVE_LIBMPFI // to be replaced by defined later
 #undef HAVE_GMPXX_H
 #else

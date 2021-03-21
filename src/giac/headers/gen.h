@@ -51,12 +51,12 @@ extern size_t stackptr;
 #undef HAVE_LIBMPFR
 #undef HAVE_LIBMPFI
 #endif
-#if defined HAVE_GMPXX_H && !defined BF2GMP_H
-#include <gmpxx.h>
-#endif
-#if defined HAVE_LIBMPFR 
+#if defined HAVE_LIBMPFR && !defined BF2GMP_H 
 #include <mpfr.h>
 // #include <mpf2mpfr.h>
+#endif
+#if defined HAVE_GMPXX_H && !defined BF2GMP_H
+#include <gmpxx.h>
 #endif
 #ifdef HAVE_LIBMPFI
 #include <mpfi.h>
@@ -82,11 +82,6 @@ namespace giac {
 
   int sprint_int(char * s,int r);
   void sprint_double(char * s,double d);
-
-#ifdef USE_GMP_REPLACEMENTS
-#undef HAVE_GMPXX_H
-#undef HAVE_LIBMPFR
-#endif
 
   void my_mpz_gcd(mpz_t &z,const mpz_t & A,const mpz_t & B);
 

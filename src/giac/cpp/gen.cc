@@ -2425,7 +2425,11 @@ namespace giac {
 	mpfr_set_default_prec(nbits);
       mpfr_t euler_gamma;
       mpfr_init(euler_gamma);
+#ifdef BF2GMP_H
+      mpfr_set_str(euler_gamma,"0.5772156649015328606065120900824024310421593359399235988057672348848677267776646709369470632917467495146314472498070824809605040144865428362241739976449235362535003337429373377376739427925952582470949160087352039481656708532331517766115286211995015079847937450857057400299213547861466940296043254215190587755352",nbits,MPFR_RNDN);
+#else
       mpfr_const_euler(euler_gamma,MPFR_RNDN);
+#endif
 #ifdef HAVE_LIBPTHREAD
       if (!locked)
 	pthread_mutex_unlock(&mpfr_mutex);
@@ -2649,6 +2653,13 @@ namespace giac {
 	return -real2int(-g,contextptr);
       if (is_zero(g))
 	return 0;
+#ifdef BF2GMP_H
+      ref_mpz_t * m=new ref_mpz_t;
+      mpz_init(m->z);
+      mpz_set(m->z,g._REALptr->inf);
+      bf_rint(&m->z,BF_RNDD);
+      return gen(m);
+#else
 #ifdef HAVE_LIBMPFR
       ref_mpz_t * m=new ref_mpz_t;
       int n=int(mpfr_get_z_exp(m->z,g._REALptr->inf));
@@ -2658,7 +2669,8 @@ namespace giac {
       return _iquo(makesequence(res,pow(plus_two,gen(-n),contextptr)),contextptr);
 #else
       return g;
-#endif
+#endif // MPFR
+#endif // BF2GMP_H
     }
     if (g.type!=_VECT)
       return g;
@@ -15312,7 +15324,7 @@ void sprint_double(char * s,double d){
   }
     
   gen real_object::sqrt() const {
-#ifdef LONGFLOAT_DOUBLE
+#if defined LONGFLOAT_DOUBLE && !defined HAVE_LIBMPFR
     real_object res; res.inf=std::sqrt(inf); return res;
 #else
     real_object res(*this);
@@ -15335,11 +15347,9 @@ void sprint_double(char * s,double d){
     return -(*this);
   }
 
-#ifndef HAVE_LIBMPFR
   static void compile_with_mpfr(){  
     setsizeerr(gettext("Compile with MPFR or USE_GMP_REPLACEMENTS if you want transcendental long float support"));  
   }
-#endif
 
   gen real_object::exp() const {
     real_object res(*this);
@@ -15548,7 +15558,7 @@ void sprint_double(char * s,double d){
     *res.inf = ::asinh(*res.inf);
 #endif
 #else
-#ifdef HAVE_LIBMPFR
+#if defined HAVE_LIBMPFR && !defined BF2GMP_H
     mpfr_asinh(res.inf,res.inf,MPFR_RNDN);
 #else
     compile_with_mpfr();
@@ -15566,7 +15576,7 @@ void sprint_double(char * s,double d){
     *res.inf = ::acosh(*res.inf);
 #endif
 #else
-#ifdef HAVE_LIBMPFR
+#if defined HAVE_LIBMPFR && !defined BF2GMP_H
     mpfr_acosh(res.inf,res.inf,MPFR_RNDN);
 #else
     compile_with_mpfr();
@@ -15584,7 +15594,7 @@ void sprint_double(char * s,double d){
     *res.inf = ::atanh(*res.inf);
 #endif
 #else
-#ifdef HAVE_LIBMPFR
+#if defined HAVE_LIBMPFR && !defined BF2GMP_H
     mpfr_atanh(res.inf,res.inf,MPFR_RNDN);
 #else
     compile_with_mpfr();
@@ -16067,6 +16077,7 @@ void sprint_double(char * s,double d){
     else
       mpfr_get_str(ptr,&expo,10,dd,inf,MPFR_RNDN);
     std::string res(ptr);
+#ifndef BF2GMP_H
     if (expo){
       if (expo==1){
 	string reste(res.substr(1,res.size()-1));
@@ -16080,6 +16091,7 @@ void sprint_double(char * s,double d){
     }
     else
       res="0."+res;
+#endif
 #ifdef VISUALC
     delete [] ptr;
 #endif

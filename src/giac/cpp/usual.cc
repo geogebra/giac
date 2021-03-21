@@ -2670,15 +2670,20 @@ namespace giac {
 #endif
     }
     gen e=frac_neg_out(e0,contextptr);
+#ifdef BF2GMP_H
+    if (e.type==_DOUBLE_ || e.type==_REAL)
+      return asinhasln(e,contextptr);
+#else
     if (e.type==_DOUBLE_)
       return asinhasln(e,contextptr);
+    if (e.type==_REAL)
+      return e._REALptr->asinh();
+#endif
     if (e.type==_SPOL1){
       gen expo=e._SPOL1ptr->empty()?undef:e._SPOL1ptr->front().exponent;
       if (is_positive(expo,contextptr))
 	return series(*e._SPOL1ptr,*at_asinh,0,contextptr);
     }
-    if (e.type==_REAL)
-      return e._REALptr->asinh();
     if ( (e.type==_CPLX) && (e.subtype || e._CPLXptr->type==_REAL))
       return no_context_evalf(asinhasln(e,contextptr));
     if (is_squarematrix(e)){
@@ -2729,15 +2734,20 @@ namespace giac {
 #endif
     }
     gen e=frac_neg_out(e0,contextptr);
+#ifdef BF2GMP_H
+    if (e.type==_DOUBLE_ || e.type==_REAL)
+      return acoshasln(e,contextptr);
+#else
     if (e.type==_DOUBLE_)
       return acoshasln(e,contextptr);
+    if (e.type==_REAL)
+      return e._REALptr->acosh();
+#endif
     if (e.type==_SPOL1){
       gen expo=e._SPOL1ptr->empty()?undef:e._SPOL1ptr->front().exponent;
       if (is_positive(expo,contextptr))
 	return series(*e._SPOL1ptr,*at_acosh,0,contextptr);
     }
-    if (e.type==_REAL)
-      return e._REALptr->acosh();
     if ( (e.type==_CPLX) && (e.subtype|| e._CPLXptr->type==_REAL || e._CPLXptr->type==_FLOAT_))
       return no_context_evalf(acoshasln(e,contextptr));
     if (is_squarematrix(e))
@@ -2796,10 +2806,15 @@ namespace giac {
       if (is_positive(expo,contextptr))
 	return series(*e._SPOL1ptr,*at_atanh,0,contextptr);
     }
+#ifdef BF2GMP_H
+    if ( e.type==_REAL || ((e.type==_CPLX) && (e.subtype || e._CPLXptr->type==_REAL)) )
+      return no_context_evalf(rdiv(ln(rdiv(1+e,1-e,contextptr),contextptr),plus_two));
+#else
     if (e.type==_REAL)
       return e._REALptr->atanh();
     if ( (e.type==_CPLX) && (e.subtype || e._CPLXptr->type==_REAL))
       return no_context_evalf(rdiv(ln(rdiv(1+e,1-e,contextptr),contextptr),plus_two));
+#endif
     if (is_squarematrix(e))
       return analytic_apply(at_atanh,*e._VECTptr,0);
     if (e.type==_VECT)
@@ -7992,7 +8007,7 @@ namespace giac {
       }
     }
 #endif
-#ifdef HAVE_LIBMPFR
+#if defined HAVE_LIBMPFR && !defined BF2GMP_H
     if (x.type==_REAL && is_positive(x,contextptr)){
       mpfr_t gam;
       int prec=mpfr_get_prec(x._REALptr->inf);
@@ -8844,7 +8859,7 @@ namespace giac {
     if (x.type==_CPLX && x.subtype!=3)
       return pari_zeta(x);
 #endif
-#ifdef HAVE_LIBMPFR
+#if defined HAVE_LIBMPFR && !defined BF2GMP_H
     if (x.type==_REAL){
       mpfr_t gam;
       int prec=mpfr_get_prec(x._REALptr->inf);

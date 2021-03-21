@@ -61,7 +61,7 @@ int xcas_python_eval=0;
 char * python_heap=0;
 
 #ifdef QUICKJS
-#include "qjs.h"
+#include "qjsgiac.h"
 #endif
 
 #ifdef MICROPY_LIB
@@ -6711,7 +6711,7 @@ namespace xcas {
     python_compat(-1,contextptr);
     if (edptr)
       edptr->python=-1;
-    if (do_confirm((lang==1)?"Effacer les variables Xcas?":"Clear Xcas variables?"))
+    if (0 && do_confirm((lang==1)?"Effacer les variables Xcas?":"Clear Xcas variables?"))
       do_restart(contextptr);
     *logptr(contextptr) << "QuickJS interpreter\n";
     Console_FMenu_Init(contextptr);
@@ -7124,19 +7124,6 @@ namespace xcas {
     duration=h+m/100.0;
     return ch;
   }
-  bool islogo(const gen & g){
-    if (g.type!=_VECT || g._VECTptr->empty()) return false;
-    if (g.subtype==_LOGO__VECT) return true;
-    const vecteur & v=*g._VECTptr;
-    if (islogo(v.back()))
-      return true;
-    for (size_t i=0;i<v.size();++i){
-      if (v[i].type==_VECT && v[i].subtype==_LOGO__VECT)
-	return true;
-    }
-    return false;
-  }
-
   const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF5  2d \nreserved\nF4 menu\nreserved\nF6 reg\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF< poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF: misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \nperiodic_table\n";
 
   const char python_conf_standard[] = "F1 misc\nprint(\ninput(\n;\n:\n[]\ndef f(x): return \ntime()\nfrom time import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nabs(\nsqrt(\nfrom math import *\nF3 c&rand\nrandint(\nrandom()\nchoice(\nfrom random import *\n.real\n.imag\nphase(\nfrom cmath import *;i=1j\nF4 menu\nreserved\nF5  2d\nreserved\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF7 linalg\nmatrix(\nadd(\nsub(\nmul(\ninv(\nrref(\ntranspose(\nfrom linalg import *;i=1j\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *;i=1j\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF: plot\nclf()\nplot(\ntext(\narrow(\nscatter(\nbar(\nshow()\nfrom matplotl import *\nF= list\nlist(\nrange(\nlen(\nappend(\nzip(\nsorted(\nmap(\nreversed(\nF> prog\n|\n&\n#\nhex(\nbin(\ndebug(\nfrom cas import *\ncaseval(\"\")\n";
@@ -9726,7 +9713,7 @@ namespace xcas {
 	    if (edptr)
 	      edptr->python=p;
 	    if (xcas_python_eval!=old_xcas_python_eval){
-	      if (old_xcas_python_eval==0 &&
+	      if (old_xcas_python_eval==0 && xcas_python_eval>0 &&
 		  do_confirm((lang==1)?"Effacer les variables Xcas?":"Clear Xcas variables?"))
 		do_restart(contextptr);
 	    }
@@ -9735,7 +9722,7 @@ namespace xcas {
 	      python_free();
 #endif
 #ifdef QUICKKS
-	    if (old_xcas_python_eval==-1 && do_confirm((lang==1)?"Effacer le tas QuickJS?":"Clear QuickJS heap?"))
+	    if (0 && old_xcas_python_eval==-1 && do_confirm((lang==1)?"Effacer le tas QuickJS?":"Clear QuickJS heap?"))
 	      js_end(global_js_context);
 #endif
 	    warn_python(p,false);
@@ -9994,8 +9981,8 @@ namespace xcas {
 	python_free();
 #endif
 #ifdef QUICKJS
-      if (p==-1 && do_confirm((lang==1)?"Effacer le tas QuickJS?":"Clear QuickJS heap?"))
-	python_free();
+      if (0 && p==-1 && do_confirm((lang==1)?"Effacer le tas QuickJS?":"Clear QuickJS heap?"))
+	js_end(global_js_context);
 #endif
       *logptr(contextptr) << "Xcas interpreter\n";
       Console_FMenu_Init(contextptr);
@@ -12835,6 +12822,7 @@ namespace xcas {
     //mp_stack_set_top((void *)(&stackTop));
     //mp_stack_set_limit(24*1024);
 #endif
+    quickjs_ck_eval("0");
     giac::micropy_ptr=micropy_ck_eval;
     python_heap=0;
     sheetptr=0;

@@ -104,8 +104,14 @@ void update_js_vars(){
     free(names);
   }
 }
+int js_token(const char * buf){
+  return js_token(js_vars.c_str(),buf);
+}
 #else // QUICKJS
 void update_js_vars(){}
+int js_token(const char * buf){
+  return 0;
+}
 #endif
 int js_token(const char * list,const char * buf){
   int bufl=strlen(buf);
@@ -124,10 +130,6 @@ int js_token(const char * list,const char * buf){
     }
   }
   return 0;
-}
-
-int js_token(const char * buf){
-  return js_token(js_vars.c_str(),buf);
 }
 
 #ifdef HAVE_LIBMICROPYTHON
@@ -157,6 +159,7 @@ size_t pythonjs_stack_size=30*1024,pythonjs_heap_size=40*1024,
   size_t pythonjs_stack_size=128*1024,pythonjs_heap_size=2*1024*1024;
 #endif
 void * bf_ctx_ptr=0;
+size_t bf_global_prec=128; // global precision for BF
 
 int my_sprintf(char * s, const char * format, ...){
     int z;

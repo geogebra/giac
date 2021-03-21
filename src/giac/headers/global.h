@@ -125,6 +125,7 @@ void update_js_vars();
 extern bool freezeturtle;
 extern "C" size_t pythonjs_stack_size,pythonjs_heap_size;
 extern "C" void * bf_ctx_ptr;
+extern "C" size_t bf_global_prec;
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
