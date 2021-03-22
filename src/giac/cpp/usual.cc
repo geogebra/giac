@@ -7390,11 +7390,12 @@ namespace giac {
       return symbolic(at_equal,gen(makevecteur(evalf(v.front(),1,contextptr),evalf(v.back(),1,contextptr)),_SEQ__VECT));
     }
     gen res;
-    int ndigits=decimal_digits(contextptr);
+    int ndigits=decimal_digits(contextptr),ndigits_save=bf_global_prec;
     if (a.type==_VECT && a.subtype==_SEQ__VECT && a._VECTptr->size()==2 && a._VECTptr->back().type==_INT_){
       ndigits=a._VECTptr->back().val;
       a=a._VECTptr->front();
       res=_evalf(a,ndigits,contextptr);
+      // bf_global_prec=ndigits_save;
     }
     else
       res=a.evalf(1,contextptr);

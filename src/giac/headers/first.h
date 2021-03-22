@@ -361,7 +361,7 @@ typedef int ref_count_t;
 #undef HAVE_GMPXX_H
 #undef HAVE_LIBMPFR
 #include "gmp_replacements.h"
-#else
+#else // USE_GMP_REPLACEMENTS
 #include <cstddef>
 #ifdef BF2GMP
 #include "bf2gmp.h"

@@ -1,3 +1,20 @@
+/*  Include this header to compile giac with libbf instead of GMP/MPFR
+ *
+ *  Copyright (C) 2000,2021 B. Parisse, Institut Fourier, 38402 St Martin d'Heres
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 #ifndef BF2GMP_H
 #define BF2GMP_H
 #include "config.h"
@@ -212,7 +229,7 @@ inline void mpz_set_d(mpz_t & z,double d){
 inline int mpz_sizeinbase(const mpz_t & a,int radix){ 
   if (radix==2)
     return a.expn;
-  return ceil(a.expn*log(2.0)/log((double)radix));
+  return ceil(a.expn*M_LN2/log((double)radix));
 }
 inline void mpz_set_str(mpz_t &  z,const char * s,int base){
   slimb_t exponent;
@@ -327,12 +344,12 @@ inline void mpfr_set(mpfr_t &  a,const mpfr_t & b,bf_flags_t){ bf_set(&a,&b);}
 inline void mpfr_set_ui(mpfr_t &  a,unsigned long ui,bf_flags_t){ bf_set_ui(&a,ui); }
 inline void mpfr_set_si(mpfr_t &  a,long ui,bf_flags_t){ bf_set_si(&a,ui); }
 inline void mpfr_set_d(mpfr_t &  a,double d,bf_flags_t){ bf_set_float64(&a,d); }
-inline int mpfr_set_z (mpfr_t & rop, const mpz_t & op, mpfr_rnd_t rnd){
+inline void mpfr_set_z (mpfr_t & rop, const mpz_t & op, mpfr_rnd_t rnd){
   mpz_set(rop,op);
 }
 inline double mpfr_get_d(const mpfr_t &  a,bf_rnd_t round){ double d; bf_get_float64(&a,&d,round); return d;}
 inline int mpfr_const_pi(mpfr_t & a,bf_flags_t flags){
-  bf_const_pi(&a,bf_global_prec,flags);
+  return bf_const_pi(&a,bf_global_prec,flags);
 }
 inline void mpfr_clear(mpfr_t & f){ bf_delete(&f);}
 inline void mpfr_swap(mpfr_t & a,mpfr_t &b){ mpz_swap(a,b); }
@@ -357,7 +374,13 @@ inline int mpfr_ui_div(mpfr_t & r,unsigned long A,const mpfr_t &b,bf_flags_t fla
 }
 // neg abs sqrt pow 
 inline int mpfr_sqrt(mpfr_t & r,const mpfr_t & a,bf_flags_t flags){
-  return bf_sqrt(&r,&a,bf_global_prec,flags);
+  if (&a==&r){
+    mpfr_t A; mpfr_init_set(A,a,flags);
+    bf_sqrt(&r,&A,bf_global_prec,flags);
+    mpfr_clear(A);
+  }
+  else
+    return bf_sqrt(&r,&a,bf_global_prec,flags);
 }
 inline void mpfr_neg(mpfr_t & r,const mpfr_t & a,bf_flags_t flags){
   if (&a!=&r) mpz_set(r, a); bf_neg(&r);
@@ -380,6 +403,8 @@ inline int mpfr_sgn(const mpfr_t & a){ return mpz_sgn(a); }
 // mpfr_get_str mpfr_set_str mpfr_strtofr
 typedef size_t mp_exp_t ;
 inline char * mpfr_get_str(char * s,mp_exp_t * expo,int base,int prec,const mpz_t &  z,bf_rnd_t round){
+  //int n=z.len*sizeof(limb_t)*8;  
+  //prec=int(floor(M_LN2/M_LN10*n))+1;
   char * ptr=bf_ftoa(expo, &z, base, prec,round);
   strcpy(s,ptr);
   free(ptr);
@@ -504,7 +529,7 @@ inline void mpfr_atan(mpfr_t & r,const mpfr_t & a,bf_flags_t flags){
 
 #define LONGFLOAT_DOUBLE
 typedef double mpf_t;
-inline int mpfr_set_f (mpfr_t & rop, const mpf_t & op, mpfr_rnd_t rnd){
+inline void mpfr_set_f (mpfr_t & rop, const mpf_t & op, mpfr_rnd_t rnd){
   mpfr_set_d(rop,op,rnd);
 }
 #define mpf_clear(x) 
