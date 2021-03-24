@@ -122,9 +122,9 @@ if (gccBin.length() > 0) {
     gccPath = gccBin.substring(0, gccBin.lastIndexOf("/"))
 }
 def clangBin = exec_("xcrun", "--sdk", "iphoneos", "--find", "clang")
-def clangPath = "/usr/bin"
+ext.clangPath = "/usr/bin"
 if (clangBin.length() > 0) {
-    clangPath = clangBin.substring(0, clangBin.lastIndexOf("/"))
+    ext.clangPath = clangBin.substring(0, clangBin.lastIndexOf("/"))
 }
 def iphoneosSdk = exec_("xcrun", "--sdk", "iphoneos", "--show-sdk-path")
 def iphonesimulatorSdk = exec_("xcrun", "--sdk", "iphonesimulator", "--show-sdk-path")
@@ -368,13 +368,17 @@ model {
             architecture 'arm64'
             operatingSystem 'ios'
         }
-        ios_i386 {
+        iphonesimulator_i386 {
             architecture 'i386'
-            operatingSystem 'ios'
+            operatingSystem 'iphonesimulator'
         }
-        ios_x86_64 {
+        iphonesimulator_x86_64 {
             architecture 'x86_64'
-            operatingSystem 'ios'
+            operatingSystem 'iphonesimulator'
+        }
+        iphonesimulator_arm64 {
+            architecture 'x86_64'
+            operatingSystem 'iphonesimulator'
         }
     }
 
@@ -431,17 +435,24 @@ model {
                 }
                 path clangPath
             }
-            target('ios_i386') {
+            target('iphonesimulator_i386') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
                     iosClangCompilerArgs(args, iphonesimulatorSdk, "i386", minIosVersion)
                 }
                 path clangPath
             }
-            target('ios_x86_64') {
+            target('iphonesimulator_x86_64') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
                     iosClangCompilerArgs(args, iphonesimulatorSdk, "x86_64", minIosVersion)
+                }
+                path clangPath
+            }
+            target('iphonesimulator_arm64') {
+                cppCompiler.executable 'clang'
+                cppCompiler.withArguments { args ->
+                    iosClangCompilerArgs(args, iphonesimulatorSdk, "arm64", minIosVersion)
                 }
                 path clangPath
             }
@@ -474,8 +485,9 @@ model {
             targetPlatform 'linux64'
             targetPlatform 'ios_armv7'
             targetPlatform 'ios_arm64'
-            targetPlatform 'ios_i386'
-            targetPlatform 'ios_x86_64'
+            targetPlatform 'iphonesimulator_i386'
+            targetPlatform 'iphonesimulator_x86_64'
+            targetPlatform 'iphonesimulator_arm64'
             if (isMac) {
                 targetPlatform 'osx_amd64'
                 targetPlatform 'osx_arm64'
@@ -485,7 +497,8 @@ model {
             binaries.all {
                 giacCommonDefines(cppCompiler)
                 giacSpecificSettings(cppCompiler, linker, targetPlatform)
-                if (targetPlatform.operatingSystem.name == 'ios') {
+                if (targetPlatform.operatingSystem.name == 'ios' 
+                    || targetPlatform.operatingSystem.name == 'iphonesimulator') {
                     giacIosDefines(cppCompiler)
                     if (targetPlatform.architecture.name == 'arm-v8') {
                         cppCompiler.define 'x86_64'
@@ -500,13 +513,15 @@ model {
         simpleInterface(NativeLibrarySpec) {
             targetPlatform 'ios_armv7'
             targetPlatform 'ios_arm64'
-            targetPlatform 'ios_i386'
-            targetPlatform 'ios_x86_64'
+            targetPlatform 'iphonesimulator_i386'
+            targetPlatform 'iphonesimulator_x86_64'
+            targetPlatform 'iphonesimulator_arm64'
 
             binaries.all {
                 lib library: 'giac', linkage: 'static'
                 giacCommonDefines(cppCompiler)
-                if (targetPlatform.operatingSystem.name == 'ios') {
+                if (targetPlatform.operatingSystem.name == 'ios'
+                    || targetPlatform.operatingSystem.name == 'iphonesimulator') {
                     giacIosDefines(cppCompiler)
                     if (targetPlatform.architecture.name == 'arm-v8') {
                         cppCompiler.define 'x86_64'
@@ -650,39 +665,33 @@ model {
     }
 }
 
-def lipoOutput(name, output) {
-    def path = "build/libs/${name}/static"
+def lipo(name, output, String... libraries) {
+    def args = ["${clangPath}/lipo"] + libraries.flatten() + ["-create", "-output", "${output}/${name}.a"]
     mkdir("${output}")
-    exec_("lipo", 
-        "${path}/ios_armv7/lib${name}.a", 
-        "${path}/ios_arm64/lib${name}.a", 
-        "${path}/ios_i386/lib${name}.a",
-        "${path}/ios_x86_64/lib${name}.a",
-        '-create', '-output', "${output}/lib${name}.a")
+    exec_(args as String[])
 }
 
-def lipoPrebuilt(name, output) {
-    def path = "src/jni/prebuilt/ios"
+def mergeLibraries(name, output, String... libraries) {
+    def args = ["${clangPath}/libtool", "-static", "-o", "${output}/${name}.a"]
+    args.addAll(libraries)
     mkdir("${output}")
-    exec_("lipo", 
-        "${path}/armv7/lib${name}.a", 
-        "${path}/arm64/lib${name}.a", 
-        "${path}/i386/lib${name}.a",
-        "${path}/x86_64/lib${name}.a",
-        '-create', '-output', "${output}/lib${name}.a")
+    exec_(args as String[])
 }
 
 task simpleInterfaceIosStaticLibrary(dependsOn: [
     'simpleInterfaceIos_armv7StaticLibrary', 
     'simpleInterfaceIos_arm64StaticLibrary', 
-    'simpleInterfaceIos_i386StaticLibrary',
-    'simpleInterfaceIos_x86_64StaticLibrary'
+    'simpleInterfaceIphonesimulator_i386StaticLibrary',
+    'simpleInterfaceIphonesimulator_x86_64StaticLibrary',
+    'simpleInterfaceIphonesimulator_arm64StaticLibrary'
 ])
+
 task giacIosStaticLibrary(dependsOn: [
     'giacIos_armv7StaticLibrary', 
     'giacIos_arm64StaticLibrary', 
-    'giacIos_i386StaticLibrary',
-    'giacIos_x86_64StaticLibrary'
+    'giacIphonesimulator_i386StaticLibrary',
+    'giacIphonesimulator_x86_64StaticLibrary',
+    'giacIphonesimulator_arm64StaticLibrary'
 ])
 
 task configBundle(type: Exec) {
@@ -699,12 +708,85 @@ task installGems(type: Exec, dependsOn: 'configBundle') {
 
 task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'giacIosStaticLibrary']) {
     doLast {
-        def output = "build/libs/lipo"
-        lipoOutput("simpleInterface", output)
-        lipoOutput("giac", output)
-        lipoPrebuilt("mpfr", output)
-        lipoPrebuilt("gmp", output)
+        def output = "${buildDir}/libs/merged"
+        ["arm64", "armv7"].each {
+            mergeLibraries("Giac", "${output}/ios_${it}", 
+                "${buildDir}/libs/giac/static/ios_${it}/libgiac.a", 
+                "${buildDir}/libs/simpleInterface/static/ios_${it}/libSimpleInterface.a", 
+                "src/jni/prebuilt/ios/${it}/libgmp.a", 
+                "src/jni/prebuilt/ios/${it}/libmpfr.a")
+        }
+        ["arm64", "i386", "x86_64"].each {
+            mergeLibraries("Giac", "${output}/iphonesimulator_${it}", 
+                "${buildDir}/libs/giac/static/iphonesimulator_${it}/libgiac.a", 
+                "${buildDir}/libs/simpleInterface/static/iphonesimulator_${it}/libSimpleInterface.a", 
+                "src/jni/prebuilt/iphonesimulator/${it}/libgmp.a", 
+                "src/jni/prebuilt/iphonesimulator/${it}/libmpfr.a")
+        }
+
+        lipo("Giac", "${output}/ios", 
+            "${output}/ios_arm64/Giac.a", 
+            "${output}/ios_armv7/Giac.a")
+        lipo("Giac", "${output}/iphonesimulator", 
+            "${output}/iphonesimulator_arm64/Giac.a", 
+            "${output}/iphonesimulator_i386/Giac.a",
+            "${output}/iphonesimulator_x86_64/Giac.a")
     }
+}
+
+task createIosFramework(dependsOn: createFatIosStaticLibrary, type: Copy) {
+    description "Creates iOS framework"
+    from("${buildDir}/libs/merged/ios") {
+        include "Giac.a"
+        rename "Giac.a", "Giac"
+        into "Giac.framework"
+    }
+    from("src/simpleInterface/headers") {
+        include "*.hpp"
+        into "Giac.framework/Headers"
+    }
+    from("src/simpleInterface/framework") {
+        include "Info.plist"
+        into "Giac.framework/Resources"
+    }
+
+    destinationDir = file("${buildDir}/libs/framework/ios")
+}
+
+task createIphonesimulatorFramework(dependsOn: createFatIosStaticLibrary, type: Copy) {
+    description "Creates iPhone Simlator framework"
+    from("${buildDir}/libs/merged/iphonesimulator") {
+        include "Giac.a"
+        rename "Giac.a", "Giac"
+        into "Giac.framework"
+    }
+    from("src/simpleInterface/headers") {
+        include "*.hpp"
+        into "Giac.framework/Headers"
+    }
+    from("src/simpleInterface/framework") {
+        include "framework.plist"
+        rename "framework.plist", "Info.plist"
+        into "Giac.framework/Resources"
+    }
+
+    destinationDir = file("${buildDir}/libs/framework/iphonesimulator")
+}
+
+task createIosXcframework(dependsOn: [createIosFramework, createIphonesimulatorFramework], type: Copy) {
+    description "Creates XCFramework"
+    from("${buildDir}/libs/framework/iphonesimulator") {
+        into "ios-arm64_i386_x86_64-simulator"
+    }
+    from("${buildDir}/libs/framework/ios") {
+        into "ios-arm64_armv7"
+    }
+    from("src/simpleInterface/framework") {
+        include "xcframework.plist"
+        rename "xcframework.plist", "Info.plist"
+    }
+
+    destinationDir = file("${buildDir}/libs/framework/Giac.xcframework")
 }
 
 task createPodspec() {
@@ -722,18 +804,10 @@ task createPodspec() {
     }
 }
 
-task cocoapodsZip(dependsOn: ['createFatIosStaticLibrary'], type: Zip) {
+task cocoapodsZip(dependsOn: createIosXcframework, type: Zip) {
     baseName 'Giac'
-    from("src/simpleInterface/headers") {
-        include "*.hpp"
-        into("Giac/headers")
-    }
-    from("${buildDir}/libs/lipo") {
-        include "libsimpleInterface.a", "libgiac.a", "libgmp.a", "libmpfr.a"
-        into("Giac/libs")
-    }
-    from("src/simpleInterface/pod/LICENSE") {
-        into("Giac")
+    from ("${buildDir}/libs/framework/Giac.xcframework") {
+        into "Giac.xcframework"
     }
     destinationDir = file("${buildDir}/cocoapods/")
 }

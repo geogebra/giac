@@ -8,10 +8,6 @@ Pod::Spec.new do |s|
   s.authors = 'Bernard Parisse', 'GeoGebra Team'
   s.homepage = 'http://dev.geogebra.org'
   s.license = 'Giac/LICENSE'
-  s.preserve_paths = '*'
   s.source_files = 'Giac/headers/ContextBridge.hpp', 'Giac/headers/GenBridge.hpp'
-  s.vendored_libraries = 'Giac/libs/libgiac.a', 'Giac/libs/libgmp.a', 'Giac/libs/libmpfr.a', 'Giac/libs/libsimpleInterface.a'
-  
-  s.pod_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }
-  s.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }
+  s.vendored_frameworks = "Giac.xcframework"
 end
