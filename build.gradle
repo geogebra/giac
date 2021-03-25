@@ -807,7 +807,7 @@ task createPodspec() {
 task cocoapodsZip(dependsOn: createIosXcframework, type: Zip) {
     baseName 'Giac'
     from ("${buildDir}/libs/framework/Giac.xcframework") {
-        into "Giac.xcframework"
+        into "Frameworks/Giac.xcframework"
     }
     destinationDir = file("${buildDir}/cocoapods/")
 }

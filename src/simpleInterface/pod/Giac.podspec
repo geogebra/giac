@@ -8,6 +8,5 @@ Pod::Spec.new do |s|
   s.authors = 'Bernard Parisse', 'GeoGebra Team'
   s.homepage = 'http://dev.geogebra.org'
   s.license = 'Giac/LICENSE'
-  s.source_files = 'Giac/headers/ContextBridge.hpp', 'Giac/headers/GenBridge.hpp'
-  s.vendored_frameworks = "Giac.xcframework"
+  s.vendored_frameworks = "Frameworks/Giac.xcframework"
 end
