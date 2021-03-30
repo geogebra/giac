@@ -9600,7 +9600,10 @@ namespace giac {
     }
     if (args.type!=_STRNG)
       return symbolic(at_expr,args);
-    return eval(gen(*args._STRNGptr,contextptr),eval_level(contextptr),contextptr);
+    gen g(*args._STRNGptr,contextptr);
+    if (giac::first_error_line(contextptr))
+      return gensizeerr(string(gettext("Syntax compatibility mode "))+print_program_syntax(xcas_mode(contextptr))+gettext(". Parse error line ")+print_INT_(giac::first_error_line(contextptr)) + gettext(" column ")+print_INT_(giac::lexer_column_number(contextptr))+  gettext(" at ")  + giac::error_token_name(contextptr)) ;
+    return eval(g,eval_level(contextptr),contextptr);
   }
   static const char _expr_s []="expr";
   static define_unary_function_eval (__expr,&_expr,_expr_s);

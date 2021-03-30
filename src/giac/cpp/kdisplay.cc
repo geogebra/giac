@@ -12822,8 +12822,12 @@ namespace xcas {
     //mp_stack_set_top((void *)(&stackTop));
     //mp_stack_set_limit(24*1024);
 #endif
+#ifdef QUICKJS
     quickjs_ck_eval("0");
+#endif
+#ifdef MICROPY_LIB
     giac::micropy_ptr=micropy_ck_eval;
+#endif
     python_heap=0;
     sheetptr=0;
     shutdown=do_shutdown;

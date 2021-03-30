@@ -9101,8 +9101,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     return gensizeerr(contextptr);
   }
   static const char _range_s []="range";
-  static define_unary_function_eval (__range,&_range,_range_s);
-  define_unary_function_ptr5( at_range ,alias_at_range,&__range,0,true);
+  static define_unary_function_eval (__giac_range,&_range,_range_s);
+  define_unary_function_ptr5( at_range ,alias_at_range,&__giac_range,0,true);
 
   string strip(const string & s,const string &chars){
     int ss=int(s.size()),cs=int(chars.size()),i,j;

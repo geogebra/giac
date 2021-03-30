@@ -94,7 +94,7 @@ using namespace std;
 #include <stdio.h>
 #include <stdarg.h>
 #ifdef QUICKJS
-#include "qjs.h"
+#include "qjsgiac.h"
 string js_vars;
 void update_js_vars(){
   const char VARS[]="function update_js_vars(){let res=''; for(var b in globalThis) { let prop=globalThis[b]; if (globalThis.hasOwnProperty(b)) res+=b+' ';} return res;}; update_js_vars()";
