@@ -743,7 +743,7 @@ namespace giac {
         else
           tmp = 200;
       }
-      gen tmp2=evalf(e._SYMBptr->feuille,1,contextptr);
+      gen tmp2=evalf_double(e._SYMBptr->feuille,0,contextptr);
       if (tmp2.type<_IDNT)
 	tmp2=_floor(tmp2/tmp+plus_one_half,contextptr);
       else
