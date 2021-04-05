@@ -4326,6 +4326,31 @@ namespace giac {
   }
 #endif
 
+  // 0: not, 1: 1/2*asin, 2: 1/2*acos, 3: 1/2* atan
+  int is_half_atrig(const gen & x, gen & arg){
+    if (x.type!=_SYMB || x._SYMBptr->sommet!=at_prod || x._SYMBptr->feuille.type!=_VECT)
+      return 0;
+    const vecteur & v=*x._SYMBptr->feuille._VECTptr;
+    if (v.size()!=2)
+      return 0;
+    arg=0;
+    if (2*v.front()==1)
+      arg=v.back();
+    if (2*v.back()==1)
+      arg=v.front();
+    if (arg.type!=_SYMB)
+      return 0;
+    const unary_function_ptr & u=arg._SYMBptr->sommet;
+    arg=arg._SYMBptr->feuille;
+    if (u==at_asin)
+      return 1;
+    if (u==at_acos)
+      return 2;
+    if (u==at_atan)
+      return 3;
+    return 0;
+  }
+
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac
 #endif // ndef NO_NAMESPACE_GIAC

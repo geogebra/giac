@@ -2272,7 +2272,7 @@ namespace giac {
 	gen tmp=_evalf(makesequence(x,n),contextptr);
 	tmp=_horner(makesequence(p,tmp),contextptr);
 	gen test=(1-cur/tmp);
-	if (is_greater(1e-12,test,contextptr))
+	if (!is_undef(test) && !is_inf(test) && is_greater(1e-12,test,contextptr))
 	  return cur;
 	cur=tmp;
       }
@@ -2280,7 +2280,7 @@ namespace giac {
     for (;n<=1024;n*=2){
       gen tmp=_evalf(makesequence(g,n),contextptr);
       gen test=(1-cur/tmp);
-      if (is_greater(1e-12,test,contextptr))
+      if (!is_undef(test) && !is_inf(test) && is_greater(1e-12,test,contextptr))
 	return cur;
       cur=tmp;
     }

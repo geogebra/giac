@@ -282,6 +282,10 @@ namespace giac {
   gen LambertW(const gen & z,int n);
 #endif
 
+  // 0: not, 1: 1/2*asin, 2: 1/2*acos, 3: 1/2* atan
+  int is_half_atrig(const gen & x, gen & arg);
+
+
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac
 #endif // ndef NO_NAMESPACE_GIAC

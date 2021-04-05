@@ -1616,7 +1616,7 @@ namespace giac {
     }
     if (e.type==_SYMB) {
       unary_function_ptr u=e._SYMBptr->sommet;
-      gen f=e._SYMBptr->feuille;
+      gen f=e._SYMBptr->feuille,e_;
       if (u==at_neg)
 	return cos(f,contextptr);
       if (u==at_acos)
@@ -1625,6 +1625,16 @@ namespace giac {
 	return sqrt(1-pow(f,2),contextptr);
       if (u==at_atan)
 	return sqrt(inv(pow(f,2)+1,contextptr),contextptr);
+      int n=is_half_atrig(e,f);
+      if (n && has_evalf(e,e_,1,contextptr)){
+	if (n==2)
+	  f=sqrt((f+1)/2,contextptr);
+	if (n==1)
+	  f=sqrt((sqrt(1-pow(f,2),contextptr)+1)/2,contextptr);
+	if (n==3)
+	  f=sqrt((inv(sqrt(1+pow(f,2),contextptr),contextptr)+1)/2,contextptr);
+	if (is_positive(e_,contextptr)) return f; else return -f;
+      }
     }
     if (is_equal(e))
       return apply_to_equal(e,cos,contextptr);
@@ -1854,7 +1864,7 @@ namespace giac {
     }
     if (e.type==_SYMB) {
       unary_function_ptr u=e._SYMBptr->sommet;
-      gen f=e._SYMBptr->feuille;
+      gen f=e._SYMBptr->feuille,e_;
       if (u==at_neg)
 	return -sin(f,contextptr);
       if (u==at_asin)
@@ -1863,6 +1873,16 @@ namespace giac {
 	return sqrt(1-pow(f,2),contextptr);
       if (u==at_atan)
 	return rdiv(f,sqrt(pow(f,2)+1,contextptr),contextptr);
+      int n=is_half_atrig(e,f);
+      if (n && has_evalf(e,e_,1,contextptr)){
+	if (n==2)
+	  f=sqrt((1-f)/2,contextptr);
+	if (n==1)
+	  f=sqrt((1-sqrt(1-pow(f,2),contextptr))/2,contextptr);
+	if (n==3)
+	  f=sqrt((1-inv(sqrt(1+pow(f,2),contextptr),contextptr))/2,contextptr);
+	if (is_positive(e_,contextptr)) return f; else return -f;
+      }
     }
     if (is_equal(e))
       return apply_to_equal(e,sin,contextptr);
@@ -2046,7 +2066,7 @@ namespace giac {
     }
     if (e.type==_SYMB) {
       unary_function_ptr u=e._SYMBptr->sommet;
-      gen f=e._SYMBptr->feuille;
+      gen f=e._SYMBptr->feuille,e_;
       if (u==at_neg)
 	return -tan(f,contextptr);
       if (u==at_atan)
@@ -2055,6 +2075,15 @@ namespace giac {
 	return rdiv(sqrt(1-pow(f,2),contextptr),f,contextptr);
       if (u==at_asin)
 	return rdiv(f,sqrt(1-pow(f,2),contextptr),contextptr);
+      int n=is_half_atrig(e,f);
+      if (n && has_evalf(e,e_,1,contextptr)){
+	if (n==1)
+	  f=sqrt(1-pow(f,2),contextptr);
+	if (n==3)
+	  f=inv(sqrt(1+pow(f,2),contextptr),contextptr);
+	f=sqrt((1-f)/(1+f),contextptr);
+	if (is_positive(e_,contextptr)) return f; else return -f;
+      }
     }
     if (is_equal(e))
       return apply_to_equal(e,tan,contextptr);
