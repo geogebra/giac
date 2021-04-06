@@ -16268,6 +16268,7 @@ void sprint_double(char * s,double d){
 	  const char * expr =xcas::Console_GetLine(contextptr);
 	  if (!expr || expr[0]==4 || strcmp(expr,"exit")==0)
 	    break;
+	  giac::freeze=true;
 	  xcas::run(expr,7,contextptr);
 	  xcas::Console_NewLine(xcas::LINE_TYPE_OUTPUT,1);
 	}
@@ -16540,7 +16541,7 @@ void sprint_double(char * s,double d){
 	  S='['+S+']'; // vector/list not allowed in Numworks calc app
       }
 #else
-      if (last.is_symb_of_sommet(at_pnt))
+      if (calc_mode(contextptr)!=1 && last.is_symb_of_sommet(at_pnt))
 	S="Graphic_object";
       else if (islogo(g))
 	S="Logo_turtle";
