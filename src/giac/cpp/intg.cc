@@ -2772,11 +2772,31 @@ namespace giac {
 	if (is_linear_wrt(f,gen_x,a,b,contextptr))
 	  continue;
 	df=derive(f,gen_x,contextptr);
-	fu=ratnormal(rdiv(e,df,contextptr),contextptr);
 	// if rvarsize==2 and f=(a*gen_x+b)/(c*gen_x+d), make the change of var
 	// inf recurs will not happen, e=RAT(gen_x,function(RAT[gen_x]))
 	// will be replaced with RAT(RAT[f],function(f))*RAT[f]
-	// a simpler integral
+	// a simpler integral  
+	gen A,B,C;
+	if (is_quadratic_wrt(inv(df,contextptr),gen_x,A,B,C,contextptr)&&is_zero(ratnormal(B*B-4*A*C,contextptr))){
+	  A=2*A;
+	  C=ratnormal(f*(A*gen_x+B),contextptr);
+	  // f=C/(2*A*gen_x+B)
+	  gen a,b;
+	  if (is_linear_wrt(C,gen_x,a,b,contextptr)){ // always true
+	    // f=(a*gen_x+b)/(A*gen_x+B)
+	    C=gcd(gcd(a,b),gcd(A,B));
+	    if (is_positive(-A,contextptr))
+	      C=-C;
+	    a=ratnormal(a/C); b=ratnormal(b/C); A=ratnormal(A/C); B=ratnormal(B/C);
+	    // let f=x, gen_x=(B*x-b)/(-A*x+a)
+	    e=subst(e,makevecteur(gen_x,f),makevecteur((B*gen_x-b)/(-A*gen_x+a),gen_x),false,contextptr)*(-A*b+B*a)/pow(gen_x*A-a,2);
+	    e=linear_integrate_nostep(e,gen_x,tmprem,intmode,contextptr);
+	    remains_to_integrate=remains_to_integrate+complex_subst(tmprem,gen_x,f,contextptr);
+	    return complex_subst(e,gen_x,f,contextptr);
+	    
+	  }
+	}
+	fu=ratnormal(rdiv(e,df,contextptr),contextptr);
 	if (is_rewritable_as_f_of(fu,f,fx,gen_x,contextptr)){
 	  if ( (intmode & 2)==0)
 	    gprintf(step_fuuprime,gettext("Integration of %gen: f(u)*u' where f=%gen->%gen and u=%gen"),makevecteur(e,gen_x,fx,f),contextptr);
