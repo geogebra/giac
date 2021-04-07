@@ -1124,6 +1124,11 @@ namespace giac {
 	for (int i=2;i<s;++i)
 	  fprintf(f,"%s",v[i].type==_STRNG?v[i]._STRNGptr->c_str():unquote(v[i].print(contextptr)).c_str());
       }
+      else if (s>1 && v[1].type==_STRNG && v[1]._STRNGptr->size()==0){
+	for (int i=2;i<s;++i)
+	  fprintf(f,"%s",v[i].type==_STRNG?v[i]._STRNGptr->c_str():unquote(v[i].print(contextptr)).c_str());
+	fprintf(f,"\n");
+      }
       else {
 	for (int i=1;i<s;++i)
 	  fprintf(f,"%s",v[i].print(contextptr).c_str());

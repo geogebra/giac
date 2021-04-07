@@ -2679,6 +2679,25 @@ namespace giac {
 	  fu=_trigsin(tan2sincos(fu,contextptr),contextptr);
 	if (it->is_symb_of_sommet(at_tan))
 	  fu=_trigtan(fu,contextptr);
+	if (it->is_symb_of_sommet(at_atan) 
+	    // ?additional check with contains to avoid recursion in int by part
+	    && !equalposcomp(lvar(e),*it) 	  
+	    ){
+	  // ? change of variable with argument of atan
+	  gen argatan=it->_SYMBptr->feuille,a,b;
+	  if (is_linear_wrt(argatan,gen_x,a,b,contextptr)){
+	    // t=atan(a*gen_x+b), gen_x=(tan(t)-b)/a
+	    gen ck=subst(fu,makevecteur(*it,gen_x,sqrt(pow(a*gen_x+b,2)+1,contextptr)),makevecteur(gen_x,(symbolic(at_sin,gen_x)/symbolic(at_cos,gen_x)-b)/a,symb_inv(symb_cos(gen_x))),false,contextptr);
+	    // gen xval=assumeeval(gen_x,contextptr);
+	    // giac_assume(symb_and(symb_superieur_egal(gen_x,0),symb_inferieur_egal(gen_x,cst_pi_over_2)),contextptr);
+	    ck=linear_integrate_nostep(ck,gen_x,tmprem,intmode,contextptr);
+	    // restorepurge(xval,gen_x,contextptr);
+	    if (is_zero(tmprem)){
+	      ck=complex_subst(ck,gen_x,*it,contextptr);
+	      return ck;
+	    }
+	  }
+	}
 	bool tst=is_rewritable_as_f_of(fu,*it,fx,gen_x,contextptr);
 	if (tst){
 	  if (taille(fx,256)>taille(e,255)){
@@ -2777,7 +2796,7 @@ namespace giac {
 	// will be replaced with RAT(RAT[f],function(f))*RAT[f]
 	// a simpler integral  
 	gen A,B,C;
-	if (is_quadratic_wrt(inv(df,contextptr),gen_x,A,B,C,contextptr)&&is_zero(ratnormal(B*B-4*A*C,contextptr))){
+	if (rvarsize==2 && is_quadratic_wrt(inv(df,contextptr),gen_x,A,B,C,contextptr)&&is_zero(ratnormal(B*B-4*A*C,contextptr))){
 	  A=2*A;
 	  C=ratnormal(f*(A*gen_x+B),contextptr);
 	  // f=C/(2*A*gen_x+B)
