@@ -2106,13 +2106,13 @@ namespace giac {
       // sin^2/cos^2/tan^2 in terms of cos(2x)
       switch (ftrig){
       case 1: // sin
-	fx=(1-gen_x)/2;
+	fx=pow((1-gen_x)/2,fexp);
 	return true;
       case 2: // cos
-	fx=(1+gen_x)/2;
+	fx=pow((1+gen_x)/2,fexp);
 	return true;
       case 3:
-	fx=(1-gen_x)/(1+gen_x);
+	fx=pow((1-gen_x)/(1+gen_x),fexp);
 	return true;
       }
     }
@@ -2668,6 +2668,14 @@ namespace giac {
 	gen df=derive(*it,gen_x,contextptr);
 	gen tmprem;
 	fu=rdiv(e,df,contextptr);
+	{
+	  gen e2=_texpand(ratnormal(fu,contextptr),contextptr);
+	  if (!is_undef(e2)){
+	    vecteur v2=lvarx(e2,gen_x),vf=lvarx(fu,gen_x);
+	    if (v2.size()<vf.size())
+	      fu=e2;
+	  }
+	}
 	fu=recursive_ratnormal(fu,contextptr);
 	fu=eval(fu,1,contextptr);
 	if ((is_undef(fu) || is_inf(fu)) && is_zero(ratnormal(df,contextptr))){
