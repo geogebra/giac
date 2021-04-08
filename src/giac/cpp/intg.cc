@@ -336,7 +336,7 @@ namespace giac {
     return res;
   }
 
-  // eval N at X=e with e=x*exp(i*dephasage*pi/n)/(X-e)+conj and integrate
+  // eval N at X=e with e=x*exp(i*dephasage*pi/n) and returns N*ln(X-e)+conj
   static gen substconj_(const gen & N,const gen & X,const gen & x,const gen & dephasage_,bool residue_only,GIAC_CONTEXT){
     int mode=angle_mode(contextptr);
     gen pi=cst_pi;
@@ -583,12 +583,12 @@ namespace giac {
 	gen c=b;
 	b=r2e(v[d],lprime,contextptr);
 	gen delta=b*b-4*a*c;
-	if (is_positive(-delta,contextptr)) // FIXME was if (is_zero(delta))
+	if (is_zero(delta)) // if (is_positive(-delta,contextptr)) 
 	  return false;
 	if ( (intmode &2)==0)
 	  gprintf(step_ratfrac,gettext("Integration of a rational fraction with denominator %gen\nroots are obtained by solving the 2nd order equation %gen=0 then extracting nth-roots"),makevecteur(a*symb_pow(vx_var,2*n)+b*symb_pow(vx_var,n)+c,a*symb_pow(vx_var,2)+b*vx_var+c),contextptr);
-	// int(num/(a*X^2n+b*X^n+c),X) = 
-	// sum(x=rootof(deno),num*x/(+/-n*sqrt(delta))*ln(X-x))
+	// int(num/(a*X^2d+b*X^d+c),X) = 
+	// sum(x=rootof(deno),num*x/(+/-d*sqrt(delta))*ln(X-x))
 	gen sqrtdelta=sqrt(delta,contextptr);
 	gen c1=(-b-sqrtdelta)/2/a;
 	gen c2=(-b+sqrtdelta)/2/a;
@@ -603,10 +603,10 @@ namespace giac {
 	    gen module=sqrt(c/a,contextptr);
 	    gen argument=acos(normal(-b/a/2/module,contextptr),contextptr);
 	    // roots are module^(1/d)*exp(i*argument/d)*exp(2*i*pi*k/d)
-	    // for k=0..d-1and conjugates
+	    // for k=0..d-1 and conjugates
 	    gen moduled=pow(c/a,inv(n,contextptr),contextptr);
 	    for (int i=0;i<d;++i)
-	      res += substconj(N/c2,X,moduled,(argument+2*i*cst_pi)/d,residue_only,contextptr);
+	      res += substconj_(N/c2,X,moduled,(argument+2*i*cst_pi)/d,residue_only,contextptr);
 	  }
 	  return true;
 	}
@@ -2184,6 +2184,10 @@ namespace giac {
 	      fx=complex_subst(fu,gen_x,rdiv(pow(gen_x,expo,contextptr)-b,a,contextptr),contextptr);
 	      return true;
 	    }
+	    if (is_rewritable_as_f_of(fu,tmpu,fx,gen_x,contextptr)){
+	      fx=complex_subst(fx,gen_x,pow(gen_x,expo,contextptr),contextptr);
+	      return true;
+	    }
 	  }
 	}
       }
@@ -2503,6 +2507,7 @@ namespace giac {
   }
 
   // intmode bit 0 is used for sqrt int control, bit 1 control step/step info
+  // bit 2 = 1 to avoid Risch call
   gen integrate_id_rem(const gen & e_orig,const gen & gen_x,gen & remains_to_integrate,GIAC_CONTEXT,int intmode){
 #ifdef LOGINT
     *logptr(contextptr) << gettext("integrate id_rem ") << e_orig << '\n';
@@ -2931,6 +2936,7 @@ namespace giac {
       return integrate_rational(e,gen_x,remains_to_integrate,xvar,intmode,contextptr);
     }
     bool do_risch=true;
+    if (intmode & 4) do_risch=false;
     for (size_t i=0;i<rvar.size();++i){
       if (rvar[i].is_symb_of_sommet(at_pow)){
 	do_risch=false;
@@ -3146,7 +3152,12 @@ namespace giac {
     // finish by calling the Risch algorithm
     if ( (intmode & 2)==0)
       gprintf(step_risch,gettext("Integrate %gen, no heuristic found, running Risch algorithm"),makevecteur(e),contextptr);
-    return risch(e,*gen_x._IDNTptr,remains_to_integrate,contextptr);
+    res=risch(e,*gen_x._IDNTptr,remains_to_integrate,contextptr);
+    if (!is_zero(remains_to_integrate) && taille(e,100)>=taille(remains_to_integrate,100)){
+      e=remains_to_integrate;
+      res += integrate_id_rem(e,*gen_x._IDNTptr,remains_to_integrate,contextptr,4);
+    }
+    return res;
   }
 
   gen linear_integrate(const gen & e,const gen & x,gen & remains_to_integrate,GIAC_CONTEXT){
