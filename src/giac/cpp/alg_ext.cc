@@ -930,8 +930,10 @@ namespace giac {
 		vecteur V,V1=*A._VECTptr,V2=derivative(V1);
 		V=gcd(V1,V2,0);
 		//if (is_zero(vb)) cout << V1 << V2 << V << endl;
-		if (V.size()>1)
+		if (V.size()>1){
+		  vb=vranm(vb.size(),0,0);
 		  continue;
+		}
 	      }
 	      if (vb0==vb)
 		break;

@@ -3320,7 +3320,7 @@ namespace giac {
 
   void mtran(const matrice & a,matrice & res,int ncolres,bool ckundef){
     if (!ckmatrix(a,true,ckundef)){
-      res=vecteur(1,vecteur(ncolres,gensizeerr("Unable to tranpose")));
+      res=vecteur(1,vecteur(ncolres,gensizeerr("Unable to transpose")));
       return;
     }
     vecteur::const_iterator it=a.begin(),itend=a.end();

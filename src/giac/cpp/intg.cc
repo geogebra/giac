@@ -528,18 +528,24 @@ namespace giac {
 	    gen racine=w[wi];
 	    if (has_op(normal(racine,contextptr),*at_rootof))
 	      return false;
-	    gen G=gcd(N-racine*Dprime,D,contextptr);
+	    gen G=_numer(gcd(N-racine*Dprime,D,contextptr),contextptr);
 	    if (reel){
 	      gen racr,raci;
 	      reim(racine,racr,raci,contextptr);
 	      if (is_zero(raci,contextptr))
 		res += racine*symb_ln(symb_abs(G));
 	      else {
-		if (wi<w.size()-1 && w[wi]==conj(w[wi+1],contextptr)){
+		// search conjugate
+		size_t wj=wi+1; gen cwi=conj(w[wi],contextptr);
+		for (;wj<w.size();++wj){
+		  if (is_zero(ratnormal(cwi-w[wj],contextptr)))
+		    break;
+		}
+		if (wj<w.size()){
 		  gen gcdr,gcdi;
 		  reim(G,gcdr,gcdi,contextptr);
 		  res += racr*symb_ln(gcdr*gcdr+gcdi*gcdi)-2*raci*ln2sumatan(gcdr,gcdi,l,contextptr);
-		  ++wi;
+		  w.erase(w.begin()+wj);
 		}
 		else
 		  res += racine*symb_ln(G);
@@ -2634,6 +2640,10 @@ namespace giac {
     // Step2: detection of f(u)*u' 
     vecteur v(1,gen_x);
     rlvarx(e,gen_x,v);
+    if (!lop(v,at_rootof).empty()){
+      remains_to_integrate=e_orig;
+      return 0;
+    }
     int rvarsize=int(v.size());
     if (rvarsize>1){
       gen e2=_texpand(e,contextptr);
@@ -2771,6 +2781,10 @@ namespace giac {
 		  e=sign(gen_x,contextptr)*e;
 	      }
 	    }
+	  }
+	  if (!lop(lvarx(remains_to_integrate,gen_x),at_rootof).empty()){
+	    remains_to_integrate=e_orig;
+	    return 0;
 	  }
 	  return e;
 #endif

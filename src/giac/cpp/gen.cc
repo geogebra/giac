@@ -7700,6 +7700,8 @@ namespace giac {
       return iquocmplx(a,b);
     case _CPLX__CPLX:
       return adjust_complex_display(iquocmplx(a,b),a,b);
+    case _EXT__INT_: case _EXT__ZINT:
+      return rdiv(a,b);
     default:
       return gentypeerr(gettext("iquo"));
     }

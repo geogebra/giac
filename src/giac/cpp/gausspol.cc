@@ -5172,6 +5172,24 @@ namespace giac {
   }
 
   void egcd(const polynome &p1, const polynome & p2, polynome & u,polynome & v,polynome & d){
+    if (p1.lexsorted_degree()==0){
+      d=p1;
+      u.coord.clear();
+      u.dim=p1.dim;
+      u.coord.push_back(monomial<gen>(1,0));
+      v.dim=p1.dim;
+      v.coord.clear();
+      return;
+    }
+    if (p2.lexsorted_degree()==0){
+      d=p2;
+      u.coord.clear();
+      u.dim=p2.dim;
+      v.dim=p2.dim;
+      v.coord.clear();
+      v.coord.push_back(monomial<gen>(1,0));
+      return;
+    }
     if (try_hensel_egcd(p1,p2,u,v,d))
       return;
     polynome g=gcd(p1,p2);
@@ -5269,9 +5287,10 @@ namespace giac {
       }
     }
     if (p1t==_EXT && p2t==0 && p1g.type==_EXT && (p1g._EXTptr+1)->type==_VECT){
-      vecteur G,p2v;
+      vecteur G,p2v,p1v;
       polynome2poly1(g,1,G);
       polynome2poly1(p2,1,p2v);
+      polynome2poly1(p1,1,p1v);
       polynome pmini(2),P1;
       algext_vmin2pmin(*(p1g._EXTptr+1)->_VECTptr,pmini);
       polynome P1n(1);
@@ -5291,14 +5310,27 @@ namespace giac {
 	    vecteur U(linsolve(S,V,context0));
 	    gen D;
 	    lcmdeno(U,D,context0);
-	    G=multvecteur(D,G);
-	    poly12polynome(G,1,d);
 	    int p2s=int(p2v.size())-1;
 	    V=vecteur(U.begin()+p2s,U.end());
+#if 1
+	    // uv*p1v+V*p2v=D
+	    // find remainder(V,p1v) -> V then uv=(D-V*p2v)/p1v
+	    V=V % p1v;
+	    gen DV; lcmdeno(V,DV,context0);
+	    poly12polynome(V,1,v);
+	    D=D*DV;
+	    vecteur tmpv; mulmodpoly(V,p2v,0,tmpv);
+	    submodpoly(vecteur(1,D),tmpv,U);
+	    U=U/p1v;
+	    poly12polynome(U,1,u);	    
+#else // does not always work, must take remainder
 	    poly12polynome(V,1,v);
 	    U=vecteur(U.begin(),U.begin()+p2s);
 	    poly12polynome(U,1,u);
 	    u=u*P1;
+#endif
+	    G=multvecteur(D,G);
+	    poly12polynome(G,1,d);
 	    //CERR << (operator_times(u,p1,0)+operator_times(v,p2,0))/D << '\n';
 	    return;
 	  }
