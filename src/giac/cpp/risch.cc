@@ -342,21 +342,30 @@ namespace giac {
 	    alpha=giacmin(0,gamma-beta);
 	  else { // possible cancellation case depend of cst coeff of f
 	    vecteur vtmp(polynome2poly1(fnum,1));
-	    gen f0=r2sym(vtmp[0],lv1,contextptr);
+	    gen f0=r2sym(vtmp.back(),lv1,contextptr);
 	    vtmp=polynome2poly1(fdenred,1);
-	    f0=f0/r2sym(vtmp[0],lv1,contextptr);
+	    f0=f0/r2sym(vtmp.back(),lv1,contextptr);
+#if 1
+	    gen lnc=ratnormal(-f0/derive(Z._SYMBptr->feuille,x,contextptr),contextptr);
+	    if (lnc.type==_INT_)
+	      alpha=giacmin(lnc.val,alpha);
+#else // old code, seems wrong
 	    gen lnc,prim,remains;
 	    if (in_risch(f0,x,v1,Z._SYMBptr->feuille,prim,lnc,remains,contextptr)&&lnc.type==_INT_)
 	      alpha=giacmin(lnc.val,alpha);
+#endif
 	  }
 	}
       }
       if (gamma>=0 && beta==0){
 	// possible cancellation case depend of cst coeff of f
 	vecteur vtmp(polynome2poly1(fnum,1));
-	gen f0=r2sym(vtmp[0],lv1,contextptr);
-	if (f0.type==_INT_ && f0.val>0)
-	  alpha=-f0.val;
+	gen f0=r2sym(vtmp.back(),lv1,contextptr);
+	vtmp=polynome2poly1(fdenred,1);
+	f0=f0/r2sym(vtmp.back(),lv1,contextptr);
+	gen lnc=ratnormal(-f0/derive(Z._SYMBptr->feuille,x,contextptr),contextptr);
+	if (lnc.type==_INT_)
+	  alpha=giacmin(lnc.val,alpha);
       }
       D=polynome(monomial<gen>(plus_one,-alpha,1,ss)); // Z^(-alpha)
     }
