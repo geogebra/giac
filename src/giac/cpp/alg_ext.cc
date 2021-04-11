@@ -829,6 +829,34 @@ namespace giac {
       a=algebraic_EXTension(makevecteur(1,0),a);
       return tmp;
     }
+    // special handling if fractional power of the same object
+    if (is_one(a[0]) && is_one(b[0]) && is_zero(a[as-1]-b[bs-1])){
+      int i=1;
+      for (;i<as-1;++i){
+	if (!is_zero(a[i])) break;
+      }
+      if (i==as-1){
+	for (i=1;i<bs-1;++i){
+	  if (!is_zero(b[i])) break;
+	}
+	if (i==bs-1){
+	  int gs=(as-1)*(bs-1)/gcd(as-1,bs-1);
+	  vecteur c(gs+1);
+	  c[0]=1;
+	  c[gs]=a[as-1];
+	  gen C(c);
+	  as=gs/(as-1);
+	  vecteur A(as+1);
+	  A[0]=1;
+	  a=algebraic_EXTension(A,C);
+	  bs=gs/(bs-1);
+	  vecteur B(bs+1);
+	  B[0]=1;
+	  b=algebraic_EXTension(B,C);
+	  return C;
+	}
+      }
+    }
     // special handling if both extensions are cyclotomic
     int ac=is_cyclotomic(*a__VECT._VECTptr,epsilon(contextptr)),bc;
     if (ac && (bc=is_cyclotomic(*b__VECT._VECTptr,epsilon(contextptr))) ){

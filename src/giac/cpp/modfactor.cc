@@ -1500,6 +1500,20 @@ namespace giac {
   static define_unary_function_eval (__max_alg_ext_order_size,&_max_alg_ext_order_size,_max_alg_ext_order_size_s);
   define_unary_function_ptr5( at_max_alg_ext_order_size ,alias_at_max_alg_ext_order_size,&__max_alg_ext_order_size,0,true);
 
+  gen _max_common_alg_ext_order_size(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if (g.type==_VECT && g._VECTptr->empty())
+      return MAX_COMMON_ALG_EXT_ORDER_SIZE;
+    if (g.type!=_INT_ || g.val<0)
+      return gensizeerr(contextptr);
+    if (g.val>0)
+      MAX_COMMON_ALG_EXT_ORDER_SIZE=g.val;
+    return MAX_COMMON_ALG_EXT_ORDER_SIZE;
+  }
+  static const char _max_common_alg_ext_order_size_s []="max_common_alg_ext_order_size";
+  static define_unary_function_eval (__max_common_alg_ext_order_size,&_max_common_alg_ext_order_size,_max_common_alg_ext_order_size_s);
+  define_unary_function_ptr5( at_max_common_alg_ext_order_size ,alias_at_max_common_alg_ext_order_size,&__max_common_alg_ext_order_size,0,true);
+
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac
