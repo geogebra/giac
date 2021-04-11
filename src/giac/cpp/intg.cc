@@ -2190,7 +2190,7 @@ namespace giac {
 	  tmpu=tmpu._VECTptr->front();
 	  if (expo.type==_INT_){ 
 	    if (is_linear_wrt(tmpu,gen_x,a,b,contextptr)){
-	      fx=complex_subst(fu,gen_x,rdiv(pow(gen_x,expo,contextptr)-b,a,contextptr),contextptr);
+	      fx=complex_subst(fu,makevecteur(u,gen_x),makevecteur(gen_x,rdiv(pow(gen_x,expo,contextptr)-b,a,contextptr)),contextptr);
 	      return true;
 	    }
 	    if (is_rewritable_as_f_of(fu,tmpu,fx,gen_x,contextptr)){

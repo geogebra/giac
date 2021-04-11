@@ -844,16 +844,20 @@ namespace giac {
 	  vecteur c(gs+1);
 	  c[0]=1;
 	  c[gs]=a[as-1];
-	  gen C(c);
-	  as=gs/(as-1);
-	  vecteur A(as+1);
-	  A[0]=1;
-	  a=algebraic_EXTension(A,C);
-	  bs=gs/(bs-1);
-	  vecteur B(bs+1);
-	  B[0]=1;
-	  b=algebraic_EXTension(B,C);
-	  return C;
+	  polynome cp=poly12polynome(c),cpc; factorization f; gen an,extra;
+	  factor(cp,cpc,f,false,false,false,an,extra);
+	  if (f.size()==1){
+	    gen C(c);
+	    as=gs/(as-1);
+	    vecteur A(as+1);
+	    A[0]=1;
+	    a=algebraic_EXTension(A,C);
+	    bs=gs/(bs-1);
+	    vecteur B(bs+1);
+	    B[0]=1;
+	    b=algebraic_EXTension(B,C);
+	    return C;
+	  }
 	}
       }
     }
