@@ -1030,7 +1030,7 @@ task installEmsdk (/*dependsOn: 'downloadEmsdk'*/) {
         // FIXME: If already installed, this results in an error and stops.
         // Below this may not work with older emscripten versions.
         exec {
-            commandLine "./emsdk install sdk-${emscriptenVersion[0]}-64bit".split()
+            commandLine "./emsdk install sdk-${emscriptenVersion}-64bit".split()
             workingDir emsdkRunDir
         }
     }
@@ -1050,7 +1050,7 @@ task emConfigureGmp {
     description 'Configures GMP for the emscripten SDK.'
     doLast {
         exec {
-            commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir[0]}/emconfigure $gmpSourceDir/configure --build=none --host=none --disable-assembly"
+            commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir}/emconfigure $gmpSourceDir/configure --build=none --host=none --disable-assembly"
             workingDir gmpSourceDir
         }
     }
@@ -1060,7 +1060,7 @@ task emMakeGmp {
     description 'Makes GMP with the emscripten SDK.'
     doLast {
         exec {
-            commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir[0]}/emmake make"
+            commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir}/emmake make"
             workingDir gmpSourceDir
         }
     }
@@ -1071,7 +1071,7 @@ task emConfigureMpfr {
     doLast {
         exec {
             commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; " +
-                    "${emscriptenDir[0]}/emconfigure $mpfrSourceDir/configure " +
+                    "${emscriptenDir}/emconfigure $mpfrSourceDir/configure " +
                     "--build=none --host=none --disable-assembly " +
                     "--with-gmp-lib=$gmpSourceDir/.libs --with-gmp-include=$gmpSourceDir"
             workingDir mpfrSourceDir
@@ -1083,7 +1083,7 @@ task emMakeMpfr {
     description 'Makes MPFR with the emscripten SDK.'
     doLast {
         exec {
-            commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir[0]}/emmake make"
+            commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir}/emmake make"
             workingDir mpfrSourceDir
         }
     }
