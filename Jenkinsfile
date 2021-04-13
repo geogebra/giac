@@ -10,8 +10,6 @@ pipeline {
     WIN_BASH = credentials('win-bash')
     WIN_SSH=credentials('win-ssh')
     LINUX32_SSH=credentials('linux32-ssh-key')
-    EMSCRIPTEN_VER='201503'
-    EMSCRIPTEN_VERSION='tag-1.34.1'
     ANDROID_SDK_ROOT='/var/lib/jenkins/.android-sdk'
   }
   stages {
