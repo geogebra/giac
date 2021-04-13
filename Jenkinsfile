@@ -18,11 +18,9 @@ pipeline {
         sh '''
           test -x emsdk || git clone https://github.com/emscripten-core/emsdk.git
           ./gradlew installEmsdk
-          pushd emsdk
-          ln -s . emsdk-portable
-          mkdir emscripten
-          ln -s upstream/emscripten emscripten/latest
-          popd .
+          ln -s emsdk emsdk/emsdk-portable
+          mkdir emsdk/emscripten
+          ln -s emsdk/upstream/emscripten emsdk/emscripten/latest
           ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --info --refresh-dependencies
           ./gradlew :updateGiac :publishNodegiac --no-daemon -Prevision=$SVN_REVISION --info'''
         node('mac') {
