@@ -12,13 +12,7 @@ dependencies {
     'com.google.gwt:gwt-user:2.8.2'
 }
 
-task prepareJsPlain(type:Copy, dependsOn: project.getParent().createGiacJs) {
-    from "${project.getParent().buildDir}/binaries/giacggb.js"
-    into file("src/main/resources/fr/grenoble/ujf/giac")
-    include "giac.js"
-}
-
-task prepareJsWasm(type:Copy, dependsOn: project.getParent().createGiacJs) {
+task prepareJs(type:Copy, dependsOn: project.getParent().createGiacJs) {
     from "${project.getParent().buildDir}/binaries/giacggb.wasm"
     into file("src/main/resources/fr/grenoble/ujf/giac")
     include "giac.wasm.js"
@@ -27,10 +21,6 @@ task prepareJsWasm(type:Copy, dependsOn: project.getParent().createGiacJs) {
 task sourcesJar(type: Jar, dependsOn: "classes") {
     classifier = 'sources'
     from sourceSets.main.allSource
-}
-
-task prepareJs(dependsOn: [prepareJsPlain, prepareJsWasm]){
-    description 'Copy generated files into Java source tree'
 }
 
 compileJava.dependsOn prepareJs

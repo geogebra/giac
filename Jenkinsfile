@@ -18,7 +18,13 @@ pipeline {
     stage('Build') {
       steps {
         sh '''
-          cp -r /data/backup-Giac/geogebra/giac/emsdk .
+          test -x emsdk || git clone https://github.com/emscripten-core/emsdk.git
+          ./gradlew installEmsdk
+          pushd emsdk
+          ln -s . emsdk-portable
+          mkdir emscripten
+          ln -s upstream/emscripten emscripten/latest
+          popd .
           ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --info --refresh-dependencies
           ./gradlew :updateGiac :publishNodegiac --no-daemon -Prevision=$SVN_REVISION --info'''
         node('mac') {
