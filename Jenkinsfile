@@ -20,7 +20,7 @@ pipeline {
           ./gradlew installEmsdk
           ln -s emsdk emsdk/emsdk-portable
           mkdir emsdk/emscripten
-          ln -s emsdk/upstream/emscripten emsdk/emscripten/latest
+          ln -sr emsdk/upstream/emscripten emsdk/emscripten/latest
           ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --info --refresh-dependencies
           ./gradlew :updateGiac :publishNodegiac --no-daemon -Prevision=$SVN_REVISION --info'''
         node('mac') {
