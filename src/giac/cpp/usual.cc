@@ -1339,7 +1339,7 @@ namespace giac {
 	    }
 	  }
 	}
-      }
+      } // end if v.size()==1
       for (unsigned i=0;i<v.size();++i){
 	gen vi=v[i];
 	if (vi.is_symb_of_sommet(at_cos)){
@@ -1361,7 +1361,7 @@ namespace giac {
 	  }
 	}
       } // end loop on vars
-    }
+    } // end _SYMB type
     return pow(e,plus_one_half,contextptr);
   }
   static gen d_sqrt(const gen & e,GIAC_CONTEXT){
@@ -3457,6 +3457,7 @@ namespace giac {
 	    series_flags(contextptr) ^= (1<<6);
 	}
       }
+#ifndef POCKETCAS
       if (bl>=3){
 	if (name[bl-2]=='_'){
 	  switch (name[bl-1]){
@@ -3490,6 +3491,7 @@ namespace giac {
 	  }
 	}
       }
+#endif
       if (!contextptr){
 	// Remove stale local assignements
 #ifdef NO_STDEXCEPT

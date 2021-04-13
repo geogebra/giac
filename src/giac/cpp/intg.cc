@@ -99,7 +99,10 @@ namespace giac {
   gen complex_subst(const gen & e,const gen & x,const gen & newx,GIAC_CONTEXT){
     bool save_complex_mode=complex_mode(contextptr);
     complex_mode(true,contextptr);
+    bool save_eval_abs=eval_abs(contextptr);
+    eval_abs(false,contextptr);
     gen res=subst(e,x,newx,false,contextptr);
+    eval_abs(save_eval_abs,contextptr);
     // avoid rewrite of fractional powers
     vecteur v=lop(newx,at_pow);
     int i=0;
@@ -117,9 +120,9 @@ namespace giac {
 	}
       }
     }				 
+    complex_mode(save_complex_mode,contextptr);
     if (i==v.size()) 
       res=eval(res,1,contextptr);
-    complex_mode(save_complex_mode,contextptr);
     return res;
   }
 
@@ -2672,13 +2675,17 @@ namespace giac {
     }
     vecteur rvar=v;
     gen fu,fx;
-    int evenodd=is_even_odd(e,gen_x,contextptr); bool chkevenodd=true;
+    bool chkevenodd=true; int evenodd=-1;
     if (rvarsize<=TRY_FU_UPRIME){ // otherwise no hope
       const_iterateur it=v.begin()+1,itend=v.end();
       for (int pos=1;pos<=v.size();++it,++pos){
 	gen u;
 	if (pos==v.size()){
-	  if (!chkevenodd || evenodd!=2 || rvar.size()==1)
+	  if (!chkevenodd || rvar.size()==1)
+	    break;
+	  if (evenodd==-1)
+	    evenodd=is_even_odd(e,gen_x,contextptr); 
+	  if (evenodd!=2)
 	    break;
 	  u=pow(gen_x,2);
 	}
@@ -2895,6 +2902,8 @@ namespace giac {
 	if (tst.is_symb_of_sommet(at_pow)){
 	  gen vtbase=tst._SYMBptr->feuille[0],vtexpo=inv(tst._SYMBptr->feuille[1],contextptr);
 	  if (vtexpo.type==_INT_ && vtexpo.val==4){
+	    if (evenodd==-1)
+	      evenodd=is_even_odd(e,gen_x,contextptr); 
 	    if (evenodd==1){
 	      gen tmp=complex_subst(e,gen_x,inv(gen_x,contextptr),contextptr);
 	      gen root=complex_subst(tst,gen_x,inv(gen_x,contextptr),contextptr);

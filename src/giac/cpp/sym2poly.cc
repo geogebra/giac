@@ -2736,6 +2736,14 @@ namespace giac {
 	continue;
       if (is_one(expnum) && is_integer(arg[0]))
 	continue;
+      if (is_one(expnum) && arg[0].type==_SYMB){
+	gen tmp=sqrt(arg[0],contextptr); // detect e.g. (1+sin(x))^(1/2)
+	if (tmp!=*it){
+	  lin.push_back(*it);
+	  lout.push_back(tmp);
+	  continue;
+	}
+      }
       // sqrt(arg[0]), we may check that arg[0] is a+b+/-2*sqrt(a*b)
       gen var,a,b,hyp;
       if (is_sqrtxy(arg[0],a,contextptr)){
