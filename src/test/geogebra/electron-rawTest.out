@@ -173,7 +173,7 @@
 87>> caseval(regroup(evalfa(median({1, 2, 3}))))
 87<< 2.0
 88>> caseval(regroup(evalfa(regroup(integrate(surd(((1)+(x))/((1)-(x)),3)^(1),x)))))
-88<< 6*(1/9*ln(abs(((-x-1)/(x-1))^(1/3)+1))-1/18*ln((((-x-1)/(x-1))^(1/3))^2-((-x-1)/(x-1))^(1/3)+1)-1/3*((-x-1)/(x-1))^(1/3)/((-x-1)/(x-1)+1)+1/3*atan((2*((-x-1)/(x-1))^(1/3)-1)/√3)/√3)+SOME_CONSTANT
+88<< 6*(1/9*ln(((-x-1)/(x-1))^(1/3)+1)-1/18*ln((((-x-1)/(x-1))^(1/3))^2-((-x-1)/(x-1))^(1/3)+1)-1/3*((-x-1)/(x-1))^(1/3)/((-x-1)/(x-1)+1)+1/3*atan((2*((-x-1)/(x-1))^(1/3)-1)/√3)/√3)+SOME_CONSTANT
 89>> caseval(regroup(evalfa([[ggbnumans:=Zeta((23/10))],when(dim(lname(ggbnumans))==0||lname(ggbnumans)==[unicode0176u],evalf(ggbnumans,13),normal(evalf(regroup(ggbnumans),13)))][1])))
 89<< 1.432417799315
 90>> caseval(regroup(evalfa([[[ggbevalarg:=ycoord(point((11)+(ggbtmpvark),(12)+(ggbtmpvark)))],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]],when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1])))
