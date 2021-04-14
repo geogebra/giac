@@ -173,7 +173,7 @@
 87>> caseval(regroup(evalfa(median({1, 2, 3}))))
 87<< 2.0
 88>> caseval(regroup(evalfa(regroup(integrate(surd(((1)+(x))/((1)-(x)),3)^(1),x)))))
-88<< 6*(1/9*ln(((-x-1)/(x-1))^(1/3)+1)-1/18*ln((((-x-1)/(x-1))^(1/3))^2-((-x-1)/(x-1))^(1/3)+1)-1/3*((-x-1)/(x-1))^(1/3)/((-x-1)/(x-1)+1)+1/3*atan((2*((-x-1)/(x-1))^(1/3)-1)/√3)/√3)+SOME_CONSTANT
+88<< 6*(1/9*ln(abs(((-x-1)/(x-1))^(1/3)+1))-1/18*ln((((-x-1)/(x-1))^(1/3))^2-((-x-1)/(x-1))^(1/3)+1)-1/3*((-x-1)/(x-1))^(1/3)/((-x-1)/(x-1)+1)+1/3*atan((2*((-x-1)/(x-1))^(1/3)-1)/√3)/√3)+SOME_CONSTANT
 89>> caseval(regroup(evalfa([[ggbnumans:=Zeta((23/10))],when(dim(lname(ggbnumans))==0||lname(ggbnumans)==[unicode0176u],evalf(ggbnumans,13),normal(evalf(regroup(ggbnumans),13)))][1])))
 89<< 1.432417799315
 90>> caseval(regroup(evalfa([[[ggbevalarg:=ycoord(point((11)+(ggbtmpvark),(12)+(ggbtmpvark)))],[ggbevalans:=regroup(normal(ggbevalarg))],[ggbevalans2:=regroup(ggbevalarg)]],when(length(""+ggbevalans)<=length(""+ggbevalans2),ggbevalans,ggbevalans2)][1])))
@@ -3163,7 +3163,7 @@
 1582>> caseval(regroup(evalfa([[ggbmaxarg:={[[ggblastarg0370:={1, 2, 3}],{when(type(ggblastarg0370)==DOM_LIST,(ggblastarg0370)[size(ggblastarg0370)-1],(ggblastarg0370)[dim(ggblastarg0370)])}][1]}],when(type(ggbmaxarg)==DOM_LIST,when(type((ggbmaxarg)[0])==DOM_LIST,?,max(ggbmaxarg)),?)][1])))
 1582<< ?
 1583>> caseval(regroup(evalfa(regroup(integrate((sin((2)*(x)))*(cos(x)),x)))))
-1583<< -1/2*cos(x)-1/6*cos(3*x)+SOME_CONSTANT
+1583<< -2/3*cos(x)^3+SOME_CONSTANT
 1584>> caseval(regroup(evalfa(rref({{2, 2}, {1, 1}}))))
 1584<< {{1,1},{0,0}}
 1585>> caseval(regroup(evalfa([[ggbderivarg0120:=(x)*(Si(x))],regroup(regroup(diff(ggbderivarg0120,when(length(lname(ggbderivarg0120))==0,x,when(count_eq(x,lname(ggbderivarg0120))==0,lname(ggbderivarg0120)[0],x)))))][1])))
