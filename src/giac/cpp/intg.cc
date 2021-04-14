@@ -1065,7 +1065,8 @@ namespace giac {
 
   gen linear_integrate_nostep(const gen & e,const gen & x,gen & remains_to_integrate,int intmode,GIAC_CONTEXT);
 
-  static bool integrate_sqrt(gen & e,const gen & gen_x,const vecteur & rvar,gen & res,gen & remains_to_integrate,int intmode,GIAC_CONTEXT){ // x and a power
+  // return 1 if power is a fraction of int, 2 if a sqrt or more general exponent where x->1/x change of var can be tested
+  static int integrate_sqrt(gen & e,const gen & gen_x,const vecteur & rvar,gen & res,gen & remains_to_integrate,int intmode,GIAC_CONTEXT){ // x and a power
     // subcase 1: power is a fraction of int
     // find rational parametrization if possible
     // subcase 2: 1st argument of power is linear, 2nd is constant && no inv
@@ -1083,15 +1084,15 @@ namespace giac {
 	gen fnc_inverse=pow(a*gen_x+b,fraction(1,d),contextptr);
 	remains_to_integrate=rdiv(d,a,contextptr)*complex_subst(tmprem,gen_x,fnc_inverse,contextptr);
 	res=rdiv(d,a,contextptr)*complex_subst(tmpres,gen_x,fnc_inverse,contextptr);
-	return true;
+	return 2;
       }
       vecteur tmpv(1,gen_x);
       lvar(argument,tmpv);
-      gen fr,fr_n,fr_d,ap,bp;
+      gen fr,fr_n,fr_np,fr_d,fr_dp,ap,bp;
       fr=e2r(argument,tmpv,contextptr);
-      fxnd(fr,fr_n,fr_d);
-      fr_n=r2e(fr_n,tmpv,contextptr);
-      fr_d=r2e(fr_d,tmpv,contextptr);
+      fxnd(fr,fr_np,fr_dp);
+      fr_n=r2e(fr_np,tmpv,contextptr);
+      fr_d=r2e(fr_dp,tmpv,contextptr);
       if (is_linear_wrt(fr_n,gen_x,a,b,contextptr) && is_linear_wrt(fr_d,gen_x,ap,bp,contextptr) ){
 	// argument=(a*x+b)/(ap*x+bp)=t^d
 	// -> x=(bp*t^d-b)/(a-ap*t^d) 
@@ -1104,7 +1105,7 @@ namespace giac {
 	gen tmp=gen(d)*(a*bp-b*ap);
 	remains_to_integrate=tmp*complex_subst(tmprem,gen_x,fnc_inverse,contextptr);
 	res=tmp*complex_subst(tmpres,gen_x,fnc_inverse,contextptr);
-	return true;
+	return 2;
       }
       /*   ( * 	2nd order: dispatch for y=ax^2+bx+c	           * )
 	   ( * 	a>0	->	x=[m^2-c]/[b-2*sqrt[a]*m]          * )
@@ -1126,23 +1127,23 @@ namespace giac {
 	gen C=_egcd(makesequence(den,pmini,tmpx),contextptr);
 	if (is_undef(C)){
 	  res=C;
-	  return true;
+	  return 2;
 	}
 	num=_rem(makesequence(num*C[0],pmini,tmpx),contextptr);
 	if (is_undef(num)){
 	  res= num;
-	  return true;
+	  return 2;
 	}
 	den=C[2];
 	gen alpha,beta,xvar(gen_x);
 	if (!is_linear_wrt(num,tmpx,beta,alpha,contextptr)){
 	  res=gensizeerr(contextptr);
-	  return true;
+	  return 2;
 	}
 	alpha=integrate_rational(alpha/den,gen_x,remains_to_integrate,xvar,intmode,contextptr);
 	if (is_undef(alpha)){
 	  res=alpha;
-	  return true;
+	  return 2;
 	}
 	/* Instead we should factor argument in den 
 	   FIXME in usual.cc diff of ln should expand * and / and rm abs
@@ -1158,7 +1159,7 @@ namespace giac {
 	C=_quorem(makesequence(D,y,gen_x),contextptr);
 	if (is_undef(C)){
 	  res= C;
-	  return true;
+	  return 2;
 	}
 	int l=0;
 	if (is_zero(C[1])){ // P/(den/y)
@@ -1167,7 +1168,7 @@ namespace giac {
 	    C=_quorem(makesequence(D,y,gen_x),contextptr);
 	    if (is_undef(C)){
 	      res=C;
-	      return true;
+	      return 2;
 	    }
 	    if (!is_zero(C[1]))
 	      break;
@@ -1180,25 +1181,25 @@ namespace giac {
 	C=_egcd(makesequence(D,yl,gen_x),contextptr);
 	if (is_undef(C)){
 	  res= C;
-	  return true;
+	  return 2;
 	}
 	gen g=C[2],Q=C[0],R=C[1];
 	C=_quorem(makesequence(P*R,D,gen_x),contextptr);
 	if (is_undef(C)){
 	  res=C;
-	  return true;
+	  return 2;
 	}
 	gen PD=C[1]/g;
 	// changed made for int(1/(sin(x)*sqrt(sin(2*x)^3)));
 	C=_quorem(makesequence(P*Q+C[0]*yl,g,gen_x),contextptr);
 	if (!is_zero(C[1]))
-	  return false;
+	  return 0;
 	gen Py=C[0];  
 	// gen Py=(P*Q+C[0]*yl)/g;
 	C=_quorem(makesequence(Py,y,gen_x),contextptr);
 	if (is_undef(C)){
 	  res= C; 
-	  return true;
+	  return 2;
 	}
 	/*
 	  int[ Py/y^l*y^-1/2 ] = Q*y^[1/2-l] + int[ C*y^-1/2 ]
@@ -1222,7 +1223,7 @@ namespace giac {
 	    if (tmpv._FRACptr->den.type==_VECT){
 	      if (tmpv._FRACptr->den._VECTptr->size()!=1){
 		*logptr(contextptr) << "Internal error integrating sqrt" << '\n';
-		return false;
+		return 0;
 	      }
 	      tmpv._FRACptr->den=tmpv._FRACptr->den._VECTptr->front();
 	    }
@@ -1232,14 +1233,14 @@ namespace giac {
 	  if (tmpv.type!=_VECT)
 	    tmpv=vecteur(1,tmpv); // change 3/1/2013 for int(sqrt(1+x^2)/(-2*x^2))
 	  // res= gensizeerr(contextptr);
-	  // return true;
+	  // return 2;
 	}
 	vecteur colP=*tmpv._VECTptr;
 	int n=int(colP.size())-1;
 	tmpv=_e2r(makesequence(y,gen_x),contextptr);
 	if (tmpv.type!=_VECT){
 	  res= gensizeerr(contextptr);
-	  return true;
+	  return 2;
 	}
 	int k=int(tmpv._VECTptr->size())-1;
 	n=giacmax(n,k*(l+1)-2);
@@ -1249,13 +1250,13 @@ namespace giac {
 	  gen yprime=(1-2*l)*derive(y,gen_x,contextptr);
 	  if (is_undef(yprime)){
 	    res= yprime;
-	    return true;
+	    return 2;
 	  }
 	  matrice sys;
 	  tmpv=_e2r(makesequence(yprime,gen_x),contextptr);
 	  if (tmpv.type!=_VECT){
 	    res=gensizeerr(contextptr);
-	    return true;
+	    return 2;
 	  }
 	  vecteur col0(*tmpv._VECTptr);
 	  vecteur col(col0);
@@ -1265,7 +1266,7 @@ namespace giac {
 	  tmpv=_e2r(makesequence(2*y,gen_x),contextptr);
 	  if (tmpv.type!=_VECT){ 
 	    res=gensizeerr(contextptr);
-	    return true;
+	    return 2;
 	  }
 	  vecteur col1(*tmpv._VECTptr);
 	  for (int i=1;i<n+2-k;++i){
@@ -1278,7 +1279,7 @@ namespace giac {
 	  tmpv=_e2r(makesequence(2*yl,gen_x),contextptr);
 	  if (tmpv.type!=_VECT){
 	    res= gensizeerr(contextptr);
-	    return true;
+	    return 2;
 	  }
 	  col0=*tmpv._VECTptr;
 	  for (int i=0;i<k-1;++i){
@@ -1294,7 +1295,7 @@ namespace giac {
 	  step_infolevel(contextptr)=st;
 	  if (!col0.empty() && is_undef(col0.front())){
 	    res= col0.front();
-	    return true;
+	    return 2;
 	  }
 	  reverse(col0.begin(),col0.end()); // C at the beginning, Q at the end
 	  C=2*horner(vecteur(col0.begin(),col0.begin()+k-1),gen_x);
@@ -1314,12 +1315,12 @@ namespace giac {
 	    tmpres=linear_integrate_nostep(tmpe,m,tmprem,intmode | 2,contextptr);
 	    remains_to_integrate=remains_to_integrate+complex_subst(plus_two*tmprem,m,sqrt(argument,contextptr)-sqrta*gen_x,contextptr);
 	    res= alpha+complex_subst(plus_two*tmpres,m,sqrt(argument,contextptr)-sqrta*gen_x,contextptr);
-	    return true;
+	    return 2;
 	  }
 	  else {
 	    gen D=b*b-gen(4)*a*c;
 	    if (is_strictly_positive(-D,contextptr))
-	      return false;
+	      return 0;
 	    D=sqrt_noabs(D,contextptr);
 	    gen sD=sign(D,contextptr);
 	    if (is_minus_one(sD)){
@@ -1345,17 +1346,23 @@ namespace giac {
 	    vecteur vin(makevecteur(u,symbolic(at_atan,u))),vout(makevecteur(uasx,inv(-2,contextptr)*sD*asin(ratnormal((-2*a*gen_x-b)/D,contextptr),contextptr)));
 	    remains_to_integrate=remains_to_integrate+complex_subst(tmprem,vin,vout,contextptr);
 	    res=alpha+complex_subst(tmpres,vin,vout,contextptr);
-	    return true;
+	    return 2;
 	  }
 	} // end sqrt of quadratic
 	else {
 	  remains_to_integrate=e;
 	  res=alpha;
-	  return true;
+	  return 2;
 	}
       } // end if d==2
+      int numdeg=0,numval=0,dendeg=0;
+      if (fr_dp.type==_POLY) dendeg=fr_dp._POLYptr->lexsorted_degree();
+      if (dendeg>0 || fr_np.type!=_POLY) return 1;
+      numdeg=fr_np._POLYptr->lexsorted_degree();
+      numval=fr_np._POLYptr->valuation(0);
+      return numval>0?2:1;
     } // end exposant=fraction of integers
-    return false;
+    return 0;
   } // end recusive var size==2 i.e. of integrate_sqrt 
 
   static gen integrate_piecewise(gen& e,const gen & piece,const gen & gen_x,gen & remains_to_integrate,GIAC_CONTEXT,int intmode){
@@ -2716,9 +2723,10 @@ namespace giac {
 	}
 	if (is_undef(fu) || is_inf(fu))
 	  continue;
-	if (u.is_symb_of_sommet(at_cos))
+	bool issin=u.is_symb_of_sommet(at_sin),iscos=u.is_symb_of_sommet(at_cos);
+	if (iscos)
 	  fu=_trigcos(tan2sincos(fu,contextptr),contextptr);
-	if (u.is_symb_of_sommet(at_sin))
+	if (issin)
 	  fu=_trigsin(tan2sincos(fu,contextptr),contextptr);
 	if (u.is_symb_of_sommet(at_tan))
 	  fu=_trigtan(fu,contextptr);
@@ -2742,6 +2750,19 @@ namespace giac {
 	  }
 	}
 	bool tst=is_rewritable_as_f_of(fu,u,fx,gen_x,contextptr);
+	if (tst && (issin || iscos)){
+	  gen fx1=ratnormal(fx/2/gen_x),fx2,fx21;
+	  if (is_rewritable_as_f_of(fx1,pow(gen_x,2),fx2,gen_x,contextptr)){ // attempt with cos^2 or sin^2
+	    fx2=recursive_ratnormal(fx2,contextptr);
+	    gen fx21=recursive_ratnormal(subst(-fx2,gen_x,1-gen_x,false,contextptr),contextptr);
+	    int t1=taille(fx2,256),t2=taille(fx21,256);
+	    if (t2<0.7*t1){
+	      if (issin) u=symb_cos(u._SYMBptr->feuille); else u=symb_sin(u._SYMBptr->feuille);
+	      fx2=fx21;
+	    }
+	    u=pow(u,2); fx=fx2;
+	  }
+	}
 	if (tst){
 	  if (taille(fx,256)>taille(e,255)){
 	    vecteur fxv=lvarx(fx,gen_x);
@@ -3006,7 +3027,8 @@ namespace giac {
     }
     // square roots
     if ( (rvarsize==2) && (rvar.back().type==_SYMB) && (rvar.back()._SYMBptr->sommet==at_pow) ){
-      if (integrate_sqrt(e,gen_x,rvar,res,remains_to_integrate,intmode,contextptr)){
+      // FIXME remove ==2, requires adding intmode parameter everywhere...
+      if (integrate_sqrt(e,gen_x,rvar,res,remains_to_integrate,intmode,contextptr)==2){
 	if ( (intmode & 1)==0 && is_zero(res)){
 	  // try again with x->1/x?
 	  gen e2=normal(-complex_subst(e,gen_x,inv(gen_x,contextptr),contextptr)/gen_x/gen_x,contextptr);
