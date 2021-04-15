@@ -983,7 +983,7 @@ task createGiacWasmJs(dependsOn: 'createGiacGgbJsWasm') {
         def wasmBase64 = file("${binaryJsDir}/giacggb.wasm.b64").text;
         file("${binaryJsDir}/giac.wasm.js").text = "window.__ggb__giac = window.__ggb__giac ||{};\n" +
             "window.__ggb__giac.wasmBinaryFile=\"data:application/wasm;base64,${wasmBase64}\";\n" +
-            file("${binaryJsDir}/giac.js").text.replace('Module', '__ggb__giac').replace('"use asm";', '')
+            file("${binaryJsDir}/giacggb.js").text.replace('Module', '__ggb__giac').replace('"use asm";', '')
     }
 }
 
