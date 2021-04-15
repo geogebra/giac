@@ -20,6 +20,7 @@ pipeline {
         sh '''
           test -x emsdk || git clone https://github.com/emscripten-core/emsdk.git
           ./gradlew installEmsdk
+          ./gradlew activateEmsdk
           ln -s emsdk emsdk/emsdk-portable
           mkdir emsdk/emscripten
           ln -sr emsdk/upstream/emscripten emsdk/emscripten/latest
