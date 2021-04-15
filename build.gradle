@@ -38,11 +38,11 @@ project.setDescription('Giac CAS for GeoGebra')
  *    The compilation can be influenced by using the environmental variable EXT_GMPMPFR (local/emgiac).
  *    Luckily, the current prebuilt files should work properly with 2.0.16.
  *
- * 3. Run the createGiacJs task. It will recompile all C++ files and then re-link the library.
+ * 3. Run the createGiacWasmJs task. It will recompile all C++ files and then re-link the library.
  *    It can be fine-tuned by using the EMSCRIPTEN_VER and EMSCRIPTEN_VERSION environmental variables
  *    (but usually not required to use them). That, is you usually need the following command line:
  *
- *    $ EMSCRIPTEN_VER=202009 EMSCRIPTEN_VERSION=tag-2.0.16 ../gradlew clean activateEmsdk createGiacJs
+ *    $ EMSCRIPTEN_VER=202009 EMSCRIPTEN_VERSION=tag-2.0.16 ../gradlew clean activateEmsdk createGiacWasmJs
  *
  *    This command line will work only after you already ran downloadEmsdk and installEmsdk
  *    (as described above).
@@ -973,34 +973,17 @@ task createGiacGgbJsWasm(dependsOn: 'emccGiacJsWasm', type: Copy) {
     include ('ggb.html')
 }
 
-task createGiacJs(dependsOn: 'createGiacGgbJsWasm') {
-    doLast {
-        copy {
-            from binaryJsDir
-            into binaryJsDir
-            include ('giacggb.js')
-            rename 'giacggb.js', 'giac.js'
-            filter { line -> line.replace('Module', '__ggb__giac').replace('"use asm";', '') }
-        }
-    }
-}
-
-task createGiacWasmJs(dependsOn: 'createGiacJs') {
+task createGiacWasmJs(dependsOn: 'createGiacGgbJsWasm') {
     description 'Creates WebAssembly version of Giac which can be embedded into GeoGebraWeb.'
     doLast {
         exec {
             commandLine "bash", "-c", "base64 -w0 giacggb.wasm > giacggb.wasm.b64"
             workingDir binaryJsDir
         }
-        copy {
-            include ('giacggb.wasm.b64')
-            rename 'giacggb.wasm.b64', 'giac.wasm.js'
-            filter { line -> "if (!window.__ggb__giac) window.__ggb__giac = (typeof window.__ggb__giac !== \"undefined\" ? window.__ggb__giac : null) || {};\nwindow.__ggb__giac.wasmBinaryFile=\"data:application/wasm;base64," + line + "\";\n" }
-        }
-        exec {
-            commandLine "bash", "-c", "cat giac.js >> giac.wasm.js"
-            workingDir binaryJsDir
-        }
+        def wasmBase64 = file("${binaryJsDir}/giacggb.wasm.b64").text;
+        file("${binaryJsDir}/giac.wasm.js").text = "window.__ggb__giac = window.__ggb__giac ||{};\n"
+          + "window.__ggb__giac.wasmBinaryFile=\"data:application/wasm;base64,${wasmBase64}\";\n"
+          + file("${binaryJsDir}/giac.js").text.replace('Module', '__ggb__giac').replace('"use asm";', '')
     }
 }
 
