@@ -12,7 +12,7 @@ dependencies {
     'com.google.gwt:gwt-user:2.8.2'
 }
 
-task prepareJs(type:Copy, dependsOn: project.getParent().createGiacJs) {
+task prepareJs(type:Copy, dependsOn: project.getParent().createGiacWasmJs) {
     from "${project.getParent().buildDir}/binaries/giacggb.wasm"
     into file("src/main/resources/fr/grenoble/ujf/giac")
     include "giac.wasm.js"
