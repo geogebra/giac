@@ -1,6 +1,10 @@
-// Authors: Balazs Bencze <balazs.bencze@geogebra.org>,
-// and Zoltan Kovacs <zoltan@geogebra.org>.
+// Authors:
+// Balazs Bencze <balazs.bencze@geogebra.org>,
+// Zbynek Konecny <zbynek@geogebra.org>,
+// Zoltan Kovacs <zoltan@geogebra.org> and
+// Agoston Suto <suto.agoston@yahoo.com>.
 // Based on Bernard Parisse's original Makefiles and other scripts.
+
 
 plugins {
     id 'org.hidetake.ssh' version '2.10.1'
@@ -18,11 +22,17 @@ repositories {
 project.setDescription('Giac CAS for GeoGebra')
 
 
-/* Emscripten related settings. Currently we use version 2.0.16, other versions may not work correctly,
+/*
+ * For the impatient: Run "./gradlew downloadEmsdk installEmsdk activateEmsdk createGiacWasmJs"
+ * to compile the WebAssembly version via Emscripten.
+ *
+ * Emscripten related settings.
+ *
+ * Currently we use version 2.0.16, other versions may not work correctly,
  * or may have problems in some Giac commands and results. By default, 2.0.16 will be used.
  *
  * 1. You will need to download the correct toolchain version by running the tasks downloadEmsdk,
- *    then set EMSCRIPTEN_VERSION=tag-2.0.16, and run the task installEmsdk.
+ *    then optionally set EMSCRIPTEN_VERSION=tag-2.0.16, and run the task installEmsdk.
  *    (Always take care of using the correct emscripten version and also the appropriate clang compiler,
  *    otherwise you may encounter extremely strange problems on compilation time or runtime.
  *    Newer emscripten versions usually do sanity checks during the compilation and inform you
@@ -993,13 +1003,13 @@ task downloadEmsdk {
     description 'Downloads emscripten SDK and downloads it.'
     outputs.dir emsdkDir
     doLast {
-        emsdkDir.mkdirs()
-        ant.get(src: "$emsdkUrlFolder/$emsdkTgzFile", dest: emsdkDir,
-                skipexisting: true, usetimestamp: true)
-        copy {
-            from tarTree("$emsdkDir/$emsdkTgzFile")
-            into "$emsdkDir"
+        exec {
+            commandLine 'git clone https://github.com/emscripten-core/emsdk.git'.split()
         }
+
+        ant.symlink(resource: emsdkDir, link: "${emsdkDir}/emsdk-portable")
+        mkdir("${emsdkDir}/emscripten")
+        ant.symlink(resource: "${emsdkDir}/upstream/emscripten", link: "${emsdkDir}/emscripten/latest")
     }
 }
 
