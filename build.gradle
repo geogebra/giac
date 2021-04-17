@@ -49,10 +49,10 @@ project.setDescription('Giac CAS for GeoGebra')
  *    Luckily, the current prebuilt files should work properly with 2.0.16.
  *
  * 3. Run the createGiacWasmJs task. It will recompile all C++ files and then re-link the library.
- *    It can be fine-tuned by using the EMSCRIPTEN_VER and EMSCRIPTEN_VERSION environmental variables
+ *    It can be fine-tuned by using the EMSCRIPTEN_VERSION environmental variables
  *    (but usually not required to use them). That, is you usually need the following command line:
  *
- *    $ EMSCRIPTEN_VER=202009 EMSCRIPTEN_VERSION=tag-2.0.16 ../gradlew clean activateEmsdk createGiacWasmJs
+ *    $ EMSCRIPTEN_VERSION=tag-2.0.16 ../gradlew clean activateEmsdk createGiacWasmJs
  *
  *    This command line will work only after you already ran downloadEmsdk and installEmsdk
  *    (as described above).
@@ -76,13 +76,6 @@ if (System.env['EXT_GMPMPFR'] != null && System.env['EXT_GMPMPFR'] == "emgiac") 
     LlvmMpfrA = "$emgiacSourceDir/giac/libmpfr.a"
     LlvmGmpA = "$emgiacSourceDir/giac/libgmp.a"
 }
-
-def emscriptenVer = '202009'
-if (System.env['EMSCRIPTEN_VER'] != null) {
-    emscriptenVer = System.env['EMSCRIPTEN_VER'];
-}
-
-
 
 def emsdkUrlFolder = 'https://s3.amazonaws.com/mozilla-games/emscripten/releases'
 def emsdkTgzFile = 'emsdk-portable.tar.gz'
@@ -898,14 +891,10 @@ tasks.addRule("Pattern: emccCompileWasm_<FILE>Cc: Compile <FILE>.cc into <FILE>.
                     def commandline = emccCommand
                     commandline += ' -DIN_GIAC -DGIAC_GENERIC_CONSTANTS -DHAVE_CONFIG_H -DNO_STDEXCEPT -fno-exceptions' // from old Makefile
                     commandline += ' -DVERSION=' + giacVersion
-
-                    if (emscriptenVer == '202009') {
-                        commandline += " -Dgammaf=tgammaf -s ALLOW_MEMORY_GROWTH=1"
-                        commandline += " -s WASM=1 -s NO_EXIT_RUNTIME=1"
-                        commandline += " -s PRECISE_I64_MATH=1 -Oz" // new setting
-                        commandline += " -DHAVE_UNISTD_H"
-                    }
-
+                    commandline += " -Dgammaf=tgammaf -s ALLOW_MEMORY_GROWTH=1"
+                    commandline += " -s WASM=1 -s NO_EXIT_RUNTIME=1"
+                    commandline += " -s PRECISE_I64_MATH=1 -Oz" // new setting
+                    commandline += " -DHAVE_UNISTD_H"
                     commandline += ' -DGIAC_GGB' // from old Makefile
                     commandline += ' -DTIMEOUT -DEMCC2 ' // from old config.h
                     commandline += " -Isrc/giac/headers -c $input -o $output"
