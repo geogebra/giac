@@ -2307,6 +2307,22 @@ namespace giac {
     return g;
   }
 
+  gen lvar_ratnormal(const gen & e,GIAC_CONTEXT){
+    vecteur v=lvar(e);
+    vecteur w(v);
+    for (int j=0;j<v.size();++j){
+      if (w[j].type!=_SYMB) continue;
+      if (w[j]._SYMBptr->feuille.type==_SYMB)
+	w[j]=symbolic(w[j]._SYMBptr->sommet,expand(recursive_normal(w[j]._SYMBptr->feuille,contextptr),contextptr));
+      else
+	w[j]=recursive_ratnormal(w[j],contextptr);
+    }
+    if (v==w)
+      return e;
+    gen res=subst(e,v,w,false,contextptr);
+    return res;
+  }
+
   gen simplify(const gen & e_orig,GIAC_CONTEXT){
     if (e_orig.type<=_POLY || is_inf(e_orig) || has_num_coeff(e_orig))
       return e_orig;
@@ -2336,6 +2352,24 @@ namespace giac {
 	    e2=ratnormal(e2,contextptr);
 	    return e2;
 	  }
+	}
+      }
+    }
+    // trying linear substitutions as a preparation for commands like texpand
+    for (int i=0;i<vvar.size();++i){ 
+      if (vvar[i].type!=_SYMB) continue;
+      gen f=vvar[i]._SYMBptr->feuille;
+      if (f.type!=_SYMB) continue;
+      vecteur v(lvar(f));
+      if (v.size()==1){
+	gen var(v[0]),a,b;
+	if (is_linear_wrt(f,var,a,b,contextptr) && a.type==_FRAC){
+	  // var -> var*a.den
+	  e=subst(e,var,var*a._FRACptr->den,false,contextptr);
+	  e=lvar_ratnormal(e,contextptr);
+	  e=simplify(e,contextptr);
+	  e=subst(e,var,var/a._FRACptr->den,false,contextptr);
+	  return lvar_ratnormal(e,contextptr);
 	}
       }
     }
@@ -2543,6 +2577,14 @@ namespace giac {
       e2=recursive_normal(_trigsin(e,contextptr),contextptr);
       if (int(loptab(e2,sincostan_tab).size())<s1)
 	return simplify(e2,contextptr);
+      e2=_texpand(lvar_ratnormal(v1,contextptr),contextptr);
+      if (e2.type==_VECT){
+	vecteur w1(loptab(e2,sincostan_tab));
+	if (w1.size()<v1.size()){
+	  e=subst(e,v1,e2,false,contextptr);
+	  return simplify(e,contextptr);
+	}
+      }
       e2=_halftan(v1,contextptr);
       if (e2.type==_VECT){
 	vecteur w1(loptab(e2,sincostan_tab));
