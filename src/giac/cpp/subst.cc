@@ -715,7 +715,7 @@ namespace giac {
   }
 
   // used for sorting
-  static bool first_sort(const gen & a,const gen & b){
+  bool first_sort(const gen & a,const gen & b){
     return islesscomplexthanf(a[0],b[0]); // FIXME GIAC_CONTEXT
   }
 
@@ -2313,6 +2313,32 @@ namespace giac {
     gen e=simplifier(e_orig,contextptr);
     if (e.type==_FRAC)
       return _evalc(e_orig,contextptr);
+    // first check for a fractional power -> substitution
+    vecteur vvar=lvar(e),vpow=lop(lvar(lop(vvar,at_pow)),at_pow);
+    gen_sort_f(vpow.begin(),vpow.end(),islesscomplexthanf);
+    for (int i=0;i<vpow.size();++i){ 
+      gen vvar0=vpow[i]._SYMBptr->feuille;
+      if (vvar0.type==_VECT && vvar0._VECTptr->size()==2){
+	gen vbase=vvar0._VECTptr->front(),vexp=vvar0._VECTptr->back();
+	vecteur vbasevar=lvar(vbase);
+	if (!vbasevar.empty() && vexp.type==_FRAC && vexp._FRACptr->num==1 && vexp._FRACptr->den.type==_INT_){
+	  gen var=vbasevar[0],a,b;
+	  if (var.type==_IDNT && is_linear_wrt(vbase,var,a,b,contextptr) && !is_zero(a)){
+	    // vbase=(a*var+b)^1/vexp.den
+	    // replace a*var+b by t^vexp.den, hence var=(t^vexp.den-b)/a
+	    gen e2;
+	    if (0) // vexp._FRACptr->den.val % 2)
+	      e2=subst(e,makevecteur(var,vpow[i]),makevecteur((symb_pow(var,vexp._FRACptr->den)-b)/a,var),false,contextptr);
+	    else
+	      e2=subst(e,var,(symb_pow(var,vexp._FRACptr->den)-b)/a,false,contextptr);
+	    gen e3=simplify(e2,contextptr);
+	    e2=subst(e3,var,vpow[i],false,contextptr);
+	    e2=ratnormal(e2,contextptr);
+	    return e2;
+	  }
+	}
+      }
+    }
     vecteur vsign=lop(e,at_sign);
     vecteur vabs=lop(e,at_abs),vs1,vs2;
     for (int i=0;i<int(vabs.size());++i){

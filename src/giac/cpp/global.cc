@@ -2898,7 +2898,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       return "/Applications/usr/share/giac/";
     return "/Applications/usr/share/giac/";
 #endif
-#ifdef WIN32
+#if defined WIN32 && !defined MINGW
     return "/cygdrive/c/xcas/";
 #endif
     string s(giac_aide_location); // ".../aide_cas"

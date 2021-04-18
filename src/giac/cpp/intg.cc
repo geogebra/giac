@@ -3038,6 +3038,7 @@ namespace giac {
 	    remains_to_integrate=-complex_subst(remains_to_integrate2,gen_x,inv(gen_x,contextptr),contextptr)/gen_x/gen_x;
 	    return res;
 	  }
+	  remains_to_integrate=e;
 	}
 	return res;
       }
@@ -3212,7 +3213,29 @@ namespace giac {
       return res;
     }
     if (!do_risch){
-      remains_to_integrate=e;
+      // Propfrac step
+      gen nd=_fxnd(e,contextptr);
+      if (nd.type==_VECT && nd._VECTptr->size()==2){
+	gen num=nd[0],den=nd[1];
+	vecteur propf=lvarx(den,gen_x);
+	gen_sort_f(propf.begin(),propf.end(),islesscomplexthanf);
+	nd=_quorem(makesequence(num,den,propf.back()),contextptr);
+	if (nd.type==_VECT && nd._VECTptr->size()==2){
+	  gen q=nd[0],r=nd[1];
+	  if (!is_zero(q) && !is_zero(r)){
+	    gen tmprem=0,tmpres;
+	    tmpres = integrate_id_rem(q,*gen_x._IDNTptr,tmprem,contextptr,1);
+	    // remains_to_integrate += tmprem; tmprem=0;
+	    if (is_zero(tmprem)){
+	      tmpres += integrate_id_rem(r/den,*gen_x._IDNTptr,tmprem,contextptr,1);	    
+	      // remains_to_integrate += tmprem;
+	      if (is_zero(tmprem))
+		return res+tmpres;
+	    }
+	  }
+	}
+      }
+      remains_to_integrate+=e;
       return 0;
     }
     // finish by calling the Risch algorithm
