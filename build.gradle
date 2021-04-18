@@ -1018,8 +1018,9 @@ task installEmsdk (/*dependsOn: 'downloadEmsdk'*/) {
     }
 }
 
-task activateEmsdk (/*dependsOn: 'downloadEmsdk'*/) {
+task activateEmsdk () {
     description 'Activates the emscripten SDK.'
+    mustRunAfter 'installEmsdk'
     doLast {
         exec {
             commandLine "./emsdk activate sdk-${emscriptenVersion}-64bit".split()
