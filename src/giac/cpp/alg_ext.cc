@@ -830,20 +830,20 @@ namespace giac {
       return tmp;
     }
     // special handling if fractional power of the same object
-    if (is_one(a[0]) && is_one(b[0]) && is_zero(a[as-1]-b[bs-1])){
+    if (is_one(a__VECT[0]) && is_one(b__VECT[0]) && is_zero(a__VECT[as-1]-b__VECT[bs-1])){
       int i=1;
       for (;i<as-1;++i){
-	if (!is_zero(a[i])) break;
+	if (!is_zero(a__VECT[i])) break;
       }
       if (i==as-1){
 	for (i=1;i<bs-1;++i){
-	  if (!is_zero(b[i])) break;
+	  if (!is_zero(b__VECT[i])) break;
 	}
 	if (i==bs-1){
 	  int gs=(as-1)*(bs-1)/gcd(as-1,bs-1);
 	  vecteur c(gs+1);
 	  c[0]=1;
-	  c[gs]=a[as-1];
+	  c[gs]=a__VECT[as-1];
 	  polynome cp=poly12polynome(c),cpc; factorization f; gen an,extra;
 	  factor(cp,cpc,f,false,false,false,an,extra);
 	  if (f.size()==1){
