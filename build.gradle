@@ -1002,8 +1002,9 @@ task downloadEmsdk {
     }
 }
 
-task installEmsdk (/*dependsOn: 'downloadEmsdk'*/) {
+task installEmsdk () {
     description 'Installs/updates the emscripten SDK.'
+    mustRunAfter 'downloadEmsdk'
     doLast {
         exec {
             commandLine 'git pull'.split()

@@ -18,10 +18,9 @@ pipeline {
     stage('Build') {
       steps {
         sh '''
-          test -x emsdk || git clone https://github.com/emscripten-core/emsdk.git
-          ./gradlew installEmsdk activateEmsdk
+          ./gradlew downloadEmsdk installEmsdk activateEmsdk
           ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --info --refresh-dependencies
-          ./gradlew :updateGiac :publishNodegiac --no-daemon -Prevision=$SVN_REVISION --info'''
+          ./gradlew :updateGiac --no-daemon -Prevision=$SVN_REVISION --info'''
         node('mac') {
           checkout([$class: 'SubversionSCM', 
             locations: [[cancelProcessOnExternalsFail: true, 
