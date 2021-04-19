@@ -1840,6 +1840,7 @@ namespace giac {
       }
     }
     vecteur a;
+    // should be replaced by a call that gives info if a boundaries are strict
     if (!find_range(v0,a,contextptr))
       return -2;
     int previous_sign=2,current_sign=0;

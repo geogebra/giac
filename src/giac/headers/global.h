@@ -112,7 +112,7 @@ extern "C" const char * console_prompt(const char * s);
 #if defined HAVE_LIBMICROPYTHON
 #include <string>
 // giac interface to micropython modules
-extern std::string python_console;
+std::string & python_console();
 #endif
 #ifdef QUICKJS
 #include <string>
@@ -608,6 +608,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     bool _atan_tan_no_floor_;
     bool _keep_acosh_asinh_;
     bool _keep_algext_;
+    bool _auto_assume_;
     int _python_compat_;
     int _angle_mode_;
     int _bounded_function_no_;
@@ -785,6 +786,9 @@ throw(std::runtime_error("Stopped by user interruption.")); \
 
   bool & keep_algext(GIAC_CONTEXT);
   void keep_algext(bool b,GIAC_CONTEXT);
+
+  bool & auto_assume(GIAC_CONTEXT);
+  void auto_assume(bool b,GIAC_CONTEXT);
 
   bool & do_lnabs(GIAC_CONTEXT);
   void do_lnabs(bool b,GIAC_CONTEXT);

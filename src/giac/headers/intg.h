@@ -28,6 +28,9 @@ namespace giac {
   struct unary_function_ptr;
   void restorepurge(const gen & xval,const gen & x,GIAC_CONTEXT);
   gen assumeeval(const gen & x,GIAC_CONTEXT);
+  // auto-assumptions assuming g is real-defined
+  // if an assumption is already made on a variable, it is ignored
+  vecteur autoassume(const gen & g_,const gen & x,GIAC_CONTEXT);
 
   gen complex_subst(const gen & e,const vecteur & substin,const vecteur & substout,GIAC_CONTEXT);
   gen complex_subst(const gen & e,const gen & x,const gen & newx,GIAC_CONTEXT);

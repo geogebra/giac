@@ -6301,7 +6301,7 @@ namespace giac {
 	bool turt=strcmp(ptr,".")==0;
 	bool xc=strcmp(ptr,"xcas")==0;
 	python_contextptr=contextptr;
-	python_console="";
+	python_console()="";
 	gen g;
 	if (!gr && !xc && !turt && !pix ){
 	  (*micropy_ptr)(ptr);
@@ -6317,11 +6317,11 @@ namespace giac {
 	  return _show_pixels(0,contextptr);
 	if (gr)
 	  return history_plot(cascontextptr);
-	if (python_console.empty())
+	if (python_console().empty())
 	  return string2gen("Done",false);
-	if (python_console[python_console.size()-1]=='\n')
-	  python_console=python_console.substr(0,python_console.size()-1);
-	return string2gen(python_console.empty()?"Done":python_console,false);
+	if (python_console()[python_console().size()-1]=='\n')
+	  python_console()=python_console().substr(0,python_console().size()-1);
+	return string2gen(python_console().empty()?"Done":python_console(),false);
       }
     }
 #endif
@@ -6701,6 +6701,23 @@ namespace giac {
   static const char _keep_algext_s []="keep_algext";
   static define_unary_function_eval2 (__keep_algext,&_keep_algext,_keep_algext_s,&printasDigits);
   define_unary_function_ptr( at_keep_algext ,alias_at_keep_algext ,&__keep_algext);
+
+  gen _auto_assume(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG &&  g.subtype==-1) return  g;
+    gen args(g);
+    if (g.type==_DOUBLE_)
+      args=int(g._DOUBLE_val);
+    if (g.type==_SYMB || g.type==_IDNT)
+      return autoassume(g,vx_var,contextptr);
+    if (args.type!=_INT_)
+      return auto_assume(contextptr);
+    auto_assume((args.val)!=0,contextptr);
+    parent_cas_setup(contextptr);
+    return args;
+  }
+  static const char _auto_assume_s []="auto_assume";
+  static define_unary_function_eval (__auto_assume,&_auto_assume,_auto_assume_s);
+  define_unary_function_ptr5( at_auto_assume ,alias_at_auto_assume ,&__auto_assume,0,true);
 
   gen _angle_radian(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;

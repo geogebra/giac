@@ -3481,10 +3481,128 @@ namespace giac {
     return primitive;
   }
 
-  // "unary" version
-  gen _integrate(const gen & args,GIAC_CONTEXT){
-    if (complex_variables(contextptr))
-      *logptr(contextptr) << gettext("Warning, complex variables is set, this can lead to fairly complex answers. It is recommended to switch off complex variables in the settings or by complex_variables:=0; and declare individual variables to be complex by e.g. assume(a,complex).") << '\n';
+  // auto-assumptions assuming g is real-defined
+  // if an assumption is already made on a variable, it is ignored
+  vecteur autoassume(const gen & g_,const gen & x,GIAC_CONTEXT){
+    gen g=eval(g_,1,contextptr);
+    vecteur v(rlvar(g,false));
+    vecteur ass,res,bases; // list of assumptions and assumed idnt
+    for (int i=0;i<v.size();++i){
+      if (v[i].type!=_SYMB)
+	continue;
+      gen f=v[i]._SYMBptr->feuille;
+      const unary_function_ptr & u=v[i]._SYMBptr->sommet;
+      gen base,expo;
+      if (u==at_pow && f.type==_VECT && f._VECTptr->size()==2){
+	base=f[0];
+	expo=f[1];
+      }
+      if (u==at_sqrt || u==at_ln){
+	base=f;
+	expo=plus_one_half;
+      }
+      if (expo!=0){
+	if (equalposcomp(bases,base))
+	  continue;
+	bases.push_back(base);
+	if (is_assumed_integer(expo,contextptr))
+	  continue;
+	if (expo.type==_FRAC && expo._FRACptr->den.type==_INT_ && (expo._FRACptr->den.val%2==1))
+	  continue;
+	vecteur varbase(lvar(base));
+	if (varbase.size()>=1){
+	  vecteur lid=lidnt(base);
+	  if (!lid.empty()){
+	    gen var=lid[0],a,b,hyp,varval;
+	    if (equalposcomp(lid,x))
+	      var=x;
+	    bool addi=equalposcomp(res,var); // additional hyp?
+	    if (!addi)
+	      varval=assumeeval(var,contextptr);
+	    if (addi || varval==var){	 
+	      if (var.type==_IDNT && is_linear_wrt(base,var,a,b,contextptr) && !is_zero(a)){
+		gen as=fastsign(a,contextptr);
+		if (as==1)
+		  hyp=symb_superieur_egal(var,-b/a);
+		else if (as==-1)
+		  hyp=symb_inferieur_egal(var,-b/a);
+	      }
+	      else {
+		varbase=lvarx(base,var);
+		if (varbase.size()==1){
+		  gen var0=varbase[0],addhyp;
+		  bool dosolve=false;
+		  if (var0.type==_IDNT)
+		    dosolve=true;
+		  if (var0.type==_SYMB){
+		    const unary_function_ptr & u=var0._SYMBptr->sommet;
+		    gen varf=var0._SYMBptr->feuille;
+		    if (varf.type!=_VECT && is_linear_wrt(varf,var,a,b,contextptr)){ // f(a*x+b), if f is trig assume in a*x+b in a period
+		      if (u==at_sin || u==at_cos)
+			addhyp=symb_and(symb_superieur_strict(a*var+b,-cst_pi),symb_inferieur_strict(a*var+b,cst_pi));
+		      if (u==at_tan)
+			addhyp=symb_and(symb_superieur_strict(a*var+b,-cst_pi/2),symb_inferieur_strict(a*var+b,cst_pi/2));
+		      dosolve=true;
+		    }
+		  }
+		  if (dosolve){
+		    if (!is_zero(addhyp)){
+		      ass.push_back(addhyp);
+		      if (addi)
+			giac_additionally(addhyp,contextptr);
+		      else {
+			res.push_back(var);
+			giac_assume(addhyp,contextptr);
+			addi=true;
+		      }
+		    }
+		    hyp=_solve(makesequence(symb_superieur_strict(base,0),var),contextptr);
+		  }
+		}
+	      }
+	    }
+	    if (hyp.type==_SYMB){
+	      ass.push_back(hyp);
+	      if (addi)
+		giac_additionally(hyp,contextptr);
+	      else {
+		res.push_back(var);
+		giac_assume(hyp,contextptr);
+	      }
+	    }
+	    if (hyp.type==_VECT){
+	      vecteur hypv=*hyp._VECTptr;
+	      for (int j=hypv.size()-1;j>=0;--j){
+		// j decreasing will give "simpler" auto-assumptions for trig
+		gen curhyp=hypv[j];
+		if (curhyp.type!=_SYMB)
+		  continue;
+		const unary_function_ptr & u=curhyp._SYMBptr->sommet;
+		if (u!=at_and && u!=at_ou && 
+		    u!=at_superieur_strict && u!=at_superieur_egal &&
+		    u!=at_inferieur_strict && u!=at_inferieur_egal)
+		  continue;
+		ass.push_back(curhyp);
+		if (addi || j)
+		  giac_additionally(curhyp,contextptr);
+		else {
+		  res.push_back(var);
+		  giac_assume(curhyp,contextptr);
+		  addi=true;
+		}
+		break; // solve will return different intervals, we select one
+	      }
+	    } // end hyp.type==_VECT
+	  } // end if lidnt(base) not empty
+	} // end if lvar(base).size()>=1
+      } // end if expo!=0
+    }
+    if (!ass.empty())
+      *logptr(contextptr) << "Auto-assuming " << ass << "\n";
+    return res;
+  }
+
+  gen _integrate_(const gen &args,GIAC_CONTEXT){
 #ifdef LOGINT
     *logptr(contextptr) << gettext("integrate begin") << '\n';
 #endif
@@ -4023,6 +4141,28 @@ namespace giac {
       return res;
     }
     return ck_int_numerically(v0orig,x,aorig,borig,res,contextptr);
+  }
+  // "unary" version
+  gen _integrate(const gen & args,GIAC_CONTEXT){
+    if (complex_variables(contextptr))
+      *logptr(contextptr) << gettext("Warning, complex variables is set, this can lead to fairly complex answers. It is recommended to switch off complex variables in the settings or by complex_variables:=0; and declare individual variables to be complex by e.g. assume(a,complex).") << '\n';
+    vecteur ass;
+    if (auto_assume(contextptr)){
+      if (args.type==_VECT && args._VECTptr->size()>=2)
+	ass=autoassume(args._VECTptr->front(),(*args._VECTptr)[1],contextptr);
+      else if (args.type==_SYMB || args.type==_IDNT)
+	ass=autoassume(args,vx_var,contextptr);
+    }
+    if (!ass.empty())
+      *logptr(contextptr) << "Run purge(" << ass << "); or purge(unquote(assumptions)) to clear auto-assumptions\n" ;
+    sto(ass,identificateur("assumptions"),contextptr);
+    gen res=_integrate_(args,contextptr);
+    if (0){
+      for (int i=0;i<ass.size();++i){
+	purgenoassume(ass[i],contextptr);
+      }
+    }
+    return res;
   }
   static const char _integrate_s []="integrate";
   static string texprintasintegrate(const gen & g,const char * s_orig,GIAC_CONTEXT){
