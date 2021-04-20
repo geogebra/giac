@@ -10126,6 +10126,13 @@ void sync_screen(){}
   static define_unary_function_eval (__modf,&_modf,_modf_s);
   define_unary_function_ptr5( at_modf ,alias_at_modf,&__modf,0,true);
 
+  gen _leafsize(const gen & g,GIAC_CONTEXT){
+    return int(taille(g,RAND_MAX));
+  }
+  static const char _leafsize_s []="leafsize";
+  static define_unary_function_eval (__leafsize,&_leafsize,_leafsize_s);
+  define_unary_function_ptr5( at_leafsize ,alias_at_leafsize,&__leafsize,0,true);
+  
 #if defined HAVE_UNISTD_H && !defined NUMWORKS
   void locate_files(const char * dirname,const char * ext_,vector<string> & v,bool recurse,GIAC_CONTEXT){
     DIR *dp;

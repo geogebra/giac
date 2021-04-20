@@ -7394,7 +7394,7 @@ namespace giac {
 		polydim=tmp._POLYptr->dim;
 		const int & curdeg=tmp._POLYptr->lexsorted_degree();
 		if (curdeg>maxdegi)
-		  maxdegi=tmp._POLYptr->lexsorted_degree();
+		  maxdegi=tmp._POLYptr->lexsorted_degree();// curdeg
 		if (curdeg>maxdegj[j])
 		  maxdegj[j]=curdeg;
 		tmp=polynome2poly1(tmp,1);
@@ -7466,9 +7466,12 @@ namespace giac {
 	      for (int i=totaldeg-1;i>=0;--i){
 		det = det*(xpoly-untrunc1(X[i]))+untrunc1(L[i]);
 	      }
+	      gen det0=det;
 	      det=det*detnum/detden;
-	      if (convert_internal)
+	      if (convert_internal){
 		det=r2sym(det,lva,contextptr);
+		det0=r2sym(det0,lva,contextptr);
+	      }
 	      if (debug_infolevel)
 		CERR << CLOCK()*1e-6 << " det: end interp" << '\n';
 	      if (fullreduction){
@@ -7490,7 +7493,7 @@ namespace giac {
 		}
 		vecteur R0=midn(lmax);
 		for (int i=0;i<R0.size();++i){
-		  (*R0[i]._VECTptr)[i]=det;
+		  (*R0[i]._VECTptr)[i]=det0;
 		}
 		R=mergevecteur(R0,RR);
 		res=mtran(R);

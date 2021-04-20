@@ -3483,8 +3483,8 @@ namespace giac {
 
   // auto-assumptions assuming g is real-defined
   // if an assumption is already made on a variable, it is ignored
-  vecteur autoassume(const gen & g_,const gen & x,GIAC_CONTEXT){
-    gen g=eval(g_,1,contextptr);
+  vecteur autoassume(const gen & g_,const gen & x_,GIAC_CONTEXT){
+    gen g=eval(g_,1,contextptr),x=eval(x_,1,contextptr);
     vecteur v(rlvar(g,false));
     vecteur ass,res,bases; // list of assumptions and assumed idnt
     for (int i=0;i<v.size();++i){
@@ -3513,7 +3513,7 @@ namespace giac {
 	if (varbase.size()>=1){
 	  vecteur lid=lidnt(base);
 	  if (!lid.empty()){
-	    gen var=lid[0],a,b,hyp,varval;
+	    gen var=lid[0],a,b,c,hyp,varval;
 	    if (equalposcomp(lid,x))
 	      var=x;
 	    bool addi=equalposcomp(res,var); // additional hyp?
@@ -3521,13 +3521,65 @@ namespace giac {
 	      varval=assumeeval(var,contextptr);
 	    if (addi || varval==var){	 
 	      if (var.type==_IDNT && is_linear_wrt(base,var,a,b,contextptr) && !is_zero(a)){
-		gen as=fastsign(a,contextptr);
+		int as=fastsign(a,contextptr);
+		gen avar,aa,ab; vecteur av;
+		if (as==0){
+		  av=lidnt(a);
+		  if (av.size()==1 && !equalposcomp(res,av[0]) && is_linear_wrt(a,av[0],aa,ab,contextptr)){
+		    as=fastsign(aa,contextptr);
+		    if (as==1)
+		      hyp=symb_superieur_strict(av[0],-ab/aa);
+		    else if (as==-1)
+		      hyp=symb_inferieur_strict(av[0],-ab/aa);
+		    if (as){
+		      res.push_back(av[0]);
+		      ass.push_back(hyp);
+		      giac_assume(hyp,contextptr);
+		      as=1;
+		    }
+		  }
+		}
+		if (as){
+		  av=lidnt(b);
+		  if (av.size()==1 && !equalposcomp(res,av[0]) && is_linear_wrt(b,av[0],aa,ab,contextptr)){
+		    as=fastsign(aa,contextptr);
+		    if (as==1)
+		      hyp=symb_superieur_strict(av[0],-ab/aa);
+		    else if (as==-1)
+		      hyp=symb_inferieur_strict(av[0],-ab/aa);
+		    if (as){
+		      res.push_back(av[0]);
+		      ass.push_back(hyp);
+		      giac_assume(hyp,contextptr);
+		      as=1;
+		    }
+		  }
+		}
 		if (as==1)
 		  hyp=symb_superieur_egal(var,-b/a);
 		else if (as==-1)
 		  hyp=symb_inferieur_egal(var,-b/a);
-	      }
+	      } // end linear case
 	      else {
+		if (var.type==_IDNT && is_quadratic_wrt(base,var,a,b,c,contextptr) && !is_zero(a)){
+		  int as=fastsign(a,contextptr);
+		  gen avar,aa,ab; vecteur av;
+		  if (as==0){
+		    av=lidnt(a);
+		    if (av.size()==1 && !equalposcomp(res,av[0]) && is_linear_wrt(a,av[0],aa,ab,contextptr)){
+		      as=fastsign(aa,contextptr);
+		      if (as==1)
+			hyp=symb_superieur_strict(av[0],-ab/aa);
+		      else if (as==-1)
+			hyp=symb_inferieur_strict(av[0],-ab/aa);
+		      if (as){
+			res.push_back(av[0]);
+			ass.push_back(hyp);
+			giac_assume(hyp,contextptr);
+		      }
+		    }
+		  } // end as==0
+		} // end quadratic
 		varbase=lvarx(base,var);
 		if (varbase.size()==1){
 		  gen var0=varbase[0],addhyp;
