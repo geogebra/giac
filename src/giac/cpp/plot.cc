@@ -931,8 +931,13 @@ namespace giac {
 	save.push_back(-1);
       else {
 	if (contextptr && contextptr->quoted_global_vars){
-	  contextptr->quoted_global_vars->push_back(tmp);
-	  save.push_back(0);
+	  gen ckassume=tmp._IDNTptr->eval(1,tmp,contextptr);
+	  if (ckassume.type==_VECT && ckassume.subtype==_ASSUME__VECT)
+	    save.push_back(-1);
+	  else {
+	    contextptr->quoted_global_vars->push_back(tmp);
+	    save.push_back(0);
+	  }
 	}
 	else {
 	  if (tmp._IDNTptr->quoted){

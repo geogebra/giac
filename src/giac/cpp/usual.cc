@@ -4552,6 +4552,9 @@ namespace giac {
   // returns the assumed idnt name
   // used if assumptions are in OR conjonction
   gen assumesymbolic(const gen & a,gen idnt_must_be,GIAC_CONTEXT){
+#ifndef NO_STDEXCEPT
+    try {
+#endif
     if (a.type==_IDNT)
       return a._IDNTptr->eval(eval_level(contextptr),a,contextptr);
     if ( (a.type!=_SYMB) || (a._SYMBptr->feuille.type!=_VECT) )
@@ -4638,6 +4641,12 @@ namespace giac {
       }
     }
     return gensizeerr(contextptr);
+#ifndef NO_STDEXCEPT
+    } catch (std::runtime_error & err){
+      *logptr(contextptr) << err.what() << '\n';
+      return 0;
+    }
+#endif
   }
   static void purge_assume(const gen & a,GIAC_CONTEXT){
     if (a.type==_SYMB && (a._SYMBptr->sommet==at_and || a._SYMBptr->sommet==at_et || a._SYMBptr->sommet==at_ou || a._SYMBptr->sommet==at_oufr || a._SYMBptr->sommet==at_inferieur_strict || a._SYMBptr->sommet==at_inferieur_egal || a._SYMBptr->sommet==at_superieur_egal || a._SYMBptr->sommet==at_superieur_strict || a._SYMBptr->sommet==at_equal) ){

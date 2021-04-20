@@ -214,7 +214,7 @@ namespace giac {
     return pf<gen>(p);
   }
 
-  static gen pf_ilaplace(const gen & e0,const gen & x, gen & remains,GIAC_CONTEXT){
+  static gen pf_ilaplace(const gen & e0,const gen & x, gen & remains,int,GIAC_CONTEXT){
     vecteur vexp;
     gen res;
     lin(e0,vexp,contextptr); // vexp = coeff, arg of exponential
@@ -353,7 +353,7 @@ namespace giac {
       return gensizeerr(contextptr);
     if (has_num_coeff(f))
       return ilaplace(exact(f,contextptr),x,s,contextptr);
-    gen remains,res=linear_apply(f,x,remains,contextptr,pf_ilaplace);
+    gen remains,res=linear_apply(f,x,remains,0,contextptr,pf_ilaplace);
     res=subst(res,laplace_var,s,false,contextptr);
     if (!is_zero(remains))
       res=res+symbolic(at_ilaplace,makevecteur(remains,x,s));

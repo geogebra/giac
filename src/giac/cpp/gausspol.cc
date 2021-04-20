@@ -7269,28 +7269,28 @@ namespace giac {
       swap(a,b); // a=b
       const tensor<gen> temp=Tpow(h,ddeg);
       // now divides r by g*h^(m-n), result is the new b
-      r.TDivRem1(g*temp,b,q); // q is not used anymore
+      r.TDivRem1(g*temp,b,q,true); // q is not used anymore
       swap(ua,ub); // ua=ub
-      ur.TDivRem1(g*temp,ub,q);
+      ur.TDivRem1(g*temp,ub,q,true);
       // COUT << (b-ub*p1) << "/" << p2 << '\n';
       // new g=b0 and new h=b0^(m-n)*h/temp
       if (ddeg==1) // the normal case, remainder deg. decreases by 1 each time
 	h=b0;
       else // not sure if it's better to keep temp or divide by h^(m-n+1)
-	(Tpow(b0,ddeg)*h).TDivRem1(temp,h,q);
+	(Tpow(b0,ddeg)*h).TDivRem1(temp,h,q,true);
       g=b0;
     }
     // ub is valid and b is the gcd, vb=(b-ub*p1)/p2 if not Tswapped
     // vb is stored in ua
     // COUT << ub << '\n';
     if (genswapped){
-      (b-ub*pp2).TDivRem1(pp1,ua,r);
+      (b-ub*pp2).TDivRem1(pp1,ua,r,true); // must allow rational for ext coeffs
       ua *= cp2; // ua=ua*cp2;
       ub *= cp1; // ub=ub*cp1;
       b *= cp1; b *= cp2; // b=b*cp1*cp2;
     }
     else {
-      (b-ub*pp1).TDivRem1(pp2,ua,r);
+      (b-ub*pp1).TDivRem1(pp2,ua,r,true);
       ua *= cp1; // ua=ua*cp1;
       ub *= cp2; // ub=ub*cp2;
       b *= cp1; b *= cp2; // b=b*cp1*cp2;

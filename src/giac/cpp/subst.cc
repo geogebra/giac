@@ -2338,19 +2338,22 @@ namespace giac {
 	gen vbase=vvar0._VECTptr->front(),vexp=vvar0._VECTptr->back();
 	vecteur vbasevar=lvar(vbase);
 	if (!vbasevar.empty() && vexp.type==_FRAC && vexp._FRACptr->num==1 && vexp._FRACptr->den.type==_INT_){
-	  gen var=vbasevar[0],a,b;
-	  if (var.type==_IDNT && is_linear_wrt(vbase,var,a,b,contextptr) && !is_zero(a)){
-	    // vbase=(a*var+b)^1/vexp.den
-	    // replace a*var+b by t^vexp.den, hence var=(t^vexp.den-b)/a
-	    gen e2;
-	    if (0) // vexp._FRACptr->den.val % 2)
-	      e2=subst(e,makevecteur(var,vpow[i]),makevecteur((symb_pow(var,vexp._FRACptr->den)-b)/a,var),false,contextptr);
-	    else
-	      e2=subst(e,var,(symb_pow(var,vexp._FRACptr->den)-b)/a,false,contextptr);
-	    gen e3=simplify(e2,contextptr);
-	    e2=subst(e3,var,vpow[i],false,contextptr);
-	    e2=ratnormal(e2,contextptr);
-	    return e2;
+	  for (int j=0;j<vbasevar.size();++j){
+	    gen var=vbasevar[j],a,b;
+	    if (var.type==_IDNT && is_linear_wrt(vbase,var,a,b,contextptr) && !is_zero(a=ratnormal(a,contextptr))){
+	      // vbase=(a*var+b)^1/vexp.den
+	      // replace a*var+b by t^vexp.den, hence var=(t^vexp.den-b)/a
+	      gen e2;
+	      if (1) 
+		e2=subst(e,makevecteur(var,vbase),makevecteur((symb_pow(var,vexp._FRACptr->den)-b)/a,symb_pow(var,vexp._FRACptr->den)),false,contextptr);
+	      else
+		e2=subst(e,var,(symb_pow(var,vexp._FRACptr->den)-b)/a,false,contextptr);
+	      e2=eval(e2,1,contextptr); // simplifies power if assumptions avail.
+	      gen e3=simplify(e2,contextptr);
+	      e2=subst(e3,var,vpow[i],false,contextptr);
+	      e2=recursive_ratnormal(e2,contextptr);
+	      return e2;
+	    }
 	  }
 	}
       }

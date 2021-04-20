@@ -3577,7 +3577,7 @@ namespace giac {
       if (!is_zero(l))
 	return false;
       gen remains;
-      gen F0=integrate_gen_rem(f0,x,remains,contextptr);
+      gen F0=integrate_gen_rem(f0,x,remains,0,contextptr);
       if (!is_zero(remains) || is_undef(F0))
 	return false;
       res=symbolic(at_euler_mac_laurin,gen(makevecteur(f0,F0,x,f[2],f[3]),_SEQ__VECT));

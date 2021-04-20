@@ -260,15 +260,15 @@ namespace giac {
   // applies linearity of f. + & neg are distributed as well as * with respect
   // to terms that are constant w.r.t. x
   // e is assumed to be a scalar
-  gen linear_apply(const gen & e,const gen & x,gen & remains, GIAC_CONTEXT, gen (* f)(const gen &,const gen &,gen &,const context *)){
+  gen linear_apply(const gen & e,const gen & x,gen & remains, int intmode,GIAC_CONTEXT, gen (* f)(const gen &,const gen &,gen &,int,const context *)){
     if (is_constant_wrt(e,x,contextptr) || (e==x) )
-      return f(e,x,remains,contextptr);
+      return f(e,x,remains,intmode,contextptr);
     // e must be of type _SYMB
     if (e.type==_VECT){
       vecteur v(*e._VECTptr);
       vecteur r(v.size());
       for (unsigned i=0;i<v.size();++i){
-	v[i]=linear_apply(v[i],x,r[i],contextptr,f);
+	v[i]=linear_apply(v[i],x,r[i],intmode,contextptr,f);
       }
       remains=r;
       return gen(v,e.subtype);
@@ -278,36 +278,36 @@ namespace giac {
     gen arg(e._SYMBptr->feuille);
     gen res;
     if (u==at_neg){
-      res=-linear_apply(arg,x,remains,contextptr,f);
+      res=-linear_apply(arg,x,remains,intmode,contextptr,f);
       remains=-remains;
       return res;
     } // end at_neg
     if (u==at_plus){
       if (arg.type!=_VECT)
-	return linear_apply(arg,x,remains,contextptr,f);
+	return linear_apply(arg,x,remains,intmode,contextptr,f);
       const_iterateur it=arg._VECTptr->begin(),itend=arg._VECTptr->end();
       for (gen tmp;it!=itend;++it){
-	res = res + linear_apply(*it,x,tmp,contextptr,f);
+	res = res + linear_apply(*it,x,tmp,intmode,contextptr,f);
 	remains =remains + tmp;
       }
       return res;
     } // end at_plus
     if (u==at_prod){
       if (arg.type!=_VECT)
-	return linear_apply(arg,x,remains,contextptr,f);
+	return linear_apply(arg,x,remains,intmode,contextptr,f);
       // find all constant terms in the product
       vecteur non_constant;
       gen prod_constant;
       decompose_prod(*arg._VECTptr,x,non_constant,prod_constant,false,contextptr);
       if (non_constant.empty()) return gensizeerr(gettext("in linear_apply 2")); // otherwise the product would be constant
       if (non_constant.size()==1)
-	res = linear_apply(non_constant.front(),x,remains,contextptr,f);
+	res = linear_apply(non_constant.front(),x,remains,intmode,contextptr,f);
       else
-	res = f(symbolic(at_prod,gen(non_constant,_SEQ__VECT)),x,remains,contextptr);
+	res = f(symbolic(at_prod,gen(non_constant,_SEQ__VECT)),x,remains,intmode,contextptr);
       remains = prod_constant * remains;
       return prod_constant * res;
     } // end at_prod
-    return f(e,x,remains,contextptr);
+    return f(e,x,remains,intmode,contextptr);
   }
 
   gen lnabs(const gen & x,GIAC_CONTEXT){
@@ -354,6 +354,13 @@ namespace giac {
     }
     gen c=cos(dephasage,contextptr);
     gen s=sin(dephasage,contextptr);
+    if (c.is_symb_of_sommet(at_cos) && c._SYMBptr->feuille==dephasage){
+      gen c2=cos(ratnormal(2*dephasage,contextptr),contextptr);
+      if (!c2.is_symb_of_sommet(at_cos)){
+	c=sign(c,contextptr)*sqrt((1+c2)/2,contextptr);
+	s=sign(s,contextptr)*sqrt((1-c2)/2,contextptr);
+      }
+    }
     gen e=x*(c+cst_i*s);
     gen b=subst(N,X,e,false,contextptr),rb,ib;
     reim(b,rb,ib,contextptr);
@@ -2299,15 +2306,15 @@ namespace giac {
       return symb_inv(g);
   }
 
-  gen integrate_gen_rem(const gen & e_orig,const gen & x_orig,gen & remains_to_integrate,GIAC_CONTEXT){
+  gen integrate_gen_rem(const gen & e_orig,const gen & x_orig,gen & remains_to_integrate,int intmode,GIAC_CONTEXT){
     if (x_orig.type!=_IDNT){
       identificateur x(" x");
       gen e=subst(e_orig,x_orig,x,false,contextptr);
-      e=integrate_id_rem(e,x,remains_to_integrate,contextptr,0);
+      e=integrate_id_rem(e,x,remains_to_integrate,contextptr,intmode);
       remains_to_integrate=quotesubst(remains_to_integrate,x,x_orig,contextptr);
       return quotesubst(e,x,x_orig,contextptr);
     }
-    return integrate_id_rem(e_orig,x_orig,remains_to_integrate,contextptr,0);
+    return integrate_id_rem(e_orig,x_orig,remains_to_integrate,contextptr,intmode);
   }
 
   static bool integrate_step0(gen & e,const gen & gen_x,vecteur & l1,vecteur & m1,gen & res,gen & remains_to_integrate,GIAC_CONTEXT,int intmode){
@@ -2920,7 +2927,7 @@ namespace giac {
       gen tmprem,u=linear_integrate_nostep(*vt,gen_x,tmprem,intmode|2,contextptr);
       if (is_undef(u) || !is_zero(tmprem)){
 	gen tst=*vt;
-	if (tst.is_symb_of_sommet(at_pow)){
+	if ((intmode&8)==0 && tst.is_symb_of_sommet(at_pow)){
 	  gen vtbase=tst._SYMBptr->feuille[0],vtexpo=inv(tst._SYMBptr->feuille[1],contextptr);
 	  if (vtexpo.type==_INT_ && vtexpo.val==4){
 	    if (evenodd==-1)
@@ -2931,7 +2938,7 @@ namespace giac {
 	      gen sroot=simplify(root,contextptr);
 	      if (is_even_odd(sroot,gen_x,contextptr)){
 		tmp=complex_subst(tmp,root,sroot,contextptr);
-		tmp=-linear_integrate_nostep(tmp*pow(gen_x,-2,contextptr),gen_x,tmprem,intmode|2,contextptr);
+		tmp=-linear_integrate_nostep(tmp*pow(gen_x,-2,contextptr),gen_x,tmprem,intmode|2|8,contextptr);
 		if (!is_undef(tmp) && is_zero(tmprem)){
 		  tmp=simplifier(tmp,contextptr);
 		  tmp=complex_subst(tmp,gen_x,inv(gen_x,contextptr),contextptr);
@@ -3242,16 +3249,16 @@ namespace giac {
     if ( (intmode & 2)==0)
       gprintf(step_risch,gettext("Integrate %gen, no heuristic found, running Risch algorithm"),makevecteur(e),contextptr);
     res=risch(e,*gen_x._IDNTptr,remains_to_integrate,contextptr);
-    if (!is_zero(remains_to_integrate) && taille(e,100)>=taille(remains_to_integrate,100)){
+    if (!is_zero(remains_to_integrate) && taille(e,100)>taille(remains_to_integrate,100)){
       e=remains_to_integrate;
-      res += integrate_id_rem(e,*gen_x._IDNTptr,remains_to_integrate,contextptr,4);
+      res += integrate_id_rem(e,*gen_x._IDNTptr,remains_to_integrate,contextptr,0);
     }
     return res;
   }
 
-  gen linear_integrate(const gen & e,const gen & x,gen & remains_to_integrate,GIAC_CONTEXT){
+  gen linear_integrate(const gen & e,const gen & x,gen & remains_to_integrate,int intmode,GIAC_CONTEXT){
     gen ee(normalize_sqrt(e,contextptr));
-    return linear_apply(ee,x,remains_to_integrate,contextptr,integrate_gen_rem);
+    return linear_apply(ee,x,remains_to_integrate,intmode,contextptr,integrate_gen_rem);
   }
 
   gen linear_integrate_nostep(const gen & e,const gen & x,gen & remains_to_integrate,int intmode,GIAC_CONTEXT){
@@ -3263,7 +3270,7 @@ namespace giac {
     gen tt(t);
     gen ee=quotesubst(e,x,tt,contextptr);
     ee=normalize_sqrt(ee,contextptr);
-    gen res=linear_apply(ee,tt,remains_to_integrate,contextptr,integrate_gen_rem);
+    gen res=linear_apply(ee,tt,remains_to_integrate,intmode,contextptr,integrate_gen_rem);
     step_infolevel(contextptr)=step_infolevelsave;
     res=quotesubst(res,tt,x,contextptr);
     remains_to_integrate=quotesubst(remains_to_integrate,tt,x,contextptr);
@@ -3305,7 +3312,7 @@ namespace giac {
     gen remains_to_integrate;
     gen ee=rewrite_hyper(e,contextptr);
     ee=rewrite_minmax(ee,true,contextptr);
-    gen res=_simplifier(linear_integrate(ee,x,remains_to_integrate,contextptr),contextptr);
+    gen res=_simplifier(linear_integrate(ee,x,remains_to_integrate,0,contextptr),contextptr);
     if (is_zero(remains_to_integrate))
       return res;
     else
@@ -3324,12 +3331,12 @@ namespace giac {
     }
     gen ee=rewrite_hyper(e,contextptr),tmprem;
     ee=rewrite_minmax(ee,true,contextptr);
-    gen res=linear_integrate(ee,x,tmprem,contextptr);
+    gen res=linear_integrate(ee,x,tmprem,0,contextptr);
     if (!is_zero(tmprem)){
       ee = tmprem;
       gen k=extract_cst(ee,x,contextptr);
       if (ee.is_symb_of_sommet(at_plus)){
-	res += k*integrate_gen_rem(ee,x,tmprem,contextptr);
+	res += k*integrate_gen_rem(ee,x,tmprem,0,contextptr);
 	tmprem = k*tmprem;
       }
     }
@@ -3552,13 +3559,14 @@ namespace giac {
 		      ass.push_back(hyp);
 		      giac_assume(hyp,contextptr);
 		      as=1;
+		      b=0;
 		    }
 		  }
 		}
 		if (as==1)
-		  hyp=symb_superieur_egal(var,-b/a);
+		  hyp=symb_superieur_strict(var,-b/a);
 		else if (as==-1)
-		  hyp=symb_inferieur_egal(var,-b/a);
+		  hyp=symb_inferieur_strict(var,-b/a);
 	      } // end linear case
 	      else {
 		if (var.type==_IDNT && is_quadratic_wrt(base,var,a,b,c,contextptr) && !is_zero(a)){
@@ -3581,7 +3589,7 @@ namespace giac {
 		  } // end as==0
 		} // end quadratic
 		varbase=lvarx(base,var);
-		if (varbase.size()==1){
+		if (varbase.size()==1 && lidnt(base).size()==1){
 		  gen var0=varbase[0],addhyp;
 		  bool dosolve=false;
 		  if (var0.type==_IDNT)
@@ -3608,7 +3616,8 @@ namespace giac {
 			addi=true;
 		      }
 		    }
-		    hyp=_solve(makesequence(symb_superieur_strict(base,0),var),contextptr);
+		    hyp=symbolic(at_solve,makesequence(symb_superieur_strict(base,0),var));
+		    hyp=protecteval(hyp,1,contextptr);
 		  }
 		}
 	      }
@@ -4505,13 +4514,13 @@ namespace giac {
       vecteur vf(1,x);
       rlvarx(f,x,vf);
       if (0 && vf.size()<=1){ // dangerous
-	gen r,F=linear_integrate(exact(f,contextptr),x,r,contextptr);
+	gen r,F=linear_integrate(exact(f,contextptr),x,r,0,contextptr);
 	value=_limit(makesequence(F,x,exact(b,contextptr),-1),contextptr)-_limit(makesequence(F,x,exact(a,contextptr),1),contextptr);
 	value=evalf(value,1,contextptr);
 	return true;
       }
       if (approxint_exact(f,x,contextptr)){
-	gen r,F=linear_integrate(f,x,r,contextptr);
+	gen r,F=linear_integrate(f,x,r,0,contextptr);
 	if (is_zero(r)){
 	  value=subst(F,x,b,false,contextptr)-subst(F,x,a,false,contextptr);
 	  return true;
@@ -5247,7 +5256,7 @@ namespace giac {
     return true;
   }
 
-  static gen inner_sum(const gen & e,const gen & x,gen & remains_to_sum,GIAC_CONTEXT){
+  static gen inner_sum(const gen & e,const gen & x,gen & remains_to_sum,int intmode,GIAC_CONTEXT){
     gen res;
     if (rational_sum(e,x,res,remains_to_sum,true,contextptr))
       return res;
@@ -5287,10 +5296,10 @@ namespace giac {
     if (!v.empty()){
       gen w=trig2exp(v,contextptr);
       gen e1=_lin(subst(e,v,*w._VECTptr,true,contextptr),contextptr);
-      return _simplify(_evalc(linear_apply(e1,x,remains_to_sum,contextptr,inner_sum),contextptr),contextptr); 
+      return _simplify(_evalc(linear_apply(e1,x,remains_to_sum,0,contextptr,inner_sum),contextptr),contextptr); 
     }
     else
-      return linear_apply(e,x,remains_to_sum,contextptr,inner_sum); 
+      return linear_apply(e,x,remains_to_sum,0,contextptr,inner_sum); 
   }
   
   // discrete antiderivative evaluated
