@@ -2070,6 +2070,7 @@ namespace giac {
     }
   }
 #endif
+  bool is_rewritable_as_f_of0(const gen & fu,const gen & u,gen & fx,const gen & gen_x,GIAC_CONTEXT);
 
   static bool in_is_rewritable_as_f_of(const gen & fu,const gen & u,gen & fx,const gen & gen_x,GIAC_CONTEXT){
     if (fu.type==_VECT){
@@ -2077,7 +2078,7 @@ namespace giac {
       const_iterateur it=fu._VECTptr->begin(),itend=fu._VECTptr->end();
       gen tmp;
       for (;it!=itend;++it){
-	if (!is_rewritable_as_f_of(*it,u,tmp,gen_x,contextptr))
+	if (!is_rewritable_as_f_of0(*it,u,tmp,gen_x,contextptr))
 	  return false;
 	res.push_back(tmp);
       }
@@ -2185,7 +2186,7 @@ namespace giac {
   // try to rewrite fu(x), function of x as a fonction of u(x), if possible 
   // return fx(x) such that fu(x)=fx(u(x))
   // FIXME: should detect u=pow(.,inv(n)) with n integer
-  bool is_rewritable_as_f_of(const gen & fu,const gen & u,gen & fx,const gen & gen_x,GIAC_CONTEXT){
+  bool is_rewritable_as_f_of0(const gen & fu,const gen & u,gen & fx,const gen & gen_x,GIAC_CONTEXT){
     gen a,b;
     if (is_linear_wrt(u,gen_x,a,b,contextptr)){
       fx=complex_subst(fu,gen_x,rdiv(gen_x-b,a,contextptr),contextptr);
@@ -2195,7 +2196,7 @@ namespace giac {
     if (u.type==_SYMB){
       if (u._SYMBptr->sommet==at_neg){
 	gen tmpu=u._SYMBptr->feuille,tmpfx;
-	if (!is_rewritable_as_f_of(fu,tmpu,tmpfx,gen_x,contextptr))
+	if (!is_rewritable_as_f_of0(fu,tmpu,tmpfx,gen_x,contextptr))
 	  return false;
 	fx=complex_subst(tmpfx,gen_x,-gen_x,contextptr);
 	return true;
@@ -2210,7 +2211,7 @@ namespace giac {
 	      fx=complex_subst(fu,makevecteur(u,gen_x),makevecteur(gen_x,rdiv(pow(gen_x,expo,contextptr)-b,a,contextptr)),contextptr);
 	      return true;
 	    }
-	    if (is_rewritable_as_f_of(fu,tmpu,fx,gen_x,contextptr)){
+	    if (is_rewritable_as_f_of0(fu,tmpu,fx,gen_x,contextptr)){
 	      fx=complex_subst(fx,gen_x,pow(gen_x,expo,contextptr),contextptr);
 	      return true;
 	    }
@@ -2221,13 +2222,13 @@ namespace giac {
       vecteur non_constant;
       if (u._SYMBptr->sommet==at_prod ){
 	if (u._SYMBptr->feuille.type!=_VECT)
-	  return is_rewritable_as_f_of(fu,u._SYMBptr->feuille,fx,gen_x,contextptr);
+	  return is_rewritable_as_f_of0(fu,u._SYMBptr->feuille,fx,gen_x,contextptr);
 	decompose_prod(*u._SYMBptr->feuille._VECTptr,gen_x,non_constant,alpha,true,contextptr);
 	if (non_constant.empty()) return false; // setsizeerr(gettext("in is_rewritable_as_f_of_f"));
 	if (!is_one(alpha)){
 	  gen tmpu,tmpfx;
 	  tmpu=_prod(non_constant,contextptr);
-	  if (!is_rewritable_as_f_of(fu,tmpu,tmpfx,gen_x,contextptr))
+	  if (!is_rewritable_as_f_of0(fu,tmpu,tmpfx,gen_x,contextptr))
 	    return false;
 	  fx=complex_subst(tmpfx,gen_x,rdiv(gen_x,alpha,contextptr),contextptr);
 	  return true;
@@ -2235,7 +2236,7 @@ namespace giac {
       }
       if (u._SYMBptr->sommet==at_plus){
 	if (u._SYMBptr->feuille.type!=_VECT)
-	  return is_rewritable_as_f_of(fu,u._SYMBptr->feuille,fx,gen_x,contextptr);
+	  return is_rewritable_as_f_of0(fu,u._SYMBptr->feuille,fx,gen_x,contextptr);
 	if (_is_polynomial(makesequence(fu,gen_x),contextptr)==1 && _is_polynomial(makesequence(u,gen_x),contextptr)==1){
 	  gen FU=_symb2poly(makesequence(fu,gen_x),contextptr);
 	  gen U=_symb2poly(makesequence(u,gen_x),contextptr);
@@ -2267,7 +2268,7 @@ namespace giac {
 	if (!is_zero(alpha)){
 	  gen tmpu,tmpfx;
 	  tmpu=_plus(non_constant,contextptr);
-	  if (!is_rewritable_as_f_of(fu,tmpu,tmpfx,gen_x,contextptr))
+	  if (!is_rewritable_as_f_of0(fu,tmpu,tmpfx,gen_x,contextptr))
 	    return in_is_rewritable_as_f_of(fu,u,fx,gen_x,contextptr);;
 	  fx=complex_subst(tmpfx,gen_x,gen_x-alpha,contextptr);
 	  if (!has_i(fx)) // FIX for int(x^3/sqrt(1-x^2),x,-1,0);
@@ -2277,6 +2278,15 @@ namespace giac {
     }
     return in_is_rewritable_as_f_of(fu,u,fx,gen_x,contextptr);
   }
+
+  bool is_rewritable_as_f_of(const gen & fu_,const gen & u,gen & fx,const gen & gen_x,GIAC_CONTEXT){
+    gen tempu=identificateur(" u");
+    gen fu=complex_subst(fu_,u,tempu,contextptr);
+    if (!is_rewritable_as_f_of0(fu,u,fx,gen_x,contextptr))
+      return false;
+    fx=complex_subst(fx,tempu,gen_x,contextptr);
+    return true;
+  }    
 
   gen firstcoefftrunc(const gen & e){
     if (e.type==_FRAC)
@@ -2687,6 +2697,7 @@ namespace giac {
 	}
       }
     }
+    // gen_sort_f(v.begin(),v.end(),islesscomplexthanf);      
     vecteur rvar=v;
     gen fu,fx;
     bool chkevenodd=true; int evenodd=-1;
@@ -2709,6 +2720,7 @@ namespace giac {
 	  continue;
 	if (!u.is_symb_of_sommet(at_pow))
 	  chkevenodd=false;
+	u=lvar_ratnormal(u,contextptr);
 	gen df=derive(u,gen_x,contextptr);
 	gen tmprem;
 	fu=rdiv(e,df,contextptr);
@@ -2720,7 +2732,7 @@ namespace giac {
 	      fu=e2;
 	  }
 	}
-	fu=recursive_ratnormal(fu,contextptr);
+	fu=ratnormal(recursive_ratnormal(fu,contextptr),contextptr);
 	fu=eval(fu,1,contextptr);
 	if ((is_undef(fu) || is_inf(fu)) && is_zero(ratnormal(df,contextptr))){
 	  // u is constant -> find the value
@@ -2839,7 +2851,8 @@ namespace giac {
 	}
 	if (pos<v.size() && u.is_symb_of_sommet(at_pow)){ // no check with u=gen_x^2
 	  v[it-v.begin()]=powexpand(*it,contextptr);
-	  bool tst=is_rewritable_as_f_of(powexpand(fu,contextptr),*it,fx,gen_x,contextptr);
+	  gen uit=lvar_ratnormal(*it,contextptr);
+	  bool tst=is_rewritable_as_f_of(powexpand(fu,contextptr),uit,fx,gen_x,contextptr);
 	  if (tst){
 	    if (taille(fx,256)>taille(e,255)){
 	      vecteur fxv=lvarx(fx,gen_x);
@@ -2849,10 +2862,10 @@ namespace giac {
 	  }
 	  if (tst){
 	    if ( (intmode & 2)==0)
-	      gprintf(step_fuuprime,gettext("Integration of %gen: f(u)*u' where f=%gen->%gen and u=%gen"),makevecteur(e,gen_x,fx,*it),contextptr);
+	      gprintf(step_fuuprime,gettext("Integration of %gen: f(u)*u' where f=%gen->%gen and u=%gen"),makevecteur(e,gen_x,fx,uit),contextptr);
 	    e=linear_integrate_nostep(fx,gen_x,tmprem,intmode,contextptr);
 	    remains_to_integrate=remains_to_integrate+complex_subst(tmprem,gen_x,*it,contextptr)*df;
-	    return complex_subst(e,gen_x,*it,contextptr);
+	    return complex_subst(e,gen_x,uit,contextptr);
 	  }
 	}
 	if (u.type!=_SYMB)
@@ -3598,11 +3611,22 @@ namespace giac {
 		    const unary_function_ptr & u=var0._SYMBptr->sommet;
 		    gen varf=var0._SYMBptr->feuille;
 		    if (varf.type!=_VECT && is_linear_wrt(varf,var,a,b,contextptr)){ // f(a*x+b), if f is trig assume in a*x+b in a period
-		      if (u==at_sin || u==at_cos)
-			addhyp=symb_and(symb_superieur_strict(a*var+b,-cst_pi),symb_inferieur_strict(a*var+b,cst_pi));
-		      if (u==at_tan)
-			addhyp=symb_and(symb_superieur_strict(a*var+b,-cst_pi/2),symb_inferieur_strict(a*var+b,cst_pi/2));
-		      dosolve=true;
+		      int as=fastsign(a,contextptr);
+		      if (as){
+			if (u==at_sin || u==at_cos)
+			  addhyp=cst_pi;
+			else if (u==at_tan)
+			  addhyp=cst_pi/2;
+			else
+			  addhyp=0;
+			if (addhyp!=0){
+			  if (as==1)
+			    addhyp=symb_and(symb_superieur_strict(var,(-addhyp-b)/a),symb_inferieur_strict(var,(addhyp-b)/a));
+			  else if (as==-1)
+			    addhyp=symb_and(symb_inferieur_strict(var,(-addhyp-b)/a),symb_superieur_strict(var,(addhyp-b)/a));
+			}
+			dosolve=true;
+		      }
 		    }
 		  }
 		  if (dosolve){

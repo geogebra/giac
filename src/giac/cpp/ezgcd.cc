@@ -480,7 +480,7 @@ namespace giac {
       dbg=_factors(dbg,context0) ;
       if (dbg.type!=_VECT) return false;
       vecteur v=*dbg._VECTptr;
-      if (v.size()==2){
+      if (v.size()==2 && v.back()==1){
 	f.push_back(facteur<polynome>(pcur,mult));
 	return true;
       }

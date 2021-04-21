@@ -129,6 +129,7 @@ namespace giac {
   bool is_unit(const gen & g);
   bool is_algebraic_extension(const gen & g);
   vecteur rlvar(const gen &e,bool alg);
+  gen lvar_ratnormal(const gen & e,GIAC_CONTEXT);
 
   // rewrite vars of e in terms of exp/ln if s1 resp. s2 is > 1
   // and simplify

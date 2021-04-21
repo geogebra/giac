@@ -3557,7 +3557,7 @@ if (xcas_mode(yyextra)==1 || xcas_mode(yyextra)==2) { (*yylval) = gen(at_functio
 case 307:
 YY_RULE_SETUP
 #line 632 "input_lexer.ll"
-if (xcas_mode(yyextra)==1 || xcas_mode(yyextra)==2) { (*yylval)=e__IDNT_e; }else (*yylval)=symbolic(at_exp,1); index_status(yyextra)=1; return T_NUMBER;
+if (xcas_mode(yyextra)==1 || xcas_mode(yyextra)==2 || parse_e(yyextra)) { (*yylval)=e__IDNT_e; }else (*yylval)=symbolic(at_exp,1); index_status(yyextra)=1; return T_NUMBER;
 	YY_BREAK
 case 308:
 YY_RULE_SETUP

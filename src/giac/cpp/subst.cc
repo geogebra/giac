@@ -2344,6 +2344,10 @@ namespace giac {
 	      // vbase=(a*var+b)^1/vexp.den
 	      // replace a*var+b by t^vexp.den, hence var=(t^vexp.den-b)/a
 	      gen e2;
+	      // FIXME modify assumptions on var 
+	      gen varval=var._IDNTptr->eval(1,var,contextptr);
+	      bool has_ass=varval!=var && (varval.type==_VECT &&varval.subtype==_ASSUME__VECT);
+	      giac_assume(symb_superieur_strict(var,0),contextptr);
 	      if (1) 
 		e2=subst(e,makevecteur(var,vbase),makevecteur((symb_pow(var,vexp._FRACptr->den)-b)/a,symb_pow(var,vexp._FRACptr->den)),false,contextptr);
 	      else
@@ -2351,6 +2355,10 @@ namespace giac {
 	      e2=eval(e2,1,contextptr); // simplifies power if assumptions avail.
 	      gen e3=simplify(e2,contextptr);
 	      e2=subst(e3,var,vpow[i],false,contextptr);
+	      if (varval!=var)
+		sto(varval,var,contextptr);
+	      else
+		purgenoassume(var,contextptr);
 	      e2=recursive_ratnormal(e2,contextptr);
 	      return e2;
 	    }

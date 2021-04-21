@@ -6719,6 +6719,21 @@ namespace giac {
   static define_unary_function_eval (__auto_assume,&_auto_assume,_auto_assume_s);
   define_unary_function_ptr5( at_auto_assume ,alias_at_auto_assume ,&__auto_assume,0,true);
 
+  gen _parse_e(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG &&  g.subtype==-1) return  g;
+    gen args(g);
+    if (g.type==_DOUBLE_)
+      args=int(g._DOUBLE_val);
+    if (args.type!=_INT_)
+      return parse_e(contextptr);
+    parse_e((args.val)!=0,contextptr);
+    parent_cas_setup(contextptr);
+    return args;
+  }
+  static const char _parse_e_s []="parse_e";
+  static define_unary_function_eval (__parse_e,&_parse_e,_parse_e_s);
+  define_unary_function_ptr5( at_parse_e ,alias_at_parse_e ,&__parse_e,0,true);
+
   gen _angle_radian(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
     gen args(g);

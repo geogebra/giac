@@ -629,7 +629,7 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 "DEBUG"		        (*yylval) = gen(at_debug,1); index_status(yyextra)=0; return T_UNARY_OP;
 "derive"		(*yylval) = gen(at_derive,2); index_status(yyextra)=0; return T_UNARY_OP;
 "D"  		if (xcas_mode(yyextra)==1 || xcas_mode(yyextra)==2) { (*yylval) = gen(at_function_diff,1); index_status(yyextra)=1; return T_UNARY_OP;} else { index_status(yyextra)=1; return find_or_make_symbol(yytext,(*yylval),yyscanner,true,yyextra); }
-"e"                     if (xcas_mode(yyextra)==1 || xcas_mode(yyextra)==2) { (*yylval)=e__IDNT_e; }else (*yylval)=symbolic(at_exp,1); index_status(yyextra)=1; return T_NUMBER;
+"e"                     if (xcas_mode(yyextra)==1 || xcas_mode(yyextra)==2 || parse_e(yyextra)) { (*yylval)=e__IDNT_e; }else (*yylval)=symbolic(at_exp,1); index_status(yyextra)=1; return T_NUMBER;
 "ℯ"                     (*yylval)=symbolic(at_exp,1); index_status(yyextra)=1; return T_NUMBER;
 ""                     (*yylval)=symbolic(at_exp,1); index_status(yyextra)=1; return T_NUMBER;
 "equal"			(*yylval) = gen(at_equal,2); index_status(yyextra)=0; return T_UNARY_OP;
