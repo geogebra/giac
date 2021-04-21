@@ -836,8 +836,25 @@ namespace giac {
   }
 
   static gen risch_lin(const gen & e_orig,const identificateur & x,gen & remains_to_integrate,GIAC_CONTEXT){
-    vecteur v;
+    // check for fractional powers 
+    vecteur chk(rlvarx(e_orig,x)),chk1,chk2;
+    for (int i=0;i<chk.size();++i){
+      gen base,expo;
+      if (chk[i].is_symb_of_sommet(at_pow) && (expo=chk[i]._SYMBptr->feuille[1]).type==_FRAC){
+	if ((base=chk[i]._SYMBptr->feuille[0]).is_symb_of_sommet(at_pow)){
+	  chk1.push_back(chk[i]);
+	  chk2.push_back(symb_pow(base._SYMBptr->feuille[0],expo*base._SYMBptr->feuille[1]));
+	}
+	else {
+	  remains_to_integrate=e_orig;
+	  return 0;
+	}
+      }
+    }
     gen e=e_orig;
+    if (!chk1.empty())
+      e=complex_subst(e,chk1,chk2,contextptr);
+    vecteur v;
     vecteur vatan=lop(e,at_atan);
     vecteur vln;
     for (int i=0;i<int(vatan.size());++i){

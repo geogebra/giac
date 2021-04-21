@@ -7761,6 +7761,25 @@ namespace giac {
     return normal(fraction(a,b),context0); // ok
   }
 
+  bool is_exactly_zero_normal(const gen &b,GIAC_CONTEXT){
+    if (b.type!=_SYMB)
+      return is_exactly_zero(b);
+    const unary_function_ptr & u=b._SYMBptr->sommet;
+    if (u==at_neg) return is_exactly_zero_normal(b._SYMBptr->feuille,contextptr);
+    if (u==at_prod){
+      gen f=b._SYMBptr->feuille;
+      if (f.type==_VECT){
+	vecteur &v=*f._VECTptr;
+	for (int i=0;i<v.size();++i){
+	  if (is_exactly_zero_normal(v[i],contextptr))
+	    return true;
+	}
+	return false;
+      }
+    }
+    return is_exactly_zero(normal(b,contextptr));
+  }
+
   gen rdiv(const gen &a,const gen &b,GIAC_CONTEXT){
     // if (!( (++control_c_counter) & control_c_counter_mask))
 #ifdef TIMEOUT
@@ -7955,7 +7974,7 @@ namespace giac {
       if (is_minus_one(b))
 	return chkmod(-a,b);
       if (is_exactly_zero(a)){
-	if (!is_exactly_zero(normal(b,contextptr)))
+	if (!is_exactly_zero_normal(b,contextptr))
 	  return a;
 	else
 	  return undef;

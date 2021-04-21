@@ -828,7 +828,7 @@ namespace giac {
     // should simplify R with Pden
   }
 
-  static gen integrate_linearizable(const gen & e,const gen & gen_x,gen & remains_to_integrate,int intmode,GIAC_CONTEXT){
+  static gen integrate_linearizable(const gen & e,const gen & gen_x,gen & remains_to_integrate,int intmode,bool do_risch,GIAC_CONTEXT){
     // exp linearization
     vecteur vexp;
     gen res;
@@ -978,7 +978,7 @@ namespace giac {
 	bool quad=imaxb.type==_SYMB && is_quadratic_wrt(imaxb._SYMBptr->feuille,gen_x,ima,imb,imc,contextptr);
 	if (!coeffnotpoly && quad && !is_zero(ima) && angle_radian(contextptr)){
 	  imc=_trig2exp(coeff*exp(reaxb,contextptr)*imaxb,contextptr);
-	  res += integrate_linearizable(imc,gen_x,remains_to_integrate,intmode,contextptr);
+	  res += integrate_linearizable(imc,gen_x,remains_to_integrate,intmode,true,contextptr);
 	  continue;
 	}
 	if ( coeffnotpoly || ( imaxb.type==_SYMB && !is_linear_wrt(imaxb._SYMBptr->feuille,gen_x,ima,imb,contextptr)) ) {
@@ -1056,9 +1056,11 @@ namespace giac {
 	  res = res +  exp(reaxb,contextptr)*rdiv(resplus*exp(cst_i*imaxb,contextptr)+resmoins*exp(-cst_i*imaxb,contextptr),plus_two,contextptr);
       } // end for (jt)
     } // end for (it)
-    gen tmp=remains_to_integrate;
-    remains_to_integrate=0;
-    res=res+risch(tmp,id_x,remains_to_integrate,contextptr);
+    if (do_risch){
+      gen tmp=remains_to_integrate;
+      remains_to_integrate=0;
+      res=res+risch(tmp,id_x,remains_to_integrate,contextptr);
+    }
     if (is_undef(res)){
       remains_to_integrate=e;
       return 0;
@@ -2825,7 +2827,8 @@ namespace giac {
 	    if (is_linear_wrt(powarg,gen_x,powa,powb,contextptr) && !is_zero(powa)){
 	      gen powx=-powb/powa;
 	      // check derivative at powx+-1
-	      gen check=ratnormal(derive(e,gen_x,contextptr)/e_orig,contextptr);
+	      gen check=derive(e,gen_x,contextptr)/e_orig;
+	      check=ratnormal(check,contextptr);
 	      gen chkplus=subst(check,gen_x,powx+1.0,false,contextptr);
 	      gen chkminus=subst(check,gen_x,powx-1.0,false,contextptr);
 	      bool tstplus=is_zero(chkplus+1,contextptr);		
@@ -3160,7 +3163,7 @@ namespace giac {
       v=lop(lvar(e),at_pow);
       vecteur vx=lvarx(v,gen_x);
       if (vx.empty() || vx==vecteur(1,gen_x))
-	return integrate_linearizable(e,gen_x,remains_to_integrate,intmode,contextptr);
+	return integrate_linearizable(e,gen_x,remains_to_integrate,intmode,true,contextptr);
       // second try with ^ rewritten as exp(ln)
       gen etmp=pow2expln(e,contextptr);
       v=lvarxwithinv(etmp,gen_x,contextptr);
@@ -3170,7 +3173,7 @@ namespace giac {
 	v=lop(lvar(etmp),at_pow);
 	vecteur vx=lvarx(v,gen_x);
 	if (vx.empty() || vx==vecteur(1,gen_x))
-	  return integrate_linearizable(etmp,gen_x,remains_to_integrate,intmode,contextptr);
+	  return integrate_linearizable(etmp,gen_x,remains_to_integrate,intmode,true,contextptr);
       }
     }
     // trigonometric fraction (or exp _FRAC), rewrite all elemnts of rvar as
