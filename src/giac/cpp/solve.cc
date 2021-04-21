@@ -2166,7 +2166,7 @@ namespace giac {
       if (othervar.size()<=listvars.size()){
 	const_iterateur it=fullres.begin(),itend=fullres.end();
 	for (;it!=itend;++it){
-	  vecteur algv=alg_lvar(*it);
+	  vecteur algv=alg_lvar(evalf(*it,1,contextptr));
 	  if (!algv.empty() && algv.front().type==_VECT && !algv.front()._VECTptr->empty()){
 	    *logptr(contextptr) << "Warning, " << *it << " not checked" << '\n';
 	    res.push_back(*it);
