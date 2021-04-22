@@ -2718,7 +2718,7 @@ namespace giac {
 	}
 	else
 	  u=*it;
-	if (u.is_symb_of_sommet(at_fsolve) || u.is_symb_of_sommet(at_equal))
+	if (u.is_symb_of_sommet(at_fsolve) || u.is_symb_of_sommet(at_equal) || u.is_symb_of_sommet(at_of))
 	  continue;
 	if (!u.is_symb_of_sommet(at_pow))
 	  chkevenodd=false;
