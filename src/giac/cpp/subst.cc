@@ -2374,7 +2374,7 @@ namespace giac {
       vecteur v(lvar(f));
       if (v.size()==1){
 	gen var(v[0]),a,b;
-	if (is_linear_wrt(f,var,a,b,contextptr) && a.type==_FRAC){
+	if (var.type==_IDNT && is_linear_wrt(f,var,a,b,contextptr) && a.type==_FRAC){
 	  // var -> var*a.den
 	  e=subst(e,var,var*a._FRACptr->den,false,contextptr);
 	  e=lvar_ratnormal(e,contextptr);
