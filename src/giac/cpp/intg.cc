@@ -521,14 +521,38 @@ namespace giac {
     // t*ln()+conjugate=re(t)*ln(|gcd|^2)-im(t)*atan(im(gcd)/re(gcd))
     gen N=r2e(num,l,contextptr);
     vecteur Nv(lvar(N));
-    if (1 || Nv==vecteur(1,X)){ // do it for univariate only
-      gen D=r2e(poly12polynome(v,1),l,contextptr);
+    if (1 || Nv==vecteur(1,X)){ // [commented: do it for univariate only]
+      gen D=r2e(poly12polynome(v,1),l,contextptr),resadd;
+#if 0
       gen Dprime=r2e(poly12polynome(derivative(v),1),l,contextptr);
+      gen Dc=1;
+#else
+      gen Dc=_content(makesequence(D,X),contextptr);
+      D=_quo(makesequence(D,Dc,X),contextptr);
+      gen Dprime=derive(D,X,contextptr);
+#endif
+      int Ddeg=v.size()-1;
       gen tres(identificateur("tresultant"));
       gen R=_resultant(makesequence(N-tres*Dprime,D,X),contextptr);
       gen Rprime=derive(R,tres,contextptr);
       R=_quo(makesequence(R,gcd(R,Rprime,contextptr),tres),contextptr);
       gen Rdeg=_degree(makesequence(R,tres),contextptr);
+      if (Rdeg.type==_INT_ && Rdeg.val==Ddeg){
+	// it's easier to extract the roots of D
+	gen racines=solve(D,X,1,contextptr);
+	if (!has_i(racines) && racines.type==_VECT && racines._VECTptr->size()==Ddeg){
+	  // apply sum_racines N/D'(racine)*log(x-racine)
+	  gen ND=N/Dprime;
+	  for (int i=0;i<Ddeg;++i){
+	    gen racine=racines[i];
+	    //if (has_op(normal(racine,contextptr),*at_rootof)) return false;
+	    gen coeff=subst(ND,X,racine,false,contextptr);
+	    resadd += coeff*symb_ln(X-racine);
+	  }
+	  res += resadd/Dc;
+	  return true;
+	}
+      }
       gen Rt=solve(R,tres,1,contextptr); // _cSolve(makesequence(R,tres),contextptr);
       if (Rdeg.type==_INT_ && Rt.type==_VECT && Rt._VECTptr->size()==Rdeg.val){
 	vecteur w=*Rt._VECTptr;
@@ -543,7 +567,7 @@ namespace giac {
 	      gen racr,raci;
 	      reim(racine,racr,raci,contextptr);
 	      if (is_zero(raci,contextptr))
-		res += racine*symb_ln(symb_abs(G));
+		resadd += racine*symb_ln(symb_abs(G));
 	      else {
 		// search conjugate
 		size_t wj=wi+1; gen cwi=conj(w[wi],contextptr);
@@ -554,17 +578,18 @@ namespace giac {
 		if (wj<w.size()){
 		  gen gcdr,gcdi;
 		  reim(G,gcdr,gcdi,contextptr);
-		  res += racr*symb_ln(gcdr*gcdr+gcdi*gcdi)-2*raci*ln2sumatan(gcdr,gcdi,l,contextptr);
+		  resadd += racr*symb_ln(gcdr*gcdr+gcdi*gcdi)-2*raci*ln2sumatan(gcdr,gcdi,l,contextptr);
 		  w.erase(w.begin()+wj);
 		}
 		else
-		  res += racine*symb_ln(G);
+		  resadd += racine*symb_ln(G);
 	      }
 	    }
 	    else {
-	      res += racine*symb_ln(G);
+	      resadd += racine*symb_ln(G);
 	    }
 	  }
+	  res += resadd/Dc;
 	  return true;
 	}
       }
