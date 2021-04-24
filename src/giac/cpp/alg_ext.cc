@@ -1301,6 +1301,39 @@ namespace giac {
   static define_unary_function_eval (__max_algext,&max_algext,_max_algext_s);
   define_unary_function_ptr5( at_max_algext ,alias_at_max_algext,&__max_algext,0,true);
 
+  // set_timeout(), set_timeout(15), set_timeout(20,30)
+  gen set_timeout(const gen & args,GIAC_CONTEXT){
+    gen g=args;
+    if (g.type==_VECT && g._VECTptr->empty()){
+#ifdef TIMEOUT
+      return caseval_mod?makevecteur(caseval_maxtime,caseval_mod):0;
+#else
+      return -1;
+#endif
+    }
+    if (g.type==_VECT && g._VECTptr->size()==2 && g._VECTptr->front().type==_INT_ && g._VECTptr->back().type==_INT_){
+      caseval_maxtime=giacmax(2,g._VECTptr->front().val);
+      caseval_n=0;
+      caseval_mod=giacmax(2,g._VECTptr->back().val);
+      string S="Max eval time set to "+print_INT_(caseval_maxtime)+", check frequency 1/"+print_INT_(caseval_mod);
+      return string2gen(S,false);
+    }
+    if (!is_integral(g) || g.type!=_INT_ || g.val<3 || g.val>24*60)
+      return gensizeerr(contextptr);
+#ifdef TIMEOUT
+    caseval_maxtime=g.val;
+    caseval_n=0;
+    caseval_mod=10;
+    string S="Max eval time set to "+g.print()+" , check frequency 1/10";
+#else
+    string S="Recompile with -DTIMEOUT to have timeout support.";
+#endif
+    return string2gen(S,false);
+   }
+  static const char _set_timeout_s []="set_timeout";
+  static define_unary_function_eval (__set_timeout,&set_timeout,_set_timeout_s);
+  define_unary_function_ptr5( at_set_timeout ,alias_at_set_timeout,&__set_timeout,0,true);
+
   static vecteur sturm(const gen & g){
     if (g.type!=_POLY)
       return vecteur(1,g);

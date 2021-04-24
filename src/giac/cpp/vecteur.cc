@@ -7403,8 +7403,9 @@ namespace giac {
 	    totaldeg+=maxdegi;
 	  }
 	  if (polydim){
-	    if (debug_infolevel)
-	      CERR << CLOCK()*1e-6 << " det: begin interp" << '\n';
+	    bool dbg=debug_infolevel && (polydim>1 || debug_infolevel>1);
+	    if (dbg)
+	      CERR << CLOCK()*1e-6 << " det: begin interp dim " << polydim << '\n';
 	    totaldeg=std::min(totaldeg,total_degree(maxdegj));
 	    if (!interpolable(totaldeg+1,coeffp,true,contextptr))
 	      return 0;
@@ -7417,8 +7418,8 @@ namespace giac {
 	      X[x]=realx;
 	      vecteur resx;
 	      resx.reserve(totaldeg+1);
-	      if (debug_infolevel)
-		CERR << CLOCK()*1e-6 << " det: begin horner" << '\n';
+	      if (dbg)
+		CERR << CLOCK()*1e-6 << " det: begin horner dim " << polydim << " pos " << x << " from" << totaldeg << '\n';
 	      for (unsigned int i=0;i<as;++i){
 		vecteur resxi;
 		resxi.reserve(a0s); // was (totaldeg+1);
@@ -7428,8 +7429,8 @@ namespace giac {
 		}
 		resx.push_back(resxi);
 	      }
-	      if (debug_infolevel)
-		CERR << CLOCK()*1e-6 << " det: end horner" << '\n';
+	      if (dbg)
+		CERR << CLOCK()*1e-6 << " det: end horner dim " << polydim << " pos " << x << " from" << totaldeg << '\n';
 	      matrice res1;
 	      if (!mrref(resx,res1,pivots,det,l,lmax,c,cmax,-fullreduction,dont_swap_below,false,algorithm_,rref_or_det_or_lu,contextptr))
 		return 0;
@@ -7454,12 +7455,12 @@ namespace giac {
 	    } // end for x
 	    if (x==totaldeg+1){
 	      proba_epsilon(contextptr) *= totaldeg;
-	      if (debug_infolevel)
-		CERR << CLOCK()*1e-6 << " det: divided diff" << '\n';
+	      if (dbg)
+		CERR << CLOCK()*1e-6 << " det: divided diff dim " << polydim << '\n';
 	      // Lagrange interpolation
 	      vecteur L=divided_differences(X,Y);
-	      if (debug_infolevel)
-		CERR << CLOCK()*1e-6 << " det: end divided diff" << '\n';
+	      if (dbg)
+		CERR << CLOCK()*1e-6 << " det: end divided diff dim " << polydim << '\n';
 	      det=untrunc1(L[totaldeg]);
 	      monomial<gen> mtmp(1,1,polydim);
 	      gen xpoly=polynome(mtmp);
@@ -7472,8 +7473,8 @@ namespace giac {
 		det=r2sym(det,lva,contextptr);
 		det0=r2sym(det0,lva,contextptr);
 	      }
-	      if (debug_infolevel)
-		CERR << CLOCK()*1e-6 << " det: end interp" << '\n';
+	      if (dbg)
+		CERR << CLOCK()*1e-6 << " det: end interp dim " << polydim << '\n';
 	      if (fullreduction){
 		vecteur R,RR;
 		interpolate(X,Z,R,0);

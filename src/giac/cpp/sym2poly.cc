@@ -1935,8 +1935,9 @@ namespace giac {
   }
 
   gen e2r(const gen & e,const vecteur & l,GIAC_CONTEXT){
-    if (e.type!=_VECT)
+    if (e.type!=_VECT){
       return sym2r(e,l,contextptr);
+    }
     bool totally_converted=true;
     int l_size;
     if (!l.empty() && l.front().type==_VECT)
@@ -2967,6 +2968,7 @@ namespace giac {
       if (lvar(EE).size()<lvar(ee).size()){
 	ee=EE; L=LL;
       }
+      ee=invfracpow(ee,contextptr);
       l=alg_lvar(ee);
       sort0(l);
       if (!L.empty() && debug_infolevel)

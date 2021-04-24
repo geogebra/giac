@@ -3159,6 +3159,69 @@ namespace giac {
   static define_unary_function_eval (__limite,&_limit,_limite_s);
   define_unary_function_ptr5( at_limite ,alias_at_limite,&__limite,0,true);
 
+  static gen do_invfracpow(const gen & e,GIAC_CONTEXT){
+    if (e.type!=_SYMB)
+      return symb_inv(e);
+    const unary_function_ptr & u=e._SYMBptr->sommet;
+    if (u==at_prod){
+      // distribute inv on arguments
+      gen f=e._SYMBptr->feuille;
+      if (f.type==_VECT){
+	vecteur v(*f._VECTptr),v1,v2;
+	for (int i=0;i<v.size();++i){
+	  gen g=do_invfracpow(v[i],contextptr);
+	  if (g.is_symb_of_sommet(at_inv))
+	    v2.push_back(g._SYMBptr->feuille);
+	  else
+	    v1.push_back(g);
+	}
+	if (v1.empty())
+	  return symb_inv(e);
+	gen g1(symbolic(at_prod,gen(v1,_SEQ__VECT)));
+	if (v1.size()==1)
+	  g1=v1.front();
+	if (v2.empty())
+	  return g1;
+	gen g2(symbolic(at_prod,gen(v2,_SEQ__VECT)));
+	if (v2.size()==1)
+	  g2=v2.front();
+	return g1*symb_inv(g2);
+      }
+    }
+    if (u==at_neg){
+      gen f=do_invfracpow(e._SYMBptr->feuille,contextptr);
+      if (f.is_symb_of_sommet(at_inv))
+	return symb_inv(-f._SYMBptr->feuille);
+      return -f;
+    }
+    if (u!=at_pow)
+      return symb_inv(e);
+    gen f=e._SYMBptr->feuille;
+    if (f.type!=_VECT || f._VECTptr->size()!=2)
+      return symb_inv(e);
+    gen base=f._VECTptr->front(),expo=f._VECTptr->back();
+    if (expo.type==_INT_ ){ 
+      if (!base.is_symb_of_sommet(at_pow) || base._SYMBptr->feuille[1].type!=_FRAC)
+	return symb_inv(e);
+      expo=expo*base._SYMBptr->feuille[1];
+      base=base._SYMBptr->feuille[0];
+    }
+    if (expo.type!=_FRAC)  
+      return symb_inv(e);
+    expo=-expo;
+    // inv(pow(base,original_exponent))=pow(base,expo)
+    if (is_positive(expo,contextptr))
+      return pow(base,expo,contextptr);
+    gen expo1=_floor(expo,contextptr); // expo1 is an integer <0
+    expo=expo-expo1; // expo>0
+    return pow(base,expo,contextptr)*inv(pow(base,-expo1,contextptr),contextptr);
+  }
+  gen invfracpow(const gen & e,GIAC_CONTEXT){
+    vector< gen_op_context > invfracpow_v(1,do_invfracpow);
+    vector<const unary_function_ptr *> inv_v(1,at_inv);
+    return subst(e,inv_v,invfracpow_v,false,contextptr);
+  }
+
   static void find_conjugates(const gen & g,vecteur & v_in,vecteur & v_out){
     v_in.clear();
     v_out.clear();

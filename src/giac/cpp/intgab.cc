@@ -206,11 +206,13 @@ namespace giac {
 	return 2;
       return 0;
     }
-    f1=normal(_texpand(f1,contextptr),contextptr);
-    f2=normal(_texpand(f2,contextptr),contextptr);
+    f1=_texpand(f1,contextptr);
+    f1=normal(f1,contextptr);
+    f2=_texpand(f2,contextptr);
+    f2=normal(f2,contextptr);
     if (f1==f2)
       return 1;
-    if (is_zero(ratnormal(f1+f2,contextptr)))
+    if (is_zero(ratnormal(invfracpow(f1+f2,contextptr),contextptr)))
       return 2;
     return 0;
   }

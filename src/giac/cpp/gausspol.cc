@@ -5198,15 +5198,17 @@ namespace giac {
       d=g*d;
       return;
     }
-    if (p1.dim!=1){
-      egcdpsr(p1,p2,u,v,d);
-      return;
-    }
     gen p1g,p2g;
     int p1t=coefftype(p1,p1g);
     int p2t=coefftype(p2,p2g);
+    if (p1.dim!=1 
+	//&& (p1t!=0 || p2t!=0)
+	){
+      egcdpsr(p1,p2,u,v,d);
+      return;
+    }
     if (p1t==0 && p2t==0 
-	&& p1.lexsorted_degree()>=GIAC_PADIC/2 && p2.lexsorted_degree()>=GIAC_PADIC/2
+	&& (p1.dim!=1 || (p1.lexsorted_degree()>=GIAC_PADIC/2 && p2.lexsorted_degree()>=GIAC_PADIC/2))
 	){
       if (debug_infolevel>2)
 	CERR << CLOCK()*1e-6 << "starting extended gcd degrees " << p1.lexsorted_degree() << " " << p2.lexsorted_degree() << '\n';
@@ -5218,8 +5220,18 @@ namespace giac {
       matrice S=sylvester(p1v,p2v);
       S=mtran(S);
       int add=int(p1v.size()+p2v.size()-G.size()-2);
-      vecteur V=mergevecteur(vecteur(add,0),G);
-      vecteur U=linsolve(S,V,context0);
+      vecteur V=mergevecteur(vecteur(add,0),G),U;
+      if (p1.dim>1){
+	// make the system symbolic so that Lagrange interpolation may happen
+	vecteur varv;
+	for (int i=1;i<p1.dim;++i)
+	  varv.push_back(identificateur("x"+print_INT_(i)));
+	S=gen2vecteur(r2e(S,varv,context0)); V=gen2vecteur(r2e(V,varv,context0));
+	U=linsolve(S,V,context0);
+	U=gen2vecteur(e2r(U,varv,context0));
+      }
+      else
+	U=linsolve(S,V,context0);
       gen D;
       lcmdeno(U,D,context0);
       if (is_positive(-D,context0)){
