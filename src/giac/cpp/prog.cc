@@ -6734,6 +6734,21 @@ namespace giac {
   static define_unary_function_eval (__parse_e,&_parse_e,_parse_e_s);
   define_unary_function_ptr5( at_parse_e ,alias_at_parse_e ,&__parse_e,0,true);
 
+  gen _convert_rootof(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG &&  g.subtype==-1) return  g;
+    gen args(g);
+    if (g.type==_DOUBLE_)
+      args=int(g._DOUBLE_val);
+    if (args.type!=_INT_)
+      return convert_rootof(contextptr);
+    convert_rootof((args.val)!=0,contextptr);
+    parent_cas_setup(contextptr);
+    return args;
+  }
+  static const char _convert_rootof_s []="convert_rootof";
+  static define_unary_function_eval (__convert_rootof,&_convert_rootof,_convert_rootof_s);
+  define_unary_function_ptr5( at_convert_rootof ,alias_at_convert_rootof ,&__convert_rootof,0,true);
+
   gen _angle_radian(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
     gen args(g);

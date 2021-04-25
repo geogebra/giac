@@ -5731,7 +5731,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	  void * ptr;
 	  pthread_join(tab[thread],&ptr);
 	  if (!ptr){
-	    gcdv[vpos].clear();
+	    gcdv[vpos].clear(); gcd_ext_ok=0;
 	  }
 	  if (gcd_ext_ok==1)
 	    gcd_ext_ok=((gcd_call_param<vector<int> > *) ptr)->ext_gcd_ok;

@@ -395,11 +395,20 @@ namespace giac {
     return true;
   }
 
-  bool is_known_rootof(const vecteur & v,gen & symroot,GIAC_CONTEXT){
-    const_iterateur it=v.begin(),itend=v.end();
+  bool is_known_rootof(const vecteur & v_,const vecteur * lvptr,gen & symroot,GIAC_CONTEXT){
+    if (!convert_rootof(contextptr))
+      lvptr=0; // keep symbolic rootof in answers
+    vecteur v(v_),lv;
+    if (lvptr && !lvptr->empty())
+      lv=vecteur(lvptr->begin()+1,lvptr->end());
+    iterateur it=v.begin(),itend=v.end();
     for (;it!=itend;++it){
-      if (it->type!=_INT_)
-	return false;
+      if (lvptr)
+	*it=r2e(*it,lv,contextptr);
+      else {
+	if (it->type!=_INT_)
+	  return false;
+      }
     }
     if (rootof_trylock())
       return false;
@@ -448,7 +457,7 @@ namespace giac {
   // find k / Q[theta1+ k*theta2 ] contains theta1 and theta2
   // return the minimal poly of theta=theta1+k*theta2
   // and return in a and b theta1 and theta2 as ext (in terms of theta)
-  gen common_minimal_POLY(const gen & ga,const gen & gb, gen & a,gen & b,int & k,GIAC_CONTEXT){
+  gen common_minimal_POLY(const gen & ga,const gen & gb, gen & a,gen & b,int & k,const vecteur * lvptr,GIAC_CONTEXT){
     const vecteur & va=*ga._VECTptr;
     const vecteur & vb=*gb._VECTptr;
     int na=int(va.size()-1),nb=int(vb.size()-1);
@@ -704,9 +713,14 @@ namespace giac {
       if (rit==ritend){
 	// should first check that va/vb are solvable poly
 	gen gaa,gbb;
-	if (is_known_rootof(va,gaa,contextptr) && is_known_rootof(vb,gbb,contextptr)){
+	if (is_known_rootof(va,lvptr,gaa,contextptr) && is_known_rootof(vb,lvptr,gbb,contextptr)){
 	  if (!rootof_trylock()){
-	    symbolic_rootof_list()[v]=gaa +k*gbb;
+	    if (lvptr){
+	      gen vexpr=r2e(v,vecteur(lvptr->begin()+1,lvptr->end()),contextptr);
+	      symbolic_rootof_list()[vexpr]=gaa+k*gbb;
+	    }
+	    else
+	      symbolic_rootof_list()[v]=gaa+k*gbb;
 	    rootof_unlock();
 	  }
 	}
@@ -1070,7 +1084,7 @@ namespace giac {
     b__VECT=polynome2poly1(p/p.coord.front().value); // p must be monic (?)
     // compute new minimal polynomial
     int k;    
-    gen res1=common_minimal_POLY(a__VECT,b__VECT,a,b,k,contextptr);
+    gen res1=common_minimal_POLY(a__VECT,b__VECT,a,b,k,l,contextptr);
     if ((a_orig.type==_EXT) && (b_orig.type==_EXT) && !is_undef(res1))
       return algebraic_EXTension(a_orig+gen(k)*b_orig,res1);
     else

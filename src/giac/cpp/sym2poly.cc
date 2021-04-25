@@ -857,7 +857,11 @@ namespace giac {
 	  a__VECTg=*(a._EXTptr+1);
 	}
 	int k;
-	gen new_v=common_minimal_POLY(a__VECTg,v,a,b,k,contextptr);
+	vecteur lvadd(lv); lvadd.insert(lvadd.begin(),vecteur(0));
+	gen new_v=common_minimal_POLY(a__VECTg,v,a,b,k,
+				      // 0.
+				      &lvadd ,
+				      contextptr);
 	if (is_undef(new_v))
 	  return false;
 	*(num._EXTptr+1)=a;

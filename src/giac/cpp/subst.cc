@@ -3159,6 +3159,57 @@ namespace giac {
   static define_unary_function_eval (__limite,&_limit,_limite_s);
   define_unary_function_ptr5( at_limite ,alias_at_limite,&__limite,0,true);
 
+  static gen symb_inv_mult_conjugate(const gen & e,GIAC_CONTEXT){
+    // find fractional powers in e and multiply by conjugate expression
+    // this should speedup normal because inv_EXT is slow 
+    // with common extensions
+    vecteur l(lvarfracpow(e));
+    if (l.empty())
+      return symb_inv(e);
+    int pos=3,prevpos=0,prevtaille(taille(l[0],RAND_MAX)),curtaille;
+    for (pos=3;pos<l.size();pos+=3){
+      curtaille=taille(l[pos],RAND_MAX);
+      if (curtaille>prevtaille){
+	prevpos=pos;
+	curtaille=prevtaille;
+      }
+    }
+    gen varbase(l[prevpos]),varexpo(l[prevpos+1]);
+    int deg=0;
+    if (varexpo.type!=_INT_ || (deg=varexpo.val)<2)
+      return symb_inv(e);
+    l=vecteur(1,l[prevpos+2]);
+    lvar(e,l);
+    lvar(varbase,l);
+    gen tmp=e2r(e,l,contextptr),num(1),den(tmp),tmpvar=e2r(varbase,l,contextptr);
+    if (tmpvar.type>_POLY) 
+      return symb_inv(e);
+    if (tmp.type==_FRAC){
+      num=tmp._FRACptr->den;
+      den=tmp._FRACptr->num;
+    }
+    if (den.type!=_POLY)
+      return symb_inv(e);
+    const polynome & pden=*den._POLYptr;
+    // now find min poly of var and invert pden
+    polynome pmin(pden.dim),pu(pden.dim),pv(pden.dim),pd(pden.dim);
+    pmin.coord.push_back(monomial<gen>(1,deg,1,pden.dim));
+    if (tmpvar.type==_POLY) 
+      pmin = pmin-*tmpvar._POLYptr;
+    else
+      pmin.coord.push_back(monomial<gen>(-tmpvar,0.1,pden.dim));
+    egcd(pden,pmin,pu,pv,pd);
+    // 1/pden=pu/pd
+    num=r2e(pu,l,contextptr)*r2e(num,l,contextptr);
+    den=ratnormal(r2e(pd,l,contextptr),contextptr);
+    if (is_exactly_zero(den))
+      return symb_inv(e);
+    den=symb_inv_mult_conjugate(den,contextptr);
+    if (is_exactly_zero(den))
+      return symb_inv(e);
+    return num*den;
+  }
+
   static gen do_invfracpow(const gen & e,GIAC_CONTEXT){
     if (e.type!=_SYMB)
       return symb_inv(e);
@@ -3185,7 +3236,7 @@ namespace giac {
 	gen g2(symbolic(at_prod,gen(v2,_SEQ__VECT)));
 	if (v2.size()==1)
 	  g2=v2.front();
-	return g1*symb_inv(g2);
+	return g1*symb_inv_mult_conjugate(g2,contextptr);
       }
     }
     if (u==at_neg){
@@ -3195,7 +3246,7 @@ namespace giac {
       return -f;
     }
     if (u!=at_pow)
-      return symb_inv(e);
+      return symb_inv_mult_conjugate(e,contextptr);
     gen f=e._SYMBptr->feuille;
     if (f.type!=_VECT || f._VECTptr->size()!=2)
       return symb_inv(e);

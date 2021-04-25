@@ -610,6 +610,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     bool _keep_algext_;
     bool _auto_assume_;
     bool _parse_e_;
+    bool _convert_rootof_;
     int _python_compat_;
     int _angle_mode_;
     int _bounded_function_no_;
@@ -793,6 +794,9 @@ throw(std::runtime_error("Stopped by user interruption.")); \
 
   bool & parse_e(GIAC_CONTEXT);
   void parse_e(bool b,GIAC_CONTEXT);
+
+  bool & convert_rootof(GIAC_CONTEXT);
+  void convert_rootof(bool b,GIAC_CONTEXT);
 
   bool & do_lnabs(GIAC_CONTEXT);
   void do_lnabs(bool b,GIAC_CONTEXT);
