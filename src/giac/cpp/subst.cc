@@ -1750,8 +1750,12 @@ namespace giac {
       return e;
     if (e._SYMBptr->feuille.type==_VECT){
       vecteur & v=*e._SYMBptr->feuille._VECTptr;
-      if ((e._SYMBptr->sommet==at_pow)  && ( contains(v[1],x) ||(v[1].type!=_INT_ && contains(v[0],x) ) ) )
-	return symb_exp(pow2expln(v[1],x,contextptr)*symb_ln(pow2expln(v[0],x,contextptr)));
+      if ((e._SYMBptr->sommet==at_pow)  && ( contains(v[1],x) ||(v[1].type!=_INT_ && contains(v[0],x) ) ) ){
+	gen g=pow2expln(v[0],x,contextptr);
+	if (g.is_symb_of_sommet(at_exp))
+	  return symb_exp(g._SYMBptr->feuille*pow2expln(v[1],x,contextptr));
+	return symb_exp(pow2expln(v[1],x,contextptr)*symb_ln(g));
+      }
     }
     return e._SYMBptr->sommet(pow2expln(e._SYMBptr->feuille,x,contextptr),contextptr); 
   }
@@ -1763,8 +1767,12 @@ namespace giac {
       return e;
     if (e._SYMBptr->feuille.type==_VECT){
       vecteur & v=*e._SYMBptr->feuille._VECTptr;
-      if (e._SYMBptr->sommet==at_pow  && v[1].type!=_INT_ && !(v[1].type==_FRAC && is_integer(v[0])))
-	return symb_exp(pow2expln(v[1],contextptr)*symb_ln(pow2expln(v[0],contextptr)));
+      if (e._SYMBptr->sommet==at_pow  && v[1].type!=_INT_ && !(v[1].type==_FRAC && is_integer(v[0]))){
+	gen g=pow2expln(v[0],contextptr);
+	if (g.is_symb_of_sommet(at_exp))
+	  return symb_exp(g._SYMBptr->feuille*pow2expln(v[1],contextptr));
+	return symb_exp(pow2expln(v[1],contextptr)*symb_ln(g));
+      }
     }
     return e._SYMBptr->sommet(pow2expln(e._SYMBptr->feuille,contextptr),contextptr); 
   }

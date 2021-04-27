@@ -1141,12 +1141,22 @@ namespace giac {
 	res=tmp*complex_subst(tmpres,gen_x,fnc_inverse,contextptr);
 	return 2;
       }
+      bool frdconst=is_constant_wrt(fr_d,gen_x,contextptr);
+      if (frdconst){
+	/* Possible improvement: remove multiplicities in denominator
+	   make a partial fraction decomposition 
+	   int(n*y^alpha/D^(k+1)) for D squarefree and coprime with y
+	   Bezout find U and V such that n=D*U+D'*y*V
+	   let N=-V/k and r=U-(y*N'+(alpha+1)*N*y'), then
+	   int(n*y^alpha/D^(k+1))=N*y^(alpha+1)/D^k+int(r*y^alpha/D^k)
+	 */
+      }
       /*   ( * 	2nd order: dispatch for y=ax^2+bx+c	           * )
 	   ( * 	a>0	->	x=[m^2-c]/[b-2*sqrt[a]*m]          * )
 	   ( *			m=sqrt[y]-sqrt[a]*x	           * )
 	   ( * 			dx/sqrt[y]=2*dm/[b-2*sqrt[a]*m]	   * )
       */
-      if (d==2 && is_constant_wrt(fr_d,gen_x,contextptr)){
+      if (d==2 && frdconst){
 	// write e as alpha+beta*sqrt(argument)
 	identificateur tmpx(" x");
 	gen e1=complex_subst(e,sqrt(argument,contextptr),tmpx,contextptr);
@@ -1346,6 +1356,8 @@ namespace giac {
 	    gen m(id_m);
 	    tmpe=eval(rdiv(complex_subst(e*sqrt(argument,contextptr),argument,pow(m+sqrta*gen_x,2),contextptr),b-plus_two*sqrta*m,contextptr),1,contextptr);
 	    tmpe=ratnormal(complex_subst(tmpe,gen_x,rdiv(m*m-c,b-plus_two*sqrta*m,contextptr),contextptr),contextptr);
+	    // factor?
+	    //tmpe=_factor(tmpe,contextptr);
 	    tmpres=linear_integrate_nostep(tmpe,m,tmprem,intmode | 2,contextptr);
 	    remains_to_integrate=remains_to_integrate+complex_subst(plus_two*tmprem,m,sqrt(argument,contextptr)-sqrta*gen_x,contextptr);
 	    res= alpha+complex_subst(plus_two*tmpres,m,sqrt(argument,contextptr)-sqrta*gen_x,contextptr);

@@ -1699,7 +1699,7 @@ namespace giac {
     for (;it!=itend;++it){
       if (it->_SYMBptr->sommet==at_surd){
 	vecteur & arg=*it->_SYMBptr->feuille._VECTptr;
-	if (arg.size()==2 && arg.back().type==_INT_){
+	if (arg.size()==2 && arg.back().type==_INT_ && absint(arg.back().val)<=MAX_ALG_EXT_ORDER_SIZE){
 	  l.push_back(arg[0]);
 	  l.push_back(arg[1]);
 	  l.push_back(*it);
@@ -1708,7 +1708,7 @@ namespace giac {
       }
       if (it->_SYMBptr->sommet==at_NTHROOT){
 	vecteur & arg=*it->_SYMBptr->feuille._VECTptr;
-	if (arg.size()==2 && arg.front().type==_INT_){
+	if (arg.size()==2 && arg.front().type==_INT_ && absint(arg.front().val)<=MAX_ALG_EXT_ORDER_SIZE){
 	  l.push_back(arg[1]);
 	  l.push_back(arg[0]);
 	  l.push_back(*it);
@@ -1735,7 +1735,7 @@ namespace giac {
 	expnum=v[0];
 	expden=v[1]._SYMBptr->feuille;
       }
-      if (expden.type!=_INT_)
+      if (expden.type!=_INT_ || absint(expden.val)>MAX_ALG_EXT_ORDER_SIZE)
 	continue;
       l.push_back(arg[0]);
       l.push_back(expden.val);
