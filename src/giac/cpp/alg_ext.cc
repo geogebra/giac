@@ -1326,11 +1326,15 @@ namespace giac {
 #endif
     }
     if (g.type==_VECT && g._VECTptr->size()==2 && g._VECTptr->front().type==_INT_ && g._VECTptr->back().type==_INT_){
+#ifdef TIMEOUT
       caseval_maxtime=giacmax(2,g._VECTptr->front().val);
       caseval_n=0;
       caseval_mod=giacmax(2,g._VECTptr->back().val);
       string S="Max eval time set to "+print_INT_(caseval_maxtime)+", check frequency 1/"+print_INT_(caseval_mod);
       return string2gen(S,false);
+#else
+      return -1;
+#endif
     }
     if (!is_integral(g) || g.type!=_INT_ || g.val<3 || g.val>24*60)
       return gensizeerr(contextptr);
