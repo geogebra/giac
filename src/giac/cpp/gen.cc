@@ -6919,7 +6919,7 @@ namespace giac {
 	    || (!lidnt(exponent).empty() && absint(superexponent.val)>MAX_COMMON_ALG_EXT_ORDER_SIZE)
 	    )
 	  return new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(base,exponent),_SEQ__VECT)));
-	if (subexponent_deno.type!=_INT_ || absint(subexponent_deno.val)>MAX_ALG_EXT_ORDER_SIZE){
+	if (subexponent_deno.type!=_INT_ || (absint(subexponent_deno.val)>MAX_ALG_EXT_ORDER_SIZE && !lidnt(base).empty())){
 	  if (is_one(superexponent))
 	    return new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(base,_FRAC2_SYMB(subexponent_num,subexponent_deno)),_SEQ__VECT)));
 	  return new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(base,_FRAC2_SYMB(subexponent_num,subexponent_deno)),_SEQ__VECT))),superexponent),_SEQ__VECT)));
