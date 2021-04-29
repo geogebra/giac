@@ -243,7 +243,7 @@ inline void mpz_get_str(char * s,int base,const mpz_t &  z){
 }
 inline void mpz_out_str(FILE * f,int base,const mpz_t & z){
   char * ptr=bf_ftoa(NULL, &z, base, 0,BF_RNDZ | BF_FTOA_FORMAT_FRAC);
-  fprintf(f,ptr);
+  fprintf(f,"%s",ptr);
   free(ptr);
 }
 inline void mpz_fac_ui(mpz_t & z,unsigned int i){
@@ -376,8 +376,9 @@ inline int mpfr_ui_div(mpfr_t & r,unsigned long A,const mpfr_t &b,bf_flags_t fla
 inline int mpfr_sqrt(mpfr_t & r,const mpfr_t & a,bf_flags_t flags){
   if (&a==&r){
     mpfr_t A; mpfr_init_set(A,a,flags);
-    bf_sqrt(&r,&A,bf_global_prec,flags);
+    int res=bf_sqrt(&r,&A,bf_global_prec,flags);
     mpfr_clear(A);
+    return res;
   }
   else
     return bf_sqrt(&r,&a,bf_global_prec,flags);

@@ -6919,7 +6919,7 @@ namespace giac {
 	    || (!lidnt(exponent).empty() && absint(superexponent.val)>MAX_COMMON_ALG_EXT_ORDER_SIZE)
 	    )
 	  return new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(base,exponent),_SEQ__VECT)));
-	if (subexponent_deno.type!=_INT_){
+	if (subexponent_deno.type!=_INT_ || absint(subexponent_deno.val)>MAX_ALG_EXT_ORDER_SIZE){
 	  if (is_one(superexponent))
 	    return new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(base,_FRAC2_SYMB(subexponent_num,subexponent_deno)),_SEQ__VECT)));
 	  return new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(base,_FRAC2_SYMB(subexponent_num,subexponent_deno)),_SEQ__VECT))),superexponent),_SEQ__VECT)));
@@ -10470,7 +10470,7 @@ namespace giac {
     mpz_init_set(a,A);
     mpz_init_set(b,B);
     while (mpz_cmp_si(b,0)){
-      mpz_cdiv_r(z,a,b);
+      mpz_tdiv_r(z,a,b);
       mpz_swap(a,b);
       mpz_swap(b,z);
     }
@@ -10489,7 +10489,7 @@ namespace giac {
     // mpz_init(r3); mpz_init(u3); mpz_init(v3);
     while (mpz_cmp_si(r2,0)){
       // CERR << "iegcd " << gen(r1) << " " << gen(r2) << '\n';
-      mpz_cdiv_qr(q,r1,r1,r2);
+      mpz_tdiv_qr(q,r1,r1,r2);
       mpz_swap(r1,r2);
       mpz_submul(u1,q,u2);
       mpz_swap(u1,u2);
