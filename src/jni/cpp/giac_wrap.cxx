@@ -5560,35 +5560,6 @@ SWIGEXPORT jlong JNICALL Java_javagiac_giacJNI_select_1root(JNIEnv *jenv, jclass
   return jresult;
 }
 
-
-SWIGEXPORT jboolean JNICALL Java_javagiac_giacJNI_is_1known_1rootof(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
-  jboolean jresult = 0 ;
-  giac::vecteur *arg1 = 0 ;
-  giac::gen *arg2 = 0 ;
-  giac::context *arg3 = (giac::context *) 0 ;
-  bool result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg2_;
-  (void)jarg3_;
-  arg1 = *(giac::vecteur **)&jarg1;
-  if (!arg1) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::vecteur const & reference is null");
-    return 0;
-  } 
-  arg2 = *(giac::gen **)&jarg2;
-  if (!arg2) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen & reference is null");
-    return 0;
-  } 
-  arg3 = *(giac::context **)&jarg3; 
-  result = (bool)giac::is_known_rootof((giac::vecteur const &)*arg1,*arg2,arg3);
-  jresult = (jboolean)result; 
-  return jresult;
-}
-
-
 SWIGEXPORT jlong JNICALL Java_javagiac_giacJNI_alg_1evalf(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   jlong jresult = 0 ;
   giac::gen *arg1 = 0 ;
@@ -5669,56 +5640,6 @@ SWIGEXPORT jlong JNICALL Java_javagiac_giacJNI_common_1EXT(JNIEnv *jenv, jclass 
   *(giac::gen **)&jresult = new giac::gen((const giac::gen &)result); 
   return jresult;
 }
-
-
-SWIGEXPORT jlong JNICALL Java_javagiac_giacJNI_common_1minimal_1POLY(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4, jobject jarg4_, jlong jarg5, jlong jarg6, jobject jarg6_) {
-  jlong jresult = 0 ;
-  giac::gen *arg1 = 0 ;
-  giac::gen *arg2 = 0 ;
-  giac::gen *arg3 = 0 ;
-  giac::gen *arg4 = 0 ;
-  int *arg5 = 0 ;
-  giac::context *arg6 = (giac::context *) 0 ;
-  giac::gen result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  (void)jarg2_;
-  (void)jarg3_;
-  (void)jarg4_;
-  (void)jarg6_;
-  arg1 = *(giac::gen **)&jarg1;
-  if (!arg1) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen const & reference is null");
-    return 0;
-  } 
-  arg2 = *(giac::gen **)&jarg2;
-  if (!arg2) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen const & reference is null");
-    return 0;
-  } 
-  arg3 = *(giac::gen **)&jarg3;
-  if (!arg3) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen & reference is null");
-    return 0;
-  } 
-  arg4 = *(giac::gen **)&jarg4;
-  if (!arg4) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen & reference is null");
-    return 0;
-  } 
-  arg5 = *(int **)&jarg5;
-  if (!arg5) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "int & reference is null");
-    return 0;
-  } 
-  arg6 = *(giac::context **)&jarg6; 
-  result = giac::common_minimal_POLY((giac::gen const &)*arg1,(giac::gen const &)*arg2,*arg3,*arg4,*arg5,arg6);
-  *(giac::gen **)&jresult = new giac::gen((const giac::gen &)result); 
-  return jresult;
-}
-
 
 SWIGEXPORT jlong JNICALL Java_javagiac_giacJNI_ext_1add(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   jlong jresult = 0 ;
@@ -8874,115 +8795,6 @@ SWIGEXPORT jboolean JNICALL Java_javagiac_giacJNI_intgab_1ratfrac(JNIEnv *jenv, 
   jresult = (jboolean)result; 
   return jresult;
 }
-
-
-SWIGEXPORT jlong JNICALL Java_javagiac_giacJNI_integrate_1gen_1rem(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4, jobject jarg4_) {
-  jlong jresult = 0 ;
-  giac::gen *arg1 = 0 ;
-  giac::gen *arg2 = 0 ;
-  giac::gen *arg3 = 0 ;
-  giac::context *arg4 = (giac::context *) 0 ;
-  giac::gen result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  (void)jarg2_;
-  (void)jarg3_;
-  (void)jarg4_;
-  arg1 = *(giac::gen **)&jarg1;
-  if (!arg1) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen const & reference is null");
-    return 0;
-  } 
-  arg2 = *(giac::gen **)&jarg2;
-  if (!arg2) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen const & reference is null");
-    return 0;
-  } 
-  arg3 = *(giac::gen **)&jarg3;
-  if (!arg3) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen & reference is null");
-    return 0;
-  } 
-  arg4 = *(giac::context **)&jarg4; 
-  result = giac::integrate_gen_rem((giac::gen const &)*arg1,(giac::gen const &)*arg2,*arg3,arg4);
-  *(giac::gen **)&jresult = new giac::gen((const giac::gen &)result); 
-  return jresult;
-}
-
-
-SWIGEXPORT jlong JNICALL Java_javagiac_giacJNI_integrate_1id_1rem(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4, jobject jarg4_) {
-  jlong jresult = 0 ;
-  giac::gen *arg1 = 0 ;
-  giac::gen *arg2 = 0 ;
-  giac::gen *arg3 = 0 ;
-  giac::context *arg4 = (giac::context *) 0 ;
-  giac::gen result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  (void)jarg2_;
-  (void)jarg3_;
-  (void)jarg4_;
-  arg1 = *(giac::gen **)&jarg1;
-  if (!arg1) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen const & reference is null");
-    return 0;
-  } 
-  arg2 = *(giac::gen **)&jarg2;
-  if (!arg2) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen const & reference is null");
-    return 0;
-  } 
-  arg3 = *(giac::gen **)&jarg3;
-  if (!arg3) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen & reference is null");
-    return 0;
-  } 
-  arg4 = *(giac::context **)&jarg4; 
-  result = giac::integrate_id_rem((giac::gen const &)*arg1,(giac::gen const &)*arg2,*arg3,arg4);
-  *(giac::gen **)&jresult = new giac::gen((const giac::gen &)result); 
-  return jresult;
-}
-
-
-SWIGEXPORT jlong JNICALL Java_javagiac_giacJNI_linear_1integrate(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4, jobject jarg4_) {
-  jlong jresult = 0 ;
-  giac::gen *arg1 = 0 ;
-  giac::gen *arg2 = 0 ;
-  giac::gen *arg3 = 0 ;
-  giac::context *arg4 = (giac::context *) 0 ;
-  giac::gen result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  (void)jarg2_;
-  (void)jarg3_;
-  (void)jarg4_;
-  arg1 = *(giac::gen **)&jarg1;
-  if (!arg1) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen const & reference is null");
-    return 0;
-  } 
-  arg2 = *(giac::gen **)&jarg2;
-  if (!arg2) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen const & reference is null");
-    return 0;
-  } 
-  arg3 = *(giac::gen **)&jarg3;
-  if (!arg3) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "giac::gen & reference is null");
-    return 0;
-  } 
-  arg4 = *(giac::context **)&jarg4; 
-  result = giac::linear_integrate((giac::gen const &)*arg1,(giac::gen const &)*arg2,*arg3,arg4);
-  *(giac::gen **)&jresult = new giac::gen((const giac::gen &)result); 
-  return jresult;
-}
-
 
 SWIGEXPORT jlong JNICALL Java_javagiac_giacJNI_integrate_1id(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jlong jarg3, jobject jarg3_) {
   jlong jresult = 0 ;
