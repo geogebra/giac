@@ -391,7 +391,7 @@
 196>> caseval(regroup(ggbsort([[[ggbcsans:=0/0],[ggbcsans:=(x)^(2)=-(1)],[ggbvars:=lname(ggbcsans)]],normal(cZeros((x)^(2)=-(1),when(size(ggbvars)==1,ggbvars[0],x)))][1])))
 196<< {ί,-ί}
 197>> caseval(regroup(ggbsort([[[ggbcsans:=0/0],[ggbcsans:=((x)^(5))-(i)=0],[ggbvars:=lname(ggbcsans)]],normal(cZeros(((x)^(5))-(i)=0,when(size(ggbvars)==1,ggbvars[0],x)))][1])))
-197<< {ί,ί*ℯ^(2*ί/5*pi),ί*ℯ^(4*ί/5*pi),(-ί)*ℯ^(ί/5*pi),(-ί)*ℯ^(3*ί/5*pi)}
+197<< {ί,1/4*(ί*√5+√(2*(√5+5))-ί),1/4*((-ί)*√5+√(2*(-√5+5))-ί),1/4*(ί*√5-√(2*(√5+5))-ί),1/4*((-ί)*√5-√(2*(-√5+5))-ί)}
 198>> caseval(regroup([[[ggbtanarg0:=-(3)],[ggbtanarg1:=(x)^(2)],[ggbtanvar:=when(size(lname(ggbtanarg1) intersect [x]) == 0,lname(ggbtanarg1)[0],x)]],when((-(3))[0]=='pnt',when((ggbtanarg1)[0]=='=',equation(tangent(ggbtanarg1,ggbtanarg0)),y=normal(subst(diff(ggbtanarg1,ggbtanvar),ggbtanvar=real(ggbtanarg0[1]))*(x-real(ggbtanarg0[1]))+subst(ggbtanarg1,ggbtanvar=real(-(3)[1])))),y=normal(subst(diff(ggbtanarg1,ggbtanvar),ggbtanvar=ggbtanarg0)*(x-(ggbtanarg0))+subst(ggbtanarg1,ggbtanvar=ggbtanarg0)))][1]))
 198<< y=(-6*x-9)
 199>> caseval(regroup([[[ggbtanarg0:=point(ggbtmpvara,sqrt((1)-((ggbtmpvara)^(2))))],[ggbtanarg1:=((x)^(2))+((y)^(2))=1],[ggbtanvar:=when(size(lname(ggbtanarg1) intersect [x]) == 0,lname(ggbtanarg1)[0],x)]],when((point(ggbtmpvara,sqrt((1)-((ggbtmpvara)^(2)))))[0]=='pnt',when((ggbtanarg1)[0]=='=',equation(tangent(ggbtanarg1,ggbtanarg0)),y=normal(subst(diff(ggbtanarg1,ggbtanvar),ggbtanvar=real(ggbtanarg0[1]))*(x-real(ggbtanarg0[1]))+subst(ggbtanarg1,ggbtanvar=real(point(ggbtmpvara,sqrt((1)-((ggbtmpvara)^(2))))[1])))),y=normal(subst(diff(ggbtanarg1,ggbtanvar),ggbtanvar=ggbtanarg0)*(x-(ggbtanarg0))+subst(ggbtanarg1,ggbtanvar=ggbtanarg0)))][1]))
