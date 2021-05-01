@@ -812,21 +812,40 @@ namespace giac {
 	}
       }
     }
+    gen prev=1;
+    gen numprev=r2sym(rdiv(-v.back(),v.front(),contextptr),lv,contextptr);
+    numprev=arg(evalf(numprev,1,contextptr),contextptr);
     for (f_it=f.begin();f_it!=f_itend;++f_it){
       polynome irr_p(f_it->fact);
       deg=irr_p.lexsorted_degree();
       if (!deg)
 	continue;
       if (deg==1){
-	v=polynome2poly1(irr_p);
+	vecteur vcur=polynome2poly1(irr_p);
 	lowest_degree=1;
-	num=rdiv(-v.back(),v.front(),contextptr);
+	gen numcur=rdiv(-vcur.back(),vcur.front(),contextptr);
 	// cerr << "xroot" << num << "\n";
-	gen numlv=r2sym(num,lv,contextptr);
-	if (!lvar(evalf(numlv,1,contextptr)).empty())
+	gen numlv=r2sym(numcur,lv,contextptr);
+	// select root by computing argument
+	gen numlvf=evalf(numlv,1,contextptr);
+	if (!lvar(numlvf).empty()){
 	  *logptr(contextptr) << gettext("Warning, checking for positivity of a root depending of parameters might return wrong sign: ")<< numlv << "\n";
-	if (is_positive(numlv,contextptr))
+	  v=vcur;
+	  num=numcur;
 	  break;
+	}
+	if (is_positive(numlvf,contextptr)){
+	  v=vcur;
+	  num=numcur;
+	  break;
+	}
+	int d=v.size()-1;
+	gen cur=abs(d*arg(numlvf,contextptr)-numprev);
+	if (is_greater(prev,cur,contextptr)){
+	  v=vcur;
+	  num=numcur;
+	  prev=cur;
+	}
       }
       if (deg==2 && deg==lowest_degree){
 	vecteur tmp=polynome2poly1(irr_p);
@@ -1707,6 +1726,8 @@ namespace giac {
       embed.pop_back();
       return false;
     }
+    if (extension.type==_FRAC)
+      return in_find_extension(extension._FRACptr->num,already,embed,iext,contextptr);
     if (extension.type!=_EXT)
       return false;
     gen Extension=*(extension._EXTptr+1);

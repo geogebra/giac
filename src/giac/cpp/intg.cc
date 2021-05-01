@@ -1143,23 +1143,9 @@ namespace giac {
       }
       bool frdconst=is_constant_wrt(fr_d,gen_x,contextptr);
       if (frdconst){
-	/* Possible improvement: remove multiplicities in denominator
-	   make a partial fraction decomposition 
-	   int(n*y^alpha/D^(k+1)) for D squarefree and coprime with y
-	   Bezout find U and V such that n=D*U+D'*y*V
-	   let N=-V/k and r=U-(y*N'+(alpha+1)*N*y'), then
-	   int(n*y^alpha/D^(k+1))=N*y^(alpha+1)/D^k+int(r*y^alpha/D^k)
-	 */
-      }
-      /*   ( * 	2nd order: dispatch for y=ax^2+bx+c	           * )
-	   ( * 	a>0	->	x=[m^2-c]/[b-2*sqrt[a]*m]          * )
-	   ( *			m=sqrt[y]-sqrt[a]*x	           * )
-	   ( * 			dx/sqrt[y]=2*dm/[b-2*sqrt[a]*m]	   * )
-      */
-      if (d==2 && frdconst){
-	// write e as alpha+beta*sqrt(argument)
+	// multiply denominator by conjugate
 	identificateur tmpx(" x");
-	gen e1=complex_subst(e,sqrt(argument,contextptr),tmpx,contextptr);
+	gen e1=complex_subst(e,rvar.back(),tmpx,contextptr); // sqrt(argument,contextptr)
 	vecteur lv(1,tmpx);
 	lvar(e1,lv);
 	gen e2=e2r(e1,lv,contextptr),num,den;
@@ -1167,7 +1153,7 @@ namespace giac {
 	den=r2e(den,lv,contextptr);
 	num=r2e(num,lv,contextptr);
 	// multiply denominator of e2 by conjugate 
-	gen pmini=tmpx*tmpx-argument;
+	gen pmini=pow(tmpx,d)-argument;
 	gen C=_egcd(makesequence(den,pmini,tmpx),contextptr);
 	if (is_undef(C)){
 	  res=C;
@@ -1179,228 +1165,250 @@ namespace giac {
 	  return 2;
 	}
 	den=C[2];
-	gen alpha,beta,xvar(gen_x);
-	if (!is_linear_wrt(num,tmpx,beta,alpha,contextptr)){
-	  res=gensizeerr(contextptr);
-	  return 2;
+	// int(num/den), den does not depend on y=tmpx, the fractional power
+	// if num does not, then we can integrate
+	if (is_constant_wrt(num,tmpx,contextptr)){
+	  res=linear_integrate_nostep(num/den,gen_x,remains_to_integrate,intmode,contextptr);
+	  return 1;
 	}
-	alpha=integrate_rational(alpha/den,gen_x,remains_to_integrate,xvar,intmode,contextptr);
-	if (is_undef(alpha)){
-	  res=alpha;
-	  return 2;
-	}
-	/* Instead we should factor argument in den 
-	   FIXME in usual.cc diff of ln should expand * and / and rm abs
-	   write y=argument, P=beta
-	   we want to integrate P*sqrt(y)/den=(P*y)/den* y^(-1/2)
-	   *IF* den=y^l*D where D is prime with y (not always true...)
-	   P/Dy^l = P_y/y^l + P_D/D <--> P = P_y*D + P_D*y^l,
-	   find P_D and P_y by Bezout, find
-	   g = Q*D+R*y^l then Pg = P*Q*D + P*R*y^l hence
-	   P_D = P*R mod D/g  and  P_y = P*Q /g + [P*R div D] *y^l /g 
-	*/
-	gen y=argument,P=beta,D=den; // P*y/den
-	C=_quorem(makesequence(D,y,gen_x),contextptr);
-	if (is_undef(C)){
-	  res= C;
-	  return 2;
-	}
-	int l=0;
-	if (is_zero(C[1])){ // P/(den/y)
-	  D=C[0];
-	  for (;;++l){
-	    C=_quorem(makesequence(D,y,gen_x),contextptr);
-	    if (is_undef(C)){
-	      res=C;
-	      return 2;
-	    }
-	    if (!is_zero(C[1]))
-	      break;
+	/* Possible improvement: remove multiplicities in denominator
+	   for each monomial of num n*tmpx^deg, set gamma=deg/d
+	   then make a partial fraction decomposition of n/den ->
+	   int(n*y^gamma/D^(k+1)) for D squarefree and coprime with y
+	   Bezout find U and V such that n=D*U+D'*y*V
+	   let N=-V/k and r=U-(y*N'+(gamma+1)*N*y'), then
+	   int(n*y^gamma/D^(k+1))=N*y^(gamma+1)/D^k+int(r*y^gamma/D^k)
+	 */
+	if (d==2){
+	  // write e as alpha+beta*sqrt(argument)
+	  /* ( * 	2nd order: dispatch for y=ax^2+bx+c	           * )
+	     ( * 	a>0	->	x=[m^2-c]/[b-2*sqrt[a]*m]          * )
+	     ( *			m=sqrt[y]-sqrt[a]*x	           * )
+	     ( * 			dx/sqrt[y]=2*dm/[b-2*sqrt[a]*m]	   * )
+	  */
+	  gen alpha,beta,xvar(gen_x);
+	  if (!is_linear_wrt(num,tmpx,beta,alpha,contextptr)){
+	    res=gensizeerr(contextptr);
+	    return 2;
+	  }
+	  alpha=integrate_rational(alpha/den,gen_x,remains_to_integrate,xvar,intmode,contextptr);
+	  if (is_undef(alpha)){
+	    res=alpha;
+	    return 2;
+	  }
+	  /* Instead we should factor argument in den 
+	     FIXME in usual.cc diff of ln should expand * and / and rm abs
+	     write y=argument, P=beta
+	     we want to integrate P*sqrt(y)/den=(P*y)/den* y^(-1/2)
+	     *IF* den=y^l*D where D is prime with y (not always true...)
+	     P/Dy^l = P_y/y^l + P_D/D <--> P = P_y*D + P_D*y^l,
+	     find P_D and P_y by Bezout, find
+	     g = Q*D+R*y^l then Pg = P*Q*D + P*R*y^l hence
+	     P_D = P*R mod D/g  and  P_y = P*Q /g + [P*R div D] *y^l /g 
+	  */
+	  gen y=argument,P=beta,D=den; // P*y/den
+	  C=_quorem(makesequence(D,y,gen_x),contextptr);
+	  if (is_undef(C)){
+	    res= C;
+	    return 2;
+	  }
+	  int l=0;
+	  if (is_zero(C[1])){ // P/(den/y)
 	    D=C[0];
-	  }
-	}
-	else
-	  P=P*y;
-	gen yl=pow(y,l);
-	C=_egcd(makesequence(D,yl,gen_x),contextptr);
-	if (is_undef(C)){
-	  res= C;
-	  return 2;
-	}
-	gen g=C[2],Q=C[0],R=C[1];
-	C=_quorem(makesequence(P*R,D,gen_x),contextptr);
-	if (is_undef(C)){
-	  res=C;
-	  return 2;
-	}
-	gen PD=C[1]/g;
-	// changed made for int(1/(sin(x)*sqrt(sin(2*x)^3)));
-	C=_quorem(makesequence(P*Q+C[0]*yl,g,gen_x),contextptr);
-	if (!is_zero(C[1]))
-	  return 0;
-	gen Py=C[0];  
-	// gen Py=(P*Q+C[0]*yl)/g;
-	C=_quorem(makesequence(Py,y,gen_x),contextptr);
-	if (is_undef(C)){
-	  res= C; 
-	  return 2;
-	}
-	/*
-	  int[ Py/y^l*y^-1/2 ] = Q*y^[1/2-l] + int[ C*y^-1/2 ]
-	  degre[Py]=n, degre[y]=k, find Q degre[Q]=n+1-k and C degre[C]=k-2
-	  so that Py = Q'*y + Q*y'*[1/2-l] + C y^l   
-	  to do this we represent Q by a n+2-k-vector, C by a k-1-vector
-	  gluing Q and C we get a n+1-vector that must be solution of a
-	  n+1*n+1 linear system. Now we build the matrix of this system
-	  The n+2-k first columns are				    
-	  y'[1/2-l]  ...  x^alpha*y'*[1/2-l]+alpha*x^[alpha-1]*y ...    
-	  The k-1 last columns are 
-	  y^l  ...  x^beta*y^l 
-	  Note 1: to avoid rational input in the matrix we multiply by 2
-	  coef of Q and C are found in the reverse order
-	  for l!=0 n is more precisely max[deg[Py],k[l+1]-2]
-	  Note 2: at the end we integrate only (C+PD/D)*y^(-1/2)
-	*/
-	gen tmpv=_e2r(makesequence(Py,gen_x),contextptr);
-	if (tmpv.type!=_VECT){
-	  if (tmpv.type==_FRAC){
-	    if (tmpv._FRACptr->den.type==_VECT){
-	      if (tmpv._FRACptr->den._VECTptr->size()!=1){
-		*logptr(contextptr) << "Internal error integrating sqrt" << '\n';
-		return 0;
+	    for (;;++l){
+	      C=_quorem(makesequence(D,y,gen_x),contextptr);
+	      if (is_undef(C)){
+		res=C;
+		return 2;
 	      }
-	      tmpv._FRACptr->den=tmpv._FRACptr->den._VECTptr->front();
+	      if (!is_zero(C[1]))
+		break;
+	      D=C[0];
 	    }
-	    if (tmpv._FRACptr->num.type==_VECT)
-	      tmpv=multvecteur(inv(tmpv._FRACptr->den,contextptr),*tmpv._FRACptr->num._VECTptr);
 	  }
-	  if (tmpv.type!=_VECT)
-	    tmpv=vecteur(1,tmpv); // change 3/1/2013 for int(sqrt(1+x^2)/(-2*x^2))
-	  // res= gensizeerr(contextptr);
-	  // return 2;
-	}
-	vecteur colP=*tmpv._VECTptr;
-	int n=int(colP.size())-1;
-	tmpv=_e2r(makesequence(y,gen_x),contextptr);
-	if (tmpv.type!=_VECT){
-	  res= gensizeerr(contextptr);
-	  return 2;
-	}
-	int k=int(tmpv._VECTptr->size())-1;
-	n=giacmax(n,k*(l+1)-2);
-	n=giacmax(n,k-1);
-	if (n){
-	  lrdm(colP,n);
-	  gen yprime=(1-2*l)*derive(y,gen_x,contextptr);
-	  if (is_undef(yprime)){
-	    res= yprime;
+	  else
+	    P=P*y;
+	  gen yl=pow(y,l);
+	  C=_egcd(makesequence(D,yl,gen_x),contextptr);
+	  if (is_undef(C)){
+	    res= C;
 	    return 2;
 	  }
-	  matrice sys;
-	  tmpv=_e2r(makesequence(yprime,gen_x),contextptr);
+	  gen g=C[2],Q=C[0],R=C[1];
+	  C=_quorem(makesequence(P*R,D,gen_x),contextptr);
+	  if (is_undef(C)){
+	    res=C;
+	    return 2;
+	  }
+	  gen PD=C[1]/g;
+	  // changed made for int(1/(sin(x)*sqrt(sin(2*x)^3)));
+	  C=_quorem(makesequence(P*Q+C[0]*yl,g,gen_x),contextptr);
+	  if (!is_zero(C[1]))
+	    return 0;
+	  gen Py=C[0];  
+	  // gen Py=(P*Q+C[0]*yl)/g;
+	  C=_quorem(makesequence(Py,y,gen_x),contextptr);
+	  if (is_undef(C)){
+	    res= C; 
+	    return 2;
+	  }
+	  /*
+	    int[ Py/y^l*y^-1/2 ] = Q*y^[1/2-l] + int[ C*y^-1/2 ]
+	    degre[Py]=n, degre[y]=k, find Q degre[Q]=n+1-k and C degre[C]=k-2
+	    so that Py = Q'*y + Q*y'*[1/2-l] + C y^l   
+	    to do this we represent Q by a n+2-k-vector, C by a k-1-vector
+	    gluing Q and C we get a n+1-vector that must be solution of a
+	    n+1*n+1 linear system. Now we build the matrix of this system
+	    The n+2-k first columns are				    
+	    y'[1/2-l]  ...  x^alpha*y'*[1/2-l]+alpha*x^[alpha-1]*y ...    
+	    The k-1 last columns are 
+	    y^l  ...  x^beta*y^l 
+	    Note 1: to avoid rational input in the matrix we multiply by 2
+	    coef of Q and C are found in the reverse order
+	    for l!=0 n is more precisely max[deg[Py],k[l+1]-2]
+	    Note 2: at the end we integrate only (C+PD/D)*y^(-1/2)
+	  */
+	  gen tmpv=_e2r(makesequence(Py,gen_x),contextptr);
 	  if (tmpv.type!=_VECT){
-	    res=gensizeerr(contextptr);
-	    return 2;
+	    if (tmpv.type==_FRAC){
+	      if (tmpv._FRACptr->den.type==_VECT){
+		if (tmpv._FRACptr->den._VECTptr->size()!=1){
+		  *logptr(contextptr) << "Internal error integrating sqrt" << '\n';
+		  return 0;
+		}
+		tmpv._FRACptr->den=tmpv._FRACptr->den._VECTptr->front();
+	      }
+	      if (tmpv._FRACptr->num.type==_VECT)
+		tmpv=multvecteur(inv(tmpv._FRACptr->den,contextptr),*tmpv._FRACptr->num._VECTptr);
+	    }
+	    if (tmpv.type!=_VECT)
+	      tmpv=vecteur(1,tmpv); // change 3/1/2013 for int(sqrt(1+x^2)/(-2*x^2))
+	    // res= gensizeerr(contextptr);
+	    // return 2;
 	  }
-	  vecteur col0(*tmpv._VECTptr);
-	  vecteur col(col0);
-	  lrdm(col,n);
-	  sys.push_back(col);
-	  col0.push_back(zero);
-	  tmpv=_e2r(makesequence(2*y,gen_x),contextptr);
-	  if (tmpv.type!=_VECT){ 
-	    res=gensizeerr(contextptr);
-	    return 2;
-	  }
-	  vecteur col1(*tmpv._VECTptr);
-	  for (int i=1;i<n+2-k;++i){
-	    col=col0+gen(i)*col1;
-	    lrdm(col,n);
-	    col0.push_back(zero);
-	    col1.push_back(zero);
-	    sys.push_back(col);
-	  }
-	  tmpv=_e2r(makesequence(2*yl,gen_x),contextptr);
+	  vecteur colP=*tmpv._VECTptr;
+	  int n=int(colP.size())-1;
+	  tmpv=_e2r(makesequence(y,gen_x),contextptr);
 	  if (tmpv.type!=_VECT){
 	    res= gensizeerr(contextptr);
 	    return 2;
 	  }
-	  col0=*tmpv._VECTptr;
-	  for (int i=0;i<k-1;++i){
-	    col=col0;
+	  int k=int(tmpv._VECTptr->size())-1;
+	  n=giacmax(n,k*(l+1)-2);
+	  n=giacmax(n,k-1);
+	  if (n){
+	    lrdm(colP,n);
+	    gen yprime=(1-2*l)*derive(y,gen_x,contextptr);
+	    if (is_undef(yprime)){
+	      res= yprime;
+	      return 2;
+	    }
+	    matrice sys;
+	    tmpv=_e2r(makesequence(yprime,gen_x),contextptr);
+	    if (tmpv.type!=_VECT){
+	      res=gensizeerr(contextptr);
+	      return 2;
+	    }
+	    vecteur col0(*tmpv._VECTptr);
+	    vecteur col(col0);
 	    lrdm(col,n);
 	    sys.push_back(col);
 	    col0.push_back(zero);
-	  }
-	  sys=mtran(sys);
-	  int st=step_infolevel(contextptr);
-	  step_infolevel(contextptr)=0;
-	  col0=linsolve(sys,colP,contextptr);
-	  step_infolevel(contextptr)=st;
-	  if (!col0.empty() && is_undef(col0.front())){
-	    res= col0.front();
-	    return 2;
-	  }
-	  reverse(col0.begin(),col0.end()); // C at the beginning, Q at the end
-	  C=2*horner(vecteur(col0.begin(),col0.begin()+k-1),gen_x);
-	  Q=2*horner(vecteur(col0.begin()+k-1,col0.end()),gen_x);
-	  alpha=alpha+Q*sqrt(y,contextptr)/yl;
-	}
-	else
-	  C=Py;
-	e=(C+PD/D)/sqrt(argument,contextptr);
-	if (is_quadratic_wrt(argument,gen_x,a,b,c,contextptr)){
-	  if (!is_positive(-a,contextptr)){
-	    gen sqrta(sqrt(a,contextptr));
-	    identificateur id_m(" m");
-	    gen m(id_m);
-	    tmpe=eval(rdiv(complex_subst(e*sqrt(argument,contextptr),argument,pow(m+sqrta*gen_x,2),contextptr),b-plus_two*sqrta*m,contextptr),1,contextptr);
-	    tmpe=ratnormal(complex_subst(tmpe,gen_x,rdiv(m*m-c,b-plus_two*sqrta*m,contextptr),contextptr),contextptr);
-	    // factor?
-	    //tmpe=_factor(tmpe,contextptr);
-	    tmpres=linear_integrate_nostep(tmpe,m,tmprem,intmode | 2,contextptr);
-	    remains_to_integrate=remains_to_integrate+complex_subst(plus_two*tmprem,m,sqrt(argument,contextptr)-sqrta*gen_x,contextptr);
-	    res= alpha+complex_subst(plus_two*tmpres,m,sqrt(argument,contextptr)-sqrta*gen_x,contextptr);
-	    return 2;
-	  }
-	  else {
-	    gen D=b*b-gen(4)*a*c;
-	    if (is_strictly_positive(-D,contextptr))
-	      return 0;
-	    D=sqrt_noabs(D,contextptr);
-	    gen sD=sign(D,contextptr);
-	    if (is_minus_one(sD)){
-	      D=-D;
-	      sD=1;
+	    tmpv=_e2r(makesequence(2*y,gen_x),contextptr);
+	    if (tmpv.type!=_VECT){ 
+	      res=gensizeerr(contextptr);
+	      return 2;
 	    }
-	    /*
-	      ( *	D=sqrt(b^2-4ac)                                    * )
-	      ( * 	a<0 and D>0 ->	x=[D*2u/[1+u^2]-b]/2a		   * )
-	      ( *			u=[D-2*sqrt[-a]*sqrt[y]]/[2ax+b]   * )
-	      ( *			dx/sqrt[y]=-2*du/[sqrt[-a]*[1+u^2]] * )
-	    */
-	    gen sqrta(sqrt(-a,contextptr));
-	    identificateur id_u(" u");
-	    gen u(id_u),uu(u);
-	    gen uasx=rdiv(D-plus_two*sqrta*sqrt(argument,contextptr),plus_two*a*gen_x+b,contextptr);
-	    tmpe=ratnormal(e*sqrt(argument,contextptr),contextptr);
-	    tmpe=complex_subst(tmpe,gen_x,rdiv(rdiv(plus_two*u*D,1+u*u,contextptr)-b,plus_two*a,contextptr),contextptr);
-	    tmpe=-rdiv(plus_two,sqrta,contextptr)*tmpe/(1+u*u);
-	    tmpres=integrate_rational(tmpe,u,tmprem,uu,intmode,contextptr);
-	    // sqrt(a*x^2+b*x+c) -> a*[(x+b/2/a)^2-(D/a)^2]
-	    // -> asin(a*x+b/2)
-	    vecteur vin(makevecteur(u,symbolic(at_atan,u))),vout(makevecteur(uasx,inv(-2,contextptr)*sD*asin(ratnormal((-2*a*gen_x-b)/D,contextptr),contextptr)));
-	    remains_to_integrate=remains_to_integrate+complex_subst(tmprem,vin,vout,contextptr);
-	    res=alpha+complex_subst(tmpres,vin,vout,contextptr);
+	    vecteur col1(*tmpv._VECTptr);
+	    for (int i=1;i<n+2-k;++i){
+	      col=col0+gen(i)*col1;
+	      lrdm(col,n);
+	      col0.push_back(zero);
+	      col1.push_back(zero);
+	      sys.push_back(col);
+	    }
+	    tmpv=_e2r(makesequence(2*yl,gen_x),contextptr);
+	    if (tmpv.type!=_VECT){
+	      res= gensizeerr(contextptr);
+	      return 2;
+	    }
+	    col0=*tmpv._VECTptr;
+	    for (int i=0;i<k-1;++i){
+	      col=col0;
+	      lrdm(col,n);
+	      sys.push_back(col);
+	      col0.push_back(zero);
+	    }
+	    sys=mtran(sys);
+	    int st=step_infolevel(contextptr);
+	    step_infolevel(contextptr)=0;
+	    col0=linsolve(sys,colP,contextptr);
+	    step_infolevel(contextptr)=st;
+	    if (!col0.empty() && is_undef(col0.front())){
+	      res= col0.front();
+	      return 2;
+	    }
+	    reverse(col0.begin(),col0.end()); // C at the beginning, Q at the end
+	    C=2*horner(vecteur(col0.begin(),col0.begin()+k-1),gen_x);
+	    Q=2*horner(vecteur(col0.begin()+k-1,col0.end()),gen_x);
+	    alpha=alpha+Q*sqrt(y,contextptr)/yl;
+	  }
+	  else
+	    C=Py;
+	  e=(C+PD/D)/sqrt(argument,contextptr);
+	  if (is_quadratic_wrt(argument,gen_x,a,b,c,contextptr)){
+	    if (!is_positive(-a,contextptr)){
+	      gen sqrta(sqrt(a,contextptr));
+	      identificateur id_m(" m");
+	      gen m(id_m);
+	      tmpe=eval(rdiv(complex_subst(e*sqrt(argument,contextptr),argument,pow(m+sqrta*gen_x,2),contextptr),b-plus_two*sqrta*m,contextptr),1,contextptr);
+	      tmpe=ratnormal(complex_subst(tmpe,gen_x,rdiv(m*m-c,b-plus_two*sqrta*m,contextptr),contextptr),contextptr);
+	      // factor?
+	      //tmpe=_factor(tmpe,contextptr);
+	      tmpres=linear_integrate_nostep(tmpe,m,tmprem,intmode | 2,contextptr);
+	      remains_to_integrate=remains_to_integrate+complex_subst(plus_two*tmprem,m,sqrt(argument,contextptr)-sqrta*gen_x,contextptr);
+	      res= alpha+complex_subst(plus_two*tmpres,m,sqrt(argument,contextptr)-sqrta*gen_x,contextptr);
+	      return 2;
+	    }
+	    else {
+	      gen D=b*b-gen(4)*a*c;
+	      if (is_strictly_positive(-D,contextptr))
+		return 0;
+	      D=sqrt_noabs(D,contextptr);
+	      gen sD=sign(D,contextptr);
+	      if (is_minus_one(sD)){
+		D=-D;
+		sD=1;
+	      }
+	      /*
+		( *	D=sqrt(b^2-4ac)                                    * )
+		( * 	a<0 and D>0 ->	x=[D*2u/[1+u^2]-b]/2a		   * )
+		( *			u=[D-2*sqrt[-a]*sqrt[y]]/[2ax+b]   * )
+		( *			dx/sqrt[y]=-2*du/[sqrt[-a]*[1+u^2]] * )
+	      */
+	      gen sqrta(sqrt(-a,contextptr));
+	      identificateur id_u(" u");
+	      gen u(id_u),uu(u);
+	      gen uasx=rdiv(D-plus_two*sqrta*sqrt(argument,contextptr),plus_two*a*gen_x+b,contextptr);
+	      tmpe=ratnormal(e*sqrt(argument,contextptr),contextptr);
+	      tmpe=complex_subst(tmpe,gen_x,rdiv(rdiv(plus_two*u*D,1+u*u,contextptr)-b,plus_two*a,contextptr),contextptr);
+	      tmpe=-rdiv(plus_two,sqrta,contextptr)*tmpe/(1+u*u);
+	      tmpres=integrate_rational(tmpe,u,tmprem,uu,intmode,contextptr);
+	      // sqrt(a*x^2+b*x+c) -> a*[(x+b/2/a)^2-(D/a)^2]
+	      // -> asin(a*x+b/2)
+	      vecteur vin(makevecteur(u,symbolic(at_atan,u))),vout(makevecteur(uasx,inv(-2,contextptr)*sD*asin(ratnormal((-2*a*gen_x-b)/D,contextptr),contextptr)));
+	      remains_to_integrate=remains_to_integrate+complex_subst(tmprem,vin,vout,contextptr);
+	      res=alpha+complex_subst(tmpres,vin,vout,contextptr);
+	      return 2;
+	    }
+	  } // end sqrt of quadratic
+	  else {
+	    remains_to_integrate=e;
+	    res=alpha;
 	    return 2;
 	  }
-	} // end sqrt of quadratic
-	else {
-	  remains_to_integrate=e;
-	  res=alpha;
-	  return 2;
-	}
-      } // end if d==2
+	} // end if d==2 
+      } // end if denominator of argument of frac power is constant
       int numdeg=0,numval=0,dendeg=0;
       if (fr_dp.type==_POLY) dendeg=fr_dp._POLYptr->lexsorted_degree();
       if (dendeg>0 || fr_np.type!=_POLY) return 1;
