@@ -813,8 +813,10 @@ namespace giac {
       }
     }
     gen prev=1;
-    gen numprev=r2sym(rdiv(-v.back(),v.front(),contextptr),lv,contextptr);
-    numprev=arg(evalf(numprev,1,contextptr),contextptr);
+    gen numprev=r2sym(rdiv(-v.back(),v.front(),contextptr),lv,contextptr),numprevf;
+    bool hasevalf=has_evalf(numprev,numprevf,1,contextptr);
+    if (hasevalf)
+      numprevf=arg(numprevf,contextptr);
     for (f_it=f.begin();f_it!=f_itend;++f_it){
       polynome irr_p(f_it->fact);
       deg=irr_p.lexsorted_degree();
@@ -827,13 +829,13 @@ namespace giac {
 	// cerr << "xroot" << num << "\n";
 	gen numlv=r2sym(numcur,lv,contextptr);
 	// select root by computing argument
-	gen numlvf=evalf(numlv,1,contextptr);
-	if (!lvar(numlvf).empty()){
+	if (!hasevalf){
 	  *logptr(contextptr) << gettext("Warning, checking for positivity of a root depending of parameters might return wrong sign: ")<< numlv << "\n";
 	  v=vcur;
 	  num=numcur;
 	  break;
 	}
+	gen numlvf=evalf(numlv,1,contextptr);
 	if (is_positive(numlvf,contextptr)){
 	  v=vcur;
 	  num=numcur;

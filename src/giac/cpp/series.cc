@@ -1339,7 +1339,7 @@ namespace giac {
 
   static int find_direction(const sparse_poly1 & s,int direction,GIAC_CONTEXT){
     int image_of_direction=0;
-    if (!s.empty() && fastsign(s.front().coeff,0)){
+    if (!s.empty() && fastsign(s.front().coeff,contextptr)){
       if (direction)
 	image_of_direction=1;
       else {
@@ -1350,7 +1350,7 @@ namespace giac {
 	    image_of_direction=1;
 	}
       }
-      image_of_direction=image_of_direction*fastsign(s.front().coeff,0);
+      image_of_direction=image_of_direction*fastsign(s.front().coeff,contextptr);
       return image_of_direction;
     }
     return 0;
