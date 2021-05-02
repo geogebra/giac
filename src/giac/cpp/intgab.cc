@@ -965,10 +965,18 @@ namespace giac {
 	  if (derive(base,x,contextptr)==0){
 	    g0mult=pow(base,expo,contextptr);
 	    g0_=symbolic(at_pow,makesequence(x-a,na*expo))*symbolic(at_pow,makesequence(b-x,nb*expo));
-	    nb=0; // insure next test is not true
+	    na=nb=0; // insure next tests are not true
+	  }
+	  else 
+	    base=g0_._VECTptr->front();
+	  bool exchanged=false;
+	  if (na==1 && !nb){ // exchange a and b
+	    // x->b+a-x
+	    base=subst(base,x,b+a-x,false,contextptr);
+	    nb=1; na=0;
+	    exchanged=true;
 	  }
 	  if (nb==1 && !na){
-	    base=g0_._VECTptr->front();
 	    gen tmp=_horner(makesequence(base,a,x),contextptr);
 	    base=base-tmp;
 	    for (;;){
@@ -988,9 +996,9 @@ namespace giac {
 	      return true;
 	    }
 	  } // nb==1 && !na
-	}
-      }
-    }
+	} // lv.size()==1 && lv.front()==x
+      } // g0_.type==-_VECT of size 2
+    } // a!=inf && b!=inf && pow
     if (!is_inf(a) && !is_inf(b) && g0_.is_symb_of_sommet(at_prod) && g0_._SYMBptr->feuille.type==_VECT && g0_._SYMBptr->feuille._VECTptr->size()==2){ // Beta?
       // rewrite ^ of powers
       vecteur v=*g0_._SYMBptr->feuille._VECTptr,v1;  
