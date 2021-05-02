@@ -3276,6 +3276,8 @@ namespace giac {
     return pow(base,expo,contextptr)*inv(pow(base,-expo1,contextptr),contextptr);
   }
   gen invfracpow(const gen & e,GIAC_CONTEXT){
+    if (e.is_symb_of_sommet(at_same))
+      return symbolic(at_same,makesequence(invfracpow(e._SYMBptr->feuille[0],contextptr),invfracpow(e._SYMBptr->feuille[1],contextptr)));
     vector< gen_op_context > invfracpow_v(1,do_invfracpow);
     vector<const unary_function_ptr *> inv_v(1,at_inv);
     return subst(e,inv_v,invfracpow_v,false,contextptr);
