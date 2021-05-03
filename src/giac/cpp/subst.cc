@@ -3275,11 +3275,15 @@ namespace giac {
     expo=expo-expo1; // expo>0
     return pow(base,expo,contextptr)*inv(pow(base,-expo1,contextptr),contextptr);
   }
+  gen do_same_nop(const gen &g,GIAC_CONTEXT){
+    return symbolic(at_same,g);
+  }
   gen invfracpow(const gen & e,GIAC_CONTEXT){
-    if (e.is_symb_of_sommet(at_same))
-      return symbolic(at_same,makesequence(invfracpow(e._SYMBptr->feuille[0],contextptr),invfracpow(e._SYMBptr->feuille[1],contextptr)));
+    //if (e.is_symb_of_sommet(at_same)) return symbolic(at_same,makesequence(invfracpow(e._SYMBptr->feuille[0],contextptr),invfracpow(e._SYMBptr->feuille[1],contextptr)));
     vector< gen_op_context > invfracpow_v(1,do_invfracpow);
+    invfracpow_v.push_back(do_same_nop);
     vector<const unary_function_ptr *> inv_v(1,at_inv);
+    inv_v.push_back(at_same);
     return subst(e,inv_v,invfracpow_v,false,contextptr);
   }
 

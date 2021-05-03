@@ -842,7 +842,7 @@ namespace giac {
 	  break;
 	}
 	int d=v.size()-1;
-	gen cur=abs(d*arg(numlvf,contextptr)-numprev);
+	gen cur=abs(d*arg(numlvf,contextptr)-numprevf);
 	if (is_greater(prev,cur,contextptr)){
 	  v=vcur;
 	  num=numcur;
