@@ -118,17 +118,28 @@ def gccPath = "/usr/bin"
 if (gccBin.length() > 0) {
     gccPath = gccBin.substring(0, gccBin.lastIndexOf("/"))
 }
-def clangBin = exec_("xcrun", "--sdk", "iphoneos", "--find", "clang")
-ext.clangPath = "/usr/bin"
-if (clangBin.length() > 0) {
-    ext.clangPath = clangBin.substring(0, clangBin.lastIndexOf("/"))
+def clangMacosxBin = exec_("xcrun", "--sdk", "macosx", "--find", "clang")
+ext.clangMacosxPath = "/usr/bin"
+if (clangMacosxBin.length() > 0) {
+    ext.clangMacosxPath = clangMacosxBin.substring(0, clangMacosxBin.lastIndexOf("/"))
 }
+def clangIosBin = exec_("xcrun", "--sdk", "iphoneos", "--find", "clang++")
+ext.clangIosPath = "/usr/bin"
+if (clangIosBin.length() > 0) {
+    ext.clangIosPath = clangIosBin.substring(0, clangIosBin.lastIndexOf("/"))
+}
+def clangIphonesimulatorBin = exec_("xcrun", "--sdk", "iphonesimulator", "--find", "clang++")
+ext.clangIphonesimulatorPath = "/usr/bin"
+if (clangIphonesimulatorBin.length() > 0) {
+    ext.clangIphonesimulatorPath = clangIphonesimulatorBin.substring(0, clangIphonesimulatorBin.lastIndexOf("/"))
+}
+
 def iphoneosSdk = exec_("xcrun", "--sdk", "iphoneos", "--show-sdk-path")
 def iphonesimulatorSdk = exec_("xcrun", "--sdk", "iphonesimulator", "--show-sdk-path")
 def iphoneosPlatform = exec_("xcrun", "--sdk", "iphoneos", "--show-sdk-platform-path")
 def minIosVersion = '9.0'
 
-def iosClangCompilerArgs(args, sdk, arch, minIosVersion) {
+def iosClangCompilerArgs(args, sdk, arch, minIosVersion, postfix = "") {
     for (int i = args.size() - 1; i >= 0; i--) {
         if (args[i].equals("-nostdinc")) {
             args.remove(i);
@@ -138,6 +149,8 @@ def iosClangCompilerArgs(args, sdk, arch, minIosVersion) {
     args << "${sdk}"
     args << "-arch"
     args << "${arch}"
+    args << "-target"
+    args << "${arch}-apple-ios${minIosVersion}{$postfix}"
     args << "-miphoneos-version-min=${minIosVersion}"
     args << "-std=gnu++98"
     args << "-stdlib=libc++"
@@ -400,7 +413,7 @@ model {
             target('osx_amd64') {
                 cppCompiler.executable 'clang'
                 linker.executable 'gcc'
-                path gccPath, clangPath
+                path gccPath, clangMacosxPath
 
                 cppCompiler.withArguments { args ->
                     macosCompilerArgs(args, null)
@@ -409,7 +422,7 @@ model {
             target('osx_arm64') {
                 cppCompiler.executable 'clang'
                 linker.executable 'gcc'
-                path gccPath, clangPath
+                path gccPath, clangMacosxPath
 
                 cppCompiler.withArguments { args ->
                     macosCompilerArgs(args, 'arm64-apple-macos11')
@@ -423,35 +436,35 @@ model {
                 cppCompiler.withArguments { args ->
                     iosClangCompilerArgs(args, iphoneosSdk, "armv7", minIosVersion)
                 }
-                path clangPath
+                path clangIosPath
             }
             target('ios_arm64') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
                     iosClangCompilerArgs(args, iphoneosSdk, "arm64", minIosVersion)
                 }
-                path clangPath
+                path clangIosPath
             }
             target('iphonesimulator_i386') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
-                    iosClangCompilerArgs(args, iphonesimulatorSdk, "i386", minIosVersion)
+                    iosClangCompilerArgs(args, iphonesimulatorSdk, "i386", minIosVersion, "-simulator")
                 }
-                path clangPath
+                path clangIphonesimulatorPath
             }
             target('iphonesimulator_x86_64') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
-                    iosClangCompilerArgs(args, iphonesimulatorSdk, "x86_64", minIosVersion)
+                    iosClangCompilerArgs(args, iphonesimulatorSdk, "x86_64", minIosVersion, "-simulator")
                 }
-                path clangPath
+                path clangIphonesimulatorPath
             }
             target('iphonesimulator_arm64') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
-                    iosClangCompilerArgs(args, iphonesimulatorSdk, "arm64", minIosVersion)
+                    iosClangCompilerArgs(args, iphonesimulatorSdk, "arm64", minIosVersion, "-simulator")
                 }
-                path clangPath
+                path clangIphonesimulatorPath
             }
         }
         // Note: Make sure manually that these executables are on the PATH.
@@ -662,13 +675,13 @@ model {
     }
 }
 
-def lipo(name, output, String... libraries) {
+def lipo(name, output, clangPath, String... libraries) {
     def args = ["${clangPath}/lipo"] + libraries.flatten() + ["-create", "-output", "${output}/${name}.a"]
     mkdir("${output}")
     exec_(args as String[])
 }
 
-def mergeLibraries(name, output, String... libraries) {
+def mergeLibraries(name, output, clangPath, String... libraries) {
     def args = ["${clangPath}/libtool", "-static", "-o", "${output}/${name}.a"]
     args.addAll(libraries)
     mkdir("${output}")
@@ -707,24 +720,24 @@ task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'g
     doLast {
         def output = "${buildDir}/libs/merged"
         ["arm64", "armv7"].each {
-            mergeLibraries("Giac", "${output}/ios_${it}", 
+            mergeLibraries("Giac", "${output}/ios_${it}", clangIosPath,
                 "${buildDir}/libs/giac/static/ios_${it}/libgiac.a", 
                 "${buildDir}/libs/simpleInterface/static/ios_${it}/libSimpleInterface.a", 
                 "src/jni/prebuilt/ios/${it}/libgmp.a", 
                 "src/jni/prebuilt/ios/${it}/libmpfr.a")
         }
         ["arm64", "i386", "x86_64"].each {
-            mergeLibraries("Giac", "${output}/iphonesimulator_${it}", 
+            mergeLibraries("Giac", "${output}/iphonesimulator_${it}", clangIphonesimulatorPath,
                 "${buildDir}/libs/giac/static/iphonesimulator_${it}/libgiac.a", 
                 "${buildDir}/libs/simpleInterface/static/iphonesimulator_${it}/libSimpleInterface.a", 
                 "src/jni/prebuilt/iphonesimulator/${it}/libgmp.a", 
                 "src/jni/prebuilt/iphonesimulator/${it}/libmpfr.a")
         }
 
-        lipo("Giac", "${output}/ios", 
+        lipo("Giac", "${output}/ios", clangIosPath, 
             "${output}/ios_arm64/Giac.a", 
             "${output}/ios_armv7/Giac.a")
-        lipo("Giac", "${output}/iphonesimulator", 
+        lipo("Giac", "${output}/iphonesimulator", clangIphonesimulatorPath,
             "${output}/iphonesimulator_arm64/Giac.a", 
             "${output}/iphonesimulator_i386/Giac.a",
             "${output}/iphonesimulator_x86_64/Giac.a")
