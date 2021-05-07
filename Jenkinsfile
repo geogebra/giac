@@ -31,7 +31,7 @@ pipeline {
               remote: 'https://dev.geogebra.org/svn/trunk/geogebra/giac']], 
             quietOperation: true, 
             workspaceUpdater: [$class: 'UpdateUpdater']])
-          sh './gradlew publishPodspec -Prevision=$SVN_REVISION'
+          sh './gradlew clean publishPodspec -Prevision=$SVN_REVISION'
         }
       }
     }
