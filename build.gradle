@@ -370,17 +370,9 @@ model {
             architecture 'arm64'
             operatingSystem 'android'
         }
-        ios_armv7 {
-            architecture 'armv7'
-            operatingSystem 'ios'
-        }
         ios_arm64 {
             architecture 'arm64'
             operatingSystem 'ios'
-        }
-        iphonesimulator_i386 {
-            architecture 'i386'
-            operatingSystem 'iphonesimulator'
         }
         iphonesimulator_x86_64 {
             architecture 'x86_64'
@@ -493,9 +485,7 @@ model {
         giac(NativeLibrarySpec) {
             targetPlatform 'linux32'
             targetPlatform 'linux64'
-            targetPlatform 'ios_armv7'
             targetPlatform 'ios_arm64'
-            targetPlatform 'iphonesimulator_i386'
             targetPlatform 'iphonesimulator_x86_64'
             targetPlatform 'iphonesimulator_arm64'
             if (isMac) {
@@ -521,9 +511,7 @@ model {
         }
 
         simpleInterface(NativeLibrarySpec) {
-            targetPlatform 'ios_armv7'
             targetPlatform 'ios_arm64'
-            targetPlatform 'iphonesimulator_i386'
             targetPlatform 'iphonesimulator_x86_64'
             targetPlatform 'iphonesimulator_arm64'
 
@@ -689,17 +677,13 @@ def mergeLibraries(name, output, clangPath, String... libraries) {
 }
 
 task simpleInterfaceIosStaticLibrary(dependsOn: [
-    'simpleInterfaceIos_armv7StaticLibrary', 
     'simpleInterfaceIos_arm64StaticLibrary', 
-    'simpleInterfaceIphonesimulator_i386StaticLibrary',
     'simpleInterfaceIphonesimulator_x86_64StaticLibrary',
     'simpleInterfaceIphonesimulator_arm64StaticLibrary'
 ])
 
 task giacIosStaticLibrary(dependsOn: [
-    'giacIos_armv7StaticLibrary', 
     'giacIos_arm64StaticLibrary', 
-    'giacIphonesimulator_i386StaticLibrary',
     'giacIphonesimulator_x86_64StaticLibrary',
     'giacIphonesimulator_arm64StaticLibrary'
 ])
@@ -719,14 +703,14 @@ task installGems(type: Exec, dependsOn: 'configBundle') {
 task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'giacIosStaticLibrary']) {
     doLast {
         def output = "${buildDir}/libs/merged"
-        ["arm64", "armv7"].each {
+        ["arm64"].each {
             mergeLibraries("Giac", "${output}/ios_${it}", clangIosPath,
                 "${buildDir}/libs/giac/static/ios_${it}/libgiac.a", 
                 "${buildDir}/libs/simpleInterface/static/ios_${it}/libSimpleInterface.a", 
                 "src/jni/prebuilt/ios/${it}/libgmp.a", 
                 "src/jni/prebuilt/ios/${it}/libmpfr.a")
         }
-        ["arm64", "i386", "x86_64"].each {
+        ["arm64", "x86_64"].each {
             mergeLibraries("Giac", "${output}/iphonesimulator_${it}", clangIphonesimulatorPath,
                 "${buildDir}/libs/giac/static/iphonesimulator_${it}/libgiac.a", 
                 "${buildDir}/libs/simpleInterface/static/iphonesimulator_${it}/libSimpleInterface.a", 
@@ -734,12 +718,9 @@ task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'g
                 "src/jni/prebuilt/iphonesimulator/${it}/libmpfr.a")
         }
 
-        lipo("Giac", "${output}/ios", clangIosPath, 
-            "${output}/ios_arm64/Giac.a", 
-            "${output}/ios_armv7/Giac.a")
+        lipo("Giac", "${output}/ios", clangIosPath, "${output}/ios_arm64/Giac.a")
         lipo("Giac", "${output}/iphonesimulator", clangIphonesimulatorPath,
             "${output}/iphonesimulator_arm64/Giac.a", 
-            "${output}/iphonesimulator_i386/Giac.a",
             "${output}/iphonesimulator_x86_64/Giac.a")
     }
 }
@@ -786,10 +767,10 @@ task createIphonesimulatorFramework(dependsOn: createFatIosStaticLibrary, type: 
 task createIosXcframework(dependsOn: [createIosFramework, createIphonesimulatorFramework], type: Copy) {
     description "Creates XCFramework"
     from("${buildDir}/libs/framework/iphonesimulator") {
-        into "ios-arm64_i386_x86_64-simulator"
+        into "ios-arm64_x86_64-simulator"
     }
     from("${buildDir}/libs/framework/ios") {
-        into "ios-arm64_armv7"
+        into "ios-arm64"
     }
     from("src/simpleInterface/framework") {
         include "xcframework.plist"
