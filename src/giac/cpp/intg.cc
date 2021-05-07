@@ -1099,6 +1099,19 @@ namespace giac {
 
   gen linear_integrate_nostep(const gen & e,const gen & x,gen & remains_to_integrate,int intmode,GIAC_CONTEXT);
 
+  bool is_a_monomial(const gen & g,int & expo){
+    expo=0;
+    if (g.type!=_POLY) return true;
+    const polynome & p=*g._POLYptr;
+    expo=p.lexsorted_degree();
+    vector< monomial<gen> >::const_iterator it=p.coord.begin(),itend=p.coord.end();
+    for (;it!=itend;++it){
+      if (it->index.front()!=expo)
+	return false;
+    }
+    return true;
+  }
+
   // return 1 if power is a fraction of int, 2 if a sqrt or more general exponent where x->1/x change of var can be tested
   static int integrate_sqrt(gen & e,const gen & gen_x,const vecteur & rvar,gen & res,gen & remains_to_integrate,int intmode,GIAC_CONTEXT){ // x and a power
     // subcase 1: power is a fraction of int
@@ -1106,8 +1119,10 @@ namespace giac {
     // subcase 2: 1st argument of power is linear, 2nd is constant && no inv
     gen argument=rvar.back()._SYMBptr->feuille._VECTptr->front();
     gen exposant=rvar.back()._SYMBptr->feuille._VECTptr->back();
+    if (exposant.is_symb_of_sommet(at_inv) && exposant._SYMBptr->feuille.type==_INT_)
+      exposant=fraction(1,exposant._SYMBptr->feuille);
     if ( (exposant.type==_FRAC) && (exposant._FRACptr->num.type==_INT_) && (exposant._FRACptr->den.type==_INT_) ){
-      int d=exposant._FRACptr->den.val; // n=exposant._FRACptr->num.val,
+      int d=exposant._FRACptr->den.val,exponum=exposant._FRACptr->num.val;
       gen a,b,c,tmprem,tmpres,tmpe;
       if (is_linear_wrt(argument,gen_x,a,b,contextptr)){
 	// argument=(ax+b)=t^d -> x=(t^d-a)/b and dx=d/a*t^(d-1)*dt
@@ -1125,6 +1140,12 @@ namespace giac {
       gen fr,fr_n,fr_np,fr_d,fr_dp,ap,bp;
       fr=e2r(argument,tmpv,contextptr);
       fxnd(fr,fr_np,fr_dp);
+      int fr_nexpo,fr_dexpo;
+      if (is_a_monomial(fr_np,fr_nexpo) && is_a_monomial(fr_dp,fr_dexpo)){
+	gen pui=fraction((fr_nexpo-fr_dexpo)*exponum,d);
+	res=e*gen_x/(pui+1);
+	return 2;
+      }
       fr_n=r2e(fr_np,tmpv,contextptr);
       fr_d=r2e(fr_dp,tmpv,contextptr);
       if (is_linear_wrt(fr_n,gen_x,a,b,contextptr) && is_linear_wrt(fr_d,gen_x,ap,bp,contextptr) ){
