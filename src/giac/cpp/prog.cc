@@ -13286,7 +13286,9 @@ namespace giac {
       unary_function_ptr u(uf);
       // cout << symbolic(u,makevecteur(1,2)) << '\n';
       user_operator_list.push_back(u);
-      bool res=lexer_functions_register(u,ss.c_str(),token_value);
+      char * scopy=(const char *)malloc(ss.size()+1); // FIXME release!
+      strcpy(scopy,ss.c_str());
+      bool res=lexer_functions_register(u,scopy,token_value);
       if (res){
 #ifdef HAVE_SIGNAL_H_OLD
 	if (!child_id)

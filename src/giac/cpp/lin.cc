@@ -586,6 +586,8 @@ namespace giac {
     // distribute wrt a AND b
     const_iterateur ita=a._SYMBptr->feuille._VECTptr->begin(),itaend=a._SYMBptr->feuille._VECTptr->end();
     const_iterateur itb=b._SYMBptr->feuille._VECTptr->begin(),itbend=b._SYMBptr->feuille._VECTptr->end();
+    if ((itbend-itb)*(itaend-ita)>MAX_PROD_EXPAND_SIZE)
+      return a*b;
     vecteur v;
     v.reserve((itbend-itb)*(itaend-ita));
     for (;ita!=itaend;++ita){
@@ -604,7 +606,12 @@ namespace giac {
     return _simplifier(prod_expand(prod_expand(it,it+s/2,contextptr),prod_expand(it+s/2,itend,contextptr),contextptr),contextptr);
   }
   static gen prod_expand(const gen & e_orig,GIAC_CONTEXT){
+    int te=taille(e_orig,MAX_PROD_EXPAND_SIZE);
+    if (te>MAX_PROD_EXPAND_SIZE)
+      return symbolic(at_prod,e_orig);
     gen e=aplatir_fois_plus(expand(e_orig,contextptr));
+    if (taille(e,MAX_PROD_EXPAND_SIZE)>MAX_PROD_EXPAND_SIZE)
+      return symbolic(at_prod,e_orig);
     if (e.type!=_VECT)
       return e;
     // look for sommet=at_plus inside e
@@ -685,6 +692,8 @@ namespace giac {
       int n=int(w.size());
       if (!n)
 	return gensizeerr(contextptr);
+      if (std::pow(n,k)>MAX_PROD_EXPAND_SIZE)
+	return pow(v[0],v[1],contextptr);
       vecteur res;
       gen p;
       for (int i=k;i>=0;--i){
