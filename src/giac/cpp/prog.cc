@@ -13286,9 +13286,15 @@ namespace giac {
       unary_function_ptr u(uf);
       // cout << symbolic(u,makevecteur(1,2)) << '\n';
       user_operator_list.push_back(u);
-      char * scopy=(const char *)malloc(ss.size()+1); // FIXME release!
-      strcpy(scopy,ss.c_str());
-      bool res=lexer_functions_register(u,scopy,token_value);
+      static vector<string> * user_operator_string=0;
+      if (!user_operator_string) 
+	user_operator_string=new vector<string>;
+      int pos=equalposcomp(*user_operator_string,ss);
+      if (!pos){
+	user_operator_string->push_back(ss);
+	pos=user_operator_string->size();
+      }
+      bool res=lexer_functions_register(u,(*user_operator_string)[pos-1].c_str(),token_value);
       if (res){
 #ifdef HAVE_SIGNAL_H_OLD
 	if (!child_id)
