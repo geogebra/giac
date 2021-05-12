@@ -13529,6 +13529,22 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     }
   }
 
+  template<class tdeg_t>
+  void rur_coordinates(const polymod<tdeg_t> & cur,const polymod<tdeg_t> & lm,vector<int> & tmp){
+    unsigned k=0,j=0;
+    for (;j<lm.coord.size() && k<cur.coord.size();++j){
+      if (lm.coord[j].u!=cur.coord[k].u)
+	tmp[j]=0;
+      else {
+	tmp[j]=cur.coord[k].g;
+	++k;
+      }
+    }
+    for (;j<lm.coord.size();++j){
+      tmp[j]=0;
+    }
+  }
+
   // s*coordinates reduced as a linear combination of the lines of M
   template<class tdeg_t>
   bool rur_linsolve(const vectpolymod<tdeg_t> & gbmod,const polymod<tdeg_t> & lm,const polymod<tdeg_t> & s,const matrice & M,modint p,matrice & res){
@@ -13581,6 +13597,27 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     res=N;
     return true;
   }
+// scalar product assuming all coordinates are positive
+  int multmod_positive(const vector<int> & v, const vector<int> & w,int p){
+    longlong p2=longlong(p)*p,res=0;
+    vector<int>::const_iterator it=v.begin(),itend=v.end(),jt=w.begin(),jtend=w.end();
+    for (; it!=itend;++jt,++it){
+      if (!*it) continue;
+      res += longlong(*it)*(*jt);
+      res -= p2;
+      res += (res>>63)&p2;
+    }
+    res %= p;
+    //if (res<0) CERR << "bug\n";
+    return res;
+  }
+
+// matrix vector multiplication assuming all coordinates are positive
+  void multmod_positive(const vector< vector<int> > &m,const vector<int> & v,int p,vector<int> & mv){
+    mv.resize(m.size());
+    for (int i=0;i<m.size();++i)
+      mv[i]=multmod_positive(m[i],v,p);
+  }
 
   // Compute minimal polynomial of s
   template<class tdeg_t>
@@ -13591,22 +13628,61 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     vector<unsigned> G(gbmod.size());
     for (unsigned i=0;i<G.size();++i)
       G[i]=i;
-    M.clear();
-    // set th i-th row of M with coordinates of s^i reduced/gbmod in terms of lm
-    vecteur tmp(S);
-    tmp[0]=makemod(0,p);
-    tmp[S-1]=1;
-    M.push_back(tmp);
-    polymod<tdeg_t> cur(s);
-    for (unsigned i=1;i<=lm.coord.size();++i){
-      reducesmallmod(cur,gbmod,G,-1,p,TMP1,false);
-      // get coordinates of cur in tmp (make them mod p)
-      rur_coordinates(cur,lm,tmp);
-      M.push_back(tmp);
-      // multiply cur and s
-      rur_mult(cur,s,p,TMP1);
-      cur.coord.swap(TMP1.coord);
+    bool done=false;
+    matrice chk;
+    if (1){ 
+      M.clear();
+      // matrix of multiplication by s of all monomials in lm
+      vector< vector<int> > mults(S),tmpm; 
+      polymod<tdeg_t> cur(order,dim);
+      vector<int> tmp(S),tmp1;
+      vecteur tmpv(S);
+      for (int i=0;i<S;++i){
+	cur.coord.clear();
+	cur.coord.push_back(lm.coord[i]);
+	rur_mult(cur,s,p,TMP1);
+	cur.coord.swap(TMP1.coord);
+	reducesmallmod(cur,gbmod,G,-1,p,TMP1,false);
+	rur_coordinates(cur,lm,tmp);
+	make_positive(tmp,p);
+	mults[i]=tmp;
+      }
+      tran_vect_vector_int(mults,tmpm); tmpm.swap(mults);  
+      // s^i is obtained by multiplying mults by the coordinates of s^[i-1]
+      tmpv[0]=makemod(0,p);
+      tmpv[S-1]=1;
+      M.push_back(tmpv);
+      tmp=vector<int>(S);
+      tmp[S-1]=1;
+      for (int i=0;i<S;++i){
+	multmod_positive(mults,tmp,p,tmp1); 
+	tmp.swap(tmp1);
+	vector_int2vecteur(tmp,tmpv);
+	M.push_back(tmpv);
+      }
+      done=true;
+      //chk=M; done=false;
     }
+    if (!done){
+      M.clear();
+      // set th i-th row of M with coordinates of s^i reduced/gbmod in terms of lm
+      vecteur tmp(S);
+      tmp[0]=makemod(0,p);
+      tmp[S-1]=1;
+      M.push_back(tmp);
+      polymod<tdeg_t> cur(s);
+      for (unsigned i=1;i<=lm.coord.size();++i){
+	reducesmallmod(cur,gbmod,G,-1,p,TMP1,false);
+	// get coordinates of cur in tmp (make them mod p)
+	rur_coordinates(cur,lm,tmp);
+	M.push_back(tmp);
+	// multiply cur and s
+	rur_mult(cur,s,p,TMP1);
+	cur.coord.swap(TMP1.coord);
+      }
+    }
+    if (!chk.empty() && !is_zero(smod(chk-M,p)))
+      CERR << "bug\n" ;
     matrice N(M);
     M.pop_back(); // remove the last one (for further computations, assuming max rank)
     if (!N.empty() && !N.front()._VECTptr->empty()) N=mtran(N);
