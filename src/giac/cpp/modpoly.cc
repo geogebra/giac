@@ -14769,7 +14769,7 @@ namespace giac {
 	  vector_int2vecteur(resp1,pq);
 	return true;
       }
-      if (//0 && // uncomment to test code below 
+      if (0 && // uncomment to test code below after debugging, fails sometimes
 	  modulo && logrs<=25 && test<p1*double(p2)*p4/2){
 	vecteur2vectorint(p,modulo,a);
 	vecteur2vectorint(q,modulo,b);

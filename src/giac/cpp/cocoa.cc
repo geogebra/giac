@@ -13800,6 +13800,31 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       CERR << CLOCK()*1e-6 << " sqrfree mod " << p << ":" << m1 << '\n';
     m1=operator_div(m,m1,&env); // m1 is the square free part
     vecteur m2=derivative(m1,&env); // m2 is the derivative, prime with m1
+#if 1 // multiply by m2 at the end
+    if (debug_infolevel)
+      CERR << CLOCK()*1e-6 << " rur linsolve" << '\n';
+    polymod<tdeg_t> one(order,dim);
+    one.coord.push_back(T_unsigned<modint,tdeg_t>(1,0));
+    if (!rur_linsolve(gbmod,lm,one,M,p,res))
+      return false;
+    // rur=[separating element,sqrfree part of minpoly,derivative of sqrfree part,
+    // derivative of sqrfree part*other coordinates]
+    rur.clear();
+    rur.push_back(s);
+    polymod<tdeg_t> tmp(order,dim);
+    rur_convert_univariate(m1,0,tmp);
+    rur.push_back(tmp);
+    rur_convert_univariate(m2,0,tmp);
+    rur.push_back(tmp);
+    // convert res to rur
+    for (unsigned i=0;i<res.size();++i){
+      vecteur v(*res[i]._VECTptr),w,q;
+      mulmodpoly(v,m2,&env,w);
+      DivRem(w,m1,&env,q,v);
+      rur_convert_univariate(v,0,tmp);
+      rur.push_back(tmp);
+    }
+#else
     // make the "product" with M (rows of M are powers of t)
     gen m3;
     for (unsigned i=0;i<m2.size();++i){
@@ -13820,7 +13845,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     // derivative of sqrfree part*other coordinates]
     rur.clear();
     rur.push_back(s);
-    polymod<tdeg_t> tmp(order,dim);
+    //polymod<tdeg_t> tmp(order,dim);
     rur_convert_univariate(m1,0,tmp);
     rur.push_back(tmp);
     rur_convert_univariate(m2,0,tmp);
@@ -13832,6 +13857,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       rur_convert_univariate(v,0,tmp);
       rur.push_back(tmp);
     }
+#endif
     return true;
   }
 
