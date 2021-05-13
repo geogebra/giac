@@ -13545,10 +13545,32 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     }
   }
 
+  void rur_cleanmod(vecteur & m){
+    for (unsigned i=0;i<m.size();++i){
+      if (m[i].type==_MOD)
+	m[i]=*m[i]._MODptr;
+    }
+  }
+
   // s*coordinates reduced as a linear combination of the lines of M
   template<class tdeg_t>
   bool rur_linsolve(const vectpolymod<tdeg_t> & gbmod,const polymod<tdeg_t> & lm,const polymod<tdeg_t> & s,const matrice & M,modint p,matrice & res){
     int S=int(lm.coord.size()),dim=lm.dim;
+    if (M.size()==1+dim){
+      // M is not the matrix of the system, it is already a kernel
+      for (int i=1;i<=dim;++i){
+	gen g=M[i];
+	if (g.type!=_VECT) return false;
+	vecteur m(*g._VECTptr);
+	rur_cleanmod(m);
+	if (m[m.size()-(dim-i)-1]!=-1) return false;
+	m[m.size()-(dim-i)-1]=0;
+	reverse(m.begin(),m.end());
+	m=trim(m,0);
+	res.push_back(m);
+      }
+      return true;
+    }
     order_t order=lm.order;
     polymod<tdeg_t> TMP1(order,dim);
     vector<unsigned> G(gbmod.size());
@@ -13681,6 +13703,44 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	cur.coord.swap(TMP1.coord);
       }
     }
+#if 1
+    if (!chk.empty() && !is_zero(smod(chk-M,p)))
+      CERR << "bug\n" ;
+    // add coordinates to avoid a separate linsolve with the same matrix
+    matrice N(M);
+    M.pop_back(); // remove the last one (for further computations, assuming max rank)
+    polymod<tdeg_t> si(order,dim);
+    int d=rur_dim(dim,order);
+    vecteur tmp(lm.coord.size());
+    polymod<tdeg_t> one(order,dim);
+    one.coord.push_back(T_unsigned<modint,tdeg_t>(1,0));
+    for (unsigned i=0;int(i)<d;++i){
+      index_t l(dim);
+      l[i]=1;
+      smallshift(one.coord,tdeg_t(l,order),si.coord);
+      reducesmallmod(si,gbmod,G,-1,p,TMP1,false);
+      // get coordinates of cur in tmp (make them mod p)
+      rur_coordinates(si,lm,tmp);
+      N.push_back(tmp);
+    }
+    N=mtran(N);
+    vecteur K;
+    if (debug_infolevel)
+      CERR << CLOCK()*1e-6 << " begin rur ker" << '\n';
+    if (!mker(N,K,1,context0) || K.empty() || K.front().type!=_VECT)
+      return false;
+    if (debug_infolevel)
+      CERR << CLOCK()*1e-6 << " end rur ker" << '\n';
+    m=*K.front()._VECTptr;
+    rur_cleanmod(m);
+    reverse(m.begin(),m.end());
+    m=trim(m,0);
+    K.swap(M);
+    if (m.size()>S+1) return false;
+    if (debug_infolevel>1)
+      CERR << "Minpoly for " << s << ":" << m << '\n';
+    return true;
+#else
     if (!chk.empty() && !is_zero(smod(chk-M,p)))
       CERR << "bug\n" ;
     matrice N(M);
@@ -13703,6 +13763,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     if (debug_infolevel>1)
       CERR << "Minpoly for " << s << ":" << m << '\n';
     return true;
+#endif
   }
 
   template<class tdeg_t>
@@ -13876,7 +13937,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       CERR << CLOCK()*1e-6 << " sqrfree mod " << p << ":" << m1 << '\n';
     m1=operator_div(m,m1,&env); // m1 is the square free part
     vecteur m2=derivative(m1,&env); // m2 is the derivative, prime with m1
-#if 1 // multiply by m2 at the end
+    // multiply by m2 at the end
     if (debug_infolevel)
       CERR << CLOCK()*1e-6 << " rur linsolve" << '\n';
     polymod<tdeg_t> one(order,dim);
@@ -13900,40 +13961,6 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       rur_convert_univariate(v,0,tmp);
       rur.push_back(tmp);
     }
-#else
-    // make the "product" with M (rows of M are powers of t)
-    gen m3;
-    for (unsigned i=0;i<m2.size();++i){
-      gen coeff=m2[m2.size()-1-i];
-      m3 += smod(coeff*M[i],p);
-    }
-    m3=smod(m3,p);
-    polymod<tdeg_t> mprime(order,dim);
-    if (m3.type==_VECT && m3._VECTptr->size()<=lm.coord.size())
-      rur_convert(*m3._VECTptr,lm,mprime);
-    else
-      return false;
-    if (debug_infolevel)
-      CERR << CLOCK()*1e-6 << " rur linsolve" << '\n';
-    if (!rur_linsolve(gbmod,lm,mprime,M,p,res))
-      return false;
-    // rur=[separating element,sqrfree part of minpoly,derivative of sqrfree part,
-    // derivative of sqrfree part*other coordinates]
-    rur.clear();
-    rur.push_back(s);
-    //polymod<tdeg_t> tmp(order,dim);
-    rur_convert_univariate(m1,0,tmp);
-    rur.push_back(tmp);
-    rur_convert_univariate(m2,0,tmp);
-    rur.push_back(tmp);
-    // convert res to rur
-    for (unsigned i=0;i<res.size();++i){
-      index_t l(dim);
-      vecteur & v = *res[i]._VECTptr;
-      rur_convert_univariate(v,0,tmp);
-      rur.push_back(tmp);
-    }
-#endif
     return true;
   }
 
