@@ -13457,7 +13457,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	return -1;
       M *= v[i];
     }
-    if (M>1e6)
+    if (M>1e8)
       return -RAND_MAX; // overflow
     // the ideal is finite dimension, now we will compute the exact dimension
     // a monomial degree is associated to an integer with
@@ -13492,9 +13492,17 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	    break;
 	}
       }
-      // if found continue, else add cur to the list of monomials
-      if (j==gbmod.size())
+      if (j==gbmod.size()) // not found, add cur to the list of monomials
 	lm.coord.push_back(T_unsigned<modint,tdeg_t>(1,curu));
+      else { 
+	if (cur[d-1]!=v[d-1]-1){
+	  // increase I to the next multiple of v[v.size()-1]
+	  I /= v[d-1];
+	  ++I;
+	  I *= v[d-1];
+	  --I;
+	}
+      }
     }
     sort(lm.coord.begin(),lm.coord.end(),tdeg_t_sort_t<tdeg_t>(order));
     return unsigned(lm.coord.size());
@@ -13620,8 +13628,8 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     return true;
   }
 // scalar product assuming all coordinates are positive
-  int multmod_positive(const vector<int> & v, const vector<int> & w,int p){
-    longlong p2=longlong(p)*p,res=0;
+int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong res=0){
+    longlong p2=longlong(p)*p;
     vector<int>::const_iterator it=v.begin(),itend=v.end(),jt=w.begin(),jtend=w.end();
     for (; it!=itend;++jt,++it){
       if (!*it) continue;
@@ -13641,6 +13649,26 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       mv[i]=multmod_positive(m[i],v,p);
   }
 
+// partially sparse multiplication: m is the dense part of the matrix
+// ms is the sparse part, as a vector of -1 or indices
+  void multmod_positive(const vector< vector<int> > &m,const vector<int> &ms,const vector<int> & v,int p,vector<int> & mv){
+    mv.resize(m.size());
+    for (int i=0;i<mv.size();++i)
+      mv[i]=0;
+    vector<int> w;
+    // set mv and w using ms
+    for (int i=0;i<ms.size();++i){
+      if (ms[i]<0)
+	w.push_back(v[i]);
+      else {
+	mv[ms[i]]=v[i];
+      }
+    }
+    // dense part of the multiplication
+    for (int i=0;i<m.size();++i)
+      mv[i]=multmod_positive(m[i],w,p,mv[i]);
+  }
+
   // Compute minimal polynomial of s
   template<class tdeg_t>
   bool rur_minpoly(const vectpolymod<tdeg_t> & gbmod,const polymod<tdeg_t> & lm,const polymod<tdeg_t> & s,modint p,vecteur & m,matrice & M){
@@ -13655,10 +13683,46 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     if (1){ 
       M.clear();
       // matrix of multiplication by s of all monomials in lm
-      vector< vector<int> > mults(S),tmpm; 
       polymod<tdeg_t> cur(order,dim);
       vector<int> tmp(S),tmp1;
       vecteur tmpv(S);
+#if 1
+      vector< vector<int> > mults,tmpm; 
+      mults.reserve(S);
+      vector<int> multv(S);
+      for (int i=0;i<S;++i){
+	cur.coord.clear();
+	cur.coord.push_back(lm.coord[i]);
+	rur_mult(cur,s,p,TMP1);
+	cur.coord.swap(TMP1.coord);
+	if (cur.coord.size()==1 && cur.coord.front().g==1){
+	  typename std::vector< T_unsigned<modint,tdeg_t> >::const_iterator jt=lm.coord.begin(),jtend=lm.coord.end(),jt_=jt;
+	  if (dicho(jt_,jtend,cur.coord.front().u,order)){
+	    multv[i]=jt_-jt;
+	    continue;
+	  }
+	}
+	reducesmallmod(cur,gbmod,G,-1,p,TMP1,false);
+	multv[i]=-1;
+	rur_coordinates(cur,lm,tmp);
+	make_positive(tmp,p);
+	mults.push_back(tmp);
+      }
+      tran_vect_vector_int(mults,tmpm); tmpm.swap(mults);  
+      // s^i is obtained by multiplying mults by the coordinates of s^[i-1]
+      tmpv[0]=makemod(0,p);
+      tmpv[S-1]=1;
+      M.push_back(tmpv);
+      tmp=vector<int>(S);
+      tmp[S-1]=1;
+      for (int i=0;i<S;++i){
+	multmod_positive(mults,multv,tmp,p,tmp1); 
+	tmp.swap(tmp1);
+	vector_int2vecteur(tmp,tmpv);
+	M.push_back(tmpv);
+      }
+#else
+      vector< vector<int> > mults(S),tmpm; 
       for (int i=0;i<S;++i){
 	cur.coord.clear();
 	cur.coord.push_back(lm.coord[i]);
@@ -13682,10 +13746,11 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	vector_int2vecteur(tmp,tmpv);
 	M.push_back(tmpv);
       }
+#endif
       done=true;
       //chk=M; done=false;
     }
-    if (!done){
+    if (!done){ // this code is active only to check optimizations above
       M.clear();
       // set th i-th row of M with coordinates of s^i reduced/gbmod in terms of lm
       vecteur tmp(S);
@@ -14407,7 +14472,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  int dim=res.front().dim;
 	  polymod<tdeg_t> lmtmp(lmmodradical.order,dim);
 	  // FIXME rur_quotient_ideal etc. should take care of parameters!
-	  if (rur_quotient_ideal_dimension(gbmod,lmtmp)<0){
+	  int rqi=rur_quotient_ideal_dimension(gbmod,lmtmp);
+	  if (rqi==-RAND_MAX)
+	    *logptr(contextptr) << "Overflow in rur, computing revlex gbasis\n";
+	  if (rqi<0){
 	    rur=0;
 	    continue;
 	  }
