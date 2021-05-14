@@ -13412,6 +13412,16 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     return dim;
   }
 
+  // list of leadings coefficients of the gbasis
+  template<class tdeg_t> void rur_gblm(const vectpolymod<tdeg_t> & gbmod,polymod<tdeg_t> & gblm){
+    unsigned S = unsigned(gbmod.size());
+    for (unsigned i=0;i<S;++i){
+      if (gbmod[i].coord.empty())
+	continue;
+      gblm.coord.push_back(gbmod[i].coord.front());
+    }
+  }
+
   // returns -1 if not 0 dimensional, -RAND_MAX if overflow
   // otherwise returns dimension of quotient and sets lm to the list of 
   // leading monomials generating the quotient ideal
@@ -13421,14 +13431,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       return -1;
     order_t order=gbmod.front().order;
     int dim=gbmod.front().dim;
+    unsigned S = unsigned(gbmod.size());
     lm.order=order; lm.dim=dim; lm.coord.clear();
     polymod<tdeg_t> gblm(order,dim);
-    unsigned S = unsigned(gbmod.size());
-    for (unsigned i=0;i<S;++i){
-      if (gbmod[i].coord.empty())
-	continue;
-      gblm.coord.push_back(gbmod[i].coord.front());
-    }
+    rur_gblm(gbmod,gblm);
     // for 3var, 7var, 11 var search in the first 3 var, 7 var or 11 var
     // for revlex search for all variables
     // we must find a leading monomial in gbmod that contains only this variable
@@ -13686,67 +13692,105 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
       polymod<tdeg_t> cur(order,dim);
       vector<int> tmp(S),tmp1;
       vecteur tmpv(S);
-#if 1
       vector< vector<int> > mults,tmpm; 
       mults.reserve(S);
       vector<int> multv(S);
+      polymod<tdeg_t> gblm(order,dim);
+      rur_gblm(gbmod,gblm);
+      reverse(gblm.coord.begin(),gblm.coord.end());
       for (int i=0;i<S;++i){
 	cur.coord.clear();
 	cur.coord.push_back(lm.coord[i]);
 	rur_mult(cur,s,p,TMP1);
 	cur.coord.swap(TMP1.coord);
+	bool red=false;
 	if (cur.coord.size()==1 && cur.coord.front().g==1){
+	  // if lm*s has one monomial
+	  // it might be in the list of the basis monomials
+	  // or it might be a leading coeff of one of the gbasis elements
 	  typename std::vector< T_unsigned<modint,tdeg_t> >::const_iterator jt=lm.coord.begin(),jtend=lm.coord.end(),jt_=jt;
 	  if (dicho(jt_,jtend,cur.coord.front().u,order)){
 	    multv[i]=jt_-jt;
 	    continue;
 	  }
+	  jt=gblm.coord.begin();jtend=gblm.coord.end();
+	  if (dicho(jt,jtend,cur.coord.front().u,order)){
+	    int curpos=jtend-jt;
+	    const polymod<tdeg_t> & curgb=gbmod[curpos-1];
+	    jt=curgb.coord.begin()+1; jtend=curgb.coord.end();
+	    cur.coord.clear(); cur.coord.reserve(jtend-jt);
+	    for (;jt!=jtend;++jt){
+	      cur.coord.push_back(T_unsigned<modint,tdeg_t>(-jt->g,jt->u));
+	    }
+	    red=true;
+	  }
 	}
-	reducesmallmod(cur,gbmod,G,-1,p,TMP1,false);
+	if (!red)
+	  reducesmallmod(cur,gbmod,G,-1,p,TMP1,false);
 	multv[i]=-1;
 	rur_coordinates(cur,lm,tmp);
 	make_positive(tmp,p);
 	mults.push_back(tmp);
       }
       tran_vect_vector_int(mults,tmpm); tmpm.swap(mults);  
+#if 1
+      // s^i is obtained by multiplying mults by the coordinates of s^[i-1]
+      tmp=vector<int>(S);
+      tmp[S-1]=1;
+      int d=rur_dim(dim,order);
+      vector< vector<int> > K; K.reserve(S+1+d);
+      K.push_back(tmp);
+      if (debug_infolevel)
+	CERR << CLOCK()*1e-6 << " rur start v<-M*v\n";
+      for (int i=0;i<S;++i){
+	multmod_positive(mults,multv,tmp,p,tmp1); 
+	tmp.swap(tmp1);
+	K.push_back(tmp);
+      }
+      polymod<tdeg_t> si(order,dim);
+      polymod<tdeg_t> one(order,dim);
+      one.coord.push_back(T_unsigned<modint,tdeg_t>(1,0));
+      for (unsigned i=0;int(i)<d;++i){
+	index_t l(dim);
+	l[i]=1;
+	smallshift(one.coord,tdeg_t(l,order),si.coord);
+	reducesmallmod(si,gbmod,G,-1,p,TMP1,false);
+	// get coordinates of cur in tmp (make them mod p)
+	rur_coordinates(si,lm,tmp);
+	K.push_back(tmp);
+      }
+      tran_vect_vector_int(K,tmpm); K.swap(tmpm);  
+      vector< vector<int> > Ker;
+      if (debug_infolevel)
+	CERR << CLOCK()*1e-6 << " begin rur ker" << '\n';
+      if (!mker(K,Ker,p) || Ker.empty() )
+	return false;
+      if (debug_infolevel)
+	CERR << CLOCK()*1e-6 << " end rur ker" << '\n';
+      vector_int2vecteur(Ker.front(),m);
+      reverse(m.begin(),m.end());
+      m=trim(m,0);
+      // Ker->M
+      vectvector_int2vecteur(Ker,M);
+      if (m.size()>S+1) return false;
+      if (debug_infolevel>1)
+	CERR << "Minpoly for " << s << ":" << m << '\n';
+      return true;
+#endif
       // s^i is obtained by multiplying mults by the coordinates of s^[i-1]
       tmpv[0]=makemod(0,p);
       tmpv[S-1]=1;
       M.push_back(tmpv);
       tmp=vector<int>(S);
       tmp[S-1]=1;
+      if (debug_infolevel)
+	CERR << CLOCK()*1e-6 << "rur start v<-M*v\n";
       for (int i=0;i<S;++i){
 	multmod_positive(mults,multv,tmp,p,tmp1); 
 	tmp.swap(tmp1);
 	vector_int2vecteur(tmp,tmpv);
 	M.push_back(tmpv);
       }
-#else
-      vector< vector<int> > mults(S),tmpm; 
-      for (int i=0;i<S;++i){
-	cur.coord.clear();
-	cur.coord.push_back(lm.coord[i]);
-	rur_mult(cur,s,p,TMP1);
-	cur.coord.swap(TMP1.coord);
-	reducesmallmod(cur,gbmod,G,-1,p,TMP1,false);
-	rur_coordinates(cur,lm,tmp);
-	make_positive(tmp,p);
-	mults[i]=tmp;
-      }
-      tran_vect_vector_int(mults,tmpm); tmpm.swap(mults);  
-      // s^i is obtained by multiplying mults by the coordinates of s^[i-1]
-      tmpv[0]=makemod(0,p);
-      tmpv[S-1]=1;
-      M.push_back(tmpv);
-      tmp=vector<int>(S);
-      tmp[S-1]=1;
-      for (int i=0;i<S;++i){
-	multmod_positive(mults,tmp,p,tmp1); 
-	tmp.swap(tmp1);
-	vector_int2vecteur(tmp,tmpv);
-	M.push_back(tmpv);
-      }
-#endif
       done=true;
       //chk=M; done=false;
     }
@@ -14459,7 +14503,7 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
 	  }
 	  CERR << "sorted" << '\n';
 	  ulonglong nmonoms=0;
-	  for (size_t i=0;i<gbmod.size();++i){
+ 	  for (size_t i=0;i<gbmod.size();++i){
 	    CERR << i << "(" << gbmod[i].age << "," << gbmod[i].logz << ":" << gbmod[i].fromleft << "," << gbmod[i].fromright << ")" << '\n';
 	    nmonoms += gbmod[i].coord.size();
 	  }
@@ -14493,8 +14537,12 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
 	  }
 	  else {
 	    if (!rur_compute(gbmod,lmtmp,lmmodradical,p.val,s,rurv)){
-	      CERR << CLOCK()*1e-6 << "Unable to compute modular rur\n";
-	      ok = false; rur = 0;
+	      if (lmmodradical.coord.empty()){ 
+		CERR << CLOCK()*1e-6 << " Unable to compute modular rur\n";
+		ok = false; rur = 0; 
+	      }
+	      else
+		CERR << CLOCK()*1e-6 << " Bad prime, ignored\n";
 	      continue;
 	    }
 	    if (debug_infolevel)

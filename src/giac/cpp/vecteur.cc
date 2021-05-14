@@ -8648,7 +8648,7 @@ namespace giac {
 	  target[c_+j]=smod(source[j],modulo);
       }
     }
-    return rref_or_det_or_lu!=0 || l_==0;//true; // we can not return true for fullreduction, because the upper lines are not reduced
+    return rref_or_det_or_lu!=0 || l_==0 || fullreduction==0;//true; // we can not return true for fullreduction, because the upper lines are not reduced
   }
     
   // if dont_swap_below !=0, for line numers < dont_swap_below
@@ -8968,12 +8968,12 @@ namespace giac {
       } // end tryblock
 #endif // GIAC_DETBLOCK
       // normal Gauss reduction
-      if (
+      if (//0 &&
 	  // FIXME: if fullreduction, upper reduction should be done!
-	  (carac>0 || (lmax-l>=32 && cmax-c>=32) ) && (lmax-l)*double(modulo)*double(modulo)<(1ULL<<63) &&
+	  (carac>0 || (lmax-l>=32 && cmax-c>=32) ) && (lmax-l)*double(modulo)*double(modulo)<(1ULL<<63) ){
 	  //double(lmax-l)*(cmax-c)*sizeof(longlong)<128e3 &&
-	  LLsmallmodrref(N,l,lmax,c,cmax,pivots,permutation,maxrankcols,idet,fullreduction,dont_swap_below,modulo,carac,rref_or_det_or_lu)){
-	break;
+	if (LLsmallmodrref(N,l,lmax,c,cmax,pivots,permutation,maxrankcols,idet,fullreduction,dont_swap_below,modulo,carac,rref_or_det_or_lu))
+	  break;
       }
       pivot = N[l].empty()?0:(N[l][c] %= modulo);
       if (rref_or_det_or_lu==3 && !pivot){
@@ -14954,6 +14954,55 @@ namespace giac {
     identificateur x(" x");
     gen ux=(*u)(x,contextptr);
     return analytic_apply(ux,x,m,contextptr);
+  }
+
+  bool mker(vector< vector<int> > & res,vector< vector<int> > & v,int modulo){
+    v.clear();
+    longlong det;
+    vector<int> permutation(res.size()),maxrankcols; vecteur pivots;
+    for (int i=0;i<res.size();++i)
+      permutation[i]=i;
+#if 1
+    smallmodrref(1,res,pivots,permutation,maxrankcols,det,0,int(res.size()),0,int(res.front().size()),/* fullreduction */0,0,modulo,0,false,NULL,true,modulo);
+    int usedcount=0;
+    smallmodrref_upper(res,0,int(res.size()),0,int(res.front().size()),modulo);
+#else
+    smallmodrref(1,res,pivots,permutation,maxrankcols,det,0,int(res.size()),0,int(res.front().size()),/* fullreduction */1,0,modulo,0,false,NULL,true,modulo);
+#endif
+    // mdividebypivot(res,-1,contextptr);
+    // put zero lines in res at their proper place, so that
+    // non zero pivot are on the diagonal
+    int s=int(res.size()),c=int(res.front().size());
+    vector< vector<int> > newres(c);
+    vector< vector<int> >::iterator it=res.begin(),itend=res.end();
+    int i;
+    for (i=0;(i<c) && (it!=itend);++i){
+      if (it->empty() || (*it)[i]==0){
+	newres[i]=vector<int>(c);
+      }
+      else {
+	newres[i].swap(*it);
+	++it;
+      }
+    }
+    for (;i<c;++i)
+      newres[i]=vector<int>(c);
+    // on newres tranposed, keep the ith line if it's ith coeff is 0
+    // replace 0 by -1 to get an element of the basis
+    //tran_vect_vector_int(newres,res); 
+    it=newres.begin();
+    itend=newres.end();
+    for (int i=0;it!=itend;++it,++i){
+      if ((*it)[i]==0){
+	(*it)[i]=-1;
+	// column i is in ker
+	vector<int> w(c);
+	for (int j=0;j<c;++j)
+	  w[j]=newres[j][i];
+	v.push_back(w);
+      }
+    }
+    return true;
   }
 
   // return a vector which elements are the basis of the ker of a

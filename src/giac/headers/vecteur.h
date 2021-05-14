@@ -439,6 +439,7 @@ namespace giac {
   matrice matpow(const matrice & m,const gen & n,GIAC_CONTEXT);
   gen _matpow(const gen & a,GIAC_CONTEXT);
 
+  bool mker(std::vector< std::vector<int> > & a,std::vector< std::vector<int> > & v,int modulo);
   bool mker(const matrice & a,vecteur & v,int algorithm,GIAC_CONTEXT);
   bool mker(const matrice & a,vecteur & v,GIAC_CONTEXT); // algorithm=0
   vecteur mker(const matrice & a,GIAC_CONTEXT);
