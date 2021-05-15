@@ -13734,6 +13734,17 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
       }
       tran_vect_vector_int(mults,tmpm); tmpm.swap(mults);  
 #if 1
+      // IMPROVE: compute s^0 to s^[2S-2] (instead of s^0 to s^S)
+      // take 1st coordinate and find minpoly q using reverse_rsolve
+      // Then for each coordinate x1..x_d, 
+      // find position j of xi in the list of monomials lm, 
+      // then solve Hankel system of SxS matrix with antidiagonals
+      // the 1st coordinates above, and second member a vector with
+      // components the j-th coordinates of s^k for 0<=k<S
+      // Hankel[g0,...,g_(2S-2)] is invertible in O(S^2) by
+      // computing sum_i>=1 g_i z^(-i)=p/q at z=infinity, deg(q)=S, deg(p)<S
+      // then solve u*p+v*q=1 and compute Bezoutian[q,u] 
+      // https://en.wikipedia.org/wiki/B%C3%A9zout_matrix
       // s^i is obtained by multiplying mults by the coordinates of s^[i-1]
       tmp=vector<int>(S);
       tmp[S-1]=1;

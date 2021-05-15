@@ -54,6 +54,13 @@ using namespace std;
 #include <gsl/gsl_poly.h>
 #endif
 
+// vector class version 1 by Agner Fog https://github.com/vectorclass
+// this might be faster for CPU with AVX512DQ instruction set
+// (fast multiplication of Vec4q)
+#ifdef HAVE_VCL1_VECTORCLASS_H 
+#include <vcl1/vectorclass.h>
+#endif
+
 // Apple has the Accelerate framework for lapack if you did not install Atlas/lapack
 // (link with -framewrok Accelerate)
 // it is not used by default because the Accelerate version is slower 
@@ -5119,6 +5126,15 @@ namespace giac {
     a=pseudo_mod(a+((longlong)b)*c,p,invp,nbits);
   }
 
+#ifdef HAVE_VCL1_VECTORCLASS_H 
+  inline Vec4q pseudo_mod4(const Vec4q & x,int p,unsigned invp,int nbits){
+    return x - (((x>>nbits)*invp)>>(nbits))*p;
+  }
+  inline void pseudo_mod4(Vec4q & a,int b,const Vec4q & c,int p,unsigned invp,unsigned nbits){
+    a=pseudo_mod4(a+b*c,p,invp,nbits);    
+  }
+#endif
+  
   // n==nbits, for |x|<=p^2, 2^n>=p>2^(n-1), returns |remainder|<=p
   // assumes invp=floor(2^(2n)/p)+1, 2^(2n)/p < invp <= 2^(2n)/p+1
   // for x>0, x/2^n-1 < floor(x/2^n) <= x/2^n hence we have 
@@ -5150,7 +5166,7 @@ namespace giac {
     int * it1=&*(v1.begin()+cstart),*it1end=&*(v1.end()),*it2=&*(v2.begin()+cstart),*it3=&*(v3.begin()+cstart),*it4=&*(v4.begin()+cstart),*it1_;
     if (cend && cend>=cstart && cend<it1end-&v1.front())
       it1end=&*(v1.begin()+cend);
-    it1_=it1-4;
+    it1_=it1end-4;
     const int * jt=&*(w.begin()+cstart);
 #ifdef PSEUDO_MOD
     if (p<(1<<29) 
@@ -5159,6 +5175,19 @@ namespace giac {
       int nbits=sizeinbase2(p); 
       unsigned invp=((1ULL<<(2*nbits)))/p+1;
       for (;it1<=it1_;){
+#if 0 // def HAVE_VCL1_VECTORCLASS_H
+	Vec4i I1,I2,I3,I4,T;
+	I1.load(it1); I2.load(it2); I3.load(it3); I4.load(it4); T.load(jt);
+	Vec4q I1_,I2_,I3_,I4_,T_;
+	I1_=extend(I1); I2_=extend(I2); I3_=extend(I3); I4_=extend(I4); T_=extend(T);
+	pseudo_mod4(I1_,c1,T_,p,invp,nbits);
+	pseudo_mod4(I2_,c2,T_,p,invp,nbits);
+	pseudo_mod4(I3_,c3,T_,p,invp,nbits);
+	pseudo_mod4(I4_,c4,T_,p,invp,nbits);
+	I1=compress(I1_); I2=compress(I2_); I3=compress(I3_); I4=compress(I4_);
+	I1.store(it1); I2.store(it2); I3.store(it3); I4.store(it4);
+	jt+=4;it4+=4;it3+=4;it2+=4;it1+=4;
+#else
 	int tmp=*jt;
 	pseudo_mod(*it1,c1,tmp,p,invp,nbits);
 	pseudo_mod(*it2,c2,tmp,p,invp,nbits);
@@ -5180,6 +5209,7 @@ namespace giac {
 	pseudo_mod(it3[3],c3,tmp,p,invp,nbits);
 	pseudo_mod(it4[3],c4,tmp,p,invp,nbits);
 	jt+=4;it4+=4;it3+=4;it2+=4;it1+=4;
+#endif
       }
       for (;it1!=it1end;++jt,++it4,++it3,++it2,++it1){
 	int tmp=*jt;
