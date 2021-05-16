@@ -161,7 +161,7 @@ extern "C" int KeyPressed( void );
 #ifdef NUMWORKS
 size_t pythonjs_stack_size=30*1024,pythonjs_heap_size=40*1024,
 #else
-  size_t pythonjs_stack_size=128*1024,pythonjs_heap_size=2*1024*1024;
+  size_t pythonjs_stack_size=128*1024,pythonjs_heap_size=(2*1024-256)*1024;
 #endif
 void * bf_ctx_ptr=0;
 size_t bf_global_prec=128; // global precision for BF

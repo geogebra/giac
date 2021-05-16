@@ -8899,7 +8899,7 @@ namespace giac {
     modpoly r1(n);
     modpoly r2(x);
     modpoly v1,v2(one()),q,r(x),v(1,1);
-    gen g(1),h(1),r20,r2pow,hpow;
+    gen g(1),h(1),r20,r2pow(1),hpow;
     for (;;){
       // During the loop, v1*x+not_computed*n=r1 and v2*x+not_computed*n=r2
       int deg2=int(r2.size())-1;
@@ -8945,6 +8945,51 @@ namespace giac {
       return false;
     return true;
   }
+
+  // assumes degree(f)=degree(g)==n
+  matrice bezoutian(const modpoly & f,const modpoly &g,environment * env){
+    vecteur u(f),v(g);
+    reverse(u.begin(),u.end());
+    reverse(v.begin(),v.end());
+    while (u.size()<v.size())
+      u.push_back(0);
+    while (v.size()<u.size())
+      v.push_back(0);
+    int n=u.size()-1;
+    matrice res; res.reserve(n);
+    for (int i=0;i<n;++i){
+      vecteur ligne; ligne.reserve(n);
+      for (int j=0;j<n;j++){
+	int m=giacmin(i,n-1-j);
+	gen r=0;
+	for (int k=0;k<=m;k++){
+	  r += u[j+k+1]*v[i-k]-u[i-k]*v[j+k+1];
+	}
+	if (env && env->moduloon)
+	  r=smod(r,env->modulo);
+	ligne.push_back(r);
+      }
+      res.push_back(ligne);
+    }
+    return res;
+  }
+
+  gen _bezoutian(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG && args.subtype==-1) return  args;
+    if (args.type!=_VECT || args._VECTptr->size()!=2)
+      return gensizeerr(contextptr);
+    gen f=args._VECTptr->front(),g=args._VECTptr->back();
+    if (f.type!=_VECT)
+      f=_e2r(makesequence(f,vx_var),contextptr);
+    if (g.type!=_VECT)
+      g=_e2r(makesequence(g,vx_var),contextptr);
+    if (f.type!=_VECT || g.type!=_VECT )
+      return gendimerr(contextptr);
+    return bezoutian(*f._VECTptr,*g._VECTptr,0);
+  }
+  static const char _bezoutian_s []="bezoutian";
+  static define_unary_function_eval (__bezoutian,&_bezoutian,_bezoutian_s);
+  define_unary_function_ptr5( at_bezoutian ,alias_at_bezoutian,&__bezoutian,0,true);
 
   // Given [v_0 ... v_(2n-1)] (begin of the recurrence sequence) 
   // return [b_n...b_0] such that b_n*v_{n+k}+...+b_0*v_k=0

@@ -9881,13 +9881,13 @@ namespace xcas {
 #if defined NUMWORKS && defined DEVICE
 			  "Tas MicroPy/JS en K (16-64)?"
 #else
-			  "Tas MicroPy/JS en K (64-4096)?"
+			  "Tas MicroPy/JS en K (64-3584)?"
 #endif
 			  ,d,contextptr) && d==int(d) &&
 #if defined NUMWORKS && defined DEVICE
 	      d>=16 && d<=64
 #else
-	      d>=64 && d<=4096
+	      d>=64 && d<=3584
 #endif
 	      ){
 	    pythonjs_heap_size=d*1024;

@@ -13528,13 +13528,14 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
   
   // coordinates of cur w.r.t. lm
   template<class tdeg_t>
-  void rur_coordinates(const polymod<tdeg_t> & cur,const polymod<tdeg_t> & lm,vecteur & tmp){
+  void rur_coordinates(const polymod<tdeg_t> & cur,const polymod<tdeg_t> & lm,vecteur & tmp,vector<bool> * ptr=0){
     unsigned k=0,j=0;
     for (;j<lm.coord.size() && k<cur.coord.size();++j){
       if (lm.coord[j].u!=cur.coord[k].u)
 	tmp[j]=0;
       else {
 	tmp[j]=cur.coord[k].g;
+	if (ptr) (*ptr)[j]=true;
 	++k;
       }
     }
@@ -13544,13 +13545,14 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
   }
 
   template<class tdeg_t>
-  void rur_coordinates(const polymod<tdeg_t> & cur,const polymod<tdeg_t> & lm,vector<int> & tmp){
+  void rur_coordinates(const polymod<tdeg_t> & cur,const polymod<tdeg_t> & lm,vector<int> & tmp,vector<bool> * ptr=0){
     unsigned k=0,j=0;
     for (;j<lm.coord.size() && k<cur.coord.size();++j){
       if (lm.coord[j].u!=cur.coord[k].u)
 	tmp[j]=0;
       else {
 	tmp[j]=cur.coord[k].g;
+	if (ptr) (*ptr)[j]=true;
 	++k;
       }
     }
@@ -13655,8 +13657,8 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
       mv[i]=multmod_positive(m[i],v,p);
   }
 
-// partially sparse multiplication: m is the dense part of the matrix
-// ms is the sparse part, as a vector of -1 or indices
+  // partially sparse multiplication m*v: m is the dense part of the matrix
+  // ms is the sparse part, as a vector of -1 or indices
   void multmod_positive(const vector< vector<int> > &m,const vector<int> &ms,const vector<int> & v,int p,vector<int> & mv){
     mv.resize(m.size());
     for (int i=0;i<mv.size();++i)
@@ -13673,6 +13675,22 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
     // dense part of the multiplication
     for (int i=0;i<m.size();++i)
       mv[i]=multmod_positive(m[i],w,p,mv[i]);
+  }
+
+  // partially sparse multiplication v*m: 
+  // m is the transpose of the dense part of the matrix
+  // ms is the sparse part, as a vector of -1 or indices
+  void multmod_positive(const vector<int> & v,const vector< vector<int> > &m,const vector<int> &ms,int p,vector<int> & mv){
+    mv.resize(v.size());
+    int j=0;
+    for (int i=0;i<v.size();++i){
+      if (ms[i]>=0)
+	mv[i]=v[ms[i]];
+      else {
+	mv[i]=multmod_positive(m[j],v,p);
+	++j;
+      }
+    }
   }
 
   // Compute minimal polynomial of s
@@ -13734,21 +13752,164 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
       }
       tran_vect_vector_int(mults,tmpm); tmpm.swap(mults);  
 #if 1
-      // IMPROVE: compute s^0 to s^[2S-2] (instead of s^0 to s^S)
-      // take 1st coordinate and find minpoly q using reverse_rsolve
-      // Then for each coordinate x1..x_d, 
-      // find position j of xi in the list of monomials lm, 
-      // then solve Hankel system of SxS matrix with antidiagonals
-      // the 1st coordinates above, and second member a vector with
-      // components the j-th coordinates of s^k for 0<=k<S
-      // Hankel[g0,...,g_(2S-2)] is invertible in O(S^2) by
-      // computing sum_i>=1 g_i z^(-i)=p/q at z=infinity, deg(q)=S, deg(p)<S
-      // then solve u*p+v*q=1 and compute Bezoutian[q,u] 
-      // https://en.wikipedia.org/wiki/B%C3%A9zout_matrix
       // s^i is obtained by multiplying mults by the coordinates of s^[i-1]
+      int d=rur_dim(dim,order);
+      vector< vector<int> > Kxi; Kxi.reserve(d);
+      polymod<tdeg_t> si(order,dim);
+      polymod<tdeg_t> one(order,dim);
+      one.coord.push_back(T_unsigned<modint,tdeg_t>(1,0));
+      vector<bool> nonzero(S,false); vector<int> posxi(d,-1);
+      for (unsigned i=0;int(i)<d;++i){
+	index_t l(dim);
+	l[i]=1;
+	smallshift(one.coord,tdeg_t(l,order),si.coord);
+	typename std::vector< T_unsigned<modint,tdeg_t> >::const_iterator jt=lm.coord.begin(),jtend=lm.coord.end(),jt_=jt;
+	if (dicho(jt_,jtend,si.coord.front().u,order)){
+	  tmp.clear(); tmp.resize(S); tmp[jt_-jt]=1;
+	  nonzero[jt_-jt]=true;
+	  posxi[i]=jt_-jt;
+	}
+	else { // could search in gblm
+	  reducesmallmod(si,gbmod,G,-1,p,TMP1,false);
+	  // get coordinates of cur in tmp (make them mod p)
+	  rur_coordinates(si,lm,tmp,&nonzero);
+	}
+	make_positive(tmp,p);
+	Kxi.push_back(tmp);
+      }
+      int count=0; 
+      for (int i=0;i<S;++i){ 
+	if (nonzero[i]) count++; 
+      }
+      if (0 && count<S/10){
+	if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel start\n" ;
+	// IMPROVE: compute s^0 to s^[2S-1] (instead of s^0 to s^S)
+	// take coordinate of index corresponding to 1 in lm
+	// and find minpoly q using reverse_rsolve
+	// Simultaneously, for each coordinate x1..x_d, 
+	// find coordinates of x_i reduced in the list of monomials lm,
+	// make scalar product with s^k
+	// then solve Hankel system of SxS matrix with antidiagonals
+	// the 1st coordinates above, and second member a vector with
+	// components the scalar products with s^k for 0<=k<S
+	// Hankel[g0,...,g_(2S-2)] is invertible in O(S^2) by
+	// computing sum_i>=1 g_i z^(-i)=p/q at z=infinity, deg(q)=S, deg(p)<S
+	// then solve u*p+v*q=1 and compute Bezoutian[q,u] 
+	// https://en.wikipedia.org/wiki/B%C3%A9zout_matrix
+	tmp=vector<int>(S);
+	for (int i=0;i<S;++i) 
+	  tmp[i]=rand()/2;
+	vector<int> g(2*S);
+	vector< vector<int> > hankelsystb(d,vector<int>(S)); // second members of Hankel systems
+	for (int i=0;i<S;++i){
+	  for (int j=0;j<d;++j){
+	    if (posxi[j]>=0)
+	      hankelsystb[j][i]=tmp[posxi[j]];
+	    else
+	      hankelsystb[j][i]=multmod_positive(Kxi[j],tmp,p);
+	  }
+	  g[i]=tmp.back();
+	  multmod_positive(tmp,tmpm,multv,p,tmp1); 
+	  tmp.swap(tmp1);
+	}
+	if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel mult part 2\n" ;
+	for (int i=S;i<2*S;++i){
+	  g[i]=tmp.back();
+	  multmod_positive(tmp,tmpm,multv,p,tmp1); 
+	  tmp.swap(tmp1);
+	}
+	if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel mult end\n" ;
+	vecteur V; vector_int2vecteur(g,V);
+	reverse(V.begin(),V.end()); // degree(V)=2S-1, size(V)=2S
+	vecteur x2n(2*S+1),A,B,G,U,unused,D; x2n[0]=1; // x2n=x^(2*S)
+	environment env; env.modulo=p; env.moduloon=true;
+	if (egcd_pade(x2n,V,S,A,B,&env)){
+	  reverse(B.begin(),B.end());
+	  while (B.size()<S+1)
+	    B.push_back(0);
+	  reverse(A.begin(),A.end());
+	  while (A.size()<S)
+	    A.push_back(0);
+	  if (B.size()==S+1){
+	    // B should be the min poly, normalize
+	    if (B.front()!=0){
+	      gen coeff=invmod(B.front(),p);
+	      mulmodpoly(B,coeff,&env,B);
+	      m=trim(B,0);
+	      modpoly mgcd=gcd(m,derivative(m,&env),&env);
+	      mulmodpoly(A,coeff,&env,A);
+	      // now Bezout 
+	      egcd(A,B,&env,U,unused,D);
+	      // check Bezout and also that B is squarefree
+	      if (D.size()==1 && mgcd.size()==1){ // D[0] should be 1
+		// Bezoutian of U and B will invert Hankel matrix
+		// compute Bezoutian(U,B)*Kxi
+		vector<int> u,b;
+		vecteur2vector_int(U,p,u);
+		make_positive(u,p);
+		vecteur2vector_int(B,p,b);
+		make_positive(b,p);
+		reverse(u.begin(),u.end()); reverse(b.begin(),b.end());
+		while (u.size()<b.size())
+		  u.push_back(0);
+		while (b.size()<u.size())
+		  b.push_back(0);
+		// u and b have now size S+1
+		longlong p2=longlong(p)*p;
+#if 1 // https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.85.3710&rep=rep1&type=pdf
+		vector< vector<int> > bez(S,vector<int>(S));
+		// initialization
+		for (int i=0;i<S;++i){
+		  for (int j=i;j<S;++j){
+		    longlong r = longlong(u[i])*b[j+1]-longlong(b[i])*u[j+1];
+		    r += (r>>63) & p2; // make r positive
+		    bez[i][j]=r%p;
+		  }
+		}
+		// recursion
+		for (int i=1;i<=S-2;++i){
+		  for (int j=i;j<=S-2;++j){
+		    int r = bez[i][j];
+		    r += bez[i-1][j+1]-p;
+		    r += (r>>31) & p; // make r positive
+		    bez[i][j] = r;
+		  }
+		}
+		// symmetry
+		for (int i=1;i<S;++i){
+		  for (int j=0;j<i;++j)
+		    bez[i][j]=bez[j][i];
+		}
+#else
+		vector< vector<int> > bez(S);
+		for (int j=0;j<S;++j){
+		  // coeff line i column j
+		  // m=giacmin(i,n-1-j);  r=0;
+		  // for (k=max(0,i-j);k<=m;k++) r += u[j+k+1]*b[i-k]-u[i-k]*b[j+k+1];
+		  for (int i=0;i<S;++i){
+		    int m=giacmin(i,S-1-j); 
+		    longlong r=0;
+		    for (int k=0;k<=m;k++){
+		      r += longlong(u[j+k+1])*b[i-k];
+		      r -= longlong(u[i-k])*b[j+k+1];
+		      r += (r>>63) & p2;
+		      r -= p2;
+		      r += (r>>63) & p2;
+		    }
+		    bez[j].push_back(r % p);
+		  }
+		}
+#endif
+		M.push_back(m);
+		// now compute bez*hankelsystb
+		if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel end\n" ;
+	      } // end D.size()==1
+	    } // end B.front()!=0
+	  } // end B.size()==S+1
+	}
+      } // end optimization with Hankel system
       tmp=vector<int>(S);
       tmp[S-1]=1;
-      int d=rur_dim(dim,order);
       vector< vector<int> > K; K.reserve(S+1+d);
       K.push_back(tmp);
       if (debug_infolevel)
@@ -13758,18 +13919,9 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
 	tmp.swap(tmp1);
 	K.push_back(tmp);
       }
-      polymod<tdeg_t> si(order,dim);
-      polymod<tdeg_t> one(order,dim);
-      one.coord.push_back(T_unsigned<modint,tdeg_t>(1,0));
-      for (unsigned i=0;int(i)<d;++i){
-	index_t l(dim);
-	l[i]=1;
-	smallshift(one.coord,tdeg_t(l,order),si.coord);
-	reducesmallmod(si,gbmod,G,-1,p,TMP1,false);
-	// get coordinates of cur in tmp (make them mod p)
-	rur_coordinates(si,lm,tmp);
-	K.push_back(tmp);
-      }
+      // append Kxi
+      for (int i=0;i<d;++i)
+	K.push_back(Kxi[i]);
       tran_vect_vector_int(K,tmpm); K.swap(tmpm);  
       vector< vector<int> > Ker;
       if (debug_infolevel)

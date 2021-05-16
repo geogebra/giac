@@ -103,7 +103,7 @@ namespace giac {
   // new_coord += a*b in place
   void add_mulmodpoly(const modpoly::const_iterator & ita0,const modpoly::const_iterator & ita_end,const modpoly::const_iterator & itb0,const modpoly::const_iterator & itb_end,environment * env,modpoly & new_coord);
   // modpoly operator * (const modpoly & th, const gen & fact);
-  void make_positive(vector<int> & f,int p);
+  void make_positive(std::vector<int> & f,int p);
   modpoly operator_times (const modpoly & th, const gen & fact,environment * env);
   // commented otherwise int * gen might be interpreted as
   // make a modpoly of size the int and multiply
