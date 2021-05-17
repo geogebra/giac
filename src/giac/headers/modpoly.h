@@ -112,6 +112,10 @@ namespace giac {
   void mulmodpoly(const modpoly & a, const modpoly & b, environment * env,modpoly & new_coord,int maxdeg=RAND_MAX);
   modpoly operator * (const modpoly & th, const modpoly & other) ;
   modpoly operator_times (const modpoly & th, const modpoly & other,environment * env) ;
+  bool operator_times(const std::vector<int> & a,const std::vector<int> & b,int m,std::vector<int> & ab);
+  // ichinrem reconstruct in resp1 from resp1/resp2/resp3
+  void ichinremp1p2p3(const std::vector<int> & resp1,const std::vector<int> & resp2,const std::vector<int> & resp3,int n,std::vector<int> & res,int modulo);
+
   void operator_times (const modpoly & a, const modpoly & b,environment * env,modpoly & new_coord,int maxdeg=RAND_MAX);
   // res=(*it) * ... (*(it_end-1))
   void mulmodpoly(std::vector<modpoly>::const_iterator it,std::vector<modpoly>::const_iterator it_end,environment * env,modpoly & new_coord);

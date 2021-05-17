@@ -2438,7 +2438,20 @@ namespace giac {
     int n=1<<l;
     int w=nthroot(m,l); 
     if (w==0){
+      vector<int> resp1;
+#if 1
+      vector<int> resp2,resp3,Wp1,Wp2,Wp3,tmp_p,tmp_q;
+      fft2mult(m,a,b,resp1,p1,Wp1,tmp_p,tmp_q,false,false,true);
+      fft2mult(m,a,b,resp2,p2,Wp2,tmp_p,tmp_q,false,false,true);
+      fft2mult(m,a,b,resp3,p3,Wp3,tmp_p,tmp_q,false,false,true);
+      ichinremp1p2p3(resp1,resp2,resp3,n,resp1,m);
+      reverse(resp1.begin(),resp1.end());
+      ab.swap(resp1);
+      return true;
+#endif
       smallmult(a.begin(),a.end(),b.begin(),b.end(),ab,m);
+      if (!resp1.empty() && resp1!=ab)
+	CERR << "bug\n";
       return false;
     }
     //smallmult(qi.begin(),qi.end(),bi.begin(),bi.end(),tmp1,m); // debug

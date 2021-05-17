@@ -8203,17 +8203,47 @@ namespace giac {
 	    }
 #else
 	    int C=col+1;
+	    longlong * ptr= &buffer[C],*ptrend=&buffer[cmax]-4;
+	    const int *ptrN=&Nline[C];
+	    for (;ptr<ptrend;ptrN+=4,ptr+=4){
+	      longlong x = *ptr;
+	      x -= coeff*(*ptrN);   
+	      x += (x>>63)&modulo2;
+	      *ptr = x;
+	      x = ptr[1];
+	      x -= coeff*(ptrN[1]);   
+	      x += (x>>63)&modulo2;
+	      ptr[1] = x;
+	      x = ptr[2];
+	      x -= coeff*(ptrN[2]);   
+	      x += (x>>63)&modulo2;
+	      ptr[2] = x;
+	      x = ptr[3];
+	      x -= coeff*(ptrN[3]);   
+	      x += (x>>63)&modulo2;
+	      ptr[3] = x;
+	    }
+	    C += ptr-&buffer[C];
 	    for (;C<cmax;++C){
 	      longlong & b=buffer[C] ;
 	      longlong x = b;
 	      x -= coeff*Nline[C];   
-	      x -= (x>>63)*modulo2;
+	      x += (x>>63)&modulo2;
 	      b=x;
 	    }
 #endif
 	  }
 	  else {
 	    int C=col+1;
+	    longlong * ptr= &buffer[C],*ptrend=&buffer[cmax]-4;
+	    const int *ptrN=&Nline[C];
+	    for (;ptr<ptrend;ptrN+=4,ptr+=4){
+	      *ptr -= coeff*(*ptrN);
+	      ptr[1] -= coeff*(ptrN[1]);
+	      ptr[2] -= coeff*(ptrN[2]);
+	      ptr[3] -= coeff*(ptrN[3]);
+	    }
+	    C += ptr-&buffer[C];
 	    for (;C<cmax;++C){
 	      buffer[C] -= coeff*Nline[C];   
 	    }
@@ -14993,9 +15023,12 @@ namespace giac {
     for (int i=0;i<res.size();++i)
       permutation[i]=i;
 #if 1
+    if (debug_infolevel) CERR << CLOCK()*1e-6 << " rref lower\n"; 
     smallmodrref(1,res,pivots,permutation,maxrankcols,det,0,int(res.size()),0,int(res.front().size()),/* fullreduction */0,0,modulo,0,false,NULL,true,modulo);
     int usedcount=0;
+    if (debug_infolevel) CERR << CLOCK()*1e-6 << " rref upper\n"; 
     smallmodrref_upper(res,0,int(res.size()),0,int(res.front().size()),modulo);
+    if (debug_infolevel) CERR << CLOCK()*1e-6 << " rref end\n"; 
 #else
     smallmodrref(1,res,pivots,permutation,maxrankcols,det,0,int(res.size()),0,int(res.front().size()),/* fullreduction */1,0,modulo,0,false,NULL,true,modulo);
 #endif

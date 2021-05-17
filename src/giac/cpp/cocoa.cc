@@ -13578,9 +13578,11 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	gen g=M[i];
 	if (g.type!=_VECT) return false;
 	vecteur m(*g._VECTptr);
-	rur_cleanmod(m);
-	if (m[m.size()-(dim-i)-1]!=-1) return false;
-	m[m.size()-(dim-i)-1]=0;
+	if (m.size()>S){
+	  rur_cleanmod(m);
+	  if (m[m.size()-(dim-i)-1]!=-1) return false;
+	  m[m.size()-(dim-i)-1]=0;
+	}
 	reverse(m.begin(),m.end());
 	m=trim(m,0);
 	res.push_back(m);
@@ -14102,6 +14104,19 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     }
   }
 
+  template<class tdeg_t>
+  void rur_convert_univariate(const vector<int> & v,int varno,polymod<tdeg_t> & tmp){
+    int vs=int(v.size());
+    order_t order=tmp.order;
+    tmp.coord.clear();
+    index_t l(tmp.dim);
+    for (unsigned j=0;int(j)<vs;++j){
+      l[varno]=vs-1-j;
+      if (v[j])
+	tmp.coord.push_back(T_unsigned<modint,tdeg_t>(v[j],tdeg_t(index_m(l),order)));
+    }
+  }
+
   // if radical==-1, shrink the ideal to radical part
   // if radical==1, the ideal is already radical
   // if radical==0, also tries with radical ideal
@@ -14276,12 +14291,23 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     rur.push_back(tmp);
     rur_convert_univariate(m2,0,tmp);
     rur.push_back(tmp);
+    vector<int> m2i; vecteur2vector_int(m2,0,m2i);
+    vector<int> m1i; vecteur2vector_int(m1,0,m1i);
     // convert res to rur
     for (unsigned i=0;i<res.size();++i){
-      vecteur v(*res[i]._VECTptr),w,q;
-      mulmodpoly(v,m2,&env,w);
-      DivRem(w,m1,&env,q,v);
+#if 1
+      vector<int> v,w,q; 
+      vecteur2vector_int(*res[i]._VECTptr,0,v);
+      operator_times(v,m2i,p,w);
+      DivRem(w,m1i,p,q,v);
       rur_convert_univariate(v,0,tmp);
+      rur.push_back(tmp);
+      continue;
+#endif
+      vecteur V(*res[i]._VECTptr),W,Q;
+      mulmodpoly(V,m2,&env,W);
+      DivRem(W,m1,&env,Q,V);
+      rur_convert_univariate(V,0,tmp);
       rur.push_back(tmp);
     }
     return true;
