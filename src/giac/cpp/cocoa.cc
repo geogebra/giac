@@ -13635,12 +13635,19 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     res=N;
     return true;
   }
-// scalar product assuming all coordinates are positive
-int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong res=0){
-    longlong p2=longlong(p)*p;
-    vector<int>::const_iterator it=v.begin(),itend=v.end(),jt=w.begin(),jtend=w.end();
+  // scalar product assuming all coordinates are positive
+  int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong res=0){
+    longlong p2=longlong(p)*p,p4=4*p2;
+    vector<int>::const_iterator it=v.begin(),itend=v.end(),it4=itend-4,jt=w.begin(),jtend=w.end();
+    if (p2<(1ULL<<59)){
+      for (;it<it4;jt+=4,it+=4){
+	res += longlong(*it)*(*jt)+longlong(it[1])*jt[1]+longlong(it[2])*jt[2]+longlong(it[3])*jt[3];
+	res -= p4;
+	res += (res>>63)&p4;
+      }
+    }
     for (; it!=itend;++jt,++it){
-      if (!*it) continue;
+      //if (!*it) continue;
       res += longlong(*it)*(*jt);
       res -= p2;
       res += (res>>63)&p2;
@@ -13648,6 +13655,48 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
     res %= p;
     //if (res<0) CERR << "bug\n";
     return res;
+  }
+
+  void multmod_positive4(const vector<int> & v1, const vector<int> & v2,const vector<int> & v3,const vector<int> & v4,const vector<int> & w,int p,int &res1,int & res2,int & res3,int & res4){
+    longlong r1=res1,r2=res2,r3=res3,r4=res4;
+    longlong p2=longlong(p)*p,p4=4*p2;
+    vector<int>::const_iterator it1=v1.begin(),itend=v1.end(),itend4=itend-4,it2=v2.begin(),it3=v3.begin(),it4=v4.begin(),jt=w.begin(),jtend=w.end();
+    if (p2<(1ULL<<59)){
+      for (;it1<itend4;jt+=4,it4+=4,it3+=4,it2+=4,it1+=4){
+	longlong j0=*jt,j1=jt[1],j2=jt[2],j3=jt[3];
+	r1 += (*it1)*j0+it1[1]*j1+it1[2]*j2+it1[3]*j3;
+	r1 -= p4;
+	r1 += (r1>>63)&p4;
+	r2 += (*it2)*j0+it2[1]*j1+it2[2]*j2+it2[3]*j3;
+	r2 -= p4;
+	r2 += (r2>>63)&p4;
+	r3 += (*it3)*j0+it3[1]*j1+it3[2]*j2+it3[3]*j3;
+	r3 -= p4;
+	r3 += (r3>>63)&p4;
+	r4 += (*it4)*j0+it4[1]*j1+it4[2]*j2+it4[3]*j3;
+	r4 -= p4;
+	r4 += (r4>>63)&p4;
+      }
+    }
+    for (; it1!=itend;++jt,++it4,++it3,++it2,++it1){
+      longlong j=*jt;
+      r1 += *it1*j;
+      r1 -= p2;
+      r1 += (r1>>63)&p2;
+      r2 += *it2*j;
+      r2 -= p2;
+      r2 += (r2>>63)&p2;
+      r3 += *it3*j;
+      r3 -= p2;
+      r3 += (r3>>63)&p2;
+      r4 += *it4*j;
+      r4 -= p2;
+      r4 += (r4>>63)&p2;
+    }
+    res1 = r1%p;
+    res2 = r2%p;
+    res3 = r3%p;
+    res4 = r4%p;
   }
 
 // matrix vector multiplication assuming all coordinates are positive
@@ -13673,7 +13722,10 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
       }
     }
     // dense part of the multiplication
-    for (int i=0;i<m.size();++i)
+    int s=m.size()-4,i=0;
+    for (;i<s;i+=4)
+      multmod_positive4(m[i],m[i+1],m[i+2],m[i+3],w,p,mv[i],mv[i+1],mv[i+2],mv[i+3]);
+    for (;i<m.size();++i)
       mv[i]=multmod_positive(m[i],w,p,mv[i]);
   }
 
@@ -13769,19 +13821,31 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
 	  nonzero[jt_-jt]=true;
 	  posxi[i]=jt_-jt;
 	}
-	else { // could search in gblm
-	  reducesmallmod(si,gbmod,G,-1,p,TMP1,false);
-	  // get coordinates of cur in tmp (make them mod p)
+	else {
+	  jt=gblm.coord.begin();jtend=gblm.coord.end();
+	  if (dicho(jt,jtend,si.coord.front().u,order)){
+	    int curpos=jtend-jt;
+	    const polymod<tdeg_t> & curgb=gbmod[curpos-1];
+	    jt=curgb.coord.begin()+1; jtend=curgb.coord.end();
+	    si.coord.clear(); si.coord.reserve(jtend-jt);
+	    for (;jt!=jtend;++jt){
+	      si.coord.push_back(T_unsigned<modint,tdeg_t>(-jt->g,jt->u));
+	    }
+	  }
+	  else 
+	    reducesmallmod(si,gbmod,G,-1,p,TMP1,false);
+	    // get coordinates of cur in tmp (make them mod p)
 	  rur_coordinates(si,lm,tmp,&nonzero);
+	  make_positive(tmp,p);
 	}
-	make_positive(tmp,p);
 	Kxi.push_back(tmp);
       }
       int count=0; 
       for (int i=0;i<S;++i){ 
 	if (nonzero[i]) count++; 
       }
-      if (0 && count<S/10){
+      if (0 && 
+	  count<S/10){
 	if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel start\n" ;
 	// IMPROVE: compute s^0 to s^[2S-1] (instead of s^0 to s^S)
 	// take coordinate of index corresponding to 1 in lm
@@ -13824,6 +13888,7 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
 	vecteur x2n(2*S+1),A,B,G,U,unused,D; x2n[0]=1; // x2n=x^(2*S)
 	environment env; env.modulo=p; env.moduloon=true;
 	if (egcd_pade(x2n,V,S,A,B,&env)){
+	  if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel after Pade\n" ;
 	  reverse(B.begin(),B.end());
 	  while (B.size()<S+1)
 	    B.push_back(0);
@@ -13856,7 +13921,7 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
 		  b.push_back(0);
 		// u and b have now size S+1
 		longlong p2=longlong(p)*p;
-#if 1 // https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.85.3710&rep=rep1&type=pdf
+		// https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.85.3710&rep=rep1&type=pdf
 		vector< vector<int> > bez(S,vector<int>(S));
 		// initialization
 		for (int i=0;i<S;++i){
@@ -13880,29 +13945,15 @@ int multmod_positive(const vector<int> & v, const vector<int> & w,int p,longlong
 		  for (int j=0;j<i;++j)
 		    bez[i][j]=bez[j][i];
 		}
-#else
-		vector< vector<int> > bez(S);
-		for (int j=0;j<S;++j){
-		  // coeff line i column j
-		  // m=giacmin(i,n-1-j);  r=0;
-		  // for (k=max(0,i-j);k<=m;k++) r += u[j+k+1]*b[i-k]-u[i-k]*b[j+k+1];
-		  for (int i=0;i<S;++i){
-		    int m=giacmin(i,S-1-j); 
-		    longlong r=0;
-		    for (int k=0;k<=m;k++){
-		      r += longlong(u[j+k+1])*b[i-k];
-		      r -= longlong(u[i-k])*b[j+k+1];
-		      r += (r>>63) & p2;
-		      r -= p2;
-		      r += (r>>63) & p2;
-		    }
-		    bez[j].push_back(r % p);
-		  }
-		}
-#endif
-		M.push_back(m);
 		// now compute bez*hankelsystb
+		if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel *\n" ;
+		vector< vector<int> > Ker(d+1);
+		vecteur2vector_int(m,p,Ker[0]);
+		for (int i=0;i<d;++i)
+		  multmod_positive(bez,hankelsystb[i],p,Ker[i+1]);
+		vectvector_int2vecteur(Ker,M);
 		if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel end\n" ;
+		// return true;
 	      } // end D.size()==1
 	    } // end B.front()!=0
 	  } // end B.size()==S+1

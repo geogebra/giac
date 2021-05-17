@@ -8955,23 +8955,43 @@ namespace giac {
       u.push_back(0);
     while (v.size()<u.size())
       v.push_back(0);
-    int n=u.size()-1;
-    matrice res; res.reserve(n);
-    for (int i=0;i<n;++i){
-      vecteur ligne; ligne.reserve(n);
-      for (int j=0;j<n;j++){
-	int m=giacmin(i,n-1-j);
-	gen r=0;
-	for (int k=0;k<=m;k++){
-	  r += u[j+k+1]*v[i-k]-u[i-k]*v[j+k+1];
-	}
-	if (env && env->moduloon)
-	  r=smod(r,env->modulo);
-	ligne.push_back(r);
+    int S=u.size()-1;
+    matrice bez(S);
+    for (int i=0;i<S;++i)
+      bez[i]=vecteur(S); 
+    // initialization
+    for (int i=0;i<S;++i){
+      vecteur & b=*bez[i]._VECTptr;
+      for (int j=i;j<S;++j){
+	gen r = u[i]*v[j+1]-v[i]*u[j+1];
+	b[j]=r;
       }
-      res.push_back(ligne);
     }
-    return res;
+    // recursion
+    for (int i=1;i<=S-2;++i){
+      vecteur & b=*bez[i]._VECTptr;
+      for (int j=i;j<=S-2;++j){
+	gen r = b[j];
+	r += bez[i-1][j+1];
+	b[j] = r;
+      }
+    }
+    // modulo
+    if (env && env->moduloon){
+      for (int i=0;i<S;++i){
+	vecteur & b=*bez[i]._VECTptr;
+	for (int j=i;j<S;++j){
+	  b[j]=smod(b[j],env->modulo);
+	}
+      }
+    }
+    // symmetry
+    for (int i=1;i<S;++i){
+      vecteur & b=*bez[i]._VECTptr;
+      for (int j=0;j<i;++j)
+	b[j]=bez[j][i];
+    }
+    return bez;
   }
 
   gen _bezoutian(const gen & args,GIAC_CONTEXT){
