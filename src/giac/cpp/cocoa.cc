@@ -13737,14 +13737,23 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
   void multmod_positive(const vector<int> & v,const vector< vector<int> > &m,const vector<int> &ms,int p,vector<int> & mv){
     mv.resize(v.size());
     int j=0;
+    vector<int> i4;
     for (int i=0;i<v.size();++i){
       if (ms[i]>=0)
 	mv[i]=v[ms[i]];
       else {
-	mv[i]=multmod_positive(m[j],v,p);
+	i4.push_back(i);
+	i4.push_back(j);
+	mv[i]=0;
+	if (i4.size()==8){
+	  multmod_positive4(m[i4[1]],m[i4[3]],m[i4[5]],m[i4[7]],v,p,mv[i4[0]],mv[i4[2]],mv[i4[4]],mv[i4[6]]);
+	  i4.clear();
+	}
 	++j;
       }
     }
+    for (int i=0;i<i4.size();i+=2)
+      mv[i4[i]]=multmod_positive(m[i4[i+1]],v,p);
   }
 
   // Compute minimal polynomial of s
@@ -13846,7 +13855,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       for (int i=0;i<S;++i){ 
 	if (nonzero[i]) count++; 
       }
-      if (0 && 
+      if (//0 && 
 	  count<S/10){
 	if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel start\n" ;
 	// IMPROVE: compute s^0 to s^[2S-1] (instead of s^0 to s^S)
@@ -13887,9 +13896,19 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel mult end\n" ;
 	vecteur V; vector_int2vecteur(g,V);
 	reverse(V.begin(),V.end()); // degree(V)=2S-1, size(V)=2S
-	vecteur x2n(2*S+1),A,B,G,U,unused,D; x2n[0]=1; // x2n=x^(2*S)
+	vecteur x2n(2*S+1),A,B,G,U,unused,D,tmp1,tmp2; x2n[0]=1; // x2n=x^(2*S)
 	environment env; env.modulo=p; env.moduloon=true;
-	if (egcd_pade(x2n,V,S,A,B,&env)){
+	if (
+	    hgcd(x2n,V,p,G,U,D,B,unused,A,tmp1,tmp2)
+	    ){
+	  if (A.empty()){
+	    // A=D*x2n+B*V
+	    operator_times(B,V,&env,A);
+	    // keep S terms (lower part)
+	    if (A.size()>S)
+	      A.erase(A.begin(),A.end()-S);
+	  }
+	  //egcd_pade(x2n,V,S,A,B,&env);
 	  if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel after Pade\n" ;
 	  reverse(B.begin(),B.end());
 	  while (B.size()<S+1)
@@ -13903,12 +13922,12 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	      gen coeff=invmod(B.front(),p);
 	      mulmodpoly(B,coeff,&env,B);
 	      m=trim(B,0);
-	      modpoly mgcd=gcd(m,derivative(m,&env),&env);
+	      //modpoly mgcd=gcd(m,derivative(m,&env),&env);
 	      mulmodpoly(A,coeff,&env,A);
 	      // now Bezout 
 	      egcd(A,B,&env,U,unused,D);
 	      // check Bezout and also that B is squarefree
-	      if (D.size()==1 && mgcd.size()==1){ // D[0] should be 1
+	      if (D.size()==1){ // D[0] should be 1
 		// Bezoutian of U and B will invert Hankel matrix
 		// compute Bezoutian(U,B)*Kxi
 		vector<int> u,b;
@@ -13955,7 +13974,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 		  multmod_positive(bez,hankelsystb[i],p,Ker[i+1]);
 		vectvector_int2vecteur(Ker,M);
 		if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel end\n" ;
-		// return true;
+		return true;
 	      } // end D.size()==1
 	    } // end B.front()!=0
 	  } // end B.size()==S+1

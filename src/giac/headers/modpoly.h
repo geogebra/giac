@@ -185,7 +185,8 @@ namespace giac {
   bool gcd_modular_algo(const modpoly &p,const modpoly &q,modpoly &d,modpoly * p_simp,modpoly * q_simp); // p and q must have coeffs in Z or Z[i]
 
   // half-gcd: a0.size() must be > a1.size(), returns [[A,B],[C,D]]
-  bool hgcd(const modpoly & a0,const modpoly & a1,const gen & modulo,modpoly &A,modpoly &B,modpoly &C,modpoly &D); // a0 is A in Yap, a1 is B
+  bool hgcd(const modpoly & a0,const modpoly & a1,const gen & modulo,modpoly &A,modpoly &B,modpoly &C,modpoly &D,modpoly & a,modpoly & b,modpoly & tmp1,modpoly & tmp2); // a0 is A in Yap, a1 is B
+
   // fast modular inverse: f*g=1 mod x^l, f must be invertible (f.back()!=0)
   bool invmod(const modpoly & f,int l,environment * env,modpoly & g);
   // for p prime such that p-1 is divisible by 2^N, compute a 2^N-th root of 1
