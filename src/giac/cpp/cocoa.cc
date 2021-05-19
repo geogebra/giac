@@ -14924,7 +14924,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	    }
 	    //Vijs=1; 
 	    bool dobrk=false;
-	    int chks[]={int(.1*Vijs),Vijs/2, int(.9*Vijs)};
+	    int chks[]={int(.1*Vijs),int(Vijs/2), int(.9*Vijs)};
 	    //int chks[]={Vijs/2, int(.9*Vijs)};
 	    for (int chk=0;chk<sizeof(chks)/sizeof(int);++chk){
 	      Vijs=chks[chk];
