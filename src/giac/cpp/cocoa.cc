@@ -14910,9 +14910,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 		  return 1;
 		}
 	      } // end jpos==early.size()
-	    }
+	    } // end if !rur ...
 	    break; // find another prime
 	  }
+	  if (debug_infolevel) CERR << CLOCK()*1e-6 << " checking\n";
 	  for (;jpos<V[i].size();++jpos){
 	    unsigned Vijs=unsigned(V[i][jpos].coord.size());
 	    if (Vijs!=gbmod[jpos].coord.size()){
@@ -14922,23 +14923,31 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	      break;
 	    }
 	    //Vijs=1; 
-	    Vijs/=2;
-	    if (Vijs && V[i][jpos].coord[Vijs].g.type==_ZINT){
-	      if (!in_fracmod(P[i],V[i][jpos].coord[Vijs].g,
-			      zd,zd1,zabsd1,zu,zu1,zur,zq,zr,zsqrtm,ztmp,num,den)){
-		rechecked=0;
-		if (debug_infolevel>1)
-		  CERR << jpos << '\n';
-		break;
-	      }
-	      modint gg=gbmod[jpos].coord[Vijs].g;
-	      if (!chk_equal_mod(num/den,gg,p.val)){
-		rechecked=0;
-		if (debug_infolevel>1)
-		  CERR << jpos << '\n';
-		break;
+	    bool dobrk=false;
+	    int chks[]={int(.1*Vijs),Vijs/2, int(.9*Vijs)};
+	    //int chks[]={Vijs/2, int(.9*Vijs)};
+	    for (int chk=0;chk<sizeof(chks)/sizeof(int);++chk){
+	      Vijs=chks[chk];
+	      if (Vijs && V[i][jpos].coord[Vijs].g.type==_ZINT){
+		if (!in_fracmod(P[i],V[i][jpos].coord[Vijs].g,
+				zd,zd1,zabsd1,zu,zu1,zur,zq,zr,zsqrtm,ztmp,num,den)){
+		  rechecked=0;
+		  if (debug_infolevel>1)
+		    CERR << jpos << '\n';
+		  dobrk=true;
+		  break;
+		}
+		modint gg=gbmod[jpos].coord[Vijs].g;
+		if (!chk_equal_mod(num/den,gg,p.val)){
+		  rechecked=0;
+		  if (debug_infolevel>1)
+		    CERR << jpos << '\n';
+		  dobrk=true;
+		  break;
+		}
 	      }
 	    }
+	    if (dobrk) break;
 	    if (!fracmod(V[i][jpos],P[i],
 			 zd,zd1,zabsd1,zu,zu1,zur,zq,zr,zsqrtm,ztmp,
 			 poly8tmp)){
