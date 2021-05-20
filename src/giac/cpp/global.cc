@@ -134,7 +134,7 @@ int js_token(const char * list,const char * buf){
 
 #ifdef HAVE_LIBMICROPYTHON
 std::string & python_console(){
-  std::string * ptr=0;
+  static std::string * ptr=0;
   if (!ptr)
     ptr=new string;
   return *ptr;
