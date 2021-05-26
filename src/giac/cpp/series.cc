@@ -2594,7 +2594,7 @@ namespace giac {
 	return first_try;
       if (!is_undef(first_try) && !is_undef(numtry)){
 	// if (!direction) return first_try;
-	if (first_try!=unsigned_inf)
+	if (first_try!=unsigned_inf && numtry!=unsigned_inf)
 	  return first_try;
       }
     } // end if vsign.empty()

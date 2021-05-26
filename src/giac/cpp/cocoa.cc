@@ -10,6 +10,10 @@
 #ifdef HAVE_LIBPTHREAD
 #endif
 
+#ifdef HAVE_VCL1_VECTORCLASS_H 
+#include <vcl1/vectorclass.h>
+#endif
+
 #ifdef BF2GMP_H
 #define USE_GMP_REPLACEMENTS
 #endif
@@ -13435,6 +13439,27 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     lm.order=order; lm.dim=dim; lm.coord.clear();
     polymod<tdeg_t> gblm(order,dim);
     rur_gblm(gbmod,gblm);
+    //#define RUR_IDEAL_JSTOP
+#ifdef RUR_IDEAL_JSTOP
+    vector<int> jstart;
+    if (order.o==_REVLEX_ORDER){
+      // record positions where total degree appears first in gblm
+      jstart.resize(gblm.coord.back().u.total_degree(order)+1);
+      int prevtdeg=-1;
+      for (int j=0;j<S;++j){
+	int curtdeg=gblm.coord[j].u.total_degree(order);
+	if (curtdeg>prevtdeg){
+	  ++prevtdeg;
+	  for (;;){
+	    jstart[prevtdeg]=j;
+	    if (prevtdeg==curtdeg)
+	      break;
+	    ++prevtdeg;
+	  }
+	}
+      }
+    }
+#endif
     // for 3var, 7var, 11 var search in the first 3 var, 7 var or 11 var
     // for revlex search for all variables
     // we must find a leading monomial in gbmod that contains only this variable
@@ -13475,8 +13500,9 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       int i=I;
       // i-> cur -> tdeg_t
       for (int j=int(v.size())-1;j>=0;--j){
-	cur[j]=i%v[j];
-	i/=v[j];
+	int q=i/v[j];
+	cur[j]=i-q*v[j];
+	i=q;
       }
       tdeg_t curu(cur,order);
       // then search if > to one of the leading monomials for all indices
@@ -13493,19 +13519,35 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       if (order.o==_11VAR_ORDER){
       }
       if (order.o==_REVLEX_ORDER){
-	for (j=0;j<S;++j){
+	int curtdeg=curu.total_degree(order),jstop;
+	j=0; jstop=S;
+#ifdef RUR_IDEAL_JSTOP
+	//if (curtdeg>=jstart.size()) j=S;
+	if (curtdeg+1>=jstart.size())
+	  jstop=S;
+	else
+	  jstop=jstart[curtdeg+1];
+	//CERR << "jstop " << jstop << '\n';
+#endif
+	for (;j<jstop;++j){
 	  if (tdeg_t_all_greater(curu,gblm.coord[j].u,order))
 	    break;
 	}
+	if (j==jstop) j=S;
       }
       if (j==gbmod.size()) // not found, add cur to the list of monomials
 	lm.coord.push_back(T_unsigned<modint,tdeg_t>(1,curu));
-      else { 
-	if (cur[d-1]!=v[d-1]-1){
-	  // increase I to the next multiple of v[v.size()-1]
-	  I /= v[d-1];
+      else {
+	int D=d;
+	while (D>=1 && cur[D-1]==0) --D;
+	if (D!=d || cur[D-1]!=v[D-1]-1){
+	  // increase I to the next multiple
+	  int prod=v[d-1];
+	  for (;D<d;++D)
+	    prod *= v[D-1];
+	  I /= prod;
 	  ++I;
-	  I *= v[d-1];
+	  I *= prod;
 	  --I;
 	}
       }
@@ -13659,10 +13701,64 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     return res;
   }
 
+
   void multmod_positive4(const vector<int> & v1, const vector<int> & v2,const vector<int> & v3,const vector<int> & v4,const vector<int> & w,int p,int &res1,int & res2,int & res3,int & res4){
     longlong r1=res1,r2=res2,r3=res3,r4=res4;
     longlong p2=longlong(p)*p,p4=4*p2;
     vector<int>::const_iterator it1=v1.begin(),itend=v1.end(),itend4=itend-4,it2=v2.begin(),it3=v3.begin(),it4=v4.begin(),jt=w.begin(),jtend=w.end();
+#if defined __AVX2__ && defined HAVE_VCL1_VECTORCLASS_H
+    Vec4q R1(0),R2(0),R3(0),R4(0),p44(4*p2),V1,V2,V3,V4,w4,w4s;
+    itend4=itend-15; // itend8
+    if (p2<(1ULL<<59)){
+      for (;it1<itend4;jt+=8,it4+=8,it3+=8,it2+=8,it1+=8){
+	w4.load(&*jt); // load 8 values
+	w4s = w4>>32;
+	V1.load(&*it1);
+	R1 += _mm256_mul_epi32(w4,V1); // 4 products
+	V1 >>= 32;
+	R1 += _mm256_mul_epi32(w4s,V1); // 4 products
+	V2.load(&*it2);
+	R2 += _mm256_mul_epi32(w4,V2); // 4 products
+	V2 >>= 32;
+	R2 += _mm256_mul_epi32(w4s,V2); // 4 products
+	V3.load(&*it3);
+	R3 += _mm256_mul_epi32(w4,V3); // 4 products
+	V3 >>= 32;
+	R3 += _mm256_mul_epi32(w4s,V3); // 4 products
+	V4.load(&*it4);
+	R4 += _mm256_mul_epi32(w4,V4); // 4 products
+	V4 >>= 32;
+	R4 += _mm256_mul_epi32(w4s,V4); // 4 products
+	jt+=8;it4+=8;it3+=8;it2+=8;it1+=8;
+	w4.load(&*jt); // load 8 values
+	w4s = w4>>32;
+	V1.load(&*it1);
+	R1 += _mm256_mul_epi32(w4,V1); // 4 products
+	V1 >>= 32;
+	R1 += _mm256_mul_epi32(w4s,V1); // 4 products
+	R1 -= p44;
+	R1 += (R1>>63)&p44;
+	V2.load(&*it2);
+	R2 += _mm256_mul_epi32(w4,V2); // 4 products
+	V2 >>= 32;
+	R2 += _mm256_mul_epi32(w4s,V2); // 4 products
+	R2 -= p44;
+	R2 += (R2>>63)&p44;
+	V3.load(&*it3);
+	R3 += _mm256_mul_epi32(w4,V3); // 4 products
+	V3 >>= 32;
+	R3 += _mm256_mul_epi32(w4s,V3); // 4 products
+	R3 -= p44;
+	R3 += (R3>>63)&p44;
+	V4.load(&*it4);
+	R4 += _mm256_mul_epi32(w4,V4); // 4 products
+	V4 >>= 32;
+	R4 += _mm256_mul_epi32(w4s,V4); // 4 products
+	R4 -= p44;
+	R4 += (R4>>63)&p44;
+      }
+    }
+#else
     if (p2<(1ULL<<59)){
       for (;it1<itend4;jt+=4,it4+=4,it3+=4,it2+=4,it1+=4){
 	longlong j0=*jt,j1=jt[1],j2=jt[2],j3=jt[3];
@@ -13680,6 +13776,34 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	r4 += (r4>>63)&p4;
       }
     }
+#endif      
+#ifdef HAVE_VCL1_VECTORCLASS_H
+    p4 = 2*p2;
+    r1 = res1+R1.extract(0)+R1.extract(1);
+    r1 -= p4;
+    r1 += (r1>>63)&p4;
+    r1 += R1.extract(2)+R1.extract(3);
+    r1 -= p4;
+    r1 += (r1>>63)&p4;
+    r2 = res2+R2.extract(0)+R2.extract(1);
+    r2 -= p4;
+    r2 += (r2>>63)&p4;
+    r2 += R2.extract(2)+R2.extract(3);
+    r2 -= p4;
+    r2 += (r2>>63)&p4;
+    r3 = res3+R3.extract(0)+R3.extract(1);
+    r3 -= p4;
+    r3 += (r3>>63)&p4;
+    r3 += R3.extract(2)+R3.extract(3);
+    r3 -= p4;
+    r3 += (r3>>63)&p4;
+    r4 = res4+R4.extract(0)+R4.extract(1);
+    r4 -= p4;
+    r4 += (r4>>63)&p4;
+    r4 += R4.extract(2)+R4.extract(3);
+    r4 -= p4;
+    r4 += (r4>>63)&p4;
+#endif
     for (; it1!=itend;++jt,++it4,++it3,++it2,++it1){
       longlong j=*jt;
       r1 += *it1*j;

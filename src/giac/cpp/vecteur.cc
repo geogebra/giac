@@ -5127,11 +5127,12 @@ namespace giac {
   }
 
 #ifdef HAVE_VCL1_VECTORCLASS_H 
-  inline Vec4q pseudo_mod4(const Vec4q & x,int p,unsigned invp,int nbits){
-    return x - (((x>>nbits)*invp)>>(nbits))*p;
+  inline Vec4q pseudo_mod4(const Vec4q & x,const Vec4q& p4,const Vec4q & invp4,int nbits){
+    return x - _mm256_mul_epi32(_mm256_mul_epi32((x>>nbits),invp4)>>(nbits),p4);
+    // return x - (((x>>nbits)*invp)>>(nbits))*p;
   }
-  inline void pseudo_mod4(Vec4q & a,int b,const Vec4q & c,int p,unsigned invp,unsigned nbits){
-    a=pseudo_mod4(a+b*c,p,invp,nbits);    
+  inline void pseudo_mod4(Vec4q & a,int b,const Vec4q & c,const Vec4q & p4,const Vec4q& invp4,unsigned nbits){
+    a=pseudo_mod4(a+b*c,p4,invp4,nbits);    
   }
 #endif
   
@@ -5174,16 +5175,19 @@ namespace giac {
 	){
       int nbits=sizeinbase2(p); 
       unsigned invp=((1ULL<<(2*nbits)))/p+1;
+#ifdef HAVE_VCL1_VECTORCLASS_H
+      Vec4q p4(p),invp4(invp);
+#endif
       for (;it1<=it1_;){
 #if 0 // def HAVE_VCL1_VECTORCLASS_H
 	Vec4i I1,I2,I3,I4,T;
 	I1.load(it1); I2.load(it2); I3.load(it3); I4.load(it4); T.load(jt);
 	Vec4q I1_,I2_,I3_,I4_,T_;
 	I1_=extend(I1); I2_=extend(I2); I3_=extend(I3); I4_=extend(I4); T_=extend(T);
-	pseudo_mod4(I1_,c1,T_,p,invp,nbits);
-	pseudo_mod4(I2_,c2,T_,p,invp,nbits);
-	pseudo_mod4(I3_,c3,T_,p,invp,nbits);
-	pseudo_mod4(I4_,c4,T_,p,invp,nbits);
+	pseudo_mod4(I1_,c1,T_,p4,invp4,nbits);
+	pseudo_mod4(I2_,c2,T_,p4,invp4,nbits);
+	pseudo_mod4(I3_,c3,T_,p4,invp4,nbits);
+	pseudo_mod4(I4_,c4,T_,p4,invp4,nbits);
 	I1=compress(I1_); I2=compress(I2_); I3=compress(I3_); I4=compress(I4_);
 	I1.store(it1); I2.store(it2); I3.store(it3); I4.store(it4);
 	jt+=4;it4+=4;it3+=4;it2+=4;it1+=4;
