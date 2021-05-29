@@ -13262,7 +13262,17 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
   }
 
   template<class tdeg_t>
-  bool zgbasis(vectpoly8<tdeg_t> & res8,vectpolymod<tdeg_t> &resmod,vector<unsigned> & G,modint env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool convertpoly8,bool eliminate_flag,bool multimodular,int parallel,bool interred){
+  void remove_zero(vectpolymod<tdeg_t> &gbmod){
+    for (int i=0;i<gbmod.size();){
+      if (gbmod[i].coord.empty())
+	gbmod.erase(gbmod.begin()+i);
+      else
+	++i;
+    }
+  }
+
+  template<class tdeg_t>
+  bool zgbasisrur(vectpoly8<tdeg_t> & res8,vectpolymod<tdeg_t> &resmod,vector<unsigned> & G,modint env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool convertpoly8,bool eliminate_flag,bool multimodular,int parallel,bool interred,int & rurinzgbasis,vectpolymod<tdeg_t> &rurv,polymod<tdeg_t> & rurs,polymod<tdeg_t> & rurlm,polymod<tdeg_t> &rurlmmodradical){
     for (unsigned i=0;i<resmod.size();++i)
       resmod[i].coord.clear();
     convert(res8,resmod,env);
@@ -13270,9 +13280,24 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     bool b=in_zgbasis(resmod,ressize,G,env,totdeg,pairs_reducing_to_zero,f4buchberger_info,recomputeR,eliminate_flag,multimodular,parallel,interred);
     if (convertpoly8)
       convert(resmod,res8,env);
+    if (rurinzgbasis==1){
+      remove_zero(resmod);
+      sort(resmod.begin(),resmod.end(),tripolymod_tri<polymod<tdeg_t> >(0));
+      int rqi=rur_quotient_ideal_dimension(resmod,rurlm);
+      rurinzgbasis=rur_compute(resmod,rurlm,rurlmmodradical,env,rurs,rurv);
+    }
+    else
+      rurinzgbasis=0;
     return b;
   }
 
+  template<class tdeg_t>
+  bool zgbasis(vectpoly8<tdeg_t> & res8,vectpolymod<tdeg_t> &resmod,vector<unsigned> & G,modint env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool convertpoly8,bool eliminate_flag,bool multimodular,int parallel,bool interred){
+    vectpolymod<tdeg_t> rurv; 
+    polymod<tdeg_t> rurs,rurlm,rurlmmodradical;
+    int rurinzgbasis=0;
+    return zgbasisrur(res8,resmod,G,env,totdeg,pairs_reducing_to_zero,f4buchberger_info,recomputeR,convertpoly8,eliminate_flag,multimodular,parallel,interred,rurinzgbasis,rurv,rurlm,rurlmmodradical,rurs);
+  }
 #endif // GIAC_SHORTSHIFTTYPE==16
   /* *************
      END ZPOLYMOD
@@ -13423,6 +13448,16 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       if (gbmod[i].coord.empty())
 	continue;
       gblm.coord.push_back(gbmod[i].coord.front());
+    }
+  }
+
+  template<class tdeg_t> void rur_gblm1(const vectpolymod<tdeg_t> & gbmod,polymod<tdeg_t> & gblm){
+    unsigned S = unsigned(gbmod.size());
+    for (unsigned i=0;i<S;++i){
+      if (gbmod[i].coord.empty())
+	continue;
+      gblm.coord.push_back(gbmod[i].coord.front());
+      gblm.coord.back().g=1;
     }
   }
 
@@ -13893,6 +13928,8 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     matrice chk;
     if (1){ 
       M.clear();
+      if (debug_infolevel)
+	CERR << CLOCK()*1e-6 << " rur * monomial matrix computation " << S << '\n';
       // matrix of multiplication by s of all monomials in lm
       polymod<tdeg_t> cur(order,dim);
       vector<int> tmp(S),tmp1;
@@ -13903,6 +13940,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       polymod<tdeg_t> gblm(order,dim);
       rur_gblm(gbmod,gblm);
       reverse(gblm.coord.begin(),gblm.coord.end());
+      int miss=0;
       for (int i=0;i<S;++i){
 	cur.coord.clear();
 	cur.coord.push_back(lm.coord[i]);
@@ -13930,8 +13968,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	    red=true;
 	  }
 	}
-	if (!red)
+	if (!red){
+	  miss++;
 	  reducesmallmod(cur,gbmod,G,-1,p,TMP1,false);
+	}
 	multv[i]=-1;
 	rur_coordinates(cur,lm,tmp);
 	make_positive(tmp,p);
@@ -13939,6 +13979,8 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       }
       tran_vect_vector_int(mults,tmpm); tmpm.swap(mults);  
 #if 1
+      if (debug_infolevel)
+	CERR << CLOCK()*1e-6 << " missed " << miss << ", rur * xi" << '\n';
       // s^i is obtained by multiplying mults by the coordinates of s^[i-1]
       int d=rur_dim(dim,order);
       vector< vector<int> > Kxi; Kxi.reserve(d);
@@ -14500,7 +14542,8 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
   template<class tdeg_t>
   struct thread_gbasis_t {
     vectpoly8<tdeg_t> current;
-    vectpolymod<tdeg_t> resmod;
+    vectpolymod<tdeg_t> resmod,rurv;
+    polymod<tdeg_t> rurlm,rurs,rurlmmodradical;
     vector<unsigned> G;
     int p;
     vector< paire > * reduceto0;
@@ -14509,6 +14552,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     bool zdata;
     bool eliminate_flag; // if true, for double revlex order returns only the gbasis part made of polynomials that do not depend on variables to eliminate
     bool interred;
+    int rurinzgbasis;
     int parallel; // max number of parallel threads for 1 modular computation
   };
   
@@ -14517,8 +14561,9 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     thread_gbasis_t<tdeg_t> * ptr=(thread_gbasis_t<tdeg_t> *) ptr_;
     ptr->G.clear();
     if (ptr->zdata){
-      if (!zgbasis(ptr->current,ptr->resmod,ptr->G,ptr->p,true,
-		   ptr->reduceto0,*ptr->zf4buchberger_info,false,false,ptr->eliminate_flag,true,ptr->parallel,ptr->interred))
+      if (!zgbasisrur(ptr->current,ptr->resmod,ptr->G,ptr->p,true,
+		   ptr->reduceto0,*ptr->zf4buchberger_info,false,false,ptr->eliminate_flag,true,ptr->parallel,ptr->interred,
+		   ptr->rurinzgbasis,ptr->rurv,ptr->rurs,ptr->rurlm,ptr->rurlmmodradical))
 	return 0;
     }
     else {
@@ -14628,7 +14673,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     vector< vectpoly8<tdeg_t> > W; // list of rational reconstructed groebner basis
     vector< vectpoly8<tdeg_t> > Wlast;
     vecteur P; // list of associate (product of) modulo
-    polymod<tdeg_t> lmmod,lmmodradical,s; vectpolymod<tdeg_t> rurv; // variables for rational univar. reconstr.
+    polymod<tdeg_t> lmmod,lmmodradical,prevgblm,s,zlmmod,zlmmodradical,mainthrurlm,mainthrurlmmodradical; int prevrqi; vectpolymod<tdeg_t> rurv,zrurv,mainthrurv; int zrur=0,rurinzgbasis=0,mainthrurinzgbasis=0;// variables for rational univar. reconstr.
     // environment env;
     // env.moduloon=true;
     vector<unsigned> G;
@@ -14691,6 +14736,9 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       p0=p.val; // 1st prime used by all threads
       // compute gbasis mod p 
       // env.modulo=p;
+      if (th==0) rurinzgbasis=0;
+      mainthrurinzgbasis=lmmodradical.coord.empty()?0:rur;
+      mainthrurlmmodradical=lmmodradical;
 #ifdef HAVE_LIBPTHREAD
       for (unsigned j=0;j<th;++j){
 	gbasis_param[j].current=current_gbasis;
@@ -14702,6 +14750,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	gbasis_param[j].eliminate_flag=eliminate_flag;
 	gbasis_param[j].parallel=parallel;
 	gbasis_param[j].interred=interred;
+	gbasis_param[j].rurinzgbasis=lmmodradical.coord.empty()?0:rur;
+	gbasis_param[j].rurlm=polymod<tdeg_t>(lmmodradical.order,lmmodradical.dim);
+	gbasis_param[j].rurlmmodradical=lmmodradical;
+	gbasis_param[j].rurs=s;
 	if (count==1)
 	  gbasis_param[j].resmod.reserve(resmod.size());
 	bool res=true;
@@ -14726,14 +14778,14 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       // CERR << "write " << th << " " << p << '\n';
 #ifdef GBASISF4_BUCHBERGER 
       if (zdata){
-	if (!zgbasis(current,resmod,G,p.val,true,&reduceto0,zf4buchberger_info,false,false,eliminate_flag,true,parallel,interred)){
+	if (!zgbasisrur(current,resmod,G,p.val,true,&reduceto0,zf4buchberger_info,false,false,eliminate_flag,true,parallel,interred,mainthrurinzgbasis,mainthrurv,s,mainthrurlm,mainthrurlmmodradical)){
 	  if (augmentgbasis>0) 
 	    augmentgbasis=2;
 	  reduceto0.clear();
 	  zf4buchberger_info.clear();
 	  zf4buchberger_info.reserve(4*zf4buchberger_info.capacity());
 	  G.clear();
-	  if (!zgbasis(current,resmod,G,p.val,true/*totaldeg*/,&reduceto0,zf4buchberger_info,false,false,eliminate_flag,true,parallel,interred)){
+	  if (!zgbasisrur(current,resmod,G,p.val,true/*totaldeg*/,&reduceto0,zf4buchberger_info,false,false,eliminate_flag,true,parallel,interred,mainthrurinzgbasis,mainthrurv,s,mainthrurlm,mainthrurlmmodradical)){
 	    ok=false;
 	    break;
 	  }
@@ -14810,7 +14862,14 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       }
       unsigned i=0;
       for (int t=0;t<=th;++t){
+	rurv.clear();
 	if (t==th){
+	  zrur=mainthrurinzgbasis;
+	  if (zrur){
+	    zlmmod=mainthrurlm;
+	    zlmmodradical=mainthrurlmmodradical;
+	    rurv.swap(mainthrurv);
+	  }
 	  // extract from current
 	  if (rur || gbmod.size()<G.size())
 	    gbmod.resize(G.size());
@@ -14827,6 +14886,12 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	    continue;
 	  thread_gbasis_t<tdeg_t> * ptr = (thread_gbasis_t<tdeg_t> *) ptr_;
 	  // extract from current
+	  zrur=ptr->rurinzgbasis;
+	  if (zrur){
+	    zlmmod=ptr->rurlm;
+	    zlmmodradical=ptr->rurlmmodradical;
+	    rurv.swap(ptr->rurv);
+	  }
 	  if (rur || gbmod.size()<ptr->G.size())
 	    gbmod.resize(ptr->G.size());
 	  for (i=0;i<ptr->G.size();++i)
@@ -14840,12 +14905,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	if (!ok)
 	  continue;
 	// remove 0 from gbmod
-	for (i=0;i<gbmod.size();){
-	  if (gbmod[i].coord.empty())
-	    gbmod.erase(gbmod.begin()+i);
-	  else
-	    ++i;
-	}
+	remove_zero(gbmod);
 	// if augmentgbasis>0 (at least) gbmod must be sorted
 	//if (augmentgbasis>0)
 	sort(gbmod.begin(),gbmod.end(),tripolymod_tri<polymod<tdeg_t> >(gbasis_logz_age));
@@ -14896,10 +14956,12 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 #if 1
 	if (rur){
 	  gbmod.resize(G.size());
-	  int dim=res.front().dim;
-	  polymod<tdeg_t> lmtmp(lmmodradical.order,dim);
-	  // FIXME rur_quotient_ideal etc. should take care of parameters!
-	  int rqi=rur_quotient_ideal_dimension(gbmod,lmtmp);
+	  int dim=res.front().dim,rqi;
+	  if (zrur){
+	    rqi=zlmmod.coord.size();
+	  }
+	  else
+	    rqi=rur_quotient_ideal_dimension(gbmod,zlmmod);
 	  if (rqi==-RAND_MAX)
 	    *logptr(contextptr) << "Overflow in rur, computing revlex gbasis\n";
 	  if (rqi<0){
@@ -14914,12 +14976,18 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	    index_t l(dim);
 	    l[dim-1]=1;
 	    s.coord.push_back(T_unsigned<modint,tdeg_t>(1,tdeg_t(l,order)));
-	    ok=rur_minpoly(gbmod,lmtmp,s,p.val,m,M);
+	    ok=rur_minpoly(gbmod,zlmmod,s,p.val,m,M);
 	    rur_convert_univariate(m,dim-1,gbmod[0]);
 	    gbmod.resize(1);
 	  }
 	  else {
-	    if (!rur_compute(gbmod,lmtmp,lmmodradical,p.val,s,rurv)){
+	    bool ok=true;
+	    if (zrur){
+	      lmmodradical=zlmmodradical;
+	    }
+	    else
+	      ok=rur_compute(gbmod,zlmmod,lmmodradical,p.val,s,rurv);
+	    if (!ok){
 	      if (lmmodradical.coord.empty()){ 
 		CERR << CLOCK()*1e-6 << " Unable to compute modular rur\n";
 		ok = false; rur = 0; 
@@ -14933,9 +15001,9 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	    gbmod.swap(rurv); // reconstruct the rur instead of the gbasis
 	  } // check for bad primes
 	  if (lmmodradical.coord.empty())
-	    lmmodradical=lmtmp;
+	    lmmodradical=zlmmod;
 	  else {
-	    int i=rur_compare(lmmodradical,lmtmp);
+	    int i=rur_compare(lmmodradical,zlmmod);
 	    if (i!=0){
 	      if (i==1) // lmmodradical!=lmtmp and contains lmtmp, bad prime
 		continue;
