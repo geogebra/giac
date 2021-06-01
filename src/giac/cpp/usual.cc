@@ -1275,7 +1275,8 @@ namespace giac {
 	return pow(e,plus_one_half,contextptr);
       gen rho=pow(a,2,contextptr)+pow(b,2,contextptr);
       rho=ratnormal(rho,contextptr);
-      if (abs_calc_mode(contextptr)==38 && !lvarfracpow(rho).empty())
+      vecteur lvfp=lvarfracpow(rho);
+      if (lvfp.size()>(abs_calc_mode(contextptr)==38?0:3))
 	return pow(e,plus_one_half,contextptr);
       if (lvar(rho).empty()) rho=eval(rho,1,contextptr);
       rho=sqrt(rho,contextptr);

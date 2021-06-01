@@ -13584,7 +13584,9 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	return -1;
       M *= v[i];
     }
-    if (M>1e8)
+    if (debug_infolevel)
+      CERR << CLOCK() << " rur quotient ideal " << M << "\n";
+    if (M>1e10)
       return -RAND_MAX; // overflow
     // the ideal is finite dimension, now we will compute the exact dimension
     // a monomial degree is associated to an integer with
@@ -13592,11 +13594,11 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     // perhaps a sieve would be faster, but it's harder to implement
     // and we won't consider too high order anyway...
     index_t cur(d);
-    for (int I=0;I<M;++I){
-      int i=I;
+    for (longlong I=0;I<M;++I){
+      longlong i=I;
       // i-> cur -> tdeg_t
       for (int j=int(v.size())-1;j>=0;--j){
-	int q=i/v[j];
+	longlong q=i/v[j];
 	cur[j]=i-q*v[j];
 	i=q;
       }
@@ -13638,7 +13640,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	while (D>=2 && cur[D-1]==0) --D;
 	if (D!=d || cur[D-1]!=v[D-1]-1){
 	  // increase I to the next multiple
-	  int prod=v[d-1];
+	  longlong prod=v[d-1];
 	  for (;D<d;++D)
 	    prod *= v[D-1];
 	  I /= prod;
@@ -13990,7 +13992,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     if (1){ 
       M.clear();
       if (debug_infolevel)
-	CERR << CLOCK()*1e-6 << " rur * monomial matrix computation " << S << '\n';
+	CERR << CLOCK()*1e-6 << " rur separate " << s << " * monomial matrix computation " << S << '\n';
       // matrix of multiplication by s of all monomials in lm
       polymod<tdeg_t> cur(order,dim);
       vector<int> tmp(S),tmp1;
@@ -14138,13 +14140,13 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  multmod_positive(tmp,tmpm,multv,p,tmp1); 
 	  tmp.swap(tmp1);
 	}
-	if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel mult part 2\n" ;
+	if (debug_infolevel) CERR << CLOCK()*1e-6 << " Hankel mult part 2\n" ;
 	for (int i=S;i<2*S;++i){
 	  g[i]=tmp.back();
 	  multmod_positive(tmp,tmpm,multv,p,tmp1); 
 	  tmp.swap(tmp1);
 	}
-	if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel mult end\n" ;
+	if (debug_infolevel) CERR << CLOCK()*1e-6 << " Hankel mult end\n" ;
 	vecteur V; vector_int2vecteur(g,V);
 	reverse(V.begin(),V.end()); // degree(V)=2S-1, size(V)=2S
 	vecteur x2n(2*S+1),A,B,G,U,unused,D,tmp1,tmp2; x2n[0]=1; // x2n=x^(2*S)
@@ -14160,13 +14162,14 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	      A.erase(A.begin(),A.end()-S);
 	  }
 	  //egcd_pade(x2n,V,S,A,B,&env);
-	  if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel after Pade\n" ;
+	  if (debug_infolevel) CERR << CLOCK()*1e-6 << " Hankel after Pade degrees " << S << "," << A.size() << "," << B.size() << "\n" ;
 	  reverse(B.begin(),B.end());
 	  while (B.size()<S+1)
 	    B.push_back(0);
 	  reverse(A.begin(),A.end());
 	  while (A.size()<S)
 	    A.push_back(0);
+	  A=trim(A,0);
 	  if (B.size()==S+1){
 	    // B should be the min poly, normalize
 	    if (B.front()!=0){
@@ -14176,7 +14179,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	      //modpoly mgcd=gcd(m,derivative(m,&env),&env);
 	      mulmodpoly(A,coeff,&env,A);
 	      // now Bezout 
-	      egcd(A,B,&env,U,unused,D);
+	      egcd(A,m,&env,U,unused,D);
 	      // check Bezout and also that B is squarefree
 	      if (D.size()==1){ // D[0] should be 1
 		// Bezoutian of U and B will invert Hankel matrix
@@ -14218,7 +14221,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 		    bez[i][j]=bez[j][i];
 		}
 		// now compute bez*hankelsystb
-		if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel *\n" ;
+		if (debug_infolevel) CERR << CLOCK()*1e-6 << " Hankel *\n" ;
 		vector< vector<int> > Ker(d+1);
 		vecteur2vector_int(m,p,Ker[0]);
 		for (int i=0;i<d;++i)
@@ -14227,6 +14230,11 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 		if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel end\n" ;
 		return true;
 	      } // end D.size()==1
+	      else {
+		m.clear(); 
+		if (D.back()==0 && D[D.size()-2]==0)
+		  return true; 
+	      }
 	    } // end B.front()!=0
 	  } // end B.size()==S+1
 	}
@@ -14356,7 +14364,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     reverse(m.begin(),m.end());
     m=trim(m,0);
     if (debug_infolevel>1)
-      CERR << "Minpoly for " << s << ":" << m << '\n';
+      CERR << "Minpoly for " << s << " degree " << m.size() << " :" << m << '\n';
     return true;
 #endif
   }
@@ -14428,14 +14436,14 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       // 40 was insufficient for the 11th gbasis rur computation
       unsigned essai=0;
       for (;essai<rur_separate_max_tries;++essai){
+	if (debug_infolevel)
+	  CERR << CLOCK()*1e-6 << " rur separate non monomial attempt " << essai << '\n';	  
 	s.coord.clear(); m.clear(); M.clear();
-	int n=(3+essai/5);
-	int r=int(std_rand()*std::pow(double(n),double(d))/RAND_MAX),r1;
+	int n=(3+2*(essai/5));
 	for (unsigned i=0;int(i)<d;++i){
 	  index_t l(dim);
 	  l[i]=1;
-	  r1=(r%n)-n/2;
-	  r/=n;
+	  int r1=int((std_rand()/double(RAND_MAX)-0.5)*n);
 	  if (r1)
 	    s.coord.push_back(T_unsigned<modint,tdeg_t>(r1,tdeg_t(l,order)));
 	}

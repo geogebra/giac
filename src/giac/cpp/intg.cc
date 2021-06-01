@@ -552,17 +552,27 @@ namespace giac {
 	  res += resadd/Dc;
 	  return true;
 	}
-      }
+      } // end Rdeg==Ddeg
       gen Rt=solve(R,tres,1,contextptr); // _cSolve(makesequence(R,tres),contextptr);
       if (Rdeg.type==_INT_ && Rt.type==_VECT && Rt._VECTptr->size()==Rdeg.val){
 	vecteur w=*Rt._VECTptr;
 	bool reel=vect_is_real(v,contextptr);
 	if (!has_num_coeff(w)){
 	  for (size_t wi=0;wi<w.size();++wi){
-	    gen racine=w[wi];
-	    if (has_op(normal(racine,contextptr),*at_rootof))
+	    gen racine=w[wi],racinen=normal(racine,contextptr);
+	    if (has_op(racinen,*at_rootof))
 	      return false;
-	    gen G=_numer(gcd(N-racine*Dprime,D,contextptr),contextptr);
+	    gen G;
+#ifndef NO_STDEXCEPT
+	    try {
+#endif
+	      G=_numer(gcd(N-racine*Dprime,D,contextptr),contextptr);
+#ifndef NO_STDEXCEPT
+	    }
+	    catch (std::runtime_error & err){
+	      return false;
+	    }
+#endif
 	    if (reel){
 	      gen racr,raci;
 	      reim(racine,racr,raci,contextptr);
