@@ -6726,7 +6726,10 @@ namespace giac {
 		} // end if
 		s=(l+r)/2;
 		in_round2(s,deuxn,nbits);
-		s=s-horner(minp,s,0,false)/horner(minp1,s,0,false);
+		gen minps=horner(minp,s,0,false);
+		if (is_exactly_zero(minps))
+		  break;
+		s=s-minps/horner(minp1,s,0,false);
 		nbits*=2;
 		deuxn=deuxn*deuxn;
 		in_round2(s,deuxn,nbits);
