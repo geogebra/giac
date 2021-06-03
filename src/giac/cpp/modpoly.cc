@@ -8909,6 +8909,97 @@ namespace giac {
   // Assume degree(x)<degree(n)
   bool egcd_pade(const modpoly & n,const modpoly & x,int l,modpoly & a,modpoly &b,environment * env,bool psron){
     l=absint(l);
+    if (!env && !x.empty() && x[0].type==_MOD){
+      gen p=*(x[0]._MODptr+1);
+      modpoly X(unmod(x,p));
+      environment e; e.modulo=p; e.moduloon=true;
+      if (!egcd_pade(n,X,l,a,b,&e,false)) 
+	return false;
+      a=*makemod(a,p)._VECTptr;
+      b=*makemod(b,p)._VECTptr;
+      return true;
+    }
+    if (n.size()==x.size()+1 && n.size()==2*l+1){
+      if (env){
+	modpoly A,B,C,D,tmp1,tmp2;
+	a.clear();
+	if (hgcd(n,x,env->modulo,A,B,C,D,a,b,tmp1,tmp2)){
+	  if (a.empty()){
+	    mulmodpoly(n,C,env,tmp1);
+	    mulmodpoly(x,D,env,tmp2);
+	    addmodpoly(tmp1,tmp2,env,a);
+	    b.swap(D);
+	    return true;
+	  }
+	}
+      }
+      // multimodular algorithm for integers, currently not faster...
+      if (is_integer_vecteur(n) && is_integer_vecteur(x)){
+	vector<int> N,X,A,B,C,D,tmp0,tmp1,tmp2,tmp3,Wp,coeffv,degv,q,f;
+	vecteur aa,bb; gen chka1,chka2,chkb1;
+	gen p(1<<30),pip(1);
+	int stable=0;
+	for (;p.val>>29;){
+	  p=prevprime(p-1);
+	  if (debug_infolevel) 
+	    CERR << CLOCK()*1e-6 << " begin egcd mod " << p << '\n';
+	  vecteur2vector_int(n,p.val,N);
+	  vecteur2vector_int(x,p.val,X);
+	  if (debug_infolevel) 
+	    CERR << CLOCK()*1e-6 << " hgcd\n";
+	  if (!hgcdint(N,X,p.val,Wp,A,B,C,D,coeffv,degv,q,f,tmp0,tmp1,tmp2,tmp3))
+	    break;
+	  if (debug_infolevel) 
+	    CERR << CLOCK()*1e-6 << " hgcd end mod\n";
+	  operator_times(N,C,p.val,tmp0);
+	  operator_times(X,D,p.val,tmp1);
+	  addmod(tmp0,tmp1,p.val); // tmp0=D*X mod N
+	  int D0=invmod(D[0],p.val);
+	  mulmod(D,D0,p.val);
+	  mulmod(tmp0,D0,p.val);
+	  gen den(1); int pos=N.size()/3;
+	  if (aa.empty()){
+	    vector_int2vecteur(tmp0,aa);
+	    vector_int2vecteur(D,bb);
+	  }
+	  else {
+	    bool chk=chk_equal_mod(chka2,tmp0.back(),p.val) 
+	      // && chk_equal_mod(chka1,tmp0[pos],p.val) 
+	      && chk_equal_mod(chkb1,D.back(),p.val);
+	    if (chk){
+	      if (stable<3)
+		++stable;
+	      else {
+		if (debug_infolevel) 
+		  CERR << CLOCK()*1e-6 << " final fracmod\n";
+		a=fracmod(aa,pip,&den);
+		b=fracmod(bb,pip,&den);
+		if (debug_infolevel) 
+		  CERR << CLOCK()*1e-6 << " end fracmod\n";
+		if (chk_equal_mod(a,tmp0,p.val) && chk_equal_mod(b,D,p.val))
+		  return true;
+	      }
+	    }
+	    else
+	      stable=0;
+	    if (debug_infolevel) 
+	      CERR << CLOCK()*1e-6 << " ichinrem\n";
+	    ichinrem_inplace(aa,tmp0,pip,p.val);
+	    ichinrem_inplace(bb,D,pip,p.val);
+	    if (debug_infolevel) 
+	      CERR << CLOCK()*1e-6 << " ichinrem end\n";
+	  }
+	  pip = pip*p;
+	  if (debug_infolevel) 
+	    CERR << CLOCK()*1e-6 << " fracmod\n";
+	  //chka1=fracmod(aa[pos],pip);
+	  chka2=fracmod(aa.back(),pip);
+	  chkb1=fracmod(bb.back(),pip);
+	  if (debug_infolevel) 
+	    CERR << CLOCK()*1e-6 << " fracmod end\n";
+	}
+      }
+    }
     modpoly r1(n);
     modpoly r2(x);
     modpoly v1,v2(one()),q,r(x),v(1,1);
@@ -10552,13 +10643,122 @@ namespace giac {
     }
   }
 
-  void taylorshift1(mpz_t * tab,int size){
+  void taylorshift1n(mpz_t * tab,int size){
     for (int i=1;i<size;++i){
       // tab[j]=tab[j-1]+tab[j] for j from 1 to size-i
       for (int j=1;j<=size-i;++j){
 	mpz_add(tab[j],tab[j],tab[j-1]);
       }
     }
+  }
+
+  void mpzpoly2modpolynodel(mpz_t * p,modpoly & res){
+    iterateur it=res.begin(),itend=res.end();
+    for (int i=0;it!=itend;++i,++it){
+      *it=*(p+i);
+    }
+  }
+
+  int binary_content(const modpoly & v){
+    int res=-1;
+    for (int i=0;res && i<v.size();++i){
+      if (is_zero(v[i]))
+	continue;
+      if (v[i].type==_INT_)
+	return 0;
+      if (v[i].type!=_ZINT)
+	return -1;
+      int cur=mpz_scan1(*v[i]._ZINTptr,0);
+      if (res==-1 || cur<res)
+	res=cur;
+    }
+    return res;
+  }
+
+  void mul_2exp(modpoly & v,int b){
+    if (b<=0) return;
+    for (int i=0;i<v.size();++i){
+      if (v[i].type==_INT_)
+	v[i].uncoerce();
+      mpz_mul_2exp(*v[i]._ZINTptr,*v[i]._ZINTptr,b);
+    }
+  }
+
+  void div_2exp(modpoly & v,int b){
+    if (b<=0) return;
+    for (int i=0;i<v.size();++i){
+      if (v[i].type==_INT_)
+	v[i].uncoerce();
+      mpz_fdiv_q_2exp(*v[i]._ZINTptr,*v[i]._ZINTptr,b);
+    }
+  }
+
+  void taylorshift1(mpz_t * tab,int size){
+    int etages=0,s=size;
+    while (s>4*FFTMUL_SIZE){
+      ++etages;
+      s=(s+1)/2;
+    }
+    // size<=2^etages*s
+    if (0 && 
+	etages>2){
+      // slice tab in at most 2^etages blocks of size s
+      // tab=[tab_k,..,tab_0]
+      // shift them [stab_k,...,stab_0]
+      // now compute (x+1)^(s*k)*stab_k+...+stab_0 
+      // compute (x+1)^s, then 
+      // (x+1)^s*stab_1+stab_0, (x+1)^s*stab_3+stab_2, ...
+      // compute (x+1)^(2s) square of (x+1)^s, then
+      // (x+1)^(2s)*((x+1)^s*stab_3+stab_2) + (x+1)^s*stab_1+stab_0
+      // etc.
+      int n=(size+s-1)/s; // super-degree
+      matrice m(n),nextm((n+1)/2); 
+      mpz_t * cur=tab+size;
+      for (int i=0;i<n;++i){
+	cur -= s;
+	if (cur<tab){
+	  taylorshift1n(tab,s-(tab-cur));
+	  m[i]=vecteur(s-(tab-cur));
+	  mpzpoly2modpolynodel(tab,*m[i]._VECTptr);
+	}
+	else {
+	  taylorshift1n(cur,s);
+	  m[i]=vecteur(s);
+	  mpzpoly2modpolynodel(cur,*m[i]._VECTptr);
+	}
+      }
+      for (int i=0;i<nextm.size();++i){
+	nextm[i]=vecteur(0);
+      }
+      vecteur x1s=pascal_nth_line(s),tmp;
+      for (;etages>0;--etages){
+	for (int i=0;i<n;i+=2){
+	  if (i<n-1){
+	    int b=binary_content(*m[i+1]._VECTptr);
+	    div_2exp(*m[i+1]._VECTptr,b);
+	    mulmodpoly(x1s,*m[i+1]._VECTptr,0,*nextm[i/2]._VECTptr);
+	    mul_2exp(*nextm[i/2]._VECTptr,b);
+	    addmodpoly(*nextm[i/2]._VECTptr,*m[i]._VECTptr,0,*nextm[i/2]._VECTptr);
+	  }
+	  else
+	    m[i]._VECTptr->swap(*nextm[i/2]._VECTptr);
+	}
+	mulmodpoly(x1s,x1s,0,tmp);
+	x1s.swap(tmp);
+	n=(n+1)/2;
+	m.swap(nextm);
+      }
+      // transfert nextm[0] in tab
+      const vecteur & v =*m[0]._VECTptr;
+      for (int i=0;i<size;++i){
+	if (v[i].type==_INT_)
+	  mpz_set_si(tab[i],v[i].val);
+	else
+	  mpz_set(tab[i],*v[i]._ZINTptr);
+      }
+    }
+    else
+      taylorshift1n(tab,size);
   }
 
   void mpzpoly2modpoly(mpz_t * p,modpoly & res){

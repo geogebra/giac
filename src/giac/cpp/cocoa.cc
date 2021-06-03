@@ -14058,11 +14058,22 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	    reducesmallmod(missed[i],gbmod,G,-1,p,TMP1,false);
 	  }
 	}
+#if 1
+	for (int i=0;i<miss;++i){
+	  mults[missed_pos[i]].resize(tmp.size());
+	}
+	for (int i=0;i<miss;++i){
+	  rur_coordinates(missed[i],lm,tmp);
+	  make_positive(tmp,p);
+	  mults[missed_pos[i]].swap(tmp);
+	}
+#else
 	for (int i=0;i<miss;++i){
 	  rur_coordinates(missed[i],lm,tmp);
 	  make_positive(tmp,p);
 	  mults[missed_pos[i]]=tmp;
 	}
+#endif
       }
       tran_vect_vector_int(mults,tmpm); tmpm.swap(mults);  
 #if 1
@@ -14439,7 +14450,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	if (debug_infolevel)
 	  CERR << CLOCK()*1e-6 << " rur separate non monomial attempt " << essai << '\n';	  
 	s.coord.clear(); m.clear(); M.clear();
-	int n=(3+2*(essai/5));
+	int n=(3+2*((essai*essai)/5));
 	for (unsigned i=0;int(i)<d;++i){
 	  index_t l(dim);
 	  l[i]=1;
