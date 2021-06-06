@@ -1511,7 +1511,7 @@ namespace giac {
       long int expo=0;
       if (is_integer(cl[i])){
 	if (cl[i].type==_ZINT){
-#if !defined USE_GMP_REPLACEMENTS || !defined BF2GMP_H
+#if defined USE_GMP_REPLACEMENTS || defined BF2GMP_H
 	  mant=evalf_double(cl[i],1,contextptr)._DOUBLE_val;
 #else
 	  mant=mpz_get_d_2exp (&expo,*cl[i]._ZINTptr);
@@ -1591,7 +1591,7 @@ namespace giac {
   static define_unary_function_eval (__posubLMQ,&_posubLMQ,_posubLMQ_s);
   define_unary_function_ptr5( at_posubLMQ ,alias_at_posubLMQ,&__posubLMQ,0,true);
 
-  gen poslbdLMQ(const modpoly & P,GIAC_CONTEXT){
+  gen poslbdLMQ(const modpoly & P,int & res,GIAC_CONTEXT){
     //---implements the Local_Max_Quadratic method (LMQ) to compute a
     //---lower bound on the values of the POSITIVE roots of p(x).
     
@@ -1631,6 +1631,10 @@ namespace giac {
     }
     tempmax=tempmax/M_LN2;
     tempmax=-_ceil(tempmax,contextptr);
+    if (tempmax.type==_INT_)
+      res=tempmax.val;
+    else
+      res=-1;
     tempmax=pow(plus_two,tempmax,contextptr);
     return tempmax; 
   }
@@ -1642,7 +1646,8 @@ namespace giac {
       v=*g._VECTptr;
     else
       v=symb2poly_num(g,contextptr);
-    return poslbdLMQ(v,contextptr);
+    int res;
+    return poslbdLMQ(v,res,contextptr);
   }
   static const char _poslbdLMQ_s []="poslbdLMQ";
   static define_unary_function_eval (__poslbdLMQ,&_poslbdLMQ,_poslbdLMQ_s);
@@ -1667,6 +1672,7 @@ namespace giac {
   // P is assumed to be squarefree and without rational roots
   // find roots of P((ax+b)/(cx+d))
   vecteur VAS_positive_roots(const modpoly & P,const gen & ap,const gen & bp,const gen & cp,const gen & dp,GIAC_CONTEXT){
+    matrice Pascal;
     //---The steps below correspond to the steps described in the reference below.
     
     //---Reference:	"A Comparative Study of Two Real Root Isolation Methods" 
@@ -1697,7 +1703,8 @@ namespace giac {
       modpoly f = *genf._VECTptr;
 
       // STEP 3
-      gen lb=poslbdLMQ(f,contextptr);
+      int lbi;
+      gen lb=poslbdLMQ(f,lbi,contextptr);
 
       // STEP 4
       if (is_strictly_greater(lb,16,contextptr)){
@@ -1709,7 +1716,7 @@ namespace giac {
       if (is_greater(lb,1,contextptr)){
 	// f=taylor(f,lb);
 	change_scale(f,lb);
-	f=taylor(f,1);
+	f=taylor(f,1,0,&Pascal);
 	back_change_scale(f,lb);
 	b = lb*a + b; d = lb*c + d;
 	if (is_zero(f.back())){
@@ -1729,7 +1736,7 @@ namespace giac {
       }
 
       // STEP 6
-      modpoly f1=taylor(f,1),f2;
+      modpoly f1=taylor(f,1,0,&Pascal),f2;
       gen a1=a, b1=a+b, c1=c, d1=c+d;
       int r=0;
       if (is_zero(f1.back())){
@@ -1745,7 +1752,7 @@ namespace giac {
       if (v2>1){
 	f2=f;
 	reverse(f2.begin(),f2.end());
-	f2=taylor(f2,1);
+	f2=taylor(f2,1,0,&Pascal);
 	if (is_zero(f2.back()))
 	  f2.pop_back();
 	v2=variations(f2,contextptr);

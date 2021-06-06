@@ -158,8 +158,8 @@ namespace giac {
 
   gen symb_horner(const modpoly & p,const gen & x,int d);
   gen symb_horner(const modpoly & p,const gen & x);
-  // shift polynomial
-  modpoly taylor(const modpoly & p,const gen & x,environment * env=0);
+  // shift polynomial, if P!=0, *P is a list of pascal n-th lines
+  modpoly taylor(const modpoly & p,const gen & x,environment * env=0,matrice * P=0);
   // split P=Pp-Pn in two parts, Pp positive coeffs and Pn negative coeffs
   void splitP(const vecteur &P,vecteur &Pp,vecteur &Pn);
 

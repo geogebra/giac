@@ -10693,15 +10693,15 @@ namespace giac {
     }
   }
 
-  void taylorshift1(mpz_t * tab,int size){
+  void taylorshift1(mpz_t * tab,int size,matrice * Pascal){
     int etages=0,s=size;
-    while (s>4*FFTMUL_SIZE){
+    while (s>=20*FFTMUL_SIZE){
       ++etages;
       s=(s+1)/2;
     }
     // size<=2^etages*s
-    if (0 && 
-	etages>2){
+    if (//0 && 
+	etages){
       // slice tab in at most 2^etages blocks of size s
       // tab=[tab_k,..,tab_0]
       // shift them [stab_k,...,stab_0]
@@ -10714,6 +10714,8 @@ namespace giac {
       int n=(size+s-1)/s; // super-degree
       matrice m(n),nextm((n+1)/2); 
       mpz_t * cur=tab+size;
+      if (debug_infolevel) 
+	CERR << CLOCK()*1e-6 << " init begin\n";
       for (int i=0;i<n;++i){
 	cur -= s;
 	if (cur<tab){
@@ -10730,21 +10732,62 @@ namespace giac {
       for (int i=0;i<nextm.size();++i){
 	nextm[i]=vecteur(0);
       }
-      vecteur x1s=pascal_nth_line(s),tmp;
+      if (debug_infolevel) 
+	CERR << CLOCK()*1e-6 << " pascal " << s << '\n';
+      vecteur x1s,tmp;
+      gen * Pptr=Pascal && (Pascal->size()>=etages) ? &Pascal->front() : 0;
+      if (Pptr){
+	if (Pptr->type==_VECT && Pptr->_VECTptr->size()==s+1){
+	  x1s=*Pptr->_VECTptr;
+	  ++Pptr;
+	}
+	else {
+	  Pascal->clear();
+	  Pptr=0;
+	}
+      }
+      if (x1s.empty()) {
+	x1s=pascal_nth_line(s);
+	if (Pascal){
+	  Pascal->reserve(etages);
+	  Pascal->push_back(x1s);
+	}
+      }
+      if (debug_infolevel) 
+	CERR << CLOCK()*1e-6 << " pascal end " << s << '\n';
       for (;etages>0;--etages){
 	for (int i=0;i<n;i+=2){
 	  if (i<n-1){
 	    int b=binary_content(*m[i+1]._VECTptr);
+	    if (debug_infolevel) 
+	      CERR << CLOCK()*1e-6 << " * binary " << b << '\n';
 	    div_2exp(*m[i+1]._VECTptr,b);
-	    mulmodpoly(x1s,*m[i+1]._VECTptr,0,*nextm[i/2]._VECTptr);
+	    if (0 && x1s.size()<8*FFTMUL_SIZE)
+	      mulmodpoly_kara_naive(x1s,*m[i+1]._VECTptr,0,*nextm[i/2]._VECTptr,INT_KARAMUL_SIZE);	    
+	    else
+	      mulmodpoly(x1s,*m[i+1]._VECTptr,0,*nextm[i/2]._VECTptr);
 	    mul_2exp(*nextm[i/2]._VECTptr,b);
+	    if (debug_infolevel) 
+	      CERR << CLOCK()*1e-6 << " * end\n";
 	    addmodpoly(*nextm[i/2]._VECTptr,*m[i]._VECTptr,0,*nextm[i/2]._VECTptr);
 	  }
 	  else
 	    m[i]._VECTptr->swap(*nextm[i/2]._VECTptr);
 	}
-	mulmodpoly(x1s,x1s,0,tmp);
-	x1s.swap(tmp);
+	if (etages>1){
+	  if (Pptr){
+	    x1s=*Pptr->_VECTptr;
+	    ++Pptr;
+	  }
+	  else {
+	    mulmodpoly(x1s,x1s,0,tmp);	
+	    x1s.swap(tmp);
+	    if (Pascal)
+	      Pascal->push_back(x1s);
+	  }
+	}
+	if (debug_infolevel) 
+	  CERR << CLOCK()*1e-6 << " pascal^2 end\n";
 	n=(n+1)/2;
 	m.swap(nextm);
       }
@@ -10780,7 +10823,7 @@ namespace giac {
   }
 
   // shift polynomial
-  modpoly taylor(const modpoly & p,const gen & x,environment * env){
+  modpoly taylor(const modpoly & p,const gen & x,environment * env,matrice * P){
     if (p.empty())
       return p;
     if ( (!env || !env->moduloon || !is_zero(env->coeff)) && x.type==_FRAC) // use derivatives of p
@@ -10790,7 +10833,7 @@ namespace giac {
     if (x==1 && a.size()>5 && isintpoly(a)){
       mpz_t * tab;
       modpoly2mpzpoly(a,tab);
-      taylorshift1(tab,int(a.size()));
+      taylorshift1(tab,int(a.size()),P);
       mpzpoly2modpoly(tab,a);
       return a;
     }
@@ -14882,6 +14925,19 @@ namespace giac {
     int ps=int(p.size()),qs=int(q.size()),mindeg=giacmin(ps-1,qs-1);
     int rs=ps+qs-1;
     int logrs=sizeinbase2(rs);
+    if (rs==(1<<(logrs-1))){
+      modpoly q_(q);
+      q_.pop_back();
+      if (!fftmultp1234(p,q_,P,Q,pq,modulo,a,b,resp1,resp2,resp3,Wp1,Wp2,Wp3,Wp4,tmp_p,tmp_q,compute_pq))
+	return false;
+      // pq*x
+      pq.push_back(0);
+      // add q.back()*p
+      q_=p;
+      mulmodpoly(q_,q.back(),q_);
+      addmodpoly(pq,q_,0,pq);
+      return true;
+    }
     if (logrs>25) return false;
     int n=(1u<<logrs);
     gen PQ=P*Q;
