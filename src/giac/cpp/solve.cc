@@ -3776,8 +3776,19 @@ namespace giac {
       }
       if (i!=w.size())
 	return gensizeerr(gettext("fsolve([equations],[variables],[guesses])"));
-      if (s==2 && _sort(lvar(v0),contextptr)==_sort(v[1],contextptr))
-	return evalf(gsolve(*v0._VECTptr,*v[1]._VECTptr,complex_mode(contextptr),evalf_after,contextptr),1,contextptr);
+      if (s==2 && _sort(lvar(v0),contextptr)==_sort(v[1],contextptr)){
+	vecteur _res=gsolve(*v0._VECTptr,*v[1]._VECTptr,complex_mode(contextptr),evalf_after,contextptr);
+	const_iterateur it=_res.begin(),itend=_res.end();
+	vecteur res;
+	for (;it!=itend;++it){
+	  gen tmp=subst(*v0._VECTptr,*v[1]._VECTptr,*it,false,contextptr);
+	  tmp=eval(tmp,1,contextptr);
+	  if (!is_undef(tmp) && !is_inf(tmp)){
+	    res.push_back(*it);
+	  }
+	}
+	return evalf(res,1,contextptr);
+      }
     }
     if (s==2 && v[1].type==_IDNT){ 
       // no initial guess, check for poly-like equation

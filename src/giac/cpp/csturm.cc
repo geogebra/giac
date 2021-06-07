@@ -171,16 +171,41 @@ namespace giac {
   }
 #endif
 
-  void change_scale(modpoly & p,const gen & l){
+  void change_scale(modpoly & p,const gen & l,longlong lb){
+    //vecteur chk(p),save(p);
     int n=int(p.size());
+    if (lb!=(1<<31)){
+      if (lb==0) return;
+      mpz_t pi;
+      mpz_init(pi);
+      for (int i=n-2;i>=0;--i){
+	if (p[i].type==_INT_)
+	  mpz_set_si(pi,p[i].val);
+	else
+	  mpz_set(pi,*p[i]._ZINTptr);
+	if (lb<0)
+	  mpz_fdiv_q_2exp(pi,pi,(-lb)*(n-1-i));
+	else
+	  mpz_mul_2exp(pi,pi,lb*(n-1-i));
+	p[i] = pi;
+      }
+      mpz_clear(pi);
+      //chk=p; p=save;
+      return;
+    }
     gen lton(l);
     for (int i=n-2;i>=0;--i){
       p[i] = p[i] * lton;
       lton = lton * l;
     }
+    //if (p!=chk) CERR << "bug\n";
   }
 
-  void back_change_scale(modpoly & p,const gen & l){
+  void back_change_scale(modpoly & p,const gen & l,longlong lb){
+    if (lb!=(1<<31)){
+      change_scale(p,l,-lb);
+      return;
+    }
     int n=int(p.size());
     gen lton(l);
     for (int i=n-2;i>=0;--i){
@@ -1634,7 +1659,7 @@ namespace giac {
     if (tempmax.type==_INT_)
       res=tempmax.val;
     else
-      res=-1;
+      res=1<<31;
     tempmax=pow(plus_two,tempmax,contextptr);
     return tempmax; 
   }
@@ -1708,16 +1733,16 @@ namespace giac {
 
       // STEP 4
       if (is_strictly_greater(lb,16,contextptr)){
-	change_scale(f,lb);
-	a=lb*a; c=lb*c; lb=1;
+	change_scale(f,lb,lbi);
+	a=lb*a; c=lb*c; lb=1; lbi=0;
       }
       
       // STEP 5
       if (is_greater(lb,1,contextptr)){
 	// f=taylor(f,lb);
-	change_scale(f,lb);
+	change_scale(f,lb,lbi);
 	f=taylor(f,1,0,&Pascal);
-	back_change_scale(f,lb);
+	back_change_scale(f,lb,lbi);
 	b = lb*a + b; d = lb*c + d;
 	if (is_zero(f.back())){
 	  res.push_back(b/d);
