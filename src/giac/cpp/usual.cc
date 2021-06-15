@@ -5570,7 +5570,7 @@ namespace giac {
   }
 
   string print_with_parenthesis_if_required(const gen & g,int format,GIAC_CONTEXT){
-    if (g.type==_SYMB || g.type==_FRAC || g.type==_CPLX || (g.type==_VECT && g.subtype==_SEQ__VECT) )
+    if ( (g.type==_SYMB && g._SYMBptr->sommet!=at_derive) || g.type==_FRAC || g.type==_CPLX || (g.type==_VECT && g.subtype==_SEQ__VECT) )
       return '('+gen2string(g,format,contextptr)+')';
     else
       return gen2string(g,format,contextptr);

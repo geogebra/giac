@@ -1819,6 +1819,20 @@ namespace giac {
     return res;
   }
 
+  // P((ax+b)/(cx+d))
+  struct thread_vas_t {
+    modpoly * P;
+    vecteur * v;
+    gen a,b,c,d;
+    const context * contextptr;
+  };
+
+  void * do_thread_vas_t(void * ptr_){
+    thread_vas_t * ptr=(thread_vas_t *) ptr_;
+    *ptr->v=VAS_positive_roots(*ptr->P,ptr->a,ptr->b,ptr->c,ptr->d,ptr->contextptr);
+    return ptr_;
+  }
+
   gen _VAS_positive(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     vecteur v;
@@ -1852,36 +1866,59 @@ namespace giac {
 
   gen vas(const modpoly & p,GIAC_CONTEXT){
     vecteur v(p);
-    vecteur res;
+    vecteur res1,res2;
     bool has_zero=false;
     if (is_zero(v.back())){
       has_zero=true;
       v.pop_back();
     }
-    res=VAS_positive_roots(v,1,0,0,1,contextptr);
     vecteur w(v);
     change_scale(w,-1);
     if (w.size()%2==0)
       w=-w;
     if (w==v){
-      v=-res;
-      reverse(v.begin(),v.end());
-      iterateur it=v.begin(),itend=v.end();
+      res1=VAS_positive_roots(v,1,0,0,1,contextptr);
+      res2=-res1;
+      reverse(res2.begin(),res2.end());
+      iterateur it=res2.begin(),itend=res2.end();
       for (;it!=itend;++it){
 	if (it->type==_VECT)
 	  reverse(it->_VECTptr->begin(),it->_VECTptr->end());
       }
       if (has_zero)
-	v.push_back(0);
-      res=mergevecteur(v,res);
+	res2.push_back(0);
+      res1=mergevecteur(res2,res1);
     }
     else {
-      v=VAS_positive_roots(w,-1,0,0,1,contextptr);
+#ifdef HAVE_LIBPTHREAD
+      int nthreads=threads_allowed?threads:1;
+      if (nthreads>1){
+	pthread_t tab0;
+	thread_vas_t tmp0={&v,&res1,1,0,0,1,contextptr};
+	for (int i=0;i<v.size();++i){
+	  if (v[i].type==_ZINT)
+	    v[i]=*v[i]._ZINTptr;
+	}
+	thread_vas_t tmp1={&w,&res2,-1,0,0,1,contextptr};
+	bool res=true;
+	res=pthread_create(&tab0,(pthread_attr_t *) NULL,do_thread_vas_t,(void *) &tmp0);
+	if (res)
+	  do_thread_vas_t(&tmp0);
+	do_thread_vas_t(&tmp1);
+	void *ptr=&nthreads;
+	pthread_join(tab0,&ptr);
+      }
+      else 
+#endif
+	{
+	res1=VAS_positive_roots(v,1,0,0,1,contextptr);
+	res2=VAS_positive_roots(w,-1,0,0,1,contextptr);
+      }
       if (has_zero)
-	v.push_back(0);
-      res=mergevecteur(v,res);
+	res2.push_back(0);
+      res1=mergevecteur(res2,res1);
     }
-    return res;
+    return res1;
   }
   gen _VAS(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
