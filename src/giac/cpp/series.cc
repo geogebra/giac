@@ -3320,10 +3320,24 @@ namespace giac {
   }
 
   // Main series entry point
-  gen series(const gen & e,const identificateur & x,const gen & lim_point,int ordre,int direction,GIAC_CONTEXT){
+  gen series(const gen & e_,const identificateur & x,const gen & lim_point,int ordre,int direction,GIAC_CONTEXT){
+    gen e(e_);
     int save_series_flags=series_flags(contextptr);
     series_flags(save_series_flags | 8,contextptr);
     if (has_op(e,*at_surd) || has_op(e,*at_NTHROOT)){
+      vecteur ls(lop(e,at_NTHROOT)),lsa,lsb;
+      for (int i=0;i<ls.size();++i){
+	vecteur v=*ls[i]._SYMBptr->feuille._VECTptr;
+	if (v[0].type==_INT_ && v[0].val%2){
+	  gen li=limit(v[1],x,lim_point,direction,contextptr);
+	  if (!is_zero(li) && is_positive(-li,contextptr)){
+	    lsa.push_back(ls[i]);
+	    lsb.push_back(-symbolic(at_NTHROOT,makesequence(v[0],-v[1])));
+	  }
+	}
+      }
+      if (!lsa.empty())
+	e=subst(e,lsa,lsb,false,contextptr);
       vecteur subst1,subst2;
       surd2pow(e,subst1,subst2,contextptr);
       gen g=subst(e,subst1,subst2,false,contextptr);

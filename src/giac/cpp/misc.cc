@@ -1531,6 +1531,10 @@ namespace giac {
       else
 	remain.push_back(tmp);
       f=_floor(tmp,0);
+      if (has_op(f,*at_floor)){
+	*logptr(contextptr) << "Unable to simplify " << f << "\n";
+	return res; 
+      }
       res.push_back(f);
       if (is_zero(tmp-f))
 	return res;

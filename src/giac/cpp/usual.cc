@@ -6664,6 +6664,8 @@ namespace giac {
       }
     }
     gen tmp=subst(args,l,lnew,false,contextptr);
+    if (tmp.type==_CPLX && is_zero(*(tmp._CPLXptr+1),contextptr))
+      tmp=*tmp._CPLXptr;
     if (tmp.type==_REAL){
 #ifdef HAVE_LIBMPFR
       // reeval with the right precision
