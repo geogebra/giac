@@ -7830,19 +7830,22 @@ namespace giac {
   }
 
   void tran_vect_vector_int(const vector< vector<int> > & N,vector< vector<int> > & tN){
-    tN.clear();
     unsigned r=unsigned(N.size());
-    if (!r)
+    if (!r){
+      tN.clear();
       return;
+    }
     unsigned c=unsigned(N.front().size());
-    tN.reserve(c);
+    tN.resize(c);
     for (unsigned int i=0;i<c;++i){
-      vector<int> current;
-      current.reserve(r);
+      tN[i].reserve(r);
+    }
+    for (unsigned int i=0;i<c;++i){
+      vector<int> & current=tN[i];
+      tN[i].clear();
       for (unsigned int j=0;j<r;++j){
 	current.push_back(N[j][i]);
       }
-      tN.push_back(current);
     }
   }
 

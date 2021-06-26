@@ -1269,6 +1269,8 @@ namespace giac {
 
   gen complexroot(const gen & g,bool complexe,GIAC_CONTEXT){
     vecteur v=gen2vecteur(g);
+    if (g.subtype==_POLY1__VECT)
+      v=makevecteur(v);
     bool use_vas=!complexe ,use_proot=true;
 #ifndef HAVE_LIBMPFR
     use_proot=false;
@@ -1635,11 +1637,11 @@ namespace giac {
     vector<short int> clsign;
     if (!compute_lnabsmantexpo(cl,cllnabsmant,clexpo,clsign,contextptr))
       return gensizeerr(contextptr);
-    gen tempmax=minus_inf;
+    gen tempmax=symbolic(at_neg,_IDNT_infinity());
     vector<int> timesused(k,1);
     for (int m=1;m<k;++m){
       if (clsign[m]==-1){ // is_strictly_positive(-cl[m],contextptr)
-	gen tempmin=plus_inf;
+	gen tempmin=symbolic(at_plus,_IDNT_infinity());
 	for (int n=0;n<m;++n){
 	  if (clsign[n]==1){ // is_strictly_positive(cl[n],contextptr)
 	    // gen temp=pow(-cl[m]/cl[n]*pow(plus_two,timesused[n]),inv(m-n,contextptr),contextptr);
