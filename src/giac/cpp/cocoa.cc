@@ -9445,6 +9445,8 @@ namespace giac {
 
   template<class tdeg_t>
   void cleardeno(vectpoly8<tdeg_t> & P){
+    if (debug_infolevel)
+      COUT << "clearing denominators of revlex gbasis ";
     for (unsigned i=0;i<P.size();++i){
       cleardeno(P[i]);
       if (debug_infolevel){
@@ -9456,6 +9458,8 @@ namespace giac {
 	  COUT << " " << CLOCK()*1e-6 << " remaining " << P.size()-i << '\n';
       }
     }
+    if (debug_infolevel)
+      COUT << " done\n";
   }
 
 
@@ -9829,25 +9833,36 @@ namespace giac {
 
   template<class tdeg_t>
   bool chk_equal_mod(const poly8<tdeg_t> & v,const polymod<tdeg_t> & p,int m){
-    // FIXME: sizes may differ if a coeff of v is 0 mod m
-    if (v.coord.size()!=p.coord.size())
+    // sizes may differ if a coeff of v is 0 mod m
+    if (v.coord.size()<p.coord.size())
       return false;
-    if (p.coord.empty())
-      return true;
-	unsigned s = unsigned(p.coord.size());
+    unsigned s = unsigned(v.coord.size());
     int lc=smod(v.coord[0].g,m).val;
-    int lcp=p.coord[0].g;
-    if (lcp!=1){
-      for (unsigned i=0;i<s;++i){
-	if (!chk_equal_mod(lcp*v.coord[i].g,(longlong(lc)*p.coord[i].g)%m,m))
-	  return false;
+    int lcp=p.coord.empty()?1:p.coord[0].g;
+    if (s==p.coord.size()){
+      if (lcp!=1){
+	for (unsigned i=0;i<s;++i){
+	  if (!chk_equal_mod(lcp*v.coord[i].g,(longlong(lc)*p.coord[i].g)%m,m))
+	    return false;
+	}
       }
+      else {
+	for (unsigned i=0;i<s;++i){
+	  if (!chk_equal_mod(v.coord[i].g,(longlong(lc)*p.coord[i].g)%m,m))
+	    return false;
+	}
+      }
+      return true;
     }
-    else {
-      for (unsigned i=0;i<s;++i){
-	if (!chk_equal_mod(v.coord[i].g,(longlong(lc)*p.coord[i].g)%m,m))
+    unsigned j=0; // position in p
+    for (unsigned i=0;i<s;++i){
+      if (v.coord[i].u==p.coord[j].u){
+	if (!chk_equal_mod(lcp*v.coord[i].g,(longlong(lc)*p.coord[j].g)%m,m))
 	  return false;
+	++j;
       }
+      if (!chk_equal_mod(lcp*v.coord[i].g,0,m))
+	return false;
     }
     return true;
   }
@@ -13364,8 +13379,9 @@ void G_idn(vector<unsigned> & G,size_t s){
 	sort(gbmod.begin(),gbmod.end(),tripolymod_tri<polymod<tdeg_t> >(0));
       }
       else {
-	gbmod=resmod;
 	G_idn(G,res8.size());
+	gbmod=resmod;
+	gbmod.resize(G.size());
       }
       int rqi=rur_quotient_ideal_dimension(gbmod,rurlm,rurgblmptr,rurlmptr);
       rurinzgbasis=rur_compute(gbmod,rurlm,rurlmmodradical,env,rurs,rurv);
@@ -13525,9 +13541,25 @@ void G_idn(vector<unsigned> & G,size_t s){
     return dim;
   }
 
+  template<class tdeg_t> int compare_gblm(const polymod<tdeg_t> & a,const polymod<tdeg_t> & b){
+    int as=a.coord.size(),bs=b.coord.size();
+    order_t order=a.order;
+    for (int i=0;i<as && i<bs;++i){
+      tdeg_t ua=a.coord[i].u,ub=b.coord[i].u;
+      if (ua==ub) continue;
+      return tdeg_t_greater(ua,ub,order)?1:-1;
+    }
+    if (as==bs) return 0;
+    return as>bs?1:-1;
+  }
   // list of leadings coefficients of the gbasis
   template<class tdeg_t> void rur_gblm(const vectpolymod<tdeg_t> & gbmod,polymod<tdeg_t> & gblm){
+    gblm.coord.clear();
     unsigned S = unsigned(gbmod.size());
+    if (S){
+      gblm.order=gbmod[0].order;
+      gblm.dim=gbmod[0].dim;
+    }
     for (unsigned i=0;i<S;++i){
       if (gbmod[i].coord.empty())
 	continue;
@@ -14782,6 +14814,191 @@ void G_idn(vector<unsigned> & G,size_t s){
     return true;
   }
 
+  template<class tdeg_t>
+  void convert_univariate(const poly8<tdeg_t> & p,modpoly & P){
+    P.clear(); if (p.coord.empty()) return;
+    unsigned char pdim=p.dim; const order_t order={(short) _REVLEX_ORDER,pdim};
+    int deg=p.coord.front().u.total_degree(order);
+    P.resize(deg+1);
+    for (unsigned i=0;i<p.coord.size();++i){
+      int d=p.coord[i].u.total_degree(order);
+      P[deg-d]=p.coord[i].g;
+    }
+  }
+
+  template<class tdeg_t>
+  struct rur_certify_t {
+    const vectpoly8<tdeg_t> * syst;
+    const modpoly * minp;
+    const modpoly * dminp; 
+    const vector<modpoly> * v; 
+    const gen * dminpden; 
+    const vecteur * vden;
+    vector<int> chk_index;
+    order_t order;
+    int dim;
+    bool ans;
+    int threadno;
+  };
+
+  modpoly free_copy(const modpoly & v){
+    modpoly res(v.size());
+    for (int i=0;i<v.size();++i)
+      res[i]=v[i].type==_ZINT?*v[i]._ZINTptr:v[i];
+    return res;
+  }
+  
+  template<class tdeg_t>
+  void * thread_rur_certify(void * ptr)  {
+    rur_certify_t<tdeg_t> * Rptr=(rur_certify_t<tdeg_t> *) ptr;
+    const vectpoly8<tdeg_t> & syst =*Rptr->syst;
+    modpoly minp=free_copy(*Rptr->minp);
+    modpoly dminp=free_copy(*Rptr->dminp);
+    modpoly tmp,rem;
+    vector<modpoly> v(Rptr->v->size());
+    for (int i=0;i<v.size();++i)
+      v[i]=free_copy((*Rptr->v)[i]);
+    vecteur vden=free_copy(*Rptr->vden);
+    const vector<int> & chk_index=Rptr->chk_index;
+    const order_t & order=Rptr->order;
+    int dim=Rptr->dim;
+    const gen dminpden=*Rptr->dminpden;
+    for (int i_=0;i_<chk_index.size();i_++){
+      int i=chk_index[i_];
+      const poly8<tdeg_t> & cur=syst[i];
+      if (cur.coord.empty()) continue;
+      int deg=cur.coord.front().u.total_degree(order);
+      if (//Rptr->threadno==0 && 
+	  debug_infolevel) CERR << CLOCK()*1e-6 << " rur_certify cheking equation "<< i << " degree " << deg << "\n";
+      modpoly sum; gen sumden(1);
+      for (int j=0;j<cur.coord.size();++j){
+	modpoly prod(1,1),tmp; gen prodden(1);
+	index_t idx; get_index(cur.coord[j].u,idx,order,dim);
+	int curdeg=cur.coord[j].u.total_degree(order); // or idx.total_deg
+	vector<modpoly *> vp; vp.reserve(deg);
+	for (int k=0;k<dim;++k){
+	  int alphak=idx[k];
+	  for (int l=0;l<alphak;++l){
+	    prodden = prodden*vden[k];
+	    vp.push_back(&v[k]);
+	  }
+	}
+	for (int l=0;l<deg-curdeg;++l){
+	  prodden = prodden*dminpden;
+	  vp.push_back(&dminp);
+	}
+	mulmodpoly(vp,0,prod);
+	mulmodpoly(prod,cur.coord[j].g,0,prod);
+	// sum/sumden = sum/sumden+prod/prodden
+	// = (sum*(prodden/g)+prod*(sumden/g)) / (g*prodden/g*sumden/g)
+	gen g=simplify3(sumden,prodden);
+	mulmodpoly(sum,prodden,0,sum);
+	mulmodpoly(prod,sumden,0,prod);
+	addmodpoly(sum,prod,0,tmp); sum.swap(tmp);
+	sumden=g*sumden*prodden;
+      }
+      // remainder
+      if (!DivRem(sum,minp,0,tmp,rem,true)){
+	Rptr->ans=false;
+	return ptr;
+      }
+      if (!rem.empty()){
+	Rptr->ans=false;
+	return ptr;
+      }
+    }
+    Rptr->ans=true;
+    return ptr;
+  }
+
+  template<class tdeg_t>
+  bool rur_certify(const vectpoly8<tdeg_t> & syst,vectpoly8<tdeg_t> & val,int gbshift){
+    // rur final check could be performed by replacing
+    // val[gbshift+3..end]/val[gbshift+2] 
+    // in the initial syst system variables 
+    // and check if it's 0 mod val[gbshift+1]
+    // u.total_degree(order), get_index(u,index_t,order,dim)
+    if (syst.empty()) return true;
+    unsigned char pdim=syst[0].dim; const order_t order={(short) _REVLEX_ORDER,pdim};
+    int dim=val.size()-gbshift-3;
+    modpoly minp,dminp,rem,tmp; vector<modpoly> v(dim); gen minpden,dminpden; vecteur vden(dim);
+    if (debug_infolevel) CERR << CLOCK()*1e-6 << " rur_certify convert univariate\n";
+    convert_univariate(val[gbshift+1],minp); lcmdeno(minp,minpden,context0);
+    convert_univariate(val[gbshift+2],dminp); lcmdeno(dminp,dminpden,context0);
+    for (int i=0;i<dim;i++){
+      convert_univariate(val[gbshift+i+3],v[i]);
+      lcmdeno(v[i],vden[i],context0);
+    }
+#ifdef HAVE_LIBPTHREAD
+    int nthreads=threads_allowed?threads:1;
+    if (nthreads>1){
+      if (nthreads>6) nthreads=6; // don't use too much memory
+      pthread_t tab[64];
+      vector< rur_certify_t<tdeg_t> > rur_certify_param; rur_certify_param.reserve(nthreads);
+      for (int j=0;j<nthreads;++j){
+	vector<int> chk_index;
+	for (int k=j;k<syst.size();k+=nthreads)
+	  chk_index.push_back(k);
+	rur_certify_t<tdeg_t> cur={&syst,&minp,&dminp,&v,&dminpden,&vden,chk_index,order,dim,true,j};
+	rur_certify_param.push_back(cur);
+	bool res=true;
+	if (j<nthreads-1)
+	  res=pthread_create(&tab[j],(pthread_attr_t *) NULL,thread_rur_certify<tdeg_t>,(void *) &rur_certify_param[j]);
+	if (res)
+	  thread_rur_certify<tdeg_t>((void *)&rur_certify_param[j]);
+      }
+      bool ans=true;
+      void * threadretval[64];
+      for (int j=0;j<nthreads;++j){
+	threadretval[j]=&threadretval; // non-0 initialization
+	if (j<nthreads-1)
+	  pthread_join(tab[j],&threadretval[j]);
+	ans=ans && rur_certify_param[j].ans;
+      }
+      return ans;
+    }
+#endif
+    for (int i=0;i<syst.size();i++){
+      const poly8<tdeg_t> & cur=syst[i];
+      if (cur.coord.empty()) continue;
+      int deg=cur.coord.front().u.total_degree(order);
+      if (debug_infolevel) CERR << CLOCK()*1e-6 << " rur_certify cheking equation "<< i << " degree " << deg << "\n";
+      modpoly sum; gen sumden(1);
+      for (int j=0;j<cur.coord.size();++j){
+	modpoly prod(1,1),tmp; gen prodden(1);
+	index_t idx; get_index(cur.coord[j].u,idx,order,dim);
+	int curdeg=cur.coord[j].u.total_degree(order); // or idx.total_deg
+	vector<modpoly *> vp; vp.reserve(deg);
+	for (int k=0;k<dim;++k){
+	  int alphak=idx[k];
+	  for (int l=0;l<alphak;++l){
+	    prodden = prodden*vden[k];
+	    vp.push_back(&v[k]);
+	  }
+	}
+	for (int l=0;l<deg-curdeg;++l){
+	  prodden = prodden*dminpden;
+	  vp.push_back(&dminp);
+	}
+	mulmodpoly(vp,0,prod);
+	mulmodpoly(prod,cur.coord[j].g,0,prod);
+	// sum/sumden = sum/sumden+prod/prodden
+	// = (sum*(prodden/g)+prod*(sumden/g)) / (g*prodden/g*sumden/g)
+	gen g=simplify3(sumden,prodden);
+	mulmodpoly(sum,prodden,0,sum);
+	mulmodpoly(prod,sumden,0,prod);
+	addmodpoly(sum,prod,0,tmp); sum.swap(tmp);
+	sumden=g*sumden*prodden;
+      }
+      // remainder
+      if (!DivRem(sum,minp,0,tmp,rem,true))
+	return false;
+      if (!rem.empty())
+	return false;
+    }
+    return true;
+  }
+
   // return 0 (failure), 1 (success), -1: parts of the gbasis reconstructed
   template<class tdeg_t>
   int in_mod_gbasis(vectpoly8<tdeg_t> & res,bool modularcheck,bool zdata,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_par,int gbasis_logz_age){
@@ -14835,7 +15052,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     vector< vectpoly8<tdeg_t> > W; // list of rational reconstructed groebner basis
     vector< vectpoly8<tdeg_t> > Wlast;
     vecteur P; // list of associate (product of) modulo
-    polymod<tdeg_t> lmmod,lmmodradical,prevgblm,s,zlmmod,zlmmodradical,mainthrurlm,mainthrurlmsave,mainthrurlmmodradical,mainthrurgblm; int prevrqi; vectpolymod<tdeg_t> rurv,zrurv,mainthrurv; int zrur=0,rurinzgbasis=0,mainthrurinzgbasis=0;// variables for rational univar. reconstr.
+    polymod<tdeg_t> cur_gblm,prev_gblm,lmmod,lmmodradical,prevgblm,s,zlmmod,zlmmodradical,mainthrurlm,mainthrurlmsave,mainthrurlmmodradical,mainthrurgblm; int prevrqi; vectpolymod<tdeg_t> rurv,zrurv,mainthrurv; int zrur=0,rurinzgbasis=0,mainthrurinzgbasis=0;// variables for rational univar. reconstr.
     // environment env;
     // env.moduloon=true;
     vector<unsigned> G;
@@ -14863,14 +15080,15 @@ void G_idn(vector<unsigned> & G,size_t s){
 #else
     int nthreads=1,th,parallel=1;
 #endif
-    bool rur_gbasis=false; //rur && nthreads<=2; // true : reconstruct gbasis before rur
+    bool rur_gbasis=true;//false; //rur && nthreads<=2; // true : reconstruct gbasis before rur
     // for more than 2 threads, real time is currently better without
     // reason might be that the gbasis is large, reduction mod p for
     // all threads has bad cache performances?
     // IMPROVE 1: compute resmod for all threads simult in main thread
     // IMPROVE 2: check whether the rur stabilizes before the gbasis!
     int pend=p.val,p0;
-    int recon_n2=-1,recon_n1=-1,recon_n0=-1,recon_added=0,recon_count=0,gbasis_size=-1; // reconstr. gbasis element number history
+    ulonglong nmonoms; // number of monoms in gbasis
+    int recon_n2=-1,recon_n1=-1,recon_n0=-1,recon_added=0,recon_count=0,gbasis_size=-1,jpos_start=-1; // reconstr. gbasis element number history
     double augmentgbasis=gbasis_reinject_ratio,prevreconpart=1.0,time1strun=-1.0,time2ndrun=-1.0; current_orig=res; current_gbasis=res;
     // if the ratio of reconstructed is more than augmentgbasis,
     // we clear info and add reconstruction to the gbasis
@@ -14908,9 +15126,10 @@ void G_idn(vector<unsigned> & G,size_t s){
       mainthrurinzgbasis=lmmodradical.coord.empty()?0:rur;
       mainthrurlmmodradical=lmmodradical;
 #ifdef HAVE_LIBPTHREAD
+      vector<int> pthread_p(th+1); vector< vector<polymod<tdeg_t> > *> pthread_mod(th+1);
       for (unsigned j=0;j<th;++j){
 	gbasis_param[j].currentptr=&current_gbasis;
-	gbasis_param[j].p=p.val;
+	gbasis_param[j].p=p.val; 
 	gbasis_param[j].reduceto0=&reduceto0;
 	gbasis_param[j].f4buchberger_info=&f4buchberger_info;
 	gbasis_param[j].zf4buchberger_info=&zf4buchberger_info;
@@ -14926,20 +15145,66 @@ void G_idn(vector<unsigned> & G,size_t s){
 	gbasis_param[j].rurlmptr=&mainthrurlmsave;
 	if (count==1)
 	  gbasis_param[j].resmod.reserve(resmod.size());
-	// if (rur<0) convert(current_gbasis,gbasis_param[j].resmod,p.val,-rur);
-	bool res=true;
-	// CERR << "write " << j << " " << p << '\n';
-	res=pthread_create(&tab[j],(pthread_attr_t *) NULL,thread_gbasis<tdeg_t>,(void *) &gbasis_param[j]);
-	if (res)
-	  thread_gbasis<tdeg_t>((void *)&gbasis_param[j]);
+	pthread_p[j]=p.val; pthread_mod[j]=&gbasis_param[j].resmod;
 #if 1
 	p=prevprime(p-1); 
 #else
 	p=nextprime(p+1);
 #endif	
       }
-#endif // thread
-      // if (rur>=0) current=current_gbasis;
+      pthread_p[th]=p.val; pthread_mod[th]=&resmod;
+      if (0 &&
+	  rur<0){
+	if (debug_infolevel) CERR << CLOCK()*1e-6 << " begin simult reduce\n";
+	// simultaneously convert(current_gbasis,pthread_mod[j],pthread_p[j],-rur)  
+	for (unsigned j=0;j<=th;++j)
+	  pthread_mod[j]->resize(-rur);
+	for (unsigned l=0;l<-rur;++l){
+	  const poly8<tdeg_t> & currentl=current_gbasis[l];
+	  vector< polymod<tdeg_t> * > resmodl(th+1);
+	  for (unsigned j=0;j<=th;++j){
+	    resmodl[j]=&(*pthread_mod[j])[l];
+	    resmodl[j]->coord.clear();
+	    resmodl[j]->coord.reserve(currentl.coord.size());
+	    resmodl[j]->dim=currentl.dim;
+	    resmodl[j]->order=currentl.order;
+	    resmodl[j]->sugar=currentl.sugar;
+	  }
+	  for (unsigned m=0;m<currentl.coord.size();++m){
+	    const gen & g=currentl.coord[m].g;
+	    int gi;
+	    for (unsigned j=0;j<=th;++j){
+	      if (g.type==_ZINT)
+		gi=modulo(*g._ZINTptr,pthread_p[j]);
+	      else
+		gi=g.val % pthread_p[j];
+	      // note: if gi==0 for m==0 we have a bad prime
+	      if (gi!=0)
+		resmodl[j]->coord.push_back(T_unsigned<int,tdeg_t>(gi,currentl.coord[m].u));
+	    }
+	  }
+	  for (unsigned j=0;j<=th;++j){
+	    polymod<tdeg_t> & q=*resmodl[j];
+	    int env=pthread_p[j];
+	    q.sugar=q.coord.front().u.total_degree(q.order);
+	    if (q.coord.front().g!=1)
+	      smallmultmod(invmod(q.coord.front().g,env),q,env);
+	    q.coord.front().g=1;
+	  }
+	}
+	if (debug_infolevel) CERR << CLOCK()*1e-6 << " end simult reduce\n";
+      } // end simult conversion if rur<0
+      for (unsigned j=0;j<th;++j){      
+	bool res=true;
+	// CERR << "write " << j << " " << p << '\n';
+	res=pthread_create(&tab[j],(pthread_attr_t *) NULL,thread_gbasis<tdeg_t>,(void *) &gbasis_param[j]);
+	if (res)
+	  thread_gbasis<tdeg_t>((void *)&gbasis_param[j]);
+      }
+#else
+      if (0 && rur<0) convert(current_gbasis,resmod,p.val,-rur);
+#endif // PTHREAD
+      if (!zdata) current=current_gbasis;
       G.clear();
       double t_0=CLOCK()*1e-6;
 #ifndef KHICAS
@@ -14949,7 +15214,6 @@ void G_idn(vector<unsigned> & G,size_t s){
       // CERR << "write " << th << " " << p << '\n';
 #ifdef GBASISF4_BUCHBERGER 
       if (zdata){
-	// if (rur<0) convert(current_gbasis,resmod,p.val,-rur);
 	if (!zgbasisrur(current_gbasis,resmod,G,p.val,true,&reduceto0,zf4buchberger_info,false,false,eliminate_flag,true,parallel,interred,mainthrurinzgbasis,mainthrurv,s,mainthrurlm,mainthrurlmmodradical,&mainthrurgblm,&mainthrurlmsave)){
 	  if (augmentgbasis>0) 
 	    augmentgbasis=2;
@@ -15081,6 +15345,25 @@ void G_idn(vector<unsigned> & G,size_t s){
 	// if augmentgbasis>0 (at least) gbmod must be sorted
 	//if (augmentgbasis>0)
 	sort(gbmod.begin(),gbmod.end(),tripolymod_tri<polymod<tdeg_t> >(gbasis_logz_age));
+	rur_gblm(gbmod,cur_gblm);
+	if (prev_gblm.coord.empty())
+	  prev_gblm=cur_gblm;
+	else {
+	  int cmp=compare_gblm(cur_gblm,prev_gblm);
+	  if (cmp==1){
+	    if (debug_infolevel) CERR << "Bad prime " << p << "\n";
+	    continue; // bad prime
+	  }
+	  if (cmp==-1){ // clear and restart!
+	    recon_n1=-1;
+	    prev_gblm.coord.clear();
+	    gbasis_size=G.size();
+	    f4buchberger_info.clear();
+	    zf4buchberger_info.clear();
+	    reduceto0.clear();
+	    V.clear(); W.clear(); Wlast.clear(); P.clear();
+	  }
+	}
 	if (gbasis_size==-1 || gbasis_size<G.size())
 	  gbasis_size=G.size();
 	if (!rur && gbasis_stop<0)
@@ -15119,7 +15402,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    CERR << i << ":" << G[i] << "(" << resmod[G[i]].age<<"," << resmod[G[i]].logz << ":" << resmod[G[i]].fromleft << "," << resmod[G[i]].fromright << ")" << '\n';
 	  }
 	  CERR << "sorted" << '\n';
-	  ulonglong nmonoms=0;
+	  nmonoms=0;
  	  for (size_t i=0;i<gbmod.size();++i){
 	    CERR << i << "(" << gbmod[i].age << "," << gbmod[i].logz << ":" << gbmod[i].fromleft << "," << gbmod[i].fromright << ")" << '\n';
 	    nmonoms += gbmod[i].coord.size();
@@ -15134,8 +15417,10 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  if (zrur){
 	    rqi=zlmmod.coord.size();
 	  }
-	  else
+	  else {
 	    rqi=rur_quotient_ideal_dimension(gbmod,zlmmod,&mainthrurgblm,&mainthrurlmsave);
+	    // compare rqi to nmonoms to set rur_gbasis?
+	  }
 	  if (rqi==-RAND_MAX)
 	    *logptr(contextptr) << "Overflow in rur, computing revlex gbasis\n";
 	  if (rqi<0){
@@ -15143,7 +15428,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    continue;
 	  }
 	  if (debug_infolevel)
-	    CERR << CLOCK()*1e-6 << " begin modular rur computation" << '\n';
+	    CERR << CLOCK()*1e-6 << " begin modular rur check" << '\n';
 	  if (rur==2){
 	    vecteur m,M,res; 
 	    polymod<tdeg_t> s(order,dim);
@@ -15171,7 +15456,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	      continue;
 	    }
 	    if (debug_infolevel)
-	      CERR << CLOCK()*1e-6 << " end modular rur computation" << '\n';
+	      CERR << CLOCK()*1e-6 << " end modular rur check" << '\n';
 	    if (rur_gbasis){ // reconstruct gbasis and rur
 	      for (int r=0;r<rurv.size();++r){
 		gbmod.push_back(rurv[r]);
@@ -15188,6 +15473,8 @@ void G_idn(vector<unsigned> & G,size_t s){
 	      if (i==1) // lmmodradical!=lmtmp and contains lmtmp, bad prime
 		continue;
 	      // clear existing reconstruction
+	      recon_n1=-1;
+	      prev_gblm.coord.clear();
 	      gbasis_size=G.size();
 	      f4buchberger_info.clear();
 	      zf4buchberger_info.clear();
@@ -15225,7 +15512,11 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    rechecked=0;
 	    continue;
 	  }
-	  jpos=recon_added; // 0 or recon_added (do not check already reconstructed)
+	  if (rur>=0 && eps>1e-20)
+	    jpos_start=giacmax(0,giacmin(recon_n0,giacmin(recon_n1,recon_n2)));
+	  else
+	    jpos_start=recon_added; // 0 or recon_added (do not check already reconstructed)
+	  jpos=jpos_start;
 	  // check existing Wlast 
 	  for (;jpos<Wlast[i].size();++jpos){
 	    if (!chk_equal_mod(Wlast[i][jpos],gbmod[jpos],p.val)){
@@ -15353,7 +15644,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	      // recon_n2==recon_n1 && recon_n1==recon_n0 &&
 	      zdata && augmentgbasis && t==th && i==0){
 	    if (rur_gbasis && rur==1 && recon_n2>=gbasis_size){ // the gbasis is known
-	      rur=-gbasis_size;
+	      rur=-gbasis_size; recon_added=gbasis_size;
 	      current_gbasis=Wlast[i];
 	      current_gbasis.erase(current_gbasis.begin()+gbasis_size,current_gbasis.end());
 	      cleardeno(current_gbasis);
@@ -15368,6 +15659,8 @@ void G_idn(vector<unsigned> & G,size_t s){
 	      CERR << CLOCK()*1e-6 << " adding reconstructed ideal generators " << recon_n2 << " (reconpart " << reconpart << " prev " << prevreconpart << " augment " << augmentgbasis << " recon_count " << recon_count << " th " << th << " recon_n2 " << recon_n2 << " V[i] " << V[i].size() << ")" << '\n';
 	      recon_count=0;
 	      prevreconpart=reconpart;
+	      if (rur && recon_added>gbasis_size)
+		recon_added=gbasis_size;
 	      //current_gbasis=current_orig;
 	      int insertpos=0;
 	      for (int k=recon_added;k<recon_n2;++k){
@@ -15446,7 +15739,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	if (jpos<gbmod.size()){
 	  if (debug_infolevel)
 	    CERR << CLOCK()*1e-6 << " i=" << i << " begin chinese remaindering " << p << " (" << count+(t==th) << ")" << '\n';
-	  int r=chinrem(V[i],P[i],gbmod,p.val,poly8tmp,recon_added); // IMPROVE: maybe start at jpos in V[i]? at least start at recon_added
+	  int r=chinrem(V[i],P[i],gbmod,p.val,poly8tmp,jpos_start); // IMPROVE: maybe start at jpos in V[i]? at least start at recon_added
 	  if (debug_infolevel)
 	    CERR << CLOCK()*1e-6 << " end chinese remaindering" << '\n';
 	  if (r==-1){
@@ -15467,9 +15760,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  if (debug_infolevel)
 	    CERR << CLOCK()*1e-6 << " end rational reconstruction " << '\n';
 	  // now check if W[i] is a Groebner basis over Q, if so it's the answer
-	  if (rur){ 
-	    // a final check could be performed by replacing
-	    // res[3..end]/res[2] in the initial gbasis element and check if it's 0 
+	  if (rur && (eps>=1e-7 || rur_certify(res,W[i],rur_gbasis?gbasis_size:0))){ 
 	    swap(res,W[i]);
 	    if (rur_gbasis)
 	      res.erase(res.begin(),res.begin()+gbasis_size);
