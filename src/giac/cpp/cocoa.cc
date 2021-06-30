@@ -14839,6 +14839,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     int dim;
     bool ans;
     int threadno;
+    const context * contextptr;
   };
 
   modpoly free_copy(const modpoly & v){
@@ -14862,6 +14863,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     const vector<int> & chk_index=Rptr->chk_index;
     const order_t & order=Rptr->order;
     int dim=Rptr->dim;
+    const context * contextptr=Rptr->contextptr;
     const gen dminpden=*Rptr->dminpden;
     for (int i_=0;i_<chk_index.size();i_++){
       int i=chk_index[i_];
@@ -14870,8 +14872,8 @@ void G_idn(vector<unsigned> & G,size_t s){
       int deg=cur.coord.front().u.total_degree(order);
       if (rur_do_certify>0 && deg>rur_do_certify)
 	continue;
-      if (//Rptr->threadno==0 && 
-	  debug_infolevel) CERR << CLOCK()*1e-6 << " rur_certify cheking equation "<< i << " degree " << deg << "\n";
+      if (Rptr->threadno==0 && 
+	  debug_infolevel) *logptr(contextptr) << CLOCK()*1e-6 << " rur_certify cheking equation "<< i << " degree " << deg << "\n";
       modpoly sum; gen sumden(1);
       for (int j=0;j<cur.coord.size();++j){
 	modpoly prod(1,1),tmp; gen prodden(1);
@@ -14908,14 +14910,14 @@ void G_idn(vector<unsigned> & G,size_t s){
 	Rptr->ans=false;
 	return ptr;
       }
-      CERR << CLOCK()*1e-6 << " rur_certify equation "<< i << " degree " << deg << " check success\n";
+      if (Rptr->threadno==0) *logptr(contextptr) << CLOCK()*1e-6 << " rur_certify equation "<< i << " degree " << deg << " check success\n";
     }
     Rptr->ans=true;
     return ptr;
   }
 
   template<class tdeg_t>
-  bool rur_certify(const vectpoly8<tdeg_t> & syst,vectpoly8<tdeg_t> & val,int gbshift){
+  bool rur_certify(const vectpoly8<tdeg_t> & syst,vectpoly8<tdeg_t> & val,int gbshift,GIAC_CONTEXT){
     if (rur_do_certify<0) return true;
     // rur final check could be performed by replacing
     // val[gbshift+3..end]/val[gbshift+2] 
@@ -14943,7 +14945,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	vector<int> chk_index;
 	for (int k=j;k<syst.size();k+=nthreads)
 	  chk_index.push_back(k);
-	rur_certify_t<tdeg_t> cur={&syst,&minp,&dminp,&v,&dminpden,&vden,chk_index,order,dim,true,j};
+	rur_certify_t<tdeg_t> cur={&syst,&minp,&dminp,&v,&dminpden,&vden,chk_index,order,dim,true,j,contextptr};
 	rur_certify_param.push_back(cur);
 	bool res=true;
 	if (j<nthreads-1)
@@ -14966,7 +14968,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       const poly8<tdeg_t> & cur=syst[i];
       if (cur.coord.empty()) continue;
       int deg=cur.coord.front().u.total_degree(order);
-      if (debug_infolevel) CERR << CLOCK()*1e-6 << " rur_certify cheking equation "<< i << " degree " << deg << "\n";
+      if (debug_infolevel) *logptr(contextptr) << CLOCK()*1e-6 << " rur_certify cheking equation "<< i << " degree " << deg << "\n";
       modpoly sum; gen sumden(1);
       for (int j=0;j<cur.coord.size();++j){
 	modpoly prod(1,1),tmp; gen prodden(1);
@@ -14999,6 +15001,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	return false;
       if (!rem.empty())
 	return false;
+      *logptr(contextptr) << CLOCK()*1e-6 << " rur_certify equation "<< i << " degree " << deg << " check success\n";
     }
     return true;
   }
@@ -15055,7 +15058,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     vector< vectpoly8<tdeg_t> > V; // list of (chinrem reconstructed) modular groebner basis
     vector< vectpoly8<tdeg_t> > W; // list of rational reconstructed groebner basis
     vector< vectpoly8<tdeg_t> > Wlast;
-    int dim; vectpoly8<tdeg_t> Wrur; // rur reconstruction part
+    int dim=0; vectpoly8<tdeg_t> Wrur; // rur reconstruction part
     vecteur P; // list of associate (product of) modulo
     polymod<tdeg_t> cur_gblm,prev_gblm,lmmod,lmmodradical,prevgblm,s,zlmmod,zlmmodradical,mainthrurlm,mainthrurlmsave,mainthrurlmmodradical,mainthrurgblm; int prevrqi; vectpolymod<tdeg_t> rurv,zrurv,mainthrurv; int zrur=0,rurinzgbasis=0,mainthrurinzgbasis=0;// variables for rational univar. reconstr.
     // environment env;
@@ -15501,7 +15504,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 		break;
 	      }
 	    }
-	    if (jpos==dim+2 && rur_certify(res,Wrur,0)){ 
+	    if (jpos==dim+3 && rur_certify(res,Wrur,0,contextptr)){ 
 	      swap(res,Wrur);
 	      mpz_clear(zd);
 	      mpz_clear(zu);
@@ -15643,7 +15646,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    }
 	    if (dobrk){
 	      if (rur_gbasis && rur>0 && jpos<gbasis_size){ // go try to reconstruct the rur part
-		jpos=gbasis_size; continue;
+		jpos=gbasis_size-1; continue;
 	      }
 	      break;
 	    }
@@ -15657,21 +15660,23 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    if (rur && !poly8tmp.coord.empty() && !chk_equal_mod(poly8tmp.coord.front().g,gbmod[jpos].coord.front().g,p.val)){
 	      rechecked=0;
 	      if (rur_gbasis && rur>0 && jpos<gbasis_size){ // go try to reconstruct the rur part
-		jpos=gbasis_size; continue;
+		jpos=gbasis_size-1; continue;
 	      }
 	      break;
 	    }
 	    if (!chk_equal_mod(poly8tmp,gbmod[jpos],p.val)){
 	      rechecked=0;
 	      if (rur_gbasis && rur>0 && jpos<gbasis_size){ // go try to reconstruct the rur part
-		jpos=gbasis_size; continue;
+		jpos=gbasis_size-1; continue;
 	      }
 	      break;
 	    }
 	    poly8<tdeg_t> tmptmp(poly8tmp.order,poly8tmp.dim);
 	    if (rur_gbasis && rur>0 && jpos>=gbasis_size){
-	      Wrur.push_back(tmptmp);
-	      Wrur.back().coord.swap(poly8tmp.coord);
+	      if (jpos>=gbasis_size+Wrur.size()){
+		Wrur.push_back(tmptmp);
+		Wrur.back().coord.swap(poly8tmp.coord);
+	      }
 	    }
 	    else {
 	      Wlast[i].push_back(tmptmp);
@@ -15796,7 +15801,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  P[i]=P[i]*p;
 	  continue; // next prime
 	}
-	else { // final check
+	else if (Wrur.size()<dim+2) { // final check
 	  W[i]=Wlast[i];
 	  if (!rur){
 	    if (debug_infolevel)
@@ -15807,7 +15812,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  if (debug_infolevel)
 	    CERR << CLOCK()*1e-6 << " end rational reconstruction " << '\n';
 	  // now check if W[i] is a Groebner basis over Q, if so it's the answer
-	  if (rur && rur_certify(res,W[i],rur_gbasis?gbasis_size:0)){ 
+	  if (rur && rur_certify(res,W[i],rur_gbasis?gbasis_size:0,contextptr)){ 
 	    swap(res,W[i]);
 	    if (rur_gbasis)
 	      res.erase(res.begin(),res.begin()+gbasis_size);
