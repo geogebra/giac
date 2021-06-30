@@ -308,9 +308,11 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   // extern int GBASISF4_BUCHBERGER;
   extern unsigned max_pairs_by_iteration; 
   extern unsigned simult_primes,simult_primes2,simult_primes_seuil2,simult_primes3,simult_primes_seuil3; 
+  // see global.cc for explanations
   extern double gbasis_reinject_ratio;
   extern double gbasis_reinject_speed_ratio;
-  extern int gbasis_logz_age_sort,gbasis_stop;
+  extern int gbasis_logz_age_sort,gbasis_stop,rur_do_gbasis,rur_do_certify;
+
   extern int PROOT_FACTOR_MAXDEG;
   extern int ABS_NBITS_EVALF;
   extern volatile bool ctrl_c,interrupted,kbd_interrupted;

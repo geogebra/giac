@@ -2982,7 +2982,7 @@ namespace giac {
 	    
 	  }
 	}
-	fu=ratnormal(rdiv(e,df,contextptr),contextptr);
+	fu=recursive_ratnormal(rdiv(e,df,contextptr),contextptr); // changed from ratnormal, made 30/06/2021 for int((4/x^5)*cos((1/x^4)-6) );
 	if (is_rewritable_as_f_of(fu,f,fx,gen_x,contextptr)){
 	  if ( (intmode & 2)==0)
 	    gprintf(step_fuuprime,gettext("Integration of %gen: f(u)*u' where f=%gen->%gen and u=%gen"),makevecteur(e,gen_x,fx,f),contextptr);

@@ -14209,7 +14209,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       }
       if (//0 && 
 	  count<S/10){
-	if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel start\n" ;
+	if (debug_infolevel>1) CERR << CLOCK()*1e-6 << "Hankel start\n" ;
 	// IMPROVE: compute s^0 to s^[2S-1] (instead of s^0 to s^S)
 	// take coordinate of index corresponding to 1 in lm
 	// and find minpoly q using reverse_rsolve
@@ -14239,13 +14239,13 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  multmod_positive(tmp,tmpm,multv,p,tmp1); 
 	  tmp.swap(tmp1);
 	}
-	if (debug_infolevel) CERR << CLOCK()*1e-6 << " Hankel mult part 2\n" ;
+	if (debug_infolevel>1) CERR << CLOCK()*1e-6 << " Hankel mult part 2\n" ;
 	for (int i=S;i<2*S;++i){
 	  g[i]=tmp.back();
 	  multmod_positive(tmp,tmpm,multv,p,tmp1); 
 	  tmp.swap(tmp1);
 	}
-	if (debug_infolevel) CERR << CLOCK()*1e-6 << " Hankel mult end\n" ;
+	if (debug_infolevel>1) CERR << CLOCK()*1e-6 << " Hankel mult end\n" ;
 	vecteur V; vector_int2vecteur(g,V);
 	reverse(V.begin(),V.end()); // degree(V)=2S-1, size(V)=2S
 	vecteur x2n(2*S+1),A,B,G,U,unused,D,tmp1,tmp2; x2n[0]=1; // x2n=x^(2*S)
@@ -14320,13 +14320,13 @@ void G_idn(vector<unsigned> & G,size_t s){
 		    bez[i][j]=bez[j][i];
 		}
 		// now compute bez*hankelsystb
-		if (debug_infolevel) CERR << CLOCK()*1e-6 << " Hankel *\n" ;
+		if (debug_infolevel>1) CERR << CLOCK()*1e-6 << " Hankel *\n" ;
 		vector< vector<int> > Ker(d+1);
 		vecteur2vector_int(m,p,Ker[0]);
 		for (int i=0;i<d;++i)
 		  multmod_positive(bez,hankelsystb[i],p,Ker[i+1]);
 		vectvector_int2vecteur(Ker,M);
-		if (debug_infolevel) CERR << CLOCK()*1e-6 << "Hankel end\n" ;
+		if (debug_infolevel>1) CERR << CLOCK()*1e-6 << "Hankel end\n" ;
 		return true;
 	      } // end D.size()==1
 	      else {
@@ -14342,7 +14342,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       tmp[S-1]=1;
       vector< vector<int> > K; K.reserve(S+1+d);
       K.push_back(tmp);
-      if (debug_infolevel)
+      if (debug_infolevel>1)
 	CERR << CLOCK()*1e-6 << " rur start v<-M*v\n";
       for (int i=0;i<S;++i){
 	multmod_positive(mults,multv,tmp,p,tmp1); 
@@ -14354,11 +14354,11 @@ void G_idn(vector<unsigned> & G,size_t s){
 	K.push_back(Kxi[i]);
       tran_vect_vector_int(K,tmpm); K.swap(tmpm);  
       vector< vector<int> > Ker;
-      if (debug_infolevel)
+      if (debug_infolevel>1)
 	CERR << CLOCK()*1e-6 << " begin rur ker" << '\n';
       if (!mker(K,Ker,p) || Ker.empty() )
 	return false;
-      if (debug_infolevel)
+      if (debug_infolevel>1)
 	CERR << CLOCK()*1e-6 << " end rur ker" << '\n';
       vector_int2vecteur(Ker.front(),m);
       reverse(m.begin(),m.end());
@@ -14366,7 +14366,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       // Ker->M
       vectvector_int2vecteur(Ker,M);
       if (m.size()>S+1) return false;
-      if (debug_infolevel>1)
+      if (debug_infolevel>2)
 	CERR << "Minpoly for " << s << ":" << m << '\n';
       return true;
 #endif
@@ -14376,7 +14376,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       M.push_back(tmpv);
       tmp=vector<int>(S);
       tmp[S-1]=1;
-      if (debug_infolevel)
+      if (debug_infolevel>1)
 	CERR << CLOCK()*1e-6 << "rur start v<-M*v\n";
       for (int i=0;i<S;++i){
 	multmod_positive(mults,multv,tmp,p,tmp1); 
@@ -14427,11 +14427,11 @@ void G_idn(vector<unsigned> & G,size_t s){
     }
     N=mtran(N);
     vecteur K;
-    if (debug_infolevel)
+    if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " begin rur ker" << '\n';
     if (!mker(N,K,1,context0) || K.empty() || K.front().type!=_VECT)
       return false;
-    if (debug_infolevel)
+    if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " end rur ker" << '\n';
     m=*K.front()._VECTptr;
     rur_cleanmod(m);
@@ -14439,7 +14439,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     m=trim(m,0);
     K.swap(M);
     if (m.size()>S+1) return false;
-    if (debug_infolevel>1)
+    if (debug_infolevel>2)
       CERR << "Minpoly for " << s << ":" << m << '\n';
     return true;
 #else
@@ -14449,11 +14449,11 @@ void G_idn(vector<unsigned> & G,size_t s){
     M.pop_back(); // remove the last one (for further computations, assuming max rank)
     if (!N.empty() && !N.front()._VECTptr->empty()) N=mtran(N);
     vecteur K;
-    if (debug_infolevel)
+    if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " begin rur ker" << '\n';
     if (!mker(N,K,1,context0) || K.empty() || K.front().type!=_VECT)
       return false;
-    if (debug_infolevel)
+    if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " end rur ker" << '\n';
     m=*K.front()._VECTptr;
     for (unsigned i=0;i<m.size();++i){
@@ -14462,7 +14462,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     }
     reverse(m.begin(),m.end());
     m=trim(m,0);
-    if (debug_infolevel>1)
+    if (debug_infolevel>2)
       CERR << "Minpoly for " << s << " degree " << m.size() << " :" << m << '\n';
     return true;
 #endif
@@ -14868,6 +14868,8 @@ void G_idn(vector<unsigned> & G,size_t s){
       const poly8<tdeg_t> & cur=syst[i];
       if (cur.coord.empty()) continue;
       int deg=cur.coord.front().u.total_degree(order);
+      if (rur_do_certify>0 && deg>rur_do_certify)
+	continue;
       if (//Rptr->threadno==0 && 
 	  debug_infolevel) CERR << CLOCK()*1e-6 << " rur_certify cheking equation "<< i << " degree " << deg << "\n";
       modpoly sum; gen sumden(1);
@@ -14906,6 +14908,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	Rptr->ans=false;
 	return ptr;
       }
+      CERR << CLOCK()*1e-6 << " rur_certify equation "<< i << " degree " << deg << " check success\n";
     }
     Rptr->ans=true;
     return ptr;
@@ -14913,6 +14916,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 
   template<class tdeg_t>
   bool rur_certify(const vectpoly8<tdeg_t> & syst,vectpoly8<tdeg_t> & val,int gbshift){
+    if (rur_do_certify<0) return true;
     // rur final check could be performed by replacing
     // val[gbshift+3..end]/val[gbshift+2] 
     // in the initial syst system variables 
@@ -15051,6 +15055,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     vector< vectpoly8<tdeg_t> > V; // list of (chinrem reconstructed) modular groebner basis
     vector< vectpoly8<tdeg_t> > W; // list of rational reconstructed groebner basis
     vector< vectpoly8<tdeg_t> > Wlast;
+    int dim; vectpoly8<tdeg_t> Wrur; // rur reconstruction part
     vecteur P; // list of associate (product of) modulo
     polymod<tdeg_t> cur_gblm,prev_gblm,lmmod,lmmodradical,prevgblm,s,zlmmod,zlmmodradical,mainthrurlm,mainthrurlmsave,mainthrurlmmodradical,mainthrurgblm; int prevrqi; vectpolymod<tdeg_t> rurv,zrurv,mainthrurv; int zrur=0,rurinzgbasis=0,mainthrurinzgbasis=0;// variables for rational univar. reconstr.
     // environment env;
@@ -15080,7 +15085,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 #else
     int nthreads=1,th,parallel=1;
 #endif
-    bool rur_gbasis=true;//false; //rur && nthreads<=2; // true : reconstruct gbasis before rur
+    bool rur_gbasis=rur_do_gbasis>=0;
     // for more than 2 threads, real time is currently better without
     // reason might be that the gbasis is large, reduction mod p for
     // all threads has bad cache performances?
@@ -15361,7 +15366,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    f4buchberger_info.clear();
 	    zf4buchberger_info.clear();
 	    reduceto0.clear();
-	    V.clear(); W.clear(); Wlast.clear(); P.clear();
+	    V.clear(); W.clear(); Wlast.clear(); P.clear(); Wrur.clear();
 	  }
 	}
 	if (gbasis_size==-1 || gbasis_size<G.size())
@@ -15396,30 +15401,33 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    continue; // next prime
 	  }
 	}
+	nmonoms=0;
+	for (size_t j=0;j<gbmod.size();++j){
+	  if (debug_infolevel>1) CERR << j << "(" << gbmod[j].age << "," << gbmod[j].logz << ":" << gbmod[j].fromleft << "," << gbmod[j].fromright << ")" << '\n';
+	  nmonoms += gbmod[j].coord.size();
+	}
+	if (rur_do_gbasis>0 && nmonoms>rur_do_gbasis)
+	  rur_gbasis=false;
 	if (debug_infolevel && count==0){
 	  CERR << "G= ";
 	  for (size_t i=0;i<G.size();++i){
 	    CERR << i << ":" << G[i] << "(" << resmod[G[i]].age<<"," << resmod[G[i]].logz << ":" << resmod[G[i]].fromleft << "," << resmod[G[i]].fromright << ")" << '\n';
 	  }
 	  CERR << "sorted" << '\n';
-	  nmonoms=0;
- 	  for (size_t i=0;i<gbmod.size();++i){
-	    CERR << i << "(" << gbmod[i].age << "," << gbmod[i].logz << ":" << gbmod[i].fromleft << "," << gbmod[i].fromright << ")" << '\n';
-	    nmonoms += gbmod[i].coord.size();
-	  }
 	  CERR << '\n' << "Partial number of monoms " << nmonoms << '\n';
 	}
 	// compare gb to existing computed basis
 #if 1
+	unsigned jpos; gen num,den; 
 	if (rur){
 	  gbmod.resize(G.size());
-	  int dim=res.front().dim,rqi;
+	  dim=res.front().dim;
+	  int rqi;
 	  if (zrur){
 	    rqi=zlmmod.coord.size();
 	  }
 	  else {
 	    rqi=rur_quotient_ideal_dimension(gbmod,zlmmod,&mainthrurgblm,&mainthrurlmsave);
-	    // compare rqi to nmonoms to set rur_gbasis?
 	  }
 	  if (rqi==-RAND_MAX)
 	    *logptr(contextptr) << "Overflow in rur, computing revlex gbasis\n";
@@ -15479,14 +15487,36 @@ void G_idn(vector<unsigned> & G,size_t s){
 	      f4buchberger_info.clear();
 	      zf4buchberger_info.clear();
 	      reduceto0.clear();
-	      V.clear(); W.clear(); Wlast.clear(); P.clear();
+	      V.clear(); W.clear(); Wlast.clear(); P.clear(); Wrur.clear();
 	      if (i==-1)
 		continue;
 	      // restart with this prime
 	    }
 	  }
+	  // check Wrur
+	  if (rur_gbasis){
+	    for (jpos=0;jpos<Wrur.size();++jpos){
+	      if (!chk_equal_mod(Wrur[jpos],gbmod[gbasis_size+jpos],p.val)){
+		Wrur.resize(jpos);
+		break;
+	      }
+	    }
+	    if (jpos==dim+2 && rur_certify(res,Wrur,0)){ 
+	      swap(res,Wrur);
+	      mpz_clear(zd);
+	      mpz_clear(zu);
+	      mpz_clear(zu1);
+	      mpz_clear(zd1);
+	      mpz_clear(zabsd1);
+	      mpz_clear(zsqrtm);
+	      mpz_clear(zq);
+	      mpz_clear(zur);
+	      mpz_clear(zr);
+	      mpz_clear(ztmp);
+	      return 1;
+	    }	    
+	  }
 	} // end if (rur)
-	unsigned jpos; gen num,den; 
 	if (debug_infolevel>2)
 	  CERR << "p=" << p << ":" << gbmod << '\n';
 	for (i=0;i<V.size();++i){
@@ -15512,7 +15542,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    rechecked=0;
 	    continue;
 	  }
-	  if (rur>=0 && eps>1e-20)
+ 	  if (rur>=0 && eps>1e-20)
 	    jpos_start=giacmax(0,giacmin(recon_n0,giacmin(recon_n1,recon_n2)));
 	  else
 	    jpos_start=recon_added; // 0 or recon_added (do not check already reconstructed)
@@ -15583,7 +15613,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    if (Vijs!=gbmod[jpos].coord.size()){
 	      rechecked=0;
 	      if (debug_infolevel>1)
-		CERR << jpos << '\n';
+		CERR << "chinrem size mismatch " << jpos << '\n';
 	      break;
 	    }
 	    //Vijs=1; 
@@ -15611,7 +15641,12 @@ void G_idn(vector<unsigned> & G,size_t s){
 		}
 	      }
 	    }
-	    if (dobrk) break;
+	    if (dobrk){
+	      if (rur_gbasis && rur>0 && jpos<gbasis_size){ // go try to reconstruct the rur part
+		jpos=gbasis_size; continue;
+	      }
+	      break;
+	    }
 	    if (!fracmod(V[i][jpos],P[i],
 			 zd,zd1,zabsd1,zu,zu1,zur,zq,zr,zsqrtm,ztmp,
 			 poly8tmp)){
@@ -15621,15 +15656,27 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    }
 	    if (rur && !poly8tmp.coord.empty() && !chk_equal_mod(poly8tmp.coord.front().g,gbmod[jpos].coord.front().g,p.val)){
 	      rechecked=0;
+	      if (rur_gbasis && rur>0 && jpos<gbasis_size){ // go try to reconstruct the rur part
+		jpos=gbasis_size; continue;
+	      }
 	      break;
 	    }
 	    if (!chk_equal_mod(poly8tmp,gbmod[jpos],p.val)){
 	      rechecked=0;
+	      if (rur_gbasis && rur>0 && jpos<gbasis_size){ // go try to reconstruct the rur part
+		jpos=gbasis_size; continue;
+	      }
 	      break;
 	    }
 	    poly8<tdeg_t> tmptmp(poly8tmp.order,poly8tmp.dim);
-	    Wlast[i].push_back(tmptmp);
-	    Wlast[i].back().coord.swap(poly8tmp.coord);
+	    if (rur_gbasis && rur>0 && jpos>=gbasis_size){
+	      Wrur.push_back(tmptmp);
+	      Wrur.back().coord.swap(poly8tmp.coord);
+	    }
+	    else {
+	      Wlast[i].push_back(tmptmp);
+	      Wlast[i].back().coord.swap(poly8tmp.coord);
+	    }
 	  }
 	  if (debug_infolevel>0)
 	    CERR << CLOCK()*1e-6 << " unstable mod " << p << " from " << gbasis_size << " reconstructed " << Wlast[i].size() << " (#" << i << ")" << '\n';
@@ -15760,7 +15807,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  if (debug_infolevel)
 	    CERR << CLOCK()*1e-6 << " end rational reconstruction " << '\n';
 	  // now check if W[i] is a Groebner basis over Q, if so it's the answer
-	  if (rur && (eps>=1e-7 || rur_certify(res,W[i],rur_gbasis?gbasis_size:0))){ 
+	  if (rur && rur_certify(res,W[i],rur_gbasis?gbasis_size:0)){ 
 	    swap(res,W[i]);
 	    if (rur_gbasis)
 	      res.erase(res.begin(),res.begin()+gbasis_size);

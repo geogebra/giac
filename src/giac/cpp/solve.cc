@@ -6638,6 +6638,10 @@ namespace giac {
 	gen rurvar=var.front();
 	if (Gv[1].type==_IDNT) 
 	  rurvar=Gv[1];
+#if 1
+	if (rur_do_certify!=0)
+	  *logptr(contextptr) << "Rational univariate representation is not certified, run rur_certify(0) to certify" << '\n';
+#else
 	if (proba_epsilon(contextptr)<1e-16){
 	  // check the solution replace var by G[4..end]/G[3] in eq and divide by G[2]
 	  for (unsigned i=0;i<eq.size();++i){
@@ -6650,6 +6654,7 @@ namespace giac {
 	}
 	else
 	  *logptr(contextptr) << "Rational univariate representation is not certified, set proba_epsilon:=0 to certify" << '\n';
+#endif
 	int deg=_degree(makesequence(Gv[2],rurvar),contextptr).val;
 	if (evalf_after & 1){
 	  gen pol=Gv[2],tmp;
@@ -7071,6 +7076,37 @@ namespace giac {
   static const char _gbasis_reinject_s []="gbasis_reinject";
   static define_unary_function_eval2 (__gbasis_reinject,&_gbasis_reinject,_gbasis_reinject_s,&printasDigits);
   define_unary_function_ptr5( at_gbasis_reinject ,alias_at_gbasis_reinject ,&__gbasis_reinject,0,true);
+
+  gen _rur_certify(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG &&  g.subtype==-1) return  g;
+    if (g.type==_INT_){
+      if (g.val<0) *logptr(contextptr) << "rur: no certification\n";
+      if (g.val==0) *logptr(contextptr) << "rur: certify all equations\n";
+      if (g.val>0) *logptr(contextptr) << "rur: certify equations of total degree <=" << g.val << "\n";
+      return rur_do_certify=g.val;
+    }
+    if (g.type==_VECT || g._VECTptr->empty())
+      return rur_do_certify;      
+    return gensizeerr(contextptr);
+  }
+  static const char _rur_certify_s []="rur_certify";
+  static define_unary_function_eval (__rur_certify,&_rur_certify,_rur_certify_s);
+  define_unary_function_ptr5( at_rur_certify ,alias_at_rur_certify ,&__rur_certify,0,true);
+  gen _rur_gbasis(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG &&  g.subtype==-1) return  g;
+    if (g.type==_INT_){
+      if (g.val<0) *logptr(contextptr) << "rur: do not compute gbasis over Q\n";
+      if (g.val==0) *logptr(contextptr) << "rur: compute gbasis over Q\n";
+      if (g.val>0) *logptr(contextptr) << "rur: compute gbasis over Q if total nmumber of monomials is <=" << g.val << "\n";
+      return rur_do_gbasis=g.val;
+    }
+    if (g.type==_VECT || g._VECTptr->empty())
+      return rur_do_gbasis;      
+    return gensizeerr(contextptr);
+  }
+  static const char _rur_gbasis_s []="rur_gbasis";
+  static define_unary_function_eval (__rur_gbasis,&_rur_gbasis,_rur_gbasis_s);
+  define_unary_function_ptr5( at_rur_gbasis ,alias_at_rur_gbasis ,&__rur_gbasis,0,true);
 
   static void read_gbargs(vecteur & v,int start,int s,gen & order,bool & with_cocoa,bool & with_f5,int & modular,gbasis_param_t & gbasis_param){
     for (int i=start;i<s;++i){
