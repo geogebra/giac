@@ -6640,7 +6640,7 @@ namespace giac {
 	  rurvar=Gv[1];
 #if 1
 	if (rur_do_certify!=0)
-	  *logptr(contextptr) << "Rational univariate representation is not certified, run rur_certify(0) to certify" << '\n';
+	  *logptr(contextptr) << "Rational univariate representation is not certified, run rur_certify(1) to certify" << '\n';
 #else
 	if (proba_epsilon(contextptr)<1e-16){
 	  // check the solution replace var by G[4..end]/G[3] in eq and divide by G[2]
@@ -7080,13 +7080,13 @@ namespace giac {
   gen _rur_certify(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
     if (g.type==_INT_){
-      if (g.val<0) *logptr(contextptr) << "rur: no certification\n";
-      if (g.val==0) *logptr(contextptr) << "rur: certify all equations\n";
-      if (g.val>0) *logptr(contextptr) << "rur: certify equations of total degree <=" << g.val << "\n";
-      return rur_do_certify=g.val;
+      if (g.val<=0) *logptr(contextptr) << "rur: no certification\n";
+      if (g.val==1) *logptr(contextptr) << "rur: certify all equations\n";
+      if (g.val>1) *logptr(contextptr) << "rur: certify equations of total degree <=" << g.val << "\n";
+      return rur_do_certify=g.val-1;
     }
     if (g.type==_VECT || g._VECTptr->empty())
-      return rur_do_certify;      
+      return rur_do_certify+1;      
     return gensizeerr(contextptr);
   }
   static const char _rur_certify_s []="rur_certify";
@@ -7095,13 +7095,13 @@ namespace giac {
   gen _rur_gbasis(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
     if (g.type==_INT_){
-      if (g.val<0) *logptr(contextptr) << "rur: do not compute gbasis over Q\n";
-      if (g.val==0) *logptr(contextptr) << "rur: compute gbasis over Q\n";
-      if (g.val>0) *logptr(contextptr) << "rur: compute gbasis over Q if total nmumber of monomials is <=" << g.val << "\n";
-      return rur_do_gbasis=g.val;
+      if (g.val<=0) *logptr(contextptr) << "rur: do not compute gbasis over Q\n";
+      if (g.val==1) *logptr(contextptr) << "rur: compute gbasis over Q\n";
+      if (g.val>1) *logptr(contextptr) << "rur: compute gbasis over Q if total nmumber of monomials is <=" << g.val << "\n";
+      return rur_do_gbasis=g.val-1;
     }
     if (g.type==_VECT || g._VECTptr->empty())
-      return rur_do_gbasis;      
+      return rur_do_gbasis+1;      
     return gensizeerr(contextptr);
   }
   static const char _rur_gbasis_s []="rur_gbasis";

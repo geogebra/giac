@@ -23,6 +23,13 @@
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
   class gen;
+  struct cpureal_t {
+    double cpu;
+    double real;
+  };
+  inline std::ostream & operator << (std::ostream & os,const cpureal_t & cr){ return os << "[" << cr.cpu << "," << cr.real << "]"; }
+  double realtime(); // since 2021
+  cpureal_t clock_realtime();
 
   gen _about(const gen & g,GIAC_CONTEXT);
   gen _zip(const gen & args,GIAC_CONTEXT);

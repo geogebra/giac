@@ -426,7 +426,30 @@ namespace giac {
   }
 
 #else // KHICAS
-  
+
+
+  double get_realtime(){ 
+#if !defined HAVE_NO_SYS_TIMES_H && defined HAVE_SYS_TIME_H
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    t.tv_sec -= (2021 - 1970)*24*365*3600; // substract 2021, in order to loose less precision when doing a difference of get_realtime()
+    return ((double)t.tv_usec + ((double)t.tv_sec*1e6)) ;
+#else
+    return 0;
+#endif
+  }
+
+  const double realtime_init(get_realtime());
+  double realtime(){
+    double d= get_realtime()-realtime_init;
+    return d*1e-6;
+  }
+
+  cpureal_t clock_realtime(){
+    cpureal_t ans={CLOCK()*1e-6,realtime()};
+    return ans;
+  }
+
   gen _time(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
     if (a.type==_VECT && a.subtype==_SEQ__VECT){

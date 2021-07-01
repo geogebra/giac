@@ -14870,10 +14870,12 @@ void G_idn(vector<unsigned> & G,size_t s){
       const poly8<tdeg_t> & cur=syst[i];
       if (cur.coord.empty()) continue;
       int deg=cur.coord.front().u.total_degree(order);
-      if (rur_do_certify>0 && deg>rur_do_certify)
+      if (rur_do_certify>0 && deg>rur_do_certify){
+	*logptr(contextptr) << "rur_certify equation not checked, degree too large " << deg << " run rur_certify(1) to check all equations\n";
 	continue;
+      }
       if (Rptr->threadno==0 && 
-	  debug_infolevel) *logptr(contextptr) << CLOCK()*1e-6 << " rur_certify cheking equation "<< i << " degree " << deg << "\n";
+	  debug_infolevel) *logptr(contextptr) << clock_realtime() << " rur_certify cheking equation "<< i << " degree " << deg << "\n";
       modpoly sum; gen sumden(1);
       for (int j=0;j<cur.coord.size();++j){
 	modpoly prod(1,1),tmp; gen prodden(1);
@@ -14904,13 +14906,17 @@ void G_idn(vector<unsigned> & G,size_t s){
       // remainder
       if (!DivRem(sum,minp,0,tmp,rem,true)){
 	Rptr->ans=false;
+	*logptr(contextptr) << "rur_certify failure equation " << i << "\n";
 	return ptr;
       }
       if (!rem.empty()){
 	Rptr->ans=false;
+	*logptr(contextptr) << "rur_certify failure equation " << i << "\n";
 	return ptr;
       }
-      if (Rptr->threadno==0) *logptr(contextptr) << CLOCK()*1e-6 << " rur_certify equation "<< i << " degree " << deg << " check success\n";
+      if (Rptr->threadno==0){
+	*logptr(contextptr) << clock_realtime() << " rur_certify equation "<< i << " degree " << deg << " check success.\n";
+      }
     }
     Rptr->ans=true;
     return ptr;
@@ -14938,6 +14944,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 #ifdef HAVE_LIBPTHREAD
     int nthreads=threads_allowed?threads:1;
     if (nthreads>1){
+      *logptr(contextptr) << "rur_certify: multi-thread check, info displayed only for 1 thread over " << nthreads << "\n";
       if (nthreads>6) nthreads=6; // don't use too much memory
       pthread_t tab[64];
       vector< rur_certify_t<tdeg_t> > rur_certify_param; rur_certify_param.reserve(nthreads);
@@ -15001,7 +15008,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	return false;
       if (!rem.empty())
 	return false;
-      *logptr(contextptr) << CLOCK()*1e-6 << " rur_certify equation "<< i << " degree " << deg << " check success\n";
+      *logptr(contextptr) << clock_realtime() << " rur_certify equation "<< i << " degree " << deg << " check success\n";
     }
     return true;
   }
@@ -15217,7 +15224,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       double t_0=CLOCK()*1e-6;
 #ifndef KHICAS
       if (debug_infolevel)
-	CERR << std::setprecision(15) << t_0 << " begin computing basis modulo " << p << " batch/threads " << th+1 << "/" << parallel << '\n';
+	CERR << std::setprecision(15) << clock_realtime() << " begin computing basis modulo " << p << " batch/threads " << th+1 << "/" << parallel << '\n';
 #endif
       // CERR << "write " << th << " " << p << '\n';
 #ifdef GBASISF4_BUCHBERGER 
