@@ -120,7 +120,7 @@ namespace giac {
   // res=(*it) * ... (*(it_end-1))
   void mulmodpoly(std::vector<modpoly>::const_iterator it,std::vector<modpoly>::const_iterator it_end,environment * env,modpoly & new_coord);
   void mulmodpoly(std::vector<modpoly>::const_iterator * it,int debut,int fin,environment * env,modpoly & pi);
-  void mulmodpoly(const std::vector<modpoly *> & v,environment * env,modpoly & res);
+  void mulmodpoly(const std::vector<modpoly *> & v,environment * env,modpoly & res,int dbg);
 
   void divmodpoly(const modpoly & th, const gen & fact, modpoly & new_coord);
   void divmodpoly(const modpoly & th, const gen & fact, environment * env,modpoly & new_coord);

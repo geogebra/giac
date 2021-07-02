@@ -311,7 +311,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   // see global.cc for explanations
   extern double gbasis_reinject_ratio;
   extern double gbasis_reinject_speed_ratio;
-  extern int gbasis_logz_age_sort,gbasis_stop,rur_do_gbasis,rur_do_certify;
+  extern int gbasis_logz_age_sort,gbasis_stop,rur_do_gbasis,rur_do_certify,rur_certify_maxthreads;
 
   extern int PROOT_FACTOR_MAXDEG;
   extern int ABS_NBITS_EVALF;

@@ -7080,7 +7080,12 @@ namespace giac {
   gen _rur_certify(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
     if (g.type==_INT_){
-      if (g.val<=0) *logptr(contextptr) << "rur: no certification\n";
+      if (g.val<0){
+	rur_certify_maxthreads=-g.val;
+	*logptr(contextptr) << "rur certification max number of threads " << rur_certify_maxthreads << "\n";
+	return -g.val;
+      }
+      if (g.val==0) *logptr(contextptr) << "rur: no certification\n";
       if (g.val==1) *logptr(contextptr) << "rur: certify all equations\n";
       if (g.val>1) *logptr(contextptr) << "rur: certify equations of total degree <=" << g.val << "\n";
       return rur_do_certify=g.val-1;

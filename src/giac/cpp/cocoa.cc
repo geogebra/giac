@@ -13604,7 +13604,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       if (chk)
 	lm=*rurlmptr;
 #ifdef HAVE_LIBPTHREAD
-      pthread_mutex_unlock(&rur_mutex);	
+      if (locked) pthread_mutex_unlock(&rur_mutex);	
 #endif
       if (chk)
 	return lm.coord.size();
@@ -14862,7 +14862,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     vecteur vden=free_copy(*Rptr->vden);
     const vector<int> & chk_index=Rptr->chk_index;
     const order_t & order=Rptr->order;
-    int dim=Rptr->dim;
+    int dim=Rptr->dim,locked=false;
     const context * contextptr=Rptr->contextptr;
     const gen dminpden=*Rptr->dminpden;
     for (int i_=0;i_<chk_index.size();i_++){
@@ -14870,10 +14870,16 @@ void G_idn(vector<unsigned> & G,size_t s){
       const poly8<tdeg_t> & cur=syst[i];
       if (cur.coord.empty()) continue;
       int deg=cur.coord.front().u.total_degree(order);
+#ifdef HAVE_LIBPTHREAD
+      locked=pthread_mutex_trylock(&rur_mutex);
+#endif
       if (rur_do_certify>0 && deg>rur_do_certify){
-	*logptr(contextptr) << "rur_certify equation not checked, degree too large " << deg << " run rur_certify(1) to check all equations\n";
+	*logptr(locked?context0:contextptr) << "rur_certify: equation not checked, degree too large " << deg << " run rur_certify(1) to check all equations\n";
 	continue;
       }
+#ifdef HAVE_LIBPTHREAD
+      if (locked) pthread_mutex_unlock(&rur_mutex);	
+#endif
       if (Rptr->threadno==0 && 
 	  debug_infolevel) *logptr(contextptr) << clock_realtime() << " rur_certify cheking equation "<< i << " degree " << deg << "\n";
       modpoly sum; gen sumden(1);
@@ -14893,7 +14899,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  prodden = prodden*dminpden;
 	  vp.push_back(&dminp);
 	}
-	mulmodpoly(vp,0,prod);
+	mulmodpoly(vp,0,prod,Rptr->threadno==0?debug_infolevel:0);
 	mulmodpoly(prod,cur.coord[j].g,0,prod);
 	// sum/sumden = sum/sumden+prod/prodden
 	// = (sum*(prodden/g)+prod*(sumden/g)) / (g*prodden/g*sumden/g)
@@ -14904,19 +14910,21 @@ void G_idn(vector<unsigned> & G,size_t s){
 	sumden=g*sumden*prodden;
       }
       // remainder
-      if (!DivRem(sum,minp,0,tmp,rem,true)){
+      if (!DivRem(sum,minp,0,tmp,rem,true) || !rem.empty()){
 	Rptr->ans=false;
-	*logptr(contextptr) << "rur_certify failure equation " << i << "\n";
+#ifdef HAVE_LIBPTHREAD
+	locked=pthread_mutex_trylock(&rur_mutex);
+#endif
+	*logptr(locked?context0:contextptr) << "rur_certify failure equation " << i << "\n";
+#ifdef HAVE_LIBPTHREAD
+	if (locked) pthread_mutex_unlock(&rur_mutex);	
+#endif
 	return ptr;
       }
-      if (!rem.empty()){
-	Rptr->ans=false;
-	*logptr(contextptr) << "rur_certify failure equation " << i << "\n";
-	return ptr;
-      }
-      if (Rptr->threadno==0){
-	*logptr(contextptr) << clock_realtime() << " rur_certify equation "<< i << " degree " << deg << " check success.\n";
-      }
+#ifdef HAVE_LIBPTHREAD
+      locked=pthread_mutex_trylock(&rur_mutex);
+#endif
+      *logptr(contextptr) << clock_realtime() << " rur_certify equation "<< i << " degree " << deg << " check success.\n";
     }
     Rptr->ans=true;
     return ptr;
@@ -14934,7 +14942,8 @@ void G_idn(vector<unsigned> & G,size_t s){
     unsigned char pdim=syst[0].dim; const order_t order={(short) _REVLEX_ORDER,pdim};
     int dim=val.size()-gbshift-3;
     modpoly minp,dminp,rem,tmp; vector<modpoly> v(dim); gen minpden,dminpden; vecteur vden(dim);
-    if (debug_infolevel) CERR << CLOCK()*1e-6 << " rur_certify convert univariate\n";
+    cpureal_t t1=clock_realtime();
+    if (debug_infolevel) CERR << t1 << " rur_certify convert univariate\n";
     convert_univariate(val[gbshift+1],minp); lcmdeno(minp,minpden,context0);
     convert_univariate(val[gbshift+2],dminp); lcmdeno(dminp,dminpden,context0);
     for (int i=0;i<dim;i++){
@@ -14944,8 +14953,8 @@ void G_idn(vector<unsigned> & G,size_t s){
 #ifdef HAVE_LIBPTHREAD
     int nthreads=threads_allowed?threads:1;
     if (nthreads>1){
-      *logptr(contextptr) << "rur_certify: multi-thread check, info displayed only for 1 thread over " << nthreads << "\n";
-      if (nthreads>6) nthreads=6; // don't use too much memory
+      if (nthreads>rur_certify_maxthreads) nthreads=rur_certify_maxthreads; // don't use too much memory
+      *logptr(contextptr) << "rur_certify: multi-thread check, info displayed onmay miss some threads info. Threads in use: " << nthreads << "\n";
       pthread_t tab[64];
       vector< rur_certify_t<tdeg_t> > rur_certify_param; rur_certify_param.reserve(nthreads);
       for (int j=0;j<nthreads;++j){
@@ -14968,6 +14977,8 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  pthread_join(tab[j],&threadretval[j]);
 	ans=ans && rur_certify_param[j].ans;
       }
+      if (debug_infolevel)
+	*logptr(contextptr) << "end rur_certify, certification time " << clock_realtime()-t1 << "\n";
       return ans;
     }
 #endif
@@ -14993,7 +15004,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  prodden = prodden*dminpden;
 	  vp.push_back(&dminp);
 	}
-	mulmodpoly(vp,0,prod);
+	mulmodpoly(vp,0,prod,debug_infolevel);
 	mulmodpoly(prod,cur.coord[j].g,0,prod);
 	// sum/sumden = sum/sumden+prod/prodden
 	// = (sum*(prodden/g)+prod*(sumden/g)) / (g*prodden/g*sumden/g)
