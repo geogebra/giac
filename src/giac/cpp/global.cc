@@ -238,7 +238,7 @@ int dfu_exec(const char * s_){
 #ifdef __APPLE__
   string s(s_);
   s="/Applications/usr/bin/"+s;
-  return system_no_deprecation(s.c_str());
+  return giac::system_no_deprecation(s.c_str());
 #else
   return system(s_);
 #endif
