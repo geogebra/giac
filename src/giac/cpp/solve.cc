@@ -1980,7 +1980,7 @@ namespace giac {
 	  return vecteur(1,x);
 	return vecteur(0);
       }
-      a=-b/a;
+      a=-rdiv(b,a,contextptr);
       if (rlvarx(a,x).empty()){
 	vecteur res(1,a);
 	solve_ckrange(x,res,isolate_mode,contextptr);

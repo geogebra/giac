@@ -11139,14 +11139,91 @@ namespace xcas {
     edptr->pos=0;
     return 2;
   }
+#ifdef NUMWORKS
+  int restore_session(const char * fname,GIAC_CONTEXT){
+    // cout << "0" << fname << endl; Console_Disp(1); GetKey(&key);
+    string filename(remove_path(remove_extension(fname)));
+#ifdef NSPIRE_NEWLIB
+    if (file_exists((filename+".xw.tns").c_str()))
+      filename += ".xw.tns";
+    else
+      filename += ".py.tns";
+#else
+    if (file_exists((filename+".xw").c_str()))
+      filename += ".xw";
+    else
+      filename += ".py";
+#endif
+    if (!load_console_state_smem(filename.c_str(),contextptr)){
+      if (confirm("OK: Francais, Back: English","set_language(1|0)")==KEY_CTRL_F6)
+	lang=0;
+      Bdisp_AllClr_VRAM();
+      int x=0,y=0;
+      PrintMini(x,y,"KhiCAS 1.6 (c) 2020 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE);
+      y +=18;
+      PrintMini(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      y += 18;
+#ifdef NSPIRE_NEWLIB
+      PrintMini(x,y,((lang==1)?"Taper menu plusieurs fois":"Type menu several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+#else
+      PrintMini(x,y,((lang==1)?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+#endif
+      y += 18;
+      PrintMini(x,y,((lang==1)?"pour quitter KhiCAS.":"to leave KhiCAS."),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      y += 18;
+      PrintMini(x,y,(lang==1)?"Si le calcul formel est interdit":"If CAS is forbidden!",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
+      y += 18;
+#ifdef NSPIRE_NEWLIB
+      PrintMini(x,y,(lang==1)?"quittez Khicas (menu menu menu)":"Leave Khicas (menu menu menu)",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
+      if (confirm("Interpreter? enter: Xcas, esc: MicroPython",(lang==1?"Peut se modifier depuis menu configuration":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
+	python_compat(4,contextptr);
+	xcas_python_eval=1;
+	*logptr(contextptr) << "Micropython interpreter\n";
+	Console_FMenu_Init(contextptr);
+      }
+      else {
+	python_compat(1,contextptr);
+	*logptr(contextptr) << "Xcas interpreter, Python compatible mode\n";
+      }
+#else
+      PrintMini(x,y,(lang==1)?"quittez Khicas (HOME HOME HOME)":"Leave Khicas (HOME HOME HOME)",TEXT_MODE_NORMAL, COLOR_RED, COLOR_WHITE);
+      if (confirm("Interpreter? OK: Xcas, Back: MicroPython",(lang==1?"Peut se modifier depuis menu configuration":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
+	python_compat(4,contextptr);
+	xcas_python_eval=1;
+	*logptr(contextptr) << "Micropython interpreter\n";
+	Console_FMenu_Init(contextptr);
+      }
+      else {
+	python_compat(1,contextptr);
+	// fake lexer required to initialize color syntax
+	gen g("abs",contextptr);
+	*logptr(contextptr) << "Xcas interpreter, Python compatible mode\n";
+      }
+#endif
+      Bdisp_AllClr_VRAM();
+#ifdef GIAC_SHOWTIME
+      Console_Output("Reglage de l'heure, exemple");
+      Console_NewLine(LINE_TYPE_OUTPUT, 1);          
+      Console_Output("12,37=>,");
+      Console_NewLine(LINE_TYPE_OUTPUT, 1);
+#endif
+      //menu_about();
+      return 0;
+    }
+    return 1;
+  }
+
+#else
 
   int restore_session(const char * fname,GIAC_CONTEXT){
     // cout << "0" << fname << endl; Console_Disp(1); GetKey(&key);
     string filename(fname); //filename="mandel.py.tns";
     if (filename.size()>4 && filename.substr(filename.size()-4,4)==".tns")
       filename=filename.substr(0,filename.size()-4);
-    if (filename.size()>3 && filename.substr(filename.size()-3,3)==".py")
-      return restore_script(filename,true,contextptr);
+    if (filename.size()>3 && filename.substr(filename.size()-3,3)==".py"){
+      if (filename.size()<5 || filename.substr(filename.size()-5,5)!="xw.py")
+	return restore_script(filename,true,contextptr);
+    }
     filename=remove_path(remove_extension(fname));
 #ifdef NSPIRE_NEWLIB
     if (file_exists((filename+".xw.tns").c_str())){
@@ -11163,7 +11240,7 @@ namespace xcas {
       filename += ".xw";
     }
     else {
-      if (file_exists((filename+".py").c_str()))
+      if ((filename.size()<2 || filename.substr(filename.size()-2,2)!="xw") && file_exists((filename+".py").c_str()))
 	return restore_script(filename,true,contextptr);
     }
 #endif
@@ -11227,6 +11304,7 @@ namespace xcas {
     }
     return 1;
   }
+#endif
 
   string extract_name(const char * s){
     int l=strlen(s),i,j;
@@ -11709,6 +11787,15 @@ namespace xcas {
 	      break;
 	    }
 	    if (smallmenu.selection==5) {
+#if SIMU
+	      // simulator debug load calc.nws into scriptstore
+	      void * ptr=ion_storage();
+	      FILE * f=fopen("calc.nws","r");
+	      if (f){
+		fread(ptr,1,32768,f);
+		fclose(f);
+	      }
+#endif
 	      if (exam_mode){
 		if (do_confirm((lang==1)?"Tout effacer?":"Really clear?")){
 		  Console_Init(contextptr);

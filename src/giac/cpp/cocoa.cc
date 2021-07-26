@@ -14575,7 +14575,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       m1=gcd(m,m1,&env);
       if (m1.size()>1){
 	if (debug_infolevel)
-	  CERR << "Adding sqrfree part " << m1 << " coordinate " << i << '\n';
+	  CERR << "Adding sqrfree part degree " << m1.size()-1 << " " << m1 << " coordinate " << i << '\n';
 	m1=operator_div(m,m1,&env); // m1 is the square free part
 	polymod<tdeg_t> m1mod(order,dim);
 	rur_convert_univariate(m1,i,m1mod);
@@ -14650,9 +14650,10 @@ void G_idn(vector<unsigned> & G,size_t s){
     env.moduloon=true;
     vecteur m1=derivative(m,&env);
     m1=gcd(m,m1,&env);
-    if (debug_infolevel && m1.size()>1)
-      CERR << CLOCK()*1e-6 << " sqrfree mod " << p << ":" << m1 << '\n';
+    bool sqf=m1.size()>1;
     m1=operator_div(m,m1,&env); // m1 is the square free part
+    if (debug_infolevel && sqf)
+      CERR << CLOCK()*1e-6 << " sqrfree mod " << p << " degree " << m1.size()-1 << " " << m1 << '\n';
     vecteur m2=derivative(m1,&env); // m2 is the derivative, prime with m1
     // multiply by m2 at the end
     if (debug_infolevel)
@@ -14881,7 +14882,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       if (locked) pthread_mutex_unlock(&rur_mutex);	
 #endif
       if (Rptr->threadno==0 && 
-	  debug_infolevel) *logptr(contextptr) << clock_realtime() << " rur_certify cheking equation "<< i << " degree " << deg << "\n";
+	  debug_infolevel) *logptr(contextptr) << clock_realtime() << " rur_certify checking equation "<< i << " degree " << deg << "\n";
       modpoly sum; gen sumden(1);
       for (int j=0;j<cur.coord.size();++j){
 	modpoly prod(1,1),tmp; gen prodden(1);
@@ -14943,6 +14944,11 @@ void G_idn(vector<unsigned> & G,size_t s){
     int dim=val.size()-gbshift-3;
     modpoly minp,dminp,rem,tmp; vector<modpoly> v(dim); gen minpden,dminpden; vecteur vden(dim);
     cpureal_t t1=clock_realtime();
+    size_t nm=0;
+    for (int i=0;i<syst.size();++i){
+      nm += syst[i].coord.size();
+    }
+    *logptr(contextptr) << clock_realtime() << " rur_certify monomials number " << nm << '\n';
     if (debug_infolevel) CERR << t1 << " rur_certify convert univariate\n";
     convert_univariate(val[gbshift+1],minp); lcmdeno(minp,minpden,context0);
     convert_univariate(val[gbshift+2],dminp); lcmdeno(dminp,dminpden,context0);
@@ -14954,7 +14960,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     int nthreads=threads_allowed?threads:1;
     if (nthreads>1){
       if (nthreads>rur_certify_maxthreads) nthreads=rur_certify_maxthreads; // don't use too much memory
-      *logptr(contextptr) << "rur_certify: multi-thread check, info displayed onmay miss some threads info. Threads in use: " << nthreads << "\n";
+      *logptr(contextptr) << "rur_certify: multi-thread check, info displayed on may miss some threads info. Threads in use: " << nthreads << "\n";
       pthread_t tab[64];
       vector< rur_certify_t<tdeg_t> > rur_certify_param; rur_certify_param.reserve(nthreads);
       for (int j=0;j<nthreads;++j){
@@ -14977,8 +14983,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  pthread_join(tab[j],&threadretval[j]);
 	ans=ans && rur_certify_param[j].ans;
       }
-      if (debug_infolevel)
-	*logptr(contextptr) << "end rur_certify, certification time " << clock_realtime()-t1 << "\n";
+      *logptr(contextptr) << "end rur_certify, certification time " << clock_realtime()-t1 << "\n";
       return ans;
     }
 #endif
@@ -15534,6 +15539,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	      mpz_clear(zur);
 	      mpz_clear(zr);
 	      mpz_clear(ztmp);
+	      *logptr(contextptr) << "#Primes " << count <<'\n';	    
 	      return 1;
 	    }	    
 	  }
@@ -15622,6 +15628,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 		  mpz_clear(zur);
 		  mpz_clear(zr);
 		  mpz_clear(ztmp);
+		  *logptr(contextptr) << "#Primes " << count <<'\n';	    
 		  return 1;
 		}
 	      } // end jpos==early.size()
@@ -15804,6 +15811,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  mpz_clear(zur);
 	  mpz_clear(zr);
 	  mpz_clear(ztmp);
+	  *logptr(contextptr) << "#Primes " << count <<'\n';	    
 	  return 1;
 	}
 	if (jpos<gbmod.size()){
@@ -15844,6 +15852,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    mpz_clear(zur);
 	    mpz_clear(zr);
 	    mpz_clear(ztmp);
+	    *logptr(contextptr) << "#Primes " << count <<'\n';	    
 	    return 1;
 	  }
 	  // first verify that the initial generators reduce to 0
@@ -17803,7 +17812,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 			 //order.o==_REVLEX_ORDER /* zdata*/,
 			 1 || !rur /* zdata*/,
 			 rur,contextptr,gbasis_param)){
-	    *logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 << " Memory " << memory_usage()*1e-6 << "M" << '\n';	    
+	    *logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 << " Memory " << memory_usage()*1e-6 << 'M'<<'\n';
 	    get_newres(res,newres,v);
 	    debug_infolevel=save_debuginfo; return true;
 	  }

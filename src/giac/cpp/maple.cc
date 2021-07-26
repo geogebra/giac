@@ -1473,6 +1473,10 @@ namespace giac {
   static define_unary_function_eval (__reverse_rsolve,&_reverse_rsolve,_reverse_rsolve_s);
   define_unary_function_ptr5( at_reverse_rsolve ,alias_at_reverse_rsolve,&__reverse_rsolve,0,true);
 
+  static const char _berlekamp_massey_s []="berlekamp_massey";
+  static define_unary_function_eval (__berlekamp_massey,&_reverse_rsolve,_berlekamp_massey_s);
+  define_unary_function_ptr5( at_berlekamp_massey ,alias_at_berlekamp_massey,&__berlekamp_massey,0,true);
+
   // Approx fft or exact if args=poly1,omega,n
   gen fft(const gen & g_orig,int direct,GIAC_CONTEXT){
     if (g_orig.type==_VECT && g_orig.subtype==_SEQ__VECT && g_orig._VECTptr->size()>=3 && g_orig._VECTptr->front().type==_VECT){

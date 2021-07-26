@@ -2265,9 +2265,11 @@ namespace giac {
 
   gen powneg2invpow(const gen & e,GIAC_CONTEXT){
     gen res=subst(e,pow_tab,powneg2invpow_tab,false,contextptr);
-    const vector< const unary_function_ptr *> exp_v(1,at_exp);
-    const vector< gen_op_context > expneg2invexp_v(1,expnegtoinvexp);
-    res=subst(res,exp_v,expneg2invexp_v,false,contextptr);
+    vector< const unary_function_ptr *> exp_v(1,at_exp);
+    // exp_v.push_back(at_pow);
+    vector< gen_op_context > expneg2invexp_v(1,expnegtoinvexp);
+    // expneg2invexp_v.push_back(pownegtoinvpow);
+    res=subst(res,exp_v,expneg2invexp_v,true,contextptr);
     return res;
   }
 
@@ -2362,11 +2364,11 @@ namespace giac {
 		e2=subst(e,var,(symb_pow(var,vexp._FRACptr->den)-b)/a,false,contextptr);
 	      e2=eval(e2,1,contextptr); // simplifies power if assumptions avail.
 	      gen e3=simplify(e2,contextptr);
-	      e2=subst(e3,var,vpow[i],false,contextptr);
 	      if (varval!=var)
 		sto(varval,var,contextptr);
 	      else
 		purgenoassume(var,contextptr);
+	      e2=subst(e3,var,vpow[i],false,contextptr);
 	      e2=recursive_ratnormal(e2,contextptr);
 	      return e2;
 	    }

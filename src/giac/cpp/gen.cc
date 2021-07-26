@@ -2354,8 +2354,10 @@ namespace giac {
   }
   // double(int) does not seem to work under GNUWINCE
   double int2double(int i){
-    if (i<0)
+    if (i<0){
+      if (i<-RAND_MAX) return -1.0-RAND_MAX;
       return -_int2double(-i);
+    }
     else
       return _int2double(i);
   }
@@ -8876,11 +8878,11 @@ namespace giac {
       if (is_positive(a._FRACptr->den,contextptr) && is_positive(b._FRACptr->den,contextptr))
 	return superieur_strict(a._FRACptr->num*b._FRACptr->den,a._FRACptr->den*b._FRACptr->num,contextptr);
       break;
-    case _FRAC__INT_:
+    case _FRAC__INT_: case _FRAC_ZINT:
       if (is_positive(a._FRACptr->den,contextptr))
 	return superieur_strict(a._FRACptr->num,a._FRACptr->den*b,contextptr);
       break;
-    case _INT___FRAC:
+    case _INT___FRAC: case _ZINT__FRAC:
       if (is_positive(b._FRACptr->den,contextptr))
 	return superieur_strict(b._FRACptr->den*a,b._FRACptr->num,contextptr);
       break;
@@ -14995,7 +14997,7 @@ void sprint_double(char * s,double d){
       }
     }
     int save_decimal_digits=decimal_digits(context0);
-    set_decimal_digits(std::ceil(precision*M_LN2/M_LN10),context0);
+    set_decimal_digits(giacmax(20,std::ceil(precision*M_LN2/M_LN10)),context0);
     gen tmp=re(evalf(g,1,context0),context0);
     set_decimal_digits(save_decimal_digits,context0);
     if (tmp.type!=_REAL){
@@ -16269,7 +16271,7 @@ void sprint_double(char * s,double d){
     context & C=*contextptr;
     if (!strcmp(s,"caseval contextptr"))
       return (const char *) contextptr;
-    history_plot(contextptr).clear();
+    // history_plot(contextptr).clear(); // must be commented otherwise matplotl fails
     if (!strcmp(s,"shell off")){
       os_shell=false;
       return "shell off";

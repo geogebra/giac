@@ -1544,7 +1544,6 @@ namespace giac {
 
   void mulmodpoly(const vector<modpoly *> & v,environment * env,modpoly & res,int dbg){
     int s=v.size();
-    if (dbg) CERR << CLOCK()*1e-6 << " mulmodpoly final degree " << s << "\n";
     if (s==0){
       res.clear();
       return;
@@ -1564,12 +1563,14 @@ namespace giac {
       mulmodpoly(tmp,*v[2],env,res);
       return;
     }
+    if (dbg) CERR << CLOCK()*1e-6 << " begin mulmodpoly final degree " << s << "\n";
     modpoly tmp1,tmp2;
     vector<modpoly *> v1(v.begin(),v.begin()+s/2);
     vector<modpoly *> v2(v.begin()+s/2,v.end());
     mulmodpoly(v1,env,tmp1,dbg);
     mulmodpoly(v2,env,tmp2,dbg);
     mulmodpoly(tmp1,tmp2,env,res);      
+    if (dbg) CERR << CLOCK()*1e-6 << " end mulmodpoly final degree " << s << "\n";
   }
 
   // return true if v empty

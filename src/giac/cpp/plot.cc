@@ -120,7 +120,9 @@ extern "C" {
 #endif
 #endif
 #ifndef HAVE_NO_SYS_RESOURCE_WAIT_H
+#ifndef __MINGW_H
 #include <sys/resource.h>
+#endif
 #include <sys/wait.h>
 #endif
 

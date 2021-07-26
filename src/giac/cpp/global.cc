@@ -159,7 +159,7 @@ extern "C" int KeyPressed( void );
 #endif
 
 #ifdef NUMWORKS
-size_t pythonjs_stack_size=30*1024,pythonjs_heap_size=40*1024,
+size_t pythonjs_stack_size=30*1024,pythonjs_heap_size=40*1024;
 #else
   size_t pythonjs_stack_size=128*1024,pythonjs_heap_size=(2*1024-256)*1024;
 #endif
@@ -201,9 +201,600 @@ const char * console_prompt(const char * s){
   return S.c_str();
 }
 
+#ifdef HAVE_LIBDFU
+extern "C" { 
+#include "dfu_lib.h"
+}
+#endif
+
+// Numworks calculator
+int dfu_exec(const char * s_){
+  CERR << s_ << "\n";
+#if 0 // def HAVE_LIBDFU
+  std::istringstream ss(s_);
+  std::string arg;
+  std::vector<std::string> ls;
+  std::vector<char*> v;
+  while (ss >> arg)
+    {
+      ls.push_back(arg); 
+      v.push_back(const_cast<char*>(ls.back().c_str()));
+    }
+  v.push_back(0);  // need terminating null pointer
+  int res=dfu_main(v.size()-1,&v[0]);
+  return res;
+#else
+#ifdef WIN32 
+  string s(s_);
+#ifdef __MINGW_H
+  if (giac::is_file_available("c:\\xcaswin\\dfu-util.exe"))
+    s="c:\\xcaswin\\"+s;
+  // otherwise dfu-util should be in the path
+#else
+  s="./"+s;
+#endif
+  return system(s.c_str());
+#else // WIN32
+#ifdef __APPLE__
+  string s(s_);
+  s="/Applications/usr/bin/"+s;
+  return system(s.c_str());
+#else
+  return system(s_);
+#endif
+#endif // WIN32
+#endif 
+}
+
+bool dfu_get_scriptstore_addr(size_t & start,size_t & taille){
+  unlink("__platf");
+  if (dfu_exec("dfu-util -i0 -a0 -s 0x080001c4:0x20 -U __platf"))
+    return false;
+  FILE * f=fopen("__platf","r");
+  if (!f){ return false; }
+  unsigned char r[32];
+  int i=fread(r,1,32,f);
+  start=((r[23]*256U+r[22])*256+r[21])*256+r[20];
+  taille=((r[27]*256U+r[26])*256+r[25])*256+r[24];
+  // taille=(taille/32768)*32768; // do not care of end of scriptstore
+  fclose(f);
+  return i==32;
+}
+
+bool dfu_get_scriptstore(const char * fname){
+  unlink(fname);
+  size_t start,taille;
+  if (!dfu_get_scriptstore_addr(start,taille)) return false;
+  string s="dfu-util -U "+string(fname)+" -i0 -a0 -s "+ giac::print_INT_(start)+":"+giac::print_INT_(taille)+":force";
+  return !dfu_exec(s.c_str());
+}
+
+bool dfu_send_scriptstore(const char * fname){
+  size_t start,taille;
+  if (!dfu_get_scriptstore_addr(start,taille)) return false;
+  string s="dfu-util -D "+string(fname)+" -i0 -a0 -s "+ giac::print_INT_(start)+":"+giac::print_INT_(taille)+":force";
+  return !dfu_exec(s.c_str());
+} 
+
+bool dfu_send_firmware(const char * fname){
+  string s=string("dfu-util -i0 -a0 -D ")+ fname;
+  return !dfu_exec(s.c_str());
+}
+
+bool dfu_send_apps(const char * fname){
+  string s=string("dfu-util -i 0 -a 0 -s 0x90200000 -D ")+ fname;
+  return !dfu_exec(s.c_str());
+}
+
+bool dfu_get_epsilon_internal(const char * fname){
+  unlink(fname);
+  string s=string("dfu-util -i 0 -a 0 -s 0x08000000:0x8000 -U ")+ fname;
+  return !dfu_exec(s.c_str());
+}
+
+bool dfu_get_epsilon(const char * fname){
+  unlink(fname);
+  string s=string("dfu-util -i 0 -a 0 -s 0x90000000:0x100000 -U ")+ fname;
+  return !dfu_exec(s.c_str());
+}
+
+// check that we can really read/write on the Numworks at 0x90100000
+// and get the same
+bool dfu_check_epsilon2(const char * fname){
+  FILE * f=fopen(fname,"w");
+  int n=0x100000;
+  char * ptr=(char *) malloc(n);
+  srand(time(NULL));
+  int i;
+  for (i=0;i<n;++i){
+    int j=(rand()/(1.0+RAND_MAX))*n;
+    ptr[j]=rand();
+  }
+  for (i=0;i<n;++i){
+    fputc(ptr[i],f);
+  }
+  fclose(f);
+  // write to the device something that can not be guessed 
+  // without really storing to flash
+  string s=string("dfu-util -i 0 -a 0 -s 0x90100000:0x100000 -D ")+ fname;
+  if (dfu_exec(s.c_str()))
+    return false;
+  // retrieve it and compare
+  unlink(fname);
+  s=string("dfu-util -i 0 -a 0 -s 0x90100000:0x100000 -U ")+ fname;
+  if (dfu_exec(s.c_str()))
+    return false;
+  f=fopen(fname,"r");
+  for (i=0;i<n;++i){
+    char ch=fgetc(f);
+    if (ch!=ptr[i])
+      break;
+  }
+  fclose(f);
+  return i==n;
+}
+
+bool dfu_get_apps(const char * fname){
+  unlink(fname);
+  string s=string("dfu-util -i 0 -a 0 -s 0x90200000:0x600000 -U ")+ fname;
+  return !dfu_exec(s.c_str());
+}
+
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
+
+  bool scriptstore2map(const char * fname,nws_map & m){
+    FILE * f=fopen(fname,"r");
+    if (!f)
+      return false;
+    unsigned char buf[nwstoresize1];
+    fread(buf,1,nwstoresize1,f);
+    fclose(f);
+    unsigned char * ptr=buf;
+    // Numworks script store archive
+    // record format: length on 2 bytes
+    // if not zero length
+    // record name 
+    // 00
+    // type 
+    // record data
+    int pos=4; ptr+=4;
+    for (;pos<nwstoresize1;){
+      size_t L=ptr[1]*256+ptr[0]; 
+      ptr+=2; pos+=2;
+      if (L==0) break;
+      L-=2;
+      char buf_[L+1];
+      memcpy(buf_,(const char *)ptr,L); ptr+=L; pos+=L;
+      string name(buf_);
+      const char * buf_mode=buf_+name.size()+2;
+      nwsrec r;
+      r.type=buf_mode[-1];
+      r.data.resize(L-name.size()-3);
+      memcpy(&r.data[0],buf_mode,r.data.size());
+      m[name]=r;
+    }
+    if (pos>=nwstoresize1)
+      return false;
+    return true;
+  }
+
+  bool map2scriptstore(const nws_map & m,const char * fname){
+    unsigned char buf[nwstoresize1];
+    for (int i=0;i<nwstoresize1;++i)
+      buf[i]=0;
+    unsigned char * ptr=buf;
+    *(unsigned *) ptr= 0xee0bddba;
+    ptr += 4;
+    nws_map::const_iterator it=m.begin(),itend=m.end();
+    int total=0;
+    for (;it!=itend;++it){
+      const string & s=it->first;
+      unsigned l1=s.size();
+      unsigned l2=it->second.data.size();
+      short unsigned L=2+l1+1+1+l2+1;
+      total += L;
+      if (total>=nwstoresize1)
+	return false;
+      *ptr=L % 256; ++ptr; *ptr=L/256; ++ptr;
+      memcpy(ptr,s.c_str(),l1+1); ptr += l1+1;
+      *ptr=it->second.type; ++ptr;
+      memcpy(ptr,&it->second.data[0],l2); ptr+=l2;
+      *ptr=0; ++ptr; 
+    }
+    FILE * f=fopen(fname,"w");
+    if (!f)
+      return false;
+    fwrite(buf,1,nwstoresize1,f);
+    fclose(f);
+    return true;
+  }
+
+  const unsigned char rsa_n_tab[]=
+    {
+      0xf2,0x0e,0xd4,0x9d,0x44,0x04,0xc4,0xc8,0x6a,0x5b,0xc6,0x9a,0xd6,0xdf,
+      0x9c,0xf5,0x56,0xf2,0x0d,0xad,0x6c,0x34,0xb4,0x48,0xf7,0xa7,0xa8,0x27,0xa0,
+      0xc8,0xbe,0x36,0xb1,0xc0,0x95,0xf8,0xc2,0x72,0xfb,0x78,0x0f,0x3f,0x15,0x22,
+      0xaf,0x51,0x96,0xe3,0xdc,0x39,0xb4,0xc6,0x40,0x6d,0x58,0x56,0x1f,0xad,0x55,
+      0x55,0x08,0xf1,0xde,0x5a,0xbc,0xd3,0xcc,0x16,0x3d,0x33,0xee,0x83,0x3f,0x32,
+      0xa7,0xa7,0xb8,0x95,0x2f,0x35,0xeb,0xf6,0x32,0x4d,0x22,0xd9,0x60,0xb7,0x5e,
+      0xbd,0xea,0xa5,0xcb,0x9c,0x69,0xeb,0xfd,0x9f,0x2b,0x5f,0x3d,0x38,0x5a,0xe1,
+      0x2b,0x63,0xf8,0x92,0x35,0x91,0xea,0x77,0x07,0xcc,0x4b,0x7a,0xbc,0xe0,0xa0,
+      0x8b,0x82,0x98,0xa2,0x87,0x10,0x2c,0xe2,0x23,0x53,0x2f,0x70,0x03,0xec,0x2d,
+      0x22,0x34,0x72,0x57,0x4d,0x24,0x2e,0x97,0xc9,0xfb,0x23,0xb0,0x05,0xff,0x87,
+      0x6e,0xbf,0x94,0x2d,0xf0,0x36,0xed,0xd7,0x9a,0xac,0x0c,0x21,0x94,0xa2,0x75,
+      0xfc,0x39,0x9b,0xba,0xf2,0xc6,0xc9,0x34,0xa0,0xb2,0x66,0x5a,0xcc,0xc9,0x5c,
+      0xc7,0xdb,0xce,0xfb,0x3a,0x10,0xee,0xc1,0x82,0x9a,0x43,0xef,0xed,0x87,0xbd,
+      0x6c,0xe4,0xc1,0x36,0xd0,0x0a,0x85,0x6e,0xca,0xcd,0x13,0x29,0x65,0xb5,0xd4,
+      0x13,0x4a,0x14,0xaa,0x65,0xac,0x0e,0x6f,0x19,0xb0,0x62,0x47,0x65,0x0e,0x40,
+      0x82,0x37,0xd6,0xf0,0x17,0x48,0xaa,0x8c,0x7b,0xc4,0x5e,0x4a,0x72,0x26,0xa6,
+      0x08,0x2e,0xff,0x2d,0x9d,0x0e,0x2e,0x19,0xe9,0x6a,0x4c,0x7c,0x3e,0xe9,0xbc,
+      0x78,0x95
+    };
+
+  gen tabunsignedchar2gen(const unsigned char tab[],int len){
+    gen res=0;
+    for (int i=0;i<len;++i){
+      res=256*res;
+      res+=tab[i];
+    }
+    return res;
+  }
+
+  /*********************************************************************
+   * Filename:   sha256.c/.h
+   * Author:     Brad Conte (brad AT bradconte.com)
+   * Copyright:
+   * Disclaimer: This code is presented "as is" without any guarantees.
+   * Details:    Implementation of the SHA-256 hashing algorithm.
+              SHA-256 is one of the three algorithms in the SHA2
+              specification. The others, SHA-384 and SHA-512, are not
+              offered in this implementation.
+              Algorithm specification can be found here:
+	      * http://csrc.nist.gov/publications/fips/fips180-2/fips180-2withchangenotice.pdf
+              This implementation uses little endian byte order.
+  *********************************************************************/
+#define SHA256_BLOCK_SIZE 32            // SHA256 outputs a 32 byte digest
+  
+  /**************************** DATA TYPES ****************************/
+  typedef unsigned char BYTE;             // 8-bit byte
+  typedef unsigned int  WORD;             // 32-bit word, change to "long" for 16-bit machines
+  
+  typedef struct {
+    BYTE data[64];
+    WORD datalen;
+    unsigned long long bitlen;
+    WORD state[8];
+  } SHA256_CTX;
+  
+  
+  /****************************** MACROS ******************************/
+#define ROTLEFT(a,b) (((a) << (b)) | ((a) >> (32-(b))))
+#define ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
+
+#define CH(x,y,z) (((x) & (y)) ^ (~(x) & (z)))
+#define MAJ(x,y,z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
+#define EP0(x) (ROTRIGHT(x,2) ^ ROTRIGHT(x,13) ^ ROTRIGHT(x,22))
+#define EP1(x) (ROTRIGHT(x,6) ^ ROTRIGHT(x,11) ^ ROTRIGHT(x,25))
+#define SIG0(x) (ROTRIGHT(x,7) ^ ROTRIGHT(x,18) ^ ((x) >> 3))
+#define SIG1(x) (ROTRIGHT(x,17) ^ ROTRIGHT(x,19) ^ ((x) >> 10))
+
+  /**************************** VARIABLES *****************************/
+  static const WORD k[64] = {
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+  };
+
+  /*********************** FUNCTION DEFINITIONS ***********************/
+  void giac_sha256_transform(SHA256_CTX *ctx, const BYTE data[])
+  {
+    WORD a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
+
+    for (i = 0, j = 0; i < 16; ++i, j += 4)
+      m[i] = (data[j] << 24) | (data[j + 1] << 16) | (data[j + 2] << 8) | (data[j + 3]);
+    for ( ; i < 64; ++i)
+      m[i] = SIG1(m[i - 2]) + m[i - 7] + SIG0(m[i - 15]) + m[i - 16];
+
+    a = ctx->state[0];
+    b = ctx->state[1];
+    c = ctx->state[2];
+    d = ctx->state[3];
+    e = ctx->state[4];
+    f = ctx->state[5];
+    g = ctx->state[6];
+    h = ctx->state[7];
+
+    for (i = 0; i < 64; ++i) {
+      t1 = h + EP1(e) + CH(e,f,g) + k[i] + m[i];
+      t2 = EP0(a) + MAJ(a,b,c);
+      h = g;
+      g = f;
+      f = e;
+      e = d + t1;
+      d = c;
+      c = b;
+      b = a;
+      a = t1 + t2;
+    }
+
+    ctx->state[0] += a;
+    ctx->state[1] += b;
+    ctx->state[2] += c;
+    ctx->state[3] += d;
+    ctx->state[4] += e;
+    ctx->state[5] += f;
+    ctx->state[6] += g;
+    ctx->state[7] += h;
+  }
+
+  void giac_sha256_init(SHA256_CTX *ctx)
+  {
+    ctx->datalen = 0;
+    ctx->bitlen = 0;
+    ctx->state[0] = 0x6a09e667;
+    ctx->state[1] = 0xbb67ae85;
+    ctx->state[2] = 0x3c6ef372;
+    ctx->state[3] = 0xa54ff53a;
+    ctx->state[4] = 0x510e527f;
+    ctx->state[5] = 0x9b05688c;
+    ctx->state[6] = 0x1f83d9ab;
+    ctx->state[7] = 0x5be0cd19;
+  }
+
+  void giac_sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len)
+  {
+    WORD i;
+
+    for (i = 0; i < len; ++i) {
+      ctx->data[ctx->datalen] = data[i];
+      ctx->datalen++;
+      if (ctx->datalen == 64) {
+	giac_sha256_transform(ctx, ctx->data);
+	ctx->bitlen += 512;
+	ctx->datalen = 0;
+      }
+    }
+  }
+
+  void giac_sha256_final(SHA256_CTX *ctx, BYTE hash[])
+  {
+    WORD i;
+
+    i = ctx->datalen;
+
+    // Pad whatever data is left in the buffer.
+    if (ctx->datalen < 56) {
+      ctx->data[i++] = 0x80;
+      while (i < 56)
+	ctx->data[i++] = 0x00;
+    }
+    else {
+      ctx->data[i++] = 0x80;
+      while (i < 64)
+	ctx->data[i++] = 0x00;
+      giac_sha256_transform(ctx, ctx->data);
+      memset(ctx->data, 0, 56);
+    }
+
+    // Append to the padding the total message's length in bits and transform.
+    ctx->bitlen += ctx->datalen * 8;
+    ctx->data[63] = ctx->bitlen;
+    ctx->data[62] = ctx->bitlen >> 8;
+    ctx->data[61] = ctx->bitlen >> 16;
+    ctx->data[60] = ctx->bitlen >> 24;
+    ctx->data[59] = ctx->bitlen >> 32;
+    ctx->data[58] = ctx->bitlen >> 40;
+    ctx->data[57] = ctx->bitlen >> 48;
+    ctx->data[56] = ctx->bitlen >> 56;
+    giac_sha256_transform(ctx, ctx->data);
+
+    // Since this implementation uses little endian byte ordering and SHA uses big endian,
+    // reverse all the bytes when copying the final state to the output hash.
+    for (i = 0; i < 4; ++i) {
+      hash[i]      = (ctx->state[0] >> (24 - i * 8)) & 0x000000ff;
+      hash[i + 4]  = (ctx->state[1] >> (24 - i * 8)) & 0x000000ff;
+      hash[i + 8]  = (ctx->state[2] >> (24 - i * 8)) & 0x000000ff;
+      hash[i + 12] = (ctx->state[3] >> (24 - i * 8)) & 0x000000ff;
+      hash[i + 16] = (ctx->state[4] >> (24 - i * 8)) & 0x000000ff;
+      hash[i + 20] = (ctx->state[5] >> (24 - i * 8)) & 0x000000ff;
+      hash[i + 24] = (ctx->state[6] >> (24 - i * 8)) & 0x000000ff;
+      hash[i + 28] = (ctx->state[7] >> (24 - i * 8)) & 0x000000ff;
+    }
+  }
+  /* END OF SHA256 */
+
+  int rsa_check(const char * sigfilename,int maxkeys,BYTE hash[][SHA256_BLOCK_SIZE],int * tailles){
+    gen rsa_n(tabunsignedchar2gen(rsa_n_tab,sizeof(rsa_n_tab)));
+    gen N=pow(gen(2),768),q;
+    // read by blocks of 2048 bits=256 bytes
+    FILE * f=fopen(sigfilename,"r");
+    if (!f)
+      return 0;
+    char firmwarename[256];
+    int i=0;
+    for (;i<maxkeys;++i){
+      gen key=0;
+      // skip firmware filename and size
+      fscanf(f,"%i %s",&tailles[i],firmwarename);
+      // skip 0x prefix
+      for (;;){
+	unsigned char c=fgetc(f);
+	if (feof(f))
+	  break;
+	if (c=='\n' || c==' ' || c=='0')
+	  continue;
+	if (c=='x')
+	  break;
+	// invalid char
+	return 0;
+      }
+      if (feof(f)){
+	fclose(f);
+	return i;
+      }
+      for (int j=0;j<256;++j){
+	key = 256*key;
+	unsigned char c=fgetc(f);
+	if (feof(f)){
+	  fclose(f);
+	  if (j!=0){ return 0; }
+	  return i;
+	}
+	if (c==' ' || c=='\n')
+	  break;
+	if (c>='0' && c<='9')
+	  c=c-'0';
+	else {
+	  if (c>='a' && c<='f')
+	    c=10+c-'a';
+	  else {
+	    fclose(f);
+	    return 0;
+	  }
+	}
+	unsigned char d=fgetc(f);
+	if (feof(f)){
+	  fclose(f);
+	  return 0;
+	}
+	if (d==' ' || d=='\n'){
+	  key = key/16+int(c);
+	  break;
+	}
+	if (d>='0' && d<='9')
+	  d=d-'0';
+	else {
+	  if (d>='a' && d<='f')
+	    d=10+d-'a';
+	  else {
+	    fclose(f);
+	    return 0;
+	  }
+	}
+	key += int(c)*16+int(d);
+      }
+      // public key decrypt and keep only 768 low bits
+      key=powmod(key,65537,rsa_n);
+      key=irem(key,N,q); 
+      if (q!=12345){
+	fclose(f);
+	return 0;
+      }
+      // check that key is valid and write in hash[i]
+      for (int j=0;j<32;++j){
+	// divide 3 times by 256, remainder must be in '0'..'9'
+	int o=0;
+	int tab[]={1,10,100};
+	for (int k=0;k<3;++k){
+	  gen r=irem(key,256,q);
+	  key=q;
+	  if (r.type!=_INT_ || r.val>'9' || r.val<'0'){
+	    fclose(f);
+	    return 0;
+	  }
+	  o+=(r.val-'0')*tab[k];
+	}
+	if (o<0 || o>255){
+	  fclose(f);
+	  return 0;
+	}
+	if (i<maxkeys)
+	  hash[i][31-j]=o;
+      }
+    }
+    fclose(f);
+    return i;
+  }
+
+  const int MAXKEYS=64;
+  // Numworks firmwares signature file is in doc/shakeys
+  bool sha256_check(const char * sigfilename,const char * filename){
+    BYTE hash[MAXKEYS][SHA256_BLOCK_SIZE];
+    int tailles[MAXKEYS];
+    int nkeys=rsa_check(sigfilename,MAXKEYS,hash,tailles);
+    if (nkeys==0) return false;
+    BYTE buf[SHA256_BLOCK_SIZE];
+    SHA256_CTX ctx;
+    string text;
+    FILE * f=fopen(filename,"r");
+    if (!f)
+      return false;
+    int taille=0;
+    for (;;++taille){
+      unsigned char c=fgetc(f);
+      if (feof(f))
+	break;
+      text += c;
+    }
+    fclose(f);
+    unsigned char * ptr=(unsigned char *)text.c_str();
+    for (int i=0;i<nkeys;++i){
+      if (taille<tailles[i])
+	continue;
+      // now try for all compatible sizes
+      // we do not know the firmware size, we extract 2M or 6M
+      // the part after the end is not known
+      giac_sha256_init(&ctx);
+      giac_sha256_update(&ctx, ptr, tailles[i]);
+      giac_sha256_final(&ctx, buf);
+      if (!memcmp(hash[i], buf, SHA256_BLOCK_SIZE))
+	return true;
+    }
+    return false;
+  }
+  
+  bool nws_certify_firmware(bool withoverwrite,GIAC_CONTEXT){
+    string sig(giac::giac_aide_dir()+"shakeys");
+    if (!is_file_available(sig.c_str())){
+#ifdef __APPLE__
+      sig="/Applications/usr/share/giac/doc/shakeys";
+#else
+#ifdef WIN32
+#ifdef __MINGW_H
+      sig="c:\\xcaswin\\doc\\shakeys";
+#else
+      sig="/cygwin/c/xcas64/shakeys";
+#endif
+#else // WIN32
+      sig="/usr/share/giac/doc/shakeys";
+#endif // WIN32
+#endif // APPLE
+      if (!is_file_available(sig.c_str())){
+	sig="shakeys";
+	if (!is_file_available(sig.c_str())){
+	  *logptr(contextptr) << "Fichier de signature introuvable\n" ;
+	  return false;
+	}
+      }
+    }
+    char epsilon[]="epsilon__",apps[]="apps__";
+    *logptr(contextptr) << "Extraction du firmware interne epsilon\n" ;
+    if (!dfu_get_epsilon_internal(epsilon)) return false;
+    *logptr(contextptr) << "Verification de signature interne epsilon\n" ;
+    if (!sha256_check(sig.c_str(),epsilon)) return false;
+    *logptr(contextptr) << "Extraction du firmware externe epsilon\n" ;
+    if (!dfu_get_epsilon(epsilon)) return false;
+    *logptr(contextptr) << "Verification de signature externe epsilon\n" ;
+    if (!sha256_check(sig.c_str(),epsilon)) return false;
+    *logptr(contextptr) << "Signature firmware conforme\nExtraction des applications\n" ;
+    if (!dfu_get_apps(apps)) return false;
+    *logptr(contextptr) << "Verification de signature epsilon\n" ;
+    if (!sha256_check(sig.c_str(),epsilon)) return false;
+    const char eps2name[]="eps2__";
+    if (withoverwrite && !dfu_check_epsilon2(eps2name)){
+      *logptr(contextptr) << "Le test d'ecriture et relecture a echoue. Le firwmare n'est peut-etre pas conforme.\n";
+      return false;
+    }
+    *logptr(contextptr) << "Signature applications conforme\nCalculatrice conforme à la reglementation\nCertification par le logiciel Xcas\nInstitut Fourier\nUniversité de Grenoble\nAssurez-vous d'avoir téléchargé Xcas sur\nwww-fourier.ujf-grenoble.fr/~parisse/install_fr.html\n" ;
+    return true;
+  }
 
   const context * python_contextptr=0;
 
@@ -1963,7 +2554,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int gbasis_logz_age_sort=0,gbasis_stop=0;
   // rur_do_gbasis==-1 no gbasis Q recon for rur, ==0 always gbasis Q recon, >0 size limit in monomials of the gbasis for gbasis Q recon
   // rur_do_certify==-1 do not certify, ==0 full certify, >0 certify equation if total degree is <= rur_do_certify. Beware of the 1 shift with the user command.
-  int rur_do_gbasis=0,rur_do_certify=12,rur_certify_maxthreads=6;
+  int rur_do_gbasis=-1,rur_do_certify=0,rur_certify_maxthreads=6;
   unsigned short int GIAC_PADIC=50;
   const char cas_suffixe[]=".cas";
   int MAX_PROD_EXPAND_SIZE=4096;
