@@ -1554,8 +1554,8 @@ namespace giac {
 	double x=t.x,y=t.y;
 	double cost=std::cos(t.theta*deg2rad_d);
 	double sint=std::sin(t.theta*deg2rad_d);
-	double Dx=t.turtle_length*cost/2;
-	double Dy=t.turtle_length*sint/2;
+	double Dx=turtle_length*cost/2;
+	double Dy=turtle_length*sint/2;
 	string col(flcolor2pstrickscolor(prec.color));
 	fprintf(file,"\\psset{linecolor=%s}\n", col.c_str());
 	if (t.visible){

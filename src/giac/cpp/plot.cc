@@ -14108,7 +14108,7 @@ gen _vers(const gen & g,GIAC_CONTEXT){
       i=i >> 1;
       t.direct = (i%2)!=0;
       i=i >> 1;
-      t.turtle_length = i & 0xff;
+      t.turtle_width = i & 0xff;
       i=i >> 8;
       t.color = i;
       t.radius = v[4].val;
@@ -14125,7 +14125,7 @@ gen _vers(const gen & g,GIAC_CONTEXT){
   }
 
   static int turtle_status(const logo_turtle & turtle){
-    int status= (turtle.color << 11) | ( (turtle.turtle_length & 0xff) << 3) ;
+    int status= (turtle.color << 11) | ( (turtle.turtle_width & 0xff) << 3) ;
     if (turtle.direct)
       status += 4;
     if (turtle.visible)
@@ -14205,7 +14205,7 @@ gen _vers(const gen & g,GIAC_CONTEXT){
     double i;
     if (g.type!=_INT_){
       if (g.type==_VECT)
-	i=turtle(contextptr).turtle_length;
+	i=turtle_length;
       else {
 	gen g1=evalf_double(g,1,contextptr);
 	if (g1.type==_DOUBLE_)
@@ -14233,7 +14233,7 @@ gen _vers(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     // logo instruction
     if (g.type==_VECT)
-      return _avance(-turtle(contextptr).turtle_length,contextptr);
+      return _avance(-turtle_length,contextptr);
     return _avance(-g,contextptr);
   }
   static const char _recule_s []="recule";
@@ -14538,7 +14538,10 @@ gen _vers(const gen & g,GIAC_CONTEXT){
       res.subtype=_INT_COLOR;
       return res;
     }
-    turtle(contextptr).color=g.val;
+    if (g.val<0)
+      turtle(contextptr).turtle_width=-g.val;
+    else
+      turtle(contextptr).color=g.val;
     turtle(contextptr).radius = 0;
     return update_turtle_state(true,contextptr);
   }

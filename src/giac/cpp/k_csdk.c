@@ -263,7 +263,7 @@ Gc * get_gc(){
 void os_set_pixel(int x,int y,int c){
   get_gc();
   gui_gc_setColor(nspire_gc,c_rgb565to888(c));
-  gui_gc_drawRect(nspire_gc,x,y+nspire_statusarea,1,1);
+  gui_gc_drawRect(nspire_gc,x,y+nspire_statusarea,0,0);
 }
 
 void os_fill_rect(int x,int y,int w,int h,int c){

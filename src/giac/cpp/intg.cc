@@ -3766,6 +3766,36 @@ namespace giac {
     return res;
   }
 
+  gen abs2piecewise(const gen & x,GIAC_CONTEXT){
+    return symbolic(at_piecewise,makesequence(symbolic(at_inferieur_strict,x,0),-x,x));
+  }
+
+  gen min2piecewise(const gen & g,GIAC_CONTEXT){
+    if (g.type!=_VECT || g._VECTptr->size()!=2)
+      return symbolic(at_min,g);
+    gen a=g._VECTptr->front(),b=g._VECTptr->back();
+    return symbolic(at_piecewise,makesequence(symbolic(at_inferieur_strict,a,b),a,b));
+  }
+
+  gen max2piecewise(const gen & g,GIAC_CONTEXT){
+    if (g.type!=_VECT || g._VECTptr->size()!=2)
+      return symbolic(at_min,g);
+    gen a=g._VECTptr->front(),b=g._VECTptr->back();
+    return symbolic(at_piecewise,makesequence(symbolic(at_inferieur_strict,a,b),b,a));
+  }
+
+  gen whenmaxmin2piecewise(const gen & g,GIAC_CONTEXT){
+    vector<const unary_function_ptr *> vu;
+    vu.push_back(at_min); 
+    vu.push_back(at_max); 
+    vector <gen_op_context> vv;
+    vv.push_back(min2piecewise);
+    vv.push_back(max2piecewise);
+    gen r=subst(g,vu,vv,quotesubst,contextptr);
+    r=when2piecewise(r,contextptr);
+    return r;
+  }
+
   gen _integrate_(const gen &args,GIAC_CONTEXT){
 #ifdef LOGINT
     *logptr(contextptr) << gettext("integrate begin") << '\n';
@@ -4035,7 +4065,7 @@ namespace giac {
 	  return ck_int_numerically(v0orig,x,aorig,borig,res,contextptr);
 	}
       }
-      v[0]=when2piecewise(v[0],contextptr);
+      v[0]=whenmaxmin2piecewise(v[0],contextptr);
       vecteur lpiece(lop(v[0],at_piecewise));
       lpiece=lvarx(lpiece,x);
       if (!lpiece.empty()){

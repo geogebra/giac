@@ -161,7 +161,7 @@ extern "C" int KeyPressed( void );
 #ifdef NUMWORKS
 size_t pythonjs_stack_size=30*1024,pythonjs_heap_size=40*1024;
 #else
-  size_t pythonjs_stack_size=128*1024,pythonjs_heap_size=(2*1024-256)*1024;
+  size_t pythonjs_stack_size=128*1024,pythonjs_heap_size=(2*1024-256-64)*1024;
 #endif
 void * bf_ctx_ptr=0;
 size_t bf_global_prec=128; // global precision for BF
@@ -275,6 +275,11 @@ bool dfu_send_scriptstore(const char * fname){
   string s="dfu-util -D "+string(fname)+" -i0 -a0 -s "+ giac::print_INT_(start)+":"+giac::print_INT_(taille)+":force";
   return !dfu_exec(s.c_str());
 } 
+
+bool dfu_send_rescue(const char * fname){
+  string s=string("dfu-util -i0 -a0 -s 0x20030000:force:leave -D ")+ fname;
+  return !dfu_exec(s.c_str());
+}
 
 bool dfu_send_firmware(const char * fname){
   string s=string("dfu-util -i0 -a0 -D ")+ fname;
@@ -1723,8 +1728,12 @@ extern "C" void Sleep(unsigned int miliSecond);
 
   void angle_mode(int b, GIAC_CONTEXT)
   {
-    if(contextptr && contextptr->globalptr)
+    if(contextptr && contextptr->globalptr){
+#ifdef POCKETCAS
+      _angle_mode_ = b;
+#endif
       contextptr->globalptr->_angle_mode_ = b;
+    }
     else
       _angle_mode_ = b;
   }

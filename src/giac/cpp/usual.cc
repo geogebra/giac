@@ -5450,6 +5450,8 @@ namespace giac {
 	return symb_equal(f._VECTptr->front(),eval_except_equal(f._VECTptr->back(),contextptr));
     }
     if (b.type==_VECT){
+      if (b.subtype==_INTERVAL__VECT)
+	return eval(b,1,contextptr);
       vecteur v=*b._VECTptr;
       for (int i=0;i<int(v.size());++i)
 	v[i]=eval_except_equal(v[i],contextptr);

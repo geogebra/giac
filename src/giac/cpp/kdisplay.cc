@@ -1867,7 +1867,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	else {
 	  int cat=completeCat[cur].category;
 	  if (
-	      (xcas_python_eval>0 || !(cat & XCAS_ONLY) ) &&
+	      (xcas_python_eval==0 || !(cat & XCAS_ONLY) ) &&
 	      ((cat & 0xff) == category ||
 	       (cat & 0xff00) == (category<<8) ||
 	       (cat & 0xff0000) == (category <<16) )
@@ -2461,9 +2461,9 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   }
 
 #ifdef NSPIRE_NEWLIB
-  const int MAX_LOGO=2048; 
+  const int MAX_LOGO=4096; 
 #else
-  const int MAX_LOGO=368; // 512;
+  const int MAX_LOGO=368; // 512?
 #endif
 
   std::vector<logo_turtle> & turtle_stack(){
@@ -2490,7 +2490,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       i=i >> 1;
       t.direct = (i%2)!=0;
       i=i >> 1;
-      t.turtle_length = i & 0xff;
+      t.turtle_width = i & 0xff;
       i=i >> 8;
       t.color = i;
       t.radius = v[4].val;
@@ -2507,7 +2507,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   }
 
   static int turtle_status(const logo_turtle & turtle){
-    int status= (turtle.color << 11) | ( (turtle.turtle_length & 0xff) << 3) ;
+    int status= (turtle.color << 11) | ( (turtle.turtle_width & 0xff) << 3) ;
     if (turtle.direct)
       status += 4;
     if (turtle.visible)
@@ -2596,7 +2596,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     double i;
     if (g.type!=_INT_){
       if (g.type==_VECT)
-	i=(*turtleptr).turtle_length;
+	i=turtle_length;
       else {
 	gen g1=evalf_double(g,1,contextptr);
 	if (g1.type==_DOUBLE_)
@@ -2624,7 +2624,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     // logo instruction
     if (g.type==_VECT)
-      return _avance(-(*turtleptr).turtle_length,contextptr);
+      return _avance(-turtle_length,contextptr);
     return _avance(-g,contextptr);
   }
   static const char _recule_s []="recule";
@@ -2888,7 +2888,10 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       res.subtype=_INT_COLOR;
       return res;
     }
-    (*turtleptr).color=g.val;
+    if (g.val<0)
+      (*turtleptr).turtle_width=-g.val;
+    else
+      (*turtleptr).color=g.val;
     (*turtleptr).radius = 0;
     return update_turtle_state(true,contextptr);
   }
@@ -4966,14 +4969,28 @@ namespace xcas {
     os_set_pixel(i0+delta_i,j0+delta_j,c);
   }
 
-  inline void fl_line(int x0,int y0,int x1,int y1,int c){
-    draw_line(x0,y0,x1,y1,c);
+  static unsigned short int fl_line_width=1;
+  void fl_line(int x0,int y0,int x1,int y1,int c){
+    if (fl_line_width==0)
+      return;
+    if (fl_line_width==1){
+      draw_line(x0,y0,x1,y1,c);
+      return;
+    }
+    double dx=x1-x0,dy=y1-y0;
+    double n=sqrt(dx*dx+dy*dy);
+    dx/=n; dy/=n;
+    for (int d=-fl_line_width/2;d<=(fl_line_width+1)/2;++d){
+      draw_line(x0-d*dy,y0+d*dx,x1-d*dy,y1+d*dx,c);
+    }
+    draw_filled_circle(x0,y0,(fl_line_width-1)/2,c,true,true);
+    draw_filled_circle(x1,y1,(fl_line_width-1)/2,c,true,true);
   }
 
   inline void fl_polygon(int x0,int y0,int x1,int y1,int x2,int y2,int c){
-    draw_line(x0,y0,x1,y1,c);
-    draw_line(x1,y1,x2,y2,c);
-    draw_line(x2,y2,x0,y0,c);
+    fl_line(x0,y0,x1,y1,c);
+    fl_line(x1,y1,x2,y2,c);
+    fl_line(x2,y2,x0,y0,c);
   }
 
   inline void check_fl_line(int i0,int j0,int i1,int j1,int imin,int jmin,int di,int dj,int delta_i,int delta_j,int c){
@@ -5646,6 +5663,7 @@ namespace xcas {
     }
     // draw turtle Logo
     if (turtleptr){
+      int save_width=fl_line_width;
 #ifdef TURTLETAB
       int l=turtle_stack_size;
 #else
@@ -5684,6 +5702,8 @@ namespace xcas {
 	  else
 #endif
 	    {
+	      int width=current.turtle_width & 0x1f;
+	      fl_line_width=width;
 	      if (current.radius>0){
 		int r=current.radius & 0x1ff; // bit 0-8
 		double theta1,theta2;
@@ -5712,14 +5732,26 @@ namespace xcas {
 		if (current.direct){
 		  if (rempli)
 		    fl_pie(deltax+x,deltay+LCD_HEIGHT_PX-y,R,R,theta1-90,theta2-90,current.color,seg);
-		  else
-		    fl_arc(deltax+x,deltay+LCD_HEIGHT_PX-y,R,R,theta1-90,theta2-90,current.color);
+		  else {
+		    for (int d=giacmax(1-r,-(width-1)/2);d<=width/2;++d){
+		      x=int(turtlezoom*(current.x-turtlex-r*std::cos(angle) - (r+d))+.5);
+		      y=int(turtlezoom*(current.y-turtley-r*std::sin(angle) + (r+d))+.5);
+		      R=int(2*turtlezoom*(r+d)+.5);
+		      fl_arc(deltax+x,deltay+LCD_HEIGHT_PX-y,R,R,theta1-90,theta2-90,current.color);
+		    }
+		  }
 		}
 		else {
 		  if (rempli)
 		    fl_pie(deltax+x,deltay+LCD_HEIGHT_PX-y,R,R,90+theta2,90+theta1,current.color,seg);
-		  else
-		    fl_arc(deltax+x,deltay+LCD_HEIGHT_PX-y,R,R,90+theta2,90+theta1,current.color);
+		  else {
+		    for (int d=giacmax(1-r,-(width-1)/2);d<=width/2;++d){
+		      x=int(turtlezoom*(current.x-turtlex+r*std::cos(angle) -(r+d))+.5);
+		      y=int(turtlezoom*(current.y-turtley+r*std::sin(angle) +(r+d))+.5);
+		      R=int(2*turtlezoom*(r+d)+.5);
+		      fl_arc(deltax+x,deltay+LCD_HEIGHT_PX-y,R,R,90+theta2,90+theta1,current.color);
+		    }
+		  }
 		}
 	      } // end radius>0
 	      else {
@@ -5755,8 +5787,8 @@ namespace xcas {
 	int y=int(turtlezoom*(t.y-turtley)+.5);
 	double cost=std::cos(t.theta*deg2rad_d);
 	double sint=std::sin(t.theta*deg2rad_d);
-	int Dx=int(turtlezoom*t.turtle_length*cost/2+.5);
-	int Dy=int(turtlezoom*t.turtle_length*sint/2+.5);
+	int Dx=int(turtlezoom*turtle_length*cost/2+.5);
+	int Dy=int(turtlezoom*turtle_length*sint/2+.5);
 	if (t.visible){
 	  fl_line(deltax+x+Dy,deltay+LCD_HEIGHT_PX-(y-Dx),deltax+x-Dy,deltay+LCD_HEIGHT_PX-(y+Dx),t.color);
 	  int c=t.color;
@@ -5766,6 +5798,7 @@ namespace xcas {
 	  fl_line(deltax+x-Dy,deltay+LCD_HEIGHT_PX-(y+Dx),deltax+x+3*Dx,deltay+LCD_HEIGHT_PX-(y+3*Dy),c);
 	}
       }
+      fl_line_width=save_width;
       return;
     } // End logo mode
   }  
@@ -9874,20 +9907,24 @@ namespace xcas {
 	  }
 	  break;
 	}
-#if defined MICROPY_LIB || defined QUICKJS
+#if (defined MICROPY_LIB || defined QUICKJS) 
 	if (smallmenu.selection==13){
 	  double d=pythonjs_heap_size/1024;
-	  if (inputdouble(
+	  if (
+#ifdef NSPIRE_NEWLIB
+	      0 &&
+#endif
+	      inputdouble(
 #if defined NUMWORKS && defined DEVICE
 			  "Tas MicroPy/JS en K (16-64)?"
 #else
-			  "Tas MicroPy/JS en K (64-3584)?"
+			  "Tas MicroPy/JS en K (64-1728)?"
 #endif
 			  ,d,contextptr) && d==int(d) &&
 #if defined NUMWORKS && defined DEVICE
 	      d>=16 && d<=64
 #else
-	      d>=64 && d<=3584
+	      d>=64 && d<=1728
 #endif
 	      ){
 	    pythonjs_heap_size=d*1024;

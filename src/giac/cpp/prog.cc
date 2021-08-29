@@ -78,6 +78,7 @@ extern "C" {
 
 #ifdef NSPIRE_NEWLIB
 #include <os.h>
+extern "C" double millis();
 #endif
 
 //#ifdef BESTA_OS
