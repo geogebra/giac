@@ -16262,6 +16262,7 @@ void sprint_double(char * s,double d){
 #endif
       
   const char * caseval(const char *s){
+    //printf("%s\n",s);
     ctrl_c=interrupted=false;
     static string * sptr=0;
     if (!sptr) sptr=new string;
