@@ -15317,7 +15317,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	      || gbasis_par.reinject_for_calc>0
 	      //|| time2ndrun<0.5
 	      ){
-	    // learning is fast enough
+	    // learning is fast enough, don't try reinjection
 	    if (augmentgbasis>0)
 	      augmentgbasis=2;
 	  }
@@ -15817,7 +15817,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	if (jpos<gbmod.size()){
 	  if (debug_infolevel)
 	    CERR << CLOCK()*1e-6 << " i=" << i << " begin chinese remaindering " << p << " (" << count+(t==th) << ")" << '\n';
-	  int r=chinrem(V[i],P[i],gbmod,p.val,poly8tmp,jpos_start); // IMPROVE: maybe start at jpos in V[i]? at least start at recon_added
+	  int r=chinrem(V[i],P[i],gbmod,p.val,poly8tmp,recon_added);// was jpos_start); but fails for cyclic7 // IMPROVE: maybe start at jpos in V[i]? at least start at recon_added
 	  if (debug_infolevel)
 	    CERR << CLOCK()*1e-6 << " end chinese remaindering" << '\n';
 	  if (r==-1){

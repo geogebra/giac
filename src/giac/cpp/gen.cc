@@ -11297,7 +11297,7 @@ namespace giac {
     my_mpz_gcd(r,q,u1);
     bool ok=mpz_cmp_ui(r,1)==0;
     if (!ok){
-      CERR << "Bad reconstruction " << a << " " << m << " " << gen(r) << '\n';
+      CERR << "Bad reconstruction a=" << a << " mod " << m << " u1=" << gen(u1) << " u1*a+v1*m= " << num << " gcd(u1,m)=" << gen(r) << '\n';
       simplify3(num,den);
       return false;
     }
