@@ -4027,8 +4027,7 @@ namespace giac {
     }
     if (res!=0){
       vecteur tmp=ifactors1(n0/F,contextptr);
-      tmp.push_back(F);
-      tmp.push_back(1);
+      tmp=mergevecteur(tmp,ifactors1(F,contextptr));
       return tmp;
     }
     ifactor_pari=nbits>=256;
