@@ -299,15 +299,15 @@ bool dfu_get_epsilon_internal(const char * fname){
 
 bool dfu_get_epsilon(const char * fname){
   unlink(fname);
-  string s=string("dfu-util -i 0 -a 0 -s 0x90000000:0x100000 -U ")+ fname;
+  string s=string("dfu-util -i 0 -a 0 -s 0x90000000:0x120000 -U ")+ fname;
   return !dfu_exec(s.c_str());
 }
 
-// check that we can really read/write on the Numworks at 0x90100000
+// check that we can really read/write on the Numworks at 0x90120000
 // and get the same
 bool dfu_check_epsilon2(const char * fname){
   FILE * f=fopen(fname,"w");
-  int n=0x100000;
+  int n=0xe0000;
   char * ptr=(char *) malloc(n);
   srand(time(NULL));
   int i;
@@ -321,12 +321,12 @@ bool dfu_check_epsilon2(const char * fname){
   fclose(f);
   // write to the device something that can not be guessed 
   // without really storing to flash
-  string s=string("dfu-util -i 0 -a 0 -s 0x90100000:0x100000 -D ")+ fname;
+  string s=string("dfu-util -i 0 -a 0 -s 0x90120000:0xe0000 -D ")+ fname;
   if (dfu_exec(s.c_str()))
     return false;
   // retrieve it and compare
   unlink(fname);
-  s=string("dfu-util -i 0 -a 0 -s 0x90100000:0x100000 -U ")+ fname;
+  s=string("dfu-util -i 0 -a 0 -s 0x90120000:0xe0000 -U ")+ fname;
   if (dfu_exec(s.c_str()))
     return false;
   f=fopen(fname,"r");

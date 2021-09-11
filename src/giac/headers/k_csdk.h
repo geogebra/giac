@@ -27,6 +27,7 @@ extern "C" {
   void os_hide_graph(); // hide graph, not used anymore
   void os_redraw(); // force redraw of window class hierarchy
 #ifdef NUMWORKS
+  int extapp_restorebackup(int mode);
   void numworks_set_pixel(int x,int y,int c);
   int numworks_get_pixel(int x,int y);
   void numworks_fill_rect(int x,int y,int w,int h,int c);
@@ -78,7 +79,7 @@ extern "C" {
   bool write_file(const char * filename,const char * s,size_t len);
 #endif
 #define MAX_NUMBER_OF_FILENAMES 255
-  int os_file_browser(const char ** filenames,int maxrecords,const char * extension);
+  int os_file_browser(const char ** filenames,int maxrecords,const char * extension,int storage=0);
   void sync_screen();
   void os_set_pixel(int x,int y,int c);
   void os_fill_rect(int x,int y,int w,int h,int c);

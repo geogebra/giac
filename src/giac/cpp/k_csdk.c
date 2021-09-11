@@ -173,7 +173,7 @@ bool write_file(const char * filename,const char * s,size_t len){
   }
 
 char os_filenames[32][FILENAME_MAXRECORDS];
-int os_file_browser(const char ** filenames,int maxrecords,const char * extension){
+int os_file_browser(const char ** filenames,int maxrecords,const char * extension,int storage){ // storage is ignored on nspire
   DIR *dp;
   struct dirent *ep;
   if (maxrecords>FILENAME_MAXRECORDS-1)

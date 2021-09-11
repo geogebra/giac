@@ -98,7 +98,7 @@ const char * gettext(const char * s) ;
 namespace xcas {
 #endif // ndef NO_NAMESPACE_XCAS
   void set_exam_mode(int i,const giac::context *);
-  int giac_filebrowser(char * filename,const char * extension,const char * title);
+  int giac_filebrowser(char * filename,const char * extension,const char * title,int storage=0);
   void draw_rectangle(int x,int y,int w,int h,int c);
   void draw_line(int x0,int y0,int x1,int y1,int c);
   void draw_circle(int xc,int yc,int r,int color,bool q1=true,bool q2=true,bool q3=true,bool q4=true);

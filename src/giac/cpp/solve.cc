@@ -1930,7 +1930,7 @@ namespace giac {
     return expr;
   }
 
-  static vecteur solve_numeric_check(const gen & e,const gen & x,const vecteur & sol,GIAC_CONTEXT){
+  static vecteur solve_numeric_check(const gen & e,const gen & x,const vecteur & sol,bool real,GIAC_CONTEXT){
     if (is_undef(sol))
       return sol;
     vecteur res;
@@ -1939,10 +1939,14 @@ namespace giac {
       return sol; // it was a univariate polynomial equation, no need to check
     for (unsigned i=0;i<sol.size();++i){
       gen tmp=subst(e,x,sol[i],false,contextptr);
+      if (real && has_i(tmp))
+	continue;
 #ifdef HAVE_LIBMPFR
       tmp=_evalf(makesequence(tmp,100),contextptr);
 #endif
       tmp=evalf_double(tmp,1,contextptr);
+      if (real && tmp.type==_CPLX)
+	continue;
       vecteur tmpid=lidnt(tmp); // find identifiers introduced by all_trig_sols=true
       for (unsigned j=0;j<tmpid.size();++j){
 	if (!equalposcomp(eid,tmpid[j]))
@@ -2359,7 +2363,7 @@ namespace giac {
     }
     solve(expr,x,v,isolate_mode,contextptr);
     if (is_undef(v)) return v;
-    v=solve_numeric_check(e_check,x,v,contextptr);
+    v=solve_numeric_check(e_check,x,v,(isolate_mode & 1)==0,contextptr);
     if (0 && !(isolate_mode & 2)){
       // check solutions if there is a tan inside, commented now that we have the test above
       for (int i=0;i<s;++i){

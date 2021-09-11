@@ -11039,6 +11039,9 @@ namespace giac {
     double echelle,minxstepystep;
     if (xstep<ystep) minxstepystep=xstep; else minxstepystep=ystep;
     echelle=minxstepystep;
+    int n1=1+std::ceil((xmax-xmin)/(scaling*xstep));
+    int n2=1+std::ceil((ymax-ymin)/(scaling*ystep));
+    res.reserve(n1*n2+1);
     for (double curx=xmin;curx<=xmax;curx+=scaling*xstep){
       if (ctrl_c || interrupted) break;
       curxcury[0]=curx;

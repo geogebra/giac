@@ -13923,26 +13923,98 @@ void sprint_double(char * s,double d){
 	return "nonposint";
       case _NONNEGINT:
 	return "nonnegint";
-      case _LP_ASSUME:
-	return "lp_assume";
       case _LP_BINARY:
-	return "lp_binary";
+        return "lp_binary";
       case _LP_BINARYVARIABLES:
-	return "lp_binaryvariables";
+        return "lp_binaryvariables";
       case _LP_DEPTHLIMIT:
-	return "lp_depthlimit";
-      case _LP_MAXIMIZE:
-	return "lp_maximize";
-      case _LP_NONNEGATIVE:
-	return "lp_nonnegative";
-      case _LP_NONNEGINT:
-	return "lp_nonnegint";
-      case _LP_VARIABLES:
-	return "lp_variables";
+        return "lp_depthlimit";
       case _LP_INTEGER:
-	return "lp_integer";
+        return "lp_integer";
       case _LP_INTEGERVARIABLES:
-	return "lp_integervariables";
+        return "lp_integervariables";
+      case _LP_MAXIMIZE:
+        return "lp_maximize";
+      case _LP_NONNEGATIVE:
+        return "lp_nonnegative";
+      case _LP_NONNEGINT:
+        return "lp_nonnegint";
+      case _LP_ASSUME:
+        return "lp_assume";
+      case _LP_NODE_LIMIT:
+        return "lp_nodelimit";
+      case _LP_METHOD:
+        return "lp_method";
+      case _LP_SIMPLEX:
+        return "lp_simplex";
+      case _LP_INTERIOR_POINT:
+        return "lp_interiorpoint";
+      case _LP_MAX_CUTS:
+        return "lp_maxcuts";
+      case _LP_GAP_TOLERANCE:
+        return "lp_gaptolerance";
+      case _LP_NODESELECT:
+        return "lp_nodeselect";
+      case _LP_VARSELECT:
+        return "lp_varselect";
+      case _LP_FIRSTFRACTIONAL:
+        return "lp_firstfractional";
+      case _LP_LASTFRACTIONAL:
+        return "lp_lastfractional";
+      case _LP_MOSTFRACTIONAL:
+        return "lp_mostfractional";
+      case _LP_PSEUDOCOST:
+        return "lp_pseudocost";
+      case _LP_DEPTHFIRST:
+        return "lp_depthfirst";
+      case _LP_BREADTHFIRST:
+        return "lp_breadthfirst";
+      case _LP_BEST_LOCAL_BOUND:
+        return "lp_bestlocalbound";
+      case _LP_BEST_PROJECTION:
+        return "lp_bestprojection";
+      case _LP_HYBRID:
+        return "lp_hybrid";
+      case _LP_ITERATION_LIMIT:
+        return "lp_iterationlimit";
+      case _LP_TIME_LIMIT:
+        return "lp_timelimit";
+      case _LP_VERBOSE:
+        return "lp_verbose";
+      case _LP_PRESOLVE:
+        return "lp_presolve";
+      case _NLP_INITIALPOINT:
+        return "nlp_initialpoint";
+      case _NLP_ITERATIONLIMIT:
+        return "nlp_iterationlimit";
+      case _NLP_NONNEGATIVE:
+        return "nlp_nonnegative";
+      case _NLP_PRECISION:
+        return "nlp_precision";
+      case _NLP_MAXIMIZE:
+        return "nlp_maximize";
+      case _GT_CONNECTED:
+        return "connected";
+      case _GT_SPRING:
+        return "spring";
+      case _GT_TREE:
+        return "tree";
+      case _GT_PLANAR:
+        return "planar";
+      case _GT_DIRECTED:
+        return "directed";
+      case _GT_WEIGHTED:
+        return "weighted";
+      case _GT_WEIGHTS:
+        return "weights";
+      case _GT_BIPARTITE:
+        return "bipartite";
+      case _GT_ACYCLIC:
+        return "acyclic";
+      case _KDE_BANDWIDTH:
+        return "bandwidth";
+      case _KDE_BINS:
+        return "bins";
       }
     }
     if (subtype==_INT_MUPADOPERATOR){

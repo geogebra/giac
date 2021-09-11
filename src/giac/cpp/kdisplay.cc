@@ -33,7 +33,7 @@
 #define is_cx2 false
 #endif
 #ifdef KHICAS
-#ifndef NSPIRE_NEWLIB
+#if 0 //ndef NSPIRE_NEWLIB
 extern "C" {
   short int nspire_exam_mode=0;
 }
@@ -9396,7 +9396,7 @@ namespace xcas {
 	    if (sres==4){
 	      char filename[MAX_FILENAME_SIZE+1];
 	      std::string ins;
-	      if (giac_filebrowser(filename, "py", "Scripts") && load_script(filename,ins))
+	      if (giac_filebrowser(filename, "py", "Scripts",2) && load_script(filename,ins))
 		insert(text,ins.c_str(),false);//add_nl(text,ins);
 	    }
 	    if (sres==5){
@@ -9675,7 +9675,11 @@ namespace xcas {
     smallmenuitems[7].text = (char*)"Greek&English";
     smallmenuitems[8].text = (char*)"Deutsch&English";
     smallmenuitems[9].text = (char *) ((lang==1)?"Raccourcis clavier (0)":"Shortcuts (0)");
+#ifdef NUMWORKS
+    smallmenuitems[10].text = (char*) ((lang==1)?"Backup examen (e^x)":"Exam backup (e^x)");
+#else
     smallmenuitems[10].text = (char*) ((lang==1)?"Mode examen (e^x)":"Exam mode (e^x)");
+#endif
     smallmenuitems[11].text = (char*) ((lang==1)?"A propos":"About");
     smallmenuitems[14].text = (char*) "Quit";
     if (exam_mode)
@@ -9838,12 +9842,18 @@ namespace xcas {
 	    }
 	  }
 #endif // NSPIRE_NEWLIB
+#ifdef NUMWORKS
+	  if (do_confirm(lang==1?"Restaurer le backup du dernier examen?":"Restore last backup before last exam?")){
+	    if (extapp_restorebackup(-1))
+	      do_confirm(lang==1?"Restauration du backup reussie!":"Backup restore success!");
+	    else
+	      do_confirm(lang==1?"Mode exam actif ou pas de backup trouve!":"Exam mode enabled or no backup found!");
+	  }
+	  // if (do_confirm(lang==1?"Le mode examen se lance depuis Parametres":"Enter Exam mode from Settings")) shutdown_state=1;
+	  break;
+#else
 	  if (!exam_mode && confirm((lang==1?"Verifiez que le calcul formel est autorise.":"Please check that the CAS is allowed."),(lang==1?"France: autorise au bac. Enter: ok, esc: annul":"enter: yes, esc: no"))!=KEY_CTRL_F1)
 	    break;
-#ifdef NUMWORKS
-	  if (do_confirm(lang==1?"Le mode examen se lance depuis Parametres":"Enter Exam mode from Settings"))
-	    shutdown_state=1;
-	  break;
 #endif
 	  // confirmation, duree (>=0 French indicative, else not indicative)
 	  double duration=exam_mode?absint(exam_duration):0;
@@ -10369,6 +10379,8 @@ namespace xcas {
 
   bool load_console_state_smem(const char * filename,GIAC_CONTEXT){
     const char * hf=read_file(filename);
+    //if (!hf){ console_output(filename,strlen(filename)); console_output(" not found\n",11); return true; }
+    // if (strcmp(filename,"session.xw")){ console_output(hf,8); return true; }
     if (!hf) return false;
     string str;
     if (strncmp(hf,"#xwaspy\n",8)==0){
@@ -11360,13 +11372,16 @@ namespace xcas {
     return string(s+j+1).substr(0,i-j-1);
   }
 
-  int giac_filebrowser(char * filename,const char * extension,const char * title){
+  // storage==0 (default) ram on numworks, ==1 flash on numworks, ==2 both on numworks, ignored on other calcs
+  int giac_filebrowser(char * filename,const char * extension,const char * title,int storage){
+    //storage=2; // debug
+    // char dbg[]="0\n"; dbg[0] += storage;   console_output(dbg,2);
     const char * filenames[MAX_NUMBER_OF_FILENAMES+1];
 #if 1 // def XWASPY
     int n,choix;
     bool isxw=strcmp(extension,"xw")==0,ispy=strcmp(extension,"py")==0;
     if (isxw || ispy){
-      n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,"py");
+      n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,"py",storage);
       if (n==0 && ispy) return 0;
       int N=0;
       // isxw: keep only filenames ending with _xw
@@ -11374,6 +11389,7 @@ namespace xcas {
       const char * fnames[MAX_NUMBER_OF_FILENAMES+1];
       for (int i=0;i<n;++i){
 	const char * f=filenames[i];
+	//console_output(f,strlen(f));
 	f+=strlen(f)-6;
 	bool isfxw=strcmp(f,"_xw.py")==0;
 	if (isxw?isfxw:!isfxw){
@@ -11382,7 +11398,7 @@ namespace xcas {
 	}
       }
       if (isxw){ // add regular .xw extensions
-	n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,"xw");
+	n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,"xw",storage);
 	if (n+N>MAX_NUMBER_OF_FILENAMES)
 	  n=MAX_NUMBER_OF_FILENAMES-N;
 	for (int i=0;i<n;++i,++N){
@@ -11398,7 +11414,7 @@ namespace xcas {
     else 
       choix=select_item(filenames,title?title:"Scripts");
 #else
-    int n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,extension);
+    int n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,extension,storage);
     if (n==0) return 0;
     int choix=select_item(filenames,title?title:"Scripts");
 #endif
@@ -11443,7 +11459,7 @@ namespace xcas {
     if (fname)
       filename=fname;
     else {
-      res=giac_filebrowser(fname_, "py", "Scripts");
+      res=giac_filebrowser(fname_, "py", "Scripts",2);
       filename=fname_;
     }
     if(res) {
@@ -11506,7 +11522,7 @@ namespace xcas {
 
   void load(GIAC_CONTEXT){
     char filename[MAX_FILENAME_SIZE+1];
-    if (giac_filebrowser(filename, "xw", "Sessions")){
+    if (giac_filebrowser(filename, "xw", "Sessions",2)){
       if (console_changed==0 ||
 	  strcmp(session_filename,"session")==0 ||
 	  confirm((lang==1)?"Session courante perdue?":"Current session will be lost",
@@ -11879,14 +11895,14 @@ namespace xcas {
 	    if (smallmenu.selection==8) {
 	      char filename[MAX_FILENAME_SIZE+1];
 	      drawRectangle(0, 0, LCD_WIDTH_PX, LCD_HEIGHT_PX-8, COLOR_WHITE);
-	      if (giac_filebrowser(filename, "py", "Scripts"))
+	      if (giac_filebrowser(filename, "py", "Scripts",2))
 		edit_script(filename,contextptr);
 	      break;
 	    }
 	    if (smallmenu.selection==9) {
 	      char filename[MAX_FILENAME_SIZE+1];
 	      drawRectangle(0, 0, LCD_WIDTH_PX, LCD_HEIGHT_PX-8, COLOR_WHITE);
-	      if (giac_filebrowser(filename, "py", "Scripts"))
+	      if (giac_filebrowser(filename, "py", "Scripts",2))
 		run_script(filename,contextptr);
 	      Console_Clear_EditLine();
 	      break;

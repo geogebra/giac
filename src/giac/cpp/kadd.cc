@@ -807,7 +807,7 @@ int sheet_menu_menu(tableur & t,GIAC_CONTEXT){
       }
       if (smallmenu.selection== 3 && !exam_mode) {
 	char filename[128];
-	if (giac_filebrowser(filename,"tab",(lang==1?"Fichiers tableurs":"Sheet files"))){
+	if (giac_filebrowser(filename,"tab",(lang==1?"Fichiers tableurs":"Sheet files"),2)){
 	  if (t.changed && do_confirm(lang==1?"Sauvegarder le tableur actuel?":"Save current sheet?"))
 	    save_sheet(t,contextptr);
 	  const char * s=read_file(filename);
@@ -897,6 +897,11 @@ int sheet_menu_menu(tableur & t,GIAC_CONTEXT){
   return 1;
 }
 
+bool is_empty_cell(const gen & g){
+  if (g.type==_VECT) return is_zero(g[0]);
+  return is_zero(g);
+}
+
 void sheet_cmd(tableur & t,const char * ans){
   string s=ans; 
   if (t.sel_row_begin>=0){
@@ -909,15 +914,15 @@ void sheet_cmd(tableur & t,const char * ans){
       t.cur_col=t.sel_col_begin;
     int i,j=t.cur_col;
     // find empty cell in next rows
-    for (i=t.cur_row;i<t.nrows;++i){
-      if (is_zero(t.m[i][t.cur_col][0]))
+    for (i=t.cur_row+1;i<t.nrows;++i){
+      if (is_empty_cell(t.m[i][t.cur_col]))
 	break;
     }
     if (i==t.nrows){
       // find an empty cell in next columns
       for (j=t.cur_col+1;j<t.ncols;++j){
 	for (i=0;i<t.nrows;++i){
-	  if (is_zero(t.m[i][j][0]))
+	  if (is_empty_cell(t.m[i][j]))
 	    break;
 	}
 	if (i<t.nrows)
