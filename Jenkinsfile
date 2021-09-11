@@ -7,8 +7,6 @@ pipeline {
     MAVEN = credentials('maven')
     MAC = credentials('mac-giac')
     NPM = credentials('npm-registry')
-    WIN_BASH = credentials('win-bash')
-    WIN_SSH=credentials('win-ssh')
     LINUX32_SSH=credentials('linux32-ssh-key')
     ANDROID_SDK_ROOT='/var/lib/jenkins/.android-sdk'
     BINARYEN="${env.WORKSPACE}/emsdk/upstream"

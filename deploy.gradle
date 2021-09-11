@@ -31,18 +31,6 @@ remotes {
         user = 'kovzol' // TODO: use a more general account
         identity = compileLinux32JavagiacKey
     }
-    testNodeWinServerBash {
-        host = '140.78.116.136'
-        port = 22078
-        user = System.env.WIN_BASH_USR
-        password = System.env.WIN_BASH_PSW
-    }
-    electronWinAutobuildServer {
-        host = '140.78.116.136'
-        port = 22077
-        user = System.env.WIN_SSH_USR
-        password = System.env.WIN_SSH_PSW
-    }
     macServer {
         host = '140.78.116.142'
         port = 22
@@ -170,24 +158,6 @@ task javagiacJars (dependsOn: ['javagiacMacJar', 'javagiacLinux32Jar', 'javagiac
 
 task testGiacJs (dependsOn: ['createGiacJs']) {
     description 'Tests Javascript version of Giac. [incubating]'
-}
-
-task testNodeGiacWin () {
-    description 'Tests the Windows port of NodeGiac.'
-    doLast {
-        ssh.run {
-            session(remotes.electronWinAutobuildServer) {
-                execute 'cmd /c "cd giac & svn update"'
-                execute 'cmd /c "cd giac & set libdir=\"c:\\Users\\IEUser\\desktop-bundle\\ggb-electron\\dll\\MpfrMpir\\Static\\Lib32\" & \"\\Program Files (x86)\\nodejs\\node_modules\\npm\\bin\\node-gyp-bin\\node-gyp\" build"'
-            }
-        }
-        ssh.run {
-            session(remotes.testNodeWinServerBash) {
-                // It is assumed that WSL (Bash for Windows) is installed here
-                execute "cd /mnt/c/Users/IEUser/giac/src/test; ./regression -r -n"
-            }
-        }
-    }
 }
 
 task testGiac (dependsOn: ['testJavagiac', 'testGiacJs']) {
