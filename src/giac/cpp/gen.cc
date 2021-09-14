@@ -4160,7 +4160,7 @@ namespace giac {
   gen arg(const gen & a,GIAC_CONTEXT){ 
     if (a.type==_CPLX && a._CPLXptr->type==_DOUBLE_ && (a._CPLXptr+1)->type==_DOUBLE_){
       double d=atan2((a._CPLXptr+1)->_DOUBLE_val,a._CPLXptr->_DOUBLE_val);
-      if (!angle_radian(contextptr))
+      if (angle_radian(contextptr))
 	return d;
       int mode = get_mode_set_radian(contextptr);
       if(mode == 1) //if was in degrees
@@ -15069,7 +15069,10 @@ void sprint_double(char * s,double d){
       }
     }
     int save_decimal_digits=decimal_digits(context0);
-    set_decimal_digits(giacmax(20,std::ceil(precision*M_LN2/M_LN10)),context0);
+    set_decimal_digits(giacmax(20,std::ceil(precision*
+					    0.30102999566398119
+					    //M_LN2/M_LN10
+					    )),context0);
     gen tmp=re(evalf(g,1,context0),context0);
     set_decimal_digits(save_decimal_digits,context0);
     if (tmp.type!=_REAL){

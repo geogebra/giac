@@ -6174,7 +6174,24 @@ namespace giac {
       vecteur v=*args._VECTptr;
       const char * fmt=v.front()._STRNGptr->c_str();
       char buf[256];
-      size_t s=v.size();
+      size_t s=v.size(),fs=1;
+      // count % in fmt, should match s
+      for (size_t i=0;i<strlen(fmt);++i){
+	if (fmt[i]=='%' && fmt[i+1]!='%') {
+	  ++i;
+	  buf[fs]=fmt[i];
+	  ++fs;
+	}
+      }
+      if (s!=fs) return gensizeerr(contextptr);
+      // check that fmt matchs types
+      for (int i=1;i<fs;++i){
+	if (buf[i]=='s' && v[i].type!=_STRNG){
+	  v[i]=string2gen(v[i].print(contextptr),false);
+	  continue;
+	}
+	// add here other conversions if required
+      }
       if (s==2){
 	switch (v[1].type){
 	case _INT_:

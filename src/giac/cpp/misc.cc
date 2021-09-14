@@ -9279,7 +9279,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     return rgb(g,contextptr);
   }
 
-#ifndef KHICAS
+#if !defined KHICAS && !defined GIAC_HAS_STO_38
 void sync_screen(){}
 #endif
 
@@ -9305,8 +9305,12 @@ void sync_screen(){}
       sync_screen();
       usleep(a._DOUBLE_val);
 #else 
+#ifdef GIAC_HAS_STO_38
+      wait_1ms(a._DOUBLE_val/1000);
+#else
       cleanup_pixel_v();
       return __getKey.op(a,contextptr);
+#endif
 #endif
     }
 #if defined GIAC_HAS_STO_38 || defined KHICAS

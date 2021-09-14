@@ -2220,11 +2220,7 @@ namespace giac {
   define_unary_function_ptr5( at_getKey ,alias_at_getKey,&__getKey,0,true);
 
   static const char _get_key_s[]="get_key";
-#if defined RTOS_THREADX || defined BESTA_OS
-  static define_unary_function_eval(__get_key,&_get_key,_get_key_s);
-#else
   unary_function_eval __get_key(0,&_getKey,_get_key_s);
-#endif
   define_unary_function_ptr5( at_get_key ,alias_at_get_key,&__get_key,0,true);
 
   gen _keydown(const gen & g,GIAC_CONTEXT){

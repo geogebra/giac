@@ -201,6 +201,8 @@ const char * console_prompt(const char * s){
   return S.c_str();
 }
 
+#if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38// 
+
 #ifdef HAVE_LIBDFU
 extern "C" { 
 #include "dfu_lib.h"
@@ -344,11 +346,13 @@ bool dfu_get_apps(const char * fname){
   string s=string("dfu-util -i 0 -a 0 -s 0x90200000:0x600000 -U ")+ fname;
   return !dfu_exec(s.c_str());
 }
+#endif 
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
+#if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
   bool scriptstore2map(const char * fname,nws_map & m){
     FILE * f=fopen(fname,"r");
     if (!f)
@@ -615,7 +619,7 @@ namespace giac {
   }
   /* END OF SHA256 */
 
-  int rsa_check(const char * sigfilename,int maxkeys,BYTE hash[][SHA256_BLOCK_SIZE],int * tailles){
+  int rsa_check(const char * sigfilename,int maxkeys,BYTE hash[][SHA256_BLOCK_SIZE],int * tailles,vector<string> & fnames){
     gen rsa_n(tabunsignedchar2gen(rsa_n_tab,sizeof(rsa_n_tab)));
     gen N=pow(gen(2),768),q;
     // read by blocks of 2048 bits=256 bytes
@@ -628,6 +632,7 @@ namespace giac {
       gen key=0;
       // skip firmware filename and size
       fscanf(f,"%i %s",&tailles[i],firmwarename);
+      fnames.push_back(firmwarename);
       // skip 0x prefix
       for (;;){
 	unsigned char c=fgetc(f);
@@ -720,10 +725,11 @@ namespace giac {
 
   const int MAXKEYS=64;
   // Numworks firmwares signature file is in doc/shakeys
-  bool sha256_check(const char * sigfilename,const char * filename){
+  bool sha256_check(const char * sigfilename,const char * filename,const char *firmwarename){
     BYTE hash[MAXKEYS][SHA256_BLOCK_SIZE];
     int tailles[MAXKEYS];
-    int nkeys=rsa_check(sigfilename,MAXKEYS,hash,tailles);
+    vector<string> fnames;
+    int nkeys=rsa_check(sigfilename,MAXKEYS,hash,tailles,fnames);
     if (nkeys==0) return false;
     BYTE buf[SHA256_BLOCK_SIZE];
     SHA256_CTX ctx;
@@ -741,7 +747,9 @@ namespace giac {
     fclose(f);
     unsigned char * ptr=(unsigned char *)text.c_str();
     for (int i=0;i<nkeys;++i){
-      if (taille<tailles[i])
+      if (debug_infolevel)
+	CERR << i << " " << firmwarename << " " << taille << " " << fnames[i] << " " << tailles[i] << '\n';
+      if (firmwarename!=fnames[i] || taille<tailles[i])
 	continue;
       // now try for all compatible sizes
       // we do not know the firmware size, we extract 2M or 6M
@@ -783,15 +791,15 @@ namespace giac {
     *logptr(contextptr) << "Extraction du firmware interne epsilon\n" ;
     if (!dfu_get_epsilon_internal(epsilon)) return false;
     *logptr(contextptr) << "Verification de signature interne epsilon\n" ;
-    if (!sha256_check(sig.c_str(),epsilon)) return false;
+    if (!sha256_check(sig.c_str(),epsilon,"delta.internal.bin")) return false;
     *logptr(contextptr) << "Extraction du firmware externe epsilon\n" ;
     if (!dfu_get_epsilon(epsilon)) return false;
     *logptr(contextptr) << "Verification de signature externe epsilon\n" ;
-    if (!sha256_check(sig.c_str(),epsilon)) return false;
+    if (!sha256_check(sig.c_str(),epsilon,"delta.external.bin")) return false;
     *logptr(contextptr) << "Signature firmware conforme\nExtraction des applications\n" ;
     if (!dfu_get_apps(apps)) return false;
-    *logptr(contextptr) << "Verification de signature epsilon\n" ;
-    if (!sha256_check(sig.c_str(),epsilon)) return false;
+    *logptr(contextptr) << "Verification de signature applications externes\n" ;
+    if (!sha256_check(sig.c_str(),apps,"apps.tar")) return false;
     const char eps2name[]="eps2__";
     if (withoverwrite && !dfu_check_epsilon2(eps2name)){
       *logptr(contextptr) << "Le test d'ecriture et relecture a echoue. Le firwmare n'est peut-etre pas conforme.\n";
@@ -800,6 +808,7 @@ namespace giac {
     *logptr(contextptr) << "Signature applications conforme\nCalculatrice conforme à la reglementation\nCertification par le logiciel Xcas\nInstitut Fourier\nUniversité de Grenoble\nAssurez-vous d'avoir téléchargé Xcas sur\nwww-fourier.ujf-grenoble.fr/~parisse/install_fr.html\n" ;
     return true;
   }
+#endif
 
   const context * python_contextptr=0;
 

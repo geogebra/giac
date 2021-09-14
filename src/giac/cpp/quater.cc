@@ -1591,7 +1591,7 @@ namespace giac {
       if (pmin.empty())
 	pmin=b;
       else {
-	if (!b.empty() && pmin!=b)
+	if (!b.empty() && !(pmin==b))
 	  return 0;
       }
     }

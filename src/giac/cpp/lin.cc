@@ -692,7 +692,7 @@ namespace giac {
       int n=int(w.size());
       if (!n)
 	return gensizeerr(contextptr);
-      if (std::pow(n,k)>MAX_PROD_EXPAND_SIZE)
+      if (std::pow(double(n),double(k))>MAX_PROD_EXPAND_SIZE)
 	return pow(v[0],v[1],contextptr);
       vecteur res;
       gen p;
@@ -945,9 +945,237 @@ namespace giac {
   static define_unary_function_eval (__developper_transcendant,&_texpand,_developper_transcendant_s);
   define_unary_function_ptr5( at_developper_transcendant ,alias_at_developper_transcendant,&__developper_transcendant,0,true);
 
+  vecteur andor2list(const gen & g,GIAC_CONTEXT){
+    if (g.type!=_SYMB)
+      return vecteur(1,vecteur(1,g));
+    if (g._SYMBptr->sommet==at_ou){
+      vecteur args(gen2vecteur(g._SYMBptr->feuille));
+      int n=int(args.size());
+      vecteur res;
+      for (int i=0;i<n;++i){
+	vecteur v(andor2list(args[i],contextptr));
+	int l=int(v.size());
+	for (int j=0;j<l;++j)
+	  res.push_back(v[j]);
+      }
+      return res;
+    }
+    if (g._SYMBptr->sommet==at_and){
+      vecteur args(gen2vecteur(g._SYMBptr->feuille));
+      int n=int(args.size());
+      vecteur res;
+      longlong N=1;
+      for (int i=0;i<n;++i){
+	vecteur v(andor2list(args[i],contextptr));
+	N*=v.size(); // res.size() at end of iteration
+	if (N>RAND_MAX)
+	  return vecteur(1,vecteur(1,gendimerr(contextptr)));
+	if (i==0){
+	  res.swap(v); continue;
+	}
+	vecteur newres; newres.reserve(N);
+	// "multiply" element by element between res and v
+	for (size_t I=0;I<res.size();++I){
+	  for (size_t J=0;J<v.size();++J){
+	    newres.push_back(mergevecteur(*res[I]._VECTptr,*v[J]._VECTptr));
+	  }
+	}
+	res.swap(newres);
+      }
+      return res;
+    }
+    return vecteur(1,vecteur(1,g));
+  }
+
+  gen list2and(const gen & g){
+    if (g.type!=_VECT)
+      return g;
+    if (g._VECTptr->empty())
+      return 1;
+    if (g._VECTptr->size()==1)
+      return g;
+    gen G=g; G.subtype=_SEQ__VECT;
+    return symbolic(at_and,G);
+  }
+
+  gen list2orand(const vecteur & v){
+    if (v.empty())
+      return 1;
+    if (v.size()==1)
+      return list2and(v.front());
+    vecteur w(v);
+    for (int i=0;i<w.size();++i){
+      w[i]=list2and(w[i]);
+    }
+    return symbolic(at_ou,gen(w,_SEQ__VECT));
+  }
+
+  bool are_inequations(const gen & g){
+    if (g.type!=_VECT)
+      return is_inequation(g);
+    const vecteur & v=*g._VECTptr;
+    size_t N=v.size();
+    for (size_t i=0;i<N;++i){
+      if (!are_inequations(v[i]))
+	return false;
+    }
+    return true;
+  }
+
+  gen ineq2diff(const gen & g){
+    if (g.type!=_SYMB) return g;
+    if (g._SYMBptr->sommet==at_superieur_strict || g._SYMBptr->sommet==at_superieur_egal){
+      vecteur & v=*g._SYMBptr->feuille._VECTptr;
+      return v[0]-v[1];
+    }
+    if (g._SYMBptr->sommet==at_inferieur_strict || g._SYMBptr->sommet==at_inferieur_egal){
+      vecteur & v=*g._SYMBptr->feuille._VECTptr;
+      return v[1]-v[0];
+    }
+    return g;
+  }
+
+  // returns true if v is a list of linear inequations, write them in a matrix
+  // w=[...,[a,b,c],...] where a*x+b*y+c>=0 (> is replaced by >=) 
+  bool and2mat(const vecteur & v,const gen &x,const gen &y,matrice &w,GIAC_CONTEXT){
+    w.clear();
+    for (size_t i=0;i<v.size();++i){
+      gen g=v[i];
+      if (!is_inequation(g))
+	return false;
+      g=ineq2diff(g);
+      gen a,tmp,b,c;
+      if (!is_linear_wrt(g,x,a,tmp,contextptr))
+	return false;
+      if (!is_linear_wrt(tmp,y,b,c,contextptr))
+	return false;
+      if (evalf_double(a,1,contextptr).type!=_DOUBLE_ || evalf_double(b,1,contextptr).type!=_DOUBLE_ || evalf_double(c,1,contextptr).type!=_DOUBLE_)
+	return false;
+      w.push_back(makevecteur(a,b,c));
+    }
+    return true;
+  }
+
+  // compute list of intersections points [x,y]
+  // update x/ymin..max,1st call set xmin/ymin to 1e307 and xmax/ymax to -1e307 
+  vecteur lin_ineq_inter(const matrice & m,double & xmin,double &xmax,double & ymin,double & ymax,GIAC_CONTEXT){
+    size_t N=m.size();
+    vecteur res; res.reserve((N*(N+1))/2);
+    for (size_t i=0;i<N;++i){
+      vecteur v1(gen2vecteur(m[i]));
+      if (v1.size()!=3) return vecteur(1,gensizeerr(contextptr));
+      gen a(v1[0]),b(v1[1]),c1(v1[2]);
+      for (size_t j=i+1;j<N;++j){
+	vecteur v2(gen2vecteur(m[j]));
+	if (v2.size()!=3) return vecteur(1,gensizeerr(contextptr));
+	gen c(v2[0]),d(v2[1]),c2(v2[2]);
+	gen D=ratnormal(a*d-b*c,contextptr);
+	if (is_zero(D)) continue; // parallel
+	// solve([a*x+b*y+c1,c*x+d*y+c2],[x,y])
+	gen x=(b*c2-c1*d)/D,y=(c*c1-a*c2)/D;
+	// check that x,y verifies equations
+	vecteur mxy=multmatvecteur(m,makevecteur(x,y,1));
+	size_t pos=0;
+	for (;pos<mxy.size();++pos){
+	  if (!is_positive(mxy[pos],contextptr))
+	    break;
+	}
+	if (pos<mxy.size())
+	  continue;
+	gen add(makevecteur(x,y));
+	if (!equalposcomp(res,add))
+	  res.push_back(add);
+	x=evalf_double(x,1,contextptr);
+	double xd=x._DOUBLE_val;
+	if (xd>xmax)
+	  xmax=xd;
+	if (xd<xmin)
+	  xmin=xd;
+	y=evalf_double(y,1,contextptr);
+	double yd=y._DOUBLE_val;
+	if (yd>ymax)
+	  ymax=yd;
+	if (yd<ymin)
+	  ymin=yd;
+      }
+    }
+    return res;
+  }
+
+  // v should be a union of intersections, as returned by andor2list
+  bool lin_ineq_plot(const vecteur & vsymb,const gen & x,const gen &y,const vecteur & attr_,vecteur & res,GIAC_CONTEXT){
+    vecteur attr(attr_);
+    if (!attr.empty() && attr[0].type==_INT_)
+      attr[0] = attr[0].val | _FILL_POLYGON;
+    double xmin=1e307,ymin=1e307,xmax=-1e307,ymax=-1e307;
+    vecteur v(vsymb.size());
+    for (size_t i=0;i<v.size();++i){
+      matrice vi;
+      if (!and2mat(gen2vecteur(vsymb[i]),x,y,vi,contextptr))
+	return false;
+      v[i]=vi;
+    }
+    matrice inter(vsymb.size()); // one list of intersection points for each element of v
+    for (size_t i=0;i<v.size();++i){
+      inter[i]=lin_ineq_inter(gen2vecteur(v[i]),xmin,xmax,ymin,ymax,contextptr);
+    }
+    if (xmin==1e307) xmin=gnuplot_xmin;
+    if (ymin==1e307) ymin=gnuplot_ymin;
+    if (xmax==-1e307) xmax=gnuplot_xmax;
+    if (ymax==-1e307) ymax=gnuplot_ymax;
+    double dx=gnuplot_xmax-gnuplot_xmin,dy=gnuplot_ymax-gnuplot_ymin;
+    if (xmax>xmin)
+      dx=xmax-xmin;
+    if (dx<1e-300)
+      dx=1e-300;
+    if (ymax>ymin)
+      dy=ymax-ymin;
+    if (dy<1e-300)
+      dy=1e-300;
+    // axes zoomeout factor
+    int z=1.5;
+    xmin -= z*dx; xmax += z*dx;
+    ymin -= z*dy; ymax += z*dy;
+    res.push_back(symb_equal(change_subtype(_GL_X,_INT_PLOT),symb_interval(xmin,xmax)));
+    res.push_back(symb_equal(change_subtype(_GL_Y,_INT_PLOT),symb_interval(ymin,ymax)));
+    // zoomout factor
+    z=6;
+    xmin -= z*dx; xmax += z*dx;
+    ymin -= z*dy; ymax += z*dy;
+    // add border equations, find again intersections (lazy version, should be optimized)
+    for (size_t i=0;i<v.size();++i){
+      vecteur w(gen2vecteur(v[i]));
+      w.push_back(makevecteur(1,0,-xmin)); // x-xmin>=0
+      w.push_back(makevecteur(-1,0,xmax)); // -x+xmax>=0
+      w.push_back(makevecteur(0,1,-ymin)); // y-ymin>=0
+      w.push_back(makevecteur(0,-1,ymax)); // -y+ymax>=0
+      inter[i]=lin_ineq_inter(w,xmin,xmax,ymin,ymax,contextptr);
+    }
+    // compute convexhull for each v[i]
+    for (size_t i=0;i<inter.size();++i){
+      vecteur cur(gen2vecteur(inter[i]));
+      for (size_t j=0;j<cur.size();++j){
+	cur[j]=cur[j][0]+cst_i*cur[j][1];
+      }
+      gen convhull=_convexhull(gen(cur,_SEQ__VECT),contextptr);
+      vecteur argv=gen2vecteur(convhull);
+      argv.push_back(argv.front());
+      convhull=pnt_attrib(gen(argv,_GROUP__VECT),attr,contextptr);
+      res.push_back(convhull);
+    }
+    return true;
+  }
+
   gen expand(const gen & e,GIAC_CONTEXT){
     if (is_equal(e))
       return apply_to_equal(e,expand,contextptr);
+    if (e.type==_SYMB && (e._SYMBptr->sommet==at_and || e._SYMBptr->sommet==at_ou)){
+#if 0 // for testing plot
+      return lin_ineq_plot(andor2list(e,contextptr),x__IDNT_e,y__IDNT_e,vecteur(1,56),contextptr); 
+#else
+      return list2orand(andor2list(e,contextptr));
+#endif
+    }
     gen var,res;
     if (e.type!=_VECT && is_algebraic_program(e,var,res))
       return symbolic(at_program,makesequence(var,0,expand(res,contextptr)));

@@ -2481,7 +2481,7 @@ namespace giac {
       return true;
 #endif
       smallmult(a.begin(),a.end(),b.begin(),b.end(),ab,m);
-      if (!resp1.empty() && resp1!=ab)
+      if (!resp1.empty() && !(resp1==ab))
 	CERR << "bug\n";
       return false;
     }
@@ -10691,6 +10691,9 @@ namespace giac {
   }
 
   int binary_content(const modpoly & v){
+#ifdef USE_GMP_REPLACEMENTS
+    return 0;
+#else
     int res=-1;
     for (int i=0;res && i<v.size();++i){
       if (is_zero(v[i]))
@@ -10704,6 +10707,7 @@ namespace giac {
 	res=cur;
     }
     return res;
+#endif
   }
 
   void mul_2exp(modpoly & v,int b){
@@ -10720,7 +10724,7 @@ namespace giac {
     for (int i=0;i<v.size();++i){
       if (v[i].type==_INT_)
 	v[i].uncoerce();
-      mpz_fdiv_q_2exp(*v[i]._ZINTptr,*v[i]._ZINTptr,b);
+      mpz_tdiv_q_2exp(*v[i]._ZINTptr,*v[i]._ZINTptr,b); // change for HP mpz_fdiv_q_2exp
     }
   }
 
@@ -14688,7 +14692,7 @@ namespace giac {
 	    *it += (*it>>31)&modulo;
 	  if (f.size()>n){ // reduce mod x^n-1
 	    vector<int>::reverse_iterator it=f.rbegin(),itend=it+n,jt=itend,jtend=f.rend();
-	    for (;jt<jtend;++jt){
+	    for (;jt!=jtend;++jt){ // change for HP: was jt<jtend
 	      int i=*it;
 	      i += *jt-modulo;
 	      i += (i>>31) & modulo;

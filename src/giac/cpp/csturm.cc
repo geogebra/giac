@@ -184,7 +184,7 @@ namespace giac {
 	else
 	  mpz_set(pi,*p[i]._ZINTptr);
 	if (lb<0)
-	  mpz_fdiv_q_2exp(pi,pi,(-lb)*(n-1-i));
+	  mpz_tdiv_q_2exp(pi,pi,(-lb)*(n-1-i)); // was mpz_fdiv_q_2exp
 	else
 	  mpz_mul_2exp(pi,pi,lb*(n-1-i));
 	p[i] = pi;

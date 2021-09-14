@@ -7083,7 +7083,9 @@ namespace giac {
     if (args.type!=_INT_)
       return decimal_digits(contextptr);
     set_decimal_digits(args.val,contextptr);
-    bf_global_prec=std::ceil(M_LN10/M_LN2*giacmax(absint(args.val),1));
+    bf_global_prec=std::ceil(3.3219280948873623
+			     //M_LN10/M_LN2
+			     *giacmax(absint(args.val),1));
     _cas_setup(cas_setup(contextptr),contextptr);
     return decimal_digits(contextptr);
   }

@@ -4918,10 +4918,10 @@ namespace giac {
   }
 #endif
 
-
+  const double m_ln2=0.69314718055994531;
   // Inspired by David Harvey code (bernmm)
   gen bernoulli_rat(int k){
-    long bound1 = (long) std::ceil((k + 0.5) * std::log(double(k)) /M_LN2);
+    long bound1 = (long) std::ceil((k + 0.5) * std::log(double(k)) /m_ln2);
     if (bound1<37)
       bound1=37;
     // Computes the denominator of B_k using Clausen/von Staudt.
@@ -4941,8 +4941,8 @@ namespace giac {
 	}
       }
     }
-    double bits= (k+0.5)*std::log(double(k))/M_LN2 - 4.094*k + 2.470 +
-      std::log(evalf_double(D,1,context0)._DOUBLE_val)/M_LN2 ;
+    double bits= (k+0.5)*std::log(double(k))/m_ln2 - 4.094*k + 2.470 +
+      std::log(evalf_double(D,1,context0)._DOUBLE_val)/m_ln2 ;
     gen res(0.0),pip=1;
     mpz_t tmpz; mpz_init(tmpz);
     for (int p = 5; ; p = nextprime(p+1).val){
@@ -4965,7 +4965,7 @@ namespace giac {
 	  res=ichinrem(gen(cur),res,gen(p),pip);
       }
       pip = p*pip;
-      bits -= std::log(p)/M_LN2;
+      bits -= std::log(double(p))/m_ln2;
       if (bits<-1)
 	break;
     }
