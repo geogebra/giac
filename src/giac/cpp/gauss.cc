@@ -666,7 +666,8 @@ namespace giac {
 #if defined POCKETCAS
 	  param_curves.push_back(makevecteur(tmp,t,-10,10,0.1,q,ratparam));
 #else
-	  param_curves.push_back(makevecteur(tmp,t,-3.14,3.14,0.0314,q,ratparam));
+	  double tt=lop(tmp,at_cosh).empty()?3.14:2.8;
+	  param_curves.push_back(makevecteur(tmp,t,-tt,tt,tt/100,q,ratparam));
 #endif
 	  if (noratparam){
 	    if (numeric){
@@ -680,7 +681,7 @@ namespace giac {
 #if defined POCKETCAS
 	    param_curves.push_back(makevecteur(tmp,t,-10,10,0.1,q,ratparam));
 #else
-	    param_curves.push_back(makevecteur(tmp,t,-3,3,0.1,q,ratparam));
+	    param_curves.push_back(makevecteur(tmp,t,-tt,tt,tt/100,q,ratparam));
 #endif
 	  }
 	}

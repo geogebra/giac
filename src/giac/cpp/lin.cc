@@ -945,9 +945,111 @@ namespace giac {
   static define_unary_function_eval (__developper_transcendant,&_texpand,_developper_transcendant_s);
   define_unary_function_ptr5( at_developper_transcendant ,alias_at_developper_transcendant,&__developper_transcendant,0,true);
 
-  vecteur andor2list(const gen & g,GIAC_CONTEXT){
-    if (g.type!=_SYMB)
-      return vecteur(1,vecteur(1,g));
+  gen ineq2diff(const gen & g){
+    if (g.type!=_SYMB) return g;
+    if (g._SYMBptr->sommet==at_superieur_strict || g._SYMBptr->sommet==at_superieur_egal){
+      vecteur & v=*g._SYMBptr->feuille._VECTptr;
+      return v[0]-v[1];
+    }
+    if (g._SYMBptr->sommet==at_inferieur_strict || g._SYMBptr->sommet==at_inferieur_egal){
+      vecteur & v=*g._SYMBptr->feuille._VECTptr;
+      return v[1]-v[0];
+    }
+    return g;
+  }
+
+  gen factor_ineq(const gen & g_,GIAC_CONTEXT){
+    if (!is_inequation(g_))
+      return g_;
+    gen g=ineq2diff(g_);
+    bool sup=true;
+    vecteur h=gen2vecteur(_factors(g,contextptr));
+    // remove odd multiplicities and ignore even 
+    vecteur v;
+    for (int i=1;i<h.size();i+=2){
+      gen hi=h[i-1]; // remove content if any
+      if (h[i].val % 2){
+	if (hi.type < _IDNT){
+	  if (!is_positive(hi,contextptr))
+	    sup=!sup;
+	}
+	else {
+	  gen shi=_sign(hi,contextptr);
+	  if (shi==1)
+	    continue;
+	  if (shi==-1)
+	    sup=!sup;
+	  v.push_back(hi);
+	}
+      }
+    }
+    vecteur res1(v.size()),res2(v.size());
+    for (int i=0;i<v.size();++i){
+      res1[i]=symbolic(at_superieur_egal,v[i],0);
+      res2[i]=symbolic(at_inferieur_egal,v[i],0);
+    }
+    if (v.size()==0){
+      // *logptr(contextptr) << (sup?gettext("Inequation is true almost everywhere"):gettext("Equation is false almost everywhere")) << "\n";
+      return sup?1:0;
+    }
+    if (v.size()==1){
+      return sup?res1[0]:res2[0];
+    }
+    if (v.size()==2){
+      gen res;
+      if (sup)
+	res=symbolic(at_ou,makesequence(
+					   symbolic(at_and,makesequence(res1[0],res1[1])),
+					   symbolic(at_and,makesequence(res2[0],res2[1]))
+					));
+      else
+	res=symbolic(at_ou,makesequence(
+					 symbolic(at_and,makesequence(res1[0],res2[1])),
+					 symbolic(at_and,makesequence(res2[0],res1[1]))
+					 ));
+      return res;
+    }
+    int n=v.size();
+    int N=1<<n;
+    vector<bool> vb(n);
+    vecteur res;
+    for (int i=0;i<N;++i){
+      // convert i base 2
+      vb.clear();
+      int i_=i,count=0;
+      while (i_){ 
+	bool b=i_%2;
+	vb.push_back(b);
+	i_ /= 2;
+	if (b) count++;
+      }
+      // check if the number of 1 matches superieur
+      if (sup){
+	if (count % 2)
+	  continue;
+      }
+      else {
+	if (count % 2==0)
+	  continue;
+      }
+      // match found
+      while (vb.size()<n) vb.push_back(false);
+      // create and symbolic
+      vecteur tmp;
+      for (int j=0;j<n;++j){
+	tmp.push_back(vb[j]?res2[j]:res1[j]);
+      }
+      res.push_back(symbolic(at_and,gen(tmp,_SEQ__VECT)));
+    }
+    return symbolic(at_ou,gen(res,_SEQ__VECT));
+  }
+
+  vecteur andor2list(const gen & g_,GIAC_CONTEXT){
+    if (g_.type!=_SYMB)
+      return vecteur(1,vecteur(1,g_));
+    gen g(g_);
+    if (is_inequation(g))
+      g=factor_ineq(g,contextptr);
     if (g._SYMBptr->sommet==at_ou){
       vecteur args(gen2vecteur(g._SYMBptr->feuille));
       int n=int(args.size());
@@ -1022,19 +1124,6 @@ namespace giac {
     return true;
   }
 
-  gen ineq2diff(const gen & g){
-    if (g.type!=_SYMB) return g;
-    if (g._SYMBptr->sommet==at_superieur_strict || g._SYMBptr->sommet==at_superieur_egal){
-      vecteur & v=*g._SYMBptr->feuille._VECTptr;
-      return v[0]-v[1];
-    }
-    if (g._SYMBptr->sommet==at_inferieur_strict || g._SYMBptr->sommet==at_inferieur_egal){
-      vecteur & v=*g._SYMBptr->feuille._VECTptr;
-      return v[1]-v[0];
-    }
-    return g;
-  }
-
   // returns true if v is a list of linear inequations, write them in a matrix
   // w=[...,[a,b,c],...] where a*x+b*y+c>=0 (> is replaced by >=) 
   bool and2mat(const vecteur & v,const gen &x,const gen &y,matrice &w,GIAC_CONTEXT){
@@ -1102,23 +1191,28 @@ namespace giac {
     return res;
   }
 
-  // v should be a union of intersections, as returned by andor2list
-  bool lin_ineq_plot(const vecteur & vsymb,const gen & x,const gen &y,const vecteur & attr_,vecteur & res,GIAC_CONTEXT){
-    vecteur attr(attr_);
+  void fill_attributs(vecteur & attr){
     if (!attr.empty() && attr[0].type==_INT_)
       attr[0] = attr[0].val | _FILL_POLYGON;
-    double xmin=1e307,ymin=1e307,xmax=-1e307,ymax=-1e307;
-    vecteur v(vsymb.size());
-    for (size_t i=0;i<v.size();++i){
-      matrice vi;
-      if (!and2mat(gen2vecteur(vsymb[i]),x,y,vi,contextptr))
-	return false;
-      v[i]=vi;
+  }
+
+  static void add_autoscale(vecteur & res,double xmin,double xmax,double ymin,double ymax,bool ortho=true){
+    if (ortho){
+      double dy=ymax-ymin,dx=xmax-xmin,r=dy/dx;
+      if (r>0.25 && r<4){
+	res.insert(res.begin(),symb_equal(change_subtype(_GL_ORTHO,_INT_PLOT),1));
+	if (r>1)
+	  res.insert(res.begin(),symb_equal(change_subtype(_GL_X,_INT_PLOT),symb_interval(xmin,xmax)));
+	else
+	  res.insert(res.begin(),symb_equal(change_subtype(_GL_Y,_INT_PLOT),symb_interval(ymin,ymax)));
+	return;
+      }
     }
-    matrice inter(vsymb.size()); // one list of intersection points for each element of v
-    for (size_t i=0;i<v.size();++i){
-      inter[i]=lin_ineq_inter(gen2vecteur(v[i]),xmin,xmax,ymin,ymax,contextptr);
-    }
+    res.insert(res.begin(),symb_equal(change_subtype(_GL_X,_INT_PLOT),symb_interval(xmin,xmax)));
+    res.insert(res.begin(),symb_equal(change_subtype(_GL_Y,_INT_PLOT),symb_interval(ymin,ymax)));
+  }
+
+  static void adjust(double & xmin,double & xmax,double & ymin,double & ymax,vecteur & res,bool zout){
     if (xmin==1e307) xmin=gnuplot_xmin;
     if (ymin==1e307) ymin=gnuplot_ymin;
     if (xmax==-1e307) xmax=gnuplot_xmax;
@@ -1133,15 +1227,37 @@ namespace giac {
     if (dy<1e-300)
       dy=1e-300;
     // axes zoomeout factor
-    int z=1.5;
-    xmin -= z*dx; xmax += z*dx;
-    ymin -= z*dy; ymax += z*dy;
-    res.push_back(symb_equal(change_subtype(_GL_X,_INT_PLOT),symb_interval(xmin,xmax)));
-    res.push_back(symb_equal(change_subtype(_GL_Y,_INT_PLOT),symb_interval(ymin,ymax)));
-    // zoomout factor
-    z=6;
-    xmin -= z*dx; xmax += z*dx;
-    ymin -= z*dy; ymax += z*dy;
+    double z=0.25;
+    if (zout){
+      xmin -= z*dx; xmax += z*dx;
+      ymin -= z*dy; ymax += z*dy;
+    }
+    add_autoscale(res,xmin,xmax,ymin,ymax);
+    if (zout){
+      // zoomout factor
+      z=6;
+      xmin -= z*dx; xmax += z*dx;
+      ymin -= z*dy; ymax += z*dy;
+    }
+  }
+
+  // v should be a union of intersections, as returned by andor2list
+  bool lin_ineq_plot(const vecteur & vsymb,const gen & x,const gen &y,const vecteur & attr_,vecteur & res,GIAC_CONTEXT){
+    vecteur attr(attr_);
+    fill_attributs(attr);
+    double xmin=1e307,ymin=1e307,xmax=-1e307,ymax=-1e307;
+    vecteur v(vsymb.size());
+    for (size_t i=0;i<v.size();++i){
+      matrice vi;
+      if (!and2mat(gen2vecteur(vsymb[i]),x,y,vi,contextptr))
+	return false;
+      v[i]=vi;
+    }
+    matrice inter(vsymb.size()); // one list of intersection points for each element of v
+    for (size_t i=0;i<v.size();++i){
+      inter[i]=lin_ineq_inter(gen2vecteur(v[i]),xmin,xmax,ymin,ymax,contextptr);
+    }
+    adjust(xmin,xmax,ymin,ymax,res,true);
     // add border equations, find again intersections (lazy version, should be optimized)
     for (size_t i=0;i<v.size();++i){
       vecteur w(gen2vecteur(v[i]));
@@ -1163,6 +1279,692 @@ namespace giac {
       convhull=pnt_attrib(gen(argv,_GROUP__VECT),attr,contextptr);
       res.push_back(convhull);
     }
+    return true;
+  }
+
+  // returns true if v is a list of polynomial inequations, write them in
+  // "normal form" eq>=0 -> eq   
+  bool and2listdiff(const vecteur & v,const gen &x,const gen &y,matrice &w,GIAC_CONTEXT){
+    w.clear();
+    for (size_t i=0;i<v.size();++i){
+      gen g=v[i];
+      if (!is_inequation(g))
+	return false;
+      g=ineq2diff(g);
+      if (is_zero(_is_polynomial(makesequence(g,x),contextptr)))
+	return false;
+      if (is_zero(_is_polynomial(makesequence(g,y),contextptr)))
+	return false;
+      w.push_back(g);
+    }
+    return true;
+  }
+
+  void adjust_xy(const gen &g,double &xmin,double &xmax,double &ymin,double &ymax,GIAC_CONTEXT){
+    if (g.is_symb_of_sommet(at_pnt))
+      return adjust_xy(remove_at_pnt(g),xmin,xmax,ymin,ymax,contextptr);
+    if (g.type==_VECT){
+      const vecteur & v=*g._VECTptr;
+      for (int i=0;i<v.size();++i)
+	adjust_xy(v[i],xmin,xmax,ymin,ymax,contextptr);
+      return;
+    }
+    if (g.is_symb_of_sommet(at_curve)){
+      vecteur p=gen2vecteur(g[2]); gen x,y;
+      for (int j=0;j<p.size();++j){
+	reim(p[j],x,y,contextptr);
+	if (x.type==_DOUBLE_){
+	  double xd=x._DOUBLE_val;
+	  if (xd<xmin) xmin=xd;
+	  if (xd>xmax) xmax=xd;
+	}
+	if (y.type==_DOUBLE_){
+	  double yd=y._DOUBLE_val;
+	  if (yd<ymin) ymin=yd;
+	  if (yd>ymax) ymax=yd;
+	}
+      }
+    }
+  }
+
+  bool is_ok(const vecteur &m,int i,const gen & vars,const gen &cur,GIAC_CONTEXT){
+    gen c(cur),x,y;
+    if (c.type!=_VECT){
+      reim(c,x,y,contextptr);
+      c=makevecteur(x,y);
+    }
+    // check that cur verifies inequations>=0 inside m
+    for (size_t pos=0;pos<m.size();++pos){
+      if (pos==i) 
+	continue;
+      gen val=subst(m[pos],vars,c,false,contextptr);
+      val=evalf_double(val,1,contextptr);
+      // 1e-7 test should be improved by checking values near c to
+      // determine sensitivity
+      if (val.type==_DOUBLE_ && val._DOUBLE_val<-5e-7) 
+	return false;
+    }
+    return true;
+  }
+
+  // return true if p_ was inserted in a loop at begin/end
+  // false otherwise
+  bool insert(const gen & p_,vecteur & branches,GIAC_CONTEXT){
+    gen p(p_);
+    if (p.type==_VECT && p._VECTptr->size()==2)
+      p=p._VECTptr->front()+cst_i*p._VECTptr->back();
+    // find nearest polygonal line from p in branches
+    // insert p in this line, cut and insert the two polygonal lines
+    gen mind(plus_inf); int b=-1; int pos=-1;
+    for (int i=0;i<branches.size();++i){
+      vecteur br=gen2vecteur(branches[i]);
+      for (int j=1;j<br.size();++j){
+	gen br1=br[j-1],br2=br[j];
+	gen t=projection(br1,br2,p,contextptr);
+	if (is_positive(t,contextptr) && is_greater(1,t,contextptr)){
+	  gen proj=br1+t*(br2-br1);
+	  gen curd=distance2pp(proj,p,contextptr);
+	  if (is_greater(mind,curd,contextptr)){
+	    mind=curd;
+	    b=i;
+	    pos=j-1;
+	  }
+	}
+      }
+    }
+    if (b>=0){
+      vecteur br=gen2vecteur(branches[b]);
+      if (pos>=0 && pos+1<br.size()){
+	// if br is closed, insert intersection point at begin/end
+	if (br[0]==br.back()  && branches[b].subtype!=-1 ){
+	  vecteur addbr=vecteur(br.begin()+pos+1,br.end());
+	  addbr.insert(addbr.begin(),p);
+	  for (int i=1;i<pos;++i)
+	    addbr.push_back(br[i]);
+	  addbr.push_back(p);
+	  branches[b]=gen(addbr,-1);
+	  return true;
+	}
+	else {
+	  vecteur addbr=vecteur(br.begin()+pos+1,br.end());
+	  br=vecteur(br.begin(),br.begin()+pos+1);
+	  br.push_back(p);
+	  addbr.insert(addbr.begin(),p);
+	  branches.push_back(addbr);
+	  branches[b]=br;
+	}
+      }
+    }
+    return false;
+  }
+
+  // fit polygonal line to domain
+  int cut(const gen & eq,const gen & vx,const gen & vy,vecteur & v,double xmin,double xmax,double ymin,double ymax,vector<double> & xymin,vector<double> & xymax, vector<double> & yxmin,vector<double> & yxmax,GIAC_CONTEXT){
+    if (v.size()<2)
+      return -1;
+    gen g=v[0],x,y; double xd,yd,lastxd,lastyd;
+    reim(g,x,y,contextptr);
+    x=evalf_double(x,1,contextptr); y=evalf_double(y,1,contextptr);
+    if (x.type!=_DOUBLE_ || y.type!=_DOUBLE_) return -1;
+    lastxd=xd=x._DOUBLE_val; lastyd=yd=y._DOUBLE_val;
+    if (xd>=xmin && xd<=xmax && yd>=ymin && yd<=ymax){
+      if ((xd==xmin || xd==xmax) && (yd==ymin || yd==ymax)){
+	*logptr(contextptr) << "Please change border, [" << xd << "," << yd << "] verifies " << eq << '\n';
+	return -1;
+      }
+      if (xd==xmin)
+	yxmin.push_back(yd); 
+      if (xd==xmax)
+	yxmax.push_back(yd); 
+      if (yd==ymin)
+	xymin.push_back(xd); 
+      if (yd==ymax)
+	xymax.push_back(xd); 
+      return 0;
+    }
+    double eps=epsilon(contextptr);
+    for (int k=1;k<v.size();++k){
+      g=v[k];
+      reim(g,x,y,contextptr);
+      x=evalf_double(x,1,contextptr); y=evalf_double(y,1,contextptr);
+      if (x.type!=_DOUBLE_ || y.type!=_DOUBLE_) return -1;
+      xd=x._DOUBLE_val; yd=y._DOUBLE_val;
+      if (xd>=xmin && xd<=xmax && yd>=ymin && yd<=ymax){
+	v.erase(v.begin(),v.begin()+k);
+	// insert edge point by solving eq==0
+	bool is_xmin=lastxd<xmin,is_xmax=lastxd>xmax;
+	if (is_xmin || is_xmax){
+	  gen eqy=subst(eq,vx,is_xmin?xmin:xmax,false,contextptr);
+	  vecteur xx(gen2vecteur(_sort(makevecteur(lastyd,yd),contextptr)));
+	  gen sol=_fsolve(makesequence(eqy,vy,xx,_BISECTION_SOLVER,100*eps),contextptr);
+	  if (!get_sol(sol,contextptr))
+	    return -1;
+	  double Y=sol._DOUBLE_val;
+	  if (is_xmin)
+	    yxmin.push_back(Y);
+	  else
+	    yxmax.push_back(Y);
+	  v.insert(v.begin(),gen(is_xmin?xmin:xmax,Y));
+	  return k;
+	}
+	bool is_ymin=lastyd<ymin,is_ymax=lastyd>ymax;
+	if (is_ymin || is_ymax){
+	  gen eqx=subst(eq,vy,is_ymin?ymin:ymax,false,contextptr);
+	  vecteur yy(gen2vecteur(_sort(makevecteur(lastxd,xd),contextptr)));
+	  gen sol=_fsolve(makesequence(eqx,vx,yy,_BISECTION_SOLVER,100*eps),contextptr);
+	  if (!get_sol(sol,contextptr))
+	    return -1;
+	  double X=sol._DOUBLE_val;
+	  if (is_ymin)
+	    xymin.push_back(X);
+	  else
+	    xymax.push_back(X);
+	  v.insert(v.begin(),gen(X,is_ymin?ymin:ymax));
+	  return k;
+	}
+	return -1; // should never be reached
+      }
+      lastxd=xd; lastyd=yd;
+    }
+    return 0;
+  }
+
+  int poly_ineq_inter(vecteur & m,matrice & res,gen & curves,const gen &vx,const gen & vy,double & xmin,double &xmax,double & ymin,double & ymax,vecteur & cache,GIAC_CONTEXT){
+    gen vars(makevecteur(vx,vy));
+    size_t N=m.size();
+    // find intersection points
+    for (size_t i=0;i<N;++i){
+      gen v1(m[i]);
+      vecteur line;
+      for (size_t j=0;j<i;++j)
+	line.push_back(res[j][i]); // curve[i] inter cur[j] : exchange order
+      line.push_back(vecteur(0)); // empty vecteur
+      for (size_t j=i+1;j<N;++j){
+	gen v2(m[j]);
+	if (v1==v2){
+	  line.push_back(vecteur(0));
+	  continue;
+	}
+	// solve([v1,v2],[x,y])
+	gen mij=_solve(makesequence(makevecteur(v1,v2),vars),contextptr);
+	vecteur sol=gen2vecteur(mij),newsol;
+	for (int k=0;k<sol.size();++k){
+	  gen cur=sol[k];
+	  if (cur.type!=_VECT || cur._VECTptr->size()!=2)
+	    continue;
+	  // check that x,y verifies equations
+	  size_t pos=0;
+	  for (;pos<N;++pos){
+	    if (pos==i || pos==j) continue; // it's 0 there
+	    gen val=subst(m[pos],vars,cur,false,contextptr);
+	    if (!is_positive(val,contextptr))
+	      break;
+	  }
+	  if (pos<N)
+	    continue;
+	  newsol.push_back(cur);
+	  gen x=cur[0],y=cur[1];
+	  x=evalf_double(x,1,contextptr);
+	  double xd=x._DOUBLE_val;
+	  if (xd>xmax)
+	    xmax=xd;
+	  if (xd<xmin)
+	    xmin=xd;
+	  y=evalf_double(y,1,contextptr);
+	  double yd=y._DOUBLE_val;
+	  if (yd>ymax)
+	    ymax=yd;
+	  if (yd<ymin)
+	    ymin=yd;
+	} // end k loop
+	line.push_back(newsol);
+      } // end j loop
+      res.push_back(line);
+    } // end i loop
+    // FIXME add code to detect multiplicities (intersection points should be for 2 curves not more)
+    vecteur C(N),P(N);
+    // check for known curves (line/conics), for other curves -> implicitplot
+    for (int i=0;i<N;++i){
+      gen g;
+      if (equation2geo2d(m[i],vx,vy,g,-3.125,3.125,0.0625,undef,3,contextptr)){
+	// adjust xmin/xmax/ymin/ymax 
+	adjust_xy(g,xmin,xmax,ymin,ymax,contextptr);
+	C[i]=g;
+      }
+    }
+    // modify xmin..xmax ymin..ymax if 1 vertex satisfies the equations
+    while (1){
+      bool ok=true;
+      for (int i=0;i<m.size();++i){
+	gen a=subst(m[i],vars,makevecteur(xmin,ymin),false,contextptr);
+	if (is_zero(a)){ ok=false; break; }
+	a=subst(m[i],vars,makevecteur(xmin,ymax),false,contextptr);
+	if (is_zero(a)){ ok=false; break; }
+	a=subst(m[i],vars,makevecteur(xmax,ymax),false,contextptr);
+	if (is_zero(a)){ ok=false; break; }
+	a=subst(m[i],vars,makevecteur(xmax,ymin),false,contextptr);
+	if (is_zero(a)){ ok=false; break; }
+      }
+      if (ok) break;
+      double z=rand()*0.1/RAND_MAX;
+      xmin -= z*std::abs(xmin);
+      z=rand()*0.1/RAND_MAX;
+      xmax += z*std::abs(xmax);
+      z=rand()*0.1/RAND_MAX;
+      ymin -= z*std::abs(ymin);
+      z=rand()*0.1/RAND_MAX;
+      ymax += z*std::abs(ymax);      
+    }
+    vector<double> yxmin,yxmax,xymin,xymax; // contains intersections of curves with the 4 edges of the domain
+    yxmin.push_back(ymin); yxmin.push_back(ymax); // y values at x=xmin
+    yxmax.push_back(ymin); yxmax.push_back(ymax);
+    xymin.push_back(xmin); xymin.push_back(xmax); // x values at y=ymin
+    xymax.push_back(xmin); xymax.push_back(xmax);
+    for (size_t i=0;i<N;++i){
+      gen Ci=C[i];
+      if (is_zero(Ci)) {
+	gen key=makevecteur(m[i],vx,vy,xmin,xmax,ymin,ymax);
+	iterateur it=cache.begin(),itend=cache.end();
+	for (;it!=itend;++it){
+	  gen k=(*it)[0][0];
+	  k=ratnormal(m[i]/k,contextptr);
+	  if (k.type==_FRAC || is_integer(k))
+	    break;
+	}
+	if (it!=itend)
+	  Ci=(*it)[1];
+	else {
+	  int nstep=20*gnuplot_pixels_per_eval;
+	  if (nstep<8000) nstep=8000;
+	  Ci=plotimplicit(m[i],vx,vy,xmin,xmax,ymin,ymax,nstep,0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,contextptr,3);
+	  cache.push_back(makevecteur(key,Ci));
+	}
+	if (Ci.type==_VECT && Ci._VECTptr->empty()){
+	  // always true or always false
+	  gen tst=subst(m[i],vars,makevecteur(xmin,ymin),false,contextptr);
+	  if (!is_positive(tst,contextptr)){
+	    curves=0;
+	    return 0; // always false
+	  }
+	}
+	// extract polygonal lines
+	vecteur v(gen2vecteur(Ci));
+	for (int j=0;j<v.size();++j){
+	  v[j]=remove_at_pnt(v[j]);
+	  if (v[j].is_symb_of_sommet(at_curve)) // should be true
+	    v[j]=v[j][2];
+	  // update begin/end of polygonal lines to fit xmin/xmax/ymin/ymax
+	  vecteur tmp(gen2vecteur(v[j]));
+	  reverse(tmp.begin(),tmp.end());
+	  if (cut(m[i],vx,vy,tmp,xmin,xmax,ymin,ymax,xymin,xymax,yxmin,yxmax,contextptr)==-1) return -1;
+	  reverse(tmp.begin(),tmp.end());
+	  if (cut(m[i],vx,vy,tmp,xmin,xmax,ymin,ymax,xymin,xymax,yxmin,yxmax,contextptr)==-1) return -1;
+	  v[j]=tmp;
+	}
+	Ci=C[i]=v;
+      } // end implicit
+      else { // find branchs in xmin..xmax,ymin..ymax for hyperbolas and segments
+	gen eq,eqx,eqy;
+	if (Ci.type==_VECT && Ci._VECTptr->size()==2 && Ci.subtype==_LINE__VECT)
+	  eq=Ci._VECTptr->front()+t__IDNT_e*(Ci._VECTptr->front()-Ci._VECTptr->back());
+	else 
+	  eq=_parameq(Ci,contextptr);
+	if (Ci.is_symb_of_sommet(at_cercle)){
+	  Ci=_paramplot(makesequence(eq,t__IDNT_e,-M_PI,M_PI,M_PI/100),contextptr);
+	  Ci=remove_at_pnt(Ci);
+	  Ci=vecteur(1,Ci[2]);
+	} else {
+	  reim(eq,eqx,eqy,contextptr);
+	  vecteur txmin=solve(eqx-xmin,t__IDNT_e,0,contextptr);
+	  for (int j=0;j<txmin.size();++j){
+	    gen y=evalf_double(subst(eqy,t__IDNT_e,txmin[j],false,contextptr),1,contextptr);
+	    if (y.type==_DOUBLE_ && y._DOUBLE_val>ymin && y._DOUBLE_val<ymax)
+	      yxmin.push_back(y._DOUBLE_val);
+	    else {
+	      txmin.erase(txmin.begin()+j); --j;
+	    }
+	  }
+	  vecteur txmax=solve(eqx-xmax,t__IDNT_e,0,contextptr);
+	  for (int j=0;j<txmax.size();++j){
+	    gen y=evalf_double(subst(eqy,t__IDNT_e,txmax[j],false,contextptr),1,contextptr);
+	    if (y.type==_DOUBLE_ && y._DOUBLE_val>ymin && y._DOUBLE_val<ymax)
+	      yxmax.push_back(y._DOUBLE_val);
+	    else {
+	      txmax.erase(txmax.begin()+j); --j;
+	    }
+	  }
+	  vecteur tymin=solve(eqy-ymin,t__IDNT_e,0,contextptr);
+	  for (int j=0;j<tymin.size();++j){
+	    gen x=evalf_double(subst(eqx,t__IDNT_e,tymin[j],false,contextptr),1,contextptr);
+	    if (x.type==_DOUBLE_ && x._DOUBLE_val>xmin && x._DOUBLE_val<xmax)
+	      xymin.push_back(x._DOUBLE_val);
+	    else {
+	      tymin.erase(tymin.begin()+j); --j;
+	    }
+	  }
+	  vecteur tymax=solve(eqy-ymax,t__IDNT_e,0,contextptr);
+	  for (int j=0;j<tymax.size();++j){
+	    gen x=evalf_double(subst(eqx,t__IDNT_e,tymax[j],false,contextptr),1,contextptr);
+	    if (x.type==_DOUBLE_ && x._DOUBLE_val>xmin && x._DOUBLE_val<xmax)
+	      xymax.push_back(x._DOUBLE_val);
+	    else {
+	      tymax.erase(tymax.begin()+j); --j;
+	    }
+	  }
+	  vecteur T(mergevecteur(mergevecteur(txmin,txmax),mergevecteur(tymin,tymax)));
+	  T=gen2vecteur(_sort(T,contextptr));
+	  vecteur branches;
+	  gen Cir=remove_at_pnt(Ci);
+	  if (T.empty() && Cir.is_symb_of_sommet(at_curve)){ // ellipse, keep the polygonal line
+	    branches=vecteur(1,remove_at_pnt(Ci)[2]); // 1 branch
+	  }
+	  else {
+	    for (int i=1;i < T.size();++i){
+	      gen t0(T[i-1]),t1(T[i]),tmid((t0+t1)/2.0);
+	      gen x=subst(eqx,t__IDNT_e,tmid,false,contextptr);
+	      x=evalf_double(x,1,contextptr);
+	      gen y=subst(eqy,t__IDNT_e,tmid,false,contextptr);
+	      y=evalf_double(y,1,contextptr);
+	      if (x.type==_DOUBLE_ && y.type==_DOUBLE_){
+		double xd=x._DOUBLE_val,yd=y._DOUBLE_val;
+		if (xd>xmin && xd<xmax && yd>ymin && yd<ymax){
+		  // curve branch is inside domain
+		  gen a,b;
+		  if (is_linear_wrt(eq,t__IDNT_e,a,b,contextptr)){
+		    a=subst(eq,t__IDNT_e,t0,false,contextptr);
+		    b=subst(eq,t__IDNT_e,t1,false,contextptr);
+		    branches.push_back(gen(makevecteur(a,b),_LINE__VECT));
+		  }
+		  else {
+		    gen br=_plotparam(makesequence(eq,t__IDNT_e,t0,t1,(t1-t0)/100),contextptr);
+		    br=remove_at_pnt(br)[2];
+		    branches.push_back(br);
+		  }
+		}
+	      }
+	    } // end loop
+	  } // end hyperbola or line
+	  Ci=branches;
+	} // end not circle
+      } // end if (implicitplot) else conic
+      // cut Ci branchs at intersection points, 
+      vecteur intp; // list of intersections points for curve i
+      aplatir(gen2vecteur(res[i]),intp,false);
+      vecteur branches=gen2vecteur(Ci);
+      for (int I=0;I<intp.size();++I){
+	// insert in the right polygonal line at the right position, cut
+	insert(intp[I],branches,contextptr);
+      }
+      // keep only valid branches
+      Ci=branches;
+      branches.clear();
+      for (int j=0;j<Ci._VECTptr->size();++j){
+	vecteur br=gen2vecteur((*Ci._VECTptr)[j]);
+	if (br.size()>=2 && is_ok(m,i,vars,br.front(),contextptr) && is_ok(m,i,vars,br.back(),contextptr)){
+	  gen chk=br.size()==2 ?(br[0]+br[1])/2:br[br.size()/2];
+	  if ( is_ok(m,i,vars,chk,contextptr))
+	    branches.push_back(br);
+	}
+      }
+      C[i]=branches;
+    }
+    vecteur branches;
+    aplatir(C,branches,false);
+    // sort and add edges of the domain
+    vector<double> tmp;
+    tmp.clear(); tmp.swap(xymin);
+    for (int i=0;i<tmp.size();++i){
+      if (is_ok(m,-1,vars,makevecteur(tmp[i],ymin),contextptr))
+	xymin.push_back(tmp[i]);
+    }
+    sort(xymin.begin(),xymin.end());
+    for (int i=1;i<xymin.size();++i){
+      gen chk=makevecteur((xymin[i-1]+xymin[i])/2,ymin);
+      if (is_ok(m,-1,vars,chk,contextptr))
+	branches.push_back(makevecteur(gen(xymin[i-1],ymin),gen(xymin[i],ymin)));
+    }
+    tmp.clear(); tmp.swap(xymax);
+    for (int i=0;i<tmp.size();++i){
+      if (is_ok(m,-1,vars,makevecteur(tmp[i],ymax),contextptr))
+	xymax.push_back(tmp[i]);
+    }
+    sort(xymax.begin(),xymax.end());
+    for (int i=1;i<xymax.size();++i){
+      if (is_ok(m,-1,vars,makevecteur((xymax[i-1]+xymax[i])/2,ymax),contextptr))
+	branches.push_back(makevecteur(gen(xymax[i-1],ymax),gen(xymax[i],ymax)));
+    }
+    tmp.clear(); tmp.swap(yxmin);
+    for (int i=0;i<tmp.size();++i){
+      if (is_ok(m,-1,vars,makevecteur(xmin,tmp[i]),contextptr))
+	yxmin.push_back(tmp[i]);
+    }
+    sort(yxmin.begin(),yxmin.end());
+    for (int i=1;i<yxmin.size();++i){
+      if (is_ok(m,-1,vars,makevecteur(xmin,(yxmin[i-1]+yxmin[i])/2),contextptr))
+	branches.push_back(makevecteur(gen(xmin,yxmin[i-1]),gen(xmin,yxmin[i])));
+    }
+    tmp.clear(); tmp.swap(yxmax);
+    for (int i=0;i<tmp.size();++i){
+      if (is_ok(m,-1,vars,makevecteur(xmax,tmp[i]),contextptr))
+	yxmax.push_back(tmp[i]);
+    }
+    sort(yxmax.begin(),yxmax.end());
+    for (int i=1;i<yxmax.size();++i){
+      if (is_ok(m,-1,vars,makevecteur(xmax,(yxmax[i-1]+yxmax[i])/2),contextptr))
+	branches.push_back(makevecteur(gen(xmax,yxmax[i-1]),gen(xmax,yxmax[i])));
+    }
+    curves=branches;
+    return 1;
+  }
+
+  // RAND_MAX invalid data, -RAND_MAX if p is on v, index otherwise
+  // index is 0 if outside
+  int is_inside(const gen & p,const vecteur &v,GIAC_CONTEXT){
+    if (v.size()<4 || v.front()!=v.back())
+      return RAND_MAX;
+    gen theta=0.0;
+    for (int i=1;i<v.size();++i){
+      gen a=v[0],b=v[1],c=a-p;
+      if (is_zero(c))
+	return -RAND_MAX;
+      theta += arg((b-p)/c,contextptr);
+    }
+    if (theta.type!=_DOUBLE_)
+      return RAND_MAX;
+    double t=theta._DOUBLE_val; // t should be about a multiple of 2*pi
+    return int(t/2/M_PI+.25);
+  }
+
+  // v and w assumed not to cross
+  // 1 if v contains w, -1 if w contains v, 0 otherwise
+  int curve_compare(const vecteur &v,const vecteur & w,GIAC_CONTEXT){
+    if (v.size()<4 || w.size()<4)
+      return RAND_MAX;
+    gen p=v[0],q=w[0];
+    int i=is_inside(q,v,contextptr),j=is_inside(p,w,contextptr);
+    if (absint(i)==RAND_MAX || absint(j)==RAND_MAX)
+      return RAND_MAX;
+    if (i!=0 && j==0) // w[0] is inside v and v[0] is outside w
+      return 1;
+    if (i==0 && j!=0)
+      return -1;
+    return 0;
+  }
+
+  gen nearest(const vecteur &v,const vecteur & w,int & pos1,int & pos2,GIAC_CONTEXT){
+    gen mind(distance2pp(v[0],w[0],contextptr));
+    pos1=pos2=0;
+    for (int i=0;i<v.size();++i){
+      for (int j=0;j<w.size();++j){
+	gen curd(distance2pp(v[i],w[j],contextptr));
+	if (is_greater(mind,curd,contextptr)){
+	  pos1=i; pos2=j; mind=curd;
+	}
+      }
+    }
+    return mind;
+  }
+
+  vecteur connect_nearest(const vecteur& C1,const vecteur &C2,GIAC_CONTEXT){
+    int pos1,pos2;
+    nearest(C1,C2,pos1,pos2,contextptr);
+    // make polygon
+    vecteur connect(C1.begin(),C1.begin()+pos1+1);
+    for (int k=pos2;k<C2.size();++k)
+      connect.push_back(C2[k]);
+    for (int k=1;k<=pos2;++k)
+      connect.push_back(C2[k]);
+    for (int k=pos1;k<C1.size();++k)
+      connect.push_back(C1[k]);
+    return connect;
+  }
+
+  bool curves2polygons(const vecteur & C,vecteur & res,GIAC_CONTEXT){
+    if (C.empty()) return true;
+    // find curves that are inside other curves
+    vector< vector<bool> > liens(C.size(),vector<bool>(C.size(),false));
+    for (int j=0;j<C.size();++j){
+      for (int k=j+1;k<C.size();++k){
+	int l=curve_compare(gen2vecteur(C[j]),gen2vecteur(C[k]),contextptr);
+	if (l==RAND_MAX) return false;
+	if (l==0) continue;
+	if (l>0) liens[j][k]=true;
+	if (l<0) liens[k][j]=true;
+      }
+    }
+    // count number of curves inside each curve
+    vector<int> nliens(C.size());
+    for (int j=0;j<C.size();++j){
+      int count=0;
+      for (int k=0;k<C.size();++k){
+	if (liens[j][k]) ++count;
+      }
+      nliens[j]=count;
+    }
+    vector<bool> done(C.size());
+    for (;;){
+      // find the curve not done that has the max number of curves inside
+      int maxin=-1,J=-1;
+      for (int j=0;j<C.size();++j){
+	if (!done[j] && nliens[j]>maxin){
+	  J=j;
+	  maxin=nliens[j];
+	}
+      }
+      if (maxin==-1) return true; // all curves were done
+      done[J]=true;
+      // curve[J] is an outside curve
+      // find direct childs, curves that are inside J but not inside other curves
+      vector<int> childrens;
+      if (maxin){
+	for (int j=0;j<C.size();++j){
+	  if (j==J) continue;
+	  int k=0;
+	  for (;k<C.size();++k){
+	    if (k!=J && liens[k][j])
+	      break;
+	  }
+	  if (k==C.size()){
+	    // j is a direct child
+	    childrens.push_back(j);
+	    done[j]=true;
+	    // recurse on C[j]'s children
+	    vecteur in;
+	    for (int l=0;l<C.size();++l){
+	      if (liens[j][l])
+		in.push_back(C[l]);
+	    }
+	    curves2polygons(in,res,contextptr);
+	  }
+	}
+      }
+      // fill polygon between J and childrens
+      if (childrens.empty()){
+	res.push_back(C[J]);
+	continue;
+      }
+      // connect childrens
+      vecteur C2(gen2vecteur(C[childrens[0]]));
+      for (int j=1;j<childrens.size();++j)
+	C2=connect_nearest(C2,gen2vecteur(C[childrens[j]]),contextptr);
+      // connect nearest point of C[J] with C[childrens[0]]
+      vecteur C1(gen2vecteur(C[J]));
+      res.push_back(connect_nearest(C1,C2,contextptr));
+    }
+    return true;
+  }
+
+  // vsymb should be a union of intersections, as returned by andor2list
+  bool poly_ineq_plot(const vecteur & vsymb,const gen & x,const gen &y,double & xmin,double & xmax,double & ymin,double & ymax,const vecteur & attr_,vecteur & res,GIAC_CONTEXT){
+    vecteur attr(attr_); fill_attributs(attr);
+    vecteur v(vsymb.size());
+    for (size_t i=0;i<v.size();++i){
+      matrice vi;
+      if (!and2listdiff(gen2vecteur(vsymb[i]),x,y,vi,contextptr))
+	return false;
+      v[i]=vi;
+    }
+    // v[i] is a list of inequations eq>=0 stored as eq
+    matrice inter(vsymb.size()),curves(vsymb.size()); // one list of matrices of intersection points for each element of v (and one list of curves)
+    vecteur cache; // cache for implicitplot
+    for (size_t i=0;i<v.size();++i){
+      vecteur vi=gen2vecteur(v[i]);
+      vecteur ii;
+      int I=poly_ineq_inter(vi,ii,curves[i],x,y,xmin,xmax,ymin,ymax,cache,contextptr);
+      if (I<0)
+	return false;
+      if (I==0)
+	continue; // empty set
+      // curves[i] is a list of branches
+      vecteur B=gen2vecteur(curves[i]),C;
+      // now we must connect them, this is an O(N^2) process
+      while (!B.empty()){
+	vecteur branch(gen2vecteur(B.back()));
+	if (branch.size()<2)
+	  return false;
+	B.pop_back();	
+	gen src=branch[0],dst=branch.back();
+	// find a branch starting or ending at dst
+	for (int j=0;j<B.size();++j){
+	  vecteur cur=gen2vecteur(B[j]);
+	  if (cur.size()<2)
+	    return false;
+	  if (is_greater(1e-8,abs(cur.back()-dst,contextptr),contextptr)){
+	    B.erase(B.begin()+j);
+	    for (int k=cur.size()-2;k>=0;--k){
+	      branch.push_back(cur[k]);
+	    }
+	    dst=cur[0];
+	    if (is_greater(1e-8,abs(dst-src,contextptr),contextptr)){
+	      branch.back()=branch.front();
+	      break;
+	    }
+	    j=-1;
+	    continue;
+	  }
+	  if (!is_greater(1e-8,abs(cur[0]-dst,contextptr),contextptr))
+	    continue;
+	  B.erase(B.begin()+j);
+	  for (int k=1;k<cur.size();++k){
+	    branch.push_back(cur[k]);
+	  }
+	  dst=cur.back();
+	  if (is_greater(1e-8,abs(dst-src,contextptr),contextptr)){
+	    branch.back()=branch.front();
+	    break;
+	  }
+	  j=-1;
+	}
+	if (!is_greater(1e-8,abs(dst-src,contextptr),contextptr))
+	  return false; // could not loop
+	C.push_back(branch);
+      }
+      curves2polygons(C,res,contextptr);
+    } // end i loop
+    for (int j=0;j<res.size();++j){
+      res[j]=pnt_attrib(change_subtype(res[j],_GROUP__VECT),attr,contextptr);
+    }
+    add_autoscale(res,xmin,xmax,ymin,ymax);
     return true;
   }
 

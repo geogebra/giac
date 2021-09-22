@@ -9836,6 +9836,8 @@ namespace giac {
     // sizes may differ if a coeff of v is 0 mod m
     if (v.coord.size()<p.coord.size())
       return false;
+    if (v.coord.empty())
+      return true;
     unsigned s = unsigned(v.coord.size());
     int lc=smod(v.coord[0].g,m).val;
     int lcp=p.coord.empty()?1:p.coord[0].g;

@@ -129,6 +129,11 @@ namespace giac {
   gen _point2d(const gen & args,GIAC_CONTEXT);
   gen mkrand2d3d(int dim,int nargs,gen (* f)(const gen &,const context *),GIAC_CONTEXT);
   gen droite_by_equation(const vecteur & v,bool est_plan,GIAC_CONTEXT);
+  // equation f -> geometric object g
+  // if allowed == 1 only lines allowed
+  // 2 lines and circles
+  // >2 all conics
+  bool equation2geo2d(const gen & f0,const gen & x,const gen & y,gen & g,double tmin,double tmax,double tstep,const gen & pointon,int allowed,const context * contextptr);
   // given 2 points e and f return equation of line e,f as coeffs a,b,c
   bool point2abc(const gen & e,const gen & f,gen & a,gen & b,gen & c,GIAC_CONTEXT);
   gen abs_norm(const gen & g,GIAC_CONTEXT);
@@ -253,7 +258,7 @@ namespace giac {
   // compute t if true
   bool on(const gen & e_orig,const gen & f,gen & t,GIAC_CONTEXT);
 
-  gen plotfunc(const gen & f,const gen & vars,const vecteur & attributs,bool clrplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_zmin, double function_zmax,int nstep,int jstep,bool showeq,GIAC_CONTEXT);
+  gen plotfunc(const gen & f,const gen & vars,const vecteur & attributs,int densityplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_zmin, double function_zmax,int nstep,int jstep,bool showeq,GIAC_CONTEXT);
   // return a vector of values with simple decimal representation
   // between xmin/xmax or including xmin/xmax (if bounds is true)
   vecteur ticks(double xmin,double xmax,bool bounds);
@@ -267,7 +272,7 @@ namespace giac {
   gen approx_area(const gen & f,const gen & x,const gen & a,const gen &b,int n,int method,GIAC_CONTEXT);
   gen _aire(const gen & args,GIAC_CONTEXT);
   gen _perimetre(const gen & args,GIAC_CONTEXT);
-  gen funcplotfunc(const gen & args,bool densityplot,const context * contextptr);
+  gen funcplotfunc(const gen & args,int densityplot,const context * contextptr);
   gen _plotfunc(const gen &,GIAC_CONTEXT);
   gen _funcplot(const gen & args,const context * contextptr);
   gen _plotdensity(const gen & args,const context * contextptr);
@@ -318,6 +323,7 @@ namespace giac {
   gen _animation(const gen & args,GIAC_CONTEXT);
   int animations(const gen & g); // number of animations inside g
   gen get_animation_pnt(const gen & g,int pos);
+  bool get_sol(gen & sol,GIAC_CONTEXT); // get solution from bisection solver
 
   gen _point(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_point;
@@ -487,12 +493,12 @@ namespace giac {
   // 4 optional != 0 automatically show a legende based on arg 0 and 1
   // 5 optional cartesian equation in x and y, 6 optional parametric rational equation
 
-  gen plotparam(const gen & f,const gen & vars,const vecteur & attributs,bool densityplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_tmin, double function_tmax,double function_tstep,const gen & equation,const gen & parameq,const context * contextptr);
+  gen plotparam(const gen & f,const gen & vars,const vecteur & attributs,int densityplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_tmin, double function_tmax,double function_tstep,const gen & equation,const gen & parameq,const context * contextptr);
   gen _plotparam(const gen & args,GIAC_CONTEXT);
   gen _paramplot(const gen & args,const context * contextptr);
   extern const unary_function_ptr * const  at_plotparam;
   extern const unary_function_ptr * const  at_paramplot;
-  gen paramplotparam(const gen & args,bool clrplot,const context * contextptr);
+  gen paramplotparam(const gen & args,int densityplot,const context * contextptr);
   gen _plot(const gen & g,const context * contextptr);
 
   gen _plotpolar(const gen & args,GIAC_CONTEXT);

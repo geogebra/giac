@@ -1334,14 +1334,21 @@ namespace giac {
 
   double max_nstep=2e4;
 
-  gen plotfunc(const gen & f_,const gen & vars,const vecteur & attributs,bool densityplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_zmin, double function_zmax,int nstep,int jstep,bool showeq,const context * contextptr){
+  gen plotfunc(const gen & f_,const gen & vars,const vecteur & attributs,int densityplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_zmin, double function_zmax,int nstep,int jstep,bool showeq,const context * contextptr){
     vecteur L=andor2list(f_,contextptr);
-    if (are_inequations(L)){
+    if (densityplot==0 && are_inequations(L)){
       vecteur res;
       if (lin_ineq_plot(L,x__IDNT_e,y__IDNT_e,attributs,res,contextptr))
 	return gen(res,_SEQ__VECT);
+      if (poly_ineq_plot(L,x__IDNT_e,y__IDNT_e,function_xmin,function_xmax,function_ymin,function_ymax,attributs,res,contextptr))
+	return gen(res,_SEQ__VECT);
+      if (jstep==0 && nstep<=401) nstep*=16;
+      return plotfunc(f_,makevecteur(x__IDNT_e,y__IDNT_e),attributs,2,function_xmin,function_xmax,function_ymin,function_ymax,-1,2,nstep,jstep,false,contextptr);
     }
-    if (f_.is_symb_of_sommet(at_equal) || is_inequation(f_)){
+    if (f_.is_symb_of_sommet(at_equal) 
+	//|| is_inequation(f_)
+	){
+      return plotimplicit(equal2diff(f_),x__IDNT_e,y__IDNT_e,function_xmin,function_xmax,function_ymin,function_ymax,nstep,jstep,epsilon(contextptr),attributs,false,contextptr,3);
       return string2gen("Try plot(["+f_._SYMBptr->feuille.print(contextptr)+"],"+vars.print(contextptr)+"). (In)equations can not be plotted.",false);
     }
     gen f=when2piecewise(f_,contextptr);
@@ -1614,7 +1621,7 @@ namespace giac {
 	nv=int(std::sqrt(double(nstep)));
       }
 #ifdef KHICAS
-      if (nu*nv>25){
+      if (nu*nv>25 && densityplot!=2){
 	nu=nv=5;
       }
 #endif
@@ -1622,14 +1629,109 @@ namespace giac {
       double dy=(function_ymax-function_ymin)/nv;
       double fmin=1e300,fmax=-fmin;
       // Compute a grid of values
-      vecteur values;
+      vecteur values,attr(attributs);
+      if (attr[0].type==_INT_)
+	attr[0].val |= _FILL_POLYGON;
+      int ev=eval_level(contextptr);
+      if (densityplot==2){ // for truth graphs (density_plot==2)
+	vector< vector<bool> > grid(nu+1,vector<bool>(nv+1));
+	for (int i=0;i<=nu;++i,x+=dx){
+	  y=function_ymin;
+	  vals[0]=x;
+	  vector<bool> & line=grid[i];
+	  for (int j=0;j<=nv;++j,y+=dy){
+	    vals[1]=y;
+	    gen fval(subst(f,vars,vals,false,contextptr));
+	    fval=eval(fval,ev,contextptr);
+	    line[j]=is_one(fval);
+	  } // end j loop
+	} // end i loop
+	double ystart;
+	x=function_xmin;
+	for (int i=0;i<=nu;++i,x+=dx){
+	  ystart=y=function_ymin; 
+	  int jstart=0;
+	  vector<bool> &gridline=grid[i];
+	  bool mode=gridline[0];
+#if 0
+	  bool push=false;
+	  if (i){
+	    vector<bool> &gl=grid[i-1];
+	    for (int k=0;k<=nv;++k){
+	      if (gl[k]){
+		push=true;
+		break;
+	      }
+	    }
+	  }
+	  if (!push) continue;
+#endif
+	  for (int j=0;j<=nv;++j,y+=dy){
+	    if (mode==gridline[j])
+	      continue;
+	    // push a rectangle if true mode
+	    if (mode){
+	      // jstart->j
+	      vecteur rect;
+	      double xleft=x-dx/2,xright=x+dx/2,ystartleft=ystart-dy/2,yleft=y-dy/2;
+#if 0
+	      if (i){ // look grid[i-1] to adjust ystartleft and yleft
+		vector<bool> &gl=grid[i-1];
+		int J;
+		if (gl[j]){
+		  for (J=j+1;J<=nv;++J){
+		    if (!gl[J])
+		      break;
+		  }
+		}
+		else {
+		  for (J=j-1;J>=jstart;--J){
+		    if (gl[J])
+		      break;
+		  }
+		  ++J;
+		}
+		// gridline[j] is false, gridline[j-1] is true
+		if (J>jstart && J<=nv) yleft += (J-j)*dy;
+		if (gl[jstart]){
+		  for (J=jstart-1;J>=0;--J){
+		    if (!gl[J])
+		      break;
+		  }
+		  ++J;
+		}
+		else {
+		  for (J=jstart+1;J<=j;++J){
+		    if (gl[J])
+		      break;
+		  }
+		}
+		if (J>=0 && J<=j) ystartleft += (J-jstart)*dy;		
+	      }
+#endif
+	      rect=makevecteur(gen(xleft,ystartleft),gen(xright,ystart-dy/2),gen(xright,y-dy/2),gen(xleft,yleft),gen(xleft,ystartleft));
+	      gen p(rect,_GROUP__VECT);
+	      p=pnt_attrib(p,attr,contextptr);
+	      values.push_back(p);
+	    }
+	    mode=gridline[j];
+	    ystart=y; jstart=j;
+	  } // end j loop
+	  if (mode && i){
+	    vecteur rect(makevecteur(gen(x-dx/2,ystart-dy/2),gen(x+dx/2,ystart-dy/2),gen(x+dx/2,y-dy/2),gen(x-dx/2,y-dy/2),gen(x-dx/2,ystart-dy/2)));
+	    values.push_back(pnt_attrib(gen(rect,_GROUP__VECT),attr,contextptr));
+	  }
+	} // end i loop
+	return values;
+      }
       for (int i=0;i<=nu;++i,x+=dx){
 	y=function_ymin;
 	vals[0]=x;
 	vecteur tmp;
 	for (int j=0;j<=nv;++j,y+=dy){
 	  vals[1]=y;
-	  gen fval=evalf_double(evalf(subst(f,vars,vals,false,contextptr),eval_level(contextptr),contextptr),1,contextptr);
+	  gen fval(subst(f,vars,vals,false,contextptr));
+	  fval=evalf_double(evalf(fval,ev,contextptr),1,contextptr);
 	  if (fval.type==_DOUBLE_){
 	    if (fval._DOUBLE_val<fmin)
 	      fmin=fval._DOUBLE_val;
@@ -1637,10 +1739,10 @@ namespace giac {
 	      fmax=fval._DOUBLE_val;
 	  }
 	  tmp.push_back(gen(makevecteur(x,y,fval),_POINT__VECT));
-	}
+	} // end j loop
 	values.push_back(gen(tmp,_GROUP__VECT));
       }
-      if (densityplot){
+      if (densityplot){	
 	if (function_zmin==function_zmax){
 	  function_zmin=fmin;
 	  function_zmax=fmax;
@@ -2113,7 +2215,7 @@ namespace giac {
     read_option(v,xmin,xmax,ymin,ymax,zmin,zmax,attributs,nstep,jstep,kstep,unfactored,contextptr);
   }
 
-  gen funcplotfunc(const gen & args,bool densityplot,const context * contextptr){
+  gen funcplotfunc(const gen & args,int densityplot,const context * contextptr){
     double xmin=gnuplot_xmin,xmax=gnuplot_xmax,ymin=gnuplot_ymin,ymax=gnuplot_ymax,zmin=gnuplot_zmin,zmax=gnuplot_zmax;
     bool showeq=false;
     if (densityplot)
@@ -2252,7 +2354,7 @@ namespace giac {
 
   gen _funcplot(const gen & args,const context * contextptr){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    return funcplotfunc(args,false,contextptr);
+    return funcplotfunc(args,0,contextptr);
   }
   static const char _funcplot_s []="funcplot"; // Same as plotfunc but with tex print
   static define_unary_function_eval_quoted (__funcplot,&_funcplot,_funcplot_s);
@@ -2260,7 +2362,7 @@ namespace giac {
 
   gen _plotdensity(const gen & args,const context * contextptr){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    return funcplotfunc(args,true,contextptr);
+    return funcplotfunc(args,1,contextptr);
   }
   static const char _plotdensity_s []="plotdensity"; 
   static define_unary_function_eval_quoted (__plotdensity,&_plotdensity,_plotdensity_s);
@@ -2268,7 +2370,7 @@ namespace giac {
 
   gen _plotmatrix(const gen & args,const context * contextptr){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    return funcplotfunc(args,true,contextptr);
+    return funcplotfunc(args,1,contextptr);
   }
   static const char _plotmatrix_s []="plotmatrix"; 
   static define_unary_function_eval_quoted (__plotmatrix,&_plotmatrix,_plotmatrix_s);
@@ -6625,7 +6727,7 @@ namespace giac {
   // allowed 1 lines
   // 2 lines and circles
   // >2 all conics
-  static bool equation2geo2d(const gen & f0,const gen & x,const gen & y,gen & g,double tmin,double tmax,double tstep,const gen & pointon,int allowed,const context * contextptr){
+  bool equation2geo2d(const gen & f0,const gen & x,const gen & y,gen & g,double tmin,double tmax,double tstep,const gen & pointon,int allowed,const context * contextptr){
     gen f=_fxnd(remove_equal(f0),contextptr)._VECTptr->front();
     gen eq=subst(f,makevecteur(x,y),makevecteur(x__IDNT_e,y__IDNT_e),false,contextptr);
     if (!lop(f,at_abs).empty() || !lop(f,at_sign).empty())
@@ -8378,7 +8480,7 @@ namespace giac {
   static define_unary_function_eval2 (__curve,&_curve,_curve_s,&printascurve);
   define_unary_function_ptr5( at_curve ,alias_at_curve,&__curve,0,true);
 
-  gen plotparam(const gen & f,const gen & vars,const vecteur & attributs,bool densityplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_tmin, double function_tmax,double function_tstep,const gen & equation,const gen & parameq,const gen & vparam,const context * contextptr){
+  gen plotparam(const gen & f,const gen & vars,const vecteur & attributs,int densityplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_tmin, double function_tmax,double function_tstep,const gen & equation,const gen & parameq,const gen & vparam,const context * contextptr){
     if (function_tstep<=0 || (function_tmax-function_tmin)/function_tstep>max_nstep || function_tmax==function_tmin)
       return gensizeerr(gettext("Plotparam: unable to discretize: tmin, tmax, tstep=")+print_DOUBLE_(function_tmin,12)+","+print_DOUBLE_(function_tmax,12)+","+print_DOUBLE_(function_tstep,12)+gettext("\nTry a larger value for tstep"));
     gen fC(f);
@@ -8483,11 +8585,11 @@ namespace giac {
     return res; // e;
   }
 
-  gen plotparam(const gen & f,const gen & vars,const vecteur & attributs,bool densityplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_tmin, double function_tmax,double function_tstep,const gen & equation,const gen & parameq,const context * contextptr){
+  gen plotparam(const gen & f,const gen & vars,const vecteur & attributs,int densityplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_tmin, double function_tmax,double function_tstep,const gen & equation,const gen & parameq,const context * contextptr){
     return plotparam(f,vars,attributs,densityplot,function_xmin,function_xmax,function_ymin,function_ymax,function_tmin,function_tmax,function_tstep,equation,parameq,undef,contextptr);
   }
 
-  gen paramplotparam(const gen & args,bool densityplot,const context * contextptr){
+  gen paramplotparam(const gen & args,int densityplot,const context * contextptr){
     // args= [x(t)+i*y(t),t] should add a t interval
     bool f_autoscale=autoscale;
     if (args.type!=_VECT || args.subtype!=_SEQ__VECT){
@@ -8790,6 +8892,11 @@ namespace giac {
 	if (i==2)
 	  yvar=v[2];
       }
+      if (i==1 && v[i].type==_VECT && v[i]._VECTptr->size()==2){
+	v.insert(v.begin()+2,v[1]._VECTptr->back());
+	v[1]=v[1]._VECTptr->front();
+	++s;
+      }
       if (i==1 && v[i].is_symb_of_sommet(at_interval)){
 	identificateur tmp(" x");
 	vecteur w(v);
@@ -8821,7 +8928,7 @@ namespace giac {
 	}
       }
     }
-    int jstep,kstep;
+    int jstep=0,kstep=0;
     read_option(v,xmin,xmax,ymin,ymax,zmin,zmax,attributs,nstep,jstep,kstep,contextptr);
     bool v0cst=false,v1cst=false;
 #ifndef NO_STDEXCEPT
@@ -8840,7 +8947,7 @@ namespace giac {
     }
     if (v0cst && v0.type==_VECT && !v0._VECTptr->empty() && v0._VECTptr->front().type==_VECT)
       return plotpoints(*v0._VECTptr,attributs,contextptr);
-    return plotfunc(v[0],xvar,attributs,false,xmin,xmax,ymin,ymax,zmin,zmax,nstep,0,showeq,contextptr);
+    return plotfunc(v[0],xvar,attributs,false,xmin,xmax,ymin,ymax,zmin,zmax,nstep,jstep,showeq,contextptr);
   }
   static const char _plot_s []="plot"; // FIXME use maple arguments
   static define_unary_function_eval_quoted (__plot,&_plot,_plot_s);
@@ -8948,7 +9055,8 @@ namespace giac {
       s=int(args._VECTptr->size());
       if (s==1)
 	return _parameq(args._VECTptr->front(),contextptr);
-      if (s>=2 && (*args._VECTptr)[1].is_symb_of_sommet(at_pnt))
+      if (s>=2 && ( (*args._VECTptr)[1].is_symb_of_sommet(at_pnt) ||
+		    (*args._VECTptr)[1].is_symb_of_sommet(at_curve)) )
 	return _parameq(args._VECTptr->front(),contextptr);
       if (s<2) 
 	return gensizeerr(contextptr);
@@ -12151,7 +12259,7 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
     return std::sqrt(x*x+y*y);
   }
 
-  static bool get_sol(gen & sol,GIAC_CONTEXT){
+  bool get_sol(gen & sol,GIAC_CONTEXT){
     if (is_undef(sol))
       return false;
     if (sol.type==_VECT && sol._VECTptr->size()==2)
@@ -12748,7 +12856,7 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
 	  double y_orig=evalf_double(im(orig,contextptr),1,contextptr)._DOUBLE_val;
 	  int i_orig=int((x_orig-xmin)/xstep);
 	  int j_orig=int((y_orig-ymin)/ystep);
-	  if (i_orig<0 || i_orig>nxstep || j_orig<0 || j_orig>nystep)
+	  if (i_orig<=0 || i_orig>=nxstep || j_orig<=0 || j_orig>=nystep)
 	    break;
 	  // revert chemin and restart in reverse direction
 	  reverse(chemin.begin(),chemin.end());
@@ -13321,38 +13429,14 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
   static define_unary_function_eval_quoted (__contourplot,&_plotcontour,_contourplot_s);
   define_unary_function_ptr5( at_contourplot ,alias_at_contourplot,&__contourplot,_QUOTE_ARGUMENTS,true);
 
-  static gen inequation2equation(const gen & g){
-    if (g.type==_VECT){
-      vecteur res;
-      const_iterateur it=g._VECTptr->begin(),itend=g._VECTptr->end();
-      for (;it!=itend;++it)
-	res.push_back(inequation2equation(*it));
-      return gen(res,g.subtype);
-    }
-    if (g.type==_SYMB && g._SYMBptr->feuille.type==_VECT && g._SYMBptr->feuille._VECTptr->size()==2){
-      if (g._SYMBptr->sommet==at_inferieur_strict || g._SYMBptr->sommet==at_inferieur_egal)
-	return g._SYMBptr->feuille._VECTptr->back()-g._SYMBptr->feuille._VECTptr->front();
-      if (g._SYMBptr->sommet==at_superieur_strict || g._SYMBptr->sommet==at_superieur_egal || g._SYMBptr->sommet==at_equal )
-	return g._SYMBptr->feuille._VECTptr->front()-g._SYMBptr->feuille._VECTptr->back();
-    }
-    return g;
-  }
-
-  // f0[0] is either a symbolic (draws f0[0]>=0) or a list (and)
-  // if you want to draw or inequations, distribute and wrt to or
-  // and make several plotinequation
   gen _plotinequation(const gen & f0,GIAC_CONTEXT){
     if ( f0.type==_STRNG && f0.subtype==-1) return  f0;
-    vecteur v(gen2vecteur(f0));
-    if (v.empty())
-      return gensizeerr(contextptr);
-    gen f=inequation2equation(v[0]);
-    if (f.type==_VECT){
-      f.subtype=_SEQ__VECT;
-      f=symbolic(at_min,f);
+    if (f0.type==_SYMB){
+      if (is_inequation(f0) || f0.is_symb_of_sommet(at_and) || f0.is_symb_of_sommet(at_ou))
+	return _plot(f0,contextptr);
+      return _plot(symbolic(at_superieur_egal,makesequence(f0,0)),contextptr);
     }
-    v[0]=f;
-    return plotcontour(v,false,contextptr);
+    return _plot(f0,contextptr);
   }
   static const char _plotinequation_s []="plotinequation";
   static define_unary_function_eval_quoted (__plotinequation,&_plotinequation,_plotinequation_s);

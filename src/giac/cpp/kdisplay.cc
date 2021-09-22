@@ -33,7 +33,7 @@
 #define is_cx2 false
 #endif
 #ifdef KHICAS
-#if 0 //ndef NSPIRE_NEWLIB
+#if defined NUMWORKS && !defined DEVICE //ndef NSPIRE_NEWLIB
 extern "C" {
   short int nspire_exam_mode=0;
 }
@@ -5316,7 +5316,7 @@ namespace xcas {
 	      y=j0save;
 	      h=j0-j0save;
 	    }
-	    draw_rectangle(deltax+x,deltay+y,w,h,couleur);
+	    draw_rectangle(deltax+x,deltay+y,w+1,h+1,couleur);
 	    if (!hidden_name)
 	      draw_legende(f,deltax+x,deltay+y,labelpos,&Mon_image,clip_x,clip_y,clip_w,clip_h,0,0,couleur,contextptr);
 	    return;
@@ -9843,12 +9843,14 @@ namespace xcas {
 	  }
 #endif // NSPIRE_NEWLIB
 #ifdef NUMWORKS
+#ifdef DEVICE
 	  if (do_confirm(lang==1?"Restaurer le backup du dernier examen?":"Restore last backup before last exam?")){
 	    if (extapp_restorebackup(-1))
 	      do_confirm(lang==1?"Restauration du backup reussie!":"Backup restore success!");
 	    else
 	      do_confirm(lang==1?"Mode exam actif ou pas de backup trouve!":"Exam mode enabled or no backup found!");
 	  }
+#endif
 	  // if (do_confirm(lang==1?"Le mode examen se lance depuis Parametres":"Enter Exam mode from Settings")) shutdown_state=1;
 	  break;
 #else

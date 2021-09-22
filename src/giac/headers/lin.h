@@ -69,6 +69,8 @@ namespace giac {
 
   // v should be a union of intersections, as returned by andor2list
   bool lin_ineq_plot(const vecteur & vsymb,const gen & x,const gen &y,const vecteur & attr_,vecteur & res,GIAC_CONTEXT);
+  // vsymb should be a union of intersections, as returned by andor2list
+  bool poly_ineq_plot(const vecteur & vsymb,const gen & x,const gen &y,double & xmin,double & xmax,double & ymin,double & ymax,const vecteur & attr_,vecteur & res,GIAC_CONTEXT);
   vecteur andor2list(const gen & g,GIAC_CONTEXT);
   bool are_inequations(const gen & g);
 
