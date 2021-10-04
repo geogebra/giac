@@ -4644,7 +4644,8 @@ namespace giac {
     return gensizeerr(contextptr);
 #ifndef NO_STDEXCEPT
     } catch (std::runtime_error & err){
-      *logptr(contextptr) << err.what() << '\n';
+      if (debug_infolevel) // avoid Unable to check sign: (56*pi/(sign(x)-1)/2)>(-56*pi/(sign(x)-1)/2) in testlimit
+	*logptr(contextptr) << err.what() << '\n';
       return 0;
     }
 #endif

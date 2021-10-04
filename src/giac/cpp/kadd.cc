@@ -267,58 +267,28 @@ int khicas_addins_menu(GIAC_CONTEXT){
   smallmenu.height=12;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
-  smallmenuitems[0].text = (char*)(lang?"Tableur":"Spreadsheet");
-  smallmenuitems[1].text = (char*)(lang?"Table periodique":"Periodic table");
-  smallmenuitems[2].text = (char*)(lang?"Exemple simple: Syracuse":"Simple example; Syracuse");
-  smallmenuitems[3].text = (char*)(lang?"Exemple de jeu: Mastermind":"Game example: Mastermind");
-  smallmenuitems[4].text = (char*)(lang?"Fractale de Mandelbrot":"Mandelbrot fractal");
-  // smallmenuitems[4].text = (char*)"Reserverd";
-  // smallmenuitems[5].text = (char*)"Reserverd";
-  // smallmenuitems[6].text = (char*)"Reserverd";
-  // smallmenuitems[7].text = (char*)"Reserverd";
-  // smallmenuitems[8].text = (char*)"Reserverd";
-  // smallmenuitems[9].text = (char*)"Reserverd";
-  // smallmenuitems[10].text = (char*)"Reserverd";
-  smallmenuitems[smallmenu.numitems-2].text = (char*)(lang?"Quitter le menu":"Leave menu");
-  smallmenuitems[smallmenu.numitems-1].text = (char*)(lang?"Quitter KhiCAS":"Leave KhiCAS");
+  smallmenuitems[0].text = (char*)((lang==1)?"Tableur":"Spreadsheet");
+  smallmenuitems[1].text = (char*)((lang==1)?"Table periodique":"Periodic table");
+  smallmenuitems[2].text = (char*)((lang==1)?"Exemple simple: Syracuse":"Simple example; Syracuse");
+  smallmenuitems[3].text = (char*)((lang==1)?"Exemple de jeu: Mastermind":"Game example: Mastermind");
+  smallmenuitems[4].text = (char*)((lang==1)?"Fractale de Mandelbrot":"Mandelbrot fractal");
+  // smallmenuitems[5].text = (char*)"Mon application"; // adjust numitem !
+  // smallmenuitems[6].text = (char*)"Autre application";
+  // smallmenuitems[7].text = (char*)"Encore une autre";
+  // smallmenuitems[8].text = (char*)"Une avant-derniere";
+  // smallmenuitems[9].text = (char*)"Une derniere";
+  smallmenuitems[smallmenu.numitems-2].text = (char*)((lang==1)?"Quitter le menu":"Leave menu");
+  smallmenuitems[smallmenu.numitems-1].text = (char*)((lang==1)?"Quitter KhiCAS":"Leave KhiCAS");
   while(1) {
     int sres = doMenu(&smallmenu);
     if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
       if (smallmenu.selection==smallmenu.numitems){
 	return KEY_CTRL_MENU;
       }
-      if (smallmenu.selection==1)
+      // Attention les entrees sont decalees de 1
+      if (smallmenu.selection==1) // tableur
 	sheet(contextptr);
-      if (smallmenu.selection==4)
-	mastermind(contextptr);
-      if (smallmenu.selection==5)
-	fractale(contextptr);
-      if (smallmenu.selection==3){
-	// Exemple simple d'application tierce: la suite de Syracuse
-	// on entre la valeur de u0
-	double d; int i;
-	for (;;){
-	  inputdouble(gettext("Suite de Syracuse. u0?"),d,contextptr);
-	  i=(d);
-	  if (i==d)
-	    break;
-	  confirm(gettext("u0 doit etre entier!"),gettext("Recommencez"));
-	}
-	i=max(i,1);
-	vecteur v(1,i); // initialise une liste avec u0
-	while (i!=1){
-	  if (i%2)
-	    i=3*i+1;
-	  else
-	    i=i/2;
-	  v.push_back(i);
-	}
-	// representation graphique de la liste
-	displaygraph(_listplot(v,contextptr),contextptr);
-	// on entre la liste en ligne de commande
-	Console_Input(gen(v).print(contextptr).c_str());
-      }
-      if (smallmenu.selection==2){
+      if (smallmenu.selection==2){ // table periodique
 	const char * name,*symbol;
 	char protons[32],nucleons[32],mass[32],electroneg[32];
 	int res=periodic_table(name,symbol,protons,nucleons,mass,electroneg);
@@ -356,6 +326,35 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	}
 	return Console_Input(console_buf);
       }
+      if (smallmenu.selection==3){
+	// Exemple simple d'application tierce: la suite de Syracuse
+	// on entre la valeur de u0
+	double d; int i;
+	for (;;){
+	  inputdouble(gettext("Suite de Syracuse. u0?"),d,contextptr);
+	  i=(d);
+	  if (i==d)
+	    break;
+	  confirm(gettext("u0 doit etre entier!"),gettext("Recommencez"));
+	}
+	i=max(i,1);
+	vecteur v(1,i); // initialise une liste avec u0
+	while (i!=1){
+	  if (i%2)
+	    i=3*i+1;
+	  else
+	    i=i/2;
+	  v.push_back(i);
+	}
+	// representation graphique de la liste en appelant la commande Xcas listplot
+	displaygraph(_listplot(v,contextptr),contextptr);
+	// on entre la liste en ligne de commande et on quitte
+	return Console_Input(gen(v).print(contextptr).c_str());
+      }
+      if (smallmenu.selection==4) // mastermind, on ne quitte pas
+	mastermind(contextptr);
+      if (smallmenu.selection==5)
+	fractale(contextptr);
     } // end sres==menu_selection
     Console_Disp(1,contextptr);
     break;
@@ -769,16 +768,25 @@ int sheet_menu_menu(tableur & t,GIAC_CONTEXT){
   //smallmenu.width=24;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
+#ifdef NUMWORKS
+  smallmenu.title = (char*)(lang==1?"Back: annule menu tableur":"Back: cancel sheet menu");
+#else
   smallmenu.title = (char*)(lang==1?"Esc: annule menu tableur":"Esc: cancel sheet menu");
-  smallmenuitems[0].text = (char *)(lang==1?"Sauvegarder tableur":"Save sheet");
+#endif
+  smallmenuitems[0].text = (char *)(lang==1?"Sauvegarde tableur (shift sto)":"Save sheet (shift sto)");
   smallmenuitems[1].text = (char *)(lang==1?"Sauvegarder tableur comme":"Save sheet as");
   if (nspire_exam_mode==2) smallmenuitems[1].text=smallmenuitems[0].text = (char*)(lang==1?"Sauvegarde desactivee":"Saving disabled");
   smallmenuitems[2].text = (char*)(lang==1?"Charger":"Load");
   string cell=(lang==1?"Editer cellule ":"Edit cell ")+printcell(t.cur_row,t.cur_col);
   smallmenuitems[3].text = (char*)cell.c_str();
   smallmenuitems[4].text = (char*)(lang==1?"Voir graphique (shift 6)":"View graph (shift 4)");
+#ifdef NUMWORKS
+  smallmenuitems[5].text = (char*)(lang==1?"Copie vers le bas (shift 4)":"Copy down (shift 7)");
+  smallmenuitems[6].text = (char*)(lang==1?"Copie vers droite (shift 4)":"Copy right (shift 7)");
+#else
   smallmenuitems[5].text = (char*)(lang==1?"Copier vers le bas (ctrl D)":"Copy down (ctrl D)");
   smallmenuitems[6].text = (char*)(lang==1?"Copier vers la droite (ctrl R)":"Copy right (ctrl R)");
+#endif
   smallmenuitems[7].text = (char*)(lang==1?"Inserer une ligne":"Insert row");
   smallmenuitems[8].text = (char*)(lang==1?"Inserer une colonne":"Insert column");
   smallmenuitems[9].text = (char*)(lang==1?"Effacer ligne courante":"Remove current row");
@@ -1060,6 +1068,10 @@ giac::gen sheet(GIAC_CONTEXT){
     status_freeze=false;
     if (key==KEY_CTRL_SETUP){
       sheet_menu_setup(t,contextptr);
+      continue;
+    }
+    if (key==KEY_CHAR_STORE && t.cmd_row<0){
+      save_sheet(t,contextptr);
       continue;
     }
     if (key==KEY_CTRL_MENU){

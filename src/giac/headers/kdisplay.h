@@ -396,18 +396,20 @@ namespace giac {
 #define MENUITEM_SEPARATOR 2
 #define MENUITEM_VALUE_NONE 0
 #define MENUITEM_VALUE_CHECKED 1
-  typedef struct
-  {
+  struct MenuItem {
     char* text; // text to be shown on screen. mandatory, must be a valid pointer to a string.
-    int token; // for syntax help on keywords not in the catalog
+    int token:20; // for syntax help on keywords not in the catalog
+    int type:4=MENUITEM_NORMAL; // type of the menu item. use MENUITEM_* to set this
+    int value:4=MENUITEM_VALUE_NONE; // value of the menu item. For example, if type is MENUITEM_CHECKBOX and the checkbox is checked, the value of this var will be MENUITEM_VALUE_CHECKED
+    int isselected:4=0; // for file browsers and other multi-select screens, this will show an arrow before the item
     short int isfolder=0; // for file browsers, this will signal the item is a folder
     signed char color=giac::_BLACK; // color of the menu item (use TEXT_COLOR_* to define)
-    signed char type=MENUITEM_NORMAL; // type of the menu item. use MENUITEM_* to set this
-    signed char value=MENUITEM_VALUE_NONE; // value of the menu item. For example, if type is MENUITEM_CHECKBOX and the checkbox is checked, the value of this var will be MENUITEM_VALUE_CHECKED
     // The following two settings require the menu type to be set to MENUTYPE_MULTISELECT
-    signed char isselected=0; // for file browsers and other multi-select screens, this will show an arrow before the item
+#if 0
     signed char icon=-1; //for file browsers, to show a file icon. -1 shows no icon (default)
-  } MenuItem;
+#endif
+    MenuItem():token(0),type(MENUITEM_NORMAL),value(MENUITEM_VALUE_NONE),isselected(0),isfolder(0),color(giac::_BLACK) {}
+  } ;
 
   typedef struct
   {

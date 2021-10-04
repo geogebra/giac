@@ -1273,8 +1273,15 @@ namespace giac {
 	gen b=e0._SYMBptr->feuille[1];
 	a=a-b;
 	gen testnum=subst(a,x,evalf(testval,1,contextptr),false,contextptr);
-	if (testnum.type==_CPLX)
+	if (testnum.type==_CPLX){
+	  if (!is_inf(m) && !equalposcomp(singu,m)){
+	    // maybe add m
+	    gen test=eval(subst(e0,x,m,false,contextptr),eval_level(contextptr),contextptr);
+	    if (test==1)
+	      res.push_back(m);
+	  }
 	  continue;
+	}
       }
       if (is_undef(test)){
 	if (e0.type==_SYMB && e0._SYMBptr->feuille.type==_VECT && e0._SYMBptr->feuille._VECTptr->size()==2){
@@ -1296,6 +1303,12 @@ namespace giac {
 	  a=subst(a,x,l,false,contextptr);
 	  if (!has_i(a))
 	    add_eq.push_back(l);
+	}
+	if (!is_inf(m) && !equalposcomp(singu,m)){
+	  // maybe add m
+	  gen test=eval(subst(e0,x,m,false,contextptr),eval_level(contextptr),contextptr);
+	  if (test==1)
+	    res.push_back(m);
 	}
 	continue;
       }

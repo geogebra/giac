@@ -2555,7 +2555,10 @@ namespace giac {
 	gen chknum;
 	bool hasnum=has_evalf(first_try,chknum,1,contextptr);
 	first_try=recursive_ratnormal(first_try,contextptr);
-	gen chk=recursive_normal(first_try,contextptr);
+	gen chk;
+	if (has_evalf(first_try,chk,1,contextptr) && !is_zero(chk) && !is_undef(chk) && !is_inf(chk))
+	  return first_try; // avoid 0 because it might be 0/almost 0
+	chk=recursive_normal(first_try,contextptr);
 	if (hasnum && !is_undef(chk) && abs(chk-chknum,contextptr)>1e-10 && abs(1-chk/chknum,contextptr)>1e-10){
 	  chk=undef;
 	  e=_simplify(e,contextptr);

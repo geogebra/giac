@@ -1807,6 +1807,10 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     return "";
   }
 
+#if 0 // def NUMWORKS
+#define MENUITEM_MALLOC
+#endif
+
   // 0 on exit, 1 on success
   int doCatalogMenu(char* insertText, const char* title, int category,GIAC_CONTEXT) {
     const catalogFunc * completeCat=(lang==1)?completeCatfr:completeCaten;
@@ -1818,7 +1822,9 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       const int CAT_COMPLETE_COUNT=((lang==1)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN);
       int nitems = isall? allcmds:(isopt?allopts:CAT_COMPLETE_COUNT);
 #ifdef MENUITEM_MALLOC
-      MenuItem *menuitems=(MenuItem *) malloc(sizeof(MenuItem)*nitems);
+      int memsize=sizeof(MenuItem)*nitems;
+      *logptr(contextptr) << "malloc " << memsize << ' ' << (size_t) &memsize << '\n';
+      MenuItem *menuitems=(MenuItem *) malloc(memsize);
       if (!menuitems)
 	return 0;
 #else
@@ -2082,7 +2088,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       title="CATALOG";
       category=0;
     } // end endless for
-    return 0;
+    return 0; // never reached
   }
 
   int trialpha(const void *p1,const void * p2){
@@ -13063,8 +13069,12 @@ namespace xcas {
 	save_session(contextptr);
 	Console_Output("Session saved");
       }
-      else 
+      else {
+#ifdef NUMWORKS // add auto-save, to avoid Memory full data loss
+	save("session",contextptr);
+#endif
 	run(expr,7,contextptr);
+      }
       //print_mem_info();
       Console_NewLine(LINE_TYPE_OUTPUT,1);
       //GetKey(&key);

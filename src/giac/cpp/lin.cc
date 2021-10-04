@@ -1504,6 +1504,12 @@ namespace giac {
 	    continue;
 	  newsol.push_back(cur);
 	  gen x=cur[0],y=cur[1];
+	  // intersection must be transversal, otherwise algorithm does not work
+	  gen dv1(derive(v1,vars,contextptr)),dv2(derive(v2,vars,contextptr));
+	  dv1=subst(dv1,vars,cur,false,contextptr),dv2=subst(dv2,vars,cur,false,contextptr);
+	  gen chk=_det(makesequence(dv1,dv2),contextptr);
+	  if (is_zero(chk,contextptr))
+	    return -1;
 	  x=evalf_double(x,1,contextptr);
 	  double xd=x._DOUBLE_val;
 	  if (xd>xmax)
@@ -1574,8 +1580,10 @@ namespace giac {
 	if (it!=itend)
 	  Ci=(*it)[1];
 	else {
-	  int nstep=20*gnuplot_pixels_per_eval;
+	  int nstep=8*gnuplot_pixels_per_eval;
+#ifndef KHICAS
 	  if (nstep<8000) nstep=8000;
+#endif
 	  Ci=plotimplicit(m[i],vx,vy,xmin,xmax,ymin,ymax,nstep,0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,contextptr,3);
 	  cache.push_back(makevecteur(key,Ci));
 	}
@@ -1607,8 +1615,9 @@ namespace giac {
 	gen eq,eqx,eqy;
 	if (Ci.type==_VECT && Ci._VECTptr->size()==2 && Ci.subtype==_LINE__VECT)
 	  eq=Ci._VECTptr->front()+t__IDNT_e*(Ci._VECTptr->front()-Ci._VECTptr->back());
-	else 
+	else {
 	  eq=_parameq(Ci,contextptr);
+	}
 	if (Ci.is_symb_of_sommet(at_cercle)){
 	  Ci=_paramplot(makesequence(eq,t__IDNT_e,-M_PI,M_PI,M_PI/100),contextptr);
 	  Ci=remove_at_pnt(Ci);
@@ -1676,8 +1685,23 @@ namespace giac {
 		    branches.push_back(gen(makevecteur(a,b),_LINE__VECT));
 		  }
 		  else {
+#if 1
+		    // eval eq from t0 to t1 with more accuracy near boundaries
+		    vecteur br;
+		    gen dt=t1-t0;
+		    for (int i=0;i<=20;++i){
+		      br.push_back(subst(eq,t__IDNT_e,t0+i*dt/1000,false,contextptr));
+		    }
+		    for (int i=2;i<=48;++i){
+		      br.push_back(subst(eq,t__IDNT_e,t0+i*dt/50,false,contextptr));
+		    }
+		    for (int i=20;i>=0;--i){
+		      br.push_back(subst(eq,t__IDNT_e,t1-i*dt/1000,false,contextptr));
+		    }
+#else
 		    gen br=_plotparam(makesequence(eq,t__IDNT_e,t0,t1,(t1-t0)/100),contextptr);
 		    br=remove_at_pnt(br)[2];
+#endif
 		    branches.push_back(br);
 		  }
 		}

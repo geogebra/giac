@@ -471,7 +471,8 @@ namespace giac {
     _CONTEXT_POINTER=3,
     _THREAD_POINTER=4,
     _VARFUNCDEF_POINTER=5,
-    _APPLET_POINTER=6
+    _APPLET_POINTER=6,
+    _BUFFER_POINTER=7,
   };
 
   enum color_values {
@@ -589,24 +590,34 @@ namespace giac {
     _LP_HYBRID = 131,              // lp_hybrid
     _LP_ITERATION_LIMIT = 132,     // lp_iterationlimit
     _LP_TIME_LIMIT = 133,          // lp_timelimit
-    _LP_VERBOSE =134,              // lp_verbose
-    _LP_PRESOLVE =135,             // lp_presolve
-    _NLP_INITIALPOINT = 136,       // nlp_initialpoint
-    _NLP_ITERATIONLIMIT = 137,     // nlp_iterationlimit
-    _NLP_NONNEGATIVE = 138,        // nlp_nonnegative
-    _NLP_PRECISION = 139,          // nlp_precision
-    _NLP_MAXIMIZE = 140,           // nlp_maximize
-    _GT_CONNECTED = 141,           // connected
-    _GT_SPRING = 142,              // spring
-    _GT_TREE = 143,                // tree
-    _GT_PLANAR = 144,              // planar
-    _GT_DIRECTED = 145,            // directed
-    _GT_WEIGHTED = 146,            // weighted
-    _GT_WEIGHTS = 147,             // weights
-    _GT_BIPARTITE = 148,           // bipartite
-    _GT_ACYCLIC = 149,             // acyclic
-    _KDE_BANDWIDTH = 150,          // bandwidth
-    _KDE_BINS = 151,               // bins
+    _LP_VERBOSE = 134,             // lp_verbose
+    _LP_PRESOLVE = 135,            // lp_presolve
+    _LP_HEURISTIC = 136,           // lp_heuristic
+    _NLP_INITIALPOINT = 137,       // nlp_initialpoint
+    _NLP_ITERATIONLIMIT = 138,     // nlp_iterationlimit
+    _NLP_NONNEGATIVE = 139,        // nlp_nonnegative
+    _NLP_PRECISION = 140,          // nlp_precision
+    _NLP_MAXIMIZE = 141,           // nlp_maximize
+    _NLP_PRESOLVE = 142,           // nlp_presolve
+    _NLP_SAMPLES = 143,            // nlp_samples
+    _NLP_INTEGER = 144,            // nlp_integer
+    _NLP_INTEGERVARIABLES = 145,   // nlp_integervariables
+    _NLP_BINARY = 146,             // nlp_binary
+    _NLP_BINARYVARIABLES = 147,    // nlp_binaryvariables
+    _NLP_NONNEGINT = 148,          // nlp_nonnegint
+    _NLP_FEAS_TOL = 149,           // nlp_feasibilitytolerance
+    _NLP_INT_TOL = 150,            // nlp_integertolerance
+    _GT_CONNECTED = 151,           // connected
+    _GT_SPRING = 152,              // spring
+    _GT_TREE = 153,                // tree
+    _GT_PLANAR = 154,              // planar
+    _GT_DIRECTED = 155,            // directed
+    _GT_WEIGHTED = 156,            // weighted
+    _GT_WEIGHTS = 157,             // weights
+    _GT_BIPARTITE = 158,           // bipartite
+    _GT_ACYCLIC = 159,             // acyclic
+    _KDE_BANDWIDTH = 160,          // bandwidth
+    _KDE_BINS = 161,               // bins
   };
 
   enum mupad_operator {

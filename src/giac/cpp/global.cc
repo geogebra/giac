@@ -49,6 +49,7 @@ using namespace std;
 #include <string.h>
 #include <stdexcept>
 #include <algorithm>
+#include <vector>
 #if !defined BESTA_OS && !defined FXCG
 #include <cerrno>
 #endif
@@ -82,6 +83,10 @@ using namespace std;
 #endif // ndef visualc
 #endif // win32
 #endif // ndef bestaos
+
+#ifdef HAVE_LIBFLTK
+#include <FL/fl_ask.H>
+#endif
 
 #if defined VISUALC && !defined BESTA_OS && !defined RTOS_THREADX && !defined FREERTOS 
 #include <Windows.h>
@@ -201,6 +206,308 @@ const char * console_prompt(const char * s){
   return S.c_str();
 }
 
+// TAR: tar file format support
+int tar_filesize(int s){
+  int h=(s/512+1)*512;
+  if (s%512)
+    h +=512;
+  return h;
+}
+
+// adapted from tarballjs https://github.com/ankitrohatgi/tarballjs
+string giac_readString(const char * buffer,size_t str_offset, size_t size) {
+  int i = 0;
+  string rtnStr = "";
+  while(i<size) {
+    char ch=buffer[str_offset+i];
+    if (ch<32) break;
+    rtnStr += ch;
+    i++;
+  }
+  return rtnStr;
+}
+string giac_readFileName(const char * buffer,size_t header_offset) {
+  return giac_readString(buffer,header_offset, 100);
+}
+string giac_readFileType(const char * buffer,size_t header_offset) {
+  // offset: 156
+  const char typeStr = buffer[header_offset+156];
+  if (typeStr == '0')
+    return "file";
+  if (typeStr == '5')
+    return "directory";
+  return string(1,typeStr);
+}
+int giac_readFileSize(const char * buffer,size_t header_offset) {
+  // offset: 124
+  const char * szView = buffer+ header_offset+124;
+  int res=0;
+  for (int i = 0; i < 11; i++) {
+    char tmp=szView[i];
+    if (tmp<'0' || tmp>'9') return -1; // invalid file size
+    res *= 8;
+    res += (tmp-'0');
+  }
+  return res;
+}
+
+int giac_readMode(const char * buffer,size_t header_offset) {
+  // offset: 100
+  const char * szView = buffer+ header_offset+100;
+  int res=0;
+  for (int i = 0; i < 7; i++) {
+    char tmp=szView[i];
+    if (tmp<'0' || tmp>'9') return -1; // invalid file size
+    res *= 10;
+    res += (tmp-'0');
+  }
+  return res;
+}
+
+void tar_clear(char * buffer){
+  for (int i=0;i<1024;++i)
+    buffer[i]=0;
+}
+
+std::vector<fileinfo_t> tar_fileinfo(const char * buffer,size_t byteLength){
+  vector<fileinfo_t> fileInfo;
+  if (!buffer) return fileInfo;
+  size_t offset=0,file_size=0;       
+  string file_name = "";
+  string file_type = "";
+  while (byteLength==0 || offset<byteLength-512){
+    file_name = giac_readFileName(buffer,offset); // file name
+    if (file_name.size() == 0) 
+      break;
+    file_type = giac_readFileType(buffer,offset);
+    file_size = giac_readFileSize(buffer,offset);
+    int mode = giac_readMode(buffer,offset);
+    if (file_size<0)
+      break;
+    //console.log(offset,file_name,file_size);
+    fileinfo_t tmp={file_name,file_type,file_size,offset,mode};
+    fileInfo.push_back(tmp);
+    offset += tar_filesize(file_size);
+  }
+  //console.log('fileinfo',offset,dohtml);
+  return fileInfo;
+}
+
+size_t tar_totalsize(const char * buffer,size_t byteLength){
+  std::vector<fileinfo_t> f=tar_fileinfo(buffer,byteLength);
+  if (f.empty()) return 0;
+  fileinfo_t i=f[f.size()-1];
+  size_t offset=i.header_offset+tar_filesize(i.size);
+  return offset;
+}
+
+std::string leftpad(const string & s,size_t targetLength) {
+  if (targetLength<=s.size())
+    return s;
+  string add(targetLength-s.size(),'0');
+  return add+s;
+}
+  
+void tar_writestring(char * buffer,const string & str, size_t offset, size_t size) {
+  for (size_t i = 0; i < size; i++) {
+    if (i < str.size()) 
+      buffer[i+offset] = str[i];
+    else 
+      buffer[i+offset] = 0;
+  }
+}
+
+std::string toString8(longlong chksum){
+  if (chksum<0)
+    return "-"+toString8(-chksum);
+  if (chksum==0)
+    return "0";
+  string res;
+  for (;chksum;chksum/=8){
+    res = string(1,'0'+(chksum % 8))+res;
+  }
+  return res;
+}
+
+void tar_writechecksum(char * buffer,size_t header_offset) {
+  // offset: 148
+  tar_writestring(buffer,"        ", header_offset+148, 8); // first fill with spaces
+  // add up header bytes
+  int chksum = 0;
+  for (int i = 0; i < 512; i++) {
+    chksum += buffer[header_offset+i];
+  }
+  tar_writestring(buffer,leftpad(toString8(chksum),6), header_offset+148, 8);
+  tar_writestring(buffer," ",header_offset+155,1); // add space inside chksum field
+}
+
+void tar_fillheader(char * buffer,size_t offset,int exec=0){
+  int uid = 501;
+  int gid = 20;
+  string mode = exec?"755":"644"; 
+#if !defined HAVE_NO_SYS_TIMES_H && defined HAVE_SYS_TIME_H
+  struct timeval t;
+  gettimeofday(&t, NULL);
+  longlong mtime=t.tv_sec;
+#else
+  longlong mtime=2021*24*365*3600;;
+#endif
+  string user = "user";
+  string group = "group";
+
+  tar_writestring(buffer,leftpad(mode,6)+" ", offset+100, 8);  
+  tar_writestring(buffer,leftpad(toString8(uid),6)+" ",offset+108,8);
+  tar_writestring(buffer,leftpad(toString8(gid),6)+" ",offset+116,8);
+  tar_writestring(buffer,leftpad(toString8(mtime),11)+" ",offset+136,12);
+
+  //UI.tar_writestring(buffer,"ustar", offset+257,6); // magic string
+  //UI.tar_writestring(buffer,"00", offset+263,2); // magic version
+  tar_writestring(buffer,"ustar  ", offset+257,8);
+    
+  tar_writestring(buffer,user, offset+265,32); // user
+  tar_writestring(buffer,group, offset+297,32); //group
+  tar_writestring(buffer,"000000 ",offset+329,7); //devmajor
+  tar_writestring(buffer,"000000 ",offset+337,7); //devmajor
+  tar_writechecksum(buffer,offset);
+}
+
+int numworks_maxtarsize=0x600000-0x10000;
+size_t tar_first_modified_offset=0; // set to non 0 if tar data comes from Numworks
+
+int tar_adddata(char * & buffer,size_t * buffersizeptr,const char * filename,const char * data,size_t datasize,int exec){
+  size_t buffersize=buffersizeptr?*buffersizeptr:0;
+  vector<fileinfo_t> finfo=tar_fileinfo(buffer,buffersize);
+  size_t s=finfo.size();
+  if (s==0) return 0;
+  fileinfo_t last=finfo[s-1];
+  size_t offset=last.header_offset;
+  offset += tar_filesize(last.size);
+  buffersize=offset;
+  size_t newsize=offset+1024+datasize;
+  newsize=10240*((newsize+10239)/10240);
+  if (newsize>numworks_maxtarsize) return 0;
+  // console.log(buffer.byteLength,newsize);
+  // resize buffer
+  if (buffersize<newsize){
+    char * newbuf=(char *)malloc(newsize);
+    // char * newbuf=new char[newsize];
+    memcpy(newbuf,buffer,buffersize);
+    // delete [] buffer;
+    free(buffer);
+    buffersize=newsize;
+    if (buffersizeptr) *buffersizeptr=buffersize;
+    buffer=newbuf;
+  }
+  // console.log(buffer.byteLength,newsize);
+  // fill header with 0
+  for (int i=0;i<1024;++i)
+    buffer[offset+i]=0;
+  tar_writestring(buffer,filename,offset,100); // filename
+  tar_writestring(buffer,leftpad(toString8(datasize),11)+" ",offset+124,12);  // filesize
+  tar_writestring(buffer,"0",offset+156,1); // file type
+  tar_fillheader(buffer,offset,exec);
+  // copy data 
+  for (size_t i=0;i<datasize;++i)
+    buffer[offset+512+i]=data[i];
+  return 1;
+}
+
+int tar_addfile(char * & buffer,const char * filename,size_t * buffersizeptr){
+  FILE * f = fopen(filename,"rb");
+  vector<char> data;
+  while (1){
+    char ch=fgetc(f);
+    if (feof(f))
+      break;
+    data.push_back(ch);
+  }
+  fclose(f);
+  int exec=1;
+  for (int i=0;filename[i];++i){
+    if (filename[i]=='.')
+      exec=0;
+  }
+  string fname=giac::remove_path(filename);
+  return tar_adddata(buffer,buffersizeptr,fname.c_str(),&data.front(),data.size(),exec);
+}
+
+int tar_savefile(char * buffer,const char * filename){
+  vector<fileinfo_t> finfo=tar_fileinfo(buffer,0);
+  int s=finfo.size();
+  if (s==0) return 0;
+  fileinfo_t info;
+  for (int i=0;i<s;++i){
+    info=finfo[i];
+    if (info.filename==filename)
+      break;
+  }
+  if (info.filename!=filename) return 0;
+  size_t target=info.header_offset+512;
+  size_t size=info.size;
+  FILE * f=fopen(filename,"wb");
+  if (!f) return 0;
+  fwrite(buffer+target,size,1,f);
+  fclose(f);
+  return 1;
+}
+
+int tar_removefile(char * buffer,const char * filename,size_t * tar_first_modif_offsetptr){
+  vector<fileinfo_t> finfo=tar_fileinfo(buffer,0);
+  int s=finfo.size();
+  if (s==0) return 0;
+  fileinfo_t info;
+  for (int i=0;i<s;++i){
+    info=finfo[i];
+    if (info.filename==filename)
+      break;
+  }
+  if (info.filename!=filename) return 0;
+  // move info.header_offset+info.size+512 to info.header_offset
+  size_t target=info.header_offset;
+  if (tar_first_modif_offsetptr && target<*tar_first_modif_offsetptr)
+    *tar_first_modif_offsetptr=target;
+  size_t src=target+tar_filesize(info.size);
+  fileinfo_t infoend=finfo[s-1];
+  size_t end=infoend.header_offset+tar_filesize(infoend.size);
+  // memcpy would be faster, but I'm unsure it is safe here
+  for (src;src<end;++src,++target) 
+    buffer[target]=buffer[src];
+  for (;target<end;++target) // clear space after new end
+    buffer[target]=0;
+  return 1;
+}
+
+char * file_gettar(const char * filename){
+  FILE * f=fopen(filename,"rb");
+  if (!f) return 0;
+  vector<char> res;
+  while (1){
+    char ch=fgetc(f);
+    if (feof(f))
+      break;
+    res.push_back(ch);
+  }
+  fclose(f);
+  size_t size=res.size();
+  size_t bufsize=65536*((size+65535)/65536);
+  char * buffer=(char *)malloc(bufsize);
+  memcpy(buffer,&res.front(),size);
+  return buffer;
+}
+
+int file_savetar(const char * filename,char * buffer,size_t buffersize){
+  size_t l=tar_totalsize(buffer,buffersize);
+  if (l==0) return 0;
+  FILE * f=fopen(filename,"wb");
+  if (!f) return 0;
+  fwrite(buffer,l,1,f);
+  char buf[1024];
+  for (int i=0;i<1024;++i)
+    buf[i]=0;
+  fwrite(buf,1024,1,f);
+  fclose(f);
+  return 1;
+}
 #if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38// 
 
 #ifdef HAVE_LIBDFU
@@ -233,13 +540,19 @@ int dfu_exec(const char * s_){
     s="c:\\xcaswin\\"+s;
   // otherwise dfu-util should be in the path
 #else
-  s="./"+s;
+  if (giac::is_file_available("/cygdrive/c/xcas64/dfu-util.exe"))
+    s="/cygdrive/c/xcas64/"+s;
+  else
+    s="./"+s;
 #endif
   return system(s.c_str());
 #else // WIN32
 #ifdef __APPLE__
   string s(s_);
   s="/Applications/usr/bin/"+s;
+  if (giac::is_file_available(s.c_str()))
+    return giac::system_no_deprecation(s.c_str());
+  s=s_; s="/usr/bin/"+s;
   return giac::system_no_deprecation(s.c_str());
 #else
   return system(s_);
@@ -308,7 +621,7 @@ bool dfu_get_epsilon(const char * fname){
 // check that we can really read/write on the Numworks at 0x90120000
 // and get the same
 bool dfu_check_epsilon2(const char * fname){
-  FILE * f=fopen(fname,"w");
+  FILE * f=fopen(fname,"wb");
   int n=0xe0000;
   char * ptr=(char *) malloc(n);
   srand(time(NULL));
@@ -341,16 +654,165 @@ bool dfu_check_epsilon2(const char * fname){
   return i==n;
 }
 
+// check that we can really read/write on the Numworks at 0x90740000
+// and get the same
+bool dfu_check_apps2(const char * fname){
+  FILE * f=fopen(fname,"wb");
+  int n=0xa0000;
+  char * ptr=(char *) malloc(n);
+  srand(time(NULL));
+  int i;
+  for (i=0;i<n;++i){
+    int j=(rand()/(1.0+RAND_MAX))*n;
+    ptr[j]=rand();
+  }
+  for (i=0;i<n;++i){
+    fputc(ptr[i],f);
+  }
+  fclose(f);
+  // write to the device something that can not be guessed 
+  // without really storing to flash
+  string s=string("dfu-util -i 0 -a 0 -s 0x90740000:0xa0000 -D ")+ fname;
+  if (dfu_exec(s.c_str()))
+    return false;
+  // retrieve it and compare
+  unlink(fname);
+  s=string("dfu-util -i 0 -a 0 -s 0x90740000:0xa0000 -U ")+ fname;
+  if (dfu_exec(s.c_str()))
+    return false;
+  f=fopen(fname,"r");
+  for (i=0;i<n;++i){
+    char ch=fgetc(f);
+    if (ch!=ptr[i])
+      break;
+  }
+  fclose(f);
+  return i==n;
+}
+
 bool dfu_get_apps(const char * fname){
   unlink(fname);
   string s=string("dfu-util -i 0 -a 0 -s 0x90200000:0x600000 -U ")+ fname;
   return !dfu_exec(s.c_str());
 }
+
+char * numworks_gettar(size_t & tar_first_modif_offset){
+  if (!dfu_get_apps("__apps"))
+    return 0;
+  FILE * f=fopen("__apps","rb");
+  if (!f) return 0;
+  char * buffer=(char *)malloc(numworks_maxtarsize);
+  fread(buffer,numworks_maxtarsize,1,f);
+  fclose(f);
+  tar_first_modif_offset=tar_totalsize(buffer,numworks_maxtarsize);
+  return buffer;
+}
+
+
+bool numworks_sendtar(char * buffer,size_t buffersize,size_t tar_first_modif_offset){
+  vector<fileinfo_t> v=tar_fileinfo(buffer,buffersize);
+  if (v.empty())
+    return false;
+  fileinfo_t info=v[v.size()-1];
+  size_t end=info.header_offset+tar_filesize(info.size)+1024;
+  if (end>numworks_maxtarsize || end<=tar_first_modif_offset) return false;
+  for (size_t i=end-1024;i<end;++i)
+    buffer[i]=0;
+  FILE * f =fopen("__apps","wb");
+  if (!f)
+    return false;
+  size_t start=(tar_first_modif_offset/65536)*65536;
+  fwrite(buffer+start,end-start,1,f);
+  fclose(f);
+  longlong ll=0x90200000LL+start;
+  string s=string("dfu-util -i 0 -a 0 -s ")+giac::gen(ll).print(giac::context0)+" -D __apps" ;
+  return !dfu_exec(s.c_str());
+}
+
 #endif 
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
+
+  
+  // buf:=tar "file.tar" -> init
+  // tar(buf) -> list files
+  // tar(buf,0,"filename") -> remove filename
+  // tar(buf,1,"filename") -> add filename
+  // tar(buf,2,"filename") -> save filename
+  // tar(buf,"file.tar") -> write tar
+  // purge(buf) -> free buffer
+  gen _tar(const gen & g_,GIAC_CONTEXT){
+    gen g(eval(g_,eval_level(contextptr),contextptr));
+    if (g.type==_STRNG){
+      char * buf=file_gettar(g._STRNGptr->c_str());
+      if (!buf) return 0;
+      tar_first_modified_offset=0;
+      return gen((void *)buf,_BUFFER_POINTER);
+    }
+    if (g.type==_POINTER_ && g.subtype==_BUFFER_POINTER){
+      char * buf= (char *) g._POINTER_val;
+      if (!buf) return 0;
+      vector<fileinfo_t> v=tar_fileinfo(buf,0);
+      vecteur res1,res2,res3,res4;
+      for (int i=0;i<v.size();++i){
+	res1.push_back(string2gen(v[i].filename,false));
+	res2.push_back(v[i].size);
+	res3.push_back(v[i].header_offset);
+	res4.push_back(v[i].mode);
+      }
+      return makevecteur(res1,res2,res3,res4);
+    }
+    if (g.type==_INT_){
+      if (g.val==1){
+	char * buf= numworks_gettar(tar_first_modified_offset);
+	if (!buf) return 0;
+	return gen((void *)buf,_BUFFER_POINTER);
+      }
+    }
+    if (g.type==_VECT){
+      vecteur & v=*g._VECTptr; 
+      int s=v.size();
+      if (s>=2 && v.front().type==_POINTER_){
+	char * buf= (char *) v[0]._POINTER_val;
+	if (!buf) return 0;
+	if (s==2 && v[1].type==_STRNG)
+	  return file_savetar(v[1]._STRNGptr->c_str(),buf,0);
+	if (s==2 && v[1].type==_INT_){
+	  if (v[1].val==1)
+	    return numworks_sendtar(buf,0,tar_first_modified_offset);
+	}
+	if (s==3 && v[1].type==_INT_ && v[2].type==_STRNG){
+	  int val=v[1].val;
+	  if (val==0)
+	    return tar_removefile(buf,v[2]._STRNGptr->c_str(),0);
+	  if (val==1 && tar_addfile(buf,v[2]._STRNGptr->c_str(),0)){
+	    gen res=gen((void *)buf,_BUFFER_POINTER);
+	    if (g_.type==_VECT && !g_._VECTptr->empty())
+	      return sto(res,g_._VECTptr->front(),contextptr);
+	    return res;
+	  }
+	  if (val==2)
+	    return tar_savefile(buf,v[2]._STRNGptr->c_str());
+	}
+      }
+    }
+    return gensizeerr(contextptr);
+  }
+  static const char _tar_s []="tar";
+  static define_unary_function_eval_quoted (__tar,&_tar,_tar_s);
+  define_unary_function_ptr5( at_tar ,alias_at_tar,&__tar,_QUOTE_ARGUMENTS,true);
+
+  std::string dos2unix(const std::string & src){
+    std::string unixsrc; // convert newlines to Unix
+    for (int i=0;i+1<src.size();++i){
+      if (src[i]==13 && src[i+1]==10)
+	continue;
+      unixsrc+= src[i];
+    }
+    return unixsrc;
+  }
 
 #if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
   bool scriptstore2map(const char * fname,nws_map & m){
@@ -412,7 +874,7 @@ namespace giac {
       memcpy(ptr,&it->second.data[0],l2); ptr+=l2;
       *ptr=0; ++ptr; 
     }
-    FILE * f=fopen(fname,"w");
+    FILE * f=fopen(fname,"wb");
     if (!f)
       return false;
     fwrite(buf,1,nwstoresize1,f);
@@ -734,7 +1196,7 @@ namespace giac {
     BYTE buf[SHA256_BLOCK_SIZE];
     SHA256_CTX ctx;
     string text;
-    FILE * f=fopen(filename,"r");
+    FILE * f=fopen(filename,"rb");
     if (!f)
       return false;
     int taille=0;
@@ -801,8 +1263,9 @@ namespace giac {
     *logptr(contextptr) << "Verification de signature applications externes\n" ;
     if (!sha256_check(sig.c_str(),apps,"apps.tar")) return false;
     const char eps2name[]="eps2__";
-    if (withoverwrite && !dfu_check_epsilon2(eps2name)){
-      *logptr(contextptr) << "Le test d'ecriture et relecture a echoue. Le firwmare n'est peut-etre pas conforme.\n";
+    if (withoverwrite && 
+	(!dfu_check_epsilon2(eps2name) || !dfu_check_apps2(eps2name))){
+      *logptr(contextptr) << "Le test d'ecriture et relecture a echoue.\nLe firwmare n'est peut-etre pas conforme ou la flash est endommagee.\n";
       return false;
     }
     *logptr(contextptr) << "Signature applications conforme\nCalculatrice conforme à la reglementation\nCertification par le logiciel Xcas\nInstitut Fourier\nUniversité de Grenoble\nAssurez-vous d'avoir téléchargé Xcas sur\nwww-fourier.ujf-grenoble.fr/~parisse/install_fr.html\n" ;
@@ -7074,8 +7537,12 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	for (int pos2=pos-1;pos2>=0;--pos2){
 	  ch=res[pos2];
 	  if (ch!=' ' && ch!=9 && ch!='\r'){
-	    if (ch=='{' || ch=='[' || ch==',' || ch=='-' || ch=='+' ||  ch=='/')
-	      cherche=true;
+	    if (ch=='{' || ch=='[' || ch==',' || ch=='-' || ch=='+' ||  ch=='/'){
+	      if (pos2>0 && (ch=='+' || ch=='-') && ch==res[pos2-1])
+		;
+	      else
+		cherche=true;
+	    }
 	    break;
 	  }
 	}

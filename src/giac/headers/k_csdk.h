@@ -79,7 +79,7 @@ extern "C" {
   bool write_file(const char * filename,const char * s,size_t len);
 #endif
 #define MAX_NUMBER_OF_FILENAMES 255
-  int os_file_browser(const char ** filenames,int maxrecords,const char * extension,int storage=0);
+  int os_file_browser(const char ** filenames,int maxrecords,const char * extension,int storage);
   void sync_screen();
   void os_set_pixel(int x,int y,int c);
   void os_fill_rect(int x,int y,int w,int h,int c);

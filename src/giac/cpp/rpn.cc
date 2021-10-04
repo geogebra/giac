@@ -887,6 +887,8 @@ namespace giac {
     gen res=it->second;
     if (it->second.type==_POINTER_ && it->second.subtype==_THREAD_POINTER)
       return gentypeerr(args.print(contextptr)+" is locked by thread "+it->second.print(contextptr));
+    if (it->second.type==_POINTER_ && it->second.subtype==_BUFFER_POINTER)
+      free(it->second._POINTER_val);
     if (contextptr->previous)
       it->second=identificateur(it->first);
     else

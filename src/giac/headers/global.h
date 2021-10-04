@@ -135,11 +135,37 @@ extern "C" size_t pythonjs_stack_size,pythonjs_heap_size;
 extern "C" void * bf_ctx_ptr;
 extern "C" size_t bf_global_prec;
 
+struct fileinfo_t {
+  std::string filename;
+  std::string type;
+  size_t size;
+  size_t header_offset;
+  int mode;
+};
+std::vector<fileinfo_t> tar_fileinfo(const char * buffer,size_t byteLength);
+// tar file format: operations on a malloc-ed char * buffer of size buffersize
+// (malloc is assumed if buffer needs to be resized by tar_adddata)
+extern int numworks_maxtarsize; // max size on the Numworks
+extern size_t tar_first_modified_offset; // will be used to truncate the file sent to  the Numworks
+int tar_adddata(char * & buffer,size_t * buffersizeptr,const char * filename,const char * data,size_t datasize,int exec=0); // filename is only used to fill the header
+int tar_addfile(char * & buffer,const char * filename,size_t * buffersizeptr);
+int tar_removefile(char * buffer,const char * filename,size_t * tar_first_modif_offsetptr);
+int tar_savefile(char * buffer,const char * filename);
+std::vector<fileinfo_t> tar_fileinfo(const char * buffer,size_t byteLength);
+char * file_gettar(const char * filename);
+int file_savetar(const char * filename,char * buffer,size_t buffersize);
+#if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38// 
+// numworks_gettar return 0 or a buffer of size numworks_maxtarsize
+// initialized with the calculator content
+char * numworks_gettar(size_t & tar_first_modif_offset); 
+bool numworks_sendtar(char * buffer,size_t buffersize,size_t tar_first_modif_offset=0);
+#endif
+
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
-  // 3 or 1 if a list of space separated commandnames includes buf
 
+  // 3 or 1 if a list of space separated commandnames includes buf
   int dichotomic_search(const char * const * tab,unsigned tab_size,const char * s);
   void opaque_double_copy(void * source,void * target);
   double opaque_double_val(const void * source);
@@ -531,6 +557,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     std::vector<unsigned char> data;
   };
   typedef std::map<std::string,nwsrec,ltstring> nws_map;
+  std::string dos2unix(const std::string & res);
   bool scriptstore2map(const char * fname,nws_map & m);
   bool map2scriptstore(const nws_map & m,const char * fname);
   // check that filename content matches a file content signed in sigfilename

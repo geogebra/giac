@@ -1568,7 +1568,10 @@ namespace giac {
     case _POINTER_:
       if (subtype==_FL_WIDGET_POINTER && fl_widget_delete_function)
 	fl_widget_delete_function(_POINTER_val);
-      delete (ref_void_pointer *) (* ((ulonglong * ) this) >> 16);
+      if (subtype==_BUFFER_POINTER)
+	; // free((ref_void_pointer *) (* ((ulonglong * ) this) >> 16));
+      else
+	delete (ref_void_pointer *) (* ((ulonglong * ) this) >> 16);
       break;
 #else // SMARTPTR64
     case _ZINT: 
@@ -13981,6 +13984,26 @@ void sprint_double(char * s,double d){
         return "lp_timelimit";
       case _LP_VERBOSE:
         return "lp_verbose";
+      case _LP_HEURISTIC:
+	return "lp_heuristic";
+      case _NLP_PRESOLVE:
+	return "nlp_presolve";
+      case _NLP_SAMPLES:
+	return "nlp_samples";
+      case _NLP_INTEGER:
+	return "nlp_integer";
+      case _NLP_INTEGERVARIABLES:
+	return "nlp_integervariables";
+      case _NLP_BINARY:
+	return "nlp_binary";
+      case _NLP_BINARYVARIABLES:
+	return "nlp_binaryvariables";
+      case _NLP_NONNEGINT:
+	return "nlp_nonnegint";
+      case _NLP_FEAS_TOL:
+	return "nlp_feasibilitytolerance";
+      case _NLP_INT_TOL:
+	return "nlp_integertolerance";
       case _LP_PRESOLVE:
         return "lp_presolve";
       case _NLP_INITIALPOINT:
