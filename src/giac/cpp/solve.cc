@@ -1252,7 +1252,7 @@ namespace giac {
 	return vecteur(0);
       return vecteur(1,gensizeerr(gettext("Unable to check sign ")+test.print()));
     }
-    vecteur add_eq,already_added;
+    vecteur add_eq,already_added; gen prevm=minus_inf;
     for (int i=0;i<s-1;++i){
       gen l=range[i],m=range[i+1];
       if (l==m)
@@ -1274,11 +1274,11 @@ namespace giac {
 	a=a-b;
 	gen testnum=subst(a,x,evalf(testval,1,contextptr),false,contextptr);
 	if (testnum.type==_CPLX){
-	  if (!is_inf(m) && !equalposcomp(singu,m)){
-	    // maybe add m
-	    gen test=eval(subst(e0,x,m,false,contextptr),eval_level(contextptr),contextptr);
+	  if (l!=prevm && !is_inf(l) && !equalposcomp(singu,l)){
+	    // maybe add l
+	    gen test=eval(subst(e0,x,l,false,contextptr),eval_level(contextptr),contextptr);
 	    if (test==1)
-	      res.push_back(m);
+	      res.push_back(l);
 	  }
 	  continue;
 	}
@@ -1304,11 +1304,11 @@ namespace giac {
 	  if (!has_i(a))
 	    add_eq.push_back(l);
 	}
-	if (!is_inf(m) && !equalposcomp(singu,m)){
-	  // maybe add m
-	  gen test=eval(subst(e0,x,m,false,contextptr),eval_level(contextptr),contextptr);
+	if (l!=prevm && !is_inf(l) && !equalposcomp(singu,l)){
+	  // maybe add l
+	  gen test=eval(subst(e0,x,l,false,contextptr),eval_level(contextptr),contextptr);
 	  if (test==1)
-	    res.push_back(m);
+	    res.push_back(l);
 	}
 	continue;
       }
@@ -1378,8 +1378,10 @@ namespace giac {
       else {
 	if (is_undef(testeq) || equalposcomp(excluded_not_singu,m) || (test!=1 && equalposcomp(singu,m)))
 	  symb_sup=symb_inferieur_strict(x,msymb);
-	else
+	else {
 	  symb_sup=symb_inferieur_egal(x,msymb);
+	  prevm=m;
+	}
       }
       if (l==minus_inf)
 	res.push_back(symb_sup);
