@@ -163,6 +163,12 @@ extern "C" int KeyPressed( void );
 #include <libndls.h>
 #endif
 
+#if defined NUMWORKS  && defined DEVICE
+extern "C" const char * extapp_fileRead(const char * filename, size_t *len, int storage);
+extern "C"  bool extapp_erasesector(int i);
+extern "C"  bool extapp_writememory(unsigned char * dest,const unsigned char * data,size_t length);
+#endif
+
 #ifdef NUMWORKS
 size_t pythonjs_stack_size=30*1024,pythonjs_heap_size=40*1024;
 #else
@@ -204,6 +210,93 @@ const char * console_prompt(const char * s){
   giac::gen g=giac::_input(giac::string2gen(s?s:"?",false),giac::python_contextptr);
   S=g.print(giac::python_contextptr);
   return S.c_str();
+}
+
+// support for tar archive in flash on the numworks
+char * buf64k=0; // we only have 64k of RAM buffer on the Numworks
+const size_t buflen=(1<<16);
+int numworks_maxtarsize=0x600000-0x10000;
+size_t tar_first_modified_offset=0; // set to non 0 if tar data comes from Numworks
+
+
+// erase sector containing address if required
+// returns true if erased, false otherwise 
+// if false is returned, it means that [address..end of sector] contains 0xff
+// i.e. the remaining part of this sector is ready to write without erasing
+bool erase_sector(const char * buf,bool force_erase){
+  const char *ptr=0;
+  char * nxt=(char *) ((((size_t) buf)/buflen +1)*buflen);
+  char * start=nxt-buflen;
+  if (!force_erase){
+    // check if sector is ready to write
+    for (ptr=buf;ptr<nxt;++ptr){
+      if (*ptr!=0xff)
+	break;
+    }
+    if (ptr==nxt) // ready to write without erasing
+      return false;
+  }
+#if defined NUMWORKS && defined DEVICE
+  int i=sectoratindex(buf);
+  extapp_erasesector(i);
+#else
+  for (int i=0;i<buflen;++i)
+    start[i]=0xff;
+#endif
+  return true;
+}
+
+#if defined NUMWORKS && defined DEVICE
+void WriteMemory(char * target,const char * src,size_t length){
+  extapp_writememory((unsigned char *)target,(unsigned char*)src,length);
+}
+
+#else
+void WriteMemory(char * target,const char * src,size_t length){
+  memcpy(target,src,length);
+}
+#endif
+
+bool write_memory(char * target,const char * src,size_t length_){
+  //if (length % 256) return false;
+  size_t length=((255+length_)/256)*256;
+  char * nxt=(char *) ((((size_t) target)/buflen +1)*buflen);
+  size_t delta=length;
+  if (delta>nxt-target)
+    delta=nxt-target;
+  // first copy current sector in buf64k before erasing
+  char * prev=(char *)nxt-buflen;
+  memcpy(buf64k,prev,buflen);
+  memcpy(buf64k+(target-prev),src,delta);
+  bool force_erase=src<nxt;
+  if (erase_sector(target,force_erase))
+    WriteMemory(prev,buf64k,(target-prev)+delta);
+  else
+    WriteMemory(target,buf64k+(target-prev),delta);
+  length -= delta;
+  src += delta;
+  target += delta;
+  while (length>0){
+    memcpy(buf64k,target,buflen);
+    delta=length;
+    if (delta>buflen) 
+      delta=buflen;
+    erase_sector(target,true);
+    if (src<target+buflen){
+      // src was partially overwritten by erase_sector, 
+      // copy this part of src to target from the copy made in buf64k 
+      size_t delta_=target+buflen-src;
+      WriteMemory(target,buf64k+buflen-delta_,delta_);
+      length -= delta_;
+      delta -= delta_;
+      src += delta_;
+      target += delta_;      
+    }
+    WriteMemory(target,src,delta);      
+    length -= delta;
+    src += delta;
+    target += delta;      
+  }
 }
 
 // TAR: tar file format support
@@ -350,7 +443,7 @@ void tar_fillheader(char * buffer,size_t offset,int exec=0){
   gettimeofday(&t, NULL);
   longlong mtime=t.tv_sec;
 #else
-  longlong mtime=2021*24*365*3600;;
+  longlong mtime=2021LL*24*365*3600;;
 #endif
   string user = "user";
   string group = "group";
@@ -371,9 +464,32 @@ void tar_fillheader(char * buffer,size_t offset,int exec=0){
   tar_writechecksum(buffer,offset);
 }
 
-int numworks_maxtarsize=0x600000-0x10000;
-size_t tar_first_modified_offset=0; // set to non 0 if tar data comes from Numworks
+// flash version
+int flash_adddata(const char * buffer_,const char * filename,const char * data,size_t datasize,int exec){
+  vector<fileinfo_t> finfo=tar_fileinfo(buffer_,numworks_maxtarsize);
+  size_t s=finfo.size();
+  if (s==0) return 0;
+  fileinfo_t last=finfo[s-1];
+  size_t offset=last.header_offset;
+  offset += tar_filesize(last.size);
+  size_t newsize=offset+1024+datasize;
+  newsize=10240*((newsize+10239)/10240);
+  if (newsize>numworks_maxtarsize) return 0;
+  char buffer[512];
+  // fill header with 0
+  for (int i=0;i<512;++i)
+    buffer[i]=0;
+  tar_writestring(buffer,filename,0,100); // filename
+  tar_writestring(buffer,leftpad(toString8(datasize),11)+" ",124,12);  // filesize
+  tar_writestring(buffer,"0",156,1); // file type
+  tar_fillheader(buffer,0,exec);
+  write_memory((char *)buffer_+offset,buffer,512);
+  // copy data 
+  write_memory((char *)buffer_+offset+512,data,datasize);
+  return 1;
+}
 
+// RAM version
 int tar_adddata(char * & buffer,size_t * buffersizeptr,const char * filename,const char * data,size_t datasize,int exec){
   size_t buffersize=buffersizeptr?*buffersizeptr:0;
   vector<fileinfo_t> finfo=tar_fileinfo(buffer,buffersize);
@@ -412,6 +528,37 @@ int tar_adddata(char * & buffer,size_t * buffersizeptr,const char * filename,con
   return 1;
 }
 
+// flash version
+int flash_addfile(const char * buffer,const char * filename){
+#if defined NUMWORKS  && defined DEVICE
+  size_t len;
+  const char * ch=extapp_fileRead(filename,&len,1); // read file in ram
+  return flash_adddata(buffer,filename,ch,len,0); // copy in flash
+#else
+  vector<char> data;
+  FILE * f = fopen(filename,"rb");
+  while (1){
+    char ch=fgetc(f);
+    if (feof(f))
+      break;
+    data.push_back(ch);
+  }
+  fclose(f);
+  int exec=1;
+  for (int i=0;filename[i];++i){
+    if (filename[i]=='.')
+      exec=0;
+  }
+  string fname=filename;
+  for (int i=0;filename[i];++i){
+    if (filename[i]=='/')
+      fname=filename+i+1;
+  }
+  return flash_adddata(buffer,fname.c_str(),&data.front(),data.size(),exec);
+#endif
+}
+
+// RAM version
 int tar_addfile(char * & buffer,const char * filename,size_t * buffersizeptr){
   FILE * f = fopen(filename,"rb");
   vector<char> data;
@@ -451,6 +598,32 @@ int tar_savefile(char * buffer,const char * filename){
   return 1;
 }
 
+// flash version
+int flash_removefile(const char * buffer,const char * filename,size_t * tar_first_modif_offsetptr){
+  vector<fileinfo_t> finfo=tar_fileinfo(buffer,0);
+  int s=finfo.size();
+  if (s==0) return 0;
+  fileinfo_t info;
+  for (int i=0;i<s;++i){
+    info=finfo[i];
+    if (info.filename==filename)
+      break;
+  }
+  if (info.filename!=filename) return 0;
+  // move info.header_offset+info.size+512 to info.header_offset
+  size_t target=info.header_offset;
+  if (tar_first_modif_offsetptr && target<*tar_first_modif_offsetptr)
+    *tar_first_modif_offsetptr=target;
+  size_t src=target+tar_filesize(info.size);
+  fileinfo_t infoend=finfo[s-1];
+  size_t end=infoend.header_offset+tar_filesize(infoend.size);
+  write_memory((char *)buffer+target,buffer+src,end-src);
+  // clear space after new end
+  // for (;target<end;++target)  buffer[target]=0;
+  return 1;
+}
+
+// RAM version
 int tar_removefile(char * buffer,const char * filename,size_t * tar_first_modif_offsetptr){
   vector<fileinfo_t> finfo=tar_fileinfo(buffer,0);
   int s=finfo.size();
@@ -764,6 +937,7 @@ namespace giac {
       }
       return makevecteur(res1,res2,res3,res4);
     }
+#if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
     if (g.type==_INT_){
       if (g.val==1){
 	char * buf= numworks_gettar(tar_first_modified_offset);
@@ -771,6 +945,7 @@ namespace giac {
 	return gen((void *)buf,_BUFFER_POINTER);
       }
     }
+#endif
     if (g.type==_VECT){
       vecteur & v=*g._VECTptr; 
       int s=v.size();
@@ -779,10 +954,12 @@ namespace giac {
 	if (!buf) return 0;
 	if (s==2 && v[1].type==_STRNG)
 	  return file_savetar(v[1]._STRNGptr->c_str(),buf,0);
+#if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
 	if (s==2 && v[1].type==_INT_){
 	  if (v[1].val==1)
 	    return numworks_sendtar(buf,0,tar_first_modified_offset);
 	}
+#endif
 	if (s==3 && v[1].type==_INT_ && v[2].type==_STRNG){
 	  int val=v[1].val;
 	  if (val==0)

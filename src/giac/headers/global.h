@@ -142,13 +142,18 @@ struct fileinfo_t {
   size_t header_offset;
   int mode;
 };
+size_t tar_totalsize(const char * buffer,size_t byteLength);
 std::vector<fileinfo_t> tar_fileinfo(const char * buffer,size_t byteLength);
 // tar file format: operations on a malloc-ed char * buffer of size buffersize
 // (malloc is assumed if buffer needs to be resized by tar_adddata)
-extern int numworks_maxtarsize; // max size on the Numworks
+extern char * buf64k; // a 64k buffer in RAM for flash sector copy
+extern int numworks_maxtarsize; // max tar size on the Numworks
 extern size_t tar_first_modified_offset; // will be used to truncate the file sent to  the Numworks
+int flash_adddata(const char * buffer_,const char * filename,const char * data,size_t datasize,int exec);
 int tar_adddata(char * & buffer,size_t * buffersizeptr,const char * filename,const char * data,size_t datasize,int exec=0); // filename is only used to fill the header
+int flash_addfile(const char * buffer,const char * filename);
 int tar_addfile(char * & buffer,const char * filename,size_t * buffersizeptr);
+int flash_removefile(const char * buffer,const char * filename,size_t * tar_first_modif_offsetptr);
 int tar_removefile(char * buffer,const char * filename,size_t * tar_first_modif_offsetptr);
 int tar_savefile(char * buffer,const char * filename);
 std::vector<fileinfo_t> tar_fileinfo(const char * buffer,size_t byteLength);

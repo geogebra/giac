@@ -92,6 +92,8 @@ int ext_main(){
 }
 #endif
 
+void handle_flash(GIAC_CONTEXT);
+
 unsigned short mmind_col[]={COLOR_BLUE,COLOR_RED,COLOR_MAGENTA,COLOR_GREEN,COLOR_CYAN,COLOR_YELLOW};
 
 void mastermind_disp(const vector<int> & solution,const vector< vector<int> > & essais,const vector<int> & essai,bool fulldisp,GIAC_CONTEXT){
@@ -258,7 +260,11 @@ int fractale(GIAC_CONTEXT){
 
 int khicas_addins_menu(GIAC_CONTEXT){
   Menu smallmenu;
+#ifdef NUMWORKS
+  smallmenu.numitems=8; // INCREMENT IF YOU ADD AN APPLICATION
+#else
   smallmenu.numitems=7; // INCREMENT IF YOU ADD AN APPLICATION
+#endif  
   // and uncomment first smallmenuitems[app_number].text="Reserved"
   // replace by your application name
   // and add if (smallmenu.selection==app_number-1){ call your code }
@@ -277,6 +283,9 @@ int khicas_addins_menu(GIAC_CONTEXT){
   // smallmenuitems[7].text = (char*)"Encore une autre";
   // smallmenuitems[8].text = (char*)"Une avant-derniere";
   // smallmenuitems[9].text = (char*)"Une derniere";
+#ifdef NUMWORKS
+  smallmenuitems[smallmenu.numitems-3].text = (char*)((lang==1)?"Personnaliser la flash":"Customize flash");
+#endif
   smallmenuitems[smallmenu.numitems-2].text = (char*)((lang==1)?"Quitter le menu":"Leave menu");
   smallmenuitems[smallmenu.numitems-1].text = (char*)((lang==1)?"Quitter KhiCAS":"Leave KhiCAS");
   while(1) {
@@ -285,6 +294,10 @@ int khicas_addins_menu(GIAC_CONTEXT){
       if (smallmenu.selection==smallmenu.numitems){
 	return KEY_CTRL_MENU;
       }
+#ifdef NUMWORKS
+      if (smallmenu.selection==smallmenu.numitems-2)
+	handle_flash(contextptr);
+#endif
       // Attention les entrees sont decalees de 1
       if (smallmenu.selection==1) // tableur
 	sheet(contextptr);
@@ -360,7 +373,102 @@ int khicas_addins_menu(GIAC_CONTEXT){
     break;
   } // end endless while
   return CONSOLE_SUCCEEDED;
-}  
+}
+
+/* *******************
+ *      FLASH        *
+ ********************* */
+#ifdef NUMWORKS
+
+void flash_info(const char * buf,size_t & first_modif,bool erase,GIAC_CONTEXT){
+  std::vector<fileinfo_t> v=tar_fileinfo(buf,0);
+  Menu smallmenu;
+  smallmenu.numitems=v.size();
+  MenuItem smallmenuitems[smallmenu.numitems];
+  smallmenu.items=smallmenuitems;
+  smallmenu.height=12;
+  smallmenu.scrollbar=1;
+  smallmenu.scrollout=1;
+  smallmenu.title = (char*)(lang==1?"Info Flash":"Flash Files");
+  if (erase){
+    smallmenu.title = (char*)(lang==1?"Effacer fichier":"Erase file");
+    smallmenu.selection=smallmenu.numitems;
+  }
+  for (int i=0;i<v.size();++i){
+    smallmenuitems[i].text=(char *)v[i].filename.c_str();
+  }
+  while (1){
+    int sres = doMenu(&smallmenu);
+    if (sres==MENU_RETURN_EXIT){
+      break;
+    }
+    if (sres == MENU_RETURN_SELECTION  || sres==KEY_CTRL_EXE) {
+      int i=smallmenu.selection-1;
+      if (i>=0 && i<v.size()){
+	string msg=v[i].filename;
+	if (erase && i>10) msg=(lang==1?"Effacer ":"Erase ")+msg+"?";
+	string msg2=(lang==1?"Taille : ":"Size: ")+print_INT_(v[i].size);
+	if (confirm(msg.c_str(),msg2.c_str())){
+	  if (erase && i>10){
+	    flash_removefile(buf,v[i].filename.c_str(),&first_modif);
+	    return;
+	  }
+	}
+      }
+    }
+  }
+}
+
+void handle_flash(GIAC_CONTEXT){
+  buf64k=(char *)malloc(1<<16);
+  if (buf64k==0){
+    confirm(lang==1?"Pas assez de memoire RAM.":"RAM Memory full",lang==1?"Purgez et relancez KhiCAS":"Purge and restart KhiCAS");    
+    return;
+  }
+#ifndef DEVICE
+  const char * buf=file_gettar("apps.tar");
+#else
+  const char * buf=(const char *)0x90200000;
+#endif
+  size_t first_modif=tar_totalsize(buf,numworks_maxtarsize);
+  Menu smallmenu;
+  smallmenu.numitems=5;
+  MenuItem smallmenuitems[smallmenu.numitems];
+  smallmenu.items=smallmenuitems;
+  smallmenu.height=12;
+  smallmenu.scrollbar=1;
+  smallmenu.scrollout=1;
+  smallmenu.title = (char*)(lang==1?"Personnaliser Flash":"Customize Flash");
+  smallmenuitems[0].text = (char*)"Informations";
+  smallmenuitems[1].text = (char*)"Copier RAM->flash";
+  smallmenuitems[2].text = (char*)"Effacer un fichier";
+  smallmenuitems[3].text = (char*)"Vider la corbeille";
+  smallmenuitems[4].text = (char*)"Quitter";
+  while (1){
+    int sres = doMenu(&smallmenu);
+    if (sres==MENU_RETURN_EXIT){
+      break;
+    }
+    if (sres == MENU_RETURN_SELECTION  || sres==KEY_CTRL_EXE) {
+      if (smallmenu.selection == smallmenu.numitems)
+	break;
+      if (smallmenu.selection == 1){
+	flash_info(buf,first_modif,false,contextptr); // info only, no erase
+	continue;
+      }
+      if (smallmenu.selection == 3){
+	flash_info(buf,first_modif,true,contextptr); // erase files
+	continue;
+      }
+    }
+  }
+  free(buf64k);
+}
+#else
+void handle_flash(GIAC_CONTEXT){
+  
+}
+#endif
 
 /* **************************
    * SPREADSHEET CODE       *
