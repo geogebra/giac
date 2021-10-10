@@ -153,7 +153,18 @@ int flash_adddata(const char * buffer_,const char * filename,const char * data,s
 int tar_adddata(char * & buffer,size_t * buffersizeptr,const char * filename,const char * data,size_t datasize,int exec=0); // filename is only used to fill the header
 int flash_addfile(const char * buffer,const char * filename);
 int tar_addfile(char * & buffer,const char * filename,size_t * buffersizeptr);
-int flash_removefile(const char * buffer,const char * filename,size_t * tar_first_modif_offsetptr);
+// by default removefile will mark the file as deleted (this requires 1 sector write)
+// if mark_only==2, this will undelete the file
+int flash_removefile(const char * buffer,const char * filename,size_t * tar_first_modif_offsetptr,int mark_only=1);
+// write all changes made in records (filename and readable attribut)
+// returns 0 if there is a mismatch between buffer and finfo
+int flash_synchronize(const char * buffer,const vector<fileinfo_t> & finfo,size_t * tar_first_modif_offsetptr);
+
+// empty trash: files marked as non readable are really removed
+// this will do 1 sector write from first sector where a file is marked to be removed to the end 
+int flash_emptytrash(const char * buffer,size_t * tar_first_modif_offsetptr);
+int flash_emptytrash(const char * buffer,const vector<fileinfo_t> & finfo,size_t * tar_first_modif_offsetptr);
+
 int tar_removefile(char * buffer,const char * filename,size_t * tar_first_modif_offsetptr);
 int tar_savefile(char * buffer,const char * filename);
 std::vector<fileinfo_t> tar_fileinfo(const char * buffer,size_t byteLength);

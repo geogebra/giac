@@ -257,7 +257,7 @@ void WriteMemory(char * target,const char * src,size_t length){
 }
 #endif
 
-bool write_memory(char * target,const char * src,size_t length_){
+bool write_memory(char * target,const char * src,size_t length_,bool writeinmiddle=false){
   //if (length % 256) return false;
   size_t length=((255+length_)/256)*256;
   char * nxt=(char *) ((((size_t) target)/buflen +1)*buflen);
@@ -268,9 +268,13 @@ bool write_memory(char * target,const char * src,size_t length_){
   char * prev=(char *)nxt-buflen;
   memcpy(buf64k,prev,buflen);
   memcpy(buf64k+(target-prev),src,delta);
-  bool force_erase=src<nxt;
-  if (erase_sector(target,force_erase))
-    WriteMemory(prev,buf64k,(target-prev)+delta);
+  bool force_erase=src>prev && src<nxt;
+  if (erase_sector(target,force_erase)){
+    size_t avant=(target-prev)+delta;
+    WriteMemory(prev,buf64k,avant);
+    if (writeinmiddle && delta==length)
+      WriteMemory(target+delta,buf64k+avant,buflen-avant);
+  }
   else
     WriteMemory(target,buf64k+(target-prev),delta);
   length -= delta;
@@ -281,23 +285,18 @@ bool write_memory(char * target,const char * src,size_t length_){
     delta=length;
     if (delta>buflen) 
       delta=buflen;
+    memcpy(buf64k,src,delta);
     erase_sector(target,true);
-    if (src<target+buflen){
-      // src was partially overwritten by erase_sector, 
-      // copy this part of src to target from the copy made in buf64k 
-      size_t delta_=target+buflen-src;
-      WriteMemory(target,buf64k+buflen-delta_,delta_);
-      length -= delta_;
-      delta -= delta_;
-      src += delta_;
-      target += delta_;      
-    }
-    WriteMemory(target,src,delta);      
+    if (writeinmiddle)
+      WriteMemory(target,buf64k,buflen);
+    else
+      WriteMemory(target,buf64k,delta);
     length -= delta;
     src += delta;
     target += delta;      
   }
 }
+
 
 // TAR: tar file format support
 int tar_filesize(int s){
@@ -350,7 +349,10 @@ int giac_readMode(const char * buffer,size_t header_offset) {
   int res=0;
   for (int i = 0; i < 7; i++) {
     char tmp=szView[i];
-    if (tmp<'0' || tmp>'9') return -1; // invalid file size
+    if (tmp==' ')
+      return res;
+    if (tmp<'0' || tmp>'9') 
+      return -1; // invalid file size
     res *= 10;
     res += (tmp-'0');
   }
@@ -599,7 +601,10 @@ int tar_savefile(char * buffer,const char * filename){
 }
 
 // flash version
-int flash_removefile(const char * buffer,const char * filename,size_t * tar_first_modif_offsetptr){
+// mark_only==1 mark for erase, ==2 undelete
+// use mark_only==0 if and only if you need some space in flash
+// otherwise it's safer to empty the trash from a PC
+int flash_removefile(const char * buffer,const char * filename,size_t * tar_first_modif_offsetptr,int mark_only){
   vector<fileinfo_t> finfo=tar_fileinfo(buffer,0);
   int s=finfo.size();
   if (s==0) return 0;
@@ -610,10 +615,24 @@ int flash_removefile(const char * buffer,const char * filename,size_t * tar_firs
       break;
   }
   if (info.filename!=filename) return 0;
-  // move info.header_offset+info.size+512 to info.header_offset
+  // new code, mark file as non readable
   size_t target=info.header_offset;
   if (tar_first_modif_offsetptr && target<*tar_first_modif_offsetptr)
     *tar_first_modif_offsetptr=target;
+  // mark the file as non readable
+  if (mark_only){
+    char headbuf[512];
+    memcpy(headbuf,buffer+target,512);
+    if (mark_only==1)
+      headbuf[104] = '0'+((headbuf[104]-'0') &3);
+    else
+      headbuf[104] = '0'+((headbuf[104]-'0') |4);
+    tar_writechecksum(headbuf,0);
+    // recompute chksum
+    write_memory((char *)buffer+target,headbuf,512,true);
+    return 1;
+  }
+  // really erase, move info.header_offset+info.size+512 to info.header_offset
   size_t src=target+tar_filesize(info.size);
   fileinfo_t infoend=finfo[s-1];
   size_t end=infoend.header_offset+tar_filesize(infoend.size);
@@ -622,6 +641,7 @@ int flash_removefile(const char * buffer,const char * filename,size_t * tar_firs
   // for (;target<end;++target)  buffer[target]=0;
   return 1;
 }
+
 
 // RAM version
 int tar_removefile(char * buffer,const char * filename,size_t * tar_first_modif_offsetptr){
@@ -648,6 +668,141 @@ int tar_removefile(char * buffer,const char * filename,size_t * tar_first_modif_
   for (;target<end;++target) // clear space after new end
     buffer[target]=0;
   return 1;
+}
+
+bool tar_nxt_readable(const vector<fileinfo_t> & finfo,int cur,fileinfo_t & f){
+  int s=finfo.size();
+  for (int i=cur;i<s;++i){
+    f=finfo[i];
+    int droit=f.mode/100 ;
+    if ( (droit & 4)==4)
+      return true;
+  }
+  return false;
+}
+
+bool same_offset_size (const fileinfo_t & a,const fileinfo_t &b){
+  return a.header_offset==b.header_offset && a.size==b.size && a.mode==b.mode;
+}
+
+int flash_synchronize(const char * buffer,const vector<fileinfo_t> & finfo,size_t * tar_first_modif_offsetptr){
+  vector<fileinfo_t> oinfo=tar_fileinfo(buffer,0);
+  int s=finfo.size();
+  if (oinfo.size()!=finfo.size())
+    return 0;
+  for (int i=0;i<s;++i){
+    fileinfo_t f=finfo[i],o=oinfo[i];
+    if (!same_offset_size(f,o))
+      return 0;
+    if (f.mode==o.mode && f.filename==o.filename)
+      continue;
+    if (tar_first_modif_offsetptr && *tar_first_modif_offsetptr>f.header_offset)
+      *tar_first_modif_offsetptr=f.header_offset;
+    // copy current sector 
+    size_t sector_begin=(f.header_offset/buflen)*buflen,sector_end=sector_begin+buflen;
+    memcpy(buf64k,buffer+sector_begin,buflen);
+    // modify all records in this sector
+    for (;i<s;++i){
+      f=finfo[i];
+      size_t sector_pos=f.header_offset-sector_begin;
+      if (sector_pos>=buflen){
+	break;
+      }
+      char * headbuf=buf64k+sector_pos;
+      strcpy(headbuf,f.filename.c_str());
+      if ( (f.mode/100 & 4) ==0)
+	headbuf[104] = '0'+((headbuf[104]-'0') &3);
+      else
+	headbuf[104] = '0'+((headbuf[104]-'0') |4);
+      tar_writechecksum(headbuf,0);
+    }
+    erase_sector(buffer+sector_begin,true);
+    WriteMemory((char *)buffer+sector_begin,buf64k,buflen);
+  } 
+  return 1;
+}
+
+int flash_emptytrash(const char * buffer,const vector<fileinfo_t> & finfo,size_t * tar_first_modif_offsetptr){
+  size_t flash_end=0x90800000;
+  int s=finfo.size();
+  if (s==0) return 0;
+  // find 1st offset marked non readable
+  int i; // record position
+  fileinfo_t f,fnxt;
+  for (i=0;i<s;++i){
+    f=finfo[i];
+    int droit=f.mode/100 ;
+    if ( (droit & 4)==0){
+      break;
+    }
+  }
+  if (i==s) return 0;
+  if (!tar_nxt_readable(finfo,i,fnxt))
+    return 0;
+  if (tar_first_modif_offsetptr && *tar_first_modif_offsetptr>f.header_offset)
+    *tar_first_modif_offsetptr=f.header_offset;
+  size_t src=fnxt.header_offset;
+  // find current sector
+  size_t sector_begin=(f.header_offset/buflen)*buflen,sector_end=sector_begin+buflen;
+  memcpy(buf64k,buffer+sector_begin,buflen);
+  size_t sector_pos=f.header_offset-sector_begin; // in [0,buflen[
+  int nwrite=0;
+  for (;i<s;++nwrite){
+    // buf64k[0..sector_pos[ is ok
+    // find nxt offset marked as non readable
+    int nxti=i;
+    for (++nxti;nxti<s;++nxti){
+      f=finfo[nxti];
+      int droit=f.mode /100;
+      if ( (droit & 4)==0){
+	break;
+      }
+    }
+    size_t length = f.header_offset-src; 
+    if (nxti==s)
+      length += tar_filesize(f.size);
+    // total number of bytes to be copied 
+    while (length>0){
+      size_t nbytes=length;
+      if (length>buflen-sector_pos)
+	nbytes=buflen-sector_pos;
+      memcpy(buf64k+sector_pos,buffer+src,nbytes);
+      sector_pos += nbytes;
+      src += nbytes;
+      length -= nbytes; 
+      if (sector_pos==buflen){
+	// erase sector, transfert buf64k, copy next sector in buf64k
+	erase_sector((char *)buffer+sector_begin,true);
+	WriteMemory((char *)buffer+sector_begin,buf64k,buflen);
+	sector_begin += buflen;
+	if (sector_begin>flash_end)
+	  return 1;
+	sector_end += buflen;
+	sector_pos = 0;
+	memcpy(buf64k,buffer+sector_begin,buflen);
+      }
+    }
+    i=nxti;
+    if (!tar_nxt_readable(finfo,i,fnxt)){
+      // nothing more to be copied, flush
+      if (sector_pos>0){
+	erase_sector((char *)buffer+sector_begin,true);
+	WriteMemory((char *)buffer+sector_begin,buf64k,sector_pos);
+      }
+      return nwrite; 
+    }
+    src=fnxt.header_offset;
+  }
+  if (sector_pos>0){
+    erase_sector((char *)buffer+sector_begin,true);
+    WriteMemory((char *)buffer+sector_begin,buf64k,sector_pos);
+  }
+  return nwrite;
+}
+
+int flash_emptytrash(const char * buffer,size_t * tar_first_modif_offsetptr){
+  vector<fileinfo_t> finfo=tar_fileinfo(buffer,0);
+  return flash_emptytrash(buffer,finfo,tar_first_modif_offsetptr);
 }
 
 char * file_gettar(const char * filename){
