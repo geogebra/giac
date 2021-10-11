@@ -169,6 +169,8 @@ int tar_removefile(char * buffer,const char * filename,size_t * tar_first_modif_
 int tar_savefile(char * buffer,const char * filename);
 std::vector<fileinfo_t> tar_fileinfo(const char * buffer,size_t byteLength);
 char * file_gettar(const char * filename);
+// same as file_gettar but returns an aligned pointer and sets freeptr to the address to be free-ed
+char * file_gettar_aligned(const char * filename,char * & freeptr);
 int file_savetar(const char * filename,char * buffer,size_t buffersize);
 #if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38// 
 // numworks_gettar return 0 or a buffer of size numworks_maxtarsize

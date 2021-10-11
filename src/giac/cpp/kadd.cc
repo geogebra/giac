@@ -380,43 +380,73 @@ int khicas_addins_menu(GIAC_CONTEXT){
  ********************* */
 #ifdef NUMWORKS
 
-void flash_info(const char * buf,size_t & first_modif,bool erase,GIAC_CONTEXT){
+void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
   std::vector<fileinfo_t> v=tar_fileinfo(buf,0);
   Menu smallmenu;
   smallmenu.numitems=v.size();
   MenuItem smallmenuitems[smallmenu.numitems];
   smallmenu.items=smallmenuitems;
-  smallmenu.height=12;
+  smallmenu.height=modif?11:12;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
   smallmenu.title = (char*)(lang==1?"Info Flash":"Flash Files");
-  if (erase){
-    smallmenu.title = (char*)(lang==1?"Effacer fichier":"Erase file");
+  smallmenu.type = MENUTYPE_FKEYS;
+  if (modif){
+    smallmenu.title = (char*)(lang==1?"Modifier fichiers":"Modify files");
     smallmenu.selection=smallmenu.numitems;
   }
+  vector<string> vs(v.size());
   for (int i=0;i<v.size();++i){
-    smallmenuitems[i].text=(char *)v[i].filename.c_str();
+    vs[i]=v[i].filename.c_str();
+    vs[i]+=' ';
+    vs[i]+=print_INT_(v[i].size);
+    smallmenuitems[i].text=(char *)vs[i].c_str();
+    smallmenuitems[i].type = MENUITEM_CHECKBOX;
+    smallmenuitems[i].value= ((v[i].mode/100)&4)==4;
   }
   while (1){
+    if (modif){
+      drawRectangle(0,200,LCD_WIDTH_PX,22,giac::_WHITE);
+      os_draw_string(0,200,giac::_WHITE,33333,"Toolbox modif|Ans check| EXE do");
+    }
     int sres = doMenu(&smallmenu);
     if (sres==MENU_RETURN_EXIT){
       break;
     }
+    if (sres == KEY_CTRL_CATALOG || sres==KEY_BOOK) { // rename
+    }
     if (sres == MENU_RETURN_SELECTION  || sres==KEY_CTRL_EXE) {
+      flash_synchronize(buf,v,&first_modif);
+#ifndef DEVICE
+      // debug
+      file_savetar("file.tar",(char *)buf,tar_totalsize(buf,0));
+#endif
+      break;
+    }
+    if (sres==KEY_CHAR_ANS){
       int i=smallmenu.selection-1;
       if (i>=0 && i<v.size()){
-	string msg=v[i].filename;
-	if (erase && i>10) msg=(lang==1?"Effacer ":"Erase ")+msg+"?";
-	string msg2=(lang==1?"Taille : ":"Size: ")+print_INT_(v[i].size);
-	if (confirm(msg.c_str(),msg2.c_str())){
-	  if (erase && i>10){
-	    flash_removefile(buf,v[i].filename.c_str(),&first_modif);
-	    return;
-	  }
+	if (modif && i>10){
+	  smallmenuitems[i].value=!smallmenuitems[i].value;
+	  int m=v[i].mode;
+	  if (smallmenuitems[i].value)
+	    m = ((m/100) | 4)*100+(m%100);
+	  else
+	    m = ((m/100) & 3)*100+(m%100);
+	  v[i].mode=m;
 	}
       }
     }
   }
+}
+
+// copy text file from ram scriptstore
+void flash_from_ram(const char * buf,size_t & first_modif,GIAC_CONTEXT){
+  char filename[MAX_FILENAME_SIZE+1];
+  int n=giac_filebrowser(filename,"py",(lang==1?"Choisir fichier a copier":"Select file to copy"),0);
+  if (n==0) return;
+  const char * data=read_file(filename);
+  n=flash_adddata(buf,filename,data,strlen(data),0);
 }
 
 void handle_flash(GIAC_CONTEXT){
@@ -426,7 +456,8 @@ void handle_flash(GIAC_CONTEXT){
     return;
   }
 #ifndef DEVICE
-  const char * buf=file_gettar("apps.tar");
+  char * freeptr=0;
+  const char * buf=file_gettar_aligned("apps.tar",freeptr);
 #else
   const char * buf=(const char *)0x90200000;
 #endif
@@ -439,16 +470,16 @@ void handle_flash(GIAC_CONTEXT){
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
   smallmenu.title = (char*)(lang==1?"Personnaliser Flash":"Customize Flash");
-  smallmenuitems[0].text = (char*)"Informations";
-  smallmenuitems[1].text = (char*)"Copier RAM->flash";
-  smallmenuitems[2].text = (char*)"Effacer un fichier";
-  smallmenuitems[3].text = (char*)"Vider la corbeille";
-  smallmenuitems[4].text = (char*)"Quitter";
+  smallmenuitems[0].text = (char*)(lang==1?"Informations flash":"Flash informations");
+  smallmenuitems[1].text = (char*)(lang==1?"Copier RAM->flash":"Copy RAM->flash");
+  smallmenuitems[2].text = (char*)(lang==1?"Modifier infos fichiers":"Modify file infos");
+  smallmenuitems[3].text = (char*)(lang==1?"Vider la corbeille":"Empty trash");
+  smallmenuitems[4].text = (char*)(lang==1?"Quitter":"Leave");
   while (1){
     int sres = doMenu(&smallmenu);
     if (sres==MENU_RETURN_EXIT){
       break;
-    }
+    } 
     if (sres == MENU_RETURN_SELECTION  || sres==KEY_CTRL_EXE) {
       if (smallmenu.selection == smallmenu.numitems)
 	break;
@@ -456,13 +487,23 @@ void handle_flash(GIAC_CONTEXT){
 	flash_info(buf,first_modif,false,contextptr); // info only, no erase
 	continue;
       }
+      if (smallmenu.selection == 2){
+	flash_from_ram(buf,first_modif,contextptr); 
+	continue;
+      }
       if (smallmenu.selection == 3){
 	flash_info(buf,first_modif,true,contextptr); // erase files
 	continue;
       }
+      if (smallmenu.selection==4){
+	flash_emptytrash(buf,&first_modif);
+      }
     }
   }
   free(buf64k);
+#ifndef DEVICE
+  free(freeptr);
+#endif
 }
 #else
 void handle_flash(GIAC_CONTEXT){

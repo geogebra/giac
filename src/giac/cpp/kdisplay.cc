@@ -11419,8 +11419,11 @@ namespace xcas {
       strcpy(filename,fnames[choix]);
       return choix+1;
     }
-    else 
-      choix=select_item(filenames,title?title:"Scripts");
+    else  {
+      int n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,extension,storage);
+      if (n==0) return 0;
+      int choix=select_item(filenames,title?title:"Scripts");
+    }
 #else
     int n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,extension,storage);
     if (n==0) return 0;

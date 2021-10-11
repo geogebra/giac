@@ -682,7 +682,7 @@ bool tar_nxt_readable(const vector<fileinfo_t> & finfo,int cur,fileinfo_t & f){
 }
 
 bool same_offset_size (const fileinfo_t & a,const fileinfo_t &b){
-  return a.header_offset==b.header_offset && a.size==b.size && a.mode==b.mode;
+  return a.header_offset==b.header_offset && a.size==b.size;
 }
 
 int flash_synchronize(const char * buffer,const vector<fileinfo_t> & finfo,size_t * tar_first_modif_offsetptr){
@@ -822,6 +822,28 @@ char * file_gettar(const char * filename){
   memcpy(buffer,&res.front(),size);
   return buffer;
 }
+
+char * file_gettar_aligned(const char * filename,char * & freeptr){
+  FILE * f=fopen(filename,"rb");
+  if (!f) return 0;
+  vector<char> res;
+  while (1){
+    char ch=fgetc(f);
+    if (feof(f))
+      break;
+    res.push_back(ch);
+  }
+  fclose(f);
+  size_t size=res.size();
+  size_t bufsize=buflen*((size+(buflen-1))/buflen);
+  char * buffer=(char *)malloc(bufsize+2*buflen);
+  freeptr=buffer;
+  // align buffer
+  buffer=(char *) ((((size_t) buffer)/buflen +1)*buflen);
+  memcpy(buffer,&res.front(),size);
+  return buffer;
+}
+
 
 int file_savetar(const char * filename,char * buffer,size_t buffersize){
   size_t l=tar_totalsize(buffer,buffersize);
