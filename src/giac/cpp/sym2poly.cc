@@ -2837,6 +2837,13 @@ namespace giac {
       if (!pos) simpl=-simpl;
       simpl=r2e(polynome(simpl,nd._POLYptr->dim),lv,contextptr); // if simpl is not an integer
       doubl=r2e(polynome(doubl,nd._POLYptr->dim),lv,contextptr); // if doubl is not an integer
+      gen z=fast_icontent(simpl),zsimpl,zdoubl; bool zpos;
+      zint2simpldoublpos(z,zsimpl,zdoubl,zpos,2,contextptr);
+      if (zdoubl!=1){
+	simpl=zsimpl*ratnormal(simpl/z);
+	simplify3(den,zdoubl);
+	doubl=zdoubl*doubl;
+      }
       gen tmparg=r2e(den,lv,contextptr),tmpd=r2e(d,lv,contextptr);
       if (keep_abs){
 	tmparg=abs(tmparg,contextptr);
