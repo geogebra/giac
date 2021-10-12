@@ -248,6 +248,17 @@ namespace giac {
   gen in_select_root(const vecteur & a,bool reel,GIAC_CONTEXT,double eps){
     if (a.empty() || is_undef(a))
       return undef;
+    if (reel){
+      // bug fix for x1:=sqrt((sqrt(2*(sqrt(17)-1))-2)/2); normal(1+(-x1)^2);
+      gen amax(minus_inf);
+      for (int i=0;i<a.size();++i){
+	gen cur=a[i].evalf_double(1,contextptr);
+	if (cur.type==_DOUBLE_ && is_greater(cur,amax,contextptr))
+	  amax=a[i];
+      }
+      if (!is_inf(amax))
+	return amax;
+    }
     gen current(a.front());
     double max_re(re(current,contextptr).evalf_double(1,contextptr)._DOUBLE_val),max_im(im(current,contextptr).evalf_double(1,contextptr)._DOUBLE_val);
     const_iterateur it=a.begin(),itend=a.end();
