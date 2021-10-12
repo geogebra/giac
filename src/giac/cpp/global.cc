@@ -18,6 +18,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#ifdef KHICAS
+  extern "C" double millis(); //extern int time_shift;
+#endif
 
 using namespace std;
 #ifdef HAVE_SSTREAM
@@ -424,6 +427,19 @@ std::string toString8(longlong chksum){
   return res;
 }
 
+ulonglong fromstring8(const char * ptr){
+  ulonglong res=0; char ch;
+  for (;ch=*ptr;++ptr){
+    if (ch==' ')
+      return res;
+    if (ch<'0' || ch>'8')
+      return -1;
+    res *= 8;
+    res += ch-'0';
+  }
+  return res;
+}
+
 void tar_writechecksum(char * buffer,size_t header_offset) {
   // offset: 148
   tar_writestring(buffer,"        ", header_offset+148, 8); // first fill with spaces
@@ -445,7 +461,10 @@ void tar_fillheader(char * buffer,size_t offset,int exec=0){
   gettimeofday(&t, NULL);
   longlong mtime=t.tv_sec;
 #else
-  longlong mtime=2021LL*24*365*3600;;
+  longlong mtime=(2021LL-1970)*24*365.2425*3600;
+#ifdef KHICAS
+  mtime = millis()/1000;
+#endif
 #endif
   string user = "user";
   string group = "group";
@@ -723,7 +742,7 @@ int flash_synchronize(const char * buffer,const vector<fileinfo_t> & finfo,size_
 }
 
 int flash_emptytrash(const char * buffer,const vector<fileinfo_t> & finfo,size_t * tar_first_modif_offsetptr){
-  size_t flash_end=0x90800000;
+  size_t flash_end=0x90800000LL-buflen,flash_begin=0x90200000LL;
   int s=finfo.size();
   if (s==0) return 0;
   // find 1st offset marked non readable
@@ -775,7 +794,7 @@ int flash_emptytrash(const char * buffer,const vector<fileinfo_t> & finfo,size_t
 	erase_sector((char *)buffer+sector_begin,true);
 	WriteMemory((char *)buffer+sector_begin,buf64k,buflen);
 	sector_begin += buflen;
-	if (sector_begin>flash_end)
+	if (sector_begin>flash_end-flash_begin)
 	  return 1;
 	sector_end += buflen;
 	sector_pos = 0;
@@ -835,6 +854,8 @@ char * file_gettar_aligned(const char * filename,char * & freeptr){
   }
   fclose(f);
   size_t size=res.size();
+  if (size<numworks_maxtarsize)
+    size=numworks_maxtarsize;
   size_t bufsize=buflen*((size+(buflen-1))/buflen);
   char * buffer=(char *)malloc(bufsize+2*buflen);
   freeptr=buffer;

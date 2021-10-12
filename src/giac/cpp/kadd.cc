@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <ctype.h>
+#define HAVE_TIME_H
+#include <time.h>
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
@@ -416,12 +418,28 @@ void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
     if (sres == KEY_CTRL_CATALOG || sres==KEY_BOOK) { // rename
     }
     if (sres == MENU_RETURN_SELECTION  || sres==KEY_CTRL_EXE) {
-      flash_synchronize(buf,v,&first_modif);
+      if (modif){
+	flash_synchronize(buf,v,&first_modif);
 #ifndef DEVICE
-      // debug
-      file_savetar("file.tar",(char *)buf,tar_totalsize(buf,0));
+	// debug
+	file_savetar("file.tar",(char *)buf,tar_totalsize(buf,0));
 #endif
-      break;
+	break;
+      }
+      int i=smallmenu.selection-1;
+      string msg1=vs[i];
+      const char * ptr=(buf+v[i].header_offset);
+#ifdef HAVE_TIME_H
+      char tbuf[512];
+      time_t t=fromstring8(ptr+136);
+      tm ts=*localtime(&t);
+      strftime(tbuf, sizeof(tbuf), "%a %Y-%m-%d %H:%M:%S %Z", &ts);;
+      string msg2=string("Mode: ")+(ptr+104)+string(", ")+tbuf;
+#else
+      string msg2=string("Mode: ")+(ptr+104)+string(" mtime ")+print_INT_(fromstring8(ptr+136));
+#endif
+      confirm(msg1.c_str(),msg2.c_str());
+      continue;
     }
     if (sres==KEY_CHAR_ANS){
       int i=smallmenu.selection-1;
@@ -461,7 +479,6 @@ void handle_flash(GIAC_CONTEXT){
 #else
   const char * buf=(const char *)0x90200000;
 #endif
-  size_t first_modif=tar_totalsize(buf,numworks_maxtarsize);
   Menu smallmenu;
   smallmenu.numitems=5;
   MenuItem smallmenuitems[smallmenu.numitems];
@@ -469,13 +486,16 @@ void handle_flash(GIAC_CONTEXT){
   smallmenu.height=12;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
-  smallmenu.title = (char*)(lang==1?"Personnaliser Flash":"Customize Flash");
   smallmenuitems[0].text = (char*)(lang==1?"Informations flash":"Flash informations");
   smallmenuitems[1].text = (char*)(lang==1?"Copier RAM->flash":"Copy RAM->flash");
   smallmenuitems[2].text = (char*)(lang==1?"Modifier infos fichiers":"Modify file infos");
   smallmenuitems[3].text = (char*)(lang==1?"Vider la corbeille":"Empty trash");
   smallmenuitems[4].text = (char*)(lang==1?"Quitter":"Leave");
   while (1){
+    size_t first_modif=tar_totalsize(buf,numworks_maxtarsize);
+    string title=(lang==1?"Flash libre ":"Free flash ");
+    title += print_INT_(numworks_maxtarsize-first_modif);
+    smallmenu.title = (char*)title.c_str();
     int sres = doMenu(&smallmenu);
     if (sres==MENU_RETURN_EXIT){
       break;
