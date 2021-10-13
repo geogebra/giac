@@ -2194,7 +2194,17 @@ namespace giac {
 	  }
 	  else {
 #ifdef HAVE_LIBMPFR
-	    gen tmp=abs(_evalf(makesequence(subst(e_check,x,*it,false,contextptr),100),contextptr),contextptr);
+	    gen tmp=subst(e_check,x,*it,false,contextptr);
+	    if ((isolate_mode & 1)==0 && tmp.is_symb_of_sommet(at_plus) && tmp._SYMBptr->feuille.type==_VECT && tmp._SYMBptr->feuille._VECTptr->size()==2){
+	      gen a=evalf_double(tmp._SYMBptr->feuille._VECTptr->front(),1,contextptr);
+	      if (a.type!=_DOUBLE_)
+		continue;
+	      a=evalf_double(tmp._SYMBptr->feuille._VECTptr->back(),1,contextptr);
+	      if (a.type!=_DOUBLE_)
+		continue;
+	    }
+	    tmp=_evalf(makesequence(tmp,100),contextptr);
+	    tmp=abs(tmp,contextptr);
 #else
 	    gen tmp=evalf(subst(e_check,x,*it,false,contextptr),1,contextptr);
 #endif

@@ -412,10 +412,21 @@ void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
       os_draw_string(0,200,giac::_WHITE,33333,"Toolbox modif|Ans check| EXE do");
     }
     int sres = doMenu(&smallmenu);
+    int i=smallmenu.selection-1;
     if (sres==MENU_RETURN_EXIT){
       break;
     }
-    if (sres == KEY_CTRL_CATALOG || sres==KEY_BOOK) { // rename
+    if (modif && sres == KEY_CTRL_CATALOG || sres==KEY_BOOK) { // rename
+      string s=v[i].filename,msg1=(lang==1?"Renommer ":"Rename ")+s;
+      int j=inputline(msg1.c_str(),"",s,false);
+      if (j){
+	v[i].filename=s;
+	vs[i]=v[i].filename.c_str();
+	vs[i]+=' ';
+	vs[i]+=print_INT_(v[i].size);
+	smallmenuitems[i].text=(char *)vs[i].c_str();
+      }
+      continue;
     }
     if (sres == MENU_RETURN_SELECTION  || sres==KEY_CTRL_EXE) {
       if (modif){
@@ -426,7 +437,6 @@ void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
 #endif
 	break;
       }
-      int i=smallmenu.selection-1;
       string msg1=vs[i];
       const char * ptr=(buf+v[i].header_offset);
 #ifdef HAVE_TIME_H
@@ -442,7 +452,6 @@ void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
       continue;
     }
     if (sres==KEY_CHAR_ANS){
-      int i=smallmenu.selection-1;
       if (i>=0 && i<v.size()){
 	if (modif && i>10){
 	  smallmenuitems[i].value=!smallmenuitems[i].value;
