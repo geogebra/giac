@@ -168,7 +168,7 @@ extern "C" int KeyPressed( void );
 
 #if defined NUMWORKS  && defined DEVICE
 extern "C" const char * extapp_fileRead(const char * filename, size_t *len, int storage);
-extern "C"  bool extapp_erasesector(int i);
+extern "C"  bool extapp_erasesector(void *);
 extern "C"  bool extapp_writememory(unsigned char * dest,const unsigned char * data,size_t length);
 #endif
 
@@ -226,27 +226,15 @@ size_t tar_first_modified_offset=0; // set to non 0 if tar data comes from Numwo
 // returns true if erased, false otherwise 
 // if false is returned, it means that [address..end of sector] contains 0xff
 // i.e. the remaining part of this sector is ready to write without erasing
-bool erase_sector(const char * buf,bool force_erase){
-  const char *ptr=0;
+void erase_sector(const char * buf){
+#if defined NUMWORKS && defined DEVICE
+  extapp_erasesector((void *)buf);
+#else
   char * nxt=(char *) ((((size_t) buf)/buflen +1)*buflen);
   char * start=nxt-buflen;
-  if (!force_erase){
-    // check if sector is ready to write
-    for (ptr=buf;ptr<nxt;++ptr){
-      if (*ptr!=0xff)
-	break;
-    }
-    if (ptr==nxt) // ready to write without erasing
-      return false;
-  }
-#if defined NUMWORKS && defined DEVICE
-  int i=sectoratindex(buf);
-  extapp_erasesector(i);
-#else
   for (int i=0;i<buflen;++i)
     start[i]=0xff;
 #endif
-  return true;
 }
 
 #if defined NUMWORKS && defined DEVICE
@@ -260,7 +248,9 @@ void WriteMemory(char * target,const char * src,size_t length){
 }
 #endif
 
-bool write_memory(char * target,const char * src,size_t length_,bool writeinmiddle=false){
+
+#if 0
+bool write_memory(char * target,const char * src,size_t length_){
   //if (length % 256) return false;
   size_t length=((255+length_)/256)*256;
   char * nxt=(char *) ((((size_t) target)/buflen +1)*buflen);
@@ -271,15 +261,8 @@ bool write_memory(char * target,const char * src,size_t length_,bool writeinmidd
   char * prev=(char *)nxt-buflen;
   memcpy(buf64k,prev,buflen);
   memcpy(buf64k+(target-prev),src,delta);
-  bool force_erase=src>prev && src<nxt;
-  if (erase_sector(target,force_erase)){
-    size_t avant=(target-prev)+delta;
-    WriteMemory(prev,buf64k,avant);
-    if (writeinmiddle && delta==length)
-      WriteMemory(target+delta,buf64k+avant,buflen-avant);
-  }
-  else
-    WriteMemory(target,buf64k+(target-prev),delta);
+  erase_sector(target);
+  WriteMemory(prev,buf64k,buflen);
   length -= delta;
   src += delta;
   target += delta;
@@ -289,17 +272,14 @@ bool write_memory(char * target,const char * src,size_t length_,bool writeinmidd
     if (delta>buflen) 
       delta=buflen;
     memcpy(buf64k,src,delta);
-    erase_sector(target,true);
-    if (writeinmiddle)
-      WriteMemory(target,buf64k,buflen);
-    else
-      WriteMemory(target,buf64k,delta);
+    erase_sector(target);
+    WriteMemory(target,buf64k,buflen);
     length -= delta;
     src += delta;
     target += delta;      
   }
 }
-
+#endif
 
 // TAR: tar file format support
 int tar_filesize(int s){
@@ -314,8 +294,8 @@ string giac_readString(const char * buffer,size_t str_offset, size_t size) {
   int i = 0;
   string rtnStr = "";
   while(i<size) {
-    char ch=buffer[str_offset+i];
-    if (ch<32) break;
+    unsigned char ch=buffer[str_offset+i];
+    if (ch<32 || ch>=128) break;
     rtnStr += ch;
     i++;
   }
@@ -493,20 +473,44 @@ int flash_adddata(const char * buffer_,const char * filename,const char * data,s
   fileinfo_t last=finfo[s-1];
   size_t offset=last.header_offset;
   offset += tar_filesize(last.size);
-  size_t newsize=offset+1024+datasize;
-  newsize=10240*((newsize+10239)/10240);
-  if (newsize>numworks_maxtarsize) return 0;
-  char buffer[512];
-  // fill header with 0
+  if (offset+1024+datasize>numworks_maxtarsize) return 0;
+  buffer_ += offset;
+  char * nxt=(char *) ((((size_t) buffer_)/buflen +1)*buflen);
+  char * prev=nxt-buflen;
+  size_t pos=buffer_-prev;
+  for (int i=0;i<buflen;++i)
+    buf64k[i]=0;
+  memcpy(buf64k,prev,pos);
+  char * buffer=buf64k+pos; // point to header
+  // fill with 0
   for (int i=0;i<512;++i)
     buffer[i]=0;
   tar_writestring(buffer,filename,0,100); // filename
   tar_writestring(buffer,leftpad(toString8(datasize),11)+" ",124,12);  // filesize
   tar_writestring(buffer,"0",156,1); // file type
   tar_fillheader(buffer,0,exec);
-  write_memory((char *)buffer_+offset,buffer,512);
-  // copy data 
-  write_memory((char *)buffer_+offset+512,data,datasize);
+  // add data
+  buffer += 512;
+  pos += 512;
+  size_t length=datasize;
+  if (length>buflen-pos)
+    length=buflen-pos;
+  memcpy(buffer,data,length);
+  erase_sector(prev);
+  WriteMemory(prev,buf64k,buflen);
+  datasize -= length;
+  data += length;
+  prev += buflen;
+  while (datasize>0){
+    // copy remaining data
+    length=datasize<buflen?datasize:buflen;
+    memcpy(buf64k,data,length);
+    for (int i=length;i<buflen;++i)
+      buf64k[i]=0;
+    erase_sector(prev);
+    WriteMemory(prev,buf64k,buflen);
+    datasize -= length;
+  }
   return 1;
 }
 
@@ -619,6 +623,7 @@ int tar_savefile(char * buffer,const char * filename){
   return 1;
 }
 
+#if 0
 // flash version
 // mark_only==1 mark for erase, ==2 undelete
 // use mark_only==0 if and only if you need some space in flash
@@ -648,7 +653,7 @@ int flash_removefile(const char * buffer,const char * filename,size_t * tar_firs
       headbuf[104] = '0'+((headbuf[104]-'0') |4);
     tar_writechecksum(headbuf,0);
     // recompute chksum
-    write_memory((char *)buffer+target,headbuf,512,true);
+    write_memory((char *)buffer+target,headbuf,512);
     return 1;
   }
   // really erase, move info.header_offset+info.size+512 to info.header_offset
@@ -660,7 +665,7 @@ int flash_removefile(const char * buffer,const char * filename,size_t * tar_firs
   // for (;target<end;++target)  buffer[target]=0;
   return 1;
 }
-
+#endif
 
 // RAM version
 int tar_removefile(char * buffer,const char * filename,size_t * tar_first_modif_offsetptr){
@@ -735,7 +740,7 @@ int flash_synchronize(const char * buffer,const vector<fileinfo_t> & finfo,size_
 	headbuf[104] = '0'+((headbuf[104]-'0') |4);
       tar_writechecksum(headbuf,0);
     }
-    erase_sector(buffer+sector_begin,true);
+    erase_sector(buffer+sector_begin);
     WriteMemory((char *)buffer+sector_begin,buf64k,buflen);
   } 
   return 1;
@@ -787,11 +792,13 @@ int flash_emptytrash(const char * buffer,const vector<fileinfo_t> & finfo,size_t
 	nbytes=buflen-sector_pos;
       memcpy(buf64k+sector_pos,buffer+src,nbytes);
       sector_pos += nbytes;
+      for (int j=sector_pos;j<buflen;++j)
+	buf64k[j]=0;
       src += nbytes;
       length -= nbytes; 
       if (sector_pos==buflen){
 	// erase sector, transfert buf64k, copy next sector in buf64k
-	erase_sector((char *)buffer+sector_begin,true);
+	erase_sector((char *)buffer+sector_begin);
 	WriteMemory((char *)buffer+sector_begin,buf64k,buflen);
 	sector_begin += buflen;
 	if (sector_begin>flash_end-flash_begin)
@@ -805,16 +812,17 @@ int flash_emptytrash(const char * buffer,const vector<fileinfo_t> & finfo,size_t
     if (!tar_nxt_readable(finfo,i,fnxt)){
       // nothing more to be copied, flush
       if (sector_pos>0){
-	erase_sector((char *)buffer+sector_begin,true);
-	WriteMemory((char *)buffer+sector_begin,buf64k,sector_pos);
+	erase_sector((char *)buffer+sector_begin);
+	WriteMemory((char *)buffer+sector_begin,buf64k,buflen);
       }
+      // if sector_pos==0, we should probably write at least 256 0
       return nwrite; 
     }
     src=fnxt.header_offset;
   }
   if (sector_pos>0){
-    erase_sector((char *)buffer+sector_begin,true);
-    WriteMemory((char *)buffer+sector_begin,buf64k,sector_pos);
+    erase_sector((char *)buffer+sector_begin);
+    WriteMemory((char *)buffer+sector_begin,buf64k,buflen);
   }
   return nwrite;
 }

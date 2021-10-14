@@ -477,6 +477,8 @@ void flash_from_ram(const char * buf,size_t & first_modif,GIAC_CONTEXT){
 }
 
 void handle_flash(GIAC_CONTEXT){
+  if (!do_confirm(lang==1?"Version alpha. Etes-vous sur?":"Alpha version. Really run?"))
+    return;
   buf64k=(char *)malloc(1<<16);
   if (buf64k==0){
     confirm(lang==1?"Pas assez de memoire RAM.":"RAM Memory full",lang==1?"Purgez et relancez KhiCAS":"Purge and restart KhiCAS");    
