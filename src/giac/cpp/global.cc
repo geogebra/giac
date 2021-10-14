@@ -449,7 +449,7 @@ void tar_fillheader(char * buffer,size_t offset,int exec=0){
   string user = "user";
   string group = "group";
 
-  tar_writestring(buffer,leftpad(mode,6)+" ", offset+100, 8);  
+  tar_writestring(buffer,leftpad(mode,7)+" ", offset+100, 8);  
   tar_writestring(buffer,leftpad(toString8(uid),6)+" ",offset+108,8);
   tar_writestring(buffer,leftpad(toString8(gid),6)+" ",offset+116,8);
   tar_writestring(buffer,leftpad(toString8(mtime),11)+" ",offset+136,12);
@@ -479,7 +479,7 @@ int flash_adddata(const char * buffer_,const char * filename,const char * data,s
   char * prev=nxt-buflen;
   size_t pos=buffer_-prev;
   for (int i=0;i<buflen;++i)
-    buf64k[i]=0;
+    buf64k[i]=0xff;
   memcpy(buf64k,prev,pos);
   char * buffer=buf64k+pos; // point to header
   // fill with 0
@@ -506,7 +506,7 @@ int flash_adddata(const char * buffer_,const char * filename,const char * data,s
     length=datasize<buflen?datasize:buflen;
     memcpy(buf64k,data,length);
     for (int i=length;i<buflen;++i)
-      buf64k[i]=0;
+      buf64k[i]=0xff;
     erase_sector(prev);
     WriteMemory(prev,buf64k,buflen);
     datasize -= length;
@@ -761,11 +761,9 @@ int flash_emptytrash(const char * buffer,const vector<fileinfo_t> & finfo,size_t
     }
   }
   if (i==s) return 0;
-  if (!tar_nxt_readable(finfo,i,fnxt))
-    return 0;
+  // if (!tar_nxt_readable(finfo,i,fnxt)) return 0;
   if (tar_first_modif_offsetptr && *tar_first_modif_offsetptr>f.header_offset)
     *tar_first_modif_offsetptr=f.header_offset;
-  size_t src=fnxt.header_offset;
   // find current sector
   size_t sector_begin=(f.header_offset/buflen)*buflen,sector_end=sector_begin+buflen;
   memcpy(buf64k,buffer+sector_begin,buflen);
@@ -773,8 +771,17 @@ int flash_emptytrash(const char * buffer,const vector<fileinfo_t> & finfo,size_t
   int nwrite=0;
   for (;i<s;++nwrite){
     // buf64k[0..sector_pos[ is ok
-    // find nxt offset marked as non readable
     int nxti=i;
+    for (++nxti;nxti<s;++nxti){
+      fnxt=finfo[nxti];
+      int droit=fnxt.mode /100;
+      if ( (droit & 4)==4){
+	break;
+      }
+    }
+    if (nxti==s) break;
+    size_t src=fnxt.header_offset;
+    // find nxt offset marked as non readable
     for (++nxti;nxti<s;++nxti){
       f=finfo[nxti];
       int droit=f.mode /100;
@@ -793,7 +800,7 @@ int flash_emptytrash(const char * buffer,const vector<fileinfo_t> & finfo,size_t
       memcpy(buf64k+sector_pos,buffer+src,nbytes);
       sector_pos += nbytes;
       for (int j=sector_pos;j<buflen;++j)
-	buf64k[j]=0;
+	buf64k[j]=0xff;
       src += nbytes;
       length -= nbytes; 
       if (sector_pos==buflen){
@@ -809,19 +816,11 @@ int flash_emptytrash(const char * buffer,const vector<fileinfo_t> & finfo,size_t
       }
     }
     i=nxti;
-    if (!tar_nxt_readable(finfo,i,fnxt)){
-      // nothing more to be copied, flush
-      if (sector_pos>0){
-	erase_sector((char *)buffer+sector_begin);
-	WriteMemory((char *)buffer+sector_begin,buf64k,buflen);
-      }
-      // if sector_pos==0, we should probably write at least 256 0
-      return nwrite; 
-    }
-    src=fnxt.header_offset;
   }
   if (sector_pos>0){
     erase_sector((char *)buffer+sector_begin);
+    for (int j=sector_pos;j<buflen;++j)
+      buf64k[j]=0xff;
     WriteMemory((char *)buffer+sector_begin,buf64k,buflen);
   }
   return nwrite;

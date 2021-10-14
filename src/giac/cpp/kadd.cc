@@ -409,7 +409,7 @@ void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
   while (1){
     if (modif){
       drawRectangle(0,200,LCD_WIDTH_PX,22,giac::_WHITE);
-      os_draw_string(0,200,giac::_WHITE,33333,"Toolbox modif|Ans check| EXE do");
+      os_draw_string(0,200,giac::_WHITE,33333,"Tool: renam | Ans: -/+ | EXE: ok");
     }
     int sres = doMenu(&smallmenu);
     int i=smallmenu.selection-1;
@@ -441,10 +441,18 @@ void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
       const char * ptr=(buf+v[i].header_offset);
 #ifdef HAVE_TIME_H
       char tbuf[512];
-      time_t t=fromstring8(ptr+136);
-      tm ts=*localtime(&t);
-      strftime(tbuf, sizeof(tbuf), "%a %Y-%m-%d %H:%M:%S %Z", &ts);;
-      string msg2=string("Mode: ")+(ptr+104)+string(", ")+tbuf;
+      char m[4]={0,0,0,0};
+      strncpy(m,ptr+104,3);
+      string msg2=string("Mode: ")+m;
+      ulonglong ul=fromstring8(ptr+136);
+      if (ul<1e8) // timestamp from calculator last reset
+	msg2 += ", RTC " + print_INT_(fromstring8(ptr+136));
+      else {
+	time_t t=ul;
+	tm ts=*localtime(&t);
+	strftime(tbuf, sizeof(tbuf), "%a %Y-%m-%d %H:%M:%S %Z", &ts);
+	msg2 += string(", ")+tbuf;
+      }
 #else
       string msg2=string("Mode: ")+(ptr+104)+string(" mtime ")+print_INT_(fromstring8(ptr+136));
 #endif
@@ -477,7 +485,7 @@ void flash_from_ram(const char * buf,size_t & first_modif,GIAC_CONTEXT){
 }
 
 void handle_flash(GIAC_CONTEXT){
-  if (!do_confirm(lang==1?"Version alpha. Etes-vous sur?":"Alpha version. Really run?"))
+  if (!do_confirm(lang==1?"Version beta. Etes-vous sur?":"Beta version. Really run?"))
     return;
   buf64k=(char *)malloc(1<<16);
   if (buf64k==0){
@@ -507,6 +515,7 @@ void handle_flash(GIAC_CONTEXT){
     string title=(lang==1?"Flash libre ":"Free flash ");
     title += print_INT_(numworks_maxtarsize-first_modif);
     smallmenu.title = (char*)title.c_str();
+    smallmenu.selection = 1;
     int sres = doMenu(&smallmenu);
     if (sres==MENU_RETURN_EXIT){
       break;
@@ -527,7 +536,8 @@ void handle_flash(GIAC_CONTEXT){
 	continue;
       }
       if (smallmenu.selection==4){
-	flash_emptytrash(buf,&first_modif);
+	if (numworks_maxtarsize-first_modif>65536 && do_confirm(lang==1?"Il reste de la place, etes-vous sur?":"There's still room, are you sure?"))
+	  flash_emptytrash(buf,&first_modif);
       }
     }
   }
