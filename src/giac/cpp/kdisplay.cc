@@ -6326,7 +6326,7 @@ namespace xcas {
 		  if (value.type==_EQW){
 		    value=value._EQWptr->g;
 		    // cout << goto_sel << " " << value << endl; continue;
-		    if (v.size()==2 && (opg==at_plus || opg==at_prod))
+		    if (v.size()==2 && (opg==at_plus || opg==at_prod || opg==at_pow))
 		      value=protecteval(value,1,contextptr);
 		    goto_sel.erase(goto_sel.begin());
 		    xcas::replace_selection(eq,value,gselparent,&goto_sel,contextptr);
