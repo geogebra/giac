@@ -382,8 +382,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
  ********************* */
 #ifdef NUMWORKS
 
-void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
-  std::vector<fileinfo_t> v=tar_fileinfo(buf,0);
+void flash_info(const char * buf,std::vector<fileinfo_t> &v,size_t & first_modif,bool modif,int initpos,GIAC_CONTEXT){
   Menu smallmenu;
   smallmenu.numitems=v.size();
   MenuItem smallmenuitems[smallmenu.numitems];
@@ -393,9 +392,9 @@ void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
   smallmenu.scrollout=1;
   smallmenu.title = (char*)(lang==1?"Info Flash":"Flash Files");
   smallmenu.type = MENUTYPE_FKEYS;
+  smallmenu.selection=initpos;
   if (modif){
     smallmenu.title = (char*)(lang==1?"Modifier fichiers":"Modify files");
-    smallmenu.selection=smallmenu.numitems;
   }
   vector<string> vs(v.size());
   for (int i=0;i<v.size();++i){
@@ -431,7 +430,7 @@ void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
     if (sres == MENU_RETURN_SELECTION  || sres==KEY_CTRL_EXE) {
       if (modif){
 	flash_synchronize(buf,v,&first_modif);
-#ifndef DEVICE
+#if defined NUMWORKS && !defined DEVICE
 	// debug
 	file_savetar("file.tar",(char *)buf,tar_totalsize(buf,0));
 #endif
@@ -445,8 +444,8 @@ void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
       strncpy(m,ptr+104,3);
       string msg2=string("Mode: ")+m;
       ulonglong ul=fromstring8(ptr+136);
-      if (ul<1e8) // timestamp from calculator last reset
-	msg2 += ", RTC " + print_INT_(fromstring8(ptr+136));
+      if (ul==(ulonglong) -1 || ul<1e8) // timestamp from calculator last reset
+	msg2 += ", RTC " + print_INT_(ul);
       else {
 	time_t t=ul;
 	tm ts=*localtime(&t);
@@ -469,34 +468,66 @@ void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
 	  else
 	    m = ((m/100) & 3)*100+(m%100);
 	  v[i].mode=m;
+	  if (smallmenuitems[i].value){
+	    // uncheck all files having the same filename
+	    const string & filename=v[i].filename;
+	    for (int j=0;j<v.size();++j){
+	      if (j==i || v[j].filename!=filename)
+		continue;
+	      m=v[j].mode;
+	      m = ((m/100) & 3)*100+(m%100);
+	      v[j].mode=m;
+	      smallmenuitems[j].value=false;
+	    }
+	  }
 	}
       }
     }
   }
 }
 
+void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
+  std::vector<fileinfo_t> v=tar_fileinfo(buf,0);
+  int initpos=1;
+  if (modif)
+    initpos=v.size();
+  flash_info(buf,v,first_modif,modif,initpos,contextptr);
+}
+
 // copy text file from ram scriptstore
-void flash_from_ram(const char * buf,size_t & first_modif,GIAC_CONTEXT){
+int flash_from_ram(const char * buf,size_t & first_modif,GIAC_CONTEXT){
   char filename[MAX_FILENAME_SIZE+1];
   int n=giac_filebrowser(filename,"py",(lang==1?"Choisir fichier a copier":"Select file to copy"),0);
-  if (n==0) return;
+  if (n==0) return 0;
   const char * data=read_file(filename);
   n=flash_adddata(buf,filename,data,strlen(data),0);
+  return n;
 }
 
 void handle_flash(GIAC_CONTEXT){
-  if (!do_confirm(lang==1?"Version beta. Etes-vous sur?":"Beta version. Really run?"))
+  const char flash_fr[]="Cette application, disponible hors mode examen, permet de sauvegarder et gerer des scripts en memoire flash. Elle a besoin de 70K de memoire RAM, lancez-la tout de suite apres avoir ouvert KhiCAS.\nPour eviter une usure trop rapide de la flash, il est conseille de l'utiliser le moins souvent possible et de ne pas vider la corbeille avant que cela ne soit necessaire (ainsi les nouveaux fichiers s'ecriront sur d'autres secteurs).\nL'auteur decline toute responsabilite en cas d'usure prematuree de votre memoire flash.";
+  const char flash_en[]="This app (not available if exam mode is on) lets you save and handle scripts in flash memory. It requires 70K of free RAM, you should run it immediatly after launching KhiCAS.\nIn order to avoid premature wear of your flash, run this app only when required. Don't empty the trash unless it's necessary (that way new files will be written in other sectors).\nThe author declines all responsability in the event of premature wear of your flash memory.";
+  textArea text;
+  text.editable=false;
+  text.clipline=-1;
+  text.title =(lang==1)?"EXIT: annuler, EXE: ok":"EXIT: cancel, EXE: run";
+  add(&text,(lang==1)?flash_fr:flash_en);
+  int key=doTextArea(&text,contextptr);
+  if (key!=1
+#ifdef DEVICE
+      || inexammode()
+#endif
+      )
     return;
+  text.elements.clear();
   buf64k=(char *)malloc(1<<16);
   if (buf64k==0){
     confirm(lang==1?"Pas assez de memoire RAM.":"RAM Memory full",lang==1?"Purgez et relancez KhiCAS":"Purge and restart KhiCAS");    
     return;
   }
-#ifndef DEVICE
+#ifndef NUMWORKS
   char * freeptr=0;
-  const char * buf=file_gettar_aligned("apps.tar",freeptr);
-#else
-  const char * buf=(const char *)0x90200000;
+  const char * flash_buf=file_gettar_aligned("apps.tar",freeptr);
 #endif
   Menu smallmenu;
   smallmenu.numitems=5;
@@ -511,7 +542,7 @@ void handle_flash(GIAC_CONTEXT){
   smallmenuitems[3].text = (char*)(lang==1?"Vider la corbeille":"Empty trash");
   smallmenuitems[4].text = (char*)(lang==1?"Quitter":"Leave");
   while (1){
-    size_t first_modif=tar_totalsize(buf,numworks_maxtarsize);
+    size_t first_modif=tar_totalsize(flash_buf,numworks_maxtarsize);
     string title=(lang==1?"Flash libre ":"Free flash ");
     title += print_INT_(numworks_maxtarsize-first_modif);
     smallmenu.title = (char*)title.c_str();
@@ -524,26 +555,45 @@ void handle_flash(GIAC_CONTEXT){
       if (smallmenu.selection == smallmenu.numitems)
 	break;
       if (smallmenu.selection == 1){
-	flash_info(buf,first_modif,false,contextptr); // info only, no erase
+	flash_info(flash_buf,first_modif,false,contextptr); // info only, no erase
 	continue;
       }
       if (smallmenu.selection == 2){
-	flash_from_ram(buf,first_modif,contextptr); 
+	if (flash_from_ram(flash_buf,first_modif,contextptr)){
+	  // uncheck files having the same filename
+	  std::vector<fileinfo_t> v=tar_fileinfo(flash_buf,0);
+	  int n=v.size();
+	  if (n){
+	    --n;
+	    string & filename=v[n].filename;
+	    int modif=0;
+	    for (int j=0;j<n;++j){
+	      if ( v[j].filename!=filename)
+		continue;
+	      modif++;
+	      int m=v[j].mode;
+	      m = ((m/100) & 3)*100+(m%100);
+	      v[j].mode=m;
+	    }
+	    if (modif)
+	      flash_info(flash_buf,v,first_modif,true,v.size(),contextptr);
+	  }
+	}
 	continue;
       }
       if (smallmenu.selection == 3){
-	flash_info(buf,first_modif,true,contextptr); // erase files
+	flash_info(flash_buf,first_modif,true,contextptr); // erase files
 	continue;
       }
       if (smallmenu.selection==4){
 	if (numworks_maxtarsize-first_modif>65536 && do_confirm(lang==1?"Il reste de la place, etes-vous sur?":"There's still room, are you sure?"))
-	  flash_emptytrash(buf,&first_modif);
+	  flash_emptytrash(flash_buf,&first_modif);
       }
     }
   }
   free(buf64k);
 #ifndef DEVICE
-  free(freeptr);
+  //free(freeptr);
 #endif
 }
 #else

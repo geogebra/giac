@@ -7,7 +7,12 @@
 #include "misc.h"
 
 #include <exception>
-
+#ifdef NUMWORKS
+extern char * freeptr;
+extern const char * flash_buf;
+extern "C" const char * flash_read(const char * filename);
+extern "C" int flash_filebrowser(const char ** filenames,int maxrecords,const char * extension);
+#endif
 class autoshutdown : public std::exception{
   const char * what () const throw ()
   {

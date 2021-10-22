@@ -496,6 +496,9 @@ int flash_adddata(const char * buffer_,const char * filename,const char * data,s
   if (length>buflen-pos)
     length=buflen-pos;
   memcpy(buffer,data,length);
+  buffer += length;
+  for (;(size_t) buffer % 512;++buffer)
+    *buffer=0;
   erase_sector(prev);
   WriteMemory(prev,buf64k,buflen);
   datasize -= length;
@@ -667,6 +670,51 @@ int flash_removefile(const char * buffer,const char * filename,size_t * tar_firs
 }
 #endif
 
+const char * tar_loadfile(const char * buffer,const char * filename,size_t * len){
+  vector<fileinfo_t> finfo=tar_fileinfo(buffer,0);
+  int s=finfo.size();
+  for (int i=0;i<s;++i){
+    const fileinfo_t & f=finfo[i];
+    if (f.filename==filename){
+      if (len)
+	*len=f.size;
+      return buffer+f.header_offset+512;
+    }
+  }
+  return 0;
+}
+
+bool match(const char * filename,const char * extension){
+  if (!extension)
+    return true;
+  int el=strlen(extension);
+  int fl=strlen(filename);
+  if (el>=fl) return false;
+  int i=fl-el,j=0;
+  for (;j<el;++i,++j){
+    if (filename[i]!=extension[j])
+      return false;
+  }
+  return true;
+}
+
+int tar_filebrowser(const char * buf,const char ** filenames,int maxrecords,const char * extension){
+  vector<fileinfo_t> finfo=tar_fileinfo(buf,0);
+  int s=finfo.size();
+  if (s==0) return 0;
+  int j=0;
+  for (int i=0;i<s;++i){
+    const fileinfo_t & f=finfo[i];
+    if (match(f.filename.c_str(),extension)){
+      filenames[j]=f.filename.c_str();
+      ++j;
+      if (j==maxrecords)
+	return j;
+    }
+  }
+  return j;
+}
+
 // RAM version
 int tar_removefile(char * buffer,const char * filename,size_t * tar_first_modif_offsetptr){
   vector<fileinfo_t> finfo=tar_fileinfo(buffer,0);
@@ -687,7 +735,7 @@ int tar_removefile(char * buffer,const char * filename,size_t * tar_first_modif_
   fileinfo_t infoend=finfo[s-1];
   size_t end=infoend.header_offset+tar_filesize(infoend.size);
   // memcpy would be faster, but I'm unsure it is safe here
-  for (src;src<end;++src,++target) 
+  for (;src<end;++src,++target) 
     buffer[target]=buffer[src];
   for (;target<end;++target) // clear space after new end
     buffer[target]=0;
@@ -850,8 +898,18 @@ char * file_gettar(const char * filename){
 }
 
 char * file_gettar_aligned(const char * filename,char * & freeptr){
+  size_t size=numworks_maxtarsize;
+  size_t bufsize=buflen*((size+(buflen-1))/buflen);
+  char * buffer=(char *)malloc(bufsize+2*buflen);
+  freeptr=buffer;
+  // align buffer
+  buffer=(char *) ((((size_t) buffer)/buflen +1)*buflen);
   FILE * f=fopen(filename,"rb");
-  if (!f) return 0;
+  if (!f){
+    for (size_t i=0;i<size;++i)
+      buffer[i]=0;
+    return buffer;
+  }
   vector<char> res;
   while (1){
     char ch=fgetc(f);
@@ -860,14 +918,9 @@ char * file_gettar_aligned(const char * filename,char * & freeptr){
     res.push_back(ch);
   }
   fclose(f);
-  size_t size=res.size();
+  size=res.size();
   if (size<numworks_maxtarsize)
     size=numworks_maxtarsize;
-  size_t bufsize=buflen*((size+(buflen-1))/buflen);
-  char * buffer=(char *)malloc(bufsize+2*buflen);
-  freeptr=buffer;
-  // align buffer
-  buffer=(char *) ((((size_t) buffer)/buflen +1)*buflen);
   memcpy(buffer,&res.front(),size);
   return buffer;
 }
@@ -7815,7 +7868,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
       pythonmode=true;
       pythoncompat=true;
     }
-    if (s_orig[first]=='#' || (s_orig[first]=='_' && !isalpha(s_orig[first+1])) || s_orig.substr(first,4)=="from" || s_orig.substr(first,7)=="import "){
+    if (s_orig[first]=='#' || (s_orig[first]=='_' && !isalpha(s_orig[first+1])) || s_orig.substr(first,4)=="from" || s_orig.substr(first,7)=="import " || s_orig.substr(first,4)=="def "){
       pythonmode=true;
       pythoncompat=true;
     }
@@ -8201,6 +8254,12 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	      cur += " fi";
 	    p=0;
 #endif
+	  }
+	  progpos=cur.find("def");
+	  if (p>progpos && progpos>=0 && progpos<cs && instruction_at(cur,progpos,3)){
+	    pythonmode=true;
+	    res = cur.substr(0,p)+":\n"+string(progpos+4,' ')+cur.substr(p+1,pos-p)+'\n'+res;
+	    continue;
 	  }
 	  progpos=cur.find("else");
 	  if (p>progpos && progpos>=0 && progpos<cs && instruction_at(cur,progpos,4)){

@@ -32,7 +32,24 @@
 #ifndef is_cx2
 #define is_cx2 false
 #endif
+
 #ifdef KHICAS
+
+#ifdef NUMWORKS
+char * freeptr=0;
+#ifndef DEVICE
+const char * flash_buf=file_gettar_aligned("apps.tar",freeptr);
+extern "C" const char * flash_read(const char * filename){
+  return tar_loadfile(flash_buf,filename,0);
+}
+extern "C" int flash_filebrowser(const char ** filenames,int maxrecords,const char * extension){
+  return tar_filebrowser(flash_buf,filenames,maxrecords,extension);
+}
+#else
+const char * flash_buf=(const char *)0x90200000;
+#endif
+#endif
+
 #if defined NUMWORKS && !defined DEVICE //ndef NSPIRE_NEWLIB
 extern "C" {
   short int nspire_exam_mode=0;
@@ -2387,6 +2404,8 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	beg=pos-12;
       if (int(s.size())-beg<36)
 	beg=giac::giacmax(0,int(s.size())-36);
+      if (beg>pos)
+	beg=pos;
       textX=X1;
 #if 0
       os_draw_string_(textX,textY,(s.substr(beg,pos-beg)+"|"+s.substr(pos,s.size()-pos)).c_str());
@@ -10149,9 +10168,10 @@ namespace xcas {
     }
     Line[Last_Line].str=0;
     Last_Line=start;
+    int savestartline=Start_Line;
     Start_Line=Last_Line>LINE_DISP_MAX?Last_Line-LINE_DISP_MAX:0;
     Cursor.x=0;
-    Cursor.y=start;
+    Cursor.y=start-Start_Line;
     Line[start].str=Edit_Line;
     Edit_Line[0]=0;
     if (v.empty()) return 0;
@@ -10168,6 +10188,8 @@ namespace xcas {
       Console_Disp(1,contextptr);
       Bdisp_PutDisp_DD();
     }
+    Cursor.y += (Start_Line-savestartline);
+    Start_Line=savestartline;
     return 0;
   }
 
@@ -10675,7 +10697,7 @@ namespace xcas {
 	  if (Cursor.x == 0 && Line[Current_Line].start_col > 0)
 	    Cursor.x = 1;
 	  //If the current cursor line is not read-only, then it is a string copy to Edit_Line for editing.
-	  if (!Line[Current_Line].readonly){
+	  if (!Line[Current_Line].readonly && Line[Current_Line].str){
 	    strcpy((char *)Edit_Line, (const char *)Line[Current_Line].str);
 	    console_free(Line[Current_Line].str);
 	    Line[Current_Line].str = Edit_Line;
@@ -10744,7 +10766,7 @@ namespace xcas {
 	    if (Cursor.x == 0 && Line[Current_Line].start_col > 0) Cursor.x = 1;
 
 	    //If the current cursor line is not read-only, then it is a string copy to Edit_Line for editing.
-	    if (!Line[Current_Line].readonly)
+	    if (!Line[Current_Line].readonly && Line[Current_Line].str)
 	      {
 		strcpy((char *)Edit_Line, (const char *)Line[Current_Line].str);
 		console_free(Line[Current_Line].str);
@@ -12964,15 +12986,13 @@ namespace xcas {
   extern "C" void mp_stack_ctrl_init();
   extern "C" void mp_stack_set_top(void *);
   extern "C" void mp_stack_set_limit(size_t);
-#endif
+#endif // NUMWORKS
 
   int console_main(GIAC_CONTEXT,const char * sessionname){
-#ifdef NUMWORKS
     mp_stack_ctrl_init();
     //volatile int stackTop;
     //mp_stack_set_top((void *)(&stackTop));
     //mp_stack_set_limit(24*1024);
-#endif
 #ifdef QUICKJS
     quickjs_ck_eval("0");
 #endif

@@ -153,6 +153,8 @@ int flash_adddata(const char * buffer_,const char * filename,const char * data,s
 int tar_adddata(char * & buffer,size_t * buffersizeptr,const char * filename,const char * data,size_t datasize,int exec=0); // filename is only used to fill the header
 int flash_addfile(const char * buffer,const char * filename);
 int tar_addfile(char * & buffer,const char * filename,size_t * buffersizeptr);
+const char * tar_loadfile(const char * buffer,const char * filename,size_t * len);
+int tar_filebrowser(const char * buf,const char ** filenames,int maxrecords,const char * extension);
 // by default removefile will mark the file as deleted (this requires 1 sector write)
 // if mark_only==2, this will undelete the file
 // int flash_removefile(const char * buffer,const char * filename,size_t * tar_first_modif_offsetptr,int mark_only=1);

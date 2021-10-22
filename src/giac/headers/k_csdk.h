@@ -27,6 +27,7 @@ extern "C" {
   void os_hide_graph(); // hide graph, not used anymore
   void os_redraw(); // force redraw of window class hierarchy
 #ifdef NUMWORKS
+  bool inexammode();
   int extapp_restorebackup(int mode);
   void numworks_set_pixel(int x,int y,int c);
   int numworks_get_pixel(int x,int y);
