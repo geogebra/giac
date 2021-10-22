@@ -2358,7 +2358,11 @@ namespace giac {
   // double(int) does not seem to work under GNUWINCE
   double int2double(int i){
     if (i<0){
+#ifdef WIN32 
+      if (i<-INT_MAX) return -1.0-INT_MAX;
+#else 
       if (i<-RAND_MAX) return -1.0-RAND_MAX;
+#endif
       return -_int2double(-i);
     }
     else
