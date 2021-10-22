@@ -10,7 +10,7 @@ pipeline {
     LINUX32_SSH=credentials('linux32-ssh-key')
     ANDROID_SDK_ROOT='/var/lib/jenkins/.android-sdk'
     BINARYEN="${env.WORKSPACE}/emsdk/upstream"
-    EMSDK_PYTHON='/usr/bin/python3.7'
+    EMSDK_PYTHON='/usr/bin/python3.8'
   }
   stages {
     stage('Build') {
