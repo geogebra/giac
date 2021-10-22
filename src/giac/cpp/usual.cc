@@ -6824,20 +6824,27 @@ namespace giac {
 	double d=std::pow(10.0,double(b.val));
 #endif
 	*/
-	gen d=10.0;
+	gen d=10.0,a=args._VECTptr->front();
 	if (b.val<0){
-	  gen gf=_floor(log10(abs(args._VECTptr->front(),contextptr),contextptr),contextptr); 
+	  gen gf=_floor(log10(abs(a,contextptr),contextptr),contextptr); 
 	  if (gf.type!=_INT_ && gf.type!=_FLOAT_)
 	    return gensizeerr(contextptr);
 	  b=-1-b-gf;
 	}
 	if (b.val>14)
 	  d=accurate_evalf(gen(10),int(b.val*3.32192809489+.5));
+	else
+	  d=accurate_evalf(gen(10),60);
 	d=pow(d,b.val,contextptr);
-	gen e=_round(d*args._VECTptr->front(),contextptr);
+	gen e=_round(d*a,contextptr);
 	if (b.val>14)
 	  e=accurate_evalf(e,int(b.val*3.32192809489+.5));
 	e=rdiv(e,d,contextptr);
+	if (b.val<=14){
+	  gen f=evalf_double(e,1,contextptr);
+	  if (!is_undef(f))
+	    return f;
+	}
 	return e;
       }
     }
