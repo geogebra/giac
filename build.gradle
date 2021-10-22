@@ -237,6 +237,7 @@ def giacSpecificSettings(cppCompiler, linker, targetPlatform) {
         cppCompiler.args '-I', file('src/jni/jdkHeaders/linux').toString()
         cppCompiler.args '-fno-strict-aliasing' // maybe not needed
         cppCompiler.args '-DPIC' // maybe not needed
+        cppCompiler.args '-fpermissive'
 
         linker.args '-s' // stripping
 
