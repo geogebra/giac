@@ -4850,6 +4850,47 @@ namespace xcas {
     return d;
   }
 
+  // 3d demo prototype
+  // surfaceg should be replaced by a list of 3d objects
+  // tranformed according to 3d current view
+  // currently we assume it is a hpersurface encoded as a matrix
+  // with lines containing 3 coordinates per point
+  void glsurface(const gen & surfaceg,int draw_mode,GIAC_CONTEXT){
+    if (!ckmatrix(surfaceg,true))
+      return;
+    drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGTH_PX,_COLOR_BLACK); // clear
+    int horiz=LCD_WIDTH_PX/2,vert=horiz/2;//LCD_HEIGHT_PX/2;
+    double xmin=-5,ymin=-5,xmax=5,ymax=5,xscale=(xmax-xmin)/horiz,yscale=(ymax-ymin)/vert,x,y,z;
+    for (int i=-horiz;i<horiz;++i){
+      double zmin=220,zmax=0; // initialize for this vertical line
+      for (int j=vert;j>-vert;--j){
+	x = xscale*(j-i) + xmin;
+	y = yscale*(j+i) + ymin;
+	// Oxy clipping
+	if (x>=xmin && x<=xmax && y>=ymin && y<=ymax){
+	  // zxy intersections of vertical line (x,y,...) with surface 
+	  
+	  z = LCD_HEIGHT_PX/2+j-zxy;
+	  if (z<0 || z>=LCD_HEIGHT_PX)
+	    continue;
+	  int color=0;
+	  if (z>zmax){
+	    doit=true;
+	    zmax=z;
+	    color=65535;
+	  }
+	  if (z<zmin){
+	    doit=true;
+	    zmin=z;
+	    color=12345;
+	  }
+	  if (color)
+	    set_pixel(i+horiz,z,color);
+	}
+      }
+    }
+  }
+
   Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),g(g_),display_mode(0x45),show_axes(1),show_names(1),labelsize(16),contextptr(cptr) {
     update();
     autoscale();

@@ -1334,6 +1334,25 @@ namespace giac {
 
   double max_nstep=2e4;
 
+  // convert surface "folded" new format to old format
+  bool gl3dunfold(const gen & g,vecteur & v){
+    v.clear();
+    if (g.type!=_VECT) return false;
+    const vecteur & w=*g._VECTptr;
+    int s=w.size();
+    if (!s) return true;
+    if (w[0].type==_VECT && w[0]._VECTptr->size()==3){
+      v=w;
+      return true;
+    }
+    if (s%3) return false;
+    v.reserve(s/3);
+    for (int i=0;i<s;i+=3){
+      v.push_back(gen(makevecteur(w[i],w[i+1],w[i+2]),_POINT__VECT));
+    }
+    return true;
+  }
+
   gen plotfunc(const gen & f_,const gen & vars,const vecteur & attributs,int densityplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_zmin, double function_zmax,int nstep,int jstep,bool showeq,const context * contextptr){
     vecteur L=andor2list(f_,contextptr);
     if (densityplot==0 && are_inequations(L)){
@@ -1621,8 +1640,8 @@ namespace giac {
 	nv=int(std::sqrt(double(nstep)));
       }
 #ifdef KHICAS
-      if (nu*nv>25 && densityplot!=2){
-	nu=nv=5;
+      if (nu*nv>400 && densityplot!=2){
+	nu=nv=20;
       }
 #endif
       double dx=(function_xmax-function_xmin)/nu;
@@ -1738,7 +1757,13 @@ namespace giac {
 	    if (fval._DOUBLE_val>fmax)
 	      fmax=fval._DOUBLE_val;
 	  }
-	  tmp.push_back(gen(makevecteur(x,y,fval),_POINT__VECT));
+#ifdef KHICAS // FIXME format is not translatable, etc.
+	  if (!densityplot){
+	    tmp.push_back(x); tmp.push_back(y); tmp.push_back(fval);
+	  } 
+	  else
+#endif
+	    tmp.push_back(gen(makevecteur(x,y,fval),_POINT__VECT));
 	} // end j loop
 	values.push_back(gen(tmp,_GROUP__VECT));
       }
