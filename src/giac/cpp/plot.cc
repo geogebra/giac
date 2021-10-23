@@ -1598,6 +1598,8 @@ namespace giac {
 #endif
     ck_parameter_x(contextptr);
     ck_parameter_y(contextptr);
+    if (nstep==gnuplot_pixels_per_eval)
+      nstep *= 2;
     int s=0;
     gen var1,var2;
     if (vars.type==_VECT){
