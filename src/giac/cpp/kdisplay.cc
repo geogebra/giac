@@ -4859,9 +4859,9 @@ namespace xcas {
     if (invarea==0) return false;
     invarea=1/invarea;
     double s = invarea*(x*(y2-y0) + x2*(y0-y) + x0*(y-y2));
-    if (s<0) return false;
+    if (s<-1e-12) return false;
     double t = invarea*(x1*(y-y0) + x0*(y1-y) + x*(y0-y1));
-    return t>=0 && s+t<=1;
+    return t>=-1e-12 && s+t<=1+1e-12;
 #else
     double as_x = x-x0;
     double as_y = y-y0;
@@ -4874,11 +4874,15 @@ namespace xcas {
 #endif
   }
 
-  void glinter(double x1,double x2,double x3,
+  void glinter(double xmin,double xmax,
+	       double ymin,double ymax,
+	       double x1,double x2,double x3,
 	       double y1,double y2,double y3,
 	       double z1,double z2,double z3,
-	       double x,double y,double &zmin,double &zmax,
-	       int i,int j,int w,int h
+	       double xscale,double xc,double yscale,double yc,
+	       double *zmin,double *zmax,
+	       int i,int horiz,int j,int w,int h,
+	       int upcolor=65535,int downcolor=12345
 	       ){
     // solve([a*x1+b*y1+c=z1,a*x2+b*y2+c=z2,a*x3+b*y3+c=z3],[a,b,c])
     double d=(x1*y2-x1*y3-x2*y1+x2*y3+x3*y1-x3*y2);
@@ -4886,98 +4890,128 @@ namespace xcas {
     double a=(-y1*z2+y1*z3+y2*z1-y2*z3-y3*z1+y3*z2)/d;
     double b=(x1*z2-x1*z3-x2*z1+x2*z3+x3*z1-x3*z2)/d;
     double c=(x1*y2*z3-x1*y3*z2-x2*y1*z3+x2*y3*z1+x3*y1*z2-x3*y2*z1)/d;
-    double zxy=a*x+b*y+c;
-    double z = LCD_HEIGHT_PX/2+j-zxy-(h-1);
-    int color=-1;
-    if (z>zmax){
-      zmax=z;
-      color=12345;
+    // plane equation solved
+    for (int I=i;I<i+w;++I,++zmax,++zmin){
+      for (int J=j;J>j-h;--J){
+	double x = yscale*J-xscale*I + xc;
+	double y = yscale*J+xscale*I + yc;
+	if (x<xmin || x>xmax || y<ymin || y>ymax)
+	  continue;
+	double zxy=a*x+b*y+c;
+	double z = LCD_HEIGHT_PX/2+J-zxy;
+	int color=-1;
+	if (z>*zmax){
+	  *zmax=z;
+	  color=downcolor;
+	}
+	if (z<*zmin){
+	  *zmin=z;
+	  color=upcolor;
+	}
+	if (z<0 || z>=LCD_HEIGHT_PX)
+	  return;
+	if (color>=0)
+	  os_set_pixel(I+horiz,z,color); // drawRectangle(i,z,w,h,color);
+      }
     }
-    if (z<zmin){
-      zmin=z;
-      color=65535;
-    }
-    if (z<0 || z>=LCD_HEIGHT_PX)
-      return;
-    if (color>=0)
-      drawRectangle(i,z,w,h,color);
   }
-
+  
   // 3d demo prototype
   // surfaceg should be replaced by a list of 3d objects
   // tranformed according to 3d current view
   // currently we assume it is a hpersurface encoded as a matrix
   // with lines containing 3 coordinates per point
-  void glsurface(const gen & surfaceg,int w,int h,GIAC_CONTEXT){
-    if (!ckmatrix(surfaceg,true))
-      return;
-    int horiz=LCD_WIDTH_PX/2,vert=horiz/2;//LCD_HEIGHT_PX/2;
-    double xmin=-5,ymin=-5,xmax=5,ymax=5,xscale=0.707*(xmax-xmin)/horiz,yscale=0.707*(ymax-ymin)/vert,x,y,z,xc=(xmin+xmax)/2,yc=(ymin+ymax)/2;
-    const vecteur & surface=*surfaceg._VECTptr;
-    const_iterateur sbeg=surface.begin(),send=surface.end(),sprec,scur,itprec,itcur,itprecend;
-    for (int i=-horiz;i<horiz;i+=w){
-      drawRectangle(i+horiz,0,w,LCD_HEIGHT_PX,COLOR_BLACK); // clear
-      double zmin=220,zmax=0; // initialize for this vertical line
-      for (int j=vert;j>-vert;j-=h){
-	x = yscale*j-xscale*i + xc;
-	y = yscale*j+xscale*i + yc;
-	// Oxy clipping
-	if (x>=xmin && x<=xmax && y>=ymin && y<=ymax){
-	  // find zxy intersections of vertical line (x,y,...) with surface
-	  for (sprec=sbeg,scur=sprec+1;scur<send;++sprec,++scur){
-	    itprec=sprec->_VECTptr->begin();
-	    itprecend=sprec->_VECTptr->end();
-	    itcur=scur->_VECTptr->begin();
-	    double x1,x2=itprec->_DOUBLE_val,x3,x4=itcur->_DOUBLE_val;
-	    for (itprec+=3,itcur+=3;itprec<itprecend;itprec+=3,itcur+=3){
-	      x1=x2;
-	      x2=itprec->_DOUBLE_val;
-	      x3=x4;
-	      x4=itcur->_DOUBLE_val;
-	      if (x<x1 && x<x2 && x<x3 && x<x4){
-		// per iteration: 2 incr, 1 test, 2 equal, 2 read, 2 comp, && , test
-		for (itprec+=3,itcur+=3;itprec<itprecend;itprec+=3,itcur+=3) {
-		  x1=x2;
-		  x2=itprec->_DOUBLE_val;
-		  x3=x4;
-		  x4=itcur->_DOUBLE_val;
-		  if (x<x2 && x<x4)
-		    continue;
-		  break;
-		}
-		if (x<x2 && x<x4) continue;
-	      }
-	      if (x>x1 && x>x2 && x>x3 && x>x4){
-		for (itprec+=3,itcur+=3;itprec<itprecend;itprec+=3,itcur+=3) {
-		  x1=x2;
-		  x2=itprec->_DOUBLE_val;
-		  x3=x4;
-		  x4=itcur->_DOUBLE_val;
-		  if (x>x2 && x>x4)
-		    continue;
-		  break;
-		}
-		if (x>x2 && x>x4) continue;
-	      }
-	      double y1=(itprec-2)->_DOUBLE_val,y2=(itprec+1)->_DOUBLE_val,y3=(itcur-2)->_DOUBLE_val,y4=(itcur+1)->_DOUBLE_val;
-	      if (y<y1 && y<y2 && y<y3 && y<y4) continue;
-	      if (y>y1 && y>y2 && y>y3 && y>y4) continue;
-	      double z1=(itprec-1)->_DOUBLE_val,z2=(itprec+2)->_DOUBLE_val,z3=(itcur-1)->_DOUBLE_val,z4=(itcur+2)->_DOUBLE_val;
-	      if (z1<0 && z2<0 && z3<0 && z4<0) continue;
-	      if (z1>=LCD_HEIGHT_PX && z2>=LCD_HEIGHT_PX && z3>=LCD_HEIGHT_PX && z4>=LCD_HEIGHT_PX) continue;
-	      // now find intersections with quad (cut in two triangles)
-	      if (inside(x1,x2,x3,y1,y2,y3,x,y))
-		glinter(x1,x2,x3,y1,y2,y3,z1,z2,z3,x,y,zmin,zmax,i+horiz,j,w,h);
-	      else if (inside(x2,x3,x4,y2,y3,y4,x,y))
-		glinter(x2,x3,x4,y2,y3,y4,z2,z3,z4,x,y,zmin,zmax,i+horiz,j,w,h);
-	    }
-	  }
-	}
+  bool glsurface(const gen & surfaceg,int w,int h,GIAC_CONTEXT){
+    if (w>9) w=9;
+    if (h>9) h=9;
+    vecteur vsurfaceg(gen2vecteur(surfaceg));
+    vector<const_iterateur> hypv;
+    for (int i=0;i<vsurfaceg.size();++i){
+      gen g=remove_at_pnt(vsurfaceg[i]);
+      if (g.is_symb_of_sommet(at_hypersurface)){
+	vecteur & hyp=*g._SYMBptr->feuille._VECTptr;
+	gen h=hyp[0][4];
+	if (!ckmatrix(h,true))
+	  return false;
+	hypv.push_back(h._VECTptr->begin());
+	hypv.push_back(h._VECTptr->end());
       }
     }
+    int horiz=LCD_WIDTH_PX/2,vert=horiz/2;//LCD_HEIGHT_PX/2;
+    double xmin=-5,ymin=-5,xmax=5,ymax=5,xscale=0.6*(xmax-xmin)/horiz,yscale=0.6*(ymax-ymin)/vert,x,y,z,xc=(xmin+xmax)/2,yc=(ymin+ymax)/2;
+    for (int i=-horiz;i<horiz;i+=w){
+      drawRectangle(i+horiz,0,w,LCD_HEIGHT_PX,COLOR_BLACK); // clear
+      double zmin[10]={220.220,220,220,220,220,220,220,220,220},
+	zmax[10]={0,0,0,0,0,0,0,0,0,0}; // initialize for these vertical lines
+      for (int k=0;k<hypv.size();k+=2){
+	const_iterateur sbeg=hypv[k],send=hypv[k+1],sprec,scur,itprec,itcur,itprecend;
+	for (int j=vert;j>-vert;j-=h){
+	  x = yscale*(j-h/2.0)-xscale*(i+w/2.0) + xc;
+	  y = yscale*(j-h/2.0)+xscale*(i+w/2.0) + yc;
+	  // Oxy clipping
+	  if (//1 
+	      x>=xmin && x<=xmax && y>=ymin && y<=ymax
+	      ){
+	    // find zxy intersections of vertical line (x,y,...) with surface
+	    for (sprec=sbeg,scur=sprec+1;scur<send;++sprec,++scur){
+	      itprec=sprec->_VECTptr->begin();
+	      itprecend=sprec->_VECTptr->end();
+	      itcur=scur->_VECTptr->begin();
+	      double x1,x2=itprec->_DOUBLE_val,x3,x4=itcur->_DOUBLE_val;
+	      for (itprec+=3,itcur+=3;itprec<itprecend;itprec+=3,itcur+=3){
+		x1=x2;
+		x2=itprec->_DOUBLE_val;
+		x3=x4;
+		x4=itcur->_DOUBLE_val;
+		if (x<x1 && x<x2 && x<x3 && x<x4){
+		  // per iteration: 2 incr, 1 test, 2 equal, 2 read, 2 comp, && , test
+		  for (itprec+=3,itcur+=3;;) {
+		    x1=x2;
+		    x2=itprec->_DOUBLE_val;
+		    x3=x4;
+		    x4=itcur->_DOUBLE_val;
+		    itprec+=3;itcur+=3;
+		    if (x<x2 && x<x4 && itprec<itprecend)
+		      continue;
+		    break;
+		  }
+		  if (x<x2 && x<x4) continue;
+		}
+		if (x>x1 && x>x2 && x>x3 && x>x4){
+		  for (itprec+=3,itcur+=3;itprec<itprecend;) {
+		    x1=x2;
+		    x2=itprec->_DOUBLE_val;
+		    x3=x4;
+		    x4=itcur->_DOUBLE_val;
+		    itprec+=3;itcur+=3;
+		    if (x>x2 && x>x4 && itprec<itprecend)
+		      continue;
+		    break;
+		  }
+		  if (x>x2 && x>x4) continue;
+		}
+		double y1=(itprec-2)->_DOUBLE_val,y2=(itprec+1)->_DOUBLE_val,y3=(itcur-2)->_DOUBLE_val,y4=(itcur+1)->_DOUBLE_val;
+		if (y<y1 && y<y2 && y<y3 && y<y4) continue;
+		if (y>y1 && y>y2 && y>y3 && y>y4) continue;
+		double z1=(itprec-1)->_DOUBLE_val,z2=(itprec+2)->_DOUBLE_val,z3=(itcur-1)->_DOUBLE_val,z4=(itcur+2)->_DOUBLE_val;
+		// now find intersections with quad (cut in two triangles)
+		if (inside(x1,x2,x3,y1,y2,y3,x,y)){
+		  // loop for all x,y in the rectangle
+		  glinter(xmin,xmax,ymin,ymax,x1,x2,x3,y1,y2,y3,z1,z2,z3,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h);
+		}
+		else if (inside(x2,x3,x4,y2,y3,y4,x,y)){
+		  glinter(xmin,xmax,ymin,ymax,x2,x3,x4,y2,y3,y4,z2,z3,z4,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h);
+		}
+	      } // end surface iterator in line loop
+	    } // end loop in surface
+	  } // end if x,y in clipping
+	} // end pixel vertical loop on j
+      } // end hypersurface loop
+    } // end pixel horizontal loop on i
+    return true;
   }
 
-  Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),g(g_),display_mode(0x45),show_axes(1),show_names(1),labelsize(16),contextptr(cptr) {
+  Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),g(g_),display_mode(0x45),show_axes(1),show_names(1),labelsize(16),precision(5),contextptr(cptr) {
     update();
     autoscale();
   }
@@ -5325,11 +5359,6 @@ namespace xcas {
       gen point=f[0];
       if (point.type==_VECT && point.subtype==_POINT__VECT)
 	return;
-      if (point.is_symb_of_sommet(at_hypersurface)){
-	vecteur hyp=*point._SYMBptr->feuille._VECTptr;
-	glsurface(hyp[0][4],1,1,contextptr);
-	return;
-      }
       if ( (f[0].type==_SYMB) && (f[0]._SYMBptr->sommet==at_curve) && (f[0]._SYMBptr->feuille.type==_VECT) && (f[0]._SYMBptr->feuille._VECTptr->size()) ){
 	// Mon_image.show_mouse_on_object=false;
 	point=f[0]._SYMBptr->feuille._VECTptr->back();
@@ -5619,6 +5648,9 @@ namespace xcas {
   }
 
   void Graph2d::draw(){
+    is3d=giac::is3d(g);
+    if (is3d && glsurface(g,precision,precision,contextptr))
+      return;
     int save_clip_ymin=clip_ymin;
     clip_ymin=STATUS_AREA_PX;
     int horizontal_pixels=LCD_WIDTH_PX,vertical_pixels=LCD_HEIGHT_PX-STATUS_AREA_PX,deltax=0,deltay=STATUS_AREA_PX,clip_x=0,clip_y=0,clip_w=horizontal_pixels,clip_h=vertical_pixels;
@@ -6098,10 +6130,26 @@ namespace xcas {
 	os_hide_graph();
 	break;
       }
-      if (key==KEY_CTRL_UP){ gr.up((gr.window_ymax-gr.window_ymin)/5); }
-      if (key==KEY_CTRL_PAGEUP) { gr.up((gr.window_ymax-gr.window_ymin)/2); }
-      if (key==KEY_CTRL_DOWN) { gr.down((gr.window_ymax-gr.window_ymin)/5); }
-      if (key==KEY_CTRL_PAGEDOWN) { gr.down((gr.window_ymax-gr.window_ymin)/2);}
+      if (key==KEY_CHAR_NORMAL){ // shift-+
+	if (is3d && gr.precision<9)
+	  gr.precision++;
+      }
+      if (key=='\\'){ // shift--
+	if (is3d && gr.precision>1)
+	 gr.precision--;
+      }
+      if (key==KEY_CTRL_UP){
+	gr.up((gr.window_ymax-gr.window_ymin)/5);
+      }
+      if (key==KEY_CTRL_PAGEUP) {
+	gr.up((gr.window_ymax-gr.window_ymin)/2);
+      }
+      if (key==KEY_CTRL_DOWN) {
+	gr.down((gr.window_ymax-gr.window_ymin)/5);
+      }
+      if (key==KEY_CTRL_PAGEDOWN) {
+	gr.down((gr.window_ymax-gr.window_ymin)/2);
+      }
       if (key==KEY_CTRL_LEFT) { gr.left((gr.window_xmax-gr.window_xmin)/5); }
       if (key==KEY_SHIFT_LEFT) { gr.left((gr.window_xmax-gr.window_xmin)/2); }
       if (key==KEY_CTRL_RIGHT) { gr.right((gr.window_xmax-gr.window_xmin)/5); }

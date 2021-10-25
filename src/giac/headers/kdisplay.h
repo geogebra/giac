@@ -156,7 +156,10 @@ namespace xcas {
   public:
     double window_xmin,window_xmax,window_ymin,window_ymax,
       x_scale,y_scale,x_tick,y_tick;
+    double proj[12]; // 3 rows, 4 columns 
     int display_mode,show_axes,show_names,labelsize;
+    short int precision;
+    bool is3d;
     giac::gen g;
     const giac::context * contextptr;
     bool findij(const giac::gen & e0,double x_scale,double y_scale,double & i0,double & j0,const giac::context * ) const;

@@ -1596,10 +1596,10 @@ namespace giac {
       return res; // e;
     } // end 1-var function plot
 #endif
-    ck_parameter_x(contextptr);
-    ck_parameter_y(contextptr);
     if (nstep==gnuplot_pixels_per_eval)
       nstep *= 2;
+    ck_parameter_x(contextptr);
+    ck_parameter_y(contextptr);
     int s=0;
     gen var1,var2;
     if (vars.type==_VECT){
@@ -1643,7 +1643,9 @@ namespace giac {
       }
 #ifdef KHICAS
       if (nu*nv>400 && densityplot!=2){
+#if 1 // def DEVICE
 	nu=nv=20;
+#endif
       }
 #endif
       double dx=(function_xmax-function_xmin)/nu;
@@ -2249,6 +2251,11 @@ namespace giac {
       zmin=zmax; // if z-range is not given, then fmin/fmax will be used 
     int nstep=gnuplot_pixels_per_eval,jstep=0;
     gen attribut=default_color(contextptr);
+    if (densityplot==0 && args.type!=_VECT){
+      vecteur lname(lidnt(args));
+      if (equalposcomp(lname,vx_var) && equalposcomp(lname,y__IDNT_e))
+	return funcplotfunc(makesequence(args,makevecteur(vx_var,y__IDNT_e)),densityplot,contextptr);
+    }
     vecteur vargs(plotpreprocess(args,contextptr));
     if (is_undef(vargs))
       return vargs;
