@@ -4874,6 +4874,119 @@ namespace xcas {
 #endif
   }
 
+  /* 3d rotation handling */
+  void normalize(double & a,double &b,double &c){
+    double n=std::sqrt(a*a+b*b+c*c);
+    a /= n;
+    b /= n;
+    c /= n;
+  }
+
+  inline int Min(int i,int j) {return i>j?j:i;}
+
+  inline int Max(int i,int j) {return i>j?i:j;}
+
+  quaternion_double::quaternion_double(double theta_x,double theta_y,double theta_z) { 
+    *this=euler_deg_to_quaternion_double(theta_x,theta_y,theta_z); 
+  }
+
+  quaternion_double euler_deg_to_quaternion_double(double a,double b,double c){
+    double phi=a*M_PI/180, theta=b*M_PI/180, psi=c*M_PI/180;
+    double c1 = std::cos(phi/2);
+    double s1 = std::sin(phi/2);
+    double c2 = std::cos(theta/2);
+    double s2 = std::sin(theta/2);
+    double c3 = std::cos(psi/2);
+    double s3 = std::sin(psi/2);
+    double c1c2 = c1*c2;
+    double s1s2 = s1*s2;
+    double w =c1c2*c3 - s1s2*s3;
+    double x =c1c2*s3 + s1s2*c3;
+    double y =s1*c2*c3 + c1*s2*s3;
+    double z =c1*s2*c3 - s1*c2*s3;
+    return quaternion_double(w,x,y,z);
+  }
+
+  void quaternion_double_to_euler_deg(const quaternion_double & q,double & phi,double & theta, double & psi){
+    double test = q.x*q.y + q.z*q.w;
+    if (test > 0.499) { // singularity at north pole
+      phi = 2 * atan2(q.x,q.w) * 180/M_PI;
+      theta = 90; 
+      psi = 0;
+      return;
+    }
+    if (test < -0.499) { // singularity at south pole
+      phi = -2 * atan2(q.x,q.w) * 180/M_PI;
+      theta = - 90;
+      psi = 0;
+      return;
+    }
+    double sqx = q.x*q.x;
+    double sqy = q.y*q.y;
+    double sqz = q.z*q.z;
+    phi = atan2(2*q.y*q.w-2*q.x*q.z , 1 - 2*sqy - 2*sqz) * 180/M_PI;
+    theta = asin(2*test) * 180/M_PI;
+    psi = atan2(2*q.x*q.w-2*q.y*q.z , 1 - 2*sqx - 2*sqz) * 180/M_PI;
+  }
+
+  quaternion_double operator * (const quaternion_double & q1,const quaternion_double & q2){ 
+    double z=q1.w*q2.z+q2.w*q1.z+q1.x*q2.y-q2.x*q1.y;
+    double x=q1.w*q2.x+q2.w*q1.x+q1.y*q2.z-q2.y*q1.z;
+    double y=q1.w*q2.y+q2.w*q1.y+q1.z*q2.x-q2.z*q1.x;
+    double w=q1.w*q2.w-q1.x*q2.x-q1.y*q2.y-q1.z*q2.z;
+    return quaternion_double(w,x,y,z);
+  }
+
+  // q must be a unit
+  void get_axis_angle_deg(const quaternion_double & q,double &x,double &y,double & z, double &theta){
+    double scale=1-q.w*q.w;
+    if (scale>1e-6){
+      scale=std::sqrt(scale);
+      theta=2*std::acos(q.w)*180/M_PI;
+      x=q.x/scale;
+      y=q.y/scale;
+      z=q.z/scale;
+    }
+    else {
+      x=0; y=0; z=1;
+      theta=0;
+    }
+  }
+
+  quaternion_double rotation_2_quaternion_double(double x, double y, double z,double theta){
+    double t=theta*M_PI/180;
+    double qx,qy,qz,qw,s=std::sin(t/2),c=std::cos(t/2);
+    qx=x*s;
+    qy=y*s;
+    qz=z*s;
+    qw=c;
+    double n=std::sqrt(qx*qx+qy*qy+qz*qz+qw*qw);
+    return quaternion_double(qw/n,qx/n,qy/n,qz/n);
+  }
+
+  // image of (x,y,z) by rotation around axis r(rx,ry,rz) of angle theta
+  void rotate(double rx,double ry,double rz,double theta,double x,double y,double z,double & X,double & Y,double & Z){
+    /*
+    quaternion_double q=rotation_2_quaternion_double(rx,ry,rz,theta);
+    quaternion_double qx(x,y,z,0);
+    quaternion_double qX=conj(q)*qx*q;
+    */
+    // r(rx,ry,rz) the axis, v(x,y,z) projects on w=a*r with a such that
+    // w.r=a*r.r=v.r
+    double r2=rx*rx+ry*ry+rz*rz;
+    double r=std::sqrt(r2);
+    double a=(rx*x+ry*y+rz*z)/r2;
+    // v=w+V, w remains stable, V=v-w=v-a*r rotates
+    // Rv=w+RV, where RV=cos(theta)*V+sin(theta)*(r cross V)/sqrt(r2)
+    double Vx=x-a*rx,Vy=y-a*ry,Vz=z-a*rz;
+    // cross product of k with V
+    double kVx=ry*Vz-rz*Vy, kVy=rz*Vx-rx*Vz,kVz=rx*Vy-ry*Vx;
+    double c=std::cos(theta),s=std::sin(theta);
+    X=a*rx+c*Vx+s*kVx/r;
+    Y=a*ry+c*Vy+s*kVy/r;
+    Z=a*rz+c*Vz+s*kVz/r;
+  }
+
   void glinter(double xmin,double xmax,
 	       double ymin,double ymax,
 	       double x1,double x2,double x3,
@@ -4890,15 +5003,65 @@ namespace xcas {
     double a=(-y1*z2+y1*z3+y2*z1-y2*z3-y3*z1+y3*z2)/d;
     double b=(x1*z2-x1*z3-x2*z1+x2*z3+x3*z1-x3*z2)/d;
     double c=(x1*y2*z3-x1*y3*z2-x2*y1*z3+x2*y3*z1+x3*y1*z2-x3*y2*z1)/d;
+    double dz=(a+b)*yscale-1;
     // plane equation solved
     for (int I=i;I<i+w;++I,++zmax,++zmin){
-      for (int J=j;J>j-h;--J){
-	double x = yscale*J-xscale*I + xc;
-	double y = yscale*J+xscale*I + yc;
-	if (x<xmin || x>xmax || y<ymin || y>ymax)
+      double x = yscale*j-xscale*I + xc;
+      double y = yscale*j+xscale*I + yc;
+      double z = LCD_HEIGHT_PX/2+j-(a*x+b*y+c);
+      if (*zmax<*zmin)
+	*zmax=*zmin=z;
+      if (x-(h-1)*yscale>xmin && y-(h-1)*yscale>ymin && z>=0 && z+(h-1)*dz>=0 && z<=LCD_HEIGHT_PX && z+(h-1)*dz<=LCD_HEIGHT_PX){
+	int color=-1;
+	if (dz>0 && z>=*zmax){
+	  // mark all points with downcolor
+	  *zmax=z+(h-1)*dz;
+	  color=downcolor;
+	}
+	if (dz<0 && z<=*zmin){
+	  // mark all points with upcolor
+	  *zmin=z+(h-1)*dz;
+	  color=upcolor;
+	}
+	if (color>=0){
+	  int ih=I+horiz;
+	  os_set_pixel(ih,z,color);
+	  if (h==1) continue;
+	  z += dz;
+	  os_set_pixel(ih,z,color);
+	  if (h==2) continue;
+	  z += dz;
+	  os_set_pixel(ih,z,color);
+	  if (h==3) continue;
+	  z += dz;
+	  os_set_pixel(ih,z,color);
+	  if (h==4) continue;
+	  z += dz;
+	  os_set_pixel(ih,z,color);
+	  if (h==5) continue;
+	  z += dz;
+	  os_set_pixel(ih,z,color);
+	  if (h==6) continue;
+	  z += dz;
+	  os_set_pixel(ih,z,color);
+	  if (h==7) continue;
+	  z += dz;
+	  os_set_pixel(ih,z,color);
+	  if (h==8) continue;
+	  z += dz;
+	  os_set_pixel(ih,z,color);
 	  continue;
-	double zxy=a*x+b*y+c;
-	double z = LCD_HEIGHT_PX/2+J-zxy;
+	}
+	if (dz<=0 && z>=*zmax) // mark only 1 point
+	  color=downcolor;
+	if (dz>=0 && z<=*zmin) // mark 1 point
+	  color=upcolor;
+	if (color>=0){
+	  os_set_pixel(I+horiz,z,color);
+	  continue;
+	}
+      }
+      for (int J=0;J<h && x>=xmin && y>=ymin;++J,z+=dz,x-=yscale,y-=yscale){
 	int color=-1;
 	if (z>*zmax){
 	  *zmax=z;
@@ -4908,8 +5071,8 @@ namespace xcas {
 	  *zmin=z;
 	  color=upcolor;
 	}
-	if (z<0 || z>=LCD_HEIGHT_PX)
-	  return;
+	if (z<=-0.5 || z>=LCD_HEIGHT_PX)
+	  continue;
 	if (color>=0)
 	  os_set_pixel(I+horiz,z,color); // drawRectangle(i,z,w,h,color);
       }
@@ -5011,10 +5174,15 @@ namespace xcas {
     return true;
   }
 
-  Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),g(g_),display_mode(0x45),show_axes(1),show_names(1),labelsize(16),precision(5),contextptr(cptr) {
+  Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),window_zmin(gnuplot_zmin),window_zmax(gnuplot_zmax),g(g_),display_mode(0x45),show_axes(1),show_names(1),labelsize(16),precision(5),contextptr(cptr) {
+    theta_x=theta_y=theta_z=0;
+    q=euler_deg_to_quaternion_double(theta_z,theta_x,theta_y);
+    grot=g;
     update();
     autoscale();
   }
+
+  // q=quaternion_double(dragi*180/h(),0,0)*rotation_2_quaternion_double(1,0,0,dragj*180/w())*q;
   
   void Graph2d::zoomx(double d,bool round){
     double x_center=(window_xmin+window_xmax)/2;
@@ -5048,9 +5216,26 @@ namespace xcas {
     update();
   }
 
+  void Graph2d::zoomz(double d,bool round){
+    double z_center=(window_zmin+window_zmax)/2;
+    double dz=(window_zmax-window_zmin);
+    if (dz==0)
+      dz=gnuplot_zmax-gnuplot_zmin;
+    dz *= d/2;
+    z_tick = find_tick(dz);
+    window_zmin = z_center - dz;
+    if (round) 
+      window_zmin=int( window_zmin/z_tick -1)*z_tick;
+    window_zmax = z_center + dz;
+    if (round)
+      window_zmax=int( window_zmax/z_tick +1)*z_tick;
+    update();
+  }
+
   void Graph2d::zoom(double d){ 
     zoomx(d);
     zoomy(d);
+    zoomz(d);
   }
 
   void Graph2d::autoscale(bool fullview){
@@ -5108,8 +5293,73 @@ namespace xcas {
   }
 
   void Graph2d::update(){
-    x_scale=LCD_WIDTH_PX/(window_xmax-window_xmin);    
-    y_scale=(LCD_HEIGHT_PX-STATUS_AREA_PX)/(window_ymax-window_ymin);    
+    if (is3d){
+      x_scale=1.414*(LCD_HEIGHT_PX-STATUS_AREA_PX)/(window_xmax-window_xmin);    
+      y_scale=1.414*(LCD_HEIGHT_PX-STATUS_AREA_PX)/(window_ymax-window_ymin);    
+      z_scale=(LCD_HEIGHT_PX-STATUS_AREA_PX)/(window_zmax-window_zmin);    
+    }
+    else {
+      x_scale=LCD_WIDTH_PX/(window_xmax-window_xmin);    
+      y_scale=(LCD_HEIGHT_PX-STATUS_AREA_PX)/(window_ymax-window_ymin);    
+    }
+  }
+
+  void do_transform(double mat[16],double x,double y,double z,double & X,double & Y,double &Z){
+    X=mat[0]*x+mat[1]*y+mat[2]*z+mat[3];
+    Y=mat[4]*x+mat[5]*y+mat[6]*z+mat[7];
+    Z=mat[8]*x+mat[9]*y+mat[10]*z+mat[11];
+    // double t=mat[12]*x+mat[13]*y+mat[14]*z+mat[15];
+    // X/=t; Y/=t; Z/=t;
+  }
+
+  void Graph2d::update_rotation(){
+    double rx,ry,rz,theta;
+    get_axis_angle_deg(q,rx,ry,rz,theta);
+    theta *= M_PI/180;
+    double r2=rx*rx+ry*ry+rz*rz,invr2=1/r2;
+    double r=std::sqrt(r2);
+    double c=std::cos(theta),s=std::sin(theta);
+    // mkisom([[rx,ry,rz],theta],1)
+    // 1/r2*[[rx*rx+ry*ry*c+rz*rz*c,rx*ry-rx*ry*c-rz*s*r,rx*rz-rx*rz*c+ry*s*r],[rx*ry-rx*ry*c+rz*s*r,ry*ry+rx*rx*c+rz*rz*c,ry*rz-rx*s*r-ry*rz*c],[rx*rz-rx*rz*c-ry*s*r,ry*rz+rx*s*r-ry*rz*c,rz*rz+rx*rx*c+ry*ry*c]]
+    double a11=invr2*(rx*rx+ry*ry*c+rz*rz*c),a12=invr2*(rx*ry-rx*ry*c-rz*s*r),a13=invr2*(rx*rz-rx*rz*c+ry*s*r);
+    double a21=invr2*(rx*ry-rx*ry*c+rz*s*r),a22=invr2*(ry*ry+rx*rx*c+rz*rz*c),a23=invr2*(ry*rz-rx*s*r-ry*rz*c);
+    double a31=invr2*(rx*rz-rx*rz*c-ry*s*r),a32=invr2*(ry*rz+rx*s*r-ry*rz*c),a33=invr2*(rz*rz+rx*rx*c+ry*ry*c);
+    double xt=(window_xmin+window_xmax)/2,yt=(window_ymin+window_ymax)/2,zt=(window_zmin+window_zmax)/2;
+    double mat[16]={a11/x_scale,a12/y_scale,a13/z_scale,-a11*xt/x_scale-a12*yt/y_scale-a13*zt/z_scale,
+		    a21/x_scale,a22/y_scale,a23/z_scale,-a21*xt/x_scale-a22*yt/y_scale-a23*zt/z_scale,
+		    a31/x_scale,a32/y_scale,a33/z_scale,-a31*xt/x_scale-a32*yt/y_scale-a33*zt/z_scale,
+		    0,0,0,1
+    };
+    for (int i=0;i<sizeof(mat)/sizeof(double);++i)
+      transform[i]=mat[i];
+    // rotate+translate+scale g
+    vecteur v(gen2vecteur(g));
+    for (int i=0;i<v.size();++i){
+      gen G=remove_at_pnt(v[i]);
+      if (G.is_symb_of_sommet(at_hypersurface)){
+	vecteur hyp=*G._SYMBptr->feuille._VECTptr;
+	gen hyp0=hyp[0];
+	vecteur hyp0v=*hyp0._VECTptr;
+	gen h=hyp0v[4];
+	if (ckmatrix(h,true)){
+	  vecteur V=*h._VECTptr;
+	  for (int j=0;j<V.size();++j){
+	    gen Vj=V[j];
+	    vecteur vj=*Vj._VECTptr;
+	    for (int k=0;k<vj.size();k+=3){
+	      double X,Y,Z;
+	      do_transform(mat,vj[k]._DOUBLE_val,vj[k+1]._DOUBLE_val,vj[k+1]._DOUBLE_val,X,Y,Z);
+	      vj[k]=X; vj[k+1]=Y; vj[k+1]=Z;
+	    }
+	    V[j]=vj;
+	  }
+	  hyp0v[4]=V;
+	  hyp[0]=hyp0;
+	  v[i]=symbolic(at_hypersurface,hyp);
+	}
+      }
+    }
+    grot=v;
   }
 
   bool Graph2d::findij(const gen & e0,double x_scale,double y_scale,double & i0,double & j0,GIAC_CONTEXT) const {
@@ -5648,8 +5898,8 @@ namespace xcas {
   }
 
   void Graph2d::draw(){
-    is3d=giac::is3d(g);
-    if (is3d && glsurface(g,precision,precision,contextptr))
+    is3d=giac::is3d(grot);
+    if (is3d && glsurface(grot,precision,precision,contextptr))
       return;
     int save_clip_ymin=clip_ymin;
     clip_ymin=STATUS_AREA_PX;
@@ -5765,6 +6015,16 @@ namespace xcas {
   void Graph2d::down(double d){ 
     window_ymin -= d;
     window_ymax -= d;
+  }
+
+  void Graph2d::z_up(double d){ 
+    window_zmin += d;
+    window_zmax += d;
+  }
+
+  void Graph2d::z_down(double d){ 
+    window_zmin -= d;
+    window_zmax -= d;
   }
 
   void Turtle::draw(){

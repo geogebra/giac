@@ -152,25 +152,48 @@ namespace xcas {
   void replace_selection(Equation & eq,const giac::gen & tmp,giac::gen * gsel,const std::vector<int> * gotoptr,const giac::context *);
   int eqw_select_leftright(xcas::Equation & g,bool left,int exchange,const giac::context *);
 
+  // quaternion struct for more intuitive rotations
+  struct quaternion_double {
+    double w,x,y,z;
+    quaternion_double():w(1),x(0),y(0),z(0) {};
+    quaternion_double(double theta_x,double theta_y,double theta_z);
+    quaternion_double(double _w,double _x,double _y,double _z):w(_w),x(_x),y(_y),z(_z) {};
+    double norm2() const { return w*w+x*x+y*y+z*z;}
+  };
+
+  quaternion_double operator * (const quaternion_double & q,const quaternion_double & q2);
+
+  void get_axis_angle_deg(const quaternion_double & q,double &x,double &y,double & z, double &theta); // q must be a quaternion of unit norm, theta is in deg
+
+  // Euler angle are given in degrees
+  quaternion_double euler_deg_to_quaternion_double(double a,double b,double c);
+  void quaternion_double_to_euler_deg(const quaternion_double & q,double & phi,double & theta, double & psi);
+
   class Graph2d{
   public:
-    double window_xmin,window_xmax,window_ymin,window_ymax,
-      x_scale,y_scale,x_tick,y_tick;
-    double proj[12]; // 3 rows, 4 columns 
+    double window_xmin,window_xmax,window_ymin,window_ymax,window_zmin,window_zmax,
+      x_scale,y_scale,z_scale,x_tick,y_tick,z_tick;
+    double theta_x,theta_y,theta_z;
+    quaternion_double q;
+    double transform[16]; // only 12 used, last line [0,0,0,1]
     int display_mode,show_axes,show_names,labelsize;
     short int precision;
     bool is3d;
-    giac::gen g;
+    giac::gen g,grot;
     const giac::context * contextptr;
     bool findij(const giac::gen & e0,double x_scale,double y_scale,double & i0,double & j0,const giac::context * ) const;
     void update();
+    void update_rotation(); // update grot
     void zoomx(double d,bool round=false);
     void zoomy(double d,bool round=false);
+    void zoomz(double d,bool round=false);
     void zoom(double);
     void left(double d);
     void right(double d);
     void up(double d);
     void down(double d);
+    void z_up(double d);
+    void z_down(double d);
     void autoscale(bool fullview=false);
     void orthonormalize();
     void draw();

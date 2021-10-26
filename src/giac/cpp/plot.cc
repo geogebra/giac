@@ -1642,9 +1642,9 @@ namespace giac {
 	nv=int(std::sqrt(double(nstep)));
       }
 #ifdef KHICAS
-      if (nu*nv>400 && densityplot!=2){
+      if (nu*nv>900 && densityplot!=2){
 #if 1 // def DEVICE
-	nu=nv=20;
+	nu=nv=30;
 #endif
       }
 #endif
