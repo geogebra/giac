@@ -7287,7 +7287,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       return gensizeerr(contextptr);
     if (v.size()==1)
       v.push_back(ggb_var(args));
-    gen tmp=apply(v,equal2diff);
+    gen tmp=giac::apply(v,equal2diff);
     vecteur lv=lvarxwithinvsqrt(tmp,v[1],contextptr);
     gen res=lv.size()<2?1:0;
     res.subtype=_INT_BOOLEAN;

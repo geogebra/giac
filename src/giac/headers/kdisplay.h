@@ -173,7 +173,7 @@ namespace xcas {
   public:
     double window_xmin,window_xmax,window_ymin,window_ymax,window_zmin,window_zmax,
       x_scale,y_scale,z_scale,x_tick,y_tick,z_tick;
-    double theta_x,theta_y,theta_z;
+    //double theta_x,theta_y,theta_z;
     quaternion_double q;
     double transform[16]; // only 12 used, last line [0,0,0,1]
     int display_mode,show_axes,show_names,labelsize;

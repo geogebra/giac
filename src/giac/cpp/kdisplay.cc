@@ -4860,7 +4860,7 @@ namespace xcas {
     invarea=1/invarea;
     double s = invarea*(x*(y2-y0) + x2*(y0-y) + x0*(y-y2));
     if (s<-1e-12) return false;
-    double t = invarea*(x1*(y-y0) + x0*(y1-y) + x*(y0-y1));
+    double t = invarea*(x*(y0-y1) + x0*(y1-y) + x1*(y-y0));
     return t>=-1e-12 && s+t<=1+1e-12;
 #else
     double as_x = x-x0;
@@ -5003,15 +5003,21 @@ namespace xcas {
     double a=(-y1*z2+y1*z3+y2*z1-y2*z3-y3*z1+y3*z2)/d;
     double b=(x1*z2-x1*z3-x2*z1+x2*z3+x3*z1-x3*z2)/d;
     double c=(x1*y2*z3-x1*y3*z2-x2*y1*z3+x2*y3*z1+x3*y1*z2-x3*y2*z1)/d;
-    double dz=(a+b)*yscale-1;
+    int lcdz= LCD_HEIGHT_PX/5;
+    double dz=lcdz*(a+b)*yscale-1;
+    //if (dz<-10 || dz>10) cout << "dz=" << dz << "\n";
     // plane equation solved
     for (int I=i;I<i+w;++I,++zmax,++zmin){
       double x = yscale*j-xscale*I + xc;
       double y = yscale*j+xscale*I + yc;
-      double z = LCD_HEIGHT_PX/2+j-(a*x+b*y+c);
+      double z = LCD_HEIGHT_PX/2+j-lcdz*(a*x+b*y+c);
+      if (i==0)
+	; // cout << "i=" << i << " j=" << j << ", zmin=" << *zmin << " z=" << z << " zmax=" << *zmax << " dz=" << dz << ", a=" << a << " b=" << b << " c=" << c <<"\n";
       if (*zmax<*zmin)
 	*zmax=*zmin=z;
-      if (x-(h-1)*yscale>xmin && y-(h-1)*yscale>ymin && z>=0 && z+(h-1)*dz>=0 && z<=LCD_HEIGHT_PX && z+(h-1)*dz<=LCD_HEIGHT_PX){
+      if (x-(h-1)*yscale>xmin && y-(h-1)*yscale>ymin &&
+	  z>=0 && z+(h-1)*dz>=0 && z<=LCD_HEIGHT_PX && z+(h-1)*dz<=LCD_HEIGHT_PX
+	  ){
 	int color=-1;
 	if (dz>0 && z>=*zmax){
 	  // mark all points with downcolor
@@ -5052,16 +5058,22 @@ namespace xcas {
 	  os_set_pixel(ih,z,color);
 	  continue;
 	}
-	if (dz<=0 && z>=*zmax) // mark only 1 point
+	if (dz<=0 && z>=*zmax && z+(h-1)*dz>=*zmin){ // mark only 1 point
+	  *zmax=z;
 	  color=downcolor;
-	if (dz>=0 && z<=*zmin) // mark 1 point
+	}
+	if (dz>=0 && z<=*zmin && z+(h-1)*dz<=*zmax){ // mark 1 point
+	  *zmin=z;
 	  color=upcolor;
+	}
 	if (color>=0){
 	  os_set_pixel(I+horiz,z,color);
 	  continue;
 	}
       }
-      for (int J=0;J<h && x>=xmin && y>=ymin;++J,z+=dz,x-=yscale,y-=yscale){
+      for (int J=0;J<h
+	     && x>=xmin && y>=ymin
+	     ;++J,z+=dz,x-=yscale,y-=yscale){
 	int color=-1;
 	if (z>*zmax){
 	  *zmax=z;
@@ -5101,11 +5113,12 @@ namespace xcas {
       }
     }
     int horiz=LCD_WIDTH_PX/2,vert=horiz/2;//LCD_HEIGHT_PX/2;
-    double xmin=-5,ymin=-5,xmax=5,ymax=5,xscale=0.6*(xmax-xmin)/horiz,yscale=0.6*(ymax-ymin)/vert,x,y,z,xc=(xmin+xmax)/2,yc=(ymin+ymax)/2;
+    double xmin=-1,ymin=-1,xmax=1,ymax=1,xscale=0.6*(xmax-xmin)/horiz,yscale=0.6*(ymax-ymin)/vert,x,y,z,xc=(xmin+xmax)/2,yc=(ymin+ymax)/2;
     for (int i=-horiz;i<horiz;i+=w){
       drawRectangle(i+horiz,0,w,LCD_HEIGHT_PX,COLOR_BLACK); // clear
       double zmin[10]={220.220,220,220,220,220,220,220,220,220},
 	zmax[10]={0,0,0,0,0,0,0,0,0,0}; // initialize for these vertical lines
+      double curx1,curx2,curx3,cury1,cury2,cury3,curz1=-1e306,curz2=-1e306,curz3=-1e306;
       for (int k=0;k<hypv.size();k+=2){
 	const_iterateur sbeg=hypv[k],send=hypv[k+1],sprec,scur,itprec,itcur,itprecend;
 	for (int j=vert;j>-vert;j-=h){
@@ -5115,6 +5128,7 @@ namespace xcas {
 	  if (//1 
 	      x>=xmin && x<=xmax && y>=ymin && y<=ymax
 	      ){
+	    bool found=false;
 	    // find zxy intersections of vertical line (x,y,...) with surface
 	    for (sprec=sbeg,scur=sprec+1;scur<send;++sprec,++scur){
 	      itprec=sprec->_VECTptr->begin();
@@ -5128,45 +5142,61 @@ namespace xcas {
 		x4=itcur->_DOUBLE_val;
 		if (x<x1 && x<x2 && x<x3 && x<x4){
 		  // per iteration: 2 incr, 1 test, 2 equal, 2 read, 2 comp, && , test
-		  for (itprec+=3,itcur+=3;;) {
+		  for (itprec+=3,itcur+=3;itprec<itprecend;itprec+=3,itcur+=3){
 		    x1=x2;
 		    x2=itprec->_DOUBLE_val;
 		    x3=x4;
 		    x4=itcur->_DOUBLE_val;
-		    itprec+=3;itcur+=3;
-		    if (x<x2 && x<x4 && itprec<itprecend)
-		      continue;
-		    break;
+		    if (x>=x2 || x>=x4 )
+		      break;
 		  }
 		  if (x<x2 && x<x4) continue;
 		}
 		if (x>x1 && x>x2 && x>x3 && x>x4){
-		  for (itprec+=3,itcur+=3;itprec<itprecend;) {
+		  for (itprec+=3,itcur+=3;itprec<itprecend;itprec+=3,itcur+=3){
 		    x1=x2;
 		    x2=itprec->_DOUBLE_val;
 		    x3=x4;
 		    x4=itcur->_DOUBLE_val;
-		    itprec+=3;itcur+=3;
-		    if (x>x2 && x>x4 && itprec<itprecend)
-		      continue;
-		    break;
+		    if (x<=x2 || x<=x4 )
+		      break;
 		  }
 		  if (x>x2 && x>x4) continue;
 		}
 		double y1=(itprec-2)->_DOUBLE_val,y2=(itprec+1)->_DOUBLE_val,y3=(itcur-2)->_DOUBLE_val,y4=(itcur+1)->_DOUBLE_val;
 		if (y<y1 && y<y2 && y<y3 && y<y4) continue;
 		if (y>y1 && y>y2 && y>y3 && y>y4) continue;
+		//std::cout << "check " << i << " " << j << " " << x << " " << y << "\n";
+		if (i==65)
+		  ;//cout << 65 << "\n";
 		double z1=(itprec-1)->_DOUBLE_val,z2=(itprec+2)->_DOUBLE_val,z3=(itcur-1)->_DOUBLE_val,z4=(itcur+2)->_DOUBLE_val;
 		// now find intersections with quad (cut in two triangles)
 		if (inside(x1,x2,x3,y1,y2,y3,x,y)){
 		  // loop for all x,y in the rectangle
-		  glinter(xmin,xmax,ymin,ymax,x1,x2,x3,y1,y2,y3,z1,z2,z3,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h);
+		  if (found && z1+z2+z3<curz1+curz2+curz3)
+		    continue;
+		  found=true;
+		  curx1=x1; curx2=x2; curx3=x3;
+		  cury1=y1; cury2=y2; cury3=y3;
+		  curz1=z1; curz2=z2; curz3=z3;
+		  // glinter(xmin,xmax,ymin,ymax,x1,x2,x3,y1,y2,y3,z1,z2,z3,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h);
 		}
 		else if (inside(x2,x3,x4,y2,y3,y4,x,y)){
-		  glinter(xmin,xmax,ymin,ymax,x2,x3,x4,y2,y3,y4,z2,z3,z4,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h);
+		  if (found && z1+z2+z3<curz1+curz2+curz3)
+		    continue;
+		  found=true;
+		  curx1=x2; curx2=x3; curx3=x4;
+		  cury1=y2; cury2=y3; cury3=y4;
+		  curz1=z2; curz2=z3; curz3=z4;
+		  // glinter(xmin,xmax,ymin,ymax,x2,x3,x4,y2,y3,y4,z2,z3,z4,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h);
 		}
 	      } // end surface iterator in line loop
 	    } // end loop in surface
+	    if (found)
+	      glinter(xmin,xmax,ymin,ymax,curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h);
+	    else {
+	      //std::cout << "not inside " << i << " " << j << " " << x << " " << y << "\n";	      
+	    }
 	  } // end if x,y in clipping
 	} // end pixel vertical loop on j
       } // end hypersurface loop
@@ -5174,12 +5204,13 @@ namespace xcas {
     return true;
   }
 
-  Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),window_zmin(gnuplot_zmin),window_zmax(gnuplot_zmax),g(g_),display_mode(0x45),show_axes(1),show_names(1),labelsize(16),precision(5),contextptr(cptr) {
-    theta_x=theta_y=theta_z=0;
-    q=euler_deg_to_quaternion_double(theta_z,theta_x,theta_y);
-    grot=g;
+  Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),window_zmin(gnuplot_zmin),window_zmax(gnuplot_zmax),g(g_),display_mode(0x45),show_axes(1),show_names(1),labelsize(16),precision(4),contextptr(cptr) {
+    is3d=giac::is3d(g);
+    //theta_x=theta_y=theta_z=0;
+    q=quaternion_double(0,0,0); 
     update();
     autoscale();
+    update_rotation();
   }
 
   // q=quaternion_double(dragi*180/h(),0,0)*rotation_2_quaternion_double(1,0,0,dragj*180/w())*q;
@@ -5247,6 +5278,8 @@ namespace xcas {
     zoomx(1.0);
     autoscaleminmax(vy,window_ymin,window_ymax,fullview);
     zoomy(1.0);
+    autoscaleminmax(vz,window_zmin,window_zmax,fullview);
+    zoomz(1.0);
     if (window_xmax-window_xmin<1e-100){
       window_xmax=gnuplot_xmax;
       window_xmin=gnuplot_xmin;
@@ -5254,6 +5287,10 @@ namespace xcas {
     if (window_ymax-window_ymin<1e-100){
       window_ymax=gnuplot_ymax;
       window_ymin=gnuplot_ymin;
+    }
+    if (window_zmax-window_zmin<1e-100){
+      window_zmax=gnuplot_zmax;
+      window_zmin=gnuplot_zmin;
     }
     bool do_ortho=ortho;
     if (!do_ortho){
@@ -5315,6 +5352,10 @@ namespace xcas {
   void Graph2d::update_rotation(){
     double rx,ry,rz,theta;
     get_axis_angle_deg(q,rx,ry,rz,theta);
+    // rx=0;ry=1;rz=0; //theta=60;
+    // cout << rx << " " << ry << " " << rz << " " << theta << "\n";
+    // rx=0;ry=0;rz=1;
+    // theta=10;
     theta *= M_PI/180;
     double r2=rx*rx+ry*ry+rz*rz,invr2=1/r2;
     double r=std::sqrt(r2);
@@ -5324,10 +5365,10 @@ namespace xcas {
     double a11=invr2*(rx*rx+ry*ry*c+rz*rz*c),a12=invr2*(rx*ry-rx*ry*c-rz*s*r),a13=invr2*(rx*rz-rx*rz*c+ry*s*r);
     double a21=invr2*(rx*ry-rx*ry*c+rz*s*r),a22=invr2*(ry*ry+rx*rx*c+rz*rz*c),a23=invr2*(ry*rz-rx*s*r-ry*rz*c);
     double a31=invr2*(rx*rz-rx*rz*c-ry*s*r),a32=invr2*(ry*rz+rx*s*r-ry*rz*c),a33=invr2*(rz*rz+rx*rx*c+ry*ry*c);
-    double xt=(window_xmin+window_xmax)/2,yt=(window_ymin+window_ymax)/2,zt=(window_zmin+window_zmax)/2;
-    double mat[16]={a11/x_scale,a12/y_scale,a13/z_scale,-a11*xt/x_scale-a12*yt/y_scale-a13*zt/z_scale,
-		    a21/x_scale,a22/y_scale,a23/z_scale,-a21*xt/x_scale-a22*yt/y_scale-a23*zt/z_scale,
-		    a31/x_scale,a32/y_scale,a33/z_scale,-a31*xt/x_scale-a32*yt/y_scale-a33*zt/z_scale,
+    double xt=(window_xmin+window_xmax)/2,xs=2.0/(window_xmax-window_xmin),yt=(window_ymin+window_ymax)/2,ys=2.0/(window_ymax-window_ymin),zt=(window_zmin+window_zmax)/2,zs=2.0/(window_zmax-window_zmin);
+    double mat[16]={a11*xs,a12*ys,a13*zs,-a11*xt*xs-a12*yt*ys-a13*zt*zs,
+		    a21*xs,a22*ys,a23*zs,-a21*xt*xs-a22*yt*ys-a23*zt*zs,
+		    a31*xs,a32*ys,a33*zs,-a31*xt*xs-a32*yt/ys-a33*zt*zs,
 		    0,0,0,1
     };
     for (int i=0;i<sizeof(mat)/sizeof(double);++i)
@@ -5348,13 +5389,13 @@ namespace xcas {
 	    vecteur vj=*Vj._VECTptr;
 	    for (int k=0;k<vj.size();k+=3){
 	      double X,Y,Z;
-	      do_transform(mat,vj[k]._DOUBLE_val,vj[k+1]._DOUBLE_val,vj[k+1]._DOUBLE_val,X,Y,Z);
-	      vj[k]=X; vj[k+1]=Y; vj[k+1]=Z;
+	      do_transform(mat,vj[k]._DOUBLE_val,vj[k+1]._DOUBLE_val,vj[k+2]._DOUBLE_val,X,Y,Z);
+	      vj[k]=X; vj[k+1]=Y; vj[k+2]=Z;
 	    }
 	    V[j]=vj;
 	  }
 	  hyp0v[4]=V;
-	  hyp[0]=hyp0;
+	  hyp[0]=hyp0v;
 	  v[i]=symbolic(at_hypersurface,hyp);
 	}
       }
@@ -5898,7 +5939,6 @@ namespace xcas {
   }
 
   void Graph2d::draw(){
-    is3d=giac::is3d(grot);
     if (is3d && glsurface(grot,precision,precision,contextptr))
       return;
     int save_clip_ymin=clip_ymin;
@@ -6399,20 +6439,96 @@ namespace xcas {
 	 gr.precision--;
       }
       if (key==KEY_CTRL_UP){
+	if (is3d){
+	  int curprec=gr.precision;
+	  gr.precision += 2;
+	  if (gr.precision>9) gr.precision=9;
+	  while (1){
+	    gr.q=rotation_2_quaternion_double(1,0,0,15)*gr.q;// quaternion_double(15,0,0)*gr.q;
+	    gr.update_rotation();
+	    gr.draw();
+#ifdef DEVICE
+	    if (!iskeydown(KEY_CTRL_UP))
+	      break;
+#else
+	    getkey(key); break;
+#endif
+	  }
+	  gr.precision=curprec;
+	  continue;
+	}
 	gr.up((gr.window_ymax-gr.window_ymin)/5);
       }
       if (key==KEY_CTRL_PAGEUP) {
 	gr.up((gr.window_ymax-gr.window_ymin)/2);
       }
       if (key==KEY_CTRL_DOWN) {
+	if (is3d){
+	  int curprec=gr.precision;
+	  gr.precision += 2;
+	  if (gr.precision>9) gr.precision=9;
+	  while (1){
+	    gr.q=rotation_2_quaternion_double(1,0,0,-15)*gr.q; // quaternion_double(-15,0,0)*gr.q;
+	    gr.update_rotation();
+	    gr.draw();
+#ifdef DEVICE
+	    if (!iskeydown(KEY_CTRL_RIGHT))
+	      break;
+#else
+	    getkey(key); break;
+#endif
+	  }
+	  gr.precision=curprec;
+	  continue;
+	}
 	gr.down((gr.window_ymax-gr.window_ymin)/5);
       }
       if (key==KEY_CTRL_PAGEDOWN) {
 	gr.down((gr.window_ymax-gr.window_ymin)/2);
       }
-      if (key==KEY_CTRL_LEFT) { gr.left((gr.window_xmax-gr.window_xmin)/5); }
+      if (key==KEY_CTRL_LEFT) {
+	if (is3d){
+	  int curprec=gr.precision;
+	  gr.precision += 2;
+	  if (gr.precision>9) gr.precision=9;
+	  while (1){
+	    gr.q=quaternion_double(0,15,0)*gr.q;
+	    gr.update_rotation();
+	    gr.draw();
+#ifdef DEVICE
+	    if (!iskeydown(KEY_CTRL_LEFT))
+	      break;
+#else
+	    getkey(key); break;
+#endif
+	  }
+	  gr.precision=curprec;
+	  continue;
+	}
+	gr.left((gr.window_xmax-gr.window_xmin)/5);
+      }
       if (key==KEY_SHIFT_LEFT) { gr.left((gr.window_xmax-gr.window_xmin)/2); }
-      if (key==KEY_CTRL_RIGHT) { gr.right((gr.window_xmax-gr.window_xmin)/5); }
+      if (key==KEY_CTRL_RIGHT) {
+	if (is3d){
+	  int curprec=gr.precision;
+	  gr.precision += 2;
+	  if (gr.precision>9) gr.precision=9;
+	  while (1){
+	    gr.q=quaternion_double(0,-15,0)*gr.q;
+	    gr.update_rotation();
+	    gr.draw();
+#ifdef DEVICE
+	    if (!iskeydown(KEY_CTRL_RIGHT))
+	      break;
+#else
+	    getkey(key); break;
+#endif
+	  }
+	  gr.precision=curprec;
+	  continue;
+	}
+	gr.right((gr.window_xmax-gr.window_xmin)/5);
+      }
       if (key==KEY_SHIFT_RIGHT) { gr.right((gr.window_xmax-gr.window_xmin)/5); }
       if (key==KEY_CHAR_PLUS) {
 	gr.zoom(0.7);

@@ -975,6 +975,18 @@ namespace giac {
       }
     }
     if (g.type==_VECT ){
+      if (g.subtype==_GROUP__VECT && !g._VECTptr->empty() && g._VECTptr->front().type!=_VECT){ // "compressed" hypersurface
+	vecteur v=*evalf_double(g,1,contextptr)._VECTptr;
+	int s=v.size();
+	if (s%3==0){
+	  for (int i=0;i<s;i+=3){
+	    vx.push_back(v[i]._DOUBLE_val);
+	    vy.push_back(v[i+1]._DOUBLE_val);
+	    vz.push_back(v[i+2]._DOUBLE_val);
+	  }
+	  return false;
+	}
+      }
       bool ortho=false;
       const_iterateur it=g._VECTptr->begin(),itend=g._VECTptr->end();
       for (;it!=itend;++it){

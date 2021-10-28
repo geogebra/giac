@@ -1044,7 +1044,7 @@ namespace giac {
     gen tmp(_exp2pow(_lin(recursive_normal(g,contextptr),contextptr),contextptr));
     vecteur l(lop(tmp,at_arg));
     if (!l.empty()){
-      vecteur lp=*apply(l,gen_feuille)._VECTptr;
+      vecteur lp=*giac::apply(l,gen_feuille)._VECTptr;
       lp=*apply(lp,contextptr,arg_CPLX)._VECTptr;
       tmp=subst(tmp,l,lp,false,contextptr);
     }
