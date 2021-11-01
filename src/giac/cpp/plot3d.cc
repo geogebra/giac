@@ -1056,9 +1056,15 @@ namespace giac {
 	for (int j=0;j<=nv;++j,y+=dy){
 	  vals[1]=y;
 	  gen tmppnt=evalf_double(subst(f,vars,vals,false,contextptr),1,contextptr);
+#ifdef KHICAS
+	  tmp.push_back(tmppnt[0]);
+	  tmp.push_back(tmppnt[1]);
+	  tmp.push_back(tmppnt[2]);
+#else
 	  if (tmppnt.type==_VECT)
 	    tmppnt.subtype=_POINT__VECT;
 	  tmp.push_back(tmppnt);
+#endif
 	}
 	values.push_back(gen(tmp,_GROUP__VECT));
       }

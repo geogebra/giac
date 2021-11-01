@@ -151,7 +151,13 @@ namespace xcas {
   // replace selection in eq by tmp
   void replace_selection(Equation & eq,const giac::gen & tmp,giac::gen * gsel,const std::vector<int> * gotoptr,const giac::context *);
   int eqw_select_leftright(xcas::Equation & g,bool left,int exchange,const giac::context *);
-
+  
+  struct double3 {
+    double x,y,z;
+    double3(double x_,double y_,double z_):x(x_),y(y_),z(z_){};
+    double3():x(0),y(0),z(0){};
+  };
+  
   // quaternion struct for more intuitive rotations
   struct quaternion_double {
     double w,x,y,z;
@@ -175,13 +181,17 @@ namespace xcas {
       x_scale,y_scale,z_scale,x_tick,y_tick,z_tick;
     //double theta_x,theta_y,theta_z;
     quaternion_double q;
-    double transform[16]; // only 12 used, last line [0,0,0,1]
-    int display_mode,show_axes,show_names,labelsize;
+    double transform[16],invtransform[16];
+    // only 12 used, last line [0,0,0,1], usual matrices, not transposed
+    int display_mode,show_axes,show_names,labelsize,lcdz;
     short int precision;
     bool is3d;
     giac::gen g,grot;
     const giac::context * contextptr;
     bool findij(const giac::gen & e0,double x_scale,double y_scale,double & i0,double & j0,const giac::context * ) const;
+    void xyz2ij(const double3 & d,int &i,int &j) const; // d not transformed
+    void XYZ2ij(const double3 & d,int &i,int &j) const; // d is transformed
+    void update_scales();
     void update();
     void update_rotation(); // update grot
     void zoomx(double d,bool round=false);

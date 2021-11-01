@@ -4994,7 +4994,7 @@ namespace xcas {
 	       double z1,double z2,double z3,
 	       double xscale,double xc,double yscale,double yc,
 	       double *zmin,double *zmax,
-	       int i,int horiz,int j,int w,int h,
+	       int i,int horiz,int j,int w,int h,int lcdz,
 	       int upcolor=65535,int downcolor=12345
 	       ){
     // solve([a*x1+b*y1+c=z1,a*x2+b*y2+c=z2,a*x3+b*y3+c=z3],[a,b,c])
@@ -5003,18 +5003,51 @@ namespace xcas {
     double a=(-y1*z2+y1*z3+y2*z1-y2*z3-y3*z1+y3*z2)/d;
     double b=(x1*z2-x1*z3-x2*z1+x2*z3+x3*z1-x3*z2)/d;
     double c=(x1*y2*z3-x1*y3*z2-x2*y1*z3+x2*y3*z1+x3*y1*z2-x3*y2*z1)/d;
-    int lcdz= LCD_HEIGHT_PX/5;
+    int diffusionz=4;
     double dz=lcdz*(a+b)*yscale-1;
     //if (dz<-10 || dz>10) cout << "dz=" << dz << "\n";
     // plane equation solved
     for (int I=i;I<i+w;++I,++zmax,++zmin){
+      int ih=I+horiz;
       double x = yscale*j-xscale*I + xc;
+      if (x<xmin) continue;
       double y = yscale*j+xscale*I + yc;
-      double z = LCD_HEIGHT_PX/2+j-lcdz*(a*x+b*y+c);
+      if (y<ymin) continue;
+      double z = (a*x+b*y+c);
+#ifdef INTERVAL
+      bool intervalonly=false;
+      if (z<-1) {
+	z=-1; intervalonly=true;
+      }
+      if (z>1) {
+	z=1; intervalonly=true;
+      }
+#endif
+      z=LCD_HEIGHT_PX/2+j-lcdz*z;
       if (i==0)
 	; // cout << "i=" << i << " j=" << j << ", zmin=" << *zmin << " z=" << z << " zmax=" << *zmax << " dz=" << dz << ", a=" << a << " b=" << b << " c=" << c <<"\n";
       if (*zmax<*zmin)
 	*zmax=*zmin=z;
+#ifdef INTERVAL
+      if (z>*zmax+diffusionz){
+	// draw interval
+	int nstep=int(z-*zmax)/diffusionz;
+	double zstep=(z-*zmax)/nstep;
+	for (double zz=*zmax+zstep;zz<z;zz+=zstep)
+	  os_set_pixel(ih,zz,downcolor);
+	if (intervalonly)
+	  continue;
+      }
+      if (z<*zmin-diffusionz){
+	// draw interval
+	int nstep=int(*zmin-z)/diffusionz;
+	double zstep=(z-*zmin)/nstep;
+	for (double zz=*zmin+zstep;zz>z;zz+=zstep)
+	  os_set_pixel(ih,zz,upcolor);	
+	if (intervalonly)
+	  continue;
+      }
+#endif
       if (x-(h-1)*yscale>xmin && y-(h-1)*yscale>ymin &&
 	  z>=0 && z+(h-1)*dz>=0 && z<=LCD_HEIGHT_PX && z+(h-1)*dz<=LCD_HEIGHT_PX
 	  ){
@@ -5023,14 +5056,29 @@ namespace xcas {
 	  // mark all points with downcolor
 	  *zmax=z+(h-1)*dz;
 	  color=downcolor;
+	  if (dz>diffusionz){
+	    // draw interval
+	    int nstep=int(std::ceil((*zmax-z)/diffusionz));
+	    double zstep=(*zmax-z)/nstep;
+	    for (int i=0;i<=nstep;++i)
+	      os_set_pixel(ih,z+i*zstep,color);		    
+	    continue;
+	  }
 	}
 	if (dz<0 && z<=*zmin){
 	  // mark all points with upcolor
 	  *zmin=z+(h-1)*dz;
 	  color=upcolor;
+	  if (dz<-diffusionz){
+	    // draw interval
+	    int nstep=int(std::ceil((z-*zmin)/diffusionz));
+	    double zstep=(*zmin-z)/nstep;
+	    for (int i=0;i<=nstep;++i)
+	      os_set_pixel(ih,z+i*zstep,color);
+	    continue;
+	  }
 	}
 	if (color>=0){
-	  int ih=I+horiz;
 	  os_set_pixel(ih,z,color);
 	  if (h==1) continue;
 	  z += dz;
@@ -5067,7 +5115,7 @@ namespace xcas {
 	  color=upcolor;
 	}
 	if (color>=0){
-	  os_set_pixel(I+horiz,z,color);
+	  os_set_pixel(ih,z,color);
 	  continue;
 	}
       }
@@ -5086,23 +5134,84 @@ namespace xcas {
 	if (z<=-0.5 || z>=LCD_HEIGHT_PX)
 	  continue;
 	if (color>=0)
-	  os_set_pixel(I+horiz,z,color); // drawRectangle(i,z,w,h,color);
+	  os_set_pixel(ih,z,color); // drawRectangle(i,z,w,h,color);
       }
     }
   }
+
+  void update12(bool & found,bool &found2,
+	       double x1,double x2,double x3,double y1,double y2,double y3,double z1,double z2,double z3,
+	       double & curx1, double &curx2, double &curx3, double &cury1, double &cury2, double &cury3, double &curz1, double &curz2, double &curz3, 
+	       double &cur2x1, double &cur2x2, double &cur2x3, double &cur2y1, double &cur2y2, double &cur2y3, double &cur2z1, double &cur2z2, double &cur2z3){
+    if (found){
+      if (z1+z2+z3<curz1+curz2+curz3){
+	// no need to update cur, perhaps cur2?
+	if (found2 && cur2z1+cur2z2+cur2z3<z1+z2+z3)
+	  return;
+	found2=true;
+	cur2x1=x1; cur2x2=x2; cur2x3=x3;
+	cur2y1=y1; cur2y2=y2; cur2y3=y3;
+	cur2z1=z1; cur2z2=z2; cur2z3=z3;
+	return;
+      }
+      else { // need to update cur, and perhaps cur2
+	if (!found2 || curz1+curz2+curz3<cur2z1+cur2z2+cur2z3){
+	  found2=true;
+	  cur2x1=curx1; cur2x2=curx2; cur2x3=curx3;
+	  cur2y1=cury1; cur2y2=cury2; cur2y3=cury3;
+	  cur2z1=curz1; cur2z2=curz2; cur2z3=curz3;
+	}
+	curx1=x1; curx2=x2; curx3=x3;
+	cury1=y1; cury2=y2; cury3=y3;
+	curz1=z1; curz2=z2; curz3=z3;
+	return;
+      }
+    }
+    found=true;
+    curx1=x1; curx2=x2; curx3=x3;
+    cury1=y1; cury2=y2; cury3=y3;
+    curz1=z1; curz2=z2; curz3=z3;
+  }
+	      
   
   // 3d demo prototype
   // surfaceg should be replaced by a list of 3d objects
   // tranformed according to 3d current view
   // currently we assume it is a hpersurface encoded as a matrix
   // with lines containing 3 coordinates per point
-  bool glsurface(const gen & surfaceg,int w,int h,GIAC_CONTEXT){
+  bool glsurface(const gen & surfaceg,int w,int h,int lcdz,GIAC_CONTEXT,
+		 int upcolor=65535,int downcolor=12345,int downupcolor=44444,int downdowncolor=1024){
     if (w>9) w=9;
     if (h>9) h=9;
     vecteur vsurfaceg(gen2vecteur(surfaceg));
-    vector<const_iterateur> hypv;
+    vector<const_iterateur> hypv; // 3 iterateurs per hypersruface
+    vector<double3> plan_pointv; // point in plan 
+    vector<double3> plan_abcv; // plan equation z=a*x+b*y+c
+    vector<double3> sphere_centerv;
+    vector<double> sphere_radiusv;
     for (int i=0;i<vsurfaceg.size();++i){
       gen g=remove_at_pnt(vsurfaceg[i]);
+      if (g.is_symb_of_sommet(at_hyperplan)){
+	vecteur & arg=*g._SYMBptr->feuille._VECTptr;
+	gen c=evalf_double(arg[1],1,contextptr);
+	double x=c[0]._DOUBLE_val,y=c[1]._DOUBLE_val,z=c[2]._DOUBLE_val;
+	plan_pointv.push_back(double3(x,y,z));
+	c=evalf_double(remove_at_pnt(arg[0]),1,contextptr);
+	double A=c[0]._DOUBLE_val,B=c[1]._DOUBLE_val,C=c[2]._DOUBLE_val;
+	// A*(X-x)+B*(Y-y)+C*(Z-z)=0
+	// => Z=z-A/C*(X-x)+B/C*(Y-y)
+	A/=C; B/=C;
+	plan_abcv.push_back(double3(-A,-B,z+A*x+B*y));
+	continue;
+      }
+      if (g.is_symb_of_sommet(at_hypersphere)){
+	vecteur & arg=*g._SYMBptr->feuille._VECTptr;
+	gen c=evalf_double(remove_at_pnt(arg[0]),1,contextptr);
+	sphere_centerv.push_back(double3(c[0]._DOUBLE_val,c[1]._DOUBLE_val,c[2]._DOUBLE_val));
+	c=evalf_double(arg[1],1,contextptr);
+	sphere_radiusv.push_back(c._DOUBLE_val);
+	continue;
+      }
       if (g.is_symb_of_sommet(at_hypersurface)){
 	vecteur & hyp=*g._SYMBptr->feuille._VECTptr;
 	gen h=hyp[0][4];
@@ -5117,19 +5226,23 @@ namespace xcas {
     for (int i=-horiz;i<horiz;i+=w){
       drawRectangle(i+horiz,0,w,LCD_HEIGHT_PX,COLOR_BLACK); // clear
       double zmin[10]={220.220,220,220,220,220,220,220,220,220},
-	zmax[10]={0,0,0,0,0,0,0,0,0,0}; // initialize for these vertical lines
+	zmax[10]={0,0,0,0,0,0,0,0,0,0},
+	zmin2[10]={220.220,220,220,220,220,220,220,220,220},
+	zmax2[10]={0,0,0,0,0,0,0,0,0,0}	; // initialize for these vertical lines
       double curx1,curx2,curx3,cury1,cury2,cury3,curz1=-1e306,curz2=-1e306,curz3=-1e306;
-      for (int k=0;k<hypv.size();k+=2){
-	const_iterateur sbeg=hypv[k],send=hypv[k+1],sprec,scur,itprec,itcur,itprecend;
-	for (int j=vert;j>-vert;j-=h){
-	  x = yscale*(j-h/2.0)-xscale*(i+w/2.0) + xc;
-	  y = yscale*(j-h/2.0)+xscale*(i+w/2.0) + yc;
-	  // Oxy clipping
-	  if (//1 
-	      x>=xmin && x<=xmax && y>=ymin && y<=ymax
-	      ){
-	    bool found=false;
+      double cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1=-1e306,cur2z2=-1e306,cur2z3=-1e306;
+      for (int j=vert;j>-vert;j-=h){
+	x = yscale*(j-h/2.0)-xscale*(i+w/2.0) + xc;
+	y = yscale*(j-h/2.0)+xscale*(i+w/2.0) + yc;
+	// Oxy clipping
+	if (//1 
+	    x>=xmin && x<=xmax && y>=ymin && y<=ymax
+	    ){
+	  bool found=false,found2=false;
+	  for (int k=0;k<hypv.size();k+=2){
+	    const_iterateur sbeg=hypv[k],send=hypv[k+1],sprec,scur,itprec,itcur,itprecend;
 	    // find zxy intersections of vertical line (x,y,...) with surface
+	    // found will mark 1st intersection from above, found2 2nd
 	    for (sprec=sbeg,scur=sprec+1;scur<send;++sprec,++scur){
 	      itprec=sprec->_VECTptr->begin();
 	      itprecend=sprec->_VECTptr->end();
@@ -5169,48 +5282,60 @@ namespace xcas {
 		//std::cout << "check " << i << " " << j << " " << x << " " << y << "\n";
 		if (i==65)
 		  ;//cout << 65 << "\n";
-		double z1=(itprec-1)->_DOUBLE_val,z2=(itprec+2)->_DOUBLE_val,z3=(itcur-1)->_DOUBLE_val,z4=(itcur+2)->_DOUBLE_val;
+		double z1=(itprec-1)->_DOUBLE_val,z2=(itprec+2)->_DOUBLE_val,z3=(itcur-1)->_DOUBLE_val,z4=(itcur+2)->_DOUBLE_val,z123=(z1+z2+z3)/3,z234=(z2+z3+z4)/3;
 		// now find intersections with quad (cut in two triangles)
-		if (inside(x1,x2,x3,y1,y2,y3,x,y)){
-		  // loop for all x,y in the rectangle
-		  if (found && z1+z2+z3<curz1+curz2+curz3)
-		    continue;
-		  found=true;
-		  curx1=x1; curx2=x2; curx3=x3;
-		  cury1=y1; cury2=y2; cury3=y3;
-		  curz1=z1; curz2=z2; curz3=z3;
-		  // glinter(xmin,xmax,ymin,ymax,x1,x2,x3,y1,y2,y3,z1,z2,z3,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h);
+		if (inside(x1,x2,x3,y1,y2,y3,x,y) && z123>=-1 && z123<=1){
+		  update12(found,found2,
+			   x1,x2,x3,y1,y2,y3,z1,z2,z3,
+			   curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,
+			   cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3);
 		}
-		else if (inside(x2,x3,x4,y2,y3,y4,x,y)){
-		  if (found && z1+z2+z3<curz1+curz2+curz3)
-		    continue;
-		  found=true;
-		  curx1=x2; curx2=x3; curx3=x4;
-		  cury1=y2; cury2=y3; cury3=y4;
-		  curz1=z2; curz2=z3; curz3=z4;
-		  // glinter(xmin,xmax,ymin,ymax,x2,x3,x4,y2,y3,y4,z2,z3,z4,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h);
+		else if (inside(x2,x3,x4,y2,y3,y4,x,y) && z234>=-1 && z234<=1){
+		  update12(found,found2,
+			   x2,x3,x4,y2,y3,y4,z2,z3,z4,
+			   curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,
+			   cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3);
 		}
 	      } // end surface iterator in line loop
 	    } // end loop in surface
-	    if (found)
-	      glinter(xmin,xmax,ymin,ymax,curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h);
-	    else {
-	      //std::cout << "not inside " << i << " " << j << " " << x << " " << y << "\n";	      
+	  } // end hypersurface loop
+	  for (int k=0;k<sphere_centerv.size();++k){
+	  } // end hypersphere loop
+	  for (int k=0;k<plan_abcv.size();++k){
+	    double3 abc=plan_abcv[k];
+	    // z=a*x+b*y+c
+	    double z=abc.x*x+abc.y*y+abc.z;
+	    if (z>=-1 && z<=1)
+	      update12(found,found2,
+		       x-1,x,x,y,y,y+1,z-abc.x,z,z+abc.y,
+		       curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,
+		       cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3);
+	  } // end hyperplan loop
+	  if (found){
+	    if (found2){
+	      glinter(xmin,xmax,ymin,ymax,curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h,lcdz,upcolor,downcolor);
+	      glinter(xmin,xmax,ymin,ymax,cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3,xscale,xc,yscale,yc,zmin2,zmax2,i,horiz,j,w,h,lcdz,downupcolor,downdowncolor);
 	    }
-	  } // end if x,y in clipping
-	} // end pixel vertical loop on j
-      } // end hypersurface loop
+	    else
+	      glinter(xmin,xmax,ymin,ymax,curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h,lcdz,upcolor,downcolor);
+	  }
+	  else {
+	    //std::cout << "not inside " << i << " " << j << " " << x << " " << y << "\n";	      
+	  }
+	} // end if x,y in clipping
+      } // end pixel vertical loop on j
     } // end pixel horizontal loop on i
     return true;
   }
 
   Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),window_zmin(gnuplot_zmin),window_zmax(gnuplot_zmax),g(g_),display_mode(0x45),show_axes(1),show_names(1),labelsize(16),precision(4),contextptr(cptr) {
+    lcdz= LCD_HEIGHT_PX/4;
     is3d=giac::is3d(g);
     //theta_x=theta_y=theta_z=0;
     q=quaternion_double(0,0,0); 
-    update();
+    update_scales();
     autoscale();
-    update_rotation();
+    if (is3d) update_rotation();
   }
 
   // q=quaternion_double(dragi*180/h(),0,0)*rotation_2_quaternion_double(1,0,0,dragj*180/w())*q;
@@ -5329,7 +5454,7 @@ namespace xcas {
     update();
   }
 
-  void Graph2d::update(){
+  void Graph2d::update_scales(){
     if (is3d){
       x_scale=1.414*(LCD_HEIGHT_PX-STATUS_AREA_PX)/(window_xmax-window_xmin);    
       y_scale=1.414*(LCD_HEIGHT_PX-STATUS_AREA_PX)/(window_ymax-window_ymin);    
@@ -5341,7 +5466,12 @@ namespace xcas {
     }
   }
 
-  void do_transform(double mat[16],double x,double y,double z,double & X,double & Y,double &Z){
+  void Graph2d::update(){
+    update_scales();
+    if (is3d) update_rotation();
+  }
+  
+  void do_transform(const double mat[16],double x,double y,double z,double & X,double & Y,double &Z){
     X=mat[0]*x+mat[1]*y+mat[2]*z+mat[3];
     Y=mat[4]*x+mat[5]*y+mat[6]*z+mat[7];
     Z=mat[8]*x+mat[9]*y+mat[10]*z+mat[11];
@@ -5349,6 +5479,48 @@ namespace xcas {
     // X/=t; Y/=t; Z/=t;
   }
 
+  void mult4(double * c,double k,double * res){
+    for (int i=0;i<16;i++)
+      res[i]=k*c[i];
+  }
+  
+  double det4(double * c){
+    return c[0]*c[5]*c[10]*c[15]-c[0]*c[5]*c[14]*c[11]-c[0]*c[9]*c[6]*c[15]+c[0]*c[9]*c[14]*c[7]+c[0]*c[13]*c[6]*c[11]-c[0]*c[13]*c[10]*c[7]-c[4]*c[1]*c[10]*c[15]+c[4]*c[1]*c[14]*c[11]+c[4]*c[9]*c[2]*c[15]-c[4]*c[9]*c[14]*c[3]-c[4]*c[13]*c[2]*c[11]+c[4]*c[13]*c[10]*c[3]+c[8]*c[1]*c[6]*c[15]-c[8]*c[1]*c[14]*c[7]-c[8]*c[5]*c[2]*c[15]+c[8]*c[5]*c[14]*c[3]+c[8]*c[13]*c[2]*c[7]-c[8]*c[13]*c[6]*c[3]-c[12]*c[1]*c[6]*c[11]+c[12]*c[1]*c[10]*c[7]+c[12]*c[5]*c[2]*c[11]-c[12]*c[5]*c[10]*c[3]-c[12]*c[9]*c[2]*c[7]+c[12]*c[9]*c[6]*c[3];
+  }
+
+  void inv4(double * c,double * res){
+    res[0]=c[5]*c[10]*c[15]-c[5]*c[14]*c[11]-c[10]*c[7]*c[13]-c[15]*c[9]*c[6]+c[14]*c[9]*c[7]+c[11]*c[6]*c[13];
+    res[1]=-c[1]*c[10]*c[15]+c[1]*c[14]*c[11]+c[10]*c[3]*c[13]+c[15]*c[9]*c[2]-c[14]*c[9]*c[3]-c[11]*c[2]*c[13];
+    res[2]=c[1]*c[6]*c[15]-c[1]*c[14]*c[7]-c[6]*c[3]*c[13]-c[15]*c[5]*c[2]+c[14]*c[5]*c[3]+c[7]*c[2]*c[13];
+    res[3]=-c[1]*c[6]*c[11]+c[1]*c[10]*c[7]+c[6]*c[3]*c[9]+c[11]*c[5]*c[2]-c[10]*c[5]*c[3]-c[7]*c[2]*c[9];
+    res[4]=-c[4]*c[10]*c[15]+c[4]*c[14]*c[11]+c[10]*c[7]*c[12]+c[15]*c[8]*c[6]-c[14]*c[8]*c[7]-c[11]*c[6]*c[12];
+    res[5]=c[0]*c[10]*c[15]-c[0]*c[14]*c[11]-c[10]*c[3]*c[12]-c[15]*c[8]*c[2]+c[14]*c[8]*c[3]+c[11]*c[2]*c[12];
+    res[6]=-c[0]*c[6]*c[15]+c[0]*c[14]*c[7]+c[6]*c[3]*c[12]+c[15]*c[4]*c[2]-c[14]*c[4]*c[3]-c[7]*c[2]*c[12];
+    res[7]=c[0]*c[6]*c[11]-c[0]*c[10]*c[7]-c[6]*c[3]*c[8]-c[11]*c[4]*c[2]+c[10]*c[4]*c[3]+c[7]*c[2]*c[8];
+    res[8]=c[4]*c[9]*c[15]-c[4]*c[13]*c[11]-c[9]*c[7]*c[12]-c[15]*c[8]*c[5]+c[13]*c[8]*c[7]+c[11]*c[5]*c[12];
+    res[9]=-c[0]*c[9]*c[15]+c[0]*c[13]*c[11]+c[9]*c[3]*c[12]+c[15]*c[8]*c[1]-c[13]*c[8]*c[3]-c[11]*c[1]*c[12];
+    res[10]=c[0]*c[5]*c[15]-c[0]*c[13]*c[7]-c[5]*c[3]*c[12]-c[15]*c[4]*c[1]+c[13]*c[4]*c[3]+c[7]*c[1]*c[12];
+    res[11]=-c[0]*c[5]*c[11]+c[0]*c[9]*c[7]+c[5]*c[3]*c[8]+c[11]*c[4]*c[1]-c[9]*c[4]*c[3]-c[7]*c[1]*c[8];
+    res[12]=-c[4]*c[9]*c[14]+c[4]*c[13]*c[10]+c[9]*c[6]*c[12]+c[14]*c[8]*c[5]-c[13]*c[8]*c[6]-c[10]*c[5]*c[12];
+    res[13]=c[0]*c[9]*c[14]-c[0]*c[13]*c[10]-c[9]*c[2]*c[12]-c[14]*c[8]*c[1]+c[13]*c[8]*c[2]+c[10]*c[1]*c[12];
+    res[14]=-c[0]*c[5]*c[14]+c[0]*c[13]*c[6]+c[5]*c[2]*c[12]+c[14]*c[4]*c[1]-c[13]*c[4]*c[2]-c[6]*c[1]*c[12];
+    res[15]=c[0]*c[5]*c[10]-c[0]*c[9]*c[6]-c[5]*c[2]*c[8]-c[10]*c[4]*c[1]+c[9]*c[4]*c[2]+c[6]*c[1]*c[8];
+    double det=det4(c);
+    mult4(res,1/det,res);
+  }
+  
+  void Graph2d::xyz2ij(const double3 &d,int &i,int &j) const {
+    double X,Y,Z;
+    do_transform(transform,d.x,d.y,d.z,X,Y,Z);
+    i=LCD_WIDTH_PX/2+(Y-X)/4.8*LCD_WIDTH_PX;
+    j=LCD_HEIGHT_PX/2-Z*lcdz+(Y+X)/9.6*LCD_WIDTH_PX;    
+  }
+  
+  void Graph2d::XYZ2ij(const double3 &d,int &i,int &j) const {
+    i=(1+(d.y-d.x)/2)*LCD_WIDTH_PX/2;
+    j=d.z*lcdz-(d.y+d.x)/2*LCD_WIDTH_PX/4;    
+  }
+  
   void Graph2d::update_rotation(){
     double rx,ry,rz,theta;
     get_axis_angle_deg(q,rx,ry,rz,theta);
@@ -5373,10 +5545,32 @@ namespace xcas {
     };
     for (int i=0;i<sizeof(mat)/sizeof(double);++i)
       transform[i]=mat[i];
+    inv4(transform,invtransform);
     // rotate+translate+scale g
     vecteur v(gen2vecteur(g));
     for (int i=0;i<v.size();++i){
       gen G=remove_at_pnt(v[i]);
+      if (G.is_symb_of_sommet(at_hyperplan)){
+	vecteur hyp=*G._SYMBptr->feuille._VECTptr;
+	gen hyp0=evalf_double(hyp[0],1,contextptr);
+	vecteur & hyp0v=*hyp0._VECTptr;
+	double X,Y,Z,x,y,z;
+	x=hyp0v[0]._DOUBLE_val;y=hyp0v[1]._DOUBLE_val;z=hyp0v[2]._DOUBLE_val;
+	double * mat=invtransform;
+	X=mat[0]*x+mat[4]*y+mat[8]*z;
+	Y=mat[1]*x+mat[5]*y+mat[9]*z;
+	Z=mat[2]*x+mat[6]*y+mat[10]*z;
+	hyp0=makevecteur(X,Y,Z);
+	hyp[0]=hyp0;
+	gen hyp1=evalf_double(hyp[1],1,contextptr);
+	vecteur & hyp1v=*hyp1._VECTptr;
+	x=hyp1v[0]._DOUBLE_val;y=hyp1v[1]._DOUBLE_val;z=hyp1v[2]._DOUBLE_val;
+	do_transform(transform,x,y,z,X,Y,Z);
+	hyp1=makevecteur(X,Y,Z);
+	hyp[1]=hyp1;
+	v[i]=symbolic(at_hyperplan,hyp);
+	continue;
+      }
       if (G.is_symb_of_sommet(at_hypersurface)){
 	vecteur hyp=*G._SYMBptr->feuille._VECTptr;
 	gen hyp0=hyp[0];
@@ -5938,9 +6132,73 @@ namespace xcas {
     return res;
   }
 
+  void normalize(double & x, double & y){
+    double fx=fabs(x),fy=fabs(y);
+    if (fx>fy){
+      y/=fx;
+      x/=fx;
+    }
+    else {
+      x/=fy;
+      y/=fy;
+    }
+    double n=std::sqrt(x*x+y*y);
+    x/=n; y/=n;
+  }
+
   void Graph2d::draw(){
-    if (is3d && glsurface(grot,precision,precision,contextptr))
+    if (is3d){
+      glsurface(grot,precision,precision,lcdz,contextptr);
+      if (show_axes){
+	// cube A,B,C,D,E,F,G,H
+	double3 A(window_xmin,window_ymin,window_zmin),
+	  B(window_xmin,window_ymin,window_zmax),
+	  C(window_xmax,window_ymin,window_zmin),
+	  D(window_xmax,window_ymin,window_zmax),
+	  E(window_xmin,window_ymax,window_zmin),
+	  F(window_xmin,window_ymax,window_zmax),
+	  G(window_xmax,window_ymax,window_zmin),
+	  H(window_xmax,window_ymax,window_zmax);
+	int Ai,Aj,Bi,Bj,Ci,Cj,Di,Dj,Ei,Ej,Fi,Fj,Gi,Gj,Hi,Hj;
+	xyz2ij(A,Ai,Aj);
+	xyz2ij(B,Bi,Bj);
+	xyz2ij(C,Ci,Cj);
+	xyz2ij(D,Di,Dj);
+	xyz2ij(E,Ei,Ej);
+	xyz2ij(F,Fi,Fj);
+	xyz2ij(G,Gi,Gj);
+	xyz2ij(H,Hi,Hj);
+	// X
+	drawLine(Ai,Aj,Ci,Cj,COLOR_RED);
+	drawLine(Bi,Bj,Di,Dj,COLOR_RED);
+	drawLine(Ei,Ej,Gi,Gj,COLOR_RED);
+	drawLine(Fi,Fj,Hi,Hj,COLOR_RED);
+	// Y
+	drawLine(Ai,Aj,Ei,Ej,COLOR_GREEN);
+	drawLine(Bi,Bj,Fi,Fj,COLOR_GREEN);
+	drawLine(Ci,Cj,Gi,Gj,COLOR_GREEN);
+	drawLine(Di,Dj,Hi,Hj,COLOR_GREEN);
+	// Z
+	drawLine(Ai,Aj,Bi,Bj,12345);
+	drawLine(Ci,Cj,Di,Dj,12345);
+	drawLine(Ei,Ej,Fi,Fj,12345);
+	drawLine(Gi,Gj,Hi,Hj,12345);
+	// frame
+	double xi=Ci-Ai,xj=Cj-Aj;
+	normalize(xi,xj);
+	drawLine(20,20,20+20*xi,20+20*xj,COLOR_RED);
+	os_draw_string_small(20+20*xi,20+20*xj,COLOR_RED,COLOR_BLACK,"x");
+	double yi=Ei-Ai,yj=Ej-Aj;
+	normalize(yi,yj);
+	drawLine(20,22,20+20*yi,20+20*yj,COLOR_GREEN);
+	os_draw_string_small(20+20*yi,20+20*yj,COLOR_GREEN,COLOR_BLACK,"y");
+	double zi=Bi-Ai,zj=Bj-Aj;
+	normalize(zi,zj);
+	drawLine(20,20,20+20*zi,20+20*zj,12345);
+	os_draw_string_small(20+20*zi,20+20*zj,12345,COLOR_BLACK,"z");
+      }      
       return;
+    }
     int save_clip_ymin=clip_ymin;
     clip_ymin=STATUS_AREA_PX;
     int horizontal_pixels=LCD_WIDTH_PX,vertical_pixels=LCD_HEIGHT_PX-STATUS_AREA_PX,deltax=0,deltay=STATUS_AREA_PX,clip_x=0,clip_y=0,clip_w=horizontal_pixels,clip_h=vertical_pixels;
@@ -6351,7 +6609,7 @@ namespace xcas {
 	return key;
 #if 1
       if (key==KEY_CTRL_CATALOG || key==KEY_BOOK){
-	char menu_xmin[32],menu_xmax[32],menu_ymin[32],menu_ymax[32];
+	char menu_xmin[32],menu_xmax[32],menu_ymin[32],menu_ymax[32],menu_zmin[32],menu_zmax[32];
 	string s;
 	s="xmin "+print_DOUBLE_(gr.window_xmin,contextptr);
 	strcpy(menu_xmin,s.c_str());
@@ -6361,8 +6619,12 @@ namespace xcas {
 	strcpy(menu_ymin,s.c_str());
 	s="ymax "+print_DOUBLE_(gr.window_ymax,contextptr);
 	strcpy(menu_ymax,s.c_str());
+	s="zmin "+print_DOUBLE_(gr.window_zmin,contextptr);
+	strcpy(menu_zmin,s.c_str());
+	s="zmax "+print_DOUBLE_(gr.window_zmax,contextptr);
+	strcpy(menu_zmax,s.c_str());
 	Menu smallmenu;
-	smallmenu.numitems=12;
+	smallmenu.numitems=15;
 	MenuItem smallmenuitems[smallmenu.numitems];
 	smallmenu.items=smallmenuitems;
 	smallmenu.height=12;
@@ -6371,57 +6633,82 @@ namespace xcas {
 	smallmenuitems[1].text = (char *) menu_xmax;
 	smallmenuitems[2].text = (char *) menu_ymin;
 	smallmenuitems[3].text = (char *) menu_ymax;
-	smallmenuitems[4].text = (char*) "Orthonormalize /";
-	smallmenuitems[5].text = (char*) "Autoscale *";
-	smallmenuitems[6].text = (char *) ("Zoom in +");
-	smallmenuitems[7].text = (char *) ("Zoom out -");
-	smallmenuitems[8].text = (char *) ("Y-Zoom out (-)");
-	smallmenuitems[9].text = (char*) ((lang==1)?"Voir axes":"Show axes");
-	smallmenuitems[10].text = (char*) ((lang==1)?"Cacher axes":"Hide axes");
-	smallmenuitems[11].text = (char*)((lang==1)?"Quitter":"Quit");
+	smallmenuitems[4].text = (char *) menu_zmin;
+	smallmenuitems[5].text = (char *) menu_zmax;
+	smallmenuitems[6].text = (char*) "Orthonormalize /";
+	smallmenuitems[7].text = (char*) "Autoscale *";
+	smallmenuitems[8].text = (char *) ("Zoom in +");
+	smallmenuitems[9].text = (char *) ("Zoom out -");
+	smallmenuitems[10].text = (char *) ("Y-Zoom out (-)");
+	smallmenuitems[11].text = (char *) ("3d reset view");
+	smallmenuitems[12].text = (char*) ((lang==1)?"Voir axes":"Show axes");
+	smallmenuitems[13].text = (char*) ((lang==1)?"Cacher axes":"Hide axes");
+	smallmenuitems[14].text = (char*)((lang==1)?"Quitter":"Quit");
 	int sres = doMenu(&smallmenu);
 	if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
 	  const char * ptr=0;
 	  string s1; double d;
 	  if (smallmenu.selection==1){
+	    d=gr.window_xmin;
 	    if (inputdouble(menu_xmin,d,contextptr)){
 	      gr.window_xmin=d;
 	      gr.update();
 	    }
 	  }
 	  if (smallmenu.selection==2){
+	    d=gr.window_xmax;
 	    if (inputdouble(menu_xmax,d,contextptr)){
 	      gr.window_xmax=d;
 	      gr.update();
 	    }
 	  }
 	  if (smallmenu.selection==3){
+	    d=gr.window_ymin;
 	    if (inputdouble(menu_ymin,d,contextptr)){
 	      gr.window_ymin=d;
 	      gr.update();
 	    }
 	  }
 	  if (smallmenu.selection==4){
+	    d=gr.window_ymax;
 	    if (inputdouble(menu_ymax,d,contextptr)){
 	      gr.window_ymax=d;
 	      gr.update();
 	    }
 	  }
-	  if (smallmenu.selection==5)
-	    gr.orthonormalize();
-	  if (smallmenu.selection==6)
-	    gr.autoscale();	
+	  if (smallmenu.selection==5){
+	    d=gr.window_zmin;
+	    if (inputdouble(menu_zmin,d,contextptr)){
+	      gr.window_zmin=d;
+	      gr.update();
+	    }
+	  }
+	  if (smallmenu.selection==6){
+	    d=gr.window_zmax;
+	    if (inputdouble(menu_zmax,d,contextptr)){
+	      gr.window_zmax=d;
+	      gr.update();
+	    }
+	  }
 	  if (smallmenu.selection==7)
-	    gr.zoom(0.7);	
+	    gr.orthonormalize();
 	  if (smallmenu.selection==8)
-	    gr.zoom(1/0.7);	
+	    gr.autoscale();	
 	  if (smallmenu.selection==9)
-	    gr.zoomy(1/0.7);
+	    gr.zoom(0.7);	
 	  if (smallmenu.selection==10)
-	    gr.show_axes=true;	
+	    gr.zoom(1/0.7);	
 	  if (smallmenu.selection==11)
+	    gr.zoomy(1/0.7);
+	  if (smallmenu.selection==12){
+	    gr.q=quaternion_double(0,0,0);
+	    gr.update();
+	  }
+	  if (smallmenu.selection==13)
+	    gr.show_axes=true;	
+	  if (smallmenu.selection==14)
 	    gr.show_axes=false;	
-	  if (smallmenu.selection==12)
+	  if (smallmenu.selection==14)
 	    break;
 	}
       }
@@ -6444,7 +6731,7 @@ namespace xcas {
 	  gr.precision += 2;
 	  if (gr.precision>9) gr.precision=9;
 	  while (1){
-	    gr.q=rotation_2_quaternion_double(1,0,0,15)*gr.q;// quaternion_double(15,0,0)*gr.q;
+	    gr.q=rotation_2_quaternion_double(0.707,0.707,0,15)*gr.q;// quaternion_double(15,0,0)*gr.q;
 	    gr.update_rotation();
 	    gr.draw();
 #ifdef DEVICE
@@ -6468,7 +6755,7 @@ namespace xcas {
 	  gr.precision += 2;
 	  if (gr.precision>9) gr.precision=9;
 	  while (1){
-	    gr.q=rotation_2_quaternion_double(1,0,0,-15)*gr.q; // quaternion_double(-15,0,0)*gr.q;
+	    gr.q=rotation_2_quaternion_double(0.707,0.707,0,-15)*gr.q; // quaternion_double(-15,0,0)*gr.q;
 	    gr.update_rotation();
 	    gr.draw();
 #ifdef DEVICE

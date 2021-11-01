@@ -2870,7 +2870,7 @@ namespace giac {
     vecteur uv(gen2vecteur(u));
     int uvs=int(uv.size());
     vecteur initcond;
-    aplatir(*apply(initcond0,equal2diff)._VECTptr,initcond);
+    aplatir(*giac::apply(initcond0,equal2diff)._VECTptr,initcond);
     gen f=apply(f0,equal2diff);
     if (n.type!=_IDNT){
       identificateur N(" rsolve_N");
