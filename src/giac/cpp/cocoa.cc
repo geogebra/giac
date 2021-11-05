@@ -14532,8 +14532,29 @@ void G_idn(vector<unsigned> & G,size_t s){
       if (radical<=0)
 	minp[i]=m;
     }
+    bool tryseparate=radical!=-1;
+    environment env;
+    env.modulo=p;
+    env.moduloon=true;
+    if (radical==0){
+      // additional check for non sqrfree minp,
+      // for solve([3*x^2-3*z^2,3*y^2-3*z^2,x*y+y*z+x*z-x*y*z],[x,y,z]);
+      for (int i=0;i<d;++i){
+	if (minp[i].type!=_VECT)
+	  continue;
+	m=*minp[i]._VECTptr;
+	if (m.empty())
+	  continue;
+	vecteur m1=derivative(m,&env);
+	m1=gcd(m,m1,&env);
+	if (m1.size()>1){
+	  tryseparate=false;
+	  break;
+	}
+      }
+    }
     // now try a random small integer linear combination
-    if (radical!=-1){
+    if (tryseparate){
       // 6 july 2020: # of tries 40->100 for 
       // eqs:=[c^2 - 3, -a^14 + 85/6*a^12 - 13465/144*a^10 + 54523/144*a^8 - 20819/18*a^6 + 8831/3*a^4 - 7384*a^2 + 10800, -b^14 + 59/4*b^12 - 459/4*b^10 + 8159/16*b^8 - 11777/8*b^6 + 40395/16*b^4 - 10971/4*b^2 + 3267, -1/599040*(53136*b^14 - 692236*b^12 + 4886796*b^10 - 20593959*b^8 + 57747314*b^6 - 116274195*b^4 + 186055404*b^2 - 162887472)*(1008*a^13 - 12240*a^11 + 67325*a^9 - 218092*a^7 + 499656*a^5 - 847776*a^3 + 1063296*a) - 1/112320*(111024*a^14 - 1310760*a^12 + 7843395*a^10 - 35101603*a^8 + 158038072*a^6 - 630801328*a^4 + 1561088256*a^2 - 1489593600)*(56*b^13 - 708*b^11 + 4590*b^9 - 16318*b^7 + 35331*b^5 - 40395*b^3 + 21942*b)];
       // pour j de 1 jusque 100 faire gb:=gbasis(eqs,[c,a,b],rur);fpour;
@@ -14567,9 +14588,6 @@ void G_idn(vector<unsigned> & G,size_t s){
     }
     // shrink ideal and try again
     bool shrinkit=false;
-    environment env;
-    env.modulo=p;
-    env.moduloon=true;
     for (unsigned i=0;int(i)<d;++i){
       if (minp[i].type!=_VECT)
 	continue;

@@ -4987,9 +4987,7 @@ namespace xcas {
     Z=a*rz+c*Vz+s*kVz/r;
   }
 
-  void glinter(double xmin,double xmax,
-	       double ymin,double ymax,
-	       double x1,double x2,double x3,
+  void glinter(double x1,double x2,double x3,
 	       double y1,double y2,double y3,
 	       double z1,double z2,double z3,
 	       double xscale,double xc,double yscale,double yc,
@@ -5010,9 +5008,9 @@ namespace xcas {
     for (int I=i;I<i+w;++I,++zmax,++zmin){
       int ih=I+horiz;
       double x = yscale*j-xscale*I + xc;
-      if (x<xmin) continue;
+      // if (x<xmin) continue;
       double y = yscale*j+xscale*I + yc;
-      if (y<ymin) continue;
+      // if (y<ymin) continue;
       double z = (a*x+b*y+c);
 #ifdef INTERVAL
       bool intervalonly=false;
@@ -5048,7 +5046,7 @@ namespace xcas {
 	  continue;
       }
 #endif
-      if (x-(h-1)*yscale>xmin && y-(h-1)*yscale>ymin &&
+      if (//x-(h-1)*yscale>xmin && y-(h-1)*yscale>ymin &&
 	  z>=0 && z+(h-1)*dz>=0 && z<=LCD_HEIGHT_PX && z+(h-1)*dz<=LCD_HEIGHT_PX
 	  ){
 	int color=-1;
@@ -5120,7 +5118,7 @@ namespace xcas {
 	}
       }
       for (int J=0;J<h
-	     && x>=xmin && y>=ymin
+	     // && x>=xmin && y>=ymin
 	     ;++J,z+=dz,x-=yscale,y-=yscale){
 	int color=-1;
 	if (z>*zmax){
@@ -5175,43 +5173,48 @@ namespace xcas {
 	      
   
   // 3d demo prototype
+  void do_transform(const double mat[16],double x,double y,double z,double & X,double & Y,double &Z){
+    X=mat[0]*x+mat[1]*y+mat[2]*z+mat[3];
+    Y=mat[4]*x+mat[5]*y+mat[6]*z+mat[7];
+    Z=mat[8]*x+mat[9]*y+mat[10]*z+mat[11];
+    // double t=mat[12]*x+mat[13]*y+mat[14]*z+mat[15];
+    // X/=t; Y/=t; Z/=t;
+  }
+
+  bool inside(const vector<double3> & v,double x,double y){
+    int n=0;
+    for (int i=1;i<v.size();++i){
+      double3 prev=v[i-1],cur=v[i];
+      double prevx=prev.x,prevy=prev.y,curx=cur.x,cury=cur.y,m=cur.z;
+      if (prevx==curx){
+	if (prevx!=x) continue;
+	if (y==cury || (y-prevy)*(cury-y)>0)
+	  ++n;
+	continue;
+      }
+      if (x==prevx || (x-prevx)*(curx-x)<0)
+	continue;
+      double Y=cury+m*(x-curx);
+      if (Y>=y)
+	++n; 
+    }
+    if (n%2)
+      return true;
+    return false;
+  }
+
   // surfaceg should be replaced by a list of 3d objects
   // tranformed according to 3d current view
   // currently we assume it is a hpersurface encoded as a matrix
   // with lines containing 3 coordinates per point
-  bool glsurface(const gen & surfaceg,int w,int h,int lcdz,GIAC_CONTEXT,
-		 int upcolor=65535,int downcolor=12345,int downupcolor=44444,int downdowncolor=1024){
+  bool Graph2d::glsurface(const gen & surfaceg,int w,int h,int lcdz,GIAC_CONTEXT,
+			  int upcolor,int downcolor,int downupcolor,int downdowncolor)  {
     if (w>9) w=9;
     if (h>9) h=9;
     vecteur vsurfaceg(gen2vecteur(surfaceg));
-    vector<const_iterateur> hypv; // 3 iterateurs per hypersruface
-    vector<double3> plan_pointv; // point in plan 
-    vector<double3> plan_abcv; // plan equation z=a*x+b*y+c
-    vector<double3> sphere_centerv;
-    vector<double> sphere_radiusv;
+    std::vector<giac::const_iterateur> hypv; // 3 iterateurs per hypersurface
     for (int i=0;i<vsurfaceg.size();++i){
       gen g=remove_at_pnt(vsurfaceg[i]);
-      if (g.is_symb_of_sommet(at_hyperplan)){
-	vecteur & arg=*g._SYMBptr->feuille._VECTptr;
-	gen c=evalf_double(arg[1],1,contextptr);
-	double x=c[0]._DOUBLE_val,y=c[1]._DOUBLE_val,z=c[2]._DOUBLE_val;
-	plan_pointv.push_back(double3(x,y,z));
-	c=evalf_double(remove_at_pnt(arg[0]),1,contextptr);
-	double A=c[0]._DOUBLE_val,B=c[1]._DOUBLE_val,C=c[2]._DOUBLE_val;
-	// A*(X-x)+B*(Y-y)+C*(Z-z)=0
-	// => Z=z-A/C*(X-x)+B/C*(Y-y)
-	A/=C; B/=C;
-	plan_abcv.push_back(double3(-A,-B,z+A*x+B*y));
-	continue;
-      }
-      if (g.is_symb_of_sommet(at_hypersphere)){
-	vecteur & arg=*g._SYMBptr->feuille._VECTptr;
-	gen c=evalf_double(remove_at_pnt(arg[0]),1,contextptr);
-	sphere_centerv.push_back(double3(c[0]._DOUBLE_val,c[1]._DOUBLE_val,c[2]._DOUBLE_val));
-	c=evalf_double(arg[1],1,contextptr);
-	sphere_radiusv.push_back(c._DOUBLE_val);
-	continue;
-      }
       if (g.is_symb_of_sommet(at_hypersurface)){
 	vecteur & hyp=*g._SYMBptr->feuille._VECTptr;
 	gen h=hyp[0][4];
@@ -5234,11 +5237,11 @@ namespace xcas {
       for (int j=vert;j>-vert;j-=h){
 	x = yscale*(j-h/2.0)-xscale*(i+w/2.0) + xc;
 	y = yscale*(j-h/2.0)+xscale*(i+w/2.0) + yc;
-	// Oxy clipping
-	if (//1 
-	    x>=xmin && x<=xmax && y>=ymin && y<=ymax
+	bool found=false,found2=false;
+	// Oxy clipping for surfaces
+	if (1 
+	    //x>=xmin && x<=xmax && y>=ymin && y<=ymax
 	    ){
-	  bool found=false,found2=false;
 	  for (int k=0;k<hypv.size();k+=2){
 	    const_iterateur sbeg=hypv[k],send=hypv[k+1],sprec,scur,itprec,itcur,itprecend;
 	    // find zxy intersections of vertical line (x,y,...) with surface
@@ -5282,47 +5285,104 @@ namespace xcas {
 		//std::cout << "check " << i << " " << j << " " << x << " " << y << "\n";
 		if (i==65)
 		  ;//cout << 65 << "\n";
-		double z1=(itprec-1)->_DOUBLE_val,z2=(itprec+2)->_DOUBLE_val,z3=(itcur-1)->_DOUBLE_val,z4=(itcur+2)->_DOUBLE_val,z123=(z1+z2+z3)/3,z234=(z2+z3+z4)/3;
+		double z1=(itprec-1)->_DOUBLE_val,z2=(itprec+2)->_DOUBLE_val,z3=(itcur-1)->_DOUBLE_val,z4=(itcur+2)->_DOUBLE_val,x123=(x1+x2+x3)/3,y123=(y1+y2+y3)/3,z123=(z1+z2+z3)/3,x234=(x2+x3+x4)/3,y234=(y2+y3+y4)/3,z234=(z2+z3+z4)/3,X,Y,Z;
+		do_transform(invtransform,x123,y123,z123,X,Y,Z);
 		// now find intersections with quad (cut in two triangles)
-		if (inside(x1,x2,x3,y1,y2,y3,x,y) && z123>=-1 && z123<=1){
+		if (X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax && Z>=window_zmin && Z<=window_zmax && inside(x1,x2,x3,y1,y2,y3,x,y)){
 		  update12(found,found2,
 			   x1,x2,x3,y1,y2,y3,z1,z2,z3,
 			   curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,
 			   cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3);
 		}
-		else if (inside(x2,x3,x4,y2,y3,y4,x,y) && z234>=-1 && z234<=1){
-		  update12(found,found2,
-			   x2,x3,x4,y2,y3,y4,z2,z3,z4,
-			   curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,
-			   cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3);
+		else {
+		  do_transform(invtransform,x234,y234,z234,X,Y,Z);
+		  if (X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax && Z>=window_zmin && Z<=window_zmax && inside(x2,x3,x4,y2,y3,y4,x,y)){
+		    update12(found,found2,
+			     x2,x3,x4,y2,y3,y4,z2,z3,z4,
+			     curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,
+			     cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3);
+		  }
 		}
 	      } // end surface iterator in line loop
 	    } // end loop in surface
 	  } // end hypersurface loop
-	  for (int k=0;k<sphere_centerv.size();++k){
-	  } // end hypersphere loop
-	  for (int k=0;k<plan_abcv.size();++k){
-	    double3 abc=plan_abcv[k];
-	    // z=a*x+b*y+c
-	    double z=abc.x*x+abc.y*y+abc.z;
-	    if (z>=-1 && z<=1)
-	      update12(found,found2,
-		       x-1,x,x,y,y,y+1,z-abc.x,z,z+abc.y,
-		       curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,
-		       cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3);
-	  } // end hyperplan loop
-	  if (found){
-	    if (found2){
-	      glinter(xmin,xmax,ymin,ymax,curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h,lcdz,upcolor,downcolor);
-	      glinter(xmin,xmax,ymin,ymax,cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3,xscale,xc,yscale,yc,zmin2,zmax2,i,horiz,j,w,h,lcdz,downupcolor,downdowncolor);
-	    }
-	    else
-	      glinter(xmin,xmax,ymin,ymax,curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h,lcdz,upcolor,downcolor);
+	} // end if x,y in after transform clipping (disabled)
+	for (int k=0;k<polyedrev.size();++k){
+	  vector<double3> & cur=polyedrev[k];
+	  double3 abc=polyedre_abcv[k];
+	  double a=abc.x,b=abc.y,c=abc.z;
+	  z=a*x+b*y+c;
+	  double X,Y,Z;
+	  do_transform(invtransform,x,y,z,X,Y,Z);
+	  if (X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax && Z>=window_zmin && inside(cur,x,y)){
+	    update12(found,found2,
+		     x,x+1,x,y,y,y+1,z,z+a,z+b,
+		     curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,
+		     cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3);
 	  }
-	  else {
-	    //std::cout << "not inside " << i << " " << j << " " << x << " " << y << "\n";	      
+	}
+	for (int k=0;k<sphere_centerv.size();++k){
+	  double3 c=sphere_centerv[k];
+	  double R=sphere_radiusv[k];
+	  matrice & m=*sphere_quadraticv[k]._VECTptr;
+	  vecteur & m0=*m[0]._VECTptr;
+	  vecteur & m1=*m[1]._VECTptr;
+	  vecteur & m2=*m[2]._VECTptr;
+	  double v0=x-c.x,v1=y-c.y,v2=0;
+	  double a=m2[2]._DOUBLE_val,b=2*m0[2]._DOUBLE_val*v0+2*m1[2]._DOUBLE_val*v1,C=m0[0]._DOUBLE_val*v0*v0+2*m0[1]._DOUBLE_val*v0*v1+m1[1]._DOUBLE_val*v1*v1-R*R;
+	  double delta=b*b-4*a*C;
+	  if (delta<0)
+	    continue;
+	  delta=std::sqrt(delta);
+	  double sol1=(-b-delta)/2/a,sol2=(-b+delta)/2/a;
+	  v2=sol1;
+	  z=v2+c.z;
+	  double X,Y,Z;
+	  do_transform(invtransform,x,y,z,X,Y,Z);
+	  if (X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax && Z>=window_zmin && Z<=window_zmax){
+	    double w0=v0*m0[0]._DOUBLE_val+v1*m1[0]._DOUBLE_val+v2*m2[0]._DOUBLE_val;
+	    double w1=v0*m0[1]._DOUBLE_val+v1*m1[1]._DOUBLE_val+v2*m2[1]._DOUBLE_val;
+	    double w2=v0*m0[2]._DOUBLE_val+v1*m1[2]._DOUBLE_val+v2*m2[2]._DOUBLE_val;
+	    update12(found,found2,
+		     x-w2,x,x,y,y,y-w2,z+w0,z,z+w1,
+		     curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,
+		     cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3);
 	  }
-	} // end if x,y in clipping
+	  v2=sol2;
+	  z=v2+c.z;
+	  do_transform(invtransform,x,y,z,X,Y,Z);
+	  if (delta>0 && X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax && Z>=window_zmin && Z<=window_zmax){
+	    double w0=v0*m0[0]._DOUBLE_val+v1*m1[0]._DOUBLE_val+v2*m2[0]._DOUBLE_val;
+	    double w1=v0*m0[1]._DOUBLE_val+v1*m1[1]._DOUBLE_val+v2*m2[1]._DOUBLE_val;
+	    double w2=v0*m0[2]._DOUBLE_val+v1*m1[2]._DOUBLE_val+v2*m2[2]._DOUBLE_val;
+	    update12(found,found2,
+		     x-w2,x,x,y,y,y-w2,z+w0,z,z+w1,
+		     curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,
+		     cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3);
+	  }
+	} // end hypersphere loop
+	for (int k=0;k<plan_abcv.size();++k){
+	  double3 abc=plan_abcv[k];
+	  // z=a*x+b*y+c
+	  double z=abc.x*x+abc.y*y+abc.z,X,Y,Z;
+	  do_transform(invtransform,x,y,z,X,Y,Z);
+	  if (X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax && Z>=window_zmin && Z<=window_zmax)
+	    update12(found,found2,
+		     x-1,x,x,y,y,y+1,z-abc.x,z,z+abc.y,
+		     curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,
+		     cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3);
+	} // end hyperplan loop
+	if (found){
+	  if (found2){
+	    glinter(curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h,lcdz,upcolor,downcolor);
+	    glinter(cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3,xscale,xc,yscale,yc,zmin2,zmax2,i,horiz,j,w,h,lcdz,downupcolor,downdowncolor);
+	  }
+	  else
+	    glinter(curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,xscale,xc,yscale,yc,zmin,zmax,i,horiz,j,w,h,lcdz,upcolor,downcolor);
+	}
+	else {
+	  //std::cout << "not inside " << i << " " << j << " " << x << " " << y << "\n";	      
+	}
       } // end pixel vertical loop on j
     } // end pixel horizontal loop on i
     return true;
@@ -5471,14 +5531,6 @@ namespace xcas {
     if (is3d) update_rotation();
   }
   
-  void do_transform(const double mat[16],double x,double y,double z,double & X,double & Y,double &Z){
-    X=mat[0]*x+mat[1]*y+mat[2]*z+mat[3];
-    Y=mat[4]*x+mat[5]*y+mat[6]*z+mat[7];
-    Z=mat[8]*x+mat[9]*y+mat[10]*z+mat[11];
-    // double t=mat[12]*x+mat[13]*y+mat[14]*z+mat[15];
-    // X/=t; Y/=t; Z/=t;
-  }
-
   void mult4(double * c,double k,double * res){
     for (int i=0;i<16;i++)
       res[i]=k*c[i];
@@ -5540,35 +5592,99 @@ namespace xcas {
     double xt=(window_xmin+window_xmax)/2,xs=2.0/(window_xmax-window_xmin),yt=(window_ymin+window_ymax)/2,ys=2.0/(window_ymax-window_ymin),zt=(window_zmin+window_zmax)/2,zs=2.0/(window_zmax-window_zmin);
     double mat[16]={a11*xs,a12*ys,a13*zs,-a11*xt*xs-a12*yt*ys-a13*zt*zs,
 		    a21*xs,a22*ys,a23*zs,-a21*xt*xs-a22*yt*ys-a23*zt*zs,
-		    a31*xs,a32*ys,a33*zs,-a31*xt*xs-a32*yt/ys-a33*zt*zs,
+		    a31*xs,a32*ys,a33*zs,-a31*xt*xs-a32*yt*ys-a33*zt*zs,
 		    0,0,0,1
     };
     for (int i=0;i<sizeof(mat)/sizeof(double);++i)
       transform[i]=mat[i];
     inv4(transform,invtransform);
+    polyedrev.clear(); polyedre_abcv.clear();// polyedre_normalv.clear();
+    plan_pointv.clear(); plan_abcv.clear();
+    sphere_centerv.clear(); sphere_radiusv.clear(); sphere_quadraticv.clear();
     // rotate+translate+scale g
     vecteur v(gen2vecteur(g));
     for (int i=0;i<v.size();++i){
       gen G=remove_at_pnt(v[i]);
+      if (G.type==_VECT && G.subtype==_POLYEDRE__VECT){
+	vecteur p=*G._VECTptr;
+	for (int j=0;j<p.size();++j){
+	  vector<double3> cur;
+	  gen g=p[j];
+	  if (g.type==_VECT){
+	    vecteur w=*g._VECTptr;
+	    for (int k=0;k<w.size();++k){
+	      gen P=evalf_double(w[k],1,contextptr);
+	      if (P.type==_VECT && P._VECTptr->size()==3){
+		double X,Y,Z;
+		do_transform(transform,P[0]._DOUBLE_val,P[1]._DOUBLE_val,P[2]._DOUBLE_val,X,Y,Z);
+		cur.push_back(double3(X,Y,Z));
+	      }
+	    }
+	    if (cur.size()>=3){
+	      double Z3;
+	      for (int l=0;l<cur.size()-2;++l){
+		double x0=cur[l].x,y0=cur[l].y,z0=cur[l].z;
+		double x1=cur[l+1].x,y1=cur[l+1].y,z1=cur[l+1].z;
+		double x2=cur[l+2].x,y2=cur[l+2].y,z2=cur[l+2].z;
+		double X1=x1-x0,Y1=y1-y0,Z1=z1-z0;
+		double X2=x2-x0,Y2=y2-y0,Z2=z2-z0;
+		double X3=Y1*Z2-Y2*Z1,Y3=X2*Z1-X1*Z2;Z3=X1*Y2-X2*Y1;
+		if (std::abs(X3)>1e-12 || std::abs(Y3)>1e-12 || std::abs(Z3)>1e-12){
+		  // X3*(x-x0)+Y3*(y-y0)+Z3*(z-z0)=0
+		  X3/=Z3; Y3/=Z3;
+		  if (std::abs(Z3)>1e-12)
+		    polyedre_abcv.push_back(double3(-X3,-Y3,z0+X3*x0+Y3*y0));
+		  break;
+		}
+	      }
+	      if (std::abs(Z3)<1e-12)
+		continue;
+	      cur.push_back(cur.front());
+	      for (int l=1;l<cur.size();++l){
+		// replace unused z coordinate by slope
+		cur[l].z=(cur[l].y-cur[l-1].y)/(cur[l].x-cur[l-1].x);
+	      }
+	      polyedrev.push_back(cur);
+	    }
+	  }
+	}
+	continue;
+      }
+      if (G.is_symb_of_sommet(at_hypersphere)){
+	vecteur hyp=*G._SYMBptr->feuille._VECTptr;
+	gen c=evalf_double(hyp[0],1,contextptr);
+	double X,Y,Z;
+	do_transform(transform,c[0]._DOUBLE_val,c[1]._DOUBLE_val,c[2]._DOUBLE_val,X,Y,Z);
+	sphere_centerv.push_back(double3(X,Y,Z));
+	gen R=evalf(hyp[1],1,contextptr);
+	sphere_radiusv.push_back(R._DOUBLE_val);
+	double * mat=invtransform;
+	matrice qmat(makevecteur(
+				 makevecteur(mat[0],mat[4],mat[8]),
+				 makevecteur(mat[1],mat[5],mat[9]),
+				 makevecteur(mat[2],mat[6],mat[10])
+				 ));
+	qmat=mmult(mtran(qmat),qmat);
+	sphere_quadraticv.push_back(qmat);
+	continue;
+      }
       if (G.is_symb_of_sommet(at_hyperplan)){
 	vecteur hyp=*G._SYMBptr->feuille._VECTptr;
-	gen hyp0=evalf_double(hyp[0],1,contextptr);
-	vecteur & hyp0v=*hyp0._VECTptr;
-	double X,Y,Z,x,y,z;
-	x=hyp0v[0]._DOUBLE_val;y=hyp0v[1]._DOUBLE_val;z=hyp0v[2]._DOUBLE_val;
-	double * mat=invtransform;
-	X=mat[0]*x+mat[4]*y+mat[8]*z;
-	Y=mat[1]*x+mat[5]*y+mat[9]*z;
-	Z=mat[2]*x+mat[6]*y+mat[10]*z;
-	hyp0=makevecteur(X,Y,Z);
-	hyp[0]=hyp0;
 	gen hyp1=evalf_double(hyp[1],1,contextptr);
 	vecteur & hyp1v=*hyp1._VECTptr;
-	x=hyp1v[0]._DOUBLE_val;y=hyp1v[1]._DOUBLE_val;z=hyp1v[2]._DOUBLE_val;
-	do_transform(transform,x,y,z,X,Y,Z);
-	hyp1=makevecteur(X,Y,Z);
-	hyp[1]=hyp1;
-	v[i]=symbolic(at_hyperplan,hyp);
+	double A,B,C,x,y,z,X,Y,Z;
+	A=hyp1v[0]._DOUBLE_val;B=hyp1v[1]._DOUBLE_val;C=hyp1v[2]._DOUBLE_val;
+	do_transform(transform,A,B,C,X,Y,Z);
+	plan_pointv.push_back(double3(X,Y,Z));	
+	gen hyp0=evalf_double(hyp[0],1,contextptr);
+	vecteur & hyp0v=*hyp0._VECTptr;
+	x=hyp0v[0]._DOUBLE_val;y=hyp0v[1]._DOUBLE_val;z=hyp0v[2]._DOUBLE_val;
+	double * mat=invtransform;
+	A=mat[0]*x+mat[4]*y+mat[8]*z;
+	B=mat[1]*x+mat[5]*y+mat[9]*z;
+	C=mat[2]*x+mat[6]*y+mat[10]*z;
+	A/=C; B/=C;
+	plan_abcv.push_back(double3(-A,-B,Z+A*Z+B*Y));
 	continue;
       }
       if (G.is_symb_of_sommet(at_hypersurface)){

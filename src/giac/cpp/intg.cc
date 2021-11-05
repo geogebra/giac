@@ -2686,6 +2686,10 @@ namespace giac {
     unary_function_ptr u=e._SYMBptr->sommet;
     gen f=e._SYMBptr->feuille,a,b;
     // particular case for ^, _FUNCnd arg must be constant
+    if (u==at_pow && f._SYMBptr->feuille[0].is_symb_of_sommet(at_pow)){
+      e=symbolic(at_pow,makesequence(f._SYMBptr->feuille[0]._SYMBptr->feuille[0],f._SYMBptr->feuille[0]._SYMBptr->feuille[1]*f._SYMBptr->feuille[1]));
+      return integrate_id_rem(e,gen_x,remains_to_integrate,contextptr,intmode);
+    }
     if ( (u==at_pow) && is_constant_wrt(f._VECTptr->back(),gen_x,contextptr) && is_linear_wrt(f._VECTptr->front(),gen_x,a,b,contextptr) ){
       if ( (intmode & 2)==0)
 	gprintf(step_linear,gettext("Integrate %gen, a linear expression u=%gen to a constant power n=%gen,\nIf n=-1 then ln(u)/a else u^(n+1)/((n+1)*%gen)"),makevecteur(e,a*gen_x+b,f._VECTptr->back(),a),contextptr);

@@ -186,6 +186,13 @@ namespace xcas {
     int display_mode,show_axes,show_names,labelsize,lcdz;
     short int precision;
     bool is3d;
+    std::vector<double3> plan_pointv; // point in plan 
+    std::vector<double3> plan_abcv; // plan equation z=a*x+b*y+c
+    std::vector<double3> sphere_centerv;
+    std::vector<double> sphere_radiusv;
+    giac::vecteur sphere_quadraticv; // matrix of the transformed quad. form
+    std::vector< std::vector<double3> > polyedrev;
+    std::vector<double3> polyedre_abcv;
     giac::gen g,grot;
     const giac::context * contextptr;
     bool findij(const giac::gen & e0,double x_scale,double y_scale,double & i0,double & j0,const giac::context * ) const;
@@ -207,6 +214,8 @@ namespace xcas {
     void autoscale(bool fullview=false);
     void orthonormalize();
     void draw();
+    bool glsurface(const giac::gen & surfaceg,int w,int h,int lcdz,const giac::context*,
+		   int upcolor=65535,int downcolor=12345,int downupcolor=44444,int downdowncolor=1024) ;
     Graph2d(const giac::gen & g_,const giac::context * );
   };
 

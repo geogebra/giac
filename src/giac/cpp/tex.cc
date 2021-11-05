@@ -1017,6 +1017,27 @@ namespace giac {
       }	
       return false;
     }
+    if (g.is_symb_of_sommet(at_hyperplan)){
+      gen & g0=g._SYMBptr->feuille;
+      if (g0.type==_VECT && g0._VECTptr->size()>=2){
+	gen n=evalf_double(g0._VECTptr->front(),1,contextptr);
+	gen P=evalf_double(g0._VECTptr->back(),1,contextptr);
+	if (n.type==_VECT && n._VECTptr->size()==3 && P.type==_VECT && P._VECTptr->size()==3){
+	  vecteur & N=*n._VECTptr;
+	  vecteur & M=*P._VECTptr;
+	  if (M[0].type==_DOUBLE_ && M[1].type==_DOUBLE_ && M[2].type==_DOUBLE_ && N[0].type==_DOUBLE_ && N[1].type==_DOUBLE_ && N[2].type==_DOUBLE_){
+	    double d=M[0]._DOUBLE_val,r=(std::abs(N[0]._DOUBLE_val)+std::abs(N[1]._DOUBLE_val)+std::abs(N[2]._DOUBLE_val))/3;
+	    vx.push_back(d-r); vx.push_back(d+r);
+	    d=M[1]._DOUBLE_val;
+	    vy.push_back(d-r); vy.push_back(d+r);
+	    d=M[2]._DOUBLE_val;
+	    vz.push_back(d-r); vz.push_back(d+r);
+	    return false;
+	  }
+	}
+      }	
+      return false;
+    }
     if (g.is_symb_of_sommet(at_cercle)){
       gen c,r;
       centre_rayon(g,c,r,false,contextptr);
@@ -1039,6 +1060,23 @@ namespace giac {
 	v=makevecteur(c-r,c+r,c-cst_i*r,c+cst_i*r);
       in_autoscale(v,vx,vy,vz,contextptr);
       return true;
+    }
+    if (g.is_symb_of_sommet(at_hypersphere)){
+      vecteur & v=*g._SYMBptr->feuille._VECTptr;
+      gen c=evalf_double(v[0],1,contextptr),R=evalf_double(v[1],1,contextptr);
+      if (c.type==_VECT && c._VECTptr->size()==3){
+	vecteur & M=*c._VECTptr;
+	if (M[0].type==_DOUBLE_ && M[1].type==_DOUBLE_ && M[2].type==_DOUBLE_ && R.type==_DOUBLE_){
+	  double r=R._DOUBLE_val;
+	  double d=M[0]._DOUBLE_val;
+	  vx.push_back(d-r); vx.push_back(d+r);
+	  d=M[1]._DOUBLE_val;
+	  vy.push_back(d-r); vy.push_back(d+r);
+	  d=M[2]._DOUBLE_val;
+	  vz.push_back(d-r); vz.push_back(d+r);
+	  return true;
+	}
+      }
     }
     // FIXME sphere etc.
     if (g.type!=_VECT){
