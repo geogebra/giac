@@ -4987,6 +4987,7 @@ namespace xcas {
     Z=a*rz+c*Vz+s*kVz/r;
   }
 
+#define INTERVAL
   void glinter(double x1,double x2,double x3,
 	       double y1,double y2,double y3,
 	       double z1,double z2,double z3,
@@ -5050,7 +5051,7 @@ namespace xcas {
 	  z>=0 && z+(h-1)*dz>=0 && z<=LCD_HEIGHT_PX && z+(h-1)*dz<=LCD_HEIGHT_PX
 	  ){
 	int color=-1;
-	if (dz>0 && z>=*zmax){
+	if (h>1 && dz>0 && z>=*zmax){
 	  // mark all points with downcolor
 	  *zmax=z+(h-1)*dz;
 	  color=downcolor;
@@ -5063,7 +5064,7 @@ namespace xcas {
 	    continue;
 	  }
 	}
-	if (dz<0 && z<=*zmin){
+	if (h>1 && dz<0 && z<=*zmin){
 	  // mark all points with upcolor
 	  *zmin=z+(h-1)*dz;
 	  color=upcolor;
@@ -5203,18 +5204,43 @@ namespace xcas {
     return false;
   }
 
+  // intersect plane x-y=xy with line m+t*v
+  // m.x+t*v.x-m.y-t*v.y=-xy
+  double intersect(const double3 & m,const double3 & v,double xy){
+    return (-xy+m.y-m.x)/(v.x-v.y);
+  }
+
   // surfaceg should be replaced by a list of 3d objects
   // tranformed according to 3d current view
   // currently we assume it is a hpersurface encoded as a matrix
   // with lines containing 3 coordinates per point
   bool Graph2d::glsurface(const gen & surfaceg,int w,int h,int lcdz,GIAC_CONTEXT,
-			  int upcolor,int downcolor,int downupcolor,int downdowncolor)  {
+			  int upcolor_,int downcolor_,int downupcolor_,int downdowncolor_)  {
     if (w>9) w=9;
     if (h>9) h=9;
-    vecteur vsurfaceg(gen2vecteur(surfaceg));
+    vecteur vsurfaceg(gen2vecteur(surfaceg)),attrv(gen2vecteur(g));
     std::vector<giac::const_iterateur> hypv; // 3 iterateurs per hypersurface
+    int upcolor,downcolor,downupcolor,downdowncolor;
     for (int i=0;i<vsurfaceg.size();++i){
-      gen g=remove_at_pnt(vsurfaceg[i]);
+      gen g=remove_at_pnt(vsurfaceg[i]),attr=attrv[i];
+      upcolor=upcolor_;downcolor=downcolor_;downupcolor=downupcolor_;downdowncolor=downdowncolor_;
+      if (attr.is_symb_of_sommet(at_pnt)){
+	attr=attr._SYMBptr->feuille[1];
+	if (attr.type==_INT_ && (attr.val & 0xffff)!=0){
+	  upcolor=attr.val &0xffff;
+	  int color=rgb565to888(upcolor);
+	  int r=(color&0xff0000)>>16,g=(color & 0xff00)>>8,b=192;
+	  r >>= 2;
+	  g >>= 2;
+	  downcolor=rgb888to565((r<<16)|(g<<8)|b);
+	  r >>= 1;
+	  g >>= 1;
+	  downupcolor=rgb888to565((r<<16)|(g<<8)|b);
+	  r >>= 2;
+	  g >>= 2;
+	  downdowncolor=rgb888to565((r<<16)|(g<<8)|b);
+	}
+      }
       if (g.is_symb_of_sommet(at_hypersurface)){
 	vecteur & hyp=*g._SYMBptr->feuille._VECTptr;
 	gen h=hyp[0][4];
@@ -5384,6 +5410,50 @@ namespace xcas {
 	  //std::cout << "not inside " << i << " " << j << " " << x << " " << y << "\n";	      
 	}
       } // end pixel vertical loop on j
+      // now render line/segments/curves: find intersection with plane
+      // y-x=yc-xc+xscale*(2*i+I), 0<=I<w
+      for (int j=0;j<linetypev.size();j++){
+	double3 m=linev[2*j];
+	double3 v=linev[2*j+1];
+	double xy=yc-xc+xscale*2*i;
+	double t1=intersect(m,v,xy);
+	// for halfline, t1 must be >=0, for segments between 0 and 1
+	if (linetypev[j]==_HALFLINE__VECT && t1<0)
+	  continue;
+	if (linetypev[j]==_GROUP__VECT && (t1<0 || t1>1))
+	  continue;
+	double dt=2*xscale/(v.y-v.x); // di==1
+	double x1=m.x+t1*v.x;
+	double y1=m.y+t1*v.y;
+	double z1=m.z+t1*v.z;
+	double X1,Y1,Z1;
+	do_transform(invtransform,x1,y1,z1,X1,Y1,Z1);
+	// int dbgi,dbgj; xyz2ij(double3(x1,y1,z1),dbgi,dbgj);
+	/// double x2=x1+dt*v.x,y2=y1+dt*v.y,z2=z1+dt*v.z;
+	if (X1<window_xmin || X1>window_xmax || Y1<window_ymin || Y1>window_ymax || Z1<window_zmin || Z1>window_zmax)
+	  continue;
+	z1=LCD_HEIGHT_PX/2-lcdz*z1+(x1+y1)/2/yscale;
+	double dz=-dt*v.z*lcdz+dt*(v.x+v.y)/2/yscale;
+	int horiz=LCD_WIDTH_PX/2;
+	for (int k=0;k<w;++k){
+	  double Z1=z1,Z2=z1+dz;
+	  z1=Z2;
+	  if (Z1>Z2) std::swap(Z1,Z2);
+	  // line [ (i+k,Z1), (i+k,Z2) ]
+	  if (Z1>zmax[k]){
+	    drawRectangle(i+horiz+k,Z1,1,std::ceil(Z2-Z1),upcolor);
+	    continue;
+	  }
+	  if (Z2<zmin[k]){
+	    drawRectangle(i+horiz+k,Z1,1,std::ceil(Z2-Z1),downdowncolor);
+	    continue;
+	  }
+	  if (Z2>zmax[k])
+	    drawRectangle(i+horiz+k,Z1,1,std::ceil(zmax[k]-Z1),upcolor);
+	  if (Z1<zmin[k])
+	    drawRectangle(i+horiz+k,zmin[k],1,std::ceil(Z2-zmin[k]),upcolor);	    
+	}
+      }
     } // end pixel horizontal loop on i
     return true;
   }
@@ -5394,7 +5464,7 @@ namespace xcas {
     //theta_x=theta_y=theta_z=0;
     q=quaternion_double(0,0,0); 
     update_scales();
-    autoscale();
+    //autoscale();
     if (is3d) update_rotation();
   }
 
@@ -5601,10 +5671,29 @@ namespace xcas {
     polyedrev.clear(); polyedre_abcv.clear();// polyedre_normalv.clear();
     plan_pointv.clear(); plan_abcv.clear();
     sphere_centerv.clear(); sphere_radiusv.clear(); sphere_quadraticv.clear();
+    linev.clear(); linetypev.clear(); curvev.clear();
     // rotate+translate+scale g
     vecteur v(gen2vecteur(g));
     for (int i=0;i<v.size();++i){
       gen G=remove_at_pnt(v[i]);
+      bool line=G.subtype==_LINE__VECT,halfline=G.subtype==_HALFLINE__VECT,segment= G.subtype==_GROUP__VECT;
+      if (G.type==_VECT && G._VECTptr->size()==2 && (line || halfline || segment)){
+	gen a=evalf_double(G._VECTptr->front(),1,contextptr),b=evalf_double(G._VECTptr->back(),1,contextptr);
+	if (a.type==_VECT && b.type==_VECT && a._VECTptr->size()==3 && b._VECTptr->size()==3){
+	  vecteur & A=*a._VECTptr;
+	  vecteur & B=*b._VECTptr;
+	  if (A[0].type==_DOUBLE_ && A[1].type==_DOUBLE_ && A[2].type==_DOUBLE_ && B[0].type==_DOUBLE_ && B[1].type==_DOUBLE_ && B[2].type==_DOUBLE_ ){
+	    double X,Y,Z;
+	    do_transform(transform,A[0]._DOUBLE_val,A[1]._DOUBLE_val,A[2]._DOUBLE_val,X,Y,Z);
+	    double3 M(X,Y,Z);
+	    do_transform(transform,B[0]._DOUBLE_val,B[1]._DOUBLE_val,B[2]._DOUBLE_val,X,Y,Z);
+	    double3 N(X,Y,Z);
+	    double3 v(N.x-M.x,N.y-M.y,N.z-M.z);
+	    linev.push_back(M); linev.push_back(v);
+	    linetypev.push_back(G.subtype);
+	  }
+	}
+      }
       if (G.type==_VECT && G.subtype==_POLYEDRE__VECT){
 	vecteur p=*G._VECTptr;
 	for (int j=0;j<p.size();++j){
@@ -5675,7 +5764,6 @@ namespace xcas {
 	double A,B,C,x,y,z,X,Y,Z;
 	A=hyp1v[0]._DOUBLE_val;B=hyp1v[1]._DOUBLE_val;C=hyp1v[2]._DOUBLE_val;
 	do_transform(transform,A,B,C,X,Y,Z);
-	plan_pointv.push_back(double3(X,Y,Z));	
 	gen hyp0=evalf_double(hyp[0],1,contextptr);
 	vecteur & hyp0v=*hyp0._VECTptr;
 	x=hyp0v[0]._DOUBLE_val;y=hyp0v[1]._DOUBLE_val;z=hyp0v[2]._DOUBLE_val;
@@ -5683,8 +5771,14 @@ namespace xcas {
 	A=mat[0]*x+mat[4]*y+mat[8]*z;
 	B=mat[1]*x+mat[5]*y+mat[9]*z;
 	C=mat[2]*x+mat[6]*y+mat[10]*z;
+	double AB=std::abs(A)+std::abs(B);
+	if (std::abs(C)<1e-2*AB){
+	  // almost vertical plane, equation A*(x-X)+B*(y-Y)=0
+	  continue;
+	}
 	A/=C; B/=C;
-	plan_abcv.push_back(double3(-A,-B,Z+A*Z+B*Y));
+	plan_pointv.push_back(double3(X,Y,Z));	
+	plan_abcv.push_back(double3(-A,-B,Z+A*X+B*Y));
 	continue;
       }
       if (G.is_symb_of_sommet(at_hypersurface)){
@@ -6262,6 +6356,15 @@ namespace xcas {
     x/=n; y/=n;
   }
 
+  void Graph2d::addpolyg(vector<int2> & polyg,double x,double y,double z,int2 & IJmin) const {
+    int I,J;
+    xyz2ij(double3(x,y,z),I,J);
+    int2 IJ(I,J);
+    polyg.push_back(IJ);
+    if (IJ<IJmin)
+      IJmin=IJ;
+  }
+
   void Graph2d::draw(){
     if (is3d){
       glsurface(grot,precision,precision,lcdz,contextptr);
@@ -6299,6 +6402,96 @@ namespace xcas {
 	drawLine(Ci,Cj,Di,Dj,12345);
 	drawLine(Ei,Ej,Fi,Fj,12345);
 	drawLine(Gi,Gj,Hi,Hj,12345);
+	// planes
+	vecteur v(gen2vecteur(grot)),attrv(gen2vecteur(g));
+	for (int i=0;i<v.size();++i){
+	  gen cur=remove_at_pnt(v[i]);
+	  int upcolor=44444;
+	  if (cur.is_symb_of_sommet(at_hyperplan)){
+	    gen attr=attrv[i];
+	    if (attr.is_symb_of_sommet(at_pnt)){
+	      attr=attr._SYMBptr->feuille[1];
+	      if (attr.type==_INT_ && (attr.val & 0xffff)!=0){
+		upcolor=attr.val &0xffff;
+	      }
+	    }
+	    vecteur & w=*cur._SYMBptr->feuille._VECTptr;
+	    gen m=evalf_double(w[1],1,contextptr),n=evalf_double(w[0],1,contextptr);
+	    double a=n[0]._DOUBLE_val,b=n[1]._DOUBLE_val,c=n[2]._DOUBLE_val;
+	    double x0=m[0]._DOUBLE_val,y0=m[1]._DOUBLE_val,z0=m[2]._DOUBLE_val;
+	    // a*(x-x0)+b*(y-y0)+c*(z-z0)=0
+	    // replace 2 coordinates of M with window_xyzminmax and find last coord
+	    vector<int2> polyg; int2 IJmin={RAND_MAX,RAND_MAX};
+	    // x
+	    if (a!=0){
+	      double x=x0-1/a*(b*(window_ymin-y0)+c*(window_zmin-z0));
+	      if (x>=window_xmin && x<=window_xmax)
+		addpolyg(polyg,x,window_ymin,window_zmin,IJmin);
+	      x=x0-1/a*(b*(window_ymin-y0)+c*(window_zmax-z0));
+	      if (x>=window_xmin && x<=window_xmax)
+		addpolyg(polyg,x,window_ymin,window_zmax,IJmin);
+	      x=x0-1/a*(b*(window_ymax-y0)+c*(window_zmin-z0));
+	      if (x>=window_xmin && x<=window_xmax)
+		addpolyg(polyg,x,window_ymax,window_zmin,IJmin);
+	      x=x0-1/a*(b*(window_ymax-y0)+c*(window_zmax-z0));
+	      if (x>=window_xmin && x<=window_xmax)
+		addpolyg(polyg,x,window_ymax,window_zmax,IJmin);
+	    }
+	    // y
+	    if (b!=0){
+	      double y=y0-1/b*(a*(window_xmin-x0)+c*(window_zmin-z0));
+	      if (y>=window_ymin && y<=window_ymax)
+		addpolyg(polyg,window_xmin,y,window_zmin,IJmin);
+	      y=y0-1/b*(a*(window_xmin-x0)+c*(window_zmax-z0));
+	      if (y>=window_ymin && y<=window_ymax)
+		addpolyg(polyg,window_xmin,y,window_zmax,IJmin);
+	      y=y0-1/b*(a*(window_xmax-x0)+c*(window_zmin-z0));
+	      if (y>=window_ymin && y<=window_ymax)
+		addpolyg(polyg,window_xmax,y,window_zmin,IJmin);
+	      y=y0-1/b*(a*(window_xmax-x0)+c*(window_zmax-z0));
+	      if (y>=window_ymin && y<=window_ymax)
+		addpolyg(polyg,window_xmax,y,window_zmax,IJmin);
+	    }
+	    // z
+	    if (c!=0){
+	      double z=z0-1/c*(a*(window_xmin-x0)+b*(window_ymin-y0));
+	      if (z>=window_zmin && z<=window_zmax)
+		addpolyg(polyg,window_xmin,window_ymin,z,IJmin);
+	      z=z0-1/c*(a*(window_xmin-x0)+b*(window_ymax-y0));
+	      if (z>=window_zmin && z<=window_zmax)
+		addpolyg(polyg,window_xmin,window_ymax,z,IJmin);
+	      z=z0-1/c*(a*(window_xmax-x0)+b*(window_ymin-y0));
+	      if (z>=window_zmin && z<=window_zmax)
+		addpolyg(polyg,window_xmax,window_ymin,z,IJmin);
+	      z=z0-1/c*(a*(window_xmax-x0)+b*(window_ymax-y0));
+	      if (z>=window_zmin && z<=window_zmax)
+		addpolyg(polyg,window_xmax,window_ymax,z,IJmin);
+	    }
+	    // sort list of arguments
+	    vector<int2_double2> p;
+	    for (int k=0;k<polyg.size();++k){
+	      int2 & cur=polyg[k];
+	      if (cur==IJmin){
+		int2_double2 id={cur.i,cur.j,0,0};
+		p.push_back(id);
+	      } else {
+		double di=cur.i-IJmin.i,dj=cur.j-IJmin.j;
+		int2_double2 id={cur.i,cur.j,atan2(di,dj),di*di+dj*dj};
+		p.push_back(id);
+	      }
+	    }
+	    sort(p.begin(),p.end());
+	    // draw polygon
+	    vector< vector<int> > P;
+	    for (int k=0;k<p.size();++k){
+	      vector<int> vi(2);
+	      vi[0]=p[k].i;
+	      vi[1]=p[k].j;
+	      P.push_back(vi);
+	    }
+	    draw_polygon(P,upcolor,contextptr);
+	  }
+	}
 	// frame
 	double xi=Ci-Ai,xj=Cj-Aj;
 	normalize(xi,xj);
@@ -6847,7 +7040,8 @@ namespace xcas {
 	  gr.precision += 2;
 	  if (gr.precision>9) gr.precision=9;
 	  while (1){
-	    gr.q=rotation_2_quaternion_double(0.707,0.707,0,15)*gr.q;// quaternion_double(15,0,0)*gr.q;
+	    gr.q=quaternion_double(15,0,15)*gr.q;
+	    //gr.q=rotation_2_quaternion_double(0.707,0.707,0,15)*gr.q;// quaternion_double(15,0,0)*gr.q;
 	    gr.update_rotation();
 	    gr.draw();
 #ifdef DEVICE
@@ -6871,11 +7065,12 @@ namespace xcas {
 	  gr.precision += 2;
 	  if (gr.precision>9) gr.precision=9;
 	  while (1){
-	    gr.q=rotation_2_quaternion_double(0.707,0.707,0,-15)*gr.q; // quaternion_double(-15,0,0)*gr.q;
+	    gr.q=quaternion_double(-15,0,-15)*gr.q;
+	    // gr.q=rotation_2_quaternion_double(0.707,0.707,0,-15)*gr.q; // quaternion_double(-15,0,0)*gr.q;
 	    gr.update_rotation();
 	    gr.draw();
 #ifdef DEVICE
-	    if (!iskeydown(KEY_CTRL_RIGHT))
+	    if (!iskeydown(KEY_CTRL_DOWN))
 	      break;
 #else
 	    getkey(key); break;

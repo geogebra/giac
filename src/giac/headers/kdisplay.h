@@ -175,6 +175,20 @@ namespace xcas {
   quaternion_double euler_deg_to_quaternion_double(double a,double b,double c);
   void quaternion_double_to_euler_deg(const quaternion_double & q,double & phi,double & theta, double & psi);
 
+  struct int2 {
+    int i,j;
+    int2(int i_,int j_):i(i_),j(j_) {}
+    int2(): i(0),j(0) {}
+  };
+  bool operator < (const int2 & a,const int2 & b){ if (a.i!=b.i) return a.i<b.i; return a.j<b.j;}
+  bool operator == (const int2 & a,const int2 & b){ return a.i==b.i && a.j==b.j;}
+
+  struct int2_double2 {
+    int i,j;
+    double arg,norm;
+  };
+  bool operator < (const int2_double2 & a,const int2_double2 & b){ if (a.arg!=b.arg) return a.arg<b.arg; return a.norm<b.norm;}
+
   class Graph2d{
   public:
     double window_xmin,window_xmax,window_ymin,window_ymax,window_zmin,window_zmax,
@@ -193,11 +207,15 @@ namespace xcas {
     giac::vecteur sphere_quadraticv; // matrix of the transformed quad. form
     std::vector< std::vector<double3> > polyedrev;
     std::vector<double3> polyedre_abcv;
+    std::vector<double3> linev; // 2 double3 per object
+    std::vector<short> linetypev;
+    std::vector< std::vector<double3> > curvev;
     giac::gen g,grot;
     const giac::context * contextptr;
     bool findij(const giac::gen & e0,double x_scale,double y_scale,double & i0,double & j0,const giac::context * ) const;
     void xyz2ij(const double3 & d,int &i,int &j) const; // d not transformed
     void XYZ2ij(const double3 & d,int &i,int &j) const; // d is transformed
+    void addpolyg(vector<int2> & polyg,double x,double y,double z,int2 & IJmin) const ;
     void update_scales();
     void update();
     void update_rotation(); // update grot

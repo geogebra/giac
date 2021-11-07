@@ -14617,8 +14617,10 @@ void G_idn(vector<unsigned> & G,size_t s){
     if (!in_gbasisf4buchbergermod<tdeg_t>(gbmod,unsigned(gbmod.size()),G,p,/* totdeg */ true,0,0,true))
       return false;
     vectpolymod<tdeg_t> newgb;
-    for (unsigned i=0;i<G.size();++i)
-      newgb.push_back(gbmod[G[i]]);
+    for (unsigned i=0;i<G.size();++i){
+      if (!gbmod[G[i]].coord.empty())
+	newgb.push_back(gbmod[G[i]]);
+    }
     newgb.swap(gbmod);
     lm.coord.clear();
     if (rur_quotient_ideal_dimension(gbmod,lm)<0)
