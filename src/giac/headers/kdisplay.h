@@ -157,6 +157,11 @@ namespace xcas {
     double3(double x_,double y_,double z_):x(x_),y(y_),z(z_){};
     double3():x(0),y(0),z(0){};
   };
+
+  struct int4 {
+    int u,d,du,dd;
+    int4(int u_,int d_,int du_,int dd_):u(u_),d(d_),du(du_),dd(dd_) {}
+  };
   
   // quaternion struct for more intuitive rotations
   struct quaternion_double {
@@ -189,6 +194,11 @@ namespace xcas {
   };
   bool operator < (const int2_double2 & a,const int2_double2 & b){ if (a.arg!=b.arg) return a.arg<b.arg; return a.norm<b.norm;}
 
+#define giac3d_default_upcolor 65535
+#define giac3d_default_downcolor 12345
+#define giac3d_default_downupcolor 18432 // 12297
+#define giac3d_default_downdowncolor 12294 // 617
+  
   class Graph2d{
   public:
     double window_xmin,window_xmax,window_ymin,window_ymax,window_zmin,window_zmax,
@@ -197,9 +207,9 @@ namespace xcas {
     quaternion_double q;
     double transform[16],invtransform[16];
     // only 12 used, last line [0,0,0,1], usual matrices, not transposed
-    int display_mode,show_axes,show_names,labelsize,lcdz;
-    short int precision;
-    bool is3d;
+    int display_mode,show_axes,show_names,labelsize,lcdz,default_upcolor,default_downcolor,default_downupcolor,default_downdowncolor;
+    short int precision,diffusionz,diffusionz_limit;
+    bool is3d,doprecise,hide2nd,interval;
     std::vector<double3> plan_pointv; // point in plan 
     std::vector<double3> plan_abcv; // plan equation z=a*x+b*y+c
     std::vector<double3> sphere_centerv;
@@ -210,6 +220,9 @@ namespace xcas {
     std::vector<double3> linev; // 2 double3 per object
     std::vector<short> linetypev;
     std::vector< std::vector<double3> > curvev;
+    std::vector<double3> pointv; 
+    std::vector<const char *> points; // legende
+    std::vector<int4> plan_color,sphere_color,polyedre_color,line_color,curve_color;
     giac::gen g,grot;
     const giac::context * contextptr;
     bool findij(const giac::gen & e0,double x_scale,double y_scale,double & i0,double & j0,const giac::context * ) const;
@@ -232,8 +245,7 @@ namespace xcas {
     void autoscale(bool fullview=false);
     void orthonormalize();
     void draw();
-    bool glsurface(const giac::gen & surfaceg,int w,int h,int lcdz,const giac::context*,
-		   int upcolor=65535,int downcolor=12345,int downupcolor=44444,int downdowncolor=1024) ;
+    bool glsurface(const giac::gen & surfaceg,int w,int h,int lcdz,const giac::context*,int upcolor,int downcolor,int downupcolor,int downdowncolor) ;
     Graph2d(const giac::gen & g_,const giac::context * );
   };
 
