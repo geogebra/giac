@@ -185,14 +185,14 @@ namespace xcas {
     int2(int i_,int j_):i(i_),j(j_) {}
     int2(): i(0),j(0) {}
   };
-  bool operator < (const int2 & a,const int2 & b){ if (a.i!=b.i) return a.i<b.i; return a.j<b.j;}
-  bool operator == (const int2 & a,const int2 & b){ return a.i==b.i && a.j==b.j;}
+  inline bool operator < (const int2 & a,const int2 & b){ if (a.i!=b.i) return a.i<b.i; return a.j<b.j;}
+  inline bool operator == (const int2 & a,const int2 & b){ return a.i==b.i && a.j==b.j;}
 
   struct int2_double2 {
     int i,j;
     double arg,norm;
   };
-  bool operator < (const int2_double2 & a,const int2_double2 & b){ if (a.arg!=b.arg) return a.arg<b.arg; return a.norm<b.norm;}
+  inline bool operator < (const int2_double2 & a,const int2_double2 & b){ if (a.arg!=b.arg) return a.arg<b.arg; return a.norm<b.norm;}
 
 #define giac3d_default_upcolor 65535
 #define giac3d_default_downcolor 12345

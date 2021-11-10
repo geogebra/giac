@@ -1047,6 +1047,12 @@ namespace giac {
       double dx=ustep;
       double dy=vstep;
       int nu=int((function_umax-function_umin)/ustep+.5),nv=int((function_vmax-function_vmin)/vstep+.5);
+#ifdef KHICAS
+      if (nu*nv>=900){
+	nu=30;
+	nv=30;
+      }
+#endif
       // Compute a grid of values
       vecteur values;
       for (int i=0;i<=nu;++i,x+=dx){
@@ -1988,7 +1994,9 @@ namespace giac {
     gen lieu_geo;
     if (equation2geo3d(f_orig,undef,x,y,z,lieu_geo,gnuplot_tmin,gnuplot_tmax,gnuplot_tstep,gnuplot_tmin,gnuplot_tmax,gnuplot_tstep,true,contextptr))
       return put_attributs(lieu_geo,attributs,contextptr);
-    //return undef;
+#ifdef KHICAS
+    return undef;
+#endif
     if (nxstep*double(nystep)*nzstep>8000){
       nxstep=10;
       nystep=10;

@@ -755,7 +755,8 @@ namespace giac {
 #define CAT_CATEGORY_SOFUS 18
 #define CAT_CATEGORY_PHYS 19
 #define CAT_CATEGORY_UNIT 20
-#define CAT_CATEGORY_LOGO 21 // should be the last one
+#define CAT_CATEGORY_3D 21
+#define CAT_CATEGORY_LOGO 22 // should be the last one
 #define XCAS_ONLY 0x80000000
   void init_locale(){
     lang=1;
@@ -897,6 +898,7 @@ namespace giac {
     {"coeff(p,x,n)", 0, "Coefficient de x^n dans le polynome p.", "(1+x)^6,x,3", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
     {"comb(n,k)", 0, "Renvoie k parmi n.", "10,4", 0, CAT_CATEGORY_PROBA | XCAS_ONLY},
     {"cond(A,[1,2,inf])", 0, "Nombre de condition d'une matrice par rapport a la norme specifiee (par defaut 1)", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX | XCAS_ONLY},
+    {"cone(A,v,theta,[h])", 0, "Cone de sommet A, axe v, angle theta, hauteur h optionnelle", "[0,0,0],[0,0,1],pi/6", "[0,0,0],[0,0,1],pi/6,4", CAT_CATEGORY_3D},
     {"conj(z)", 0, "Conjugue complexe de z.", "1+i", 0, CAT_CATEGORY_COMPLEXNUM},
     {"correlation(l1,l2)", 0, "Correlation listes l1 et l2", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
     {"covariance(l1,l2)", 0, "Covariance listes l1 et l2", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
@@ -904,8 +906,10 @@ namespace giac {
     {"crayon ", "crayon ", "Couleur de trace de la tortue", "#crayon rouge", 0, CAT_CATEGORY_LOGO},
     {"cross(u,v)", 0, "Produit vectoriel de u et v.","[1,2,3],[0,1,3]", 0, CAT_CATEGORY_LINALG},
     {"csolve(equation,x)", 0, "Resolution exacte dans C d'une equation en x (ou d'un systeme polynomial).","x^2+x+1=0", 0, CAT_CATEGORY_SOLVE | (CAT_CATEGORY_COMPLEXNUM << 8) | XCAS_ONLY},
+    {"cube(A,B,C)", 0, "Cube d'arete AB avec une face dans le plan ABC", "[0,0,0],[0,2,sqrt(5)/2+3/2],[0,0,1]", 0, CAT_CATEGORY_3D},
     {"curl(u,vars)", 0, "Rotationnel du vecteur u.", "[2*x*y,x*z,y*z],[x,y,z]", 0, CAT_CATEGORY_LINALG | XCAS_ONLY},
     {"cyan", "cyan", "Option d'affichage", "#display=cyan", 0, CAT_CATEGORY_PROGCMD},
+    {"cylinder(A,v,r,[h])", 0, "Cylindre d'axe A,v de rayon r et de hauteur optionnelle h", "[0,0,0],[0,1,0],2", "[0,0,0],[0,1,0],2,3", CAT_CATEGORY_3D},
     {"debug(f(args))", 0, "Execute la fonction f en mode pas a pas.", 0, 0, CAT_CATEGORY_PROG | XCAS_ONLY},
     {"degree(p,x)", 0, "Degre du polynome p en x.", "x^4-1", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
     {"denom(x)", 0, "Denominateur de l'expression x.", "3/4", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
@@ -915,6 +919,7 @@ namespace giac {
     {"display", "display", "Option d'affichage", "#display=red", 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
     {"disque n", "disque ", "Cercle rempli tangent a la tortue, de rayon n. Utiliser disque n,theta pour remplir un morceau de camembert ou disque n,theta,segment pour remplir un segment de disque", "#disque 30", "#disque(30,90)", CAT_CATEGORY_LOGO},
     {"dot(a,b)", 0, "Produit scalaire de 2 vecteurs. Raccourci: *", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_LINALG},
+    {"dodecahedron(A,B,C)", 0, "Dodecaedre d'arete AB avec une face dans le plan ABC", "[0,0,0],[0,2,sqrt(5)/2+3/2],[0,0,1]", 0, CAT_CATEGORY_3D},
     {"draw_arc(x1,y1,rx,ry,theta1,theta2,c)", 0, "Arc d'ellipse pixelise.", "100,100,60,80,0,pi,magenta", 0, CAT_CATEGORY_PROGCMD},
     {"draw_circle(x1,y1,r,c)", 0, "Cercle pixelise. Option filled pour le remplir.", "100,100,60,cyan+filled", 0, CAT_CATEGORY_PROGCMD},
     {"draw_line(x1,y1,x2,y2,c)", 0, "Droite pixelisee.", "100,50,300,200,blue", 0, CAT_CATEGORY_PROGCMD},
@@ -967,6 +972,7 @@ namespace giac {
     {"histogram(list,min,size)", 0, "Histogramme d'une liste de donneees, classes commencant a min de taille size.","ranv(100,uniformd,0,1),0,0.1", 0, CAT_CATEGORY_STATS | (CAT_CATEGORY_PLOT<<8)},
     {"iabcuv(a,b,c)", 0, "Cherche 2 entiers u,v tels que a*u+b*v=c","23,13,15", 0, CAT_CATEGORY_ARIT | XCAS_ONLY},
     {"ichinrem([a,m],[b,n])", 0,"Restes chinois entiers de a mod m et b mod n.", "[3,13],[2,7]", 0, CAT_CATEGORY_ARIT | XCAS_ONLY},
+    {"icosahedron(A,B,C)", 0, "Icosaedre de centre A, de sommet B où le plan ABC contient le sommet le plus proche (parmi les 5) de B", "[0,0,0],[sqrt(5),0,0],[1,2,0]", 0, CAT_CATEGORY_3D},
     {"idivis(n)", 0, "Liste des diviseurs d'un entier n.", "10", 0, CAT_CATEGORY_ARIT},
     {"idn(n)", 0, "matrice identite n * n", "4", 0, CAT_CATEGORY_MATRIX},
     {"iegcd(a,b)", 0, "Determine les entiers u,v,d tels que a*u+b*v=d=gcd(a,b)","23,13", 0, CAT_CATEGORY_ARIT},
@@ -993,6 +999,7 @@ namespace giac {
 #endif
     {"leve_crayon ", "leve_crayon ", "La tortue se deplace sans marquer son passage", 0, 0, CAT_CATEGORY_LOGO},
     {"limit(f,x=a)", 0, "Limite de f en x = a. Ajouter 1 ou -1 pour une limite a droite ou a gauche, limit(sin(x)/x,x=0) ou limit(abs(x)/x,x=0,1). Raccourci: SHIFT MIXEDFRAC", "sin(x)/x,x=0", "exp(-1/x),x=0,1", CAT_CATEGORY_CALCULUS | XCAS_ONLY},
+    {"line(A,B)", 0, "Droite donnee par equation ou 2 points", "y=x-1", "[0,0,0],[1,-2,3]", CAT_CATEGORY_3D | XCAS_ONLY},
     {"line_width_", "line_width_", "Prefixe d'epaisseur (2 a 8)", 0, 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
     {"linear_regression(Xlist,Ylist)", 0, "Regression lineaire.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
     {"linear_regression_plot(Xlist,Ylist)", 0, "Graphe d'une regression lineaire.", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];linear_regression_plot(X,Y);", 0, CAT_CATEGORY_STATS | (CAT_CATEGORY_PLOT<<8)},
@@ -1014,23 +1021,27 @@ namespace giac {
     {"normald([mu,sigma],x)", 0, "Loi normale, par defaut mu=0 et sigma=1. normald_cdf([mu,sigma],x) probabilite que \"loi normale <=x\" par ex. normald_cdf(1.96). normald_icdf([mu,sigma],t) renvoie x tel que \"loi normale <=x\" vaut t, par ex. normald_icdf(0.975) ", "1.2", 0, CAT_CATEGORY_PROBA | XCAS_ONLY},
     {"not(x)", 0, "Non logique.", 0, 0, CAT_CATEGORY_PROGCMD},
     {"numer(x)", 0, "Numerateur de x.", "3/4", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
+    {"octahedron(A,B,C)", 0, "Octaedre d'arete AB avec une face dans le plan ABC", "[0,0,0],[3,0,0],[0,1,0]", 0, CAT_CATEGORY_3D},
     {"odesolve(f(t,y),[t,y],[t0,y0],t1)", 0, "Solution approchee d'equation differentielle y'=f(t,y) et y(t0)=y0, valeur en t1 (ajouter curve pour les valeurs intermediaires de y)", "sin(t*y),[t,y],[0,1],2", "0..pi,(t,v)->{[-v[1],v[0]]},[0,1]", CAT_CATEGORY_SOLVE | XCAS_ONLY},
     {"partfrac(p,x)", 0, "Decomposition en elements simples. Raccourci p=>+", "1/(x^4-1)", 0, CAT_CATEGORY_ALGEBRA | XCAS_ONLY},
     {"pas_de_cote n", "pas_de_cote ", "Saut lateral de la tortue, par defaut n=10", "#pas_de_cote 30", 0, CAT_CATEGORY_LOGO},
-    {"plot(expr,x)", 0, "Xcas: graphe de fonction, par exemple plot(sin(x)), plot(ln(x),x.0,5). Python et Xcas: plot(Xlist,Ylist) ligne polygonale", "[1,2,3,4,5,6],[2,3,5,2,1,4]","ln(x),x=0..5,xstep=0.1", CAT_CATEGORY_PLOT},
+    {"plane(equation)", 0, "Plan donne par equation ou 3 points", "z=x+y-1", "[0,0,0],[1,0,0],[0,1,0]", CAT_CATEGORY_3D | XCAS_ONLY},
+    {"plot(expr,x)", 0, "Xcas: graphe de fonction, par exemple plot(sin(x)), plot(ln(x),x.0,5). Python et Xcas: plot(Xlist,Ylist) ligne polygonale", "[1,2,3,4,5,6],[2,3,5,2,1,4]","ln(x),x=0..5,xstep=0.1", CAT_CATEGORY_PLOT },
+    {"plotfunc(expr,[x,y])", 0, "Xcas: graphe de fonction 3d", "x^2-y^2,[x,y]","x^2-y^2,[x=-2..2,y=-2..2],nstep=700", CAT_CATEGORY_PLOT | (CAT_CATEGORY_3D << 8) | XCAS_ONLY },
     {"plotarea(expr,x=a..b,[n,meth])", 0, "Aire sous la courbe selon une methode d'integration.", "1/x,x=1..5,4,rectangle_gauche", 0, CAT_CATEGORY_PLOT | XCAS_ONLY},
     {"plotcontour(expr,[x=xm..xM,y=ym..yM],niveaux)", 0, "Lignes de niveau de expr.", "x^2+2y^2, [x=-2..2,y=-2..2],[1,2]", 0, CAT_CATEGORY_PLOT | XCAS_ONLY},
     {"plotdensity(expr,[x=xm..xM,y=ym..yM])", 0, "Representation en niveaux de couleurs d'une expression de 2 variables.", "x^2-y^2,[x=-3..3,y=-2..2]", 0, CAT_CATEGORY_PLOT | XCAS_ONLY},
     {"plotfield(f(t,y), [t=tmin..tmax,y=ymin..ymax])", 0, "Champ des tangentes de y'=f(t,y), optionnellement graphe avec plotode=[t0,y0]", "sin(t*y), [t=-3..3,y=-3..3],plotode=[0,1]", "5*[-y,x], [x=-1..1,y=-1..1]", CAT_CATEGORY_PLOT | XCAS_ONLY},
     {"plotlist(list)", 0, "Graphe d'une liste", "[3/2,2,1,1/2,3,2,3/2]", "[1,13],[2,10],[3,15],[4,16]", CAT_CATEGORY_PLOT | XCAS_ONLY},
     {"plotode(f(t,y), [t=tmin..tmax,y],[t0,y0])", 0, "Graphe de solution d'equation differentielle y'=f(t,y), y(t0)=y0.", "sin(t*y),[t=-3..3,y],[0,1]", 0, CAT_CATEGORY_PLOT | XCAS_ONLY},
-    {"plotparam([x,y],t)", 0, "Graphe en parametriques. Par exemple plotparam([sin(3t),cos(2t)],t,0,pi) ou plotparam(exp(i*t),t,0,pi)", "[sin(3t),cos(2t)],t,0,pi", "[t^2,t^3],t=-1..1,tstep=0.1", CAT_CATEGORY_PLOT | XCAS_ONLY},
+    {"plotparam([x,y],t)", 0, "Graphe en parametriques. Par exemple plotparam([sin(3t),cos(2t)],t,0,pi) ou plotparam(exp(i*t),t,0,pi)", "[sin(3t),cos(2t)],t,0,pi", "[t^2,t^3],t=-1..1,tstep=0.1", CAT_CATEGORY_PLOT | (CAT_CATEGORY_3D << 8) | XCAS_ONLY},
     {"plotpolar(r,theta)", 0, "Graphe en polaire.","cos(3*x),x,0,pi", "1/(1+cos(x)),x=0..pi,xstep=0.05", CAT_CATEGORY_PLOT | XCAS_ONLY},
     {"plotseq(f(x),x=[u0,m,M],n)", 0, "Trace f(x) sur [m,M] et n termes de la suite recurrente u_{n+1}=f(u_n) de 1er terme u0.","sqrt(2+x),x=[6,0,7],5", 0, CAT_CATEGORY_PLOT | XCAS_ONLY},
     {"plus_point", "plus_point", "Option d'affichage", "#display=blue+plus_point", 0, CAT_CATEGORY_PROGCMD  | XCAS_ONLY},
     {"point(x,y)", 0, "Point", "1,2", 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
     {"polygon(list)", 0, "Polygone ferme.", "1-i,2+i,3", 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
     {"polygonscatterplot(Xlist,Ylist)", 0, "Nuage de points relies.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
+    {"polyhedron(A,B,C,D,...)", 0, "Polyedre convexe dont les sommets sont parmi A,B,C,D,...", "[0,0,0],[0,5,0],[0,0,5],[1,2,6]", 0, CAT_CATEGORY_3D},
     {"polynomial_regression(Xlist,Ylist,n)", 0, "Regression polynomiale de degre <= n.", "[1,2,3,4,5],[0,1,3,4,4],2", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
     {"polynomial_regression_plot(Xlist,Ylist,n)", 0, "Graphe d'une regression polynomiale de degre <= n.", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];polynomial_regression_plot(X,Y,2);scatterplot(X,Y);", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
     {"pour (boucle Xcas)", "pour  de  to  faire  fpour;", "Boucle definie.","#pour j de 1 to 10 faire print(j,j^2); fpour;", 0, CAT_CATEGORY_PROG | XCAS_ONLY},
@@ -1043,6 +1054,7 @@ namespace giac {
     {"peval(p,x)", 0, "Valeur d'un polynome en un point", "[1,2,3],4", 0, CAT_CATEGORY_POLYNOMIAL},
     {"proot(p)", 0, "Racines reelles et complexes approchees d'un polynome. Exemple proot([1,2.1,3,4.2]) ou proot(x^3+2.1*x^2+3x+4.2)", "[1.,2.1,3,4.2]","x^3+2.1*x^2+3x+4.2", CAT_CATEGORY_POLYNOMIAL|(CAT_CATEGORY_SOLVE<<8)},
     {"purge(x)", 0, "Purge le contenu de la variable x. Raccourci SHIFT-FORMAT", 0, 0, CAT_CATEGORY_PROGCMD | (CAT_CATEGORY_SOFUS<<8) | XCAS_ONLY},
+    {"pyramid(A,B,C)", 0, "Tetraedre d'arete AB avec une face dans le plan ABC", "[0,0,0],[3,0,0],[0,1,0]", "[0,0,0],[3,0,0],[0,3,0],[0,0,4]", CAT_CATEGORY_3D},
     {"python(f)", 0, "Affiche la fonction f en syntaxe Python.", 0, 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
     {"python_compat(0|1|2|4)", 0, "python_compat(0) syntaxe Xcas, python_compat(1) syntaxe Python avec ^ interprete comme puissance, python_compat(2) ^ interprete comme ou exclusif bit a bit", "0", "1", CAT_CATEGORY_PROG | XCAS_ONLY},
     {"qr(A)", 0, "Factorisation A=Q*R avec Q orthogonale et R triangulaire superieure", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX | XCAS_ONLY},
@@ -1083,6 +1095,7 @@ namespace giac {
     {"sin_regression_plot(Xlist,Ylist)", 0, "Graphe d'une regression trigonometrique.", "#X,Y:=[1,2,3,4,5,6,7,8,9,10,11,12,13,14],[0.1,0.5,0.8,1,0.7,0.5,0.05,-.5,-.75,-1,-.7,-.4,0.1,.5];sin_regression_plot(X,Y);", 0, CAT_CATEGORY_STATS  | XCAS_ONLY},
     {"solve()", 0, "Xcas: solve(equation,x) resolution exacte d'une equation en x (ou d'un systeme polynomial). Utiliser csolve pour les solutions complexes, linsolve pour un systeme lineaire. Python et Xcas: solve(A,b) resolution d'un systeme de Cramer A*x=b", "x^2-x-1=0,x", "[x^2-y^2=0,x^2-z^2=0],[x,y,z]", CAT_CATEGORY_SOLVE},
     {"sorted(l)", 0, "Trie une liste.","[3/2,2,1,1/2,3,2,3/2]", "[[1,2],[2,3],[4,3]],(x,y)->when(x[1]==y[1],x[0]>y[0],x[1]>y[1]", CAT_CATEGORY_LIST},
+    {"sphere(A,r)", 0, "Sphere de centre A et rayon r ou de diametre AB", "[0,0,0],1", "[0,0,0],[1,1,1]", CAT_CATEGORY_3D},
     {"square_point", "square_point", "Option d'affichage", "#display=cyan+square_point", 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY },
     {"star_point", "star_point", "Option d'affichage", "#display=magenta+star_point", 0, CAT_CATEGORY_PROGCMD  | XCAS_ONLY},
     {"stddev(l)", 0, "Ecart-type d'une liste l", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_STATS | XCAS_ONLY},
@@ -1249,6 +1262,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   {"coeff(p,x,n)", 0, "Coefficient of x^n in polynomial p.", 0, 0, CAT_CATEGORY_POLYNOMIAL},
   {"comb(n,k)", 0, "Returns nCk", "10,4", 0, CAT_CATEGORY_PROBA},
   {"cond(A,[1,2,inf])", 0, "Nombre de condition d'une matrice par rapport a la norme specifiee (par defaut 1)", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
+  {"cone(A,v,theta,[h])", 0, " cone with vertex A, direction v, and with half_angle t [and with altitudes h and -h]", "[0,0,0],[0,0,1],pi/6", "[0,0,0],[0,0,1],pi/6,4", CAT_CATEGORY_3D},
   {"conj(z)", 0, "Complex conjugate of z.", "1+i", 0, CAT_CATEGORY_COMPLEXNUM},
   {"correlation(l1,l2)", 0, "Correlation of lists l1 and l2", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
   {"covariance(l1,l2)", 0, "Covariance of lists l1 and l2", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
@@ -1256,8 +1270,10 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   {"crayon ", "crayon ", "Turtle drawing color", "#crayon red", 0, CAT_CATEGORY_LOGO},
   {"cross(u,v)", 0, "Cross product of vectors u and v.","[1,2,3],[0,1,3]", 0, CAT_CATEGORY_LINALG},
   {"csolve(equation,x)", 0, "Solve equation (or polynomial system) in exact mode over the complex numbers.","x^2+x+1=0", 0, CAT_CATEGORY_SOLVE| (CAT_CATEGORY_COMPLEXNUM << 8)},
+  {"cube(A,B,C)", 0, "Cube of edge AB with one face in plane ABC", "[0,0,0],[0,2,sqrt(5)/2+3/2],[0,0,1]", 0, CAT_CATEGORY_3D},
   {"curl(u,vars)", 0, "Curl of vector u.", "[2*x*y,x*z,y*z],[x,y,z]", 0, CAT_CATEGORY_LINALG},
   {"cyan", "cyan", "Display option", "#display=cyan", 0, CAT_CATEGORY_PROGCMD},
+  {"cylinder(A,v,r,[h])", 0, "Cylinder of axis A,v and radius r [and optional altitude h]", "[0,0,0],[0,1,0],2", "[0,0,0],[0,1,0],2,3", CAT_CATEGORY_3D},
   {"debug(f(args))", 0, "Runs user function f in step by step mode.", 0, 0, CAT_CATEGORY_PROG},
   {"degree(p,x)", 0, "Degre of polynomial p in x.", "x^4-1", 0, CAT_CATEGORY_POLYNOMIAL},
   {"denom(x)", 0, "Denominator of expression x.", "3/4", 0, CAT_CATEGORY_POLYNOMIAL},
@@ -1266,6 +1282,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   {"diff(f,var,[n])", 0, "Derivative of expression f with respect to var (order n, n=1 by default), for example diff(sin(x),x) or diff(x^3,x,2). For derivation with respect to x, run f' (shortcut F3). For the gradient of f, var is the list of variables.", "sin(x),x", "sin(x^2),x,3", CAT_CATEGORY_CALCULUS},
   {"display", "display", "Display option", "#display=red", 0, CAT_CATEGORY_PROGCMD},
   {"disque n", "disque ", "Filled circle tangent to the turtle, radius n. Run disque n,theta for a filled arc of circle, theta in degrees, or disque n,theta,segment for a segment of circle.", "#disque 30", "#disque(30,90)", CAT_CATEGORY_LOGO},
+  {"dodecahedron(A,B,C)", 0, "Dodecahedron of edge AB with one face in plane ABC", "[0,0,0],[0,2,sqrt(5)/2+3/2],[0,0,1]", 0, CAT_CATEGORY_3D},
   {"dot(a,b)", 0, "Dot product of 2 vectors. Shortcut: *", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_LINALG},
   {"draw_arc(x1,y1,rx,ry,theta1,theta2,c)", 0, "Pixelised arc of ellipse.", "100,100,60,80,0,pi,magenta", 0, CAT_CATEGORY_PROGCMD},
   {"draw_circle(x1,y1,r,c)", 0, "Pixelised circle. Option: filled", "100,100,60,cyan+filled", 0, CAT_CATEGORY_PROGCMD},
@@ -1315,7 +1332,8 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   {"histogram(list,min,size)", 0, "Histogram of data in list, classes begin at min of size size.","ranv(100,uniformd,0,1),0,0.1", 0, CAT_CATEGORY_STATS},
   {"iabcuv(a,b,c)", 0, "Find 2 integers u,v such that a*u+b*v=c","23,13,15", 0, CAT_CATEGORY_ARIT},
   {"ichinrem([a,m],[b,n])", 0,"Integer chinese remainder of a mod m and b mod n.", "[3,13],[2,7]", 0, CAT_CATEGORY_ARIT},
-  {"idivis(n)", 0, "Returns the list of divisors of an integer n.", "10", 0, CAT_CATEGORY_ARIT},
+  {"icosahedron(A,B,C)", 0, "Icosahedron with center A, vertex B and such that the plane ABC contains one vertex among the 5 nearest vertices from B ", "[0,0,0],[sqrt(5),0,0],[1,2,0]", 0, CAT_CATEGORY_3D},
+   {"idivis(n)", 0, "Returns the list of divisors of an integer n.", "10", 0, CAT_CATEGORY_ARIT},
   {"idn(n)", 0, "Identity matrix of order n", "4", 0, CAT_CATEGORY_MATRIX},
   {"iegcd(a,b)", 0, "Find integers u,v,d such that a*u+b*v=d=gcd(a,b)","23,13", 0, CAT_CATEGORY_ARIT},
   {"ifactor(n)", 0, "Factorization of an integer (not too large!). Shortcut n=>*", 0, 0, CAT_CATEGORY_ARIT},
@@ -1340,7 +1358,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 #endif
   {"leve_crayon ", "leve_crayon ", "Turtle moves without trace.", 0, 0, CAT_CATEGORY_LOGO},
   {"limit(f,x=a)", 0, "Limit of f at x = a. Add 1 or -1 for unidirectional limits, e.g. limit(sin(x)/x,x=0) or limit(abs(x)/x,x=0,1). Shortcut: SHIFT MIXEDFRAC", "sin(x)/x,x=0", "exp(-1/x),x=0,1", CAT_CATEGORY_CALCULUS},
-  {"line(equation)", 0, "Line of equation", "y=2x+1", 0, CAT_CATEGORY_PROGCMD},
+  {"line(equation)", 0, "Line of equation", "y=2x+1", "[0,0,0],[1,-2,3]", CAT_CATEGORY_PROGCMD},
   {"line_width_", "line_width_", "Width prefix (2 to 8)", 0, 0, CAT_CATEGORY_PROGCMD},
   {"linear_regression(Xlist,Ylist)", 0, "Linear regression.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
   {"linear_regression_plot(Xlist,Ylist)", 0, "Linear regression plot.", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];linear_regression_plot(X,Y);scatterplot(X,Y)", 0, CAT_CATEGORY_STATS},
@@ -1361,15 +1379,18 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   {"normald([mu,sigma],x)", 0, "Normal distribution probability density, by default mu=0 and sigma=1. normald_cdf([mu,sigma],x) probability that \"normal distribution <=x\" e.g. normald_cdf(1.96). normald_icdf([mu,sigma],t) returns x such that \"normal distribution <=x\" has probability t, e.g. normald_icdf(0.975) ", "1.2", 0, CAT_CATEGORY_PROBA},
   {"not(x)", 0, "Logical not.", 0, 0, CAT_CATEGORY_PROGCMD},
   {"numer(x)", 0, "Numerator of x.", "3/4", 0, CAT_CATEGORY_POLYNOMIAL},
+  {"octahedron(A,B,C)", 0, "Octahedron of edge AB with one face in plane ABC", "[0,0,0],[3,0,0],[0,1,0]", 0, CAT_CATEGORY_3D},
   {"odesolve(f(t,y),[t,y],[t0,y0],t1)", 0, "Approx. solution of differential equation y'=f(t,y) and y(t0)=y0, value for t=t1 (add curve to get intermediate values of y)", "sin(t*y),[t,y],[0,1],2", "0..pi,(t,v)->{[-v[1],v[0]]},[0,1]", CAT_CATEGORY_SOLVE},
   {"partfrac(p,x)", 0, "Partial fraction expansion. Shortcut p=>+", "1/(x^4-1)", 0, CAT_CATEGORY_ALGEBRA},
   {"pas_de_cote n", "pas_de_cote ", "Turtle side jump from n steps, by default n=10", "#pas_de_cote 30", 0, CAT_CATEGORY_LOGO},
+  {"plane(equation)", 0, "Plane given by equation or by 3 points", "z=x+y-1", "[0,0,0],[1,0,0],[0,1,0]", CAT_CATEGORY_3D | XCAS_ONLY},
   {"plot(expr,x)", 0, "Plot an expression. For example plot(sin(x)), plot(ln(x),x.0,5)", "ln(x),x,0,5", "1/x,x=1..5,xstep=1", CAT_CATEGORY_PLOT},
 #ifdef RELEASE
   {"plotarea(expr,x=a..b,[n,meth])", 0, "Area under curve with specified quadrature.", "1/x,x=1..3,2,trapezoid", 0, CAT_CATEGORY_PLOT},
 #endif
   {"plotcontour(expr,[x=xm..xM,y=ym..yM],levels)", 0, "Levels of expr.", "x^2+2y^2,[x=-2..2,y=-2..2],[1,2]", 0, CAT_CATEGORY_PLOT},
   {"plotfield(f(t,y),[t=tmin..tmax,y=ymin..ymax])", 0, "Plot field of differential equation y'=f(t,y), an optionally one solution by adding plotode=[t0,y0]", "sin(t*y),[t=-3..3,y=-3..3],plotode=[0,1]", 0, CAT_CATEGORY_PLOT},
+  {"plotfunc(expr,[x,y])", 0, "Xcas: graph of a 3d function", "x^2-y^2,[x,y]","x^2-y^2,[x=-2..2,y=-2..2],nstep=700", CAT_CATEGORY_PLOT | (CAT_CATEGORY_3D << 8) | XCAS_ONLY },
   {"plotlist(list)", 0, "Plot a list", "[3/2,2,1,1/2,3,2,3/2]", 0, CAT_CATEGORY_PLOT},
   {"plotode(f(t,y),[t=tmin..tmax,y],[t0,y0])", 0, "Plot solution of differential equation y'=f(t,y), y(t0)=y0.", "sin(t*y),[t=-3..3,y],[0,1]", 0, CAT_CATEGORY_PLOT},
   {"plotparam([x,y],t)", 0, "Parametric plot. For example plotparam([sin(3t),cos(2t)],t,0,pi) or plotparam(exp(i*t),t,0,pi)", "[sin(3t),cos(2t)],t,0,pi", "[t^2,t^3],t=-1..1,tstep=0.1", CAT_CATEGORY_PLOT},
@@ -1379,6 +1400,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   {"point(x,y)", 0, "Point", "1,2", 0, CAT_CATEGORY_PLOT},
   {"polygon(list)", 0, "Closed polygon.", "1-i,2+i,3", 0, CAT_CATEGORY_PROGCMD},
   {"polygonscatterplot(Xlist,Ylist)", 0, "Plot points and polygonal line.", "[1,2,3,4,5],[0,1,3,4,4]", 0, CAT_CATEGORY_STATS},
+  {"polyhedron(A,B,C,D,...)", 0, "Convex polyhedron of vertices in A,B,C,D,...", "[0,0,0],[0,5,0],[0,0,5],[1,2,6]", 0, CAT_CATEGORY_3D},
   {"polynomial_regression(Xlist,Ylist,n)", 0, "Polynomial regression, degree <= n.", "[1,2,3,4,5],[0,1,3,4,4],2", 0, CAT_CATEGORY_STATS},
   {"polynomial_regression_plot(Xlist,Ylist,n)", 0, "Polynomial regression plot, degree <= n.", "#X,Y:=[1,2,3,4,5],[0,1,3,4,4];polynomial_regression_plot(X,Y,2);scatterplot(X,Y)", 0, CAT_CATEGORY_STATS},
   //{"pour", "pour j de 1 jusque  faire  fpour;", "For loop.","#pour j de 1 jusque 10 faire print(j,j^2); fpour;", 0, CAT_CATEGORY_PROG},
@@ -1422,6 +1444,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   //{"si", "si  alors  sinon  fsi;", "Test.", "#f(x):=si x>0 alors x; sinon -x; fsi;// valeur absolue", 0, CAT_CATEGORY_PROG},
   {"sign(x)", 0, "Returns -1 if x is negative, 0 if x is zero and 1 if x is positive.", 0, 0, CAT_CATEGORY_REAL|XCAS_ONLY},
   {"simplify(expr)", 0, "Returns x in a simpler form. Shortcut expr=>/", "sin(3x)/sin(x)", 0, CAT_CATEGORY_ALGEBRA},
+  {"sphere(A,r)", 0, "Sphere of center A and radius r or diameter AB", "[0,0,0],1", "[0,0,0],[1,1,1]", CAT_CATEGORY_3D},
   {"solve(equation,x)", 0, "Exact solving of equation w.r.t. x (or of a polynomial system). Run csolve for complex solutions, linsolve for a linear system. Shortcut SHIFT XthetaT", "x^2-x-1=0,x", "[x^2-y^2=0,x^2-z^2=0],[x,y,z]", CAT_CATEGORY_SOLVE},
   {"sorted(l)", 0, "Sorts a list.","[3/2,2,1,1/2,3,2,3/2]", "[[1,2],[2,3],[4,3]],(x,y)->when(x[1]==y[1],x[0]>y[0],x[1]>y[1]", CAT_CATEGORY_LIST},
   {"square_point", "square_point", "Display option", "#display=cyan+square_point", 0, CAT_CATEGORY_PROGCMD},
@@ -1533,6 +1556,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     menuitems[CAT_CATEGORY_SOFUS].text = (char*)((lang==1)?"Modifier variables (tan)":"Change variables (tan)");
     menuitems[CAT_CATEGORY_PHYS].text = (char*)((lang==1)?"Constantes physique (pi)":"Physics constants (pi)");
     menuitems[CAT_CATEGORY_UNIT].text = (char*)((lang==1)?"Unites physiques (sqrt)":"Units (sqrt)");
+    menuitems[CAT_CATEGORY_3D].text = (char*)((lang==1)?"3D":"3D");
     menuitems[CAT_CATEGORY_LOGO].text = (char*)((lang==1)?"Tortue (x^2)":"Turtle (x^2)");
   
     Menu menu;
@@ -5074,7 +5098,7 @@ namespace xcas {
 	  z>=0 && z+(h-1)*dz>=0 && z<=LCD_HEIGHT_PX && z+(h-1)*dz<=LCD_HEIGHT_PX
 	  ){
 	int color=-1;
-	if (h>1 && dz>0 && z>=*zmax){
+	if ( (h>1 || diffusionz<diffusionz_limit) && dz>0 && z>=*zmax){
 	  // mark all points with downcolor
 	  *zmax=z+(h-1)*dz;
 	  color=downcolor;
@@ -5087,7 +5111,7 @@ namespace xcas {
 	    continue;
 	  }
 	}
-	if (h>1 && dz<0 && z<=*zmin){
+	if ( (h>1 || diffusionz<diffusionz_limit) && dz<0 && z<=*zmin){
 	  // mark all points with upcolor
 	  *zmin=z+(h-1)*dz;
 	  color=upcolor;
@@ -5230,7 +5254,8 @@ namespace xcas {
       }
       if (x==prevx || (x-prevx)*(curx-x)<0)
 	continue;
-      double Y=cury+m*(x-curx);
+      // double Y=cury+m*(x-curx);
+      double Y=cury+(cur.y-prev.y)/(cur.x-prev.x)*(x-curx);
       if (Y>=y)
 	++n; 
     }
@@ -5316,6 +5341,8 @@ namespace xcas {
     int horiz=LCD_WIDTH_PX/2,vert=horiz/2;//LCD_HEIGHT_PX/2;
     double xmin=-1,ymin=-1,xmax=1,ymax=1,xscale=0.6*(xmax-xmin)/horiz,yscale=0.6*(ymax-ymin)/vert,x,y,z,xc=(xmin+xmax)/2,yc=(ymin+ymax)/2;
     for (int i=-horiz;i<horiz;i+=w){
+      if (i%8==0)
+	sync_screen();
       drawRectangle(i+horiz,0,w,LCD_HEIGHT_PX,COLOR_BLACK); // clear
       double zmin[10]={220.220,220,220,220,220,220,220,220,220},
 	zmax[10]={0,0,0,0,0,0,0,0,0,0},
@@ -5411,7 +5438,7 @@ namespace xcas {
 	  do_transform(invtransform,x,y,z,X,Y,Z);
 	  if (X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax && Z>=window_zmin && inside(cur,x,y)){
 	    update12(found,found2,
-		     x,x+1,x,y,y,y+1,z,z+a,z+b,color.u,color.d,color.du,color.dd,
+		     x-.5,x-.5,x+1,y+0.866,y-0.866,y,z-.5*a+.866*b,z-.5*a-.866*b,z+a,color.u,color.d,color.du,color.dd,
 		     curx1,curx2,curx3,cury1,cury2,cury3,curz1,curz2,curz3,
 		     cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1,cur2z2,cur2z3,
 		     upcolor,downcolor,downupcolor,downdowncolor);
@@ -5498,8 +5525,9 @@ namespace xcas {
 	  double3 m=cur[l];
 	  double3 n=cur[l+1];
 	  double3 v(n.x-m.x,n.y-m.y,n.z-m.z);
-	  if (std::abs(v.y-v.x)<1e-3*(std::abs(v.y)+std::abs(v.x)))
-	    v.y=v.x+1e-3*(std::abs(v.y)+std::abs(v.x));
+	  if (std::abs(v.y-v.x)<1e-4*(std::abs(v.y)+std::abs(v.x))){
+	    v.y=v.x+1e-4*(std::abs(v.y)+std::abs(v.x));
+	  }
 	  double t1=intersect(m,v,xy);
 	  if (t1<0 || t1>1)
 	    continue;
@@ -5538,9 +5566,19 @@ namespace xcas {
       for (int j=0;j<linetypev.size();j++){
 	double3 m=linev[2*j];
 	double3 v=linev[2*j+1];
-	if (std::abs(v.y-v.x)<1e-3*(std::abs(v.y)+std::abs(v.x)))
-	  v.y=v.x+1e-3*(std::abs(v.y)+std::abs(v.x));
 	int4 color=line_color[j];
+	if (std::abs(v.y-v.x)<1e-4*(std::abs(v.y)+std::abs(v.x))){
+#if 0
+	  double X=m.x-xc,Y=m.y-yc,XY=Y-X;
+	  double I=XY/xscale/2;
+	  if (I-i>0.5 || I-i<=-0.5)
+	    continue;
+	  double3 M,N;
+	  do_transform(invtransform,m.x,m.y.m.z,M.x,M.y,M.z);
+#else
+	  v.y=v.x+1e-6*(std::abs(v.y)+std::abs(v.x));
+#endif
+	}
 	double xy=yc-xc+xscale*2*i;
 	double t1=intersect(m,v,xy);
 	// for halfline, t1 must be >=0, for segments between 0 and 1
@@ -5604,7 +5642,7 @@ namespace xcas {
   }
 
   Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),window_zmin(gnuplot_zmin),window_zmax(gnuplot_zmax),g(g_),display_mode(0x45),show_axes(1),show_names(1),labelsize(16),precision(4),contextptr(cptr) {
-    diffusionz=6; diffusionz_limit=5;hide2nd=false; interval=true;
+    diffusionz=5; diffusionz_limit=5; hide2nd=false; interval=false;
     default_upcolor=giac3d_default_upcolor;
     default_downcolor=giac3d_default_downcolor;
     default_downupcolor=giac3d_default_downupcolor;
@@ -7131,11 +7169,15 @@ namespace xcas {
     DefineStatusMessage((char*)"+-: zoom, pad: move, EXIT: quit", 1, 0, 0);
 #endif
     // EnableStatusArea(2);
+    int saveprecision=gr.precision;
+    gr.precision += 2; // fast draw first
+    gr.draw();
+    gr.precision=saveprecision;    
     for (;;){
       int saveprec=gr.precision;
       if (gr.doprecise){
 	gr.doprecise=false;
-	gr.precision=1;
+	gr.precision=1;//gr.precision-=2;
       }
       gr.draw();
       gr.precision=saveprec;
@@ -7179,7 +7221,7 @@ namespace xcas {
 	smallmenuitems[8].text = (char *) ("Zoom in +");
 	smallmenuitems[9].text = (char *) ("Zoom out -");
 	smallmenuitems[10].text = (char *) ("Y-Zoom out (-)");
-	smallmenuitems[11].text = (char *) ("3d reset view");
+	smallmenuitems[11].text = (char *) ((lang==1)?"raccourcis clavier":"3d shortcuts");
 	smallmenuitems[12].text = (char*) ((lang==1)?"Voir axes":"Show axes");
 	smallmenuitems[13].text = (char*) ((lang==1)?"Cacher axes":"Hide axes");
 	smallmenuitems[14].text = (char*)((lang==1)?"Quitter":"Quit");
@@ -7240,8 +7282,15 @@ namespace xcas {
 	  if (smallmenu.selection==11)
 	    gr.zoomy(1/0.7);
 	  if (smallmenu.selection==12){
-	    gr.q=quaternion_double(0,0,0);
-	    gr.update();
+	    xcas::textArea text;
+	    text.editable=false;
+	    text.clipline=-1;
+	    text.title = (char*)((lang==1)?"Raccourcis clavier 3d":"3d Keyboard shortcuts");
+	    text.allowF1=false;
+	    text.python=false;
+	    add(&text,lang==1?"haut/bas/droit/gauche: change point de vue\ny^x ou e^x: trace precis\n( et ): modifie le rendu des surfaces raides\n0: surfaces cachees ON/OFF\n.: remplissage surface raide ON/OFF\n5 reset view\n7,8,9,1,2,3: deplacement":"up/down/right/left: modify viewpoint\ny^x or e^x: precise\n( and ): modify stiff surfaces rendering\n0: hidden surfaces ON/OFF\n.: fill stiff surfacesON/OFF\n5 reset view\n7,8,9,1,2,3: move view");
+	    int exec=doTextArea(&text,contextptr);
+	    // gr.q=quaternion_double(0,0,0); gr.update();
 	  }
 	  if (smallmenu.selection==13)
 	    gr.show_axes=true;	
@@ -7256,11 +7305,11 @@ namespace xcas {
 	os_hide_graph();
 	break;
       }
-      if (key==KEY_CHAR_NORMAL){ // shift-+
+      if (key==KEY_CHAR_NORMAL || key=='>'){ // shift-+
 	if (is3d && gr.precision<9)
 	  gr.precision++;
       }
-      if (key=='\\'){ // shift--
+      if (key=='\\' || key=='<'){ // shift--
 	if (is3d && gr.precision>1)
 	 gr.precision--;
       }
@@ -7278,7 +7327,7 @@ namespace xcas {
 	    gr.q=rotation_2_quaternion_double(0.707,0.707,0,15)*gr.q;// quaternion_double(15,0,0)*gr.q;
 	    gr.update_rotation();
 	    gr.draw();
-#ifdef DEVICE
+#ifndef SIMU
 	    if (!iskeydown(KEY_CTRL_UP))
 	      break;
 #else
@@ -7307,7 +7356,7 @@ namespace xcas {
 	    gr.q=rotation_2_quaternion_double(0.707,0.707,0,-15)*gr.q; // quaternion_double(-15,0,0)*gr.q;
 	    gr.update_rotation();
 	    gr.draw();
-#ifdef DEVICE
+#ifndef SIMU
 	    if (!iskeydown(KEY_CTRL_DOWN))
 	      break;
 #else
@@ -7331,7 +7380,7 @@ namespace xcas {
 	    gr.q=quaternion_double(0,15,0)*gr.q;
 	    gr.update_rotation();
 	    gr.draw();
-#ifdef DEVICE
+#ifndef SIMU
 	    if (!iskeydown(KEY_CTRL_LEFT))
 	      break;
 #else
@@ -7353,7 +7402,7 @@ namespace xcas {
 	    gr.q=quaternion_double(0,-15,0)*gr.q;
 	    gr.update_rotation();
 	    gr.draw();
-#ifdef DEVICE
+#ifndef SIMU
 	    if (!iskeydown(KEY_CTRL_RIGHT))
 	      break;
 #else
@@ -7416,7 +7465,7 @@ namespace xcas {
 	  gr.down((gr.window_ymax-gr.window_ymin)/5);
 	  gr.update_rotation();
 	}
-	if (key==KEY_CHAR_POW)
+	if (key==KEY_CHAR_POW || key==KEY_CHAR_EXPN)
 	  gr.doprecise=true;
 	if (key==KEY_CHAR_LPAR && gr.diffusionz<64)
 	  gr.diffusionz++;
@@ -13307,7 +13356,7 @@ namespace xcas {
 	      break;
 	    }
 	    if (smallmenu.selection==5) {
-#if SIMU
+#if 0 // SIMU
 	      // simulator debug load calc.nws into scriptstore
 	      void * ptr=ion_storage();
 	      FILE * f=fopen("calc.nws","r");
