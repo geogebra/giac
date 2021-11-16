@@ -151,9 +151,11 @@ namespace xcas {
   // replace selection in eq by tmp
   void replace_selection(Equation & eq,const giac::gen & tmp,giac::gen * gsel,const std::vector<int> * gotoptr,const giac::context *);
   int eqw_select_leftright(xcas::Equation & g,bool left,int exchange,const giac::context *);
-  
+
+  typedef double float3d;
+  // typedef float float3d;
   struct double3 {
-    double x,y,z;
+    float3d x,y,z;
     double3(double x_,double y_,double z_):x(x_),y(y_),z(z_){};
     double3():x(0),y(0),z(0){};
   };
@@ -197,7 +199,7 @@ namespace xcas {
 #define giac3d_default_upcolor 65535
 #define giac3d_default_downcolor 12345
 #define giac3d_default_downupcolor 18432 // 12297
-#define giac3d_default_downdowncolor 12294 // 617
+#define giac3d_default_downdowncolor 22539
   
   class Graph2d{
   public:
@@ -210,6 +212,8 @@ namespace xcas {
     int display_mode,show_axes,show_names,labelsize,lcdz,default_upcolor,default_downcolor,default_downupcolor,default_downdowncolor;
     short int precision,diffusionz,diffusionz_limit;
     bool is3d,doprecise,hide2nd,interval;
+    double Ai,Aj,Bi,Bj,Ci,Cj,Di,Dj,Ei,Ej,Fi,Fj,Gi,Gj,Hi,Hj; // visualization cube coordinates
+    std::vector< std::vector< std::vector<float3d> > > surfacev;
     std::vector<double3> plan_pointv; // point in plan 
     std::vector<double3> plan_abcv; // plan equation z=a*x+b*y+c
     std::vector<double3> sphere_centerv;
@@ -217,16 +221,18 @@ namespace xcas {
     giac::vecteur sphere_quadraticv; // matrix of the transformed quad. form
     std::vector< std::vector<double3> > polyedrev;
     std::vector<double3> polyedre_abcv;
+    std::vector<double> polyedre_xyminmax;
     std::vector<double3> linev; // 2 double3 per object
     std::vector<short> linetypev;
     std::vector< std::vector<double3> > curvev;
     std::vector<double3> pointv; 
     std::vector<const char *> points; // legende
-    std::vector<int4> plan_color,sphere_color,polyedre_color,line_color,curve_color;
-    giac::gen g,grot;
+    std::vector<int4> hyp_color,plan_color,sphere_color,polyedre_color,line_color,curve_color;
+    giac::gen g;
     const giac::context * contextptr;
     bool findij(const giac::gen & e0,double x_scale,double y_scale,double & i0,double & j0,const giac::context * ) const;
     void xyz2ij(const double3 & d,int &i,int &j) const; // d not transformed
+    void xyz2ij(const double3 & d,double &i,double &j) const; // d not transformed
     void XYZ2ij(const double3 & d,int &i,int &j) const; // d is transformed
     void addpolyg(vector<int2> & polyg,double x,double y,double z,int2 & IJmin) const ;
     void update_scales();
@@ -245,7 +251,7 @@ namespace xcas {
     void autoscale(bool fullview=false);
     void orthonormalize();
     void draw();
-    bool glsurface(const giac::gen & surfaceg,int w,int h,int lcdz,const giac::context*,int upcolor,int downcolor,int downupcolor,int downdowncolor) ;
+    bool glsurface(int w,int h,int lcdz,const giac::context*,int upcolor,int downcolor,int downupcolor,int downdowncolor) ;
     Graph2d(const giac::gen & g_,const giac::context * );
   };
 

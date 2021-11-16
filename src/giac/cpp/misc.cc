@@ -7358,6 +7358,22 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   static define_unary_function_eval (__find,&_find,_find_s);
   define_unary_function_ptr5( at_find ,alias_at_find,&__find,0,true);
 
+  gen _max_index(const gen & args,GIAC_CONTEXT){
+    if (args.type!=_VECT || args._VECTptr->empty()) return gensizeerr(contextptr);
+    const vecteur & v=*args._VECTptr;
+    int s=v.size(),pos=0; gen val=v[0];
+    for (int i=1;i<s;++i){
+      if (ck_is_strictly_greater(v[i],val,contextptr)){
+	pos=i;
+	val=v[i];
+      }
+    }
+    return makevecteur(val,pos);
+  }
+  static const char _max_index_s []="max_index";
+  static define_unary_function_eval (__max_index,&_max_index,_max_index_s);
+  define_unary_function_ptr5( at_max_index ,alias_at_max_index,&__max_index,0,true);
+
   gen _dayofweek(const gen & args,GIAC_CONTEXT){
     if (args.type!=_VECT || args._VECTptr->size()!=3)
       return gensizeerr(contextptr);

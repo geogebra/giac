@@ -1597,7 +1597,7 @@ namespace giac {
     } // end 1-var function plot
 #endif
     if (nstep==gnuplot_pixels_per_eval)
-      nstep *= 2;
+      nstep *= 1.69;
     ck_parameter_x(contextptr);
     ck_parameter_y(contextptr);
     int s=0;
