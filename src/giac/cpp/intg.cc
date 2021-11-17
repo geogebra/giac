@@ -2686,8 +2686,8 @@ namespace giac {
     unary_function_ptr u=e._SYMBptr->sommet;
     gen f=e._SYMBptr->feuille,a,b;
     // particular case for ^, _FUNCnd arg must be constant
-    if (u==at_pow && f._SYMBptr->feuille[0].is_symb_of_sommet(at_pow)){
-      e=symbolic(at_pow,makesequence(f._SYMBptr->feuille[0]._SYMBptr->feuille[0],f._SYMBptr->feuille[0]._SYMBptr->feuille[1]*f._SYMBptr->feuille[1]));
+    if (u==at_pow && f[0].is_symb_of_sommet(at_pow)){
+      e=symbolic(at_pow,makesequence(f[0]._SYMBptr->feuille[0],f[0]._SYMBptr->feuille[1]*f[1]));
       return integrate_id_rem(e,gen_x,remains_to_integrate,contextptr,intmode);
     }
     if ( (u==at_pow) && is_constant_wrt(f._VECTptr->back(),gen_x,contextptr) && is_linear_wrt(f._VECTptr->front(),gen_x,a,b,contextptr) ){
@@ -6546,11 +6546,11 @@ namespace giac {
       }
       // accept or reject current step and compute dt
       double err=rk_error(y_final4,y_final5,yt,contextptr);
-      gen hopt=.9*tstep*pow(tolerance/err,.2,contextptr);
-      if (err==0 || is_undef(hopt))
+      gen hopt=err==0?tstep:.9*tstep*pow(tolerance/err,.2,contextptr);
+      if (is_undef(hopt))
 	break;
       if (debug_infolevel>5)
-	CERR << nstep << ":" << t_e << ",y5=" << y_final5 << ",y4=" << y_final4 << " " << tstep << " hopt=" << hopt << " err=" << err << '\n';
+	CERR << nstep << ":" << t_e << ",y5=" << y_final5 << ",y4=" << y_final4 << " " << tstep << " tstep (optimal)=" << hopt << " err=" << err << '\n';
       if (is_strictly_greater(err,tolerance,contextptr)){
 	// reject step
 	tstep=hopt._DOUBLE_val;
