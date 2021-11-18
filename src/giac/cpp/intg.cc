@@ -2686,7 +2686,7 @@ namespace giac {
     unary_function_ptr u=e._SYMBptr->sommet;
     gen f=e._SYMBptr->feuille,a,b;
     // particular case for ^, _FUNCnd arg must be constant
-    if (u==at_pow && f[0].is_symb_of_sommet(at_pow)){
+    if ( ((intmode & 4)==0) && u==at_pow && f[0].is_symb_of_sommet(at_pow)){
       e=symbolic(at_pow,makesequence(f[0]._SYMBptr->feuille[0],f[0]._SYMBptr->feuille[1]*f[1]));
       return integrate_id_rem(e,gen_x,remains_to_integrate,contextptr,intmode);
     }
@@ -2719,7 +2719,7 @@ namespace giac {
       vecteur subst1,subst2;
       surd2pow(e,subst1,subst2,contextptr);
       gen g=subst(e,subst1,subst2,false,contextptr);
-      g=integrate_id_rem(g,gen_x,remains_to_integrate,contextptr,intmode);
+      g=integrate_id_rem(g,gen_x,remains_to_integrate,contextptr,intmode | 4);
       remains_to_integrate=subst(remains_to_integrate,subst2,subst1,false,contextptr);
       g=subst(g,subst2,subst1,false,contextptr);
       return g;
