@@ -347,7 +347,7 @@ namespace giac {
 
   gen _cercle(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_cercle;
-  bool centre_rayon(const gen & cercle,gen & centre,gen & rayon,bool absrayon, GIAC_CONTEXT);
+  bool centre_rayon(const gen & cercle,gen & centre,gen & rayon,bool absrayon, GIAC_CONTEXT,bool detect_conic=false);
   gen _centre(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_centre;
   gen _rayon(const gen & args,GIAC_CONTEXT);

@@ -66,7 +66,7 @@ namespace giac {
   bool intgab_ratfrac(const gen & e,const gen & x,gen & value,GIAC_CONTEXT);
   // integr. of rat. fcns.
   gen integrate_gen_rem(const gen & e, const gen & x, gen & remains_to_integrate,int intmode,GIAC_CONTEXT);
-  gen integrate_id_rem(const gen & e, const gen & x, gen & remains_to_integrate,GIAC_CONTEXT,int intmode); // intmode bit 0 is used for sqrt int control, bit 1 control step/step info
+  gen integrate_id_rem(const gen & e, const gen & x, gen & remains_to_integrate,GIAC_CONTEXT,int intmode); // intmode bit 0 is used for sqrt int control, bit 1 control step/step info, bit 2 indicates surd was replaced
   gen integrate_id_rem(const gen & e, const gen & x, gen & remains_to_integrate,GIAC_CONTEXT,int intmode);
   gen linear_integrate(const gen & e,const gen & x,gen & remains_to_integrate,int intmode,GIAC_CONTEXT);
   gen integrate_id(const gen & e,const identificateur & x,GIAC_CONTEXT);

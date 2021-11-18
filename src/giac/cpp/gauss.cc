@@ -383,7 +383,7 @@ namespace giac {
     return M+res[0]*(1+cst_i*t);
   }
 
-  // return a,b,c,d,e such that the parametric equation of the conic
+  // return M,a,b,c,d,e such that the parametric equation of the conic
   // is M+(1+i*t)*(d*t+e)/(a*t^2+b*t+c)
   vecteur conique_ratparams(const gen & eq,const gen & M,GIAC_CONTEXT){
     if (is_undef(M))
@@ -402,12 +402,12 @@ namespace giac {
     return makevecteur(at_ellipse,M,a,b,c,-d,-e);
   }
 
-  bool conique_reduite(const gen & equation_conique,const gen & pointsurconique,const vecteur & nom_des_variables,gen & x0, gen & y0, vecteur & V0, vecteur &V1, gen & propre,gen & equation_reduite, vecteur & param_curves,gen & ratparam,bool numeric,GIAC_CONTEXT){
+  int conique_reduite(const gen & equation_conique,const gen & pointsurconique,const vecteur & nom_des_variables,gen & x0, gen & y0, vecteur & V0, vecteur &V1, gen & propre,gen & equation_reduite, vecteur & param_curves,gen & ratparam,bool numeric,GIAC_CONTEXT,gen *aptr,gen * bptr){
     ratparam=conique_ratparam(equation_conique,pointsurconique,contextptr);
     gen q(remove_equal(equation_conique));
     vecteur x(nom_des_variables);
     if (x.size()!=2)
-      return false; // setsizeerr(contextptr);
+      return 0; // setsizeerr(contextptr);
     identificateur iT(" T");
     x.push_back(iT);
     //n est le nombre de variables en geo. projective   
@@ -423,7 +423,7 @@ namespace giac {
     //qp est l'equation en projective qp est quadratique
     A=qxac(qp,x,contextptr);
     if (is_undef(A))
-      return false;
+      return 0;
 #ifdef EMCC
     // otherwise some implicit plots do not work
     // but this make distance(point(0,2),y=x^2) approx... 
@@ -437,6 +437,9 @@ namespace giac {
     gen d=A[0][2];
     gen e=A[1][2];
     gen f=A[2][2];
+    if (is_strictly_positive(f,contextptr)){
+      a=-a; b=-b; c=-c; d=-d; e=-e; f=-f;
+    }
     //propre=(a*c-b*b)*f+d*(b*e-d*c)-e*(a*e-b*d);
     if ((a*c-b*b)*f+d*(b*e-d*c)-e*(a*e-b*d)!=0) {
       propre=1;
@@ -451,6 +454,7 @@ namespace giac {
     V1=vecteur(2);
     gen norme;
     norme=normalize_sqrt(sqrt(a*a+b*b,contextptr),contextptr); 
+    int restype=1;
     if (a*c-b*b==0) {
       gen coeffy2,coeffx,coeffcst;
       //on a une parabole ou 2dr//
@@ -508,7 +512,7 @@ namespace giac {
 #ifndef GIAC_HAS_STO_38
 	  *logptr(contextptr) << gettext("Empty parabola") << '\n';
 #endif
-	  return true;
+	  return -1;
 	}
 #ifndef GIAC_HAS_STO_38
 	*logptr(contextptr) << gettext("2 parallel lines") << '\n';
@@ -518,11 +522,15 @@ namespace giac {
 	gen zY0=cst_i*zV0*Y0;
 	param_curves.push_back(gen(makevecteur(z0+zY0,z0+zV0+zY0),_LINE__VECT));
 	param_curves.push_back(gen(makevecteur(z0-zY0,z0+zV0-zY0),_LINE__VECT));
+	restype=-5;
       }
       else {
+	restype=2; // parabola
 	// parabola coeffy2*Y^2+coeffx*X=0 -> X=-coeffy2/coeffx*Y^2
 	// X+i*Y=-coeffy2/coeffx*Y^2+i*Y
 	gen coeff=-coeffy2/coeffx;
+	if (aptr) *aptr=coeffx;
+	if (bptr) *bptr=coeffy2;  
 #ifdef GIAC_HAS_STO_38
 	gen t(vx_var);
 #else
@@ -560,6 +568,12 @@ namespace giac {
 	V0[1]=normal((vp0-a)/normv1,contextptr);
 	V1[0]=-V0[1]; V1[1]=V0[0];
       }
+      if (is_greater(vp0,vp1,contextptr)){
+	swapgen(vp0,vp1);
+	std::swap(V0,V1);
+      }
+      if (aptr) *aptr=-vp0/f;
+      if (bptr) *bptr=-vp1/f;
       //coord du centre
       x0=(-d*c+b*e)/(a*c-b*b);
       y0=(-a*e+d*b)/(a*c-b*b);
@@ -580,19 +594,20 @@ namespace giac {
 	ck_parameter_t(contextptr);
 	int sprodvp = svp0.val * svp1.val;
 	int sprodcoeff = svp0.val*scoeffcst.val;
-	if (sprodvp>0){ // ellipse
+	if (sprodvp>0){ 
+	  restype=3; // ellipse
 	  if (is_zero(coeffcst)){
 #ifndef GIAC_HAS_STO_38
 	    *logptr(contextptr) << gettext("Ellipsis reduced to (") << x0 << "," << y0 << ")" << '\n';
 #endif
 	    param_curves.push_back(z0);
-	    return true;
+	    return -2;
 	  }
 	  if (sprodcoeff>0){
 #ifndef GIAC_HAS_STO_38
 	    *logptr(contextptr) << gettext("Empty ellipsis") << '\n';
 #endif
-	    return true;
+	    return -3;
 	  }
 #ifndef GIAC_HAS_STO_38
 	  *logptr(contextptr) << gettext("Ellipsis of center (") << x0 << "," << y0 << ")" << '\n';
@@ -618,7 +633,7 @@ namespace giac {
 	  if (is_undef(ratparam))
 	    ratparam=z0+zV0*(vp0*(1-pow(t,2))+cst_i*vp1*plus_two*t)/(1+pow(t,2));
 
-    bool rad = angle_radian(contextptr), deg = angle_degree(contextptr);
+	  bool rad = angle_radian(contextptr), deg = angle_degree(contextptr);
 	  param_curves.push_back(makevecteur(tmp,t,0, rad?cst_two_pi:(deg ? 360 : 400), rad?cst_two_pi/60:(deg?6:rdiv(20,3)),q,ratparam)); //grad
 
 	} else {
@@ -633,9 +648,9 @@ namespace giac {
 	      ratparam=makevecteur(z0+zV0*(1+cst_i*directeur)*t,z0+zV0*(1-cst_i*directeur)*t);
 	    param_curves.push_back(gen(makevecteur(z0,z0+zV0*(1+cst_i*directeur)),_LINE__VECT));
 	    param_curves.push_back(gen(makevecteur(z0,z0+zV0*(1-cst_i*directeur)),_LINE__VECT));
-	    return true;
+	    return -4;
 	  }
-	  // hyperbole
+	  restype=4; // hyperbola
 #ifndef GIAC_HAS_STO_38
 	  *logptr(contextptr) << gettext("Hyperbola of center (") << x0 << "," << y0 << ")" << '\n';
 #endif
@@ -687,7 +702,7 @@ namespace giac {
 	}
       }
     }
-    return true;
+    return restype;
   }  
 
 #ifdef RTOS_THREADX

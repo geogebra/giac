@@ -220,9 +220,9 @@ namespace giac {
       kstep=int(std::sqrt(double(nstep)));
     }
     if (kstep<1)
-      kstep=10;
+      kstep=15;
     if (jstep<1)
-      jstep=10;
+      jstep=15;
   }
 
   gen cone(const gen & args,bool cone_complet,GIAC_CONTEXT){
@@ -267,7 +267,7 @@ namespace giac {
       }
     }
     vecteur uv(makevecteur(u__IDNT_e,v__IDNT_e));
-    gen res= plotparam3d(M,uv,xmin,xmax,ymin,ymax,zmin,zmax,cone_complet?-uscale:0,uscale,0,2*M_PI,false,false,attributs,uscale/jstep,M_PI/kstep,eq,xyz,contextptr);
+    gen res= plotparam3d(M,uv,xmin,xmax,ymin,ymax,zmin,zmax,cone_complet?-uscale:0,uscale,0,2*M_PI,false,false,attributs,uscale/jstep,2*M_PI/kstep,eq,xyz,contextptr);
     if (!cercles)
       return res;
     theta=evalf_double(theta,1,contextptr);
@@ -277,11 +277,11 @@ namespace giac {
     // add disque center P+uscale*cos(theta)*n, perp to n, r=uscale*sin(theta)
     vecteur vres(1,res);
     M=P+uscale*cos(theta,contextptr)*n+u__IDNT_e*(cos(v__IDNT_e,contextptr)*n1+sin(v__IDNT_e,contextptr)*n2);
-    res=plotparam3d(M,uv,xmin,xmax,ymin,ymax,zmin,zmax,0,uscale*std::sin(thetad),0,2*M_PI,false,false,attributs,uscale*std::sin(thetad),M_PI/kstep,undef,xyz,contextptr);
+    res=plotparam3d(M,uv,xmin,xmax,ymin,ymax,zmin,zmax,0,uscale*std::sin(thetad),0,2*M_PI,false,false,attributs,uscale*std::sin(thetad),2*M_PI/kstep,undef,xyz,contextptr);
     vres.push_back(res);
     if (cone_complet){
       M=P-uscale*cos(theta,contextptr)*n+u__IDNT_e*(cos(v__IDNT_e,contextptr)*n1+sin(v__IDNT_e,contextptr)*n2);
-      res=plotparam3d(M,uv,xmin,xmax,ymin,ymax,zmin,zmax,0,uscale*std::sin(thetad),0,2*M_PI,false,false,attributs,uscale*std::sin(thetad),M_PI/kstep,undef,xyz,contextptr);
+      res=plotparam3d(M,uv,xmin,xmax,ymin,ymax,zmin,zmax,0,uscale*std::sin(thetad),0,2*M_PI,false,false,attributs,uscale*std::sin(thetad),2*M_PI/kstep,undef,xyz,contextptr);
       vres.push_back(res);
     }
     return vres; // gen(vres,_SEQ__VECT);
@@ -348,7 +348,7 @@ namespace giac {
     gen M=P+u__IDNT_e*n+r*(cos(v__IDNT_e,contextptr)*n1+sin(v__IDNT_e,contextptr)*n2);
     gen eq=normal(pow(r,2)-(pow(dotvecteur(xyzP,n1),2)+pow(dotvecteur(xyzP,n2),2)),contextptr);
     vecteur uv(makevecteur(u__IDNT_e,v__IDNT_e));
-    gen res=plotparam3d(M,uv,xmin,xmax,ymin,ymax,zmin,zmax,0,uscale,0,2*M_PI,false,false,attributs,uscale/jstep,M_PI/kstep,eq,xyz,contextptr);
+    gen res=plotparam3d(M,uv,xmin,xmax,ymin,ymax,zmin,zmax,0,uscale,0,2*M_PI,false,false,attributs,uscale/jstep,2*M_PI/kstep,eq,xyz,contextptr);
     if (!cercles)
       return res;
     // add disque center P and P+uscale*n, perp to n, radius r
@@ -358,10 +358,10 @@ namespace giac {
     double rd=r._DOUBLE_val;
     vecteur vres(1,res);
     M=P+u__IDNT_e*(cos(v__IDNT_e,contextptr)*n1+sin(v__IDNT_e,contextptr)*n2);
-    res=plotparam3d(M,uv,xmin,xmax,ymin,ymax,zmin,zmax,0,rd,0,2*M_PI,false,false,attributs,rd,M_PI/kstep,undef,xyz,contextptr);
+    res=plotparam3d(M,uv,xmin,xmax,ymin,ymax,zmin,zmax,0,rd,0,2*M_PI,false,false,attributs,rd,2*M_PI/kstep,undef,xyz,contextptr);
     vres.push_back(res);
     M=M+n*gen(uscale);
-    res=plotparam3d(M,uv,xmin,xmax,ymin,ymax,zmin,zmax,0,rd,0,2*M_PI,false,false,attributs,rd,M_PI/kstep,undef,xyz,contextptr);
+    res=plotparam3d(M,uv,xmin,xmax,ymin,ymax,zmin,zmax,0,rd,0,2*M_PI,false,false,attributs,rd,2*M_PI/kstep,undef,xyz,contextptr);
     vres.push_back(res);
     return vres; // gen(vres,_SEQ__VECT);
   }
