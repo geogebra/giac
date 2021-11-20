@@ -209,7 +209,7 @@ namespace xcas {
     quaternion_double q;
     double transform[16],invtransform[16];
     // only 12 used, last line [0,0,0,1], usual matrices, not transposed
-    int display_mode,show_axes,show_names,labelsize,lcdz,default_upcolor,default_downcolor,default_downupcolor,default_downdowncolor;
+    int display_mode,show_axes,show_edges,show_names,labelsize,lcdz,default_upcolor,default_downcolor,default_downupcolor,default_downdowncolor;
     short int precision,diffusionz,diffusionz_limit;
     bool is3d,doprecise,hide2nd,interval;
     double Ai,Aj,Bi,Bj,Ci,Cj,Di,Dj,Ei,Ej,Fi,Fj,Gi,Gj,Hi,Hj; // visualization cube coordinates

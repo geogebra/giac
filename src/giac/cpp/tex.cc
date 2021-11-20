@@ -988,6 +988,8 @@ namespace giac {
 	}
       }
       bool ortho=false;
+      if (g.subtype==_POLYEDRE__VECT)
+	ortho=true;
       const_iterateur it=g._VECTptr->begin(),itend=g._VECTptr->end();
       for (;it!=itend;++it){
 	ortho = ortho | in_autoscale(*it,vx,vy,vz,contextptr);
