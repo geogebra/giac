@@ -10571,10 +10571,10 @@ namespace giac {
       return gensizeerr(contextptr);
     if (aan.type!=_POLY)
       return p;
-    lv=vecteur(lv.begin()+1,lv.end());
-    gen ba=e2r(q,lv,contextptr);
+    vecteur lv1=vecteur(lv.begin()+1,lv.end());
+    gen ba=e2r(q,lv1,contextptr);
     vecteur a(polynome2poly1(*aan._POLYptr,1));
-    return r2e(horner(a,ba),lv,contextptr)/r2e(aad,lv,contextptr);
+    return r2e(horner(a,ba),lv1,contextptr)/r2e(aad,lv,contextptr);
   }
   static const char _horner_s []="horner";
   static define_unary_function_eval (__horner,&_horner,_horner_s);

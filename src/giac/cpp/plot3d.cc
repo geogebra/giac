@@ -1994,7 +1994,7 @@ namespace giac {
     gen lieu_geo;
     if (equation2geo3d(f_orig,undef,x,y,z,lieu_geo,gnuplot_tmin,gnuplot_tmax,gnuplot_tstep,gnuplot_tmin,gnuplot_tmax,gnuplot_tstep,true,contextptr))
       return put_attributs(lieu_geo,attributs,contextptr);
-#ifdef KHICAS
+#if defined NUMWORKS && defined DEVICE
     return undef;
 #endif
     if (nxstep*double(nystep)*nzstep>8000){

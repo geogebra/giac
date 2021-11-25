@@ -224,6 +224,7 @@ namespace xcas {
     std::vector<double> polyedre_xyminmax;
     std::vector<double3> linev; // 2 double3 per object
     std::vector<short> linetypev;
+    std::vector<const char *> lines; // legende
     std::vector< std::vector<double3> > curvev;
     std::vector<double3> pointv; 
     std::vector<const char *> points; // legende
@@ -238,18 +239,18 @@ namespace xcas {
     void update_scales();
     void update();
     void update_rotation(); // update grot
-    void zoomx(double d,bool round=false);
-    void zoomy(double d,bool round=false);
-    void zoomz(double d,bool round=false);
-    void zoom(double);
+    void zoomx(double d,bool round=false,bool doupdate=true);
+    void zoomy(double d,bool round=false,bool doupdate=true);
+    void zoomz(double d,bool round=false,bool doupdate=true);
+    void zoom(double d,bool doupdate=true);
     void left(double d);
     void right(double d);
     void up(double d);
     void down(double d);
     void z_up(double d);
     void z_down(double d);
-    void autoscale(bool fullview=false);
-    void orthonormalize();
+    void autoscale(bool fullview=false,bool doupdate=true);
+    void orthonormalize(bool doupdate=true);
     void draw();
     bool glsurface(int w,int h,int lcdz,const giac::context*,int upcolor,int downcolor,int downupcolor,int downdowncolor) ;
     Graph2d(const giac::gen & g_,const giac::context * );

@@ -4964,7 +4964,9 @@ NULL,NULL,SW_SHOWNORMAL);
 	    }
 	  }
 	}
+#ifndef KHICAS
 	CERR << "Added " << vector_aide_ptr()->size()-s << " synonyms" << '\n';
+#endif
 	sort(vector_aide_ptr()->begin(),vector_aide_ptr()->end(),alpha_order);
 	update_completions();
       }
@@ -7140,7 +7142,7 @@ unsigned int ConvertUTF8toUTF162 (
   // moved from input_lexer.ll for easier debug
   const char invalid_name[]="Invalid name";
 
-#if defined USTL || defined GIAC_HAS_STO_38 || defined KHICAS
+#if defined USTL || defined GIAC_HAS_STO_38 || (defined KHICAS && !defined(SIMU))
 #if defined GIAC_HAS_STO_38 || defined KHICAS
 void update_lexer_localization(const std::vector<int> & v,std::map<std::string,std::string> &lexer_map,std::multimap<std::string,localized_string> &back_lexer_map,GIAC_CONTEXT){}
 #endif
