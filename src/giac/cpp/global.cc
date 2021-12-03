@@ -409,7 +409,7 @@ std::string toString8(longlong chksum){
 
 ulonglong fromstring8(const char * ptr){
   ulonglong res=0; char ch;
-  for (;ch=*ptr;++ptr){
+  for (;(ch=*ptr);++ptr){
     if (ch==' ')
       return res;
     if (ch<'0' || ch>'8')
@@ -1139,6 +1139,35 @@ char * numworks_gettar(size_t & tar_first_modif_offset){
   return buffer;
 }
 
+bool dfu_update_khicas(const char * fname){
+  FILE * f=fopen(fname,"rb");
+  if (!f) return 0;
+  char * buffer=(char *)malloc(numworks_maxtarsize);
+  fread(buffer,numworks_maxtarsize,1,f);
+  fclose(f);
+  size_t pos=0;
+  char * oldbuffer=numworks_gettar(pos);
+  if (!oldbuffer){
+    free(buffer);
+    return false;
+  }
+  vector<fileinfo_t> oldv=tar_fileinfo(oldbuffer,0),v=tar_fileinfo(buffer,0);
+  // add files from oldbuffer that are not in buffer
+  for (int i=0;i<oldv.size();++i){
+    const fileinfo_t & cur=oldv[i];
+    string s=cur.filename; int j;
+    for (j=0;j<v.size();++j){
+      if (v[j].filename==s)
+	break;
+    }
+    if (j<v.size()) 
+      continue; // file is in buffer
+    int res=tar_adddata(buffer,0,s.c_str(),oldbuffer+cur.header_offset+512,cur.size,0); // exec can not be translated
+  }
+  file_savetar("__apps",buffer,0);
+  //return true;
+  return dfu_send_apps("__apps");
+}
 
 bool numworks_sendtar(char * buffer,size_t buffersize,size_t tar_first_modif_offset){
   vector<fileinfo_t> v=tar_fileinfo(buffer,buffersize);
@@ -1271,7 +1300,11 @@ namespace giac {
       ptr+=2; pos+=2;
       if (L==0) break;
       L-=2;
+#ifdef VISUALC
+      char buf_[65536];
+#else
       char buf_[L+1];
+#endif
       memcpy(buf_,(const char *)ptr,L); ptr+=L; pos+=L;
       string name(buf_);
       const char * buf_mode=buf_+name.size()+2;

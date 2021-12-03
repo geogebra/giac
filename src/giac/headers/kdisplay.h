@@ -228,7 +228,7 @@ namespace xcas {
     std::vector< std::vector<double3> > curvev;
     std::vector<double3> pointv; 
     std::vector<const char *> points; // legende
-    std::vector<int4> hyp_color,plan_color,sphere_color,polyedre_color,line_color,curve_color;
+    std::vector<int4> hyp_color,plan_color,sphere_color,polyedre_color,line_color,curve_color,point_color;
     giac::gen g;
     const giac::context * contextptr;
     bool findij(const giac::gen & e0,double x_scale,double y_scale,double & i0,double & j0,const giac::context * ) const;

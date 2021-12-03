@@ -266,6 +266,7 @@ int my_sprintf(char * s, const char * format, ...);
 #endif
 
 #ifdef __VISUALC__ 
+#define _ITERATOR_DEBUG_LEVEL 0
 #define GIAC_GENERIC_CONSTANTS
 // Visual C++ is compiling
 #define VISUALC

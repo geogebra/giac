@@ -914,7 +914,7 @@ namespace giac {
     {"crayon ", "crayon ", "Couleur de trace de la tortue", "#crayon rouge", 0, CAT_CATEGORY_LOGO},
     {"cross(u,v)", 0, "Produit vectoriel de u et v.","[1,2,3],[0,1,3]", 0, CAT_CATEGORY_LINALG},
     {"csolve(equation,x)", 0, "Resolution exacte dans C d'une equation en x (ou d'un systeme polynomial).","x^2+x+1=0", 0, CAT_CATEGORY_SOLVE | (CAT_CATEGORY_COMPLEXNUM << 8) | XCAS_ONLY},
-    {"cube(A,B,C)", 0, "Cube d'arete AB avec une face dans le plan ABC", "[0,0,0],[0,2,sqrt(5)/2+3/2],[0,0,1]", 0, CAT_CATEGORY_3D},
+    {"cube(A,B,C)", 0, "Cube d'arete AB avec une face dans le plan ABC", "[0,0,0],[1,0,0],[0,1,0]","[0,0,0],[0,2,sqrt(5)/2+3/2],[0,0,1]", CAT_CATEGORY_3D},
     {"curl(u,vars)", 0, "Rotationnel du vecteur u.", "[2*x*y,x*z,y*z],[x,y,z]", 0, CAT_CATEGORY_LINALG | XCAS_ONLY},
     {"cyan", "cyan", "Option d'affichage", "#display=cyan", 0, CAT_CATEGORY_PROGCMD},
     {"cylinder(A,v,r,[h])", 0, "Cylindre d'axe A,v de rayon r et de hauteur optionnelle h", "[0,0,0],[0,1,0],2", "[0,0,0],[0,1,0],2,3", CAT_CATEGORY_3D},
@@ -1308,7 +1308,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   {"crayon ", "crayon ", "Turtle drawing color", "#crayon red", 0, CAT_CATEGORY_LOGO},
   {"cross(u,v)", 0, "Cross product of vectors u and v.","[1,2,3],[0,1,3]", 0, CAT_CATEGORY_LINALG},
   {"csolve(equation,x)", 0, "Solve equation (or polynomial system) in exact mode over the complex numbers.","x^2+x+1=0", 0, CAT_CATEGORY_SOLVE| (CAT_CATEGORY_COMPLEXNUM << 8)},
-  {"cube(A,B,C)", 0, "Cube of edge AB with one face in plane ABC", "[0,0,0],[0,2,sqrt(5)/2+3/2],[0,0,1]", 0, CAT_CATEGORY_3D},
+  {"cube(A,B,C)", 0, "Cube of edge AB with one face in plane ABC", "[0,0,0],[1,0,0],[0,1,0]","[0,0,0],[0,2,sqrt(5)/2+3/2],[0,0,1]", CAT_CATEGORY_3D},
   {"curl(u,vars)", 0, "Curl of vector u.", "[2*x*y,x*z,y*z],[x,y,z]", 0, CAT_CATEGORY_LINALG},
   {"cyan", "cyan", "Display option", "#display=cyan", 0, CAT_CATEGORY_PROGCMD},
   {"cylinder(A,v,r,[h])", 0, "Cylinder of axis A,v and radius r [and optional altitude h]", "[0,0,0],[0,1,0],2", "[0,0,0],[0,1,0],2,3", CAT_CATEGORY_3D},
@@ -2570,7 +2570,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   }
 
 #ifdef NSPIRE_NEWLIB
-  const int MAX_LOGO=4096; 
+  const int MAX_LOGO=8192; 
 #else
   const int MAX_LOGO=368; // 512?
 #endif
@@ -2997,8 +2997,11 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       res.subtype=_INT_COLOR;
       return res;
     }
-    if (g.val<0)
+    if (g.val<0){
+      if (g.val<-64)
+	return (*turtleptr).turtle_width;
       (*turtleptr).turtle_width=-g.val;
+    }
     else
       (*turtleptr).color=g.val;
     (*turtleptr).radius = 0;
@@ -3230,6 +3233,44 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 
   gen _polygone_rempli(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
+    static int turtle_fill_begin=-1,turtle_fill_color=-1;
+    if (g.type==_VECT && g._VECTptr->size()==3){
+      turtle_fill_color=_rgb(g,contextptr).val;
+      return change_subtype(turtle_fill_color,_INT_COLOR);
+    }
+    if (g.type==_VECT && !g._VECTptr->empty() && g._VECTptr->front().type==_INT_){
+      if (g._VECTptr->front().val>=0)
+	turtle_fill_color= g._VECTptr->front().val;
+      return change_subtype(turtle_fill_color,_INT_COLOR);
+    }
+    if (g.type==_INT_ && g.subtype==_INT_COLOR){
+      turtle_fill_color= g.val;
+      return g;
+    }
+    if (g.type==_VECT && g._VECTptr->empty()){
+      if (turtle_fill_begin<0){
+	if (g.subtype==0)
+	  turtle_fill_begin=turtle_stack().size();
+	else
+	  return gensizeerr();
+	return 1;
+      }
+      int c=turtleptr->color;
+      if (turtle_fill_color>=0)
+	_crayon(turtle_fill_color,contextptr);
+      int n=turtle_stack().size()- turtle_fill_begin;
+      turtle_fill_begin=-1;
+      turtleptr->radius=-absint(n);
+      gen res=update_turtle_state(true,contextptr);
+      if (turtle_fill_color>=0){
+	_crayon(c,contextptr);
+      }
+      return res;
+    }
+    if (is_zero(g)){
+      turtle_fill_begin=turtle_stack().size();
+      return 1;
+    }
     if (g.type==_INT_){
       (*turtleptr).radius=-absint(g.val);
       if ((*turtleptr).radius<-1)
@@ -5104,13 +5145,13 @@ namespace xcas {
       z=LCD_HEIGHT_PX/2+j-lcdz*z;
       if (ZMIN<z && z<ZMAX)
 	return;
-      if (0 && z<10)
-	z=z; // debug
       bool intervalonly=false;
       if (*zmax<*zmin || z<*zmin-lcdz || z>*zmax+lcdz)
 	*zmax=*zmin=z;
+      if (0 && (*zmax<50 || *zmin<50 || z<50))
+	cout << *zmax << " "; // debug
       bool diffus=diffusionz<diffusionz_limit;
-      int deltaz;
+      double deltaz;
       if (interval){
 	if (z<0) {
 	  // return;
@@ -5172,9 +5213,12 @@ namespace xcas {
 	}
 	if (color>=0){
 	  if (dz>0)
-	    drawRectangle(ih,z,1,std::ceil(deltaz),diffuse(color,std::min(double(diffusionz),std::max(dz,1.0))));
-	  else
-	    drawRectangle(ih,z-std::ceil(deltaz),1,std::ceil(deltaz),diffuse(color,std::min(double(diffusionz),std::max(-dz,1.0))));
+	    drawRectangle(ih,z-std::ceil(deltaz),1,std::ceil(deltaz),diffuse(color,std::min(double(diffusionz),std::max(dz,1.0))));
+	  else {
+	    if (0 && deltaz>1)
+	      cout << ih << " " << z << " " << std::ceil(deltaz) << "\n";
+	    drawRectangle(ih,z,1,std::ceil(deltaz),diffuse(color,std::min(double(diffusionz),std::max(-dz,1.0))));
+	  }
 	  return;
 	}
 	if (z>=*zmax){ // mark only 1 point
@@ -5515,9 +5559,10 @@ namespace xcas {
     return (-xy+m.y-m.x)/(v.x-v.y);
   }
 
-  void get_colors(gen attr,int & upcolor,int & downcolor,int & downupcolor,int & downdowncolor){      
-    if (attr.is_symb_of_sommet(at_pnt))
-      attr=attr._SYMBptr->feuille[1];
+  void get_colors(gen attr,int & upcolor,int & downcolor,int & downupcolor,int & downdowncolor){
+    if (attr.is_symb_of_sommet(at_pnt)){
+      attr=attr[1];
+    }
     if (attr.type==_INT_ && (attr.val & 0xffff)!=0){
       upcolor=attr.val &0xffff;
       int color=rgb565to888(upcolor);
@@ -5809,6 +5854,7 @@ namespace xcas {
 	  if (inside(cur,x,y)){
 	    double3 abc=polyedre_abcv[k];
 	    int4 color=polyedre_color[k];
+	    // std::cout << k << " " << x << " " << y << " " << color.u << "\n";
 	    double a=abc.x,b=abc.y,c=abc.z;
 	    z=a*x+b*y+c;
 	    double X,Y,Z;
@@ -6060,19 +6106,20 @@ namespace xcas {
       // points rendering
       for (int j=0;j<pointv.size();++j){
 	double3 m=pointv[j];
+	int4 c=point_color[j];
 	if (m.x<i+horiz || m.x>=i+horiz+w)
 	  continue;
 	int k=m.x-i-horiz,color=-1;
 	double mz=LCD_HEIGHT_PX/2-lcdz*m.z;
 	if (mz>=zmax[k])
-	  color=upcolor;
+	  color=c.u;
 	else if (mz<=zmin[k])
-	  color=downcolor;
-	else color=downupcolor;
+	  color=c.d;
+	else color=c.du;
 	drawRectangle(m.x,m.y,3,3,color);
 	if (points[j]){
 	  int dx=os_draw_string(0,0,color,0,points[j],true); // fake print
-	  os_draw_string(m.x-dx,m.y,upcolor,0,points[j]);
+	  os_draw_string(m.x-dx,m.y,c.u,0,points[j]);
 	}
       } // end points rendering
     } // end pixel horizontal loop on i
@@ -6128,7 +6175,8 @@ namespace xcas {
       }
       // find which intersection we want
       bool usetmax=v.x+v.y==0?v.z>=0:v.x+v.y>0; 
-      double tmin_=usetmax?tmin:tmax,tmax_=usetmax?tmin:tmax;
+      double tmin_=usetmax?tmin:tmax,
+	tmax_=usetmax?tmin:tmax;
       for (int k=0;k<plan_abcv.size();++k){
 	// z >= z_plan=a*x+b*y+c where (x,y,z)=m+t*v
 	// m.z+t*v.z >= a*m.x+t*a*v.x+b*m.y+t*b*v.y+c
@@ -6137,7 +6185,7 @@ namespace xcas {
 	double A=v.z-abc.x*v.x-abc.y*v.y,B=abc.x*m.x+abc.y*m.y+abc.z-m.z;
 	if (A==0) continue;
 	double t=B/A;
-	if (t<tmin || t>tmax)
+	if (t<=tmin || t>=tmax)
 	  continue;
 	if (tmax_<t)
 	  tmax_=t;
@@ -6164,7 +6212,7 @@ namespace xcas {
 	  if (t2<tmin || t2>tmax)
 	    t2=t1;
 	  double t=usetmax?t2:t1;
-	  if (t<tmin || t>tmax)
+	  if (t<=tmin || t>=tmax)
 	    continue;
 	  if (tmin_>t)
 	    tmin_=t;
@@ -6183,7 +6231,7 @@ namespace xcas {
 	  double t=B/A;
 	  double x=m.x+t*v.x;
 	  double y=m.y+t*v.y;
-	  if (t>=tmin && t<=tmax && inside(polyedrev[k],x,y)){
+	  if (t>tmin && t<tmax && inside(polyedrev[k],x,y)){
 	    interpoly.push_back(t);
 	  }
 	}
@@ -6402,11 +6450,12 @@ namespace xcas {
     int s;
     bool ortho=autoscaleg(g,vx,vy,vz,contextptr);
     autoscaleminmax(vx,window_xmin,window_xmax,fullview);
-    zoomx(1.0,false,false);
+    double zf=1+1e-14;
+    zoomx(zf,false,false);
     autoscaleminmax(vy,window_ymin,window_ymax,fullview);
-    zoomy(1.0,false,false);
+    zoomy(zf,false,false);
     autoscaleminmax(vz,window_zmin,window_zmax,fullview);
-    zoomz(1.0,false,false);
+    zoomz(zf,false,false);
     if (window_xmax-window_xmin<1e-100){
       window_xmax=gnuplot_xmax;
       window_xmin=gnuplot_xmin;
@@ -6573,9 +6622,10 @@ namespace xcas {
     sphere_centerv.clear(); sphere_radiusv.clear(); sphere_quadraticv.clear();
     linev.clear(); linetypev.clear(); curvev.clear();
     pointv.clear(); points.clear();
-    plan_color.clear();sphere_color.clear();polyedre_color.clear();line_color.clear();curve_color.clear(); hyp_color.clear();
+    plan_color.clear();sphere_color.clear();polyedre_color.clear();line_color.clear();curve_color.clear(); hyp_color.clear(); point_color.clear();
     // rotate+translate+scale g
-    vecteur v(gen2vecteur(g));
+    vecteur v;
+    aplatir(gen2vecteur(g),v);
     for (int i=0;i<v.size();++i){
       int u=default_upcolor,d=default_downcolor,du=default_downupcolor,dd=default_downdowncolor;
       const char * ptr=0;
@@ -6625,6 +6675,7 @@ namespace xcas {
 	    xyz2ij(double3(A[0]._DOUBLE_val,A[1]._DOUBLE_val,A[2]._DOUBLE_val),I,J);
 	    pointv.push_back(double3(I,J,Z));
 	    points.push_back(ptr);
+	    point_color.push_back(int4(u,d,du,dd));
 	  }
 	}
 	continue;
@@ -7582,7 +7633,35 @@ namespace xcas {
 	normalize(zi,zj);
 	drawLine(20,20,20+20*zi,20+20*zj,12345);
 	os_draw_string_small(20+20*zi,20+20*zj,12345,COLOR_BLACK,"z");
-      }
+      } // end show_axes
+      // now handle legend([x,y],string)
+      vecteur V(gen2vecteur(g));
+      for (int i=0;i<V.size();++i){
+	gen attr=V[i];
+	if (attr.is_symb_of_sommet(at_pnt)){
+	  attr=attr._SYMBptr->feuille;
+	  if (attr.type==_VECT && attr._VECTptr->size()>1){
+	    int color=65535;
+	    gen attr0=attr._VECTptr->front();
+	    attr=attr[1];
+	    if (attr.type==_INT_ && (attr.val & 0xffff)!=0){
+	      color=attr.val &0xffff;
+	    }
+	    if (attr0.is_symb_of_sommet(at_legende)){
+	      gen leg=attr0._SYMBptr->feuille;
+	      if (leg.type==_VECT && leg._VECTptr->size()>=2){
+		gen pos=leg._VECTptr->front();
+		leg=leg[1];
+		if (pos.type==_VECT && pos._VECTptr->size()==2 && leg.type==_STRNG){
+		  gen x=pos._VECTptr->front(),y=pos._VECTptr->back();
+		  if (x.type==_INT_ && y.type==_INT_)
+		    os_draw_string(x.val,y.val,color,0,leg._STRNGptr->c_str());
+		}
+	      }
+	    }
+	  }
+	}
+      }      
 #ifdef NSPIRE_NEWLIB
     DefineStatusMessage((char*)"+-: zoom, pad: move, esc: quit", 1, 0, 0);
 #else
@@ -7973,6 +8052,11 @@ namespace xcas {
 		case _GL_Y:
 		  gr.window_ymin=a._DOUBLE_val;
 		  gr.window_ymax=b._DOUBLE_val;
+		  gr.update();
+		  break;
+		case _GL_Z:
+		  gr.window_zmin=a._DOUBLE_val;
+		  gr.window_zmax=b._DOUBLE_val;
 		  gr.update();
 		  break;
 		}
@@ -9460,6 +9544,12 @@ namespace xcas {
     mpz_out_str(f,10,*key._ZINTptr);
     fclose(f);
     // main_ptt(1,0);
+#ifdef MICROPY_LIB
+    python_free();
+#endif   
+#ifdef QUICKJS
+    js_end(global_js_context);
+#endif
     int res=nl_exec(exec,2,args);
     //*logptr(contextptr) << "exam mode " << res << '\n';
     //int res=nl_exec(exec,1,0);
@@ -9488,7 +9578,7 @@ namespace xcas {
     duration=h+m/100.0;
     return ch;
   }
-  const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF5  2d \nreserved\nF4 menu\nreserved\nF6 reg\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF< poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF: misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n and \n or \nperiodic_table\n";
+  const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF5  2d \nreserved\nF4 menu\nreserved\nF6 reg\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF< poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF: misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n and \n or \nperiodic_table\nF? geo\npoint(\nline(\ncircle(\nplane(\nF@ color\ncolor=\nred\ncyan\ngreen\nblue\nmagenta\nyellow\n";
 
   const char python_conf_standard[] = "F1 misc\nprint(\ninput(\n;\n:\n[]\ndef f(x): return \ntime()\nfrom time import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nabs(\nsqrt(\nfrom math import *\nF3 c&rand\nrandint(\nrandom()\nchoice(\nfrom random import *\n.real\n.imag\nphase(\nfrom cmath import *;i=1j\nF4 menu\nreserved\nF5  2d\nreserved\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF7 linalg\nmatrix(\nadd(\nsub(\nmul(\ninv(\nrref(\ntranspose(\nfrom linalg import *;i=1j\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *;i=1j\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF: plot\nclf()\nplot(\ntext(\narrow(\nscatter(\nbar(\nshow()\nfrom matplotl import *\nF= list\nlist(\nrange(\nlen(\nappend(\nzip(\nsorted(\nmap(\nreversed(\nF> prog\n|\n&\n#\nhex(\nbin(\ndebug(\nfrom cas import *\ncaseval(\"\")\n";
   
@@ -11236,7 +11326,11 @@ namespace xcas {
       }
 #endif
       if (key!=KEY_CTRL_PRGM && key!=KEY_CHAR_FRAC)
-	translate_fkey(key);    
+	translate_fkey(key);
+      if (key==KEY_CHAR_NORMAL)
+	key=KEY_CTRL_F15;
+      if (key==KEY_CHAR_FACTOR)
+	key=KEY_CTRL_F16;
       //char keylog[32];sprint_int(keylog,key); puts(keylog);
       show_status(text,search,replace);
       int & clipline=text->clipline;
@@ -11367,7 +11461,7 @@ namespace xcas {
 	  const char * adds;
 #if 1
 	  if ( (key>=KEY_CTRL_F1 && key<=KEY_CTRL_F4) ||
-	       (key >= KEY_CTRL_F6 && key <= KEY_CTRL_F14)
+	       (key >= KEY_CTRL_F6 && key <= KEY_CTRL_F16)
 	       ){
 	    string le_menu;
 	    if (xcas_python_eval==1)//text->python?
@@ -11375,7 +11469,7 @@ namespace xcas {
 	    if (xcas_python_eval<=0)
 	      le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nvar\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF< plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF: misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
 	    if (xcas_python_eval>=0)
-	      le_menu += "F= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\n";
+	      le_menu += "F= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\nF? geo\npoint(\nline(\nsegment(\ncircle(\ntriangle(\nplane(\nsphere(\nsingle_inter(\nF@ color\ncolor=\nred\ncyan\ngreen\nblue\nmagenta\nyellow\nlegend(";
 	    const char * ptr=console_menu(key,(char*)(le_menu.c_str()),2);
 	    if (!ptr){
 	      show_status(text,search,replace);
@@ -14723,7 +14817,7 @@ namespace xcas {
       
       if ( active_app==0 &&
 	   ((input_key >= KEY_CTRL_F1 && input_key <= KEY_CTRL_F6) ||
-	    (input_key >= KEY_CTRL_F7 && input_key <= KEY_CTRL_F12) )
+	    (input_key >= KEY_CTRL_F7 && input_key <= KEY_CTRL_F16) )
 	   ){
 	Console_Disp(1,0);
 	key=input_key;

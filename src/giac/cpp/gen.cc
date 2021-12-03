@@ -14310,6 +14310,7 @@ void sprint_double(char * s,double d){
   const char * gen::dbgprint() const { return "Done";}
 #else
 #if defined(VISUALC) && !defined(MS_SMART)
+#include <atlbase.h>
   const char * gen::dbgprint() const { ATLTRACE2("%s\r\n", this->print(0).c_str()); return "Done";}
 #else
   const char * gen::dbgprint() const{    

@@ -1060,6 +1060,14 @@ namespace giac {
     char s[256];
 #ifdef KHICAS
     sprint_double(s,d);
+    // search for a decimal point in s
+    int l=strlen(s),i;
+    for (i=0;i<l;++i){
+      if (s[i]=='.')
+	break;
+    }
+    if (i+ndigits+1<l)
+      s[i+ndigits+1]=0;
 #else
     ndigits=ndigits<2?2:ndigits;
     ndigits=ndigits>15?15:ndigits;
@@ -14736,8 +14744,11 @@ gen _vers(const gen & g,GIAC_CONTEXT){
       res.subtype=_INT_COLOR;
       return res;
     }
-    if (g.val<0)
+    if (g.val<0){
+      if (g.val<-64)
+	return turtle(contextptr).turtle_width;
       turtle(contextptr).turtle_width=-g.val;
+    }
     else
       turtle(contextptr).color=g.val;
     turtle(contextptr).radius = 0;
@@ -14942,6 +14953,45 @@ gen _vers(const gen & g,GIAC_CONTEXT){
 
   gen _polygone_rempli(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
+    static int turtle_fill_begin=-1,turtle_fill_color=-1;
+    if (g.type==_VECT && g._VECTptr->size()==3){
+      turtle_fill_color=_rgb(g,contextptr).val;
+      return change_subtype(turtle_fill_color,_INT_COLOR);
+    }
+    if (g.type==_INT_ && g.subtype==_INT_COLOR){
+      turtle_fill_color= g.val;
+      return g;
+    }
+    if (g.type==_VECT && !g._VECTptr->empty() && g._VECTptr->front().type==_INT_){
+      if (g._VECTptr->front().val>=0)
+	turtle_fill_color= g._VECTptr->front().val;
+      return change_subtype(turtle_fill_color,_INT_COLOR);
+    }
+    if (g.type==_VECT && g._VECTptr->empty()){
+      if (turtle_fill_begin<0){
+	if (g.subtype==0)
+	  turtle_fill_begin=turtle_stack(contextptr).size();
+	else
+	  return gensizeerr();
+	return 1;
+      }
+      int c=turtle(contextptr).color;
+      if (turtle_fill_color>=0)
+	_crayon(turtle_fill_color,contextptr);
+      int n=turtle_stack(contextptr).size()- turtle_fill_begin;     
+      turtle_fill_begin=-1;
+      turtle(contextptr).radius=-absint(n);
+      gen res=update_turtle_state(true,contextptr);
+      if (turtle_fill_color>=0){
+	turtle(contextptr).color=c;
+	res=update_turtle_state(true,contextptr);
+      }
+      return res;
+    }
+    if (is_zero(g)){
+      turtle_fill_begin=turtle_stack(contextptr).size();
+      return 1;
+    }
     if (g.type==_INT_){
       turtle(contextptr).radius=-absint(g.val);
       if (turtle(contextptr).radius<-1)

@@ -122,6 +122,7 @@
 #define KEY_CTRL_F13         30021
 #define KEY_CTRL_F14         30022
 #define KEY_CTRL_F15         30023
+#define KEY_CTRL_F16         30024
 #define KEY_CTRL_CATALOG    30100
 #define KEY_CTRL_CAPTURE    30055
 #define KEY_CTRL_CLIP       30050

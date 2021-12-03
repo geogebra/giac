@@ -116,6 +116,7 @@ bool dfu_send_rescue(const char * fname);
 const int nwstoresize1=0x8000,nwstoresize2=0x8014;
 bool dfu_send_firmware(const char * fname);
 bool dfu_send_apps(const char * fname);
+bool dfu_update_khicas(const char * fname); 
 
 #if defined HAVE_LIBMICROPYTHON
 #include <string>
