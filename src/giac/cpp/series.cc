@@ -2643,7 +2643,7 @@ namespace giac {
     }
     if (!cv.empty()){
       gen cvg=tsimplify(cv,contextptr);
-      if (cvg.type==_VECT && cvg._VECTptr->size()==cv.size())
+      if (!has_i(cvg) && cvg.type==_VECT && cvg._VECTptr->size()==cv.size())
 	e_copy=subst(e_copy,cv,*cvg._VECTptr,false,contextptr);
     }
     if (!direction) { 

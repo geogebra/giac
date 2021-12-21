@@ -7663,10 +7663,11 @@ namespace xcas {
 	}
       }      
 #ifdef NSPIRE_NEWLIB
-    DefineStatusMessage((char*)"+-: zoom, pad: move, esc: quit", 1, 0, 0);
+      DefineStatusMessage((char*)"+-: zoom, pad: move, esc: quit", 1, 0, 0);
 #else
-    DefineStatusMessage((char*)"+-: zoom, pad: move, EXIT: quit", 1, 0, 0);
+      DefineStatusMessage((char*)"+-: zoom, pad: move, EXIT: quit", 1, 0, 0);
 #endif
+      DisplayStatusArea();
       return;
     }
     int save_clip_ymin=clip_ymin;
@@ -7801,6 +7802,12 @@ namespace xcas {
     // Check for fast redraw
     // Then redraw the background
     drawRectangle(deltax, deltay, LCD_WIDTH_PX, LCD_HEIGHT_PX,COLOR_WHITE);
+#ifdef TURTLETAB
+    if (turtleptr && turtle_stack_size==0){
+      turtleptr[0]=logo_turtle();
+      ++turtle_stack_size;
+    }
+#endif
     if (turtleptr &&
 #ifdef TURTLETAB
 	turtle_stack_size
@@ -8072,7 +8079,7 @@ namespace xcas {
 #else
     DefineStatusMessage((char*)"+-: zoom, pad: move, EXIT: quit", 1, 0, 0);
 #endif
-    // EnableStatusArea(2);
+    DisplayStatusArea();
     int saveprecision=gr.precision;
     gr.precision += 2; // fast draw first
     gr.draw();
@@ -8518,7 +8525,6 @@ namespace xcas {
 	set_xcas_status();
 #else
       DefineStatusMessage((char*)"+-: zoom, pad: move, EXIT: quit", 1, 0, 0);
-      EnableStatusArea(2);
       DisplayStatusArea();
 #endif
       gen value;
@@ -15945,6 +15951,16 @@ void c_set_pixel(int x,int y,int c){
 }
 void c_fill_rect(int x,int y,int w,int h,int c){
   giac::freeze=true;
+  if (w<0){
+    w=-w;
+    x -= w; 
+  }
+  if (h<0){
+    h=-h;
+    y -= h; 
+  }
+  if (x<0){ w+=x; x=0;}
+  if (y<0){ h+=y; y=0;}
   os_fill_rect(x,y,w,h,c);
 }
 int c_draw_string(int x,int y,int c,int bg,const char * s,bool fake){
@@ -16277,9 +16293,9 @@ const char * gettext(const char * s) {
       giac::freeze=false;
       for (;;){
 #ifdef NSPIRE_NEWLIB
-	DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper esc":"Screen freezed. Press esc."), 1, 0, 0);
+	DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper esc":"Screen frozen. Press esc."), 1, 0, 0);
 #else
-	DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper clear":"Screen freezed. Press clear."), 1, 0, 0);
+	DefineStatusMessage((char*)((lang==1)?"Ecran fige. Taper clear":"Screen frozen. Press clear."), 1, 0, 0);
 #endif
 	DisplayStatusArea();
 	int key;

@@ -1033,7 +1033,7 @@ namespace giac {
       }
       if (u==at_asin || u==at_acos || u==at_atanh){
 	if (mode==1)
-	  excluded=mergevecteur(excluded,gen2vecteur(_solve(makesequence(symb_equal(pow(gf,2,contextptr),0),x),contextptr)));
+	  excluded=mergevecteur(excluded,gen2vecteur(_solve(makesequence(symb_equal(pow(gf,2,contextptr),1),x),contextptr)));
 	else
 	  eqs.push_back(symb_inferieur_egal(pow(gf,2,contextptr),1));
 	continue;

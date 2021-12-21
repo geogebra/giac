@@ -962,7 +962,7 @@ namespace giac {
     }
   }
 
-  static bool in_autoscale(const gen & g,vector<double> & vx,vector<double> & vy,vector<double> & vz,GIAC_CONTEXT){
+  static bool in_autoscale(const gen & g,vector<double> & vx,vector<double> & vy,vector<double> & vz,GIAC_CONTEXT,bool curve=false){
     if (g.type==_VECT && g.subtype==_POINT__VECT && g._VECTptr->size()==3){
       vecteur v=*evalf_double(g,1,contextptr)._VECTptr;
       if (v[2].type==_CPLX)
@@ -975,7 +975,7 @@ namespace giac {
       }
     }
     if (g.type==_VECT ){
-      if (g.subtype==_GROUP__VECT && !g._VECTptr->empty() && g._VECTptr->front().type!=_VECT){ // "compressed" hypersurface
+      if (!curve && g.subtype==_GROUP__VECT && !g._VECTptr->empty() && g._VECTptr->front().type!=_VECT){ // "compressed" hypersurface
 	vecteur v=*evalf_double(g,1,contextptr)._VECTptr;
 	int s=v.size();
 	if (s%3==0){
@@ -1005,7 +1005,7 @@ namespace giac {
 	  if (tmp.type==_VECT && tmp._VECTptr->size()>4)
 	    tmp=(*tmp._VECTptr)[4];
 	}
-	in_autoscale(tmp,vx,vy,vz,contextptr);
+	in_autoscale(tmp,vx,vy,vz,contextptr,true);
       }
       return false;
     }

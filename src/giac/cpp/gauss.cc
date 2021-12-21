@@ -730,7 +730,13 @@ namespace giac {
     matrice C=makevecteur(A[0][3],A[1][3],A[2][3]);
     matrice P;
     egv(B,P,propre,contextptr,false,false,false);
-    gen s1=propre[0][0],s2=propre[1][1],s3=propre[2][2];
+    gen s1,s2,s3;
+    if (ckmatrix(propre)){
+      s1=propre[0][0];s2=propre[1][1];s3=propre[2][2];
+    }
+    else {
+      s1=propre[0];s2=propre[1];s3=propre[2];
+    }
     if (is_zero(s1)) s1=0;
     if (is_zero(s2)) s2=0;
     if (is_zero(s3)) s3=0;

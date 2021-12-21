@@ -104,7 +104,7 @@ extern "C" uint32_t mainThreadStack[];
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
-#if 0 // def ASPEN_GEOMETRY
+#ifdef FXCG
 #define ALLOCSMALL
 #endif
 
@@ -115,26 +115,58 @@ namespace giac {
     int i1,i2,i3,i4,i5,i6,i7,i8;
   };
   
+  struct eleven_int {
+    int i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11;
+  };
+  
   struct six_int {
-    int i1,i2,i3,i4,i5,i6;
+    int i1,i2,i3,i4,i5,i6
+#ifdef FXCG
+      ,i7,i8
+#endif
+      ;
   };
   
   struct four_int {
     int i1,i2,i3,i4;
   };
-  
-#ifdef RTOS_THREADX
-  const int ALLOC24=5*32;
-  const int ALLOC32=2*32;
-  const int ALLOC16=4*32;
-  static unsigned int freeslot24[ALLOC24/32]={0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,0xffffffff};
-  static unsigned int freeslot16[ALLOC16/32]={0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff};
-  static unsigned int freeslot32[ALLOC32/32]={0xffffffff, 0xffffffff};
-#else
-  const int ALLOC24=16*32;
-  const int ALLOC32=16*32;
-  const int ALLOC16=16*32;
+
+  // ALLOCA  constants must be multiples of 2*32
+#if 0 // def FXCG
+  const int ALLOC24=10*32;
+  const int ALLOC32=8*32;
+  const int ALLOC16=8*32;
   static unsigned int freeslot24[ALLOC24/32]={
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 
+  };
+  static unsigned int freeslot16[ALLOC16/32]={
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff,
+    //0xffffffff, 0xffffffff
+  };
+  static unsigned int freeslot32[ALLOC32/32]={
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff,
+    //0xffffffff, 0xffffffff
+  };
+  static four_int * tab16=(four_int *) 0xe5200000;
+  static six_int * tab24=(six_int *) 0xe5007000;
+  static eight_int * tab32=(eight_int *) 0xe5017000;
+#else
+  const int ALLOC24=32*32;
+  const int ALLOC32=28*32;
+  const int ALLOC16=32*32;
+  //#define ALLOC44 16*32
+  static unsigned int freeslot24[ALLOC24/32]={
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
@@ -145,58 +177,136 @@ namespace giac {
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
   };
   static unsigned int freeslot32[ALLOC32/32]={
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    //0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
   };
+#ifdef ALLOC44
+  static unsigned int freeslot44[ALLOC44/32]={
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    //0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    //0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    //0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    //0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+  };
+  static eleven_int tab44[ALLOC44];
 #endif
+
+  static eight_int tab32[ALLOC32];
   static six_int tab24[ALLOC24];
   static four_int tab16[ALLOC16];
-  static eight_int tab32[ALLOC32];
+#endif
+
   
   unsigned freeslotpos(unsigned n){
     unsigned r=1;
-    if (n<<16==0) r+= 16, n>>=16;
-    if (n<<24==0) r+= 8, n>>=8;
-    if (n<<28==0) r+= 4, n>>=4;
-    if (n<<30==0) r+= 2, n>>=2;
+    if ( (n<<16)==0 ){ 
+      r+= 16;
+      n>>=16;
+    }
+    if ( (n<<24)==0 ) {
+      r+= 8; 
+      n>>=8;
+    }
+    if ( (n<<28)==0 ) {
+      r+= 4;
+      n>>=4;
+    }
+    if ( (n<<30)==0 ) {
+      r+= 2;
+      n>>=2;
+    }
     r -= n&1;
     return r;
   }
   
-  static void* allocfast(std::size_t size){
+  static void* allocfast(size_t size){
     int i,pos;
     if (size==24){ 
-      for (i=0;i<ALLOC24/32;++i){
+      for (i=0;i<ALLOC24/32;){
+	if (!(freeslot24[i] || freeslot24[i+1])){
+	  i+=2;
+	  continue;
+	}
 	if (freeslot24[i]){
 	  pos=freeslotpos(freeslot24[i]);
 	  freeslot24[i] &= ~(1<<pos);
 	  return (void *) (tab24+i*32+pos);
 	}
+	i++;
+	pos=freeslotpos(freeslot24[i]);
+	freeslot24[i] &= ~(1<<pos);
+	return (void *) (tab24+i*32+pos);
       }
     }
     if (size==16){ 
-      for (i=0;i<ALLOC16/32;++i){
+      for (i=0;i<ALLOC16/32;){
+	if (!(freeslot16[i] || freeslot16[i+1])){
+	  i+=2;
+	  continue;
+	}
 	if (freeslot16[i]){
 	  pos=freeslotpos(freeslot16[i]);
 	  freeslot16[i] &= ~(1<<pos);
 	  return (void *) (tab16+i*32+pos);
 	}
+	++i;
+	pos=freeslotpos(freeslot16[i]);
+	freeslot16[i] &= ~(1<<pos);
+	return (void *) (tab16+i*32+pos);
       }
     }
     if (size==32){ 
-      for (i=0;i<ALLOC32/32;++i){
+      for (i=0;i<ALLOC32/32;){
+	if (!(freeslot32[i] || freeslot32[i+1])){
+	  i+=2;
+	  continue;
+	}
 	if (freeslot32[i]){
 	  pos=freeslotpos(freeslot32[i]);
 	  freeslot32[i] &= ~(1<<pos);
 	  return (void *) (tab32+i*32+pos);
 	}
+	++i;
+	pos=freeslotpos(freeslot32[i]);
+	freeslot32[i] &= ~(1<<pos);
+	return (void *) (tab32+i*32+pos);
       }
     }
-    void * p =  std::malloc(size);  
+#ifdef ALLOC44
+    if (size==44){ 
+      for (i=0;i<ALLOC44/32;){
+	if (!(freeslot44[i] || freeslot44[i+1])){
+	  i+=2;
+	  continue;
+	}
+	if (freeslot44[i]){
+	  pos=freeslotpos(freeslot44[i]);
+	  freeslot44[i] &= ~(1<<pos);
+	  return (void *) (tab44+i*32+pos);
+	}
+	++i;
+	pos=freeslotpos(freeslot44[i]);
+	freeslot44[i] &= ~(1<<pos);
+	return (void *) (tab44+i*32+pos);
+      }
+    }
+#endif
+    void * p =  malloc(size);  
 #ifndef NO_STDEXCEPT
     if(!p) {
       std::bad_alloc ba;
@@ -210,25 +320,64 @@ namespace giac {
     if ( ((size_t)obj >= (size_t) &tab24[0]) &&
 	 ((size_t)obj < (size_t) &tab24[ALLOC24]) ){
       int pos= ((size_t)obj -((size_t) &tab24[0]))/sizeof(six_int);
-      freeslot24[pos/32] |= 1 << (pos%32); 
+      freeslot24[pos/32] |= (1 << (pos%32)); 
       return;
     }
     if ( ((size_t)obj>=(size_t) &tab16[0] ) &&
 	 ((size_t)obj<(size_t) &tab16[ALLOC16] ) ){
       * (unsigned *) obj= 0;
       int pos= ((size_t)obj -((size_t) &tab16[0]))/sizeof(four_int);
-      freeslot16[pos/32] |= 1 << (pos%32); 
+      freeslot16[pos/32] |= (1 << (pos%32)); 
       return;
     }
+#ifdef ALLOC44
+    if ( ((size_t)obj>=(size_t) &tab44[0] ) &&
+	 ((size_t)obj<(size_t) &tab44[ALLOC44] ) ){
+      * (unsigned *) obj= 0;
+      int pos= ((size_t)obj -((size_t) &tab44[0]))/sizeof(eleven_int);
+      freeslot44[pos/32] |= (1 << (pos%32)); 
+      return;
+    }
+#endif
     if ( ((size_t)obj>=(size_t) &tab32[0]) &&
 	 ((size_t)obj<(size_t) &tab32[ALLOC32]) ){
       int pos= ((size_t)obj -((size_t) &tab32[0]))/sizeof(eight_int);
-      freeslot32[pos/32] |= 1 << (pos%32); 
+      freeslot32[pos/32] |= (1 << (pos%32)); 
     }
     else
       free(obj);
   }
+  unsigned hamdist(unsigned val){
+    size_t res=0;
+    if (!val) return res;
+    for (int i=0;i<32;++i){
+      res += ((val >>i) & 1); 
+    }
+    return res;
+  }
+
+  size_t freeslotmem(){
+    size_t res=0;
+    for (int i=0;i<ALLOC16/32;++i){
+      res += 16*hamdist(freeslot16[i]);
+    }
+    for (int i=0;i<ALLOC24/32;++i){
+      res += 24*hamdist(freeslot24[i]);
+    }
+    for (int i=0;i<ALLOC32/32;++i){
+      res += 32*hamdist(freeslot32[i]);
+    }
+    for (int i=0;i<ALLOC44/32;++i){
+      res += 44*hamdist(freeslot44[i]);
+    }
+    return res;
+  }
+#else // ALLOCSMALL
+  size_t freeslotmem(){
+    return 0;
+  }
 #endif // ALLOCSMALL
+
 
 #if defined(SMARTPTR64) || !defined(ALLOCSMALL)
   inline void deletecomplex(ref_complex * ptr){
@@ -462,7 +611,9 @@ namespace giac {
 #ifdef GIAC_HAS_STO_38
     usleep(10);
 #else
+#ifndef _MINGW_H
     usleep(1000);
+#endif
 #endif
 #endif
 #if !defined NO_STDEXCEPT && !defined EMCC
@@ -967,11 +1118,34 @@ namespace giac {
     subtype = 0;
   }
 
+#ifdef ALLOC44
+  ref_eqwdata * new_ref_eqwdata(const eqwdata & e){
+    ref_eqwdata * ptr=(ref_eqwdata *) allocfast(sizeof(ref_eqwdata));
+    ptr->ref_count=1;
+    *(unsigned *)&ptr->e=0;
+    *((unsigned *)&ptr->e+1)=0;
+    *((unsigned *)&ptr->e+2)=0;
+    *((unsigned *)&ptr->e+3)=0;
+    *((unsigned *)&ptr->e+4)=0;
+    *((unsigned *)&ptr->e+5)=0;
+    *((unsigned *)&ptr->e+6)=0;
+    *((unsigned *)&ptr->e+7)=0;
+    *((unsigned *)&ptr->e+8)=0;
+    *((unsigned *)&ptr->e+9)=0;
+    ptr->e=e;
+    return ptr;
+  }
+#endif
+
   gen::gen(const eqwdata & g){
 #ifdef SMARTPTR64
       * ((ulonglong * ) this) = ulonglong(new ref_eqwdata(g)) << 16;
 #else
+#ifdef ALLOC44
+    __EQWptr = new_ref_eqwdata(g);
+#else
     __EQWptr = new ref_eqwdata(g);
+#endif
 #endif
     type = _EQW;
     subtype=0;
@@ -1278,7 +1452,11 @@ namespace giac {
 #ifdef SMARTPTR64
       * ((ulonglong * ) this) = ulonglong(new ref_complex(a,b)) << 16;
 #else
+#if 0 //def FXCG
+      __CPLXptr = new ref_complex(a,b);
+#else
       __CPLXptr = new_ref_complex(a,b);
+#endif
 #endif
       type =_CPLX;
       subtype=3;
@@ -1629,7 +1807,12 @@ namespace giac {
       delete __MAPptr;
       break;
     case _EQW:
+#ifdef ALLOC44
+      __EQWptr->e.g=0;
+      deletefast(__EQWptr);
+#else
       delete __EQWptr;
+#endif
       break;
     case _GROB:
       delete __GROBptr;
@@ -1709,7 +1892,12 @@ namespace giac {
 	delete (ref_gen_map *) ptr_save;
 	break;
       case _EQW:
+#ifdef ALLOC44
+	((ref_eqwdata *) ptr_save)->e.g=0;
+	deletefast(ptr_save);
+#else
 	delete (ref_eqwdata *) ptr_save;
+#endif
 	break;
       case _GROB:
 	delete (ref_grob *) ptr_save;
@@ -2358,7 +2546,7 @@ namespace giac {
   // double(int) does not seem to work under GNUWINCE
   double int2double(int i){
     if (i<0){
-#ifdef WIN32
+#if defined WIN32 && !defined __CYGWIN__ // INT_MAX not defined with cygwin
       if (i<-INT_MAX) return -1.0-INT_MAX;
 #else
       if (i<-RAND_MAX) return -1.0-RAND_MAX;
@@ -4169,7 +4357,7 @@ namespace giac {
       double d=atan2((a._CPLXptr+1)->_DOUBLE_val,a._CPLXptr->_DOUBLE_val);
       if (angle_radian(contextptr))
 	return d;
-      int mode = get_mode_set_radian(contextptr);
+      int mode = angle_mode(contextptr);
       if(mode == 1) //if was in degrees
         return 180*d/M_PI;
       else 

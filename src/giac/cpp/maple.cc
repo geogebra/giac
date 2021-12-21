@@ -24,14 +24,69 @@ using namespace std;
 #include <cmath>
 #include <cstdlib>
 #include <stdio.h>
+
 #if !defined GIAC_HAS_STO_38 && !defined NSPIRE && !defined FXCG 
 #include <fstream>
 #endif
+
 #if !defined HAVE_NO_SYS_TIMES_H && defined HAVE_SYS_TIME_H
 #include <fcntl.h>
 #include <sys/time.h>
 #include <time.h>
-#endif
+#else 
+#if 0 // defined VISUALC || defined __MINGW_H
+
+#include <sys/timeb.h>
+#include <sys/types.h>
+#include <winsock2.h>
+
+int gettimeofday(struct timeval* t,void* timezone);
+
+#define __need_clock_t
+
+/* Structure describing CPU time used by a process and its children.  */
+struct tms  {
+  clock_t tms_utime;          /* User CPU time.  */
+  clock_t tms_stime;          /* System CPU time.  */
+  
+  clock_t tms_cutime;         /* User CPU time of dead children.  */
+  clock_t tms_cstime;         /* System CPU time of dead children.  */
+};
+
+/* Store the CPU time used by this process and all its
+   dead children (and their dead children) in BUFFER.
+   Return the elapsed real time, or (clock_t) -1 for errors.
+   All times are in CLK_TCKths of a second.  */
+clock_t times (struct tms *__buffer);
+
+typedef long long suseconds_t ;
+
+int gettimeofday(struct timeval* t,void* timezone)
+{       
+  struct _timeb timebuffer;
+  _ftime( &timebuffer );
+  t->tv_sec=timebuffer.time;
+  t->tv_usec=1000*timebuffer.millitm;
+  return 0;
+}
+
+double clock(){
+  struct _timeb timebuffer;
+  _ftime( &timebuffer );
+  return timebuffer.time*1e6+1000*timebuffer.millitm;
+}
+
+clock_t times (struct tms *__buffer) {
+  __buffer->tms_utime = clock();
+  __buffer->tms_stime = 0;
+  __buffer->tms_cstime = 0;
+  __buffer->tms_cutime = 0;
+  return __buffer->tms_utime;
+}
+#define HAVE_SYS_TIME_H
+#endif // VISUALC || MINGW
+#endif // !defined HAVE_NO_SYS_TIMES_H && defined HAVE_SYS_TIME_H
+
 // #include <sys/resource.h>
 // #include <unistd.h>
 #include "sym2poly.h"
@@ -453,6 +508,11 @@ namespace giac {
   gen _time(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
     if (a.type==_VECT && a.subtype==_SEQ__VECT){
+#if defined VISUALC || defined __MINGW_H
+    struct _timeb timebuffer;
+    _ftime(&timebuffer);
+    return timebuffer.time+double(timebuffer.millitm)/1000;
+#endif
 #ifdef GIAC_HAS_STO_38
       return PrimeGetNow()/1000.;
 #endif
@@ -506,6 +566,28 @@ namespace giac {
     double t1=emcctime();
     eval(a,level,contextptr);
     return (emcctime()-t1)/1e6;
+#endif
+#if defined VISUALC || defined __MINGW_H
+    struct _timeb timebuffer0,timebuffer1;
+    _ftime(&timebuffer0);
+    for (;i<1000;){ // do it 10 times more
+      for (;i<ntimes;++i){
+	eval(a,level,contextptr);
+      }
+      _ftime(&timebuffer1);
+      delta=(timebuffer1.time-timebuffer0.time)+double(timebuffer1.millitm-timebuffer0.millitm)/1000;
+      if (delta>0.1)
+	break;
+      if (delta>0.05) // max wait time will be 2 seconds
+	ntimes *= 2;
+      else {
+	if (delta>0.02) 
+	  ntimes *= 5;
+	else
+	  ntimes *= 10;
+      }
+    }
+    return (delta/ntimes);
 #endif
 #if defined(__APPLE__) || defined(PNACL)
     unsigned u1=CLOCK();

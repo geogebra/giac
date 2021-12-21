@@ -753,6 +753,7 @@ namespace giac {
   // before making a user transformation on the frame, 
   // collect pixon instructions in g
   string svg_preamble_pixel(const gen &g,double svg_width_cm, double svg_height_cm,double xmin,double xmax,double ymin,double ymax,bool ortho,bool xml,int color){
+    // COUT << "svg_preamble_pixel " << svg_width_cm << " " << svg_height_cm << " " << xmin << " " << xmax << " " << ymin << " " << ymax << '\n';
     bool cutupper=color==7;
     double svg_width=xmax-xmin;
     double svg_height=ymax-ymin;

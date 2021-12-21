@@ -9656,9 +9656,17 @@ void sync_screen(){}
   define_unary_function_ptr5( at_draw_polygon ,alias_at_draw_polygon,&__draw_polygon,0,true);
 
   void draw_rectangle(int x, int y, int width, int height, unsigned short color,GIAC_CONTEXT){
+    if (width<0){
+      width=-width;
+      x-=width; // adapt for Casio 
+    }
+    if (height<0){
+      height=-height;
+      y-=height; // adapt for Casio
+    }
     if (x<0){ width+=x; x=0;}
     if (y<0){ height+=y; y=0;}
-    if (width<0 || height<0) return;
+    // if (width<0 || height<0) return;
 #ifdef KHICAS
     os_fill_rect(x,y,width,height,color);
 #else
