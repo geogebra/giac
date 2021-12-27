@@ -529,7 +529,7 @@ namespace giac {
     }
     if ( g.feuille.type==_VECT && g.feuille._VECTptr->empty() ){
       s += g.sommet.ptr()->print(contextptr);
-      s += "(NULL)";
+      s += g.feuille.subtype==0?"([])":"(NULL)";
       return s;
     }
     if (g.sommet==at_prod)
