@@ -3,8 +3,7 @@ name: build test
 on: [push]
 
 jobs:
-  linux:
-
+  linux-native-gradle:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -12,3 +11,12 @@ jobs:
       run: sudo apt update && sudo apt install build-essential libgmp-dev libmpfr-dev default-jdk
     - name: build
       run: ./gradlew installMinigiacLinux64Executable
+
+  linux-native-cmake:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: prerequisites
+      run: sudo apt update && sudo apt install build-essential libgmp-dev libmpfr-dev cmake
+    - name: build
+      run: mkdir cbuild && cd cbuild && cmake .. && make
