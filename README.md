@@ -1,3 +1,5 @@
+![build](https://github.com/kovzol/giac-1/workflows/build/badge.svg)
+
 # Giac, a free computer algebra system #
 
 [Giac](http://www-fourier.ujf-grenoble.fr/~parisse/giac.html) is a free
