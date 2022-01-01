@@ -20,3 +20,21 @@ jobs:
       run: sudo apt update && sudo apt install build-essential libgmp-dev libmpfr-dev cmake
     - name: build
       run: mkdir cbuild && cd cbuild && cmake .. && make
+
+  linux-wasm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: prerequisites
+      run: sudo apt update && sudo apt install git default-jdk
+    - name: build
+      run: |
+        git clone https://github.com/emscripten-core/emsdk.git
+        ./gradlew installEmsdk
+        cd emsdk
+        ln -s . emsdk-portable
+        mkdir emscripten
+        cd emscripten
+        ln -s ../upstream/emscripten latest
+        cd ../..
+        ./gradlew activateEmsdk createGiacWasmJs
