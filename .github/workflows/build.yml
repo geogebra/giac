@@ -62,6 +62,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: prerequisites
-      run: brew install gmp mpfr readline coreutils node
+      run: brew install gmp mpfr readline coreutils node@15
     - name: build
       run: npm install
+
