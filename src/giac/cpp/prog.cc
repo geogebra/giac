@@ -1900,11 +1900,18 @@ namespace giac {
       if ((calc38 || xcas_mode(contextptr)>0) && (it->type==_SYMB) && (it->_SYMBptr->sommet==at_bloc))
 	res += printasinnerbloc(it->_SYMBptr->feuille,contextptr);
       else {
-	res += it->print(contextptr);
-	if (res[res.size()-1]!=';' 
-	    //&& !xcas_mode(contextptr)
-	    )
-	  res += ";";
+	if (it->type==_SYMB && (it->_SYMBptr->sommet==at_ifte || it->_SYMBptr->sommet==at_for)){
+	  res +='{';
+	  res += it->print(contextptr);
+	  res += '}';
+	}
+	else {
+	  res += it->print(contextptr);
+	  if (res[res.size()-1]!=';' 
+	      //&& !xcas_mode(contextptr)
+	      )
+	    res += ";";
+	}
       }
       debug_ptr(contextptr)->indent_spaces -=2;
     }
