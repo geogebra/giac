@@ -48,7 +48,7 @@ jobs:
     - name: build
       run: npm install
 
-  mac-native-cmake
+  mac-native-cmake:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v1
