@@ -161,3 +161,8 @@ add_executable(minigiac
         src/minigiac/cpp/minigiac.cc)
 
 target_link_libraries(minigiac gmp mpfr)
+
+IF(APPLE)
+    # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
+    LINK_DIRECTORIES(/usr/local/lib)
+ENDIF()
