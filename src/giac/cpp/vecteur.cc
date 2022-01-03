@@ -121,8 +121,12 @@ namespace giac {
   unsigned nbits(const gen & g){
     if (g.type==_INT_)
       return sizeinbase2(g.val>0?g.val:-g.val);
-    else 
+    if (g.type==_ZINT)
       return mpz_sizeinbase(*g._ZINTptr,2);
+    gen G=_ceil(g,context0);
+    if (is_integer(G))
+      return nbits(G);
+    return RAND_MAX;
   }
 
 #if defined(GIAC_HAS_STO_38) && defined(VISUALC)
