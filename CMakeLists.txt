@@ -12,7 +12,7 @@ include_directories(src/giac/headers)
 
 add_definitions(-DHAVE_NO_HOME_DIRECTORY -DHAVE_SYSCONF -DGIAC_GGB -DIN_GIAC -DHAVE_LIB_PTHREAD
         -DGIAC_GENERIC_CONSTANTS -DHAVE_UNISTD_H -DHAVE_SYS_TIMES_H -DHAVE_SYS_TIME_H -DTIMEOUT
-        -DHAVE_MPFR_1 -DHAVE_LIBMPFR -DVERSION="1.2.3")
+        -DHAVE_MPFR_1 -DHAVE_LIBMPFR -DVERSION="1.2.3" -DDONT_USE_LIBLAPLACK)
 
 add_executable(minigiac
         src/giac/cpp/alg_ext.cc

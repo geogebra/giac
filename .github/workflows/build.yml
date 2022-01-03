@@ -56,3 +56,12 @@ jobs:
       run: brew install gmp mpfr readline coreutils cmake
     - name: build
       run: mkdir cbuild && cd cbuild && cmake .. && make
+
+  mac-nodejs:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: prerequisites
+      run: brew install gmp mpfr readline coreutils node
+    - name: build
+      run: npm install
