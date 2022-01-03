@@ -38,3 +38,12 @@ jobs:
         ln -s ../upstream/emscripten latest
         cd ../..
         ./gradlew activateEmsdk createGiacWasmJs
+
+  linux-nodejs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: prerequisites
+      run: sudo apt update && sudo apt install build-essential libgmp-dev libmpfr-dev npm nodejs
+    - name: build
+      run: npm install
