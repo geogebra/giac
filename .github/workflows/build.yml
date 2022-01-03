@@ -47,3 +47,12 @@ jobs:
       run: sudo apt update && sudo apt install build-essential libgmp-dev libmpfr-dev npm nodejs
     - name: build
       run: npm install
+
+  mac-native-cmake
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: prerequisites
+      run: brew install gmp mpfr readline coreutils cmake
+    - name: build
+      run: mkdir cbuild && cd cbuild && cmake .. && make
