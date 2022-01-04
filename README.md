@@ -1,4 +1,4 @@
-![build](https://github.com/kovzol/giac-1/actions/workflows/build/badge.svg)
+![build](https://github.com/kovzol/giac-1/actions/workflows/build.yml/badge.svg)
 
 # Giac, a free computer algebra system #
 
