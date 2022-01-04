@@ -89,7 +89,7 @@ jobs:
     - name: build
       run: mkdir cbuild && cd cbuild && cmake .. && make
 
- mac-jnidll-gradle:
+  mac-jnidll-gradle:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v1
