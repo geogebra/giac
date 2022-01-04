@@ -2,6 +2,29 @@ name: build test
 
 on: [push]
 
+# Lots of jobs are defined below. Their format is:
+#
+# OS-VARIANT-TOOL
+#
+# where
+#
+# OS can be:
+#
+# * linux or
+# * mac,
+#
+# VARIANT can be:
+#
+# * native (to obtain a command line application) or
+# * wasm (to get a WebAssembly version, to be embedded in a webpage) or
+# * jnidll (to get a .DLL file that can be integrated in a Java application as a Java Native Interface),
+#
+# TOOL can be:
+#
+# * gradle (the build process is conducted by Gradle) or
+# * cmake (the build process is run via CMake) or
+# * npm (the build is performed via NPM).
+
 jobs:
   linux-native-gradle:
     runs-on: ubuntu-latest
@@ -21,7 +44,7 @@ jobs:
     - name: build
       run: mkdir cbuild && cd cbuild && cmake .. && make
 
-  linux-wasm:
+  linux-wasm-gradle:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -39,7 +62,7 @@ jobs:
         cd ../..
         ./gradlew activateEmsdk createGiacWasmJs
 
-  linux-jnidll:
+  linux-jnidll-gradle:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -48,7 +71,7 @@ jobs:
     - name: build
       run: ./gradlew javagiacLinux64SharedLibrary
 
-  linux-nodejs:
+  linux-nodejs-npm:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -66,8 +89,17 @@ jobs:
     - name: build
       run: mkdir cbuild && cd cbuild && cmake .. && make
 
+ mac-jnidll-gradle:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: prerequisites
+      run: brew install gmp mpfr coreutils java11
+    - name: build
+      run: ./gradlew javagiacOsx_am64SharedLibrary
+
 # Currently broken:
-#  mac-nodejs:
+#  mac-nodejs-npm:
 #    runs-on: macos-11
 #    steps:
 #    - uses: actions/checkout@v1
