@@ -3997,7 +3997,7 @@ namespace giac {
 
   // kind=0: BesselI, =1 BesselJ, =2 BesselK, =3 BesselY
   gen Bessel(const gen & g,int kind,GIAC_CONTEXT){
-#if defined BESTA_OS || defined FXCG || defined KHICAS
+#if defined BESTA_OS || defined FXCG || defined KHICAS || defined __MINGW_H
     return gensizeerr(gettext("Bessel not implemented"));
 #else
     int n;

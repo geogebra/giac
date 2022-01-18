@@ -35,6 +35,19 @@
 #else
 #ifdef __MINGW_H
 #define MINGW32
+#ifndef M_LN2
+#define M_LN2 0.693147180559945310
+#endif
+#ifndef M_PI
+#define M_PI       3.14159265358979323846
+#define M_PI_2       (M_PI/2)
+#endif
+#ifndef M_E
+#define M_E       2.71828182845904524
+#endif
+#ifndef M_SQRT2
+#define M_SQRT2       1.41421356237309505
+#endif
 #endif
 #endif
 

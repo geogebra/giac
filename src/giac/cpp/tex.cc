@@ -975,7 +975,7 @@ namespace giac {
       }
     }
     if (g.type==_VECT ){
-      if (!curve && g.subtype==_GROUP__VECT && !g._VECTptr->empty() && g._VECTptr->front().type!=_VECT){ // "compressed" hypersurface
+      if (!curve && g.subtype==_GROUP__VECT && !has_i(g) && !g._VECTptr->empty() && g._VECTptr->front().type!=_VECT){ // "compressed" hypersurface
 	vecteur v=*evalf_double(g,1,contextptr)._VECTptr;
 	int s=v.size();
 	if (s%3==0){
