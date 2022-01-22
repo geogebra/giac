@@ -1,4 +1,24 @@
-# This is tested on Linux only.
+# This file has been tested on Linux, Mac and Windows.
+# 
+# Building on Linux and Mac
+# -------------------------
+#
+# Install cmake, make, gmp and mpfr: On Linux, use the standard
+# packaging tool -- on Mac use Homebrew. Then issue
+# "mkdir build; cd build; cmake ..; make".
+#
+# Building on Windows
+# -------------------
+#
+# Use MSYS2 with CLANG64 flavor. Necessary packages are:
+#
+# * mingw-w64-clang-x86_64-gmp
+# * mingw-w64-clang-x86_64-mpfr
+# * mingw-w64-clang-x86_64-cmake
+# * mingw-w64-clang-x86_64-make
+#
+# Install them via "pacman -S ...". Then issue
+# "mkdir build; cd build; cmake -G "MinGW Makefiles" ..; mingw32-make".
 
 cmake_minimum_required(VERSION 3.10)
 project(minigiac)
@@ -11,13 +31,24 @@ set(CMAKE_CXX_FLAGS "-fpermissive -std=c++0x")
 IF(APPLE)
     # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
     LINK_DIRECTORIES(/usr/local/lib)
+    add_definitions(-DDONT_USE_LIBLAPLACK)
+ENDIF()
+
+IF(UNIX)
+    add_definitions(-DHAVE_SYS_TIMES_H -DHAVE_UNISTD_H -DHAVE_SYS_TIME_H -DHAVE_SYSCONF )
+ENDIF()
+
+IF(WIN32)
+add_definitions(-DGIAC_MPQS -D__MINGW_H -DMINGW32 -DHAVE_NO_SYS_TIMES_H
+        -DHAVE_NO_SYS_RESOURCE_WAIT_H -DHAVE_NO_PWD_H -DHAVE_NO_CWD -DNO_CLOCK
+        -Dusleep= -DYY_NO_UNISTD_H)
 ENDIF()
 
 include_directories(src/giac/headers)
 
-add_definitions(-DHAVE_NO_HOME_DIRECTORY -DHAVE_SYSCONF -DGIAC_GGB -DIN_GIAC -DHAVE_LIB_PTHREAD
-        -DGIAC_GENERIC_CONSTANTS -DHAVE_UNISTD_H -DHAVE_SYS_TIMES_H -DHAVE_SYS_TIME_H -DTIMEOUT
-        -DHAVE_MPFR_1 -DHAVE_LIBMPFR -DVERSION="1.2.3" -DDONT_USE_LIBLAPLACK)
+add_definitions(-DHAVE_NO_HOME_DIRECTORY -DGIAC_GGB -DIN_GIAC -DHAVE_LIB_PTHREAD
+        -DGIAC_GENERIC_CONSTANTS -DTIMEOUT
+        -DHAVE_MPFR_1 -DHAVE_LIBMPFR -DVERSION="1.2.3")
 
 add_executable(minigiac
         src/giac/cpp/alg_ext.cc
