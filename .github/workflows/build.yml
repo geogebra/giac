@@ -11,7 +11,8 @@ on: [push]
 # OS can be:
 #
 # * linux or
-# * mac,
+# * mac or
+# * windows_msys2_clang64
 #
 # VARIANT can be:
 #
@@ -97,6 +98,28 @@ jobs:
       run: brew install gmp mpfr coreutils java11
     - name: build
       run: ./gradlew javagiacOsx_am64SharedLibrary
+
+  windows_msys2_clang64-native-cmake:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@v1
+    - name: prerequisites
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: CLANG64
+        update: true
+        install: >-
+          base-devel
+          gcc
+          mingw-w64-clang-x86_64-cmake
+          mingw-w64-clang-x86_64-make
+          mingw-w64-clang-x86_64-gmp
+          mingw-w64-clang-x86_64-mpfr
+    - name: build
+      run: mkdir cbuild && cd cbuild && cmake -G "MinGW Makefiles" .. && mingw32-make
 
 # Currently broken:
 #  mac-nodejs-npm:
