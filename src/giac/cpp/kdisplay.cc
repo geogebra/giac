@@ -2740,6 +2740,20 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   static define_unary_function_eval2 (__recule,&_recule,_recule_s,&printastifunction);
   define_unary_function_ptr5( at_recule ,alias_at_recule,&__recule,0,T_LOGO);
 
+  gen _towards(const gen & g,GIAC_CONTEXT){
+    // logo instruction
+    if (g.type!=_VECT || g._VECTptr->size()!=2)
+      return gensizeerr(contextptr);
+    gen z=g._VECTptr->front()-(*turtleptr).x+cst_i*(g._VECTptr->back()-(*turtleptr).y);
+    int m=get_mode_set_radian(contextptr);
+    z=arg(z,contextptr);
+    angle_mode(m,contextptr);
+    return 180/M_PI*z;
+  }
+  static const char _towards_s []="towards";
+  static define_unary_function_eval2 (__towards,&_towards,_towards_s,&printastifunction);
+  define_unary_function_ptr5( at_towards ,alias_at_towards,&__towards,0,T_LOGO);
+
   static const char _backward_s []="backward";
   static define_unary_function_eval (__backward,&_recule,_backward_s);
   define_unary_function_ptr5( at_backward ,alias_at_backward,&__backward,0,true);
@@ -3243,7 +3257,9 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	turtle_fill_color= g._VECTptr->front().val;
       return change_subtype(turtle_fill_color,_INT_COLOR);
     }
-    if (g.type==_INT_ && g.subtype==_INT_COLOR){
+    if (g.type==_INT_ 
+	//&& g.subtype==_INT_COLOR
+	){
       turtle_fill_color= g.val;
       return g;
     }
@@ -7992,6 +8008,21 @@ namespace xcas {
 #else
 		  logo_turtle & t=(*turtleptr)[k+i];
 #endif
+		  if (t.radius>0){
+		    int r=t.radius & 0x1ff; // bit 0-8
+		    int x,y,R;
+		    R=int(2*turtlezoom*r+.5);
+		    double angle = M_PI/180*(current.theta-90);
+		    if (t.direct){
+		      x=int(turtlezoom*(t.x-turtlex-r*std::cos(angle) - r)+.5);
+		      y=int(turtlezoom*(t.y-turtley-r*std::sin(angle) + r)+.5);
+		    }
+		    else {
+		      x=int(turtlezoom*(t.x-turtlex+r*std::cos(angle) -r)+.5);
+		      y=int(turtlezoom*(t.y-turtley+r*std::sin(angle) +r)+.5);
+		    }
+		    fl_pie(deltax+x,deltay+LCD_HEIGHT_PX-y,R,R,0,360,current.color,false);
+		  }
 		  vi[-i][0]=deltax+turtlezoom*(t.x-turtlex);
 		  vi[-i][1]=deltay+LCD_HEIGHT_PX+turtlezoom*(turtley-t.y);
 		  //*logptr(contextptr) << i << " " << vi[-i][0] << " " << vi[-i][1] << endl;

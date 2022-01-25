@@ -7999,7 +7999,7 @@ namespace giac {
       interrupted = true; ctrl_c=false;
       return gensizeerr(gettext("Stopped by user interruption.")); 
     }
-    if (b.type==_MOD)
+    if (b.type==_MOD || a.type==_MOD)
       return a*inv(b,contextptr);
     switch ( (a.type<< _DECALAGE) | b.type ) {
     case _INT___INT_: case _ZINT__INT_: case _ZINT__ZINT:
