@@ -417,10 +417,11 @@ namespace giac {
     }
     if (w.size()!=1 || w.front().type!=_VECT)
       return;
-    w=*w.front()._VECTptr;
+    gen wfront=w.front();
+    w=*wfront._VECTptr;
     if (w.size()!=2)
       return;
-    gen l(w.front()),m(w.back());
+    gen l(w[0]),m(w[1]);
     vecteur newv;
     iterateur it=v.begin(),itend=v.end();
     for (;it!=itend;++it){

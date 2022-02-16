@@ -623,7 +623,11 @@ void change_undo(tableur & t){
 }
 
 void save_sheet(tableur & t,GIAC_CONTEXT){
+#if 1
+  string s=print_tableur(t,contextptr);
+#else
   string s=gen(extractmatricefromsheet(t.m,false),_SPREAD__VECT).print(contextptr);
+#endif
   string filename(remove_path(remove_extension(t.filename)));
   filename+=".tab";
 #ifdef NSPIRE_NEWLIB
@@ -1069,6 +1073,7 @@ int sheet_menu_menu(tableur & t,GIAC_CONTEXT){
 	      t.ncols=t.m.front()._VECTptr->size();
 	      t.cur_col=t.cur_row=0;
 	      t.sel_row_begin=t.cmd_row=-1;
+	      fix_sheet(t);
 	    }
 	    else
 	      s=0;

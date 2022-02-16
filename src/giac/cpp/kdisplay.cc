@@ -3260,8 +3260,17 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     if (g.type==_INT_ 
 	//&& g.subtype==_INT_COLOR
 	){
+      if (g.val<-1 && g.val>-1024){
+	(*turtleptr).radius=-absint(g.val);
+	if ((*turtleptr).radius<-1)
+	  return update_turtle_state(true,contextptr);
+      }
       turtle_fill_color= g.val;
       return g;
+    }
+    if (is_zero(g)){ // 0.0
+      turtle_fill_begin=turtle_stack().size();
+      return 1;
     }
     if (g.type==_VECT && g._VECTptr->empty()){
       if (turtle_fill_begin<0){
@@ -3282,15 +3291,6 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	_crayon(c,contextptr);
       }
       return res;
-    }
-    if (is_zero(g)){
-      turtle_fill_begin=turtle_stack().size();
-      return 1;
-    }
-    if (g.type==_INT_){
-      (*turtleptr).radius=-absint(g.val);
-      if ((*turtleptr).radius<-1)
-	return update_turtle_state(true,contextptr);
     }
     return gensizeerr(gettext("Integer argument >= 2"));
   }
@@ -7643,7 +7643,7 @@ namespace xcas {
 	os_draw_string_small(20+20*xi,20+20*xj,COLOR_RED,COLOR_BLACK,"x");
 	double yi=Ei-Ai,yj=Ej-Aj;
 	normalize(yi,yj);
-	drawLine(20,22,20+20*yi,20+20*yj,COLOR_GREEN);
+	drawLine(20,20,20+20*yi,20+20*yj,COLOR_GREEN);
 	os_draw_string_small(20+20*yi,20+20*yj,COLOR_GREEN,COLOR_BLACK,"y");
 	double zi=Bi-Ai,zj=Bj-Aj;
 	normalize(zi,zj);
@@ -7842,15 +7842,17 @@ namespace xcas {
       logo_turtle t=turtleptr->back();
 #endif
       double x=turtlezoom*(t.x-turtlex);
+      double y=turtlezoom*(t.y-turtley);
+#if 0
       if (x<0)
 	turtlex += int(x/turtlezoom);
       if (x>=LCD_WIDTH_PX-10)
 	turtlex += int((x-LCD_WIDTH_PX+10)/turtlezoom);
-      double y=turtlezoom*(t.y-turtley);
       if (y<0)
 	turtley += int(y/turtlezoom);
       if (y>LCD_HEIGHT_PX-10)
 	turtley += int((y-LCD_HEIGHT_PX+10)/turtlezoom);
+#endif
     }
 #if 0
     if (maillage & 0x3){
@@ -15430,6 +15432,49 @@ namespace xcas {
 #endif
 
   tableur * sheetptr=0;
+
+  string print_tableur(const tableur & t,GIAC_CONTEXT){
+    string s="spreadsheet[";
+    for (int i=0;i<t.nrows;++i){
+      printcell_current_row(contextptr)=i;
+      s += "[";
+      gen g=t.m[i];
+      if (g.type!=_VECT) continue;
+      vecteur & v=*g._VECTptr;
+      for (int j=0;j<t.ncols;++j){
+	gen vj=v[j];
+	printcell_current_col(contextptr)=j;
+	s += vj.print(contextptr);
+	if (j==t.ncols-1)
+	  s += "]";
+	else
+	  s += ",";
+      }
+      if (i==t.nrows-1)
+	s += "]";
+      else
+	s += ",";      
+    }
+    return s;
+  }  
+  
+  void fix_sheet(tableur & t,GIAC_CONTEXT){
+    for (int i=0;i<t.nrows;++i){
+      vecteur & v = *t.m[i]._VECTptr;
+      for (int j=0;j<t.ncols;++j){
+	gen & g=v[j];
+	if (g.type==_VECT){
+	  vecteur & w=*g._VECTptr;
+	  if (w[0].type==_SYMB){
+	    // cout << "fix " << w[0] << "\n";
+	    w[0]=spread_convert(w[0],i,j,contextptr);
+	  }
+	}
+      }
+    }
+  }
+
+
 #ifdef NUMWORKS
   extern "C" void mp_stack_ctrl_init();
   extern "C" void mp_stack_set_top(void *);

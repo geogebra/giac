@@ -728,11 +728,11 @@ namespace giac {
 	  }
 	}
 	simplify3(coeffn,coeffd);
-	if (hasnum)
+	if (hasnum || coeffn.type==_POLY)
 	  coeffnum=monomial2gen(monomial<gen>(coeffn,inum));
 	else
 	  coeffnum=coeffn;
-	if (hasden)
+	if (hasden || coeffd.type==_POLY)
 	  coeffden=monomial2gen(monomial<gen>(coeffd,iden));
 	else
 	  coeffden=coeffd;

@@ -4946,6 +4946,15 @@ namespace giac {
   void lcmdeno(const polynome & p, gen & res){
     vector< monomial<gen> >::const_iterator it=p.coord.begin(),itend=p.coord.end();
     for (;it!=itend;++it){
+      if (it->value.type==_EXT){
+	gen e=*it->value._EXTptr,eden=1;
+	if (e.type==_VECT){
+	  vecteur v=*e._VECTptr;
+	  lcmdeno(v,eden,context0);
+	  res=lcm(res,eden);
+	}
+	continue;
+      }
       if (it->value.type!=_FRAC)
 	continue;
       gen tmp=it->value,tmpden=1;
@@ -4954,6 +4963,23 @@ namespace giac {
 	tmp=tmp._FRACptr->num;
       }
       res=lcm(tmpden,res);
+    }
+  }
+
+  void lcmmult(polynome & p, const gen & res){
+    vector< monomial<gen> >::iterator it=p.coord.begin(),itend=p.coord.end();
+    for (;it!=itend;++it){
+      if (it->value.type==_EXT){
+	gen e=*it->value._EXTptr,eden=1;
+	if (e.type==_VECT){
+	  vecteur v=*e._VECTptr;
+	  lcmdeno(v,eden,context0);
+	  v=multvecteur(res/eden,v);
+	  it->value=algebraic_EXTension(v,*(it->value._EXTptr+1));
+	  continue;
+	}
+      }
+      it->value=res*it->value;
     }
   }
 
@@ -7116,7 +7142,7 @@ namespace giac {
       gen tmp(1);
       lcmdeno(jt->fact,tmp);
       if (!is_one(tmp)){
-	jt->fact=tmp*jt->fact;
+	lcmmult(jt->fact,tmp); // jt->fact=tmp*jt->fact;
 	tmp=pow(tmp,jt->mult,context0);
 	num=tmp*num;
 	den=tmp*den;

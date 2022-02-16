@@ -114,6 +114,16 @@ namespace giac {
       *itres=(*ita)+(*itb);
   }
 
+  bool equal(const index_t & a,const index_t &b){
+    index_t::const_iterator ita=a.begin(),itaend=a.end();
+    index_t::const_iterator itb=b.begin();
+    for (;ita!=itaend;++itb,++ita){
+      if (*ita!=*itb)
+	return false;
+    }
+    return true;
+  }
+
   index_t operator + (const index_t & a, const index_t & b){
     index_t::const_iterator ita=a.begin(),itaend=a.end(),itb=b.begin();
     unsigned s=unsigned(itaend-ita);
@@ -385,7 +395,7 @@ namespace giac {
   bool operator == (const index_m & i1, const index_m & i2){
     if (i1.riptr==i2.riptr)
       return true;
-    return (i1.riptr->i==i2.riptr->i);
+    return equal(i1.riptr->i,i2.riptr->i);
   }
 
   int sum_degree_from(const index_m & v1,int start){
@@ -499,7 +509,7 @@ namespace giac {
       }
       return true;
 #else
-      return (i1.riptr->i==i2.riptr->i);
+      return equal(i1.riptr->i,i2.riptr->i);
 #endif
     }
     if (i1.taille!=i2.taille)

@@ -454,6 +454,8 @@ namespace xcas {
     bool changed,recompute,matrix_fill_cells,movedown,keytooltip;
   } ;
   extern tableur * sheetptr;
+  void fix_sheet(tableur & t,GIAC_CONTEXT);
+  std::string print_tableur(const tableur & t,GIAC_CONTEXT);
 
   int check_do_graph(giac::gen & ge,int do_logo_graph_eqw,const giac::context *);
   int get_filename(char * filename,const char * extension);

@@ -78,6 +78,7 @@ namespace giac {
 
   typedef short int deg_t;
   typedef std::vector<deg_t> index_t;
+  bool equal(const index_t & a,const index_t &b);
 
   int mygcd(int a,int b);
   void swapint(int & a,int & b);
