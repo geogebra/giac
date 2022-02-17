@@ -15,9 +15,7 @@ plugins {
 }
 
 
-repositories {
-    mavenCentral()
-}
+apply from: 'repositories.gradle'
 
 project.setDescription('Giac CAS for GeoGebra')
 

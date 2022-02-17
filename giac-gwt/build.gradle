@@ -1,16 +1,18 @@
 plugins {
-    id 'java'
+    id 'java-library'
     id 'maven-publish'
 }
 
-repositories {
-   mavenCentral()
-}
+apply from: '../repositories.gradle'
 
 dependencies {
-    compile 'com.google.gwt:gwt-dev:2.8.2',
-    'com.google.gwt:gwt-user:2.8.2'
+    api 'com.google.gwt:gwt-dev:2.9.0',
+        'com.google.gwt:gwt-user:2.9.0',
+        'org.gwtproject.resources:gwt-resources-api:HEAD-SNAPSHOT'
+    annotationProcessor 'org.gwtproject.resources:gwt-resources-processor:HEAD-SNAPSHOT'
 }
+
+compileJava.options.sourcepath = files(processResources.destinationDir).builtBy(processResources)
 
 task prepareJs(type:Copy, dependsOn: project.getParent().createGiacWasmJs) {
     from "${project.getParent().buildDir}/binaries/giacggb.wasm"
@@ -21,6 +23,7 @@ task prepareJs(type:Copy, dependsOn: project.getParent().createGiacWasmJs) {
 task sourcesJar(type: Jar, dependsOn: "classes") {
     classifier = 'sources'
     from sourceSets.main.allSource
+    from files(file("build/generated/sources/annotationProcessor/java/main/"))
 }
 
 compileJava.dependsOn prepareJs
@@ -39,4 +42,9 @@ publishing {
             }
         }
     }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
