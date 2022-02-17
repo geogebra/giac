@@ -25,12 +25,6 @@ def javagiacDir = file("$distDir/javagiac/")
 def ggbGiacJsDir = file("$distDir/giac.js/")
 
 remotes {
-    compileLinux32Server {
-        host = 'ggb1.idm.jku.at'
-        port = 2299
-        user = 'kovzol' // TODO: use a more general account
-        identity = compileLinux32JavagiacKey
-    }
     macServer {
         host = '140.78.116.142'
         port = 22
@@ -135,12 +129,6 @@ task compileLinux32MacJavagiacRemotely () {
     // outputs.file output // be never UP-TO-DATE
     doLast {
         ssh.run {
-            // session(remotes.compileLinux32Server) {
-            //     execute "cd giac; svn update -r$ggrev --non-interactive --trust-server-cert"
-            //     execute "cd giac; ./gradlew javagiacLinux32SharedLibrary -Prevision=$ggrev"
-            //     file(outputLinux32Dir).mkdirs()
-            //     get from: "giac/build/libs/javagiac/shared/linux32/libjavagiac.so", into: outputLinux32 // FIXME: unify
-            // }
             session(remotes.macServer) {
                 execute "cd giac; $macServerSvnCommand update -r$ggrev --non-interactive --trust-server-cert"
                 execute "cd giac; export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary -Prevision=$ggrev"
