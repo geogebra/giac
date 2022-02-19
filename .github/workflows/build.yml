@@ -119,7 +119,7 @@ jobs:
           mingw-w64-clang-x86_64-gmp
           mingw-w64-clang-x86_64-mpfr
     - name: build
-      run: mkdir cbuild && cd cbuild && CXX=clang++ cmake -G "MinGW Makefiles" .. && mingw32-make
+      run: mkdir cbuild && cd cbuild && CC=clang CXX=clang++ cmake -G "MinGW Makefiles" .. && mingw32-make
 
 # Currently broken:
 #  mac-nodejs-npm:
