@@ -12,13 +12,15 @@
 #
 # Use MSYS2 with CLANG64 flavor. Necessary packages are:
 #
+# * base-devel
+# * mingw-w64-clang-x86_64-cc
 # * mingw-w64-clang-x86_64-gmp
 # * mingw-w64-clang-x86_64-mpfr
 # * mingw-w64-clang-x86_64-cmake
 # * mingw-w64-clang-x86_64-make
 #
 # Install them via "pacman -S ...". Then issue
-# "mkdir build; cd build; cmake -G "MinGW Makefiles" ..; mingw32-make".
+# "mkdir build; cd build; CC=clang CXX=clang++ cmake -G "MinGW Makefiles" ..; mingw32-make".
 
 cmake_minimum_required(VERSION 3.10)
 project(minigiac)
