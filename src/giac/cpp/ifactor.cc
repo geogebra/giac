@@ -4996,7 +4996,260 @@ namespace giac {
   static define_unary_function_eval (__bernoulli_mod,&_bernoulli_mod,_bernoulli_mod_s);
   define_unary_function_ptr5( at_bernoulli_mod ,alias_at_bernoulli_mod,&__bernoulli_mod,0,true); 
 
+  inline void new_xab(int & x, int & a, int& b,const int N,const int n,const int alpha,const int beta) {
+    switch (x % 3) {
+    case 0: 
+      x = longlong(x)*x % N;  
+      a = longlong(a)*2 % n;  
+      b = longlong(b)*2 % n;  
+      break;
+    case 1: 
+      x = longlong(x)*alpha % N;  
+      a = (a+1) % n;                  
+      break;
+    case 2: 
+      x = longlong(x)*beta % N;                  
+      b = (b+1) % n;  
+      break;
+    }
+  }
 
+  // N prime, solve alpha^e=beta mod N using Pollard-Rho
+  int baby64(int alpha,int beta,int N,int n){
+    int x = 1, a = 0, b = 0; // x=alpha^a*beta^b
+    int X = x, A = a, B = b; // X=alpha^A*beta^B
+    for (int i = 1; i < n; ++i) {
+      new_xab(x,a,b,N,n,alpha,beta);
+      new_xab(X,A,B,N,n,alpha,beta);
+      new_xab(X,A,B,N,n,alpha,beta);
+      if (x==X){ 
+	// alpha^a*beta^b=alpha^A*beta^B hence
+	// alpha^(A-a)=beta^(B-b) mod n, (B-b)*e=(A-a) mod n
+	int b1=B-b,a1=a-A;
+	int g=gcd(b1,n);
+	if (a1%g) 
+	  return -1;
+	// b1*e=a1+k*n1 <-> b2*e=a2+k*n2
+	int b2=b1/g,a2=a1/g,n2=n/g;
+	longlong b3=invmod(b2,n2); // e=b3*a2 mod n2 
+	int e0=(b3*a2) % n2;
+	for (longlong k=0;k<g;++k){
+	  int e=e0+k*n2;
+	  if (e<0) e+=n; 
+	  longlong chk=powmod(alpha,e,N);
+	  if ((chk-beta)%N==0)
+	    return e;
+	  if ((chk+beta)%N==0)
+	    return e+n/2;
+	}
+      }
+    }
+    return -1; // means not found
+  }
+
+#ifdef INT128
+  inline void new_xab(longlong & x, longlong & a, longlong& b,const longlong N,const longlong n,const longlong alpha,const longlong beta) {
+    switch (x % 3) {
+    case 0: 
+      x = int128_t(x)*x % N;  
+      a = int128_t(a)*2 % n;  
+      b = int128_t(b)*2 % n;  
+      break;
+    case 1: 
+      x = int128_t(x)*alpha % N;  
+      a = (a+1) % n;                  
+      break;
+    case 2: 
+      x = int128_t(x)*beta % N;                  
+      b = (b+1) % n;  
+      break;
+    }
+  }
+
+  // N prime, solve alpha^e=beta mod N using Pollard-Rho
+  longlong baby128(longlong alpha,longlong beta,longlong N,longlong n){
+    longlong x = 1, a = 0, b = 0; // x=alpha^a*beta^b
+    longlong X = x, A = a, B = b; // X=alpha^A*beta^B
+    for (longlong i = 1; i < n; ++i) {
+      new_xab(x,a,b,N,n,alpha,beta);
+      new_xab(X,A,B,N,n,alpha,beta);
+      new_xab(X,A,B,N,n,alpha,beta);
+      if (x==X){ 
+	// alpha^a*beta^b=alpha^A*beta^B hence
+	// alpha^(A-a)=beta^(B-b) mod n, (B-b)*e=(A-a) mod n
+	longlong b1=B-b,a1=a-A;
+	longlong g=gcd(b1,n);
+	if (a1%g) 
+	  return -1;
+	// b1*e=a1+k*n1 <-> b2*e=a2+k*n2
+	longlong b2=b1/g,a2=a1/g,n2=n/g;
+	int128_t b3=invmod(b2,n2); // e=b3*a2 mod n2 
+	if (b3<0) b3+=n2;
+	longlong e0=(b3*a2) % n2;
+	for (longlong k=0;k<g;++k){
+	  longlong e=e0+k*n2;
+	  int128_t chk=powmod(alpha,e,N);
+	  if ((chk-beta)%N==0)
+	    return e;
+	  if ((chk+beta)%N==0)
+	    return e+n/2;
+	}
+      }
+    }
+    return -1; // means not found
+  }
+#endif
+
+  void new_xab(gen & x, gen & a, gen& b,const gen & N,const gen & n,const gen & alpha,const gen & beta) {
+    mpz_t & xz=*x._ZINTptr;
+    mpz_t & az=*a._ZINTptr;
+    mpz_t & bz=*b._ZINTptr;
+    const mpz_t & Nz=*N._ZINTptr;
+    const mpz_t & nz=*n._ZINTptr;
+    int t=modulo(xz,3);
+    switch (t) {
+    case 0: 
+      mpz_mul(xz,xz,xz); mpz_tdiv_r(xz,xz,Nz); // x = longlong(x*x) % N;  
+      mpz_mul_si(az,az,2); mpz_tdiv_r(az,az,nz);  // a = longlong(a*2) % n;  
+      mpz_mul_si(bz,bz,2); mpz_tdiv_r(bz,bz,nz); // b = longlong(b*2) % n;  
+      break;
+    case 1: 
+      mpz_mul(xz,*alpha._ZINTptr,xz); mpz_tdiv_r(xz,xz,Nz); // x = longlong(x*alpha) % N;  
+      mpz_add_ui(az,az,1);  mpz_tdiv_r(az,az,nz); // a = (a+1) % n;                  
+      break;
+    case 2: 
+      mpz_mul(xz,*beta._ZINTptr,xz); mpz_tdiv_r(xz,xz,Nz); // x = longlong(x*beta) % N;                  
+      mpz_add_ui(bz,bz,1);  mpz_tdiv_r(bz,bz,nz); // b = (b+1) % n;  
+      break;
+    }
+  }
+
+  // N prime, solve alpha^e=beta mod N using Pollard-Rho
+  gen baby(const gen & alpha,const gen & beta,const gen & N,const gen & n_){
+    if (alpha.type==_INT_ || beta.type==_INT_ || N.type==_INT_){
+      gen al=alpha,be=beta,NN=N;
+      al.uncoerce(); be.uncoerce(); NN.uncoerce();
+      return baby(al,be,NN,n_);
+    }
+    gen n=n_; n.uncoerce();
+    gen x = 1, a = 0, b = 0; // x=alpha^a*beta^b
+    gen X = x, A = a, B = b; // X=alpha^A*beta^B
+    x.uncoerce(); a.uncoerce(); b.uncoerce(); X.uncoerce(); A.uncoerce(); B.uncoerce();
+    for (longlong i=0; i<(1LL<<46); ++i) {
+      new_xab(x,a,b,N,n,alpha,beta);
+      new_xab(X,A,B,N,n,alpha,beta);
+      new_xab(X,A,B,N,n,alpha,beta);
+      if (x==X){ 
+	// alpha^a*beta^b=alpha^A*beta^B hence
+	// alpha^(A-a)=beta^(B-b) mod n, (B-b)*e=(A-a) mod n
+	gen b1=B-b,a1=a-A;
+	gen g=gcd(b1,n);
+	if (a1%g!=0) 
+	  return -1;
+	// b1*e=a1+k*n1 <-> b2*e=a2+k*n2
+	gen b2=b1/g,a2=a1/g,n2=n/g;
+	gen b3=invmod(b2,n2); // e=b3*a2 mod n2 
+	if (is_positive(-b3,context0))
+	  b3 += n2;
+	gen e0=(b3*a2) % n2;
+	for (gen k=0;is_greater(g,k,context0);k+=1){
+	  gen e=e0+k*n2;
+	  gen chk=powmod(alpha,e,N);
+	  if ((chk-beta)%N==0)
+	    return e;
+	  if ((chk+beta)%N==0) 
+	    return e+n/2; // works only if alpha^(n/2)=-1
+	}
+      }
+    }
+    return -1; // means not found
+  }
+
+  // solve g^x=h mod N, where g^(p^e)=1 mod N and g^(p^(e-1))!=1 mod N
+  // start from the fact that h^-1*g^0 is of order p^(e)  mod N, x0=0
+  // then for k>=0 find dk such that
+  // h^-1*g^(xk+dk*p^(k)) is of order p^(e-(k+1)) mod N 
+  // where h^-1*g^xk of order p^(e-k) mod N
+  // (g^(-xk)*h)^-1*g^(dk*p^(k)) must be of order p^(e-(k+1)) mod N
+  // let hk:=(g^(-xk)*h)^(p^(e-1-k)) and gamma=g^(p^(e-1)
+  // Take power p^(e-1-k) -> hk^-1*gamma^dk of order 1 mod N
+  // gamma^dk=hk mod N
+  gen padic_logb(const gen & g,const gen & h,const gen & p,int e,const gen & N){
+    if (h==1) return 0;
+    if (h==g) return 1;
+    gen xk=0;
+    gen pe1=pow(p,e-1),pe=pe1*p,invg=invmod(g,N);
+    if (is_positive(-invg,context0))
+      invg+=N;
+    gen gamma=powmod(g,pe1,N);
+    gen pk=1;
+    for (int k=0;k<e;++k){
+      gen g1=powmod(invg,xk,N)*h;
+      gen hk=powmod(g1,pow(p,e-1-k),N);
+      gen dk=logb(hk,gamma,N,context0,p);
+      xk = xk+dk*pk;
+      pk=p*pk;
+    }
+    return xk;
+  }
+
+  gen logb(const gen & a,const gen &b,const gen & N,GIAC_CONTEXT,gen order){
+    if (a==0)
+      return undef;
+    if (N==2)
+      return 0;
+    if (a==b)
+      return 1;
+    if (a==1)
+      return 0;
+    gen n(order);
+    if (order==0){
+      n=N-1;
+      if (_isprime(N,context0)==0)
+	return gensizeerr(gettext("Expecting an odd prime as 3rd argument"));
+      // solve b^x=a mod N (that's x=log_b(a))
+      gen chk=powmod(b,(N-1)/2,N);
+      if ((chk+1) % N !=0)
+	*logptr(contextptr) << "2nd arg is not a generator, answer might be wrong\n";
+      gen n=N-1;
+      vecteur v(ifactors(n,contextptr));
+      if (v.size()==2){
+	gen res=padic_logb(b,a,v[0],v[1].val,N);
+	return res;
+      }
+      // chinese remaindering step
+      gen x,curprod(1);
+      for (int i=0;i<v.size();i+=2){
+	gen pi=v[i],ei=v[i+1];
+	if (ei.type!=_INT_)
+	  return gensizeerr(contextptr);
+	gen piei=pow(pi,ei.val),coorder=n/piei;
+	gen gi=powmod(b,coorder,N);
+	gen hi=powmod(a,coorder,N);
+	gen xi=padic_logb(gi,hi,pi,ei.val,N);
+	if (i==0) 
+	  x=xi;
+	else
+	  x=ichinrem(x,xi,curprod,piei);
+	curprod=curprod*piei;
+      }
+      if (is_positive(x,contextptr))
+	return x;
+      return x+n;
+    }
+    if (is_integer(a) && is_integer(b) && N.type==_INT_){
+      int A=a.type==_INT_?a.val:modulo(*a._ZINTptr,N.val),B=b.type==_INT_?b.val:modulo(*b._ZINTptr,N.val);
+      int res=baby64(B,A,N.val,order.val);
+      if (order!=0)
+	return res % order.val;
+      return res;
+    }
+    // ifactor n==N-1
+    gen res=baby(a,b,N,order);
+    if (order!=0)
+      return res % order;
+    return res;
+  }
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac
 #endif // ndef NO_NAMESPACE_GIAC

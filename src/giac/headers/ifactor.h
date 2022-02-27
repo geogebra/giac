@@ -91,6 +91,8 @@ namespace giac {
   extern const unary_function_ptr * const  at_ithprime ;
   gen bernoulli_rat(int k);
 
+  gen logb(const gen & a,const gen &b,const gen & N,GIAC_CONTEXT,gen order=0);
+
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac
 #endif // NO_NAMESPACE_GIAC
