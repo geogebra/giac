@@ -7794,7 +7794,7 @@ namespace giac {
     if (is_one(base))
       return base;
     if (is_minus_one(base))
-      return exponent%2?-1:1;
+      return exponent%2?base:base*base;
     unsigned long int expo=exponent;
     gen b;
     if (base.type<=_ZINT && has_evalf(base,b,0,context0) && !is_inf(b) &&

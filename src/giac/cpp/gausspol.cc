@@ -5472,13 +5472,37 @@ namespace giac {
     return true;
   }
 
+  void Tpown_ff(polynome & g,int n){
+    vector< monomial<gen> > ::iterator it=g.coord.begin(),itend=g.coord.end();
+    for (;it!=itend;++it){
+      it->value=pow(it->value,n);
+      it->index=it->index*n;
+    }
+  }
+  static void push_factor(factorization & v,polynome & g,polynome & q,int k,int n){
+    q=q/Tpow(g,k);
+    for (int l=0;;++l){
+      polynome d(gcd(q,g));
+      if (d!=g){
+	v.push_back(facteur< polynome >(g/d,k+l*n)); 
+	if (Tis_one(d))
+	  break;
+	g=d;
+      }
+      polynome gn(g);
+      Tpown_ff(gn,n); 
+      q=q/gn;
+      // instead of q=q/Tpow(g,n); 
+    }
+  }
   // Yun algorithm in finite field of characteristic n
   // Must be called recursively since it will not detect powers multiple of n
   static void partialsquarefree_fp(const polynome & p,unsigned n,polynome & c,factorization & v){
     v.clear();
+    c=p;
     polynome y(p.derivative()),w(p);
     y=smod(y,gen(int(n)));
-    c=simplify(w,y);
+    simplify(w,y);
     // If p=p_1*p_2^2*...*p_n^n, 
     // then c=gcd(p,p')=Pi_{i s.t. i%n!=0} p_i^{i-1} Pi_{i s.t. i%n==0} p_i^i
     // w=p/c=Pi_{i%n>=1} p_i, 
@@ -5491,19 +5515,17 @@ namespace giac {
       // y=sum_{i%n >= k+1} (i-k) p_i' * pi_{j!=i, j>=k} p_j
       polynome g=simplify(w,y);
       if (!Tis_one(g))
-	v.push_back(facteur< polynome >(g,k)); 
-      // extract one time the factors of multiplicity k mod n
-      c=c/w;
+	push_factor(v,g,c,k,n);
       // this push p_k, now w=pi_{i%n>=k+1} p_i and 
-      // y=sum_{i%n>=k+1} (i-k) p_i' * pi_{j!=i, j%n>=k+1} p_j
+      // y=sum_{i%n>=k+1} (i-k)%n p_i' * pi_{j!=i, j%n>=k+1} p_j
       y=y-w.derivative();
       y=smod(y,gen(int(n)));
       // y=sum_{i%n>=k+1} (i-(k+1)) p_i' * pi_{j!=i, j%n>=k+1} p_j
       k++;
     }
     if (!Tis_one(w))
-      v.push_back(facteur< polynome >(w,k));
-    // at the end c contains Pi_{i} p_i^{i-(i%n)}
+      push_factor(v,w,c,k,n);//v.push_back(facteur< polynome >(w,k));
+    // at the end c contains Pi_{i mod p=0} p_i^i}
   }
   
   // Yun algorithm in finite field of characteristic n
@@ -5731,21 +5753,24 @@ namespace giac {
     env.modulo=n;
     env.pn=n;
     // Check that all coeff are mod
-    polynome p(p_orig);
-    vector< monomial<gen> >::iterator pit=p.coord.begin(),pitend=p.coord.end();
+    polynome p(p_orig.dim);
+    vector< monomial<gen> >::const_iterator pit=p_orig.coord.begin(),pitend=p_orig.coord.end();
     for (;pit!=pitend;++pit){
-      if (pit->value.type!=_MOD)
-	pit->value=makemod(pit->value,n);
-      gen & tmp = *(pit->value._MODptr+1);
+      gen val0=pit->value;
+      if (val0.type!=_MOD)
+	val0=makemod(val0,n);
+      gen & tmp = *(val0._MODptr+1);
       if (tmp.type!=_INT_ || tmp.val!=n){
 #ifndef NO_STDEXCEPT
 	setsizeerr();
 #endif
 	return false;
       }
-      gen & val = *(pit->value._MODptr);
+      gen & val = *(val0._MODptr);
       if (val.type==_CPLX)
 	env.complexe=true;
+      if (!is_zero(val))
+	p.coord.push_back(monomial<gen>(val0,pit->index));
     }
 #ifdef HAVE_LIBNTL
 #ifdef HAVE_LIBPTHREAD

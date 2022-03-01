@@ -267,7 +267,7 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
   static double pm=100; // mensualite
   static double nb=10; // nombre d'annuites
   double * tabd[6]={&pv,&fv,&ir,&irpy,&pm,&nb};
-  static bool solved=false;
+  bool solved=false;
   Menu smallmenu;
   smallmenu.numitems=7; 
   // and uncomment first smallmenuitems[app_number].text="Reserved"
@@ -278,8 +278,8 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
   smallmenu.height=11;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
-  smallmenu.title = (char *) "Pret bancaire";
-  smallmenu.type = MENUTYPE_FKEYS;
+  smallmenu.title = (char *) (mode==-1?"Pret bancaire":"Epargne");
+  smallmenu.type = MENUTYPE_NO_NUMBER;
   while(1) {
     drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
     string pvs,fvs,pms;
@@ -365,11 +365,15 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
       }
       solved=true;
     }
-    if (sres==KEY_CTRL_EXE || sres == MENU_RETURN_SELECTION || sres == KEY_CTRL_OK) {
+    int keynumber=-1;
+    if (sres>=KEY_CHAR_0 && sres<=KEY_CHAR_9) keynumber=sres-KEY_CHAR_0;
+    if (sres==KEY_CTRL_EXE || sres == MENU_RETURN_SELECTION || sres == KEY_CTRL_OK || keynumber>=0) {
       if (smallmenu.selection==7) // quit
 	break;
       double d=*tabd[choix];
       if (choix<2 && mode==1) d=-d;
+      if (keynumber>=0)
+	d=keynumber;
       if (!inputdouble(tab[choix],d,contextptr))
 	continue;
       if (choix<2 && mode==1) d=-d;

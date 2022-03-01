@@ -393,6 +393,8 @@ namespace giac {
 	      strcpy(menuitem, "  "); //allow for the folder and selection icons on MULTISELECT menus (e.g. file browser)
 	      strcpy(menuitem+2,menu->items[curitem].text);
 	    }
+	    else if (menu->type==MENUTYPE_NO_NUMBER)
+	      strcpy(menuitem,menu->items[curitem].text);
 	    else {
 	      int cur=curitem+1;
 	      if (menu->numitems<10){
@@ -593,7 +595,7 @@ namespace giac {
             menu->numselitems = menu->numselitems+1;
 	    }
 	    return key; //return on F1 too so that parent subroutines have a chance to e.g. redraw fkeys*/
-	} else if (menu->type == MENUTYPE_FKEYS) {
+	} else if (menu->type == MENUTYPE_FKEYS || menu->type==MENUTYPE_NO_NUMBER) {
 	  return key;
 	}
 	break;
@@ -603,7 +605,7 @@ namespace giac {
       case KEY_CTRL_F5:
       case KEY_CTRL_F6: case KEY_CTRL_CATALOG: case KEY_BOOK: case '\t':
       case KEY_CHAR_ANS: 
-	if (menu->type == MENUTYPE_FKEYS || menu->type==MENUTYPE_MULTISELECT) return key; // MULTISELECT also returns on Fkeys
+	if (menu->type == MENUTYPE_FKEYS || menu->type==MENUTYPE_NO_NUMBER || menu->type==MENUTYPE_MULTISELECT) return key; // MULTISELECT also returns on Fkeys
 	break;
       case KEY_CTRL_PASTE:
 	if (menu->type==MENUTYPE_MULTISELECT) return key; // MULTISELECT also returns on paste
@@ -649,12 +651,16 @@ namespace giac {
       case KEY_CHAR_7:
       case KEY_CHAR_8:
       case KEY_CHAR_9:
+	if (menu->type==MENUTYPE_NO_NUMBER)
+	  return key;
 	if(menu->numitems>=(key-0x30)) {
 	  menu->selection = (key-0x30);
 	  if (menu->type != MENUTYPE_FKEYS) return MENU_RETURN_SELECTION;
 	}
 	break;
       case KEY_CHAR_0:
+	if (menu->type==MENUTYPE_NO_NUMBER)
+	  return key;
 	if(menu->numitems>=10) {
 	  menu->selection = 10;
 	  if (menu->type != MENUTYPE_FKEYS)  return MENU_RETURN_SELECTION;
