@@ -990,6 +990,9 @@ task downloadEmsdk {
     description 'Downloads emscripten SDK and downloads it.'
     outputs.dir emsdkDir
     doLast {
+        delete {
+            delete emsdkDir
+        }
         exec {
             commandLine 'git clone https://github.com/emscripten-core/emsdk.git'.split()
         }
