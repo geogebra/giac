@@ -3776,7 +3776,7 @@ namespace giac {
       setsizeerr(gettext("Bug!"));
 #endif
     if (p==q)
-      return p;
+      return p;    
     if (p.coord.empty())
       return q;
     if (q.coord.empty())
@@ -4156,6 +4156,14 @@ namespace giac {
     return t;
   }
 
+  void trim(polynome & pmod,const gen & m){
+    while (!pmod.coord.empty()){
+      if (!is_zero(smod(pmod.coord.front().value,m)))
+	break;
+      pmod.coord.erase(pmod.coord.begin());
+    }
+  }
+
   static bool gcdheu(const polynome &p_orig,const index_t & p_deg,const polynome &q_orig, const index_t & q_deg,polynome & p_simp, gen & np_simp, polynome & q_simp, gen & nq_simp, polynome & d, gen & d_content,bool skip_test,bool compute_cofactors){
     // COUT << "Entering gcdheu " << p.dim << '\n';
     if (debug_infolevel>=123456-p_orig.dim)
@@ -4192,6 +4200,8 @@ namespace giac {
       polynome pmod,qmod;
       unmodularize(p_simp,pmod);
       unmodularize(q_simp,qmod);
+      trim(pmod,m);
+      trim(qmod,m);
       d=gcdmod(pmod,qmod,m);
       if (debug_infolevel)
 	CERR << "gcdmod end " << CLOCK() << '\n';
