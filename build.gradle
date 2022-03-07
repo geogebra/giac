@@ -185,6 +185,7 @@ def giacSpecificSettings(cppCompiler, linker, targetPlatform) {
     cppCompiler.define 'GIAC_GENERIC_CONSTANTS'
     cppCompiler.define 'HAVE_CONFIG_H'
     cppCompiler.define 'GIAC_GGB'
+    cppCompiler.define 'TIMEOUT'
     cppCompiler.args '-fexceptions'
     cppCompiler.args '-O2' // standard optimization (default)
     cppCompiler.args '-I.'
