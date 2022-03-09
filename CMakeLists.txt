@@ -1,5 +1,5 @@
 # This file has been tested on Linux, Mac and Windows.
-# 
+#
 # Building on Linux and Mac
 # -------------------------
 #
@@ -30,29 +30,7 @@ project(minigiac)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "-fpermissive -std=c++0x")
 
-IF(APPLE)
-    # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
-    LINK_DIRECTORIES(/usr/local/lib)
-    add_definitions(-DDONT_USE_LIBLAPLACK)
-ENDIF()
-
-IF(UNIX)
-    add_definitions(-DHAVE_SYS_TIMES_H -DHAVE_UNISTD_H -DHAVE_SYS_TIME_H -DHAVE_SYSCONF )
-ENDIF()
-
-IF(WIN32)
-add_definitions(-DGIAC_MPQS -D__MINGW_H -DMINGW32 -DHAVE_NO_SYS_TIMES_H
-        -DHAVE_NO_SYS_RESOURCE_WAIT_H -DHAVE_NO_PWD_H -DHAVE_NO_CWD -DNO_CLOCK
-        -Dusleep= -DYY_NO_UNISTD_H)
-ENDIF()
-
-include_directories(src/giac/headers)
-
-add_definitions(-DHAVE_NO_HOME_DIRECTORY -DGIAC_GGB -DIN_GIAC -DHAVE_LIB_PTHREAD
-        -DGIAC_GENERIC_CONSTANTS -DTIMEOUT
-        -DHAVE_MPFR_1 -DHAVE_LIBMPFR -DVERSION="1.2.3")
-
-add_executable(minigiac
+set(GIAC_SOURCES
         src/giac/cpp/alg_ext.cc
         src/giac/cpp/cocoa.cc
         src/giac/cpp/csturm.cc
@@ -196,7 +174,54 @@ add_executable(minigiac
         src/giac/headers/usual.h
         src/giac/headers/vecteur.h
         src/giac/headers/vector.h
+)
+
+include_directories(src/giac/headers)
+
+add_definitions(-DHAVE_NO_HOME_DIRECTORY -DGIAC_GGB -DIN_GIAC -DHAVE_LIB_PTHREAD
+        -DGIAC_GENERIC_CONSTANTS -DTIMEOUT
+        -DHAVE_MPFR_1 -DHAVE_LIBMPFR -DVERSION="1.2.3")
+
+add_executable(minigiac
+        ${GIAC_SOURCES}
         src/minigiac/cpp/minigiac.cc)
 
 target_link_libraries(minigiac gmp mpfr)
 
+add_library(javagiac SHARED
+        ${GIAC_SOURCES}
+        src/jni/cpp/giac_wrap.cxx)
+
+target_link_libraries(javagiac gmp mpfr)
+
+set_target_properties(javagiac PROPERTIES
+        LINK_FLAGS -s -static-libgcc -static-libstdc++)
+
+target_include_directories(javagiac PUBLIC
+        ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders
+        ${CMAKE_SOURCE_DIR}/src/giac/headers)
+
+IF(APPLE)
+    # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
+    LINK_DIRECTORIES(/usr/local/lib)
+    add_definitions(-DDONT_USE_LIBLAPLACK)
+    target_include_directories(javagiac PUBLIC
+        ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders/darwin)
+ENDIF()
+
+IF(UNIX)
+    add_definitions(-DHAVE_SYS_TIMES_H -DHAVE_UNISTD_H -DHAVE_SYS_TIME_H -DHAVE_SYSCONF )
+ENDIF()
+
+IF(UNIX)
+    target_include_directories(javagiac PUBLIC
+        ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders/linux)
+ENDIF()
+
+IF(WIN32)
+    add_definitions(-DGIAC_MPQS -D__MINGW_H -DMINGW32 -DHAVE_NO_SYS_TIMES_H
+        -DHAVE_NO_SYS_RESOURCE_WAIT_H -DHAVE_NO_PWD_H -DHAVE_NO_CWD -DNO_CLOCK
+        -Dusleep= -DYY_NO_UNISTD_H)
+    target_include_directories(javagiac PUBLIC
+        ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders/win32)
+ENDIF()
