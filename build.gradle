@@ -15,9 +15,7 @@ plugins {
 }
 
 
-repositories {
-    mavenCentral()
-}
+apply from: 'repositories.gradle'
 
 project.setDescription('Giac CAS for GeoGebra')
 
@@ -151,7 +149,7 @@ def iosClangCompilerArgs(args, sdk, arch, minIosVersion, postfix = "") {
     args << "-arch"
     args << "${arch}"
     args << "-target"
-    args << "${arch}-apple-ios${minIosVersion}{$postfix}"
+    args << "${arch}-apple-ios${minIosVersion}${postfix}"
     args << "-miphoneos-version-min=${minIosVersion}"
     args << "-std=gnu++98"
     args << "-stdlib=libc++"
@@ -188,7 +186,6 @@ def giacSpecificSettings(cppCompiler, linker, targetPlatform) {
     cppCompiler.define 'HAVE_CONFIG_H'
     cppCompiler.define 'GIAC_GGB'
     cppCompiler.define 'TIMEOUT'
-
     cppCompiler.args '-fexceptions'
     cppCompiler.args '-O2' // standard optimization (default)
     cppCompiler.args '-I.'
@@ -994,6 +991,9 @@ task downloadEmsdk {
     description 'Downloads emscripten SDK and downloads it.'
     outputs.dir emsdkDir
     doLast {
+        delete {
+            delete emsdkDir
+        }
         exec {
             commandLine 'git clone https://github.com/emscripten-core/emsdk.git'.split()
         }

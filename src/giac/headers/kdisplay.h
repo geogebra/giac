@@ -454,6 +454,8 @@ namespace xcas {
     bool changed,recompute,matrix_fill_cells,movedown,keytooltip;
   } ;
   extern tableur * sheetptr;
+  void fix_sheet(tableur & t,const giac::context *);
+  std::string print_tableur(const tableur & t,const giac::context *);
 
   int check_do_graph(giac::gen & ge,int do_logo_graph_eqw,const giac::context *);
   int get_filename(char * filename,const char * extension);
@@ -508,6 +510,7 @@ namespace giac {
 #define MENUTYPE_INSTANT_RETURN 2 // this type of menu insantly returns even if user hasn't selected an option (allows for e.g. redrawing the GUI behind it). if user hasn't exited or selected an option, menu will return MENU_RETURN_INSTANT
 #define MENUTYPE_NO_KEY_HANDLING 3 //this type of menu doesn't handle any keys, only draws.
 #define MENUTYPE_FKEYS 4 // returns GetKey value of a Fkey when one is pressed
+#define MENUTYPE_NO_NUMBER 5
   typedef struct {
     char* statusText = NULL; // text to be shown on the status bar, may be empty
     char* title = NULL; // title to be shown on the first line if not null

@@ -393,6 +393,8 @@ namespace giac {
 	      strcpy(menuitem, "  "); //allow for the folder and selection icons on MULTISELECT menus (e.g. file browser)
 	      strcpy(menuitem+2,menu->items[curitem].text);
 	    }
+	    else if (menu->type==MENUTYPE_NO_NUMBER)
+	      strcpy(menuitem,menu->items[curitem].text);
 	    else {
 	      int cur=curitem+1;
 	      if (menu->numitems<10){
@@ -593,7 +595,7 @@ namespace giac {
             menu->numselitems = menu->numselitems+1;
 	    }
 	    return key; //return on F1 too so that parent subroutines have a chance to e.g. redraw fkeys*/
-	} else if (menu->type == MENUTYPE_FKEYS) {
+	} else if (menu->type == MENUTYPE_FKEYS || menu->type==MENUTYPE_NO_NUMBER) {
 	  return key;
 	}
 	break;
@@ -603,7 +605,7 @@ namespace giac {
       case KEY_CTRL_F5:
       case KEY_CTRL_F6: case KEY_CTRL_CATALOG: case KEY_BOOK: case '\t':
       case KEY_CHAR_ANS: 
-	if (menu->type == MENUTYPE_FKEYS || menu->type==MENUTYPE_MULTISELECT) return key; // MULTISELECT also returns on Fkeys
+	if (menu->type == MENUTYPE_FKEYS || menu->type==MENUTYPE_NO_NUMBER || menu->type==MENUTYPE_MULTISELECT) return key; // MULTISELECT also returns on Fkeys
 	break;
       case KEY_CTRL_PASTE:
 	if (menu->type==MENUTYPE_MULTISELECT) return key; // MULTISELECT also returns on paste
@@ -649,12 +651,16 @@ namespace giac {
       case KEY_CHAR_7:
       case KEY_CHAR_8:
       case KEY_CHAR_9:
+	if (menu->type==MENUTYPE_NO_NUMBER)
+	  return key;
 	if(menu->numitems>=(key-0x30)) {
 	  menu->selection = (key-0x30);
 	  if (menu->type != MENUTYPE_FKEYS) return MENU_RETURN_SELECTION;
 	}
 	break;
       case KEY_CHAR_0:
+	if (menu->type==MENUTYPE_NO_NUMBER)
+	  return key;
 	if(menu->numitems>=10) {
 	  menu->selection = 10;
 	  if (menu->type != MENUTYPE_FKEYS)  return MENU_RETURN_SELECTION;
@@ -2740,6 +2746,20 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   static define_unary_function_eval2 (__recule,&_recule,_recule_s,&printastifunction);
   define_unary_function_ptr5( at_recule ,alias_at_recule,&__recule,0,T_LOGO);
 
+  gen _towards(const gen & g,GIAC_CONTEXT){
+    // logo instruction
+    if (g.type!=_VECT || g._VECTptr->size()!=2)
+      return gensizeerr(contextptr);
+    gen z=g._VECTptr->front()-(*turtleptr).x+cst_i*(g._VECTptr->back()-(*turtleptr).y);
+    int m=get_mode_set_radian(contextptr);
+    z=arg(z,contextptr);
+    angle_mode(m,contextptr);
+    return 180/M_PI*z;
+  }
+  static const char _towards_s []="towards";
+  static define_unary_function_eval2 (__towards,&_towards,_towards_s,&printastifunction);
+  define_unary_function_ptr5( at_towards ,alias_at_towards,&__towards,0,T_LOGO);
+
   static const char _backward_s []="backward";
   static define_unary_function_eval (__backward,&_recule,_backward_s);
   define_unary_function_ptr5( at_backward ,alias_at_backward,&__backward,0,true);
@@ -3243,9 +3263,20 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	turtle_fill_color= g._VECTptr->front().val;
       return change_subtype(turtle_fill_color,_INT_COLOR);
     }
-    if (g.type==_INT_ && g.subtype==_INT_COLOR){
+    if (g.type==_INT_ 
+	//&& g.subtype==_INT_COLOR
+	){
+      if (g.val<-1 && g.val>-1024){
+	(*turtleptr).radius=-absint(g.val);
+	if ((*turtleptr).radius<-1)
+	  return update_turtle_state(true,contextptr);
+      }
       turtle_fill_color= g.val;
       return g;
+    }
+    if (is_zero(g)){ // 0.0
+      turtle_fill_begin=turtle_stack().size();
+      return 1;
     }
     if (g.type==_VECT && g._VECTptr->empty()){
       if (turtle_fill_begin<0){
@@ -3266,15 +3297,6 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	_crayon(c,contextptr);
       }
       return res;
-    }
-    if (is_zero(g)){
-      turtle_fill_begin=turtle_stack().size();
-      return 1;
-    }
-    if (g.type==_INT_){
-      (*turtleptr).radius=-absint(g.val);
-      if ((*turtleptr).radius<-1)
-	return update_turtle_state(true,contextptr);
     }
     return gensizeerr(gettext("Integer argument >= 2"));
   }
@@ -7627,7 +7649,7 @@ namespace xcas {
 	os_draw_string_small(20+20*xi,20+20*xj,COLOR_RED,COLOR_BLACK,"x");
 	double yi=Ei-Ai,yj=Ej-Aj;
 	normalize(yi,yj);
-	drawLine(20,22,20+20*yi,20+20*yj,COLOR_GREEN);
+	drawLine(20,20,20+20*yi,20+20*yj,COLOR_GREEN);
 	os_draw_string_small(20+20*yi,20+20*yj,COLOR_GREEN,COLOR_BLACK,"y");
 	double zi=Bi-Ai,zj=Bj-Aj;
 	normalize(zi,zj);
@@ -7826,15 +7848,17 @@ namespace xcas {
       logo_turtle t=turtleptr->back();
 #endif
       double x=turtlezoom*(t.x-turtlex);
+      double y=turtlezoom*(t.y-turtley);
+#if 0
       if (x<0)
 	turtlex += int(x/turtlezoom);
       if (x>=LCD_WIDTH_PX-10)
 	turtlex += int((x-LCD_WIDTH_PX+10)/turtlezoom);
-      double y=turtlezoom*(t.y-turtley);
       if (y<0)
 	turtley += int(y/turtlezoom);
       if (y>LCD_HEIGHT_PX-10)
 	turtley += int((y-LCD_HEIGHT_PX+10)/turtlezoom);
+#endif
     }
 #if 0
     if (maillage & 0x3){
@@ -7992,6 +8016,21 @@ namespace xcas {
 #else
 		  logo_turtle & t=(*turtleptr)[k+i];
 #endif
+		  if (t.radius>0){
+		    int r=t.radius & 0x1ff; // bit 0-8
+		    int x,y,R;
+		    R=int(2*turtlezoom*r+.5);
+		    double angle = M_PI/180*(current.theta-90);
+		    if (t.direct){
+		      x=int(turtlezoom*(t.x-turtlex-r*std::cos(angle) - r)+.5);
+		      y=int(turtlezoom*(t.y-turtley-r*std::sin(angle) + r)+.5);
+		    }
+		    else {
+		      x=int(turtlezoom*(t.x-turtlex+r*std::cos(angle) -r)+.5);
+		      y=int(turtlezoom*(t.y-turtley+r*std::sin(angle) +r)+.5);
+		    }
+		    fl_pie(deltax+x,deltay+LCD_HEIGHT_PX-y,R,R,0,360,current.color,false);
+		  }
 		  vi[-i][0]=deltax+turtlezoom*(t.x-turtlex);
 		  vi[-i][1]=deltay+LCD_HEIGHT_PX+turtlezoom*(turtley-t.y);
 		  //*logptr(contextptr) << i << " " << vi[-i][0] << " " << vi[-i][1] << endl;
@@ -15399,6 +15438,49 @@ namespace xcas {
 #endif
 
   tableur * sheetptr=0;
+
+  string print_tableur(const tableur & t,GIAC_CONTEXT){
+    string s="spreadsheet[";
+    for (int i=0;i<t.nrows;++i){
+      printcell_current_row(contextptr)=i;
+      s += "[";
+      gen g=t.m[i];
+      if (g.type!=_VECT) continue;
+      vecteur & v=*g._VECTptr;
+      for (int j=0;j<t.ncols;++j){
+	gen vj=v[j];
+	printcell_current_col(contextptr)=j;
+	s += vj.print(contextptr);
+	if (j==t.ncols-1)
+	  s += "]";
+	else
+	  s += ",";
+      }
+      if (i==t.nrows-1)
+	s += "]";
+      else
+	s += ",";      
+    }
+    return s;
+  }  
+  
+  void fix_sheet(tableur & t,GIAC_CONTEXT){
+    for (int i=0;i<t.nrows;++i){
+      vecteur & v = *t.m[i]._VECTptr;
+      for (int j=0;j<t.ncols;++j){
+	gen & g=v[j];
+	if (g.type==_VECT){
+	  vecteur & w=*g._VECTptr;
+	  if (w[0].type==_SYMB){
+	    // cout << "fix " << w[0] << "\n";
+	    w[0]=spread_convert(w[0],i,j,contextptr);
+	  }
+	}
+      }
+    }
+  }
+
+
 #ifdef NUMWORKS
   extern "C" void mp_stack_ctrl_init();
   extern "C" void mp_stack_set_top(void *);

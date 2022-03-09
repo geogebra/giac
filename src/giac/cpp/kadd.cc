@@ -259,13 +259,149 @@ int fractale(GIAC_CONTEXT){
   return 0;
 }
 
+int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
+  static double pv=(-mode)*10000;
+  static double fv=0;
+  static double ir=3; // % annual
+  static double irpy=12; // per year
+  static double pm=100; // mensualite
+  static double nb=10; // nombre d'annuites
+  double * tabd[6]={&pv,&fv,&ir,&irpy,&pm,&nb};
+  bool solved=false;
+  Menu smallmenu;
+  smallmenu.numitems=7; 
+  // and uncomment first smallmenuitems[app_number].text="Reserved"
+  // replace by your application name
+  // and add if (smallmenu.selection==app_number-1){ call your code }
+  MenuItem smallmenuitems[smallmenu.numitems];      
+  smallmenu.items=smallmenuitems;
+  smallmenu.height=11;
+  smallmenu.scrollbar=1;
+  smallmenu.scrollout=1;
+  smallmenu.title = (char *) (mode==-1?"Pret bancaire":"Epargne");
+  smallmenu.type = MENUTYPE_NO_NUMBER;
+  while(1) {
+    drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
+    string pvs,fvs,pms;
+    if (mode==-1){
+      pvs=((lang==1)?"Somme due actuelle ":"Present due amount ");
+      fvs=((lang==1)?"Somme due future ":"Future due amount "); 
+      pms=((lang==1)?"Mensualite ":"Payment ");
+    } else {
+      pvs=((lang==1)?"Epargne actuelle ":"Present amount ");
+      fvs=((lang==1)?"Epargne future ":"Future amount ");
+      pms=((lang==1)?"Versement mensuel ":"Payment ");
+    }
+    string irs=((lang==1)?"Taux d'interet annuel ":"Annual interest rate ");
+    string irpys=((lang==1)?"Paiements par an ":"Payments per year ");
+    string nbs=((lang==1)?"Nombre d'annees ":"Number of years ");
+    string pvs1=pvs+giac::print_DOUBLE_((-mode)*pv,contextptr),
+      fvs1=fvs+giac::print_DOUBLE_((-mode)*fv,contextptr),
+      irs1=irs+giac::print_DOUBLE_(ir,contextptr)+"%",
+      irpys1=irpys+giac::print_DOUBLE_(irpy,contextptr),
+      pms1=pms+giac::print_DOUBLE_(pm,contextptr),
+      nbs1=nbs+giac::print_DOUBLE_(nb,contextptr);
+    char * tab[6]={(char*)pvs1.c_str(),(char*)fvs1.c_str(), (char*)irs1.c_str(),(char*)irpys1.c_str(), (char*)pms1.c_str(),(char*)nbs1.c_str()};
+    for (int i=0;i<6;i++)
+      smallmenuitems[i].text = tab[i];
+    smallmenuitems[6].text = (char*)((lang==1)?"Quitter ":"Quit ");
+    os_draw_string(0,200,solved?giac::_GREEN:giac::_MAGENTA,_WHITE,"Ans solve|EXE change|Tool help");
+    int sres = doMenu(&smallmenu);
+    if (sres==MENU_RETURN_EXIT)
+      break;
+    int choix=smallmenu.selection-1;
+    if (sres == KEY_CTRL_CATALOG || sres==KEY_BOOK) { // Help
+      xcas::textArea text;
+      text.editable=false;
+      text.clipline=-1;
+      text.title = (char*)((lang==1)?"Calcul d'un pret":"Finance help");
+      text.allowF1=true;
+      text.python=python_compat(contextptr);
+      std::vector<xcas::textElement> & elem=text.elements;
+      elem = std::vector<xcas::textElement> (2);
+      elem[0].s = (lang==1)?"Deplacez le curseur sur une ligne, tapez EXE/OK pour entrer une nouvelle valeur ou tapez sur Ans pour resoudre.":"Move cursor on a line, type EXE/OK to enter a new value or type Ans to solve";
+      elem[0].newLine = 0;
+      if (mode==-1)
+	elem[1].s = (lang==1)?"Par exemple entrez le montant de l'emprunt en 1, 0 en 2, le taux d'interet, le nombre d'annees puis placez le curseur en 5 et tapez Ans.":"For example, enter due amount in 1, 0 in 2, interest rate, number of years then move cursor on 5 and type Ans";
+      else
+	elem[1].s = (lang==1)?"Pour calculer l'evolution d'un placement, entrer le montant place au debut, le taux d'interet, le nombre d'annees, 0 en 5 (paiement) puis deplacez le curseur en 2 et tapez Ans":"";
+      elem[1].newLine = 1;
+      sres=doTextArea(&text,contextptr);
+      continue;
+    }
+    if (sres == KEY_CHAR_ANS){
+      if (choix==3)
+	continue;
+      double t1=std::pow(1+ir/100,1./irpy);
+      double t=t1-1;
+      double & u0=pv;
+      double & un=fv;
+      double & r=pm;
+      double C=r/t;
+      double n=nb*irpy;
+      // un=(1+t)^n*(u0-r/t)+r/t
+      if (choix==0){ // solve for u0=(1+t)^(-n)*(un-r/t)+r/t
+	u0=pow(t1,-n)*(un-C)+C;
+      }
+      if (choix==1){
+	un=pow(t1,n)*(u0-C)+C;
+      }
+      if (choix==2){ // solve for T
+	giac::gen sol=un-pow(1+vx_var,n,contextptr)*(u0-gen(r)/vx_var)-gen(r)/vx_var;
+	sol=giac::_fsolve(makesequence(sol,vx_var,t),contextptr);
+	if (sol.type==_DOUBLE_){
+	  t=sol._DOUBLE_val;
+	  ir=100*(std::pow(1+t,irpy)-1);
+	}
+	else continue;
+      }
+      if (choix==4){ // solve for r=t*(u0*(t+1)**n-﻿un)/((t+1)**n-1)
+	double tmp=pow(t+1,n);
+	r=t*(u0*tmp-un)/(tmp-1);
+      }
+      if (choix==5){ // solve for n=(-ln(t*u0-r)+ln(t*﻿un-r))/ln(t+1)
+	double n=std::log((t*un-r)/(t*u0-r))/std::log(t+1);
+	nb=n/irpy;
+      }
+      solved=true;
+    }
+    int keynumber=-1;
+    if (sres>=KEY_CHAR_0 && sres<=KEY_CHAR_9) keynumber=sres-KEY_CHAR_0;
+    if (sres==KEY_CTRL_EXE || sres == MENU_RETURN_SELECTION || sres == KEY_CTRL_OK || keynumber>=0) {
+      if (smallmenu.selection==7) // quit
+	break;
+      double d=*tabd[choix];
+      if (choix<2 && mode==1) d=-d;
+      if (keynumber>=0)
+	d=keynumber;
+      if (!inputdouble(tab[choix],d,contextptr))
+	continue;
+      if (choix<2 && mode==1) d=-d;
+      if (choix==3){
+	if (d<1)
+	  d=1;
+	if (d>365)
+	  d=365;
+      }
+      if (choix==5){
+	if (d<=0)
+	  d=1;
+	if (d>365)
+	  d=365;
+      }
+      *tabd[choix]=d;
+      solved=false;
+    }
+  }
+  return 0;
+}
 
 int khicas_addins_menu(GIAC_CONTEXT){
   Menu smallmenu;
 #ifdef NUMWORKS
-  smallmenu.numitems=8; // INCREMENT IF YOU ADD AN APPLICATION
+  smallmenu.numitems=10; // INCREMENT IF YOU ADD AN APPLICATION
 #else
-  smallmenu.numitems=7; // INCREMENT IF YOU ADD AN APPLICATION
+  smallmenu.numitems=9; // INCREMENT IF YOU ADD AN APPLICATION
 #endif  
   // and uncomment first smallmenuitems[app_number].text="Reserved"
   // replace by your application name
@@ -277,9 +413,11 @@ int khicas_addins_menu(GIAC_CONTEXT){
   smallmenu.scrollout=1;
   smallmenuitems[0].text = (char*)((lang==1)?"Tableur":"Spreadsheet");
   smallmenuitems[1].text = (char*)((lang==1)?"Table periodique":"Periodic table");
-  smallmenuitems[2].text = (char*)((lang==1)?"Exemple simple: Syracuse":"Simple example; Syracuse");
-  smallmenuitems[3].text = (char*)((lang==1)?"Exemple de jeu: Mastermind":"Game example: Mastermind");
-  smallmenuitems[4].text = (char*)((lang==1)?"Fractale de Mandelbrot":"Mandelbrot fractal");
+  smallmenuitems[2].text = (char*)((lang==1)?"Pret":"Mortgage");
+  smallmenuitems[3].text = (char*)((lang==1)?"Epargne":"TVM");
+  smallmenuitems[4].text = (char*)((lang==1)?"Exemple simple: Syracuse":"Simple example; Syracuse");
+  smallmenuitems[5].text = (char*)((lang==1)?"Exemple de jeu: Mastermind":"Game example: Mastermind");
+  smallmenuitems[6].text = (char*)((lang==1)?"Fractale de Mandelbrot":"Mandelbrot fractal");
   // smallmenuitems[5].text = (char*)"Mon application"; // adjust numitem !
   // smallmenuitems[6].text = (char*)"Autre application";
   // smallmenuitems[7].text = (char*)"Encore une autre";
@@ -342,6 +480,14 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	return Console_Input(console_buf);
       }
       if (smallmenu.selection==3){
+	finance(-1,contextptr);
+	continue;
+      }
+      if (smallmenu.selection==4){
+	finance(1,contextptr);
+	continue;
+      }
+      if (smallmenu.selection==5){
 	// Exemple simple d'application tierce: la suite de Syracuse
 	// on entre la valeur de u0
 	double d; int i;
@@ -366,9 +512,9 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	// on entre la liste en ligne de commande et on quitte
 	return Console_Input(gen(v).print(contextptr).c_str());
       }
-      if (smallmenu.selection==4) // mastermind, on ne quitte pas
+      if (smallmenu.selection==6) // mastermind, on ne quitte pas
 	mastermind(contextptr);
-      if (smallmenu.selection==5)
+      if (smallmenu.selection==7)
 	fractale(contextptr);
     } // end sres==menu_selection
     Console_Disp(1,contextptr);
@@ -623,7 +769,11 @@ void change_undo(tableur & t){
 }
 
 void save_sheet(tableur & t,GIAC_CONTEXT){
+#if 1
+  string s=print_tableur(t,contextptr);
+#else
   string s=gen(extractmatricefromsheet(t.m,false),_SPREAD__VECT).print(contextptr);
+#endif
   string filename(remove_path(remove_extension(t.filename)));
   filename+=".tab";
 #ifdef NSPIRE_NEWLIB
@@ -1069,6 +1219,7 @@ int sheet_menu_menu(tableur & t,GIAC_CONTEXT){
 	      t.ncols=t.m.front()._VECTptr->size();
 	      t.cur_col=t.cur_row=0;
 	      t.sel_row_begin=t.cmd_row=-1;
+	      fix_sheet(t,contextptr);
 	    }
 	    else
 	      s=0;

@@ -70,7 +70,8 @@ FILE* cfile(std::ifstream const& ifs){return cfile_impl(ifs.rdbuf());}
 #endif // __VISUALC__
 #ifdef FXCG
 extern "C" {
-#include <keyboard.h>
+#include <fxcg/keyboard.h>
+#include <fxcg/display.h>
 }
 #endif
 
@@ -14023,7 +14024,7 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
       return g.print(context0);
   }
 
-#ifndef KHICAS // in kdisplay.cc
+#if !defined KHICAS // in kdisplay.cc
 #if defined RTOS_THREADX || defined NSPIRE || defined FXCG
   logo_turtle vecteur2turtle(const vecteur & v){
     return logo_turtle();
@@ -14070,6 +14071,13 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
   static const char _recule_s []="recule";
   static define_unary_function_eval2 (__recule,&_recule,_recule_s,&printastifunction);
   define_unary_function_ptr5( at_recule ,alias_at_recule,&__recule,0,T_LOGO);
+
+  gen _towards(const gen & g,GIAC_CONTEXT){
+    return undef;
+  }
+  static const char _towards_s []="towards";
+  static define_unary_function_eval2 (__towards,&_towards,_towards_s,&printastifunction);
+  define_unary_function_ptr5( at_towards ,alias_at_towards,&__towards,0,T_LOGO);
 
   gen _position(const gen & g,GIAC_CONTEXT){
     return undef;
@@ -14445,6 +14453,20 @@ gen _vers(const gen & g,GIAC_CONTEXT){
   static const char _recule_s []="recule";
   static define_unary_function_eval2 (__recule,&_recule,_recule_s,&printastifunction);
   define_unary_function_ptr5( at_recule ,alias_at_recule,&__recule,0,T_LOGO);
+
+  gen _towards(const gen & g,GIAC_CONTEXT){
+    // logo instruction
+    if (g.type!=_VECT || g._VECTptr->size()!=2)
+      return gensizeerr(contextptr);
+    gen z=g._VECTptr->front()-turtle(contextptr).x+cst_i*(g._VECTptr->back()-turtle(contextptr).y);
+    int m=get_mode_set_radian(contextptr);
+    z=arg(z,contextptr);
+    angle_mode(m,contextptr);
+    return 180/M_PI*z;
+  }
+  static const char _towards_s []="towards";
+  static define_unary_function_eval2 (__towards,&_towards,_towards_s,&printastifunction);
+  define_unary_function_ptr5( at_towards ,alias_at_towards,&__towards,0,T_LOGO);
 
   static const char _backward_s []="backward";
   static define_unary_function_eval (__backward,&_recule,_backward_s);
@@ -14958,9 +14980,19 @@ gen _vers(const gen & g,GIAC_CONTEXT){
       turtle_fill_color=_rgb(g,contextptr).val;
       return change_subtype(turtle_fill_color,_INT_COLOR);
     }
-    if (g.type==_INT_ && g.subtype==_INT_COLOR){
+    if (g.type==_INT_ 
+	//&& g.subtype==_INT_COLOR
+	){
+      if (g.val<-1 && g.val>-1024){
+	turtle(contextptr).radius=-absint(g.val);
+	return update_turtle_state(true,contextptr);
+      }
       turtle_fill_color= g.val;
       return g;
+    }
+    if (is_zero(g)){ // will only work with 0.0
+      turtle_fill_begin=turtle_stack(contextptr).size();
+      return 1;
     }
     if (g.type==_VECT && !g._VECTptr->empty() && g._VECTptr->front().type==_INT_){
       if (g._VECTptr->front().val>=0)
@@ -14987,15 +15019,6 @@ gen _vers(const gen & g,GIAC_CONTEXT){
 	res=update_turtle_state(true,contextptr);
       }
       return res;
-    }
-    if (is_zero(g)){
-      turtle_fill_begin=turtle_stack(contextptr).size();
-      return 1;
-    }
-    if (g.type==_INT_){
-      turtle(contextptr).radius=-absint(g.val);
-      if (turtle(contextptr).radius<-1)
-	return update_turtle_state(true,contextptr);
     }
     return gensizeerr(gettext("Integer argument >= 2"));
   }

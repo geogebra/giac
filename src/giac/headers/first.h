@@ -35,6 +35,19 @@
 #else
 #ifdef __MINGW_H
 #define MINGW32
+#ifndef M_LN2
+#define M_LN2 0.693147180559945310
+#endif
+#ifndef M_PI
+#define M_PI       3.14159265358979323846
+#define M_PI_2       (M_PI/2)
+#endif
+#ifndef M_E
+#define M_E       2.71828182845904524
+#endif
+#ifndef M_SQRT2
+#define M_SQRT2       1.41421356237309505
+#endif
 #endif
 #endif
 
@@ -531,14 +544,14 @@ inline int fsign (float f1){return f1==0?0:(f1>0?1:-1);}
 float fsqrt (float f1);
 void print_float(const giac_float & f,char * ch);
 inline float fpow(float f1,float f2){ 
-#ifdef NSPIRE
+#if defined NSPIRE || defined FXCG
   return pow(f1,f2); 
 #else
   return std::pow(f1,f2); 
 #endif
 }
 inline float ffloor(float f1){ 
-#ifdef NSPIRE
+#if defined NSPIRE || defined FXCG
   return floor(f1); 
 #else
   return std::floor(f1); 
@@ -567,4 +580,31 @@ inline float atan2f(float f1,float f2,int rad){ if (rad) return atan2f(f1,f2); e
 #undef B0 //this conflicts with a define
 #undef bcopy //this conflicts with a define
 #endif
+
+#ifdef FXCG
+namespace ustl {
+  inline double abs(double d){ return ::fabs(d); }
+  inline double tan(double d){ return ::tan(d); }
+  inline double atan(double d){ return ::atan(d); }
+  inline double asin(double d){ return ::asin(d); }
+  inline double sin(double d){ return ::sin(d); }
+  inline double acos(double d){ return ::acos(d); }
+  inline double cos(double d){ return ::cos(d); }
+  inline double tanh(double d){ return ::tanh(d); }
+  inline double atanh(double d){ return ::atanh(d); }
+  inline double asinh(double d){ return ::asinh(d); }
+  inline double sinh(double d){ return ::sinh(d); }
+  inline double acosh(double d){ return ::acosh(d); }
+  inline double cosh(double d){ return ::cosh(d); }
+  inline double log(double d){ return ::log(d); }
+  inline double log10(double d){ return ::log10(d); }
+  inline double exp(double d){ return ::exp(d); }
+  inline double sqrt(double d){ return ::sqrt(d); }
+  inline double floor(double d){ return ::floor(d); }
+  inline double ceil(double d){ return ::ceil(d); }
+  inline double pow(double d1,double d2){ return ::pow(d1,d2); }
+  inline double atan2(double d1,double d2){ return ::atan2(d1,d2); }
+}
+#endif
+
 #endif // _GIAC_FIRST_H_

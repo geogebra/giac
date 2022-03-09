@@ -728,11 +728,11 @@ namespace giac {
 	  }
 	}
 	simplify3(coeffn,coeffd);
-	if (hasnum)
+	if (hasnum || coeffn.type==_POLY)
 	  coeffnum=monomial2gen(monomial<gen>(coeffn,inum));
 	else
 	  coeffnum=coeffn;
-	if (hasden)
+	if (hasden || coeffd.type==_POLY)
 	  coeffden=monomial2gen(monomial<gen>(coeffd,iden));
 	else
 	  coeffden=coeffd;
@@ -2629,9 +2629,10 @@ namespace giac {
     vecteur res;
     const_iterateur it=g._VECTptr->begin(),itend=g._VECTptr->end();
     for (;it!=itend;++it){
-      if (it->is_symb_of_sommet(at_pow) && it->_SYMBptr->feuille._VECTptr->back().type==_INT_)
-	continue;
-      res=mergeset(res,lop_pow(*it));
+      gen cur=*it;
+      if (cur.is_symb_of_sommet(at_pow) && cur._SYMBptr->feuille._VECTptr->back().type==_INT_)
+	cur=cur._SYMBptr->feuille._VECTptr->front(); // was continue, changed for integrate((b^2*x^2 + a*b*x*2 + a^2)^(-3/2) , x) ;
+      res=mergeset(res,lop_pow(cur));
     }
     return res;
   }

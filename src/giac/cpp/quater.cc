@@ -685,7 +685,7 @@ namespace giac {
     if (g.type==_MOD){
       if (*(g._MODptr+1)!=p)
 	return gensizeerr(gettext("Incompatible characteristics"));
-      return galois_field(p,P,x,a+*g._MODptr);
+      return *this+*g._MODptr; // galois_field(p,P,x,a+*g._MODptr)
     }
     if (g.type!=_USER)
       return sym_add(*this,cleanup(*this,g),context0); // ok symbolic(at_plus,makesequence(g,*this));
@@ -743,7 +743,7 @@ namespace giac {
     if (g.type==_MOD){
       if (*(g._MODptr+1)!=p)
 	return gensizeerr(gettext("Incompatible characteristics"));
-      return galois_field(p,P,x,a-*g._MODptr);
+      return *this-*g._MODptr;//galois_field(p,P,x,a-*g._MODptr);
     }
     if (g.type!=_USER)
       return sym_add(*this,cleanup(*this,-g),context0); // ok symbolic(at_plus,makesequence(-g,*this));

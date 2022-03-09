@@ -154,7 +154,8 @@ namespace giac {
     0xffffffff, 0xffffffff,
     //0xffffffff, 0xffffffff
   };
-  static four_int * tab16=(four_int *) 0xe5200000;
+  // does not work after OFF/ON
+  static four_int * tab16=(four_int *) 0xe5200000; 
   static six_int * tab24=(six_int *) 0xe5007000;
   static eight_int * tab32=(eight_int *) 0xe5017000;
 #else
@@ -611,7 +612,7 @@ namespace giac {
 #ifdef GIAC_HAS_STO_38
     usleep(10);
 #else
-#ifndef _MINGW_H
+#ifndef __MINGW_H
     usleep(1000);
 #endif
 #endif
@@ -7793,7 +7794,7 @@ namespace giac {
     if (is_one(base))
       return base;
     if (is_minus_one(base))
-      return exponent%2?-1:1;
+      return exponent%2?base:base*base;
     unsigned long int expo=exponent;
     gen b;
     if (base.type<=_ZINT && has_evalf(base,b,0,context0) && !is_inf(b) &&
@@ -7998,7 +7999,7 @@ namespace giac {
       interrupted = true; ctrl_c=false;
       return gensizeerr(gettext("Stopped by user interruption.")); 
     }
-    if (b.type==_MOD)
+    if (b.type==_MOD || a.type==_MOD)
       return a*inv(b,contextptr);
     switch ( (a.type<< _DECALAGE) | b.type ) {
     case _INT___INT_: case _ZINT__INT_: case _ZINT__ZINT:

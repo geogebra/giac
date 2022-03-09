@@ -417,10 +417,11 @@ namespace giac {
     }
     if (w.size()!=1 || w.front().type!=_VECT)
       return;
-    w=*w.front()._VECTptr;
+    gen wfront=w.front();
+    w=*wfront._VECTptr;
     if (w.size()!=2)
       return;
-    gen l(w.front()),m(w.back());
+    gen l(w[0]),m(w[1]);
     vecteur newv;
     iterateur it=v.begin(),itend=v.end();
     for (;it!=itend;++it){
@@ -1992,10 +1993,10 @@ namespace giac {
       return vecteur(0);
     gen expr(e),a,b;
     if (is_linear_wrt(e,x,a,b,contextptr)){
-      if (contains(a,x)) 
+      if (contains(a,x))  
 	a=ratnormal(a,contextptr);
-      if (is_exactly_zero(a)){
-	if (is_exactly_zero(b))
+      if (is_exactly_zero(ratnormal(a,contextptr))){
+	if (is_exactly_zero(ratnormal(b,contextptr)))
 	  return vecteur(1,x);
 	return vecteur(0);
       }

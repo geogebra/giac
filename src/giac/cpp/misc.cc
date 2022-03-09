@@ -9587,8 +9587,12 @@ void sync_screen(){}
 	  if (impair[k]){
 	    int x1=giacmax(xmin,int(lxj[k][0]+.5));
 	    int x2=k==lxjs-1?xmax:giacmin(xmax,int(lxj[k+1][0]+.5));
+#ifdef NUMWORKS
+	    os_fill_rect(x1,y,x2-x1+1,1,color);
+#else
 	    for (;x1<=x2;++x1)
 	      set_pixel(x1,y,color,contextptr);
+#endif
 	  }
 	}
       } // end if y>=ymin

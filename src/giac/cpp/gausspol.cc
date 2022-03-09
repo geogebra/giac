@@ -3776,7 +3776,7 @@ namespace giac {
       setsizeerr(gettext("Bug!"));
 #endif
     if (p==q)
-      return p;
+      return p;    
     if (p.coord.empty())
       return q;
     if (q.coord.empty())
@@ -4156,6 +4156,14 @@ namespace giac {
     return t;
   }
 
+  void trim(polynome & pmod,const gen & m){
+    while (!pmod.coord.empty()){
+      if (!is_zero(smod(pmod.coord.front().value,m)))
+	break;
+      pmod.coord.erase(pmod.coord.begin());
+    }
+  }
+
   static bool gcdheu(const polynome &p_orig,const index_t & p_deg,const polynome &q_orig, const index_t & q_deg,polynome & p_simp, gen & np_simp, polynome & q_simp, gen & nq_simp, polynome & d, gen & d_content,bool skip_test,bool compute_cofactors){
     // COUT << "Entering gcdheu " << p.dim << '\n';
     if (debug_infolevel>=123456-p_orig.dim)
@@ -4192,6 +4200,8 @@ namespace giac {
       polynome pmod,qmod;
       unmodularize(p_simp,pmod);
       unmodularize(q_simp,qmod);
+      trim(pmod,m);
+      trim(qmod,m);
       d=gcdmod(pmod,qmod,m);
       if (debug_infolevel)
 	CERR << "gcdmod end " << CLOCK() << '\n';
@@ -4946,14 +4956,51 @@ namespace giac {
   void lcmdeno(const polynome & p, gen & res){
     vector< monomial<gen> >::const_iterator it=p.coord.begin(),itend=p.coord.end();
     for (;it!=itend;++it){
-      if (it->value.type!=_FRAC)
+      gen tmp=it->value;
+      if (tmp.type!=_FRAC && tmp.type!=_EXT)
 	continue;
-      gen tmp=it->value,tmpden=1;
-      while (tmp.type==_FRAC){
+      gen tmpden=1;
+      while (tmp.type==_FRAC || tmp.type==_EXT){
+	if (tmp.type==_EXT){
+	  if (tmp._EXTptr->type==_VECT){
+	    vecteur v=*tmp._EXTptr->_VECTptr;
+	    gen eden;
+	    lcmdeno(v,eden,context0);
+	    tmpden=tmpden*eden;
+	  }
+	  break;
+	}
 	tmpden=tmpden*tmp._FRACptr->den;
 	tmp=tmp._FRACptr->num;
       }
       res=lcm(tmpden,res);
+    }
+  }
+
+  void lcmmult(polynome & p, const gen & res){
+    vector< monomial<gen> >::iterator it=p.coord.begin(),itend=p.coord.end();
+    for (;it!=itend;++it){
+      gen tmp=it->value;
+      if (tmp.type!=_FRAC && tmp.type!=_EXT){
+	it->value=tmp*res;
+	continue;
+      }
+      gen tmpden=1;
+      while (tmp.type==_FRAC || tmp.type==_EXT){
+	if (tmp.type==_EXT){
+	  if (tmp._EXTptr->type==_VECT){
+	    vecteur v=*tmp._EXTptr->_VECTptr;
+	    gen eden;
+	    lcmdeno(v,eden,context0);
+	    tmp=algebraic_EXTension(v,*(tmp._EXTptr+1));
+	    tmpden=tmpden*eden;
+	  }
+	  break;
+	}
+	tmpden=tmpden*tmp._FRACptr->den;
+	tmp=tmp._FRACptr->num;
+      }
+      it->value=(res/tmpden)*tmp;
     }
   }
 
@@ -5435,13 +5482,37 @@ namespace giac {
     return true;
   }
 
+  void Tpown_ff(polynome & g,int n){
+    vector< monomial<gen> > ::iterator it=g.coord.begin(),itend=g.coord.end();
+    for (;it!=itend;++it){
+      it->value=pow(it->value,n);
+      it->index=it->index*n;
+    }
+  }
+  static void push_factor(factorization & v,polynome & g,polynome & q,int k,int n){
+    q=q/Tpow(g,k);
+    for (int l=0;;++l){
+      polynome d(gcd(q,g));
+      if (d!=g){
+	v.push_back(facteur< polynome >(g/d,k+l*n)); 
+	if (Tis_one(d))
+	  break;
+	g=d;
+      }
+      polynome gn(g);
+      Tpown_ff(gn,n); 
+      q=q/gn;
+      // instead of q=q/Tpow(g,n); 
+    }
+  }
   // Yun algorithm in finite field of characteristic n
   // Must be called recursively since it will not detect powers multiple of n
   static void partialsquarefree_fp(const polynome & p,unsigned n,polynome & c,factorization & v){
     v.clear();
+    c=p;
     polynome y(p.derivative()),w(p);
     y=smod(y,gen(int(n)));
-    c=simplify(w,y);
+    simplify(w,y);
     // If p=p_1*p_2^2*...*p_n^n, 
     // then c=gcd(p,p')=Pi_{i s.t. i%n!=0} p_i^{i-1} Pi_{i s.t. i%n==0} p_i^i
     // w=p/c=Pi_{i%n>=1} p_i, 
@@ -5454,19 +5525,17 @@ namespace giac {
       // y=sum_{i%n >= k+1} (i-k) p_i' * pi_{j!=i, j>=k} p_j
       polynome g=simplify(w,y);
       if (!Tis_one(g))
-	v.push_back(facteur< polynome >(g,k)); 
-      // extract one time the factors of multiplicity k mod n
-      c=c/w;
+	push_factor(v,g,c,k,n);
       // this push p_k, now w=pi_{i%n>=k+1} p_i and 
-      // y=sum_{i%n>=k+1} (i-k) p_i' * pi_{j!=i, j%n>=k+1} p_j
+      // y=sum_{i%n>=k+1} (i-k)%n p_i' * pi_{j!=i, j%n>=k+1} p_j
       y=y-w.derivative();
       y=smod(y,gen(int(n)));
       // y=sum_{i%n>=k+1} (i-(k+1)) p_i' * pi_{j!=i, j%n>=k+1} p_j
       k++;
     }
     if (!Tis_one(w))
-      v.push_back(facteur< polynome >(w,k));
-    // at the end c contains Pi_{i} p_i^{i-(i%n)}
+      push_factor(v,w,c,k,n);//v.push_back(facteur< polynome >(w,k));
+    // at the end c contains Pi_{i mod p=0} p_i^i}
   }
   
   // Yun algorithm in finite field of characteristic n
@@ -5694,21 +5763,24 @@ namespace giac {
     env.modulo=n;
     env.pn=n;
     // Check that all coeff are mod
-    polynome p(p_orig);
-    vector< monomial<gen> >::iterator pit=p.coord.begin(),pitend=p.coord.end();
+    polynome p(p_orig.dim);
+    vector< monomial<gen> >::const_iterator pit=p_orig.coord.begin(),pitend=p_orig.coord.end();
     for (;pit!=pitend;++pit){
-      if (pit->value.type!=_MOD)
-	pit->value=makemod(pit->value,n);
-      gen & tmp = *(pit->value._MODptr+1);
+      gen val0=pit->value;
+      if (val0.type!=_MOD)
+	val0=makemod(val0,n);
+      gen & tmp = *(val0._MODptr+1);
       if (tmp.type!=_INT_ || tmp.val!=n){
 #ifndef NO_STDEXCEPT
 	setsizeerr();
 #endif
 	return false;
       }
-      gen & val = *(pit->value._MODptr);
+      gen & val = *(val0._MODptr);
       if (val.type==_CPLX)
 	env.complexe=true;
+      if (!is_zero(val))
+	p.coord.push_back(monomial<gen>(val0,pit->index));
     }
 #ifdef HAVE_LIBNTL
 #ifdef HAVE_LIBPTHREAD
@@ -7116,7 +7188,7 @@ namespace giac {
       gen tmp(1);
       lcmdeno(jt->fact,tmp);
       if (!is_one(tmp)){
-	jt->fact=tmp*jt->fact;
+	lcmmult(jt->fact,tmp); // jt->fact=tmp*jt->fact;
 	tmp=pow(tmp,jt->mult,context0);
 	num=tmp*num;
 	den=tmp*den;

@@ -160,7 +160,7 @@ namespace giac {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     bool b=approx_mode(contextptr);
     approx_mode(false,contextptr);
-#ifndef NSPIRE
+#if !defined NSPIRE && !defined FXCG
     my_ostream * ptr=logptr(contextptr);
     logptr(0,contextptr);
     gen res=_laplace_(args,contextptr);

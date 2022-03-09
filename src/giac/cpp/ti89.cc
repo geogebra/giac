@@ -118,9 +118,18 @@ namespace giac {
   define_unary_function_ptr5( at_seq ,alias_at_seq,&__seq,_QUOTE_ARGUMENTS,true);
 
   gen _logb(const gen & g,GIAC_CONTEXT){
-    if (g.type!=_VECT || g._VECTptr->size()!=2)
+    if (g.type!=_VECT)
       return ln(g,contextptr);
-    int n=0; gen e1(g._VECTptr->front()),b(g._VECTptr->back()),q;
+    vecteur & v=*g._VECTptr;
+    if (v.size()==3){
+      gen a(v[0]),b(v[1]),N(v[2]);
+      return logb(a,b,N,contextptr);
+    }
+    if (v.size()!=2)
+      return ln(g,contextptr);
+    int n=0; gen e1(v.front()),b(v.back()),q;
+    if (b.type==_MOD)
+      return logb(e1,*b._MODptr,*(b._MODptr+1),contextptr);
     if (is_integer(e1) && is_integer(b) && is_strictly_greater(b,1,contextptr) && !is_zero(e1)){
       while (is_zero(irem(e1,b,q))){
 	if (q.type==_ZINT)

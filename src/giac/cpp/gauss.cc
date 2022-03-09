@@ -329,13 +329,19 @@ namespace giac {
   }
   gen _a2q(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    if (args.type!=_VECT)
-      return symb_a2q(args);
+    if (args.type!=_VECT || args._VECTptr->empty())
+      return gensizeerr(contextptr);
     int s=int(args._VECTptr->size());
+    if (args.subtype!=_SEQ__VECT && s<=6){
+      vecteur vars(makevecteur(x__IDNT_e,y__IDNT_e,z__IDNT_e,t__IDNT_e,u__IDNT_e,v__IDNT_e));
+      vars.erase(vars.begin()+s,vars.end());
+      return _a2q(makesequence(args,vars),contextptr);
+    }
     if (s!=2)
       return gendimerr(contextptr);
-    if ((args._VECTptr->front().type==_VECT) && (args._VECTptr->back().type==_VECT))
-      return axq(*args._VECTptr->front()._VECTptr,*args._VECTptr->back()._VECTptr,contextptr);
+    const vecteur & v = *args._VECTptr;
+    if (ckmatrix(v.front()) && v.back().type==_VECT)
+      return axq(*v.front()._VECTptr,*v.back()._VECTptr,contextptr);
     return symb_a2q(args);
   }
   static const char _a2q_s []="a2q";
