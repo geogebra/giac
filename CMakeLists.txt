@@ -208,6 +208,7 @@ IF(APPLE)
     target_include_directories(javagiac PUBLIC
         ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders/darwin)
     target_link_directories(javagiac PUBLIC /usr/local/lib)
+    target_link_directories(minigiac PUBLIC /usr/local/lib)
 ENDIF()
 
 IF(UNIX)
