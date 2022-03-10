@@ -12,7 +12,7 @@ on: [push]
 #
 # * linux or
 # * mac or
-# * windows_msys2_clang64 or
+# * windows_msys2_clang64 or windows_msys2_clang32, or
 # * windows64_linux or windows32_linux (when cross-platform build is done for Windows, under Linux),
 #
 # VARIANT can be:
@@ -137,6 +137,30 @@ jobs:
           mingw-w64-clang-x86_64-make
           mingw-w64-clang-x86_64-gmp
           mingw-w64-clang-x86_64-mpfr
+    - name: build
+      run: mkdir cbuild && cd cbuild && CC=clang CXX=clang++ cmake -G "MinGW Makefiles" .. && mingw32-make
+
+  windows_msys2_clang32-native-cmake:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@v1
+    - name: prerequisites
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: CLANG32
+        update: true
+        install: >-
+          base-devel
+    - name: prerequisites2
+      run: |
+          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'echo' '[clang32]' >> '/etc/pacman.conf'"
+          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'echo' 'Include = /etc/pacman.d/mirrorlist.mingw' >> '/etc/pacman.conf'"
+          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-Syuu' '--overwrite' '*'"
+          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-S' '--needed' '--overwrite' '*' 'mingw-w64-clang-i686-cc' 'mingw-w64-clang-i686-cmake' 'mingw-w64-clang-i686-make' 'mingw-w64-clang-i686-gmp' 'mingw-w64-clang-i686-mpfr'"
+      shell: cmd
     - name: build
       run: mkdir cbuild && cd cbuild && CC=clang CXX=clang++ cmake -G "MinGW Makefiles" .. && mingw32-make
 
