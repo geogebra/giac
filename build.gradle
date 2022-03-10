@@ -132,12 +132,19 @@ if (clangIphonesimulatorBin.length() > 0) {
     ext.clangIphonesimulatorPath = clangIphonesimulatorBin.substring(0, clangIphonesimulatorBin.lastIndexOf("/"))
 }
 
+def macosSdk = exec_("xcrun", "--sdk", "macosx", "--show-sdk-path")
 def iphoneosSdk = exec_("xcrun", "--sdk", "iphoneos", "--show-sdk-path")
 def iphonesimulatorSdk = exec_("xcrun", "--sdk", "iphonesimulator", "--show-sdk-path")
 def iphoneosPlatform = exec_("xcrun", "--sdk", "iphoneos", "--show-sdk-platform-path")
 def minIosVersion = '9.0'
 
-def iosClangCompilerArgs(args, sdk, arch, minIosVersion, postfix = "") {
+def simulatorPostfix = "-simulator"
+def catalystPostfix = "-macabi"
+def iosTarget(arch, minIosVersion, postfix = "") {
+    return "${arch}-apple-ios${minIosVersion}${postfix}";
+}
+
+def iosClangCompilerArgs(args, sdk, arch, minIosVersion, target) {
     appleCompilerArgs(args)
     for (int i = args.size() - 1; i >= 0; i--) {
         if (args[i].equals("-nostdinc")) {
@@ -146,10 +153,8 @@ def iosClangCompilerArgs(args, sdk, arch, minIosVersion, postfix = "") {
     }
     args << "-isysroot"
     args << "${sdk}"
-    args << "-arch"
-    args << "${arch}"
     args << "-target"
-    args << "${arch}-apple-ios${minIosVersion}${postfix}"
+    args << target
     args << "-miphoneos-version-min=${minIosVersion}"
     args << "-std=gnu++98"
     args << "-stdlib=libc++"
@@ -387,6 +392,14 @@ model {
             architecture 'x86_64'
             operatingSystem 'iphonesimulator'
         }
+        maccatalyst_x86_64 {
+            architecture 'x86_64'
+            operatingSystem 'maccatalyst'   
+        }
+        maccatalyst_arm64 {
+            architecture 'arm64'
+            operatingSystem 'maccatalyst'   
+        }
     }
 
     toolChains {
@@ -431,38 +444,54 @@ model {
             target('ios_armv7') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
-                    iosClangCompilerArgs(args, iphoneosSdk, "armv7", minIosVersion)
+                    iosClangCompilerArgs(args, iphoneosSdk, "armv7", minIosVersion, iosTarget("armv7", minIosVersion))
                 }
                 path clangIosPath
             }
             target('ios_arm64') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
-                    iosClangCompilerArgs(args, iphoneosSdk, "arm64", minIosVersion)
+                    iosClangCompilerArgs(args, iphoneosSdk, "arm64", minIosVersion, iosTarget("arm64", minIosVersion))
                 }
                 path clangIosPath
             }
             target('iphonesimulator_i386') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
-                    iosClangCompilerArgs(args, iphonesimulatorSdk, "i386", minIosVersion, "-simulator")
+                    iosClangCompilerArgs(args, iphonesimulatorSdk, "i386", minIosVersion, iosTarget("i386", minIosVersion, simulatorPostfix))
                 }
                 path clangIphonesimulatorPath
             }
             target('iphonesimulator_x86_64') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
-                    iosClangCompilerArgs(args, iphonesimulatorSdk, "x86_64", minIosVersion, "-simulator")
+                    iosClangCompilerArgs(args, iphonesimulatorSdk, "x86_64", minIosVersion, iosTarget("x86_64", minIosVersion, simulatorPostfix))
                 }
                 path clangIphonesimulatorPath
             }
             target('iphonesimulator_arm64') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
-                    iosClangCompilerArgs(args, iphonesimulatorSdk, "arm64", minIosVersion, "-simulator")
+                    iosClangCompilerArgs(args, iphonesimulatorSdk, "arm64", minIosVersion, iosTarget("arm64", minIosVersion, simulatorPostfix))
                 }
                 path clangIphonesimulatorPath
             }
+            target('maccatalyst_x86_64') {
+                cppCompiler.executable 'clang'
+                cppCompiler.withArguments { args ->
+                    iosClangCompilerArgs(args, macosSdk, "x86_64", minIosVersion, iosTarget("x86_64", "13.0", catalystPostfix))
+                }
+                path clangMacosxPath
+
+            }
+            target('maccatalyst_arm64') {
+                cppCompiler.executable 'clang'
+                cppCompiler.withArguments { args ->
+                    iosClangCompilerArgs(args, macosSdk, "arm64", minIosVersion, iosTarget("arm64", "13.0", catalystPostfix))
+                }
+                path clangMacosxPath
+            }
+
         }
         // Note: Make sure manually that these executables are on the PATH.
         android(Gcc) {
@@ -493,6 +522,8 @@ model {
             targetPlatform 'ios_arm64'
             targetPlatform 'iphonesimulator_x86_64'
             targetPlatform 'iphonesimulator_arm64'
+            targetPlatform 'maccatalyst_x86_64'
+            targetPlatform 'maccatalyst_arm64'
             if (isMac) {
                 targetPlatform 'osx_amd64'
                 targetPlatform 'osx_arm64'
@@ -503,7 +534,8 @@ model {
                 giacCommonDefines(cppCompiler)
                 giacSpecificSettings(cppCompiler, linker, targetPlatform)
                 if (targetPlatform.operatingSystem.name == 'ios' 
-                    || targetPlatform.operatingSystem.name == 'iphonesimulator') {
+                    || targetPlatform.operatingSystem.name == 'iphonesimulator'
+                    || targetPlatform.operatingSystem.name == 'maccatalyst') {
                     giacIosDefines(cppCompiler)
                     if (targetPlatform.architecture.name == 'arm-v8') {
                         cppCompiler.define 'x86_64'
@@ -519,6 +551,8 @@ model {
             targetPlatform 'ios_arm64'
             targetPlatform 'iphonesimulator_x86_64'
             targetPlatform 'iphonesimulator_arm64'
+            targetPlatform 'maccatalyst_x86_64'
+            targetPlatform 'maccatalyst_arm64'
 
             binaries.all {
                 lib library: 'giac', linkage: 'static'
@@ -684,13 +718,17 @@ def mergeLibraries(name, output, clangPath, String... libraries) {
 task simpleInterfaceIosStaticLibrary(dependsOn: [
     'simpleInterfaceIos_arm64StaticLibrary', 
     'simpleInterfaceIphonesimulator_x86_64StaticLibrary',
-    'simpleInterfaceIphonesimulator_arm64StaticLibrary'
+    'simpleInterfaceIphonesimulator_arm64StaticLibrary',
+    'simpleInterfaceMaccatalyst_x86_64StaticLibrary',
+    'simpleInterfaceMaccatalyst_arm64StaticLibrary'
 ])
 
 task giacIosStaticLibrary(dependsOn: [
     'giacIos_arm64StaticLibrary', 
     'giacIphonesimulator_x86_64StaticLibrary',
-    'giacIphonesimulator_arm64StaticLibrary'
+    'giacIphonesimulator_arm64StaticLibrary',
+    'giacMaccatalyst_x86_64StaticLibrary',
+    'giacMaccatalyst_arm64StaticLibrary'
 ])
 
 task configBundle(type: Exec) {
@@ -722,11 +760,21 @@ task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'g
                 "src/jni/prebuilt/iphonesimulator/${it}/libgmp.a", 
                 "src/jni/prebuilt/iphonesimulator/${it}/libmpfr.a")
         }
+        ["arm64", "x86_64"].each {
+            mergeLibraries("Giac", "${output}/maccatalyst_${it}", clangIphonesimulatorPath,
+                "${buildDir}/libs/giac/static/maccatalyst_${it}/libgiac.a", 
+                "${buildDir}/libs/simpleInterface/static/maccatalyst_${it}/libSimpleInterface.a", 
+                "src/jni/prebuilt/maccatalyst/${it}/libgmp.a", 
+                "src/jni/prebuilt/maccatalyst/${it}/libmpfr.a")
+        }
 
         lipo("Giac", "${output}/ios", clangIosPath, "${output}/ios_arm64/Giac.a")
         lipo("Giac", "${output}/iphonesimulator", clangIphonesimulatorPath,
             "${output}/iphonesimulator_arm64/Giac.a", 
             "${output}/iphonesimulator_x86_64/Giac.a")
+        lipo("Giac", "${output}/maccatalyst", clangIphonesimulatorPath,
+            "${output}/maccatalyst_arm64/Giac.a", 
+            "${output}/maccatalyst_x86_64/Giac.a")
     }
 }
 
@@ -769,13 +817,32 @@ task createIphonesimulatorFramework(dependsOn: createFatIosStaticLibrary, type: 
     destinationDir = file("${buildDir}/libs/framework/iphonesimulator")
 }
 
-task createIosXcframework(dependsOn: [createIosFramework, createIphonesimulatorFramework], type: Copy) {
+task createMaccatalystFramework(dependsOn: createFatIosStaticLibrary, type: Copy) {
+    description "Creates Mac Catalyst framework"
+    from("${buildDir}/libs/merged/maccatalyst") {
+        include "Giac.a"
+        rename "Giac.a", "Giac"
+        into "Giac.framework"
+    }
+    from("src/simpleInterface/headers") {
+        include "*.hpp"
+        into "Giac.framework/Headers"
+    }
+
+    destinationDir = file("${buildDir}/libs/framework/maccatalyst")
+}
+
+
+task createIosXcframework(dependsOn: [createIosFramework, createIphonesimulatorFramework, createMaccatalystFramework], type: Copy) {
     description "Creates XCFramework"
     from("${buildDir}/libs/framework/iphonesimulator") {
         into "ios-arm64_x86_64-simulator"
     }
     from("${buildDir}/libs/framework/ios") {
         into "ios-arm64"
+    }
+    from("${buildDir}/libs/framework/maccatalyst") {
+        into "ios-arm64_x86_64-maccatalyst"
     }
     from("src/simpleInterface/framework") {
         include "xcframework.plist"
