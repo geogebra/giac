@@ -3504,6 +3504,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   // rur_do_gbasis==-1 no gbasis Q recon for rur, ==0 always gbasis Q recon, >0 size limit in monomials of the gbasis for gbasis Q recon
   // rur_do_certify==-1 do not certify, ==0 full certify, >0 certify equation if total degree is <= rur_do_certify. Beware of the 1 shift with the user command.
   int rur_do_gbasis=-1,rur_do_certify=0,rur_certify_maxthreads=6;
+  bool rur_error_ifnot0dimensional=false;
   unsigned short int GIAC_PADIC=50;
   const char cas_suffixe[]=".cas";
   int MAX_PROD_EXPAND_SIZE=4096;

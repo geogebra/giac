@@ -6344,7 +6344,7 @@ namespace giac {
 	python_contextptr=contextptr;
 	python_console()="";
 	gen g;
-	if (!gr && !xc && !turt && !pix ){
+	if ( strcmp(ptr,",") && !xc && !turt && !pix ){
 	  (*micropy_ptr)(ptr);
 	}
 	context * cascontextptr=(context *)caseval("caseval contextptr");

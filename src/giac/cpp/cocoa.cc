@@ -15485,6 +15485,20 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  if (rqi==-RAND_MAX)
 	    *logptr(contextptr) << "Overflow in rur, computing revlex gbasis\n";
 	  if (rqi<0){
+	    if (rur_error_ifnot0dimensional){
+	      res.clear();
+	      mpz_clear(zd);
+	      mpz_clear(zu);
+	      mpz_clear(zu1);
+	      mpz_clear(zd1);
+	      mpz_clear(zabsd1);
+	      mpz_clear(zsqrtm);
+	      mpz_clear(zq);
+	      mpz_clear(zur);
+	      mpz_clear(zr);
+	      mpz_clear(ztmp);
+	      return 1;
+	    }
 	    rur=0;
 	    continue;
 	  }

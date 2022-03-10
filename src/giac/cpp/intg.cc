@@ -2752,6 +2752,26 @@ namespace giac {
     // Step2: detection of f(u)*u' 
     vecteur v(1,gen_x);
     rlvarx(e,gen_x,v);
+    // detect constants
+    for (int i=1;i<v.size();++i){
+      if (v[i].type!=_SYMB)
+	continue;
+      gen vf=v[i]._SYMBptr->feuille;
+      gen vf1=derive(vf,gen_x,contextptr);
+      vf1=ratnormal(vf1,contextptr);
+      if (is_zero(vf1) && gen_x.type==_IDNT){
+	vf=limit(vf,*gen_x._IDNTptr,0,1,contextptr);
+	if (!is_undef(vf)){
+	  gen e1=complex_subst(e,v[i],v[i]._SYMBptr->sommet(vf,contextptr),contextptr);
+	  vecteur w(1,gen_x);
+	  rlvarx(e1,gen_x,w);
+	  if (w.size()<v.size()){
+	    v=w;
+	    e=e1;
+	  }
+	}
+      }
+    }
     if (!lop(v,at_rootof).empty()){
       remains_to_integrate=e_orig;
       return 0;

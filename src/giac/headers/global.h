@@ -369,6 +369,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   extern double gbasis_reinject_ratio;
   extern double gbasis_reinject_speed_ratio;
   extern int gbasis_logz_age_sort,gbasis_stop,rur_do_gbasis,rur_do_certify,rur_certify_maxthreads;
+  extern bool rur_error_ifnot0dimensional; // error code or compute gbasis
 
   extern int PROOT_FACTOR_MAXDEG;
   extern int ABS_NBITS_EVALF;
