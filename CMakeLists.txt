@@ -188,9 +188,18 @@ add_executable(minigiac
 
 target_link_libraries(minigiac gmp mpfr)
 
+# JNI/DLL
+
+set(GIAC_DEF "")
+
+IF(WIN32)
+    set(GIAC_DEF ${CMAKE_SOURCE_DIR}/src/jni/giac.def)
+ENDIF()
+
 add_library(javagiac SHARED
         ${GIAC_SOURCES}
-        src/jni/cpp/giac_wrap.cxx)
+        src/jni/cpp/giac_wrap.cxx
+        ${GIAC_DEF})
 
 target_link_libraries(javagiac gmp mpfr)
 
