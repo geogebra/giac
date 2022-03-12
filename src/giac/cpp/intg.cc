@@ -2752,7 +2752,8 @@ namespace giac {
     // Step2: detection of f(u)*u' 
     vecteur v(1,gen_x);
     rlvarx(e,gen_x,v);
-    // detect constants
+    // detect constants and gcd for linear args
+    gen curgcd(v.size()<=2?1:0); bool allsame=true;
     for (int i=1;i<v.size();++i){
       if (v[i].type!=_SYMB)
 	continue;
@@ -2771,6 +2772,32 @@ namespace giac {
 	  }
 	}
       }
+      if (!is_constant_wrt(vf1,gen_x,contextptr)){
+	curgcd=1;
+	continue;
+      }
+      if (vf1.type==_VECT) 
+	vf1=_gcd(vf1,contextptr);
+      if (curgcd!=0 && vf1!=curgcd)
+	allsame=false;
+      curgcd=gcd(vf1,curgcd);
+    }
+    if (!allsame && curgcd!=0 && curgcd!=1){
+      gen e1=complex_subst(e,gen_x,inv(curgcd,contextptr)*gen_x,contextptr);
+      v=vecteur(1,gen_x);
+      rlvarx(e1,gen_x,v);
+      vecteur vrep(v);
+      for (int i=1;i<v.size();++i){
+	if (v[i].type!=_SYMB)
+	  continue;
+	gen vf=ratnormal(v[i]._SYMBptr->feuille,contextptr);
+	vrep[i]=symbolic(v[i]._SYMBptr->sommet,vf);
+      }
+      if (v!=vrep) e1=complex_subst(e1,v,vrep,contextptr);
+      gen E1=integrate_id_rem(e1,gen_x,remains_to_integrate,contextptr,intmode);
+      remains_to_integrate=complex_subst(remains_to_integrate,gen_x,curgcd*gen_x,contextptr);
+      E1=complex_subst(E1,gen_x,curgcd*gen_x,contextptr);
+      return E1/curgcd;
     }
     if (!lop(v,at_rootof).empty()){
       remains_to_integrate=e_orig;
