@@ -4748,8 +4748,27 @@ namespace giac {
   }
 
   gen _znprimroot(const gen & p,GIAC_CONTEXT){
-    if (p.type==_INT_ && is_probab_prime_p(p))
-      return makemod(generator(p.val),p);
+    if (is_probab_prime_p(p)){
+      if (p.type==_INT_) return makemod(generator(p.val),p);
+      gen o=p-1; // order
+      gen g=prime_factors(o,true,contextptr);
+      if (g.type!=_VECT) return undef;
+      vecteur & v=*g._VECTptr;
+      vecteur w;
+      for (int i=0;i<v.size();++i){
+	w.push_back(o/v[i]);
+      }
+      for (int a=2;a<65536;++a){
+	int i;
+	for (i=0;i<w.size();++i){
+	  if (powmod(a,w[i],p)==1)
+	    break;
+	}
+	if (i==w.size())
+	  return makemod(a,p);
+      }
+      return undef;
+    }
 #ifdef HAVE_LIBPARI
     if (!is_integer(p))
       return gentypeerr(contextptr);
@@ -4789,6 +4808,36 @@ namespace giac {
     return znorder(k,p,phi,v);
   }
 
+  gen znorder(const gen & k,const gen & p,const gen & phi,const vecteur & v){
+    gen o=1;
+    for (int i=0;i<v.size();i+=2){
+      gen pi=v[i];
+      if (is_greater(1,pi,context0))
+	continue;
+      int mi=v[i+1].val;
+      gen pimi=pow(pi,mi);
+      gen a=powmod(k,phi/pimi,p);
+      while (a!=1){
+	o = o*pi;
+	a=powmod(a,pi,p);
+      }
+    }
+    return o;
+  }
+
+  gen znorder(gen & k,const gen & p){
+    k=k % p;
+    if (gcd(k,p)!=1)
+      return 0;
+    if (k==1)
+      return 1;
+    gen phi=_euler(p,context0);
+    gen v=_ifactors(phi,context0);
+    if (v.type!=_VECT)
+      return undef;
+    return znorder(k,p,phi,*v._VECTptr);
+  }
+
   gen _znorder(const gen & args,GIAC_CONTEXT){
     if (args.type==_MOD)
       return _znorder(makevecteur(*args._MODptr,*(args._MODptr+1)),contextptr);
@@ -4800,9 +4849,11 @@ namespace giac {
       return 0;
     return _pari(makesequence(string2gen("znorder",false),makemod(k,p)),contextptr);
 #endif
-    if (k.type!=_INT_ || p.type!=_INT_  || p.val<2)
-      return gentypeerr("PARI not compiled in => currently, znorder(k,p) expects integers<2^31");
-    return znorder(k.val,p.val);
+    if (is_greater(1,p,contextptr))
+      return undef;
+    if (k.type==_INT_ && p.val==_INT_ )
+      return znorder(k.val,p.val);
+    return znorder(k,p);
   }
   static const char _znorder_s []="znorder";
   static define_unary_function_eval (__znorder,&_znorder,_znorder_s);
@@ -5262,8 +5313,19 @@ namespace giac {
   // if not found return undef
   gen prime_factors(const gen &g0,bool full,GIAC_CONTEXT){
     gen g(g0);
-    gen gstop=full?1:isqrt(g);
     vecteur res;
+    if (full){
+      g=_ifactors(g0,contextptr);
+      if (g.type!=_VECT)
+	return undef;
+      vecteur & v=*g._VECTptr;
+      for (int i=0;i<v.size();i+=2){
+	if (is_greater(v[i],1,contextptr))
+	  res.push_back(v[i]);
+      }
+      return res;
+    }
+    gen gstop=isqrt(g);
     // trivial factor
     for (int i=0;i<sizeof(giac_primes)/sizeof(short int);++i){
       int p=giac_primes[i];
@@ -5312,6 +5374,8 @@ namespace giac {
   }
 
   gen prime_cert(const gen & g,GIAC_CONTEXT){
+    if (!is_probab_prime_p(g))
+      return 0;
     gen o=g-1; // order
     gen lf=prime_factors(o,false,contextptr); // partial list of prime factors
     if (lf.type!=_VECT)
