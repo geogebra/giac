@@ -4403,7 +4403,7 @@ namespace giac {
 	}
       }
       if (firstd.type==_CPLX && firstd._CPLXptr->type==_DOUBLE_ && (firstd._CPLXptr+1)->type==_DOUBLE_){
-	int arg=int(std::floor(std::atan2((firstd._CPLXptr+1)->_DOUBLE_val,firstd._CPLXptr->_DOUBLE_val)/(M_PI/2)));
+	int arg=int(std::floor(std::atan2((firstd._CPLXptr+1)->_DOUBLE_val,firstd._CPLXptr->_DOUBLE_val)/(3.14159265358979323846/2)));
 	if (arg!=0){
 	  gen mult=arg>0?(-cst_i):(arg==-1?cst_i:-1);
 	  d *= mult;

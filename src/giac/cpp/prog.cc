@@ -18,6 +18,10 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 using namespace std;
+#ifdef __MINGW_H
+#define HAVE_NO_PWD_H
+#endif
+
 #ifndef HAVE_NO_PWD_H
 #ifndef BESTA_OS
 #include <pwd.h>

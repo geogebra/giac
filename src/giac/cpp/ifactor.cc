@@ -411,6 +411,12 @@ namespace giac {
   }
 #endif
 
+  int modulo(const gen & a,unsigned b){
+    if (a.type==_INT_)
+      return a.val % b;
+    return modulo(*a._ZINTptr,b);
+  }
+
 #if defined RTOS_THREADX || defined BESTA_OS || defined NSPIRE
   typedef unsigned short pui_t ;
   typedef unsigned short ushort_t;
@@ -5248,6 +5254,85 @@ namespace giac {
     gen res=baby(a,b,N,order);
     if (order!=0)
       return res % order;
+    return res;
+  }
+
+  // Find a list of prime factors 
+  // such that g/factors^multiplicity<sqrt(g) if full==false
+  // if not found return undef
+  gen prime_factors(const gen &g0,bool full,GIAC_CONTEXT){
+    gen g(g0);
+    gen gstop=full?1:isqrt(g);
+    vecteur res;
+    // trivial factor
+    for (int i=0;i<sizeof(giac_primes)/sizeof(short int);++i){
+      int p=giac_primes[i];
+      if (modulo(g,p))
+	continue;
+      res.push_back(p);
+      for (;;){
+	g=g/p;
+	if (modulo(g,p))
+	  break;
+      }
+      if (is_greater(gstop,g,contextptr))
+	return res;
+      if (is_greater(g0,g*g,contextptr)){
+	res.push_back(g);
+	return res;
+      }
+    }
+    // pollard(a,k,contextptr) -> factor or -1/0
+    for (;;){
+      if (is_greater(gstop,g,contextptr))
+	return res;
+      if (is_probab_prime_p(g)){
+	// leave the user compute a certificate for this prime factor...
+	res.push_back(g);
+	return res;
+      }
+      gen b=pollard(g,1,contextptr);
+      if (!is_greater(b,2,contextptr)){
+	// _ecm_factor(n,contextptr) -> factor or undef
+	b=_ecm_factor(g,contextptr);
+	if (is_undef(b))
+	  return undef; // could not partial factor
+      }
+      gen c=_ifactors(b,contextptr);
+      if (c.type!=_VECT)
+	return undef;
+      vecteur & v=*c._VECTptr;
+      for (int i=0;i<v.size();i+=2){
+	if (is_greater(v[i],2,contextptr))
+	  res.push_back(v[i]);
+      }
+      g=g/b;
+    }
+    return undef; // could not partial factor (never reached)
+  }
+
+  gen prime_cert(const gen & g,GIAC_CONTEXT){
+    gen o=g-1; // order
+    gen lf=prime_factors(o,false,contextptr); // partial list of prime factors
+    if (lf.type!=_VECT)
+      return undef;
+    vecteur & v=*lf._VECTptr;
+    // for each element p of v, we must find a such that 
+    // * a^o==1 mod g
+    // * gcd(a^(o/p)-1,g)==1
+    vecteur res;
+    for (int i=0;i<v.size();++i){
+      gen p=v[i];
+      for (int a=2;;++a){
+	if (a==RAND_MAX) return undef;
+	if (powmod(a,o,g)!=1)
+	  continue;
+	if (gcd(powmod(a,o/p,g)-1,g)==1){
+	  res.push_back(makevecteur(p,a,p.type==_INT_?1:0));
+	  break;
+	}
+      }
+    }
     return res;
   }
 #ifndef NO_NAMESPACE_GIAC
