@@ -4748,9 +4748,46 @@ namespace giac {
   }
 
   gen _znprimroot(const gen & p,GIAC_CONTEXT){
-    if (is_probab_prime_p(p)){
-      if (p.type==_INT_) return makemod(generator(p.val),p);
-      gen o=p-1; // order
+    if (p==2) return 1;
+    if (p==4) return 3;
+    gen o=p-1,q=p; // order
+    if (modulo(p,2)==0){
+      q=p/2;
+      if (modulo(q,2)==0)
+	return undef;
+    }
+    int cyclic=0;
+    if (is_probab_prime_p(q))
+      cyclic=1;
+    else {
+      // is q a power of a prime?
+      double d=evalf_double(q,1,contextptr)._DOUBLE_val;
+      int maxpow=int(std::ceil(std::log(d)/std::log(3)));
+      for (int i=2;i<=maxpow;++i){
+	if ( (i>2 && i%2==0) ||
+	     (i>3 && i%3==0) ||
+	     (i>5 && i%5==0) ||
+	     (i>7 && i%7==0) )
+	  continue;
+	gen u;
+	if (i==2)
+	  u=isqrt(q);
+	else if (i==4)
+	  u=isqrt(isqrt(q));
+	else {
+	  double x=std::pow(d,1./i);
+	  u=longlong(x);
+	}
+	if (pow(u,i,contextptr)==q){
+	  cyclic=2;
+	  o=q*(1-inv(u,contextptr));
+	  break;
+	}
+      }
+    }
+    if (cyclic){
+      if (cyclic==1 && p.type==_INT_) 
+	return makemod(generator(p.val),p);
       gen g=prime_factors(o,true,contextptr);
       if (g.type!=_VECT) return undef;
       vecteur & v=*g._VECTptr;
@@ -4759,6 +4796,8 @@ namespace giac {
 	w.push_back(o/v[i]);
       }
       for (int a=2;a<65536;++a){
+	if (gcd(a,p)!=1)
+	  continue;
 	int i;
 	for (i=0;i<w.size();++i){
 	  if (powmod(a,w[i],p)==1)
