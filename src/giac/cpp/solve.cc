@@ -1267,6 +1267,11 @@ namespace giac {
 	else
 	  testval=(l+m)/2;
       }
+      if (has_op(testval,*at_rootof)){
+	testval=evalf_double(testval,1,contextptr);
+	if (testval.type==_CPLX && is_zero(*(testval._CPLXptr+1),contextptr))
+	  testval=*testval._CPLXptr;
+      }
       gen test=eval(subst(e0,x,testval,false,contextptr),eval_level(contextptr),contextptr);
       // additional numeric check
       if (e0.type==_SYMB && e0._SYMBptr->feuille.type==_VECT && e0._SYMBptr->feuille._VECTptr->size()==2){
