@@ -1,5 +1,15 @@
 # This file has been tested on Linux, Mac and Windows.
 #
+# Note that the source tree comes with prebuilt versions
+# of GMP and MPFR for a large variety of platforms
+# and they are used by default. This helps in linking
+# Giac as much statically as possible and improves
+# portability. If you don't want this, change
+# ${GMP_STATIC} to gmp and ${MPFR_STATIC} to mpfr.
+#
+# If you use the default setting (the static option),
+# you don't need the prerequisities gmp and mpfr below.
+#
 # Building on Linux and Mac
 # -------------------------
 #
@@ -21,6 +31,8 @@
 #
 # Install them via "pacman -S ...". Then issue
 # "mkdir build; cd build; CC=clang CXX=clang++ cmake -G "MinGW Makefiles" ..; mingw32-make".
+#
+# For a 32-bit build the CLANG32 flavor must be used, and instead of "x86_64" "i686" must be set.
 
 cmake_minimum_required(VERSION 3.10)
 project(minigiac)
@@ -29,10 +41,12 @@ if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
 endif()
 
-# TODO: Add gmp/mpfr detection via find_package
+# Detection of gmp/mpfr could be done via find_package, but this
+# seems unsupported.
 
 # We link GMP and MPFR statically to the JNI/DLL. This may break MPFR
-# in some cases, see https://www.mpfr.org/faq.html#undef_ref1
+# in some cases, see https://www.mpfr.org/faq.html#undef_ref1 if
+# you encounter strange bugs.
 
 function(find_static_library LIB_NAME OUT VENDOR_PATH)
 
@@ -60,11 +74,13 @@ endfunction()
 set(PREBUILT_DIR ${CMAKE_SOURCE_DIR}/src/jni/prebuilt)
 
 if(LINUX)
+    message(STATUS "Using prebuilt gmp/mpfr (Linux)")
     find_static_library(gmp GMP_STATIC ${PREBUILT_DIR}/linux/x86-64/)
     find_static_library(mpfr MPFR_STATIC ${PREBUILT_DIR}/linux/x86-64/)
 endif()
 
 if(APPLE)
+    message(STATUS "Using prebuilt gmp/mpfr (Mac)")
     find_static_library(gmp GMP_STATIC ${PREBUILT_DIR}/osx/x86-64/)
     find_static_library(mpfr MPFR_STATIC ${PREBUILT_DIR}/osx/x86-64/)
 endif()
@@ -235,13 +251,15 @@ include_directories(src/giac/headers)
 
 add_definitions(-DHAVE_NO_HOME_DIRECTORY -DGIAC_GGB -DIN_GIAC -DHAVE_LIB_PTHREAD
         -DGIAC_GENERIC_CONSTANTS -DTIMEOUT
-        -DHAVE_LIBMPFR -DVERSION="1.2.3")
+        -DHAVE_LIBMPFR -DVERSION="1.2.3") # Version number seems hardwired, FIXME.
 
 add_executable(minigiac
         ${GIAC_SOURCES}
         src/minigiac/cpp/minigiac.cc)
 
-target_link_libraries(minigiac gmp mpfr) # minigiac is built as dynamic executable
+# Note the order: MPFR must precede GMP!
+target_link_libraries(minigiac ${MPFR_STATIC} ${GMP_STATIC})
+#target_link_libraries(minigiac mpfr gmp) # minigiac can also be built as dynamic executable
 
 # JNI/DLL
 
@@ -256,7 +274,8 @@ add_library(javagiac SHARED
         src/jni/cpp/giac_wrap.cxx
         ${GIAC_DEF})
 
-target_link_libraries(javagiac ${GMP_STATIC} ${MPFR_STATIC})
+# Note the order: MPFR must precede GMP!
+target_link_libraries(javagiac ${MPFR_STATIC} ${GMP_STATIC})
 
 set_target_properties(javagiac PROPERTIES LINK_FLAGS -s) # strip
 
@@ -266,12 +285,12 @@ target_include_directories(javagiac PUBLIC
 
 if(APPLE)
     # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
-    link_directories(/usr/local/lib)
+    link_directories(/usr/local/lib) # This seems unnecessary.
     add_definitions(-DDONT_USE_LIBLAPLACK)
     target_include_directories(javagiac PUBLIC
         ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders/darwin)
-    target_link_directories(javagiac PUBLIC /usr/local/lib)
-    target_link_directories(minigiac PUBLIC /usr/local/lib)
+    target_link_directories(javagiac PUBLIC /usr/local/lib) # This seems unnecessary.
+    target_link_directories(minigiac PUBLIC /usr/local/lib) # This seems unnecessary.
 endif()
 
 if(UNIX)
