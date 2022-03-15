@@ -5720,7 +5720,9 @@ namespace giac {
     if (e.type!=_VECT || e._VECTptr->size()<2)
       return undef;
     vecteur v(*e._VECTptr);
+    int c=calc_mode(contextptr); calc_mode(0,contextptr);
     gen p=projection(ee,f,contextptr);
+    calc_mode(c,contextptr);
     gen projete=subst(v[0],v[1],p,false,contextptr);
     return distance2pp(projete,f,contextptr);
   }
