@@ -9213,6 +9213,8 @@ namespace giac {
     }
     if ( (v[0].type!=_INT_) || (v[1].type!=_INT_) )
       return gensizeerr(contextptr);
+    if (v[0].val==0)
+      return symbolic(at_matrix,g); // used by PARI in bnfinit
     int l(giacmax(v[0].val,1)),c(giacmax(v[1].val,1));
     if (l*longlong(c)>LIST_SIZE_LIMIT)
       return gendimerr(contextptr);

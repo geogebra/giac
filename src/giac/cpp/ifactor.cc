@@ -4154,12 +4154,22 @@ namespace giac {
 
   gen _ifactors(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    if (args.type==_VECT && args.subtype==_SEQ__VECT && args._VECTptr->size()==2 && args._VECTptr->back()==at_matrix){
+    if (args.type==_VECT && args.subtype==_SEQ__VECT && args._VECTptr->size()==2 ){
       gen g=args._VECTptr->front();
-      g=_ifactors(g,contextptr);
-      if (g.type!=_VECT || g._VECTptr->size()%2)
-	return g;
-      return _matrix(makesequence(g._VECTptr->size()/2,2,g),contextptr);
+      gen b=args._VECTptr->back();
+      if (b==at_matrix){
+	g=_ifactors(g,contextptr);
+	if (g.type!=_VECT || g._VECTptr->size()%2)
+	  return g;
+	return _matrix(makesequence(g._VECTptr->size()/2,2,g),contextptr);
+      }
+      if (b.type==_SYMB){
+	gen res;
+	// b is assumed to be a minimal polynomial check if g is a norm 
+	if (!pari_intnorm(g,b,lvar(b),res,contextptr))
+	  return gensizeerr(gettext("Not implemented. Try to compile with PARI"));
+	return res;
+      }
     }
     if (args.type==_VECT)
       return apply(args,_ifactors,contextptr);
