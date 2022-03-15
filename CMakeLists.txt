@@ -180,7 +180,7 @@ include_directories(src/giac/headers)
 
 add_definitions(-DHAVE_NO_HOME_DIRECTORY -DGIAC_GGB -DIN_GIAC -DHAVE_LIB_PTHREAD
         -DGIAC_GENERIC_CONSTANTS -DTIMEOUT
-        -DHAVE_MPFR_1 -DHAVE_LIBMPFR -DVERSION="1.2.3")
+        -DHAVE_LIBMPFR -DVERSION="1.2.3")
 
 add_executable(minigiac
         ${GIAC_SOURCES}
@@ -221,7 +221,7 @@ IF(APPLE)
 ENDIF()
 
 IF(UNIX)
-    add_definitions(-DHAVE_SYS_TIMES_H -DHAVE_UNISTD_H -DHAVE_SYS_TIME_H -DHAVE_SYSCONF )
+    add_definitions(-DHAVE_SYS_TIMES_H -DHAVE_UNISTD_H -DHAVE_SYS_TIME_H -DHAVE_SYSCONF)
 ENDIF()
 
 IF(UNIX)
