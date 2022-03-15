@@ -29,7 +29,49 @@ if(UNIX AND NOT APPLE)
     set(LINUX TRUE)
 endif()
 
-# TODO: Add gmp/mpfr detection
+# TODO: Add gmp/mpfr detection via find_package
+
+# We link GMP and MPFR statically to the JNI/DLL. This may break MPFR
+# in some cases, see https://www.mpfr.org/faq.html#undef_ref1
+
+function(find_static_library LIB_NAME OUT VENDOR_PATH)
+
+    if (WIN32 OR MSVC)
+        set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib")
+    elseif (UNIX)
+        set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    endif()
+
+    find_library(
+        FOUND_${LIB_NAME}_STATIC
+        ${LIB_NAME}
+        NO_DEFAULT_PATH
+        PATHS ${VENDOR_PATH}
+        )
+
+    if (FOUND_${LIB_NAME}_STATIC)
+        get_filename_component(ABS_FILE ${FOUND_${LIB_NAME}_STATIC} ABSOLUTE)
+    else()
+        message(SEND_ERROR "Unable to find library ${LIB_NAME} in ${VENDOR_PATH}")
+    endif()
+
+    set(${OUT} ${ABS_FILE} PARENT_SCOPE)
+
+endfunction()
+
+# Use prebuilt versions of GMP and MPFR to support static linking.
+
+set(PREBUILT_DIR ${CMAKE_SOURCE_DIR}/src/jni/prebuilt)
+
+if(LINUX)
+    find_static_library(gmp GMP_STATIC ${PREBUILT_DIR}/linux/x86-64/)
+    find_static_library(mpfr MPFR_STATIC ${PREBUILT_DIR}/linux/x86-64/)
+endif()
+
+if(APPLE)
+    find_static_library(gmp GMP_STATIC ${PREBUILT_DIR}/osx/x86-64/)
+    find_static_library(mpfr MPFR_STATIC ${PREBUILT_DIR}/osx/x86-64/)
+endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "-fpermissive -std=c++0x")
@@ -190,7 +232,7 @@ add_executable(minigiac
         ${GIAC_SOURCES}
         src/minigiac/cpp/minigiac.cc)
 
-target_link_libraries(minigiac gmp mpfr)
+target_link_libraries(minigiac gmp mpfr) # minigiac is built as dynamic executable
 
 # JNI/DLL
 
@@ -205,10 +247,11 @@ add_library(javagiac SHARED
         src/jni/cpp/giac_wrap.cxx
         ${GIAC_DEF})
 
-target_link_libraries(javagiac gmp mpfr)
+target_link_libraries(javagiac ${GMP_STATIC} ${MPFR_STATIC})
 
-set_target_properties(javagiac PROPERTIES
-        LINK_FLAGS -s -static-libgcc -static-libstdc++)
+set_target_properties(javagiac PROPERTIES LINK_FLAGS -s) # strip
+
+target_link_options(javagiac PRIVATE -static-libgcc -static-libstdc++)
 
 target_include_directories(javagiac PUBLIC
         ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders
