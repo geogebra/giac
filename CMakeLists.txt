@@ -36,11 +36,7 @@ endif()
 
 function(find_static_library LIB_NAME OUT VENDOR_PATH)
 
-    if (WIN32 OR MSVC)
-        set(CMAKE_FIND_LIBRARY_SUFFIXES ".lib")
-    elseif (UNIX)
-        set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-    endif()
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
     find_library(
         FOUND_${LIB_NAME}_STATIC
@@ -71,6 +67,19 @@ endif()
 if(APPLE)
     find_static_library(gmp GMP_STATIC ${PREBUILT_DIR}/osx/x86-64/)
     find_static_library(mpfr MPFR_STATIC ${PREBUILT_DIR}/osx/x86-64/)
+endif()
+
+if(WIN32)
+    if("$ENV{MSYSTEM}" STREQUAL "CLANG64")
+        message(STATUS "Using prebuilt gmp/mpfr for clang64")
+        find_static_library(gmp GMP_STATIC ${PREBUILT_DIR}/windows/clang64/)
+        find_static_library(mpfr MPFR_STATIC ${PREBUILT_DIR}/windows/clang64/)
+    endif()
+    if("$ENV{MSYSTEM}" STREQUAL "CLANG32")
+        message(STATUS "Using prebuilt gmp/mpfr for clang32")
+        find_static_library(gmp GMP_STATIC ${PREBUILT_DIR}/windows/clang32/)
+        find_static_library(mpfr MPFR_STATIC ${PREBUILT_DIR}/windows/clang32/)
+    endif()
 endif()
 
 set(CMAKE_CXX_STANDARD 11)
