@@ -25,6 +25,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(minigiac)
 
+if(UNIX AND NOT APPLE)
+    set(LINUX TRUE)
+endif()
+
 # TODO: Add gmp/mpfr detection
 
 set(CMAKE_CXX_STANDARD 11)
@@ -192,9 +196,9 @@ target_link_libraries(minigiac gmp mpfr)
 
 set(GIAC_DEF "")
 
-IF(WIN32)
+if(WIN32)
     set(GIAC_DEF ${CMAKE_SOURCE_DIR}/src/jni/giac.def)
-ENDIF()
+endif()
 
 add_library(javagiac SHARED
         ${GIAC_SOURCES}
@@ -210,29 +214,29 @@ target_include_directories(javagiac PUBLIC
         ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders
         ${CMAKE_SOURCE_DIR}/src/giac/headers)
 
-IF(APPLE)
+if(APPLE)
     # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
-    LINK_DIRECTORIES(/usr/local/lib)
+    link_directories(/usr/local/lib)
     add_definitions(-DDONT_USE_LIBLAPLACK)
     target_include_directories(javagiac PUBLIC
         ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders/darwin)
     target_link_directories(javagiac PUBLIC /usr/local/lib)
     target_link_directories(minigiac PUBLIC /usr/local/lib)
-ENDIF()
+endif()
 
-IF(UNIX)
+if(UNIX)
     add_definitions(-DHAVE_SYS_TIMES_H -DHAVE_UNISTD_H -DHAVE_SYS_TIME_H -DHAVE_SYSCONF)
-ENDIF()
+endif()
 
-IF(UNIX)
+if(LINUX)
     target_include_directories(javagiac PUBLIC
         ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders/linux)
-ENDIF()
+endif()
 
-IF(WIN32)
+if(WIN32)
     add_definitions(-DGIAC_MPQS -D__MINGW_H -DMINGW32 -DHAVE_NO_SYS_TIMES_H
         -DHAVE_NO_SYS_RESOURCE_WAIT_H -DHAVE_NO_PWD_H -DHAVE_NO_CWD -DNO_CLOCK
         -Dusleep= -DYY_NO_UNISTD_H)
     target_include_directories(javagiac PUBLIC
         ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders/win32)
-ENDIF()
+endif()
