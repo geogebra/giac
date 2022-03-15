@@ -251,8 +251,6 @@ target_link_libraries(javagiac ${GMP_STATIC} ${MPFR_STATIC})
 
 set_target_properties(javagiac PROPERTIES LINK_FLAGS -s) # strip
 
-target_link_options(javagiac PRIVATE -static-libgcc -static-libstdc++)
-
 target_include_directories(javagiac PUBLIC
         ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders
         ${CMAKE_SOURCE_DIR}/src/giac/headers)
@@ -274,6 +272,7 @@ endif()
 if(LINUX)
     target_include_directories(javagiac PUBLIC
         ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders/linux)
+    target_link_options(javagiac PRIVATE -static-libgcc -static-libstdc++)
 endif()
 
 if(WIN32)
@@ -282,4 +281,5 @@ if(WIN32)
         -Dusleep= -DYY_NO_UNISTD_H)
     target_include_directories(javagiac PUBLIC
         ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders/win32)
+    target_link_options(javagiac PRIVATE -static-libgcc -static-libstdc++)
 endif()
