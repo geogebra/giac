@@ -5753,8 +5753,10 @@ namespace giac {
       else
 	t=projection(a,b,p,contextptr);
       if (is_undef(t)) return t;
-      if (subtype==_LINE__VECT || (ck_is_positive(t,contextptr) && (subtype==_HALFLINE__VECT || ck_is_greater(1,t,contextptr))))
-	newres=distance2pp(t*b+(1-t)*a,p,contextptr);
+      if (subtype==_LINE__VECT || (ck_is_positive(t,contextptr) && (subtype==_HALFLINE__VECT || ck_is_greater(1,t,contextptr)))){
+	c=ratnormal(t*b+(1-t)*a,contextptr);
+	newres=distance2pp(c,p,contextptr);
+      }
       else
 	newres=distance2pp(b,p,contextptr);
       if (subtype==_LINE__VECT || ck_is_greater(res,newres,contextptr))
@@ -5902,14 +5904,32 @@ namespace giac {
       gen ief=*(e._CPLXptr+1)-*(f._CPLXptr+1);
       return ref*ref+ief*ief;
     }
-    gen ef=e-f;
-    return pow(re(ef,contextptr),2)+pow(im(ef,contextptr),2);
+    gen ef=e-f,r,i;
+    reim(ef,r,i,contextptr);
+    return pow(r,2)+pow(i,2);
 #endif
   }
 
   gen distance2(const gen & f1,const gen & f2,GIAC_CONTEXT){
     gen e1(remove_at_pnt(f1)),e2(f2);
     if (e2.is_symb_of_sommet(at_equal)){
+      bool pnt=e1.type!=_VECT;
+      if (!pnt && e1.type==_SYMB)
+	pnt=e1._SYMBptr->sommet!=at_curve && e1._SYMBptr->sommet!=at_cercle && e1._SYMBptr->sommet!=at_hypersphere && e1._SYMBptr->sommet!=at_hypersurface && e1._SYMBptr->sommet!=at_hyperplan;
+      if (pnt){
+	gen e3=e2._SYMBptr->feuille;
+	if (e3.type==_VECT && e3._VECTptr->size()==2){
+	  e3=e3._VECTptr->back()-e3._VECTptr->front();
+	  gen a,A,b,c;
+	  if (is_linear_wrt(e3,x__IDNT_e,a,A,contextptr) && is_linear_wrt(A,y__IDNT_e,b,c,contextptr) && (a!=0 || b!=0)){
+	    // line a*x+b*y+c=0 to point
+	    gen r,i;
+	    reim(e1,r,i,contextptr);
+	    A=a*r+b*i+c;
+	    return pow(A,2)/(pow(a,2)+pow(b,2));
+	  }
+	}
+      }
       e2=_plotimplicit(e2,contextptr);
       if (e2.type==_VECT && !e2._VECTptr->empty())
 	e2=e2._VECTptr->front();
@@ -13084,12 +13104,21 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
   gen plotimplicit(const gen& f_orig,const gen&x,const gen & y,double xmin,double xmax,double ymin,double ymax,int nxstep,int nystep,double eps,const vecteur & attributs,bool unfactored,const context * contextptr,int ckgeo2d){
     if ( (x.type!=_IDNT) || (y.type!=_IDNT) )
       return gensizeerr(gettext("Variables must be free"));
-    gen a,b;
+    gen a,b,c,d;
     if (is_linear_wrt(f_orig,y,a,b,contextptr) && a!=0){
+      if (is_linear_wrt(b,x,c,d,contextptr)){
+	// a*y+c*x+d=0 -> droite(-d/a*i,1+(-d-c)/a*i)
+	gen A=-d/a*cst_i,B=A+1-c/a*cst_i;
+	return _droite(makesequence(A,B),contextptr);
+      }
       // y=-b/a
       return plotfunc(-b/a,x,attributs,0,xmin,xmax,ymin,ymax,-5,5,nxstep,0,false,contextptr);
     }
     if (is_linear_wrt(f_orig,x,a,b,contextptr) && a!=0){
+      if (is_constant_wrt(b,y,contextptr)){
+	// a*x+b=0 -> droite(-d/a*i,1+(-d-c)/a*i)
+	return _droite(f_orig,contextptr);
+      }
       // x=-b/a
       gen d=_droite(makesequence(0,1+cst_i),contextptr);
       return symetrie(d,plotfunc(-b/a,y,attributs,0,xmin,xmax,ymin,ymax,-5,5,nxstep,0,false,contextptr),contextptr);

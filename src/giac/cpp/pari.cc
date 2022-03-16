@@ -1184,7 +1184,7 @@ namespace giac {
     return 0;
   }
 
-  bool pari_intnorm(int N, const gen & pmin,const vecteur & lv,gen & res,GIAC_CONTEXT){
+  bool pari_intnorm(const gen & N, const gen & pmin,const vecteur & lv,gen & res,GIAC_CONTEXT){
     return false;
   }
   bool pari_polroots(const vecteur & p,vecteur & res,long prec,GIAC_CONTEXT){
