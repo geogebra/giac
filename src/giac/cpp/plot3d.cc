@@ -2147,7 +2147,7 @@ namespace giac {
   }
 #endif
 
-  gen plotimplicit(const gen& f_orig,const gen&x,const gen & y,const gen & z,double xmin,double xmax,double ymin,double ymax,double zmin,double zmax,int nxstep,int nystep,int nzstep,double eps,const vecteur & attributs,bool unfactored,const context * contextptr){
+  gen plotimplicit(const gen& f_orig,const gen&x,const gen & y,const gen & z,double xmin,double xmax,double ymin,double ymax,double zmin,double zmax,int nxstep,int nystep,int nzstep,double eps,const vecteur & attributs,bool unfactored,bool cklinear,const context * contextptr){
     if ( x.type!=_IDNT || y.type!=_IDNT || z.type!=_IDNT )
       return gensizeerr(gettext("Variables must be free"));
     if (!nystep || !nzstep){

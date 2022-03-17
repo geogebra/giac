@@ -1376,7 +1376,7 @@ namespace giac {
     if (f_.is_symb_of_sommet(at_equal) 
 	//|| is_inequation(f_)
 	){
-      return plotimplicit(equal2diff(f_),x__IDNT_e,y__IDNT_e,function_xmin,function_xmax,function_ymin,function_ymax,nstep,jstep,epsilon(contextptr),attributs,false,contextptr,3);
+      return plotimplicit(equal2diff(f_),x__IDNT_e,y__IDNT_e,function_xmin,function_xmax,function_ymin,function_ymax,nstep,jstep,epsilon(contextptr),attributs,false,true,contextptr,3);
       return string2gen("Try plot(["+f_._SYMBptr->feuille.print(contextptr)+"],"+vars.print(contextptr)+"). (In)equations can not be plotted.",false);
     }
     gen f=when2piecewise(f_,contextptr);
@@ -2197,7 +2197,7 @@ namespace giac {
   }
 
 
-  static void read_option(const vecteur & v,double xmin,double xmax,double ymin,double ymax,double zmin,double zmax,vecteur & attributs, int & nstep,int & jstep,int & kstep,bool unfactored,GIAC_CONTEXT){
+  static void read_option(const vecteur & v,double xmin,double xmax,double ymin,double ymax,double zmin,double zmax,vecteur & attributs, int & nstep,int & jstep,int & kstep,bool & unfactored,GIAC_CONTEXT){
     read_attributs(v,attributs,contextptr);
     const_iterateur it=v.begin(),itend=v.end();
     for (;it!=itend;++it){
@@ -5930,7 +5930,7 @@ namespace giac {
 	  }
 	}
       }
-      e2=_plotimplicit(e2,contextptr);
+      e2=plotimplicit(e2,x__IDNT_e,y__IDNT_e,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,20*gnuplot_pixels_per_eval,0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,false,contextptr,1);
       if (e2.type==_VECT && !e2._VECTptr->empty())
 	e2=e2._VECTptr->front();
     }
@@ -13101,11 +13101,11 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
 #endif // RTOS_THREADX
   }
 
-  gen plotimplicit(const gen& f_orig,const gen&x,const gen & y,double xmin,double xmax,double ymin,double ymax,int nxstep,int nystep,double eps,const vecteur & attributs,bool unfactored,const context * contextptr,int ckgeo2d){
+  gen plotimplicit(const gen& f_orig,const gen&x,const gen & y,double xmin,double xmax,double ymin,double ymax,int nxstep,int nystep,double eps,const vecteur & attributs,bool unfactored,bool cklinear,const context * contextptr,int ckgeo2d){
     if ( (x.type!=_IDNT) || (y.type!=_IDNT) )
       return gensizeerr(gettext("Variables must be free"));
     gen a,b,c,d;
-    if (is_linear_wrt(f_orig,y,a,b,contextptr) && a!=0){
+    if (cklinear && is_linear_wrt(f_orig,y,a,b,contextptr) && a!=0){
       if (is_linear_wrt(b,x,c,d,contextptr)){
 	// a*y+c*x+d=0 -> droite(-d/a*i,1+(-d-c)/a*i)
 	gen A=-d/a*cst_i,B=A+1-c/a*cst_i;
@@ -13114,7 +13114,7 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
       // y=-b/a
       return plotfunc(-b/a,x,attributs,0,xmin,xmax,ymin,ymax,-5,5,nxstep,0,false,contextptr);
     }
-    if (is_linear_wrt(f_orig,x,a,b,contextptr) && a!=0){
+    if (cklinear && is_linear_wrt(f_orig,x,a,b,contextptr) && a!=0){
       if (is_constant_wrt(b,y,contextptr)){
 	// a*x+b=0 -> droite(-d/a*i,1+(-d-c)/a*i)
 	return _droite(f_orig,contextptr);
@@ -13141,7 +13141,7 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
   gen _plotimplicit(const gen & args,const context * contextptr){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_VECT)
-      return plotimplicit(remove_equal(args),vx_var,y__IDNT_e,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,20*gnuplot_pixels_per_eval,0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,contextptr,3);
+      return plotimplicit(remove_equal(args),vx_var,y__IDNT_e,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,20*gnuplot_pixels_per_eval,0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,true,contextptr,3);
     // vecteur v(plotpreprocess(args));
     vecteur v(*args._VECTptr);
     if (v.size()<2)
@@ -13172,12 +13172,12 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
       dim3=readrange(v[3],gnuplot_zmin,gnuplot_zmax,z,zmin,zmax,contextptr);
     else
       zmin=zmax=0.0;
-    bool unfactored=false;
+    bool unfactored=false,cklinear=true;
     read_option(v,xmin,xmax,ymin,ymax,zmin,zmax,attributs,nstep,jstep,kstep,unfactored,contextptr);
     if (dim3)
-      return plotimplicit(remove_equal(v[0]),x,y,z,xmin,xmax,ymin,ymax,zmin,zmax,nstep,jstep,kstep,epsilon(contextptr),attributs,unfactored,contextptr);
+      return plotimplicit(remove_equal(v[0]),x,y,z,xmin,xmax,ymin,ymax,zmin,zmax,nstep,jstep,kstep,epsilon(contextptr),attributs,unfactored,cklinear,contextptr);
     else
-      return plotimplicit(remove_equal(v[0]),x,y,xmin,xmax,ymin,ymax,nstep,jstep,epsilon(contextptr),attributs,unfactored,contextptr,3);
+      return plotimplicit(remove_equal(v[0]),x,y,xmin,xmax,ymin,ymax,nstep,jstep,epsilon(contextptr),attributs,unfactored,cklinear,contextptr,3);
   }
   static const char _plotimplicit_s []="plotimplicit";
   static define_unary_function_eval (__plotimplicit,&_plotimplicit,_plotimplicit_s);
