@@ -2282,7 +2282,7 @@ namespace giac {
       if (u._SYMBptr->sommet==at_pow){
 	gen tmpu=u._SYMBptr->feuille,tmpfx;
 	if (tmpu.type==_VECT && tmpu._VECTptr->size()==2){
-	  gen expo=inv(tmpu._VECTptr->back(),contextptr);
+	  gen expo=ratnormal(inv(tmpu._VECTptr->back(),contextptr),contextptr);
 	  tmpu=tmpu._VECTptr->front();
 	  if (expo.type==_INT_){ 
 	    if (is_linear_wrt(tmpu,gen_x,a,b,contextptr)){
@@ -2856,7 +2856,7 @@ namespace giac {
 	{
 	  gen e2=_texpand(ratnormal(fu,contextptr),contextptr);
 	  if (!is_undef(e2)){
-	    vecteur v2=lvarx(e2,gen_x),vf=lvarx(fu,gen_x);
+	    vecteur v2=lvarx(e2,gen_x),vf=lvarx(fu,gen_x); 
 	    if (v2.size()<vf.size())
 	      fu=e2;
 	  }
