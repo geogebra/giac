@@ -4163,6 +4163,7 @@ namespace giac {
 	  return g;
 	return _matrix(makesequence(g._VECTptr->size()/2,2,g),contextptr);
       }
+#ifndef EMCC
       if (b.type==_SYMB){
 	gen res;
 	// b is assumed to be a minimal polynomial check if g is a norm 
@@ -4170,6 +4171,7 @@ namespace giac {
 	  return gensizeerr(gettext("Not implemented. Try to compile with PARI"));
 	return res;
       }
+#endif
     }
     if (args.type==_VECT)
       return apply(args,_ifactors,contextptr);

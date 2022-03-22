@@ -30,7 +30,8 @@
 #endif
 //#include <stdint.h>
 
-#if defined(__x86_64__) || defined(__arm64__)
+// mingw now defines x86_64
+#if (defined(__x86_64__) || defined(__arm64__)) && !defined __MINGW_H
 #define x86_64 1
 #else
 #ifdef __MINGW_H
