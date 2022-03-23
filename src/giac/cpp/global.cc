@@ -4585,7 +4585,10 @@ extern "C" void Sleep(unsigned int miliSecond);
   bool is_file_available(const char * ch){
     if (!ch)
       return false;
-#if !defined NSPIRE && !defined FXCG //&& !defined MINGW32
+#if !defined NSPIRE && !defined FXCG 
+#if defined MINGW32 && defined GIAC_GGB
+    return true;
+#else
     if (access(ch,R_OK))
       return false;
 #endif
