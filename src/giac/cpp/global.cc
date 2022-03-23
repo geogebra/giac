@@ -4592,6 +4592,7 @@ extern "C" void Sleep(unsigned int miliSecond);
     if (access(ch,R_OK))
       return false;
 #endif
+#endif
     return true;
   }
 
