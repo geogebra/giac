@@ -42,7 +42,8 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: prerequisites
-      run: sudo apt update && sudo apt install build-essential libgmp-dev libmpfr-dev cmake
+      run: sudo apt update && sudo apt install build-essential cmake
+      # run: sudo apt update && sudo apt install build-essential libgmp-dev libmpfr-dev cmake
     - name: build
       run: mkdir cbuild && cd cbuild && cmake .. && make
 
@@ -69,7 +70,8 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: prerequisites
-      run: sudo apt update && sudo apt install build-essential libgmp-dev libmpfr-dev default-jdk
+      run: sudo apt update && sudo apt install build-essential default-jdk
+      # run: sudo apt update && sudo apt install build-essential libgmp-dev libmpfr-dev default-jdk
     - name: build
       run: ./gradlew javagiacLinux64SharedLibrary
 
@@ -105,7 +107,8 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: prerequisites
-      run: brew install gmp mpfr readline coreutils cmake
+      run: brew install coreutils cmake
+      # run: brew install gmp mpfr readline coreutils cmake
     - name: build
       run: mkdir cbuild && cd cbuild && cmake .. && make
 
@@ -114,7 +117,8 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: prerequisites
-      run: brew install gmp mpfr coreutils java11
+      run: brew install coreutils java11
+      # run: brew install gmp mpfr coreutils java11
     - name: build
       run: ./gradlew javagiacOsx_am64SharedLibrary
 
@@ -135,8 +139,8 @@ jobs:
           mingw-w64-clang-x86_64-cc
           mingw-w64-clang-x86_64-cmake
           mingw-w64-clang-x86_64-make
-          mingw-w64-clang-x86_64-gmp
-          mingw-w64-clang-x86_64-mpfr
+          # mingw-w64-clang-x86_64-gmp
+          # mingw-w64-clang-x86_64-mpfr
     - name: build
       run: mkdir cbuild && cd cbuild && CC=clang CXX=clang++ cmake -G "MinGW Makefiles" .. && mingw32-make
 
@@ -159,7 +163,8 @@ jobs:
           C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'echo' '[clang32]' >> '/etc/pacman.conf'"
           C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'echo' 'Include = /etc/pacman.d/mirrorlist.mingw' >> '/etc/pacman.conf'"
           C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-Syuu' '--overwrite' '*'"
-          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-S' '--needed' '--overwrite' '*' 'mingw-w64-clang-i686-cc' 'mingw-w64-clang-i686-cmake' 'mingw-w64-clang-i686-make' 'mingw-w64-clang-i686-gmp' 'mingw-w64-clang-i686-mpfr'"
+          # C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-S' '--needed' '--overwrite' '*' 'mingw-w64-clang-i686-cc' 'mingw-w64-clang-i686-cmake' 'mingw-w64-clang-i686-make' 'mingw-w64-clang-i686-gmp' 'mingw-w64-clang-i686-mpfr'"
+          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-S' '--needed' '--overwrite' '*' 'mingw-w64-clang-i686-cc' 'mingw-w64-clang-i686-cmake' 'mingw-w64-clang-i686-make'"
       shell: cmd
     - name: build
       run: mkdir cbuild && cd cbuild && CC=clang CXX=clang++ cmake -G "MinGW Makefiles" .. && mingw32-make
