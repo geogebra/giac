@@ -10,6 +10,9 @@
 # If you use the default setting (the static option),
 # you don't need the prerequisities gmp and mpfr below.
 #
+# This build machinery does not use config.h. Instead,
+# all definitions are given explicitly.
+#
 # Building on Linux and Mac
 # -------------------------
 #
@@ -157,7 +160,7 @@ set(GIAC_SOURCES
         src/giac/headers/android/mpfr.h
         src/giac/headers/alg_ext.h
         src/giac/headers/cocoa.h
-        src/giac/headers/config.h
+        # src/giac/headers/config.h
         src/giac/headers/csturm.h
         src/giac/headers/derive.h
         src/giac/headers/desolve.h
@@ -259,7 +262,7 @@ add_executable(minigiac
 
 # Note the order: MPFR must precede GMP!
 target_link_libraries(minigiac ${MPFR_STATIC} ${GMP_STATIC})
-#target_link_libraries(minigiac mpfr gmp) # minigiac can also be built as dynamic executable
+#target_link_libraries(minigiac mpfr gmp) # minigiac can also be built as a dynamic executable
 
 # JNI/DLL
 
@@ -285,12 +288,12 @@ target_include_directories(javagiac PUBLIC
 
 if(APPLE)
     # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
-    link_directories(/usr/local/lib) # This seems unnecessary.
+    # link_directories(/usr/local/lib) # This is necessary only if you use Homebrew's libs.
     add_definitions(-DDONT_USE_LIBLAPLACK)
     target_include_directories(javagiac PUBLIC
         ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders/darwin)
-    target_link_directories(javagiac PUBLIC /usr/local/lib) # This seems unnecessary.
-    target_link_directories(minigiac PUBLIC /usr/local/lib) # This seems unnecessary.
+    # target_link_directories(javagiac PUBLIC /usr/local/lib) # Only for Homebrew's libs.
+    # target_link_directories(minigiac PUBLIC /usr/local/lib) # Only for Homebrew's libs.
 endif()
 
 if(UNIX)
