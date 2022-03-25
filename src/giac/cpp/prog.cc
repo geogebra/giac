@@ -9246,6 +9246,7 @@ namespace giac {
     }
     if (v[2].type==_VECT){
       vecteur w=*v[2]._VECTptr;
+      if (is_undef(w)) w.clear();
       int s=int(w.size());
       if (ckmatrix(w)){
 	int ss=0;
