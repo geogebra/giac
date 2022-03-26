@@ -13105,7 +13105,7 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
     if ( (x.type!=_IDNT) || (y.type!=_IDNT) )
       return gensizeerr(gettext("Variables must be free"));
     gen a,b,c,d;
-    if (cklinear && is_linear_wrt(f_orig,y,a,b,contextptr) && a!=0){
+    if (/*cklinear &&*/ is_linear_wrt(f_orig,y,a,b,contextptr) && a!=0){
       if (is_linear_wrt(b,x,c,d,contextptr)){
 	// a*y+c*x+d=0 -> droite(-d/a*i,1+(-d-c)/a*i)
 	gen A=-d/a*cst_i,B=A+1-c/a*cst_i;
@@ -13114,7 +13114,7 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
       // y=-b/a
       return plotfunc(-b/a,x,attributs,0,xmin,xmax,ymin,ymax,-5,5,nxstep,0,false,contextptr);
     }
-    if (cklinear && is_linear_wrt(f_orig,x,a,b,contextptr) && a!=0){
+    if (/*cklinear &&*/ is_linear_wrt(f_orig,x,a,b,contextptr) && a!=0){
       if (is_constant_wrt(b,y,contextptr)){
 	// a*x+b=0 -> droite(-d/a*i,1+(-d-c)/a*i)
 	return _droite(f_orig,contextptr);
