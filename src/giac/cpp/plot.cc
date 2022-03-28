@@ -2197,7 +2197,7 @@ namespace giac {
   }
 
 
-  static void read_option(const vecteur & v,double xmin,double xmax,double ymin,double ymax,double zmin,double zmax,vecteur & attributs, int & nstep,int & jstep,int & kstep,bool & unfactored,GIAC_CONTEXT){
+  static void read_option(const vecteur & v,double xmin,double xmax,double ymin,double ymax,double zmin,double zmax,vecteur & attributs, int & nstep,int & jstep,int & kstep,bool unfactored,GIAC_CONTEXT){
     read_attributs(v,attributs,contextptr);
     const_iterateur it=v.begin(),itend=v.end();
     for (;it!=itend;++it){
