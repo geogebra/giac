@@ -247,11 +247,15 @@ allprojects {
         publishing {
             repositories {
                 maven {
-                    url 'sftp://dev.geogebra.org:22077/var/www/maven2'
+                    url 'https://repo.geogebra.net/releases'
                     credentials {
                         username = ggMavenRepoUser
                         password = ggMavenRepoPass
                     }
+                    authentication {
+                        basic(BasicAuthentication)
+                    }
+
                 }
             }
         }

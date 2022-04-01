@@ -9,7 +9,7 @@ pipeline {
         stage('Java and JS') {
           agent {label 'deploy2'}
           environment {
-            MAVEN = credentials('maven')
+            MAVEN = credentials('maven-repo')
             MAC = credentials('mac-giac')
             NPM = credentials('npm-registry')
             ANDROID_SDK_ROOT='/var/lib/jenkins/.android-sdk'
