@@ -27,7 +27,7 @@ pipeline {
         stage('Objective C') {
           agent {label 'mac'}
           environment {
-            MAVEN = credentials('maven')
+            MAVEN = credentials('maven-repo')
           }
           steps {
             sh './gradlew clean publishPodspec -Prevision=$SVN_REVISION'
