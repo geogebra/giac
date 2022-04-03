@@ -9609,6 +9609,27 @@ namespace xcas {
   }
 #endif
 #endif
+
+#ifdef NUMWORKS
+
+  BYTE bootloader_hash[]={140,62,252,137,128,165,8,243,135,8,134,222,255,97,235,199,193,22,6,141,85,189,34,181,5,49,41,224,103,124,135,12,};
+  const int bootloader_size=65480;
+  // check bootloade code, skipping exam mode buffer sector
+  bool bootloader_sha256_check(size_t addr){
+    BYTE buf[SHA256_BLOCK_SIZE];
+    SHA256_CTX ctx;
+    unsigned char * ptr=(unsigned char *)addr;
+    giac_sha256_init(&ctx);
+    giac_sha256_update(&ctx, ptr, 16*1024);
+    giac_sha256_update(&ctx, ptr+32*1024, bootloader_size-32*1024);
+    giac_sha256_final(&ctx, buf);
+    if (0) confirm(("@"+hexa_print_INT_(addr)).c_str(),("hash "+print_INT_(buf[0])+","+print_INT_(buf[1])).c_str());
+    if (!memcmp(bootloader_hash, buf, SHA256_BLOCK_SIZE))
+      return true;
+    return false;
+  }
+#endif
+  
   string print_duration(double & duration){
     if (duration<=0)
       return "";
@@ -12129,8 +12150,11 @@ namespace xcas {
     smallmenu.height=12;
     smallmenu.scrollbar=1;
     smallmenu.scrollout=1;
-    smallmenu.title = (char*)"Config";
+    smallmenu.title = (char *)"Config";
+  
 #ifdef NUMWORKS
+    string titles="Config (Memory "+print_INT_(_heap_size)+")";
+    smallmenu.title = (char*) titles.c_str();
     smallmenuitems[0].type = MENUITEM_CHECKBOX;
     smallmenuitems[0].text = (char*)"x,n,t -> t";
 #endif
@@ -12398,13 +12422,13 @@ namespace xcas {
 #endif
 	      inputdouble(
 #if defined NUMWORKS && defined DEVICE
-			  "Tas MicroPy/JS en K (16-64)?"
+			  string("Tas MicroPy/JS en K (16-"+print_INT_(_heap_size/1024-52)+")?").c_str()
 #else
 			  "Tas MicroPy/JS en K (64-1728)?"
 #endif
 			  ,d,contextptr) && d==int(d) &&
 #if defined NUMWORKS && defined DEVICE
-	      d>=16 && d<=64
+	      d>=16 && d<=_heap_size/1024-52
 #else
 	      d>=64 && d<=1728
 #endif
@@ -13675,6 +13699,46 @@ namespace xcas {
     return 2;
   }
 #ifdef NUMWORKS
+  void numworks_certify_internal(){
+    // check internal flash sha256 signature
+    size_t internal_flash_start=0x08000000;
+    if (bootloader_sha256_check(internal_flash_start)){
+      confirm("Amorcage calculatrice certifie!","OK?");
+      Bdisp_AllClr_VRAM();
+      return;
+    }
+    PrintMini(0,0,"Amorcage non certifie.",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+    std::vector<fileinfo_t> v=tar_fileinfo(flash_buf,0);
+    int i=0;
+    for (;i<v.size();++i){
+      fileinfo_t & f=v[i];
+      if (f.filename=="bootloader.bin" && f.size==bootloader_size)
+	break;
+    }
+    // check file content signature
+    unsigned romaddr=((unsigned) flash_buf) +v[i].header_offset+0x200;
+    if (i<v.size() && !bootloader_sha256_check(romaddr))
+      i=v.size();
+    if (i==v.size()){
+      PrintMini(0,18,"Pour mettre a jour:",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini(0,36,"www-fourier.univ-grenoble-alpes.fr",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini(0,54,"/~parisse/nw",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      int key; GetKey(&key);
+    }
+    else {
+      if (confirm("Mise a jour de l'amorcage ?","OK/Annul.")){
+	// sector size=16K -> erase 4 sector for 64K
+	erase_sector((const char *) internal_flash_start);
+	erase_sector((const char *) (internal_flash_start+16*1024));
+	erase_sector((const char *) (internal_flash_start+32*1024));
+	erase_sector((const char *) (internal_flash_start+48*1024));
+	WriteMemory((char *)internal_flash_start,(const char *) romaddr,bootloader_size);
+	confirm("Mise a jour faite","OK?");
+      }
+    }
+    Bdisp_AllClr_VRAM();
+  }
+  				   
   int restore_session(const char * fname,GIAC_CONTEXT){
     // cout << "0" << fname << endl; Console_Disp(1); GetKey(&key);
     string filename(remove_path(remove_extension(fname)));
@@ -13692,9 +13756,10 @@ namespace xcas {
     if (!load_console_state_smem(filename.c_str(),contextptr)){
       if (confirm("OK: Francais, Back: English","set_language(1|0)")==KEY_CTRL_F6)
 	lang=0;
+      numworks_certify_internal();
       Bdisp_AllClr_VRAM();
       int x=0,y=0;
-      PrintMini(x,y,"KhiCAS 1.6 (c) 2020 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE);
+      PrintMini(x,y,"KhiCAS 1.7 (c) 2022 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE);
       y +=18;
       PrintMini(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       y += 18;
@@ -13733,6 +13798,21 @@ namespace xcas {
 	// fake lexer required to initialize color syntax
 	gen g("abs",contextptr);
 	*logptr(contextptr) << "Xcas interpreter, Python compatible mode\n";
+      }
+#endif
+#ifdef NUMWORKS
+      if (lang==1){
+	*logptr(contextptr) << "!!! ATTENTION !!!\n";
+	*logptr(contextptr) << "Ne faites pas de mises a jour\n";
+	*logptr(contextptr) << "depuis le site de Numworks.\n";
+	*logptr(contextptr) << "Cela verrouille la Numworks\n";
+	*logptr(contextptr) << "et empeche d'utiliser KhiCAS\n";
+      } else {
+	*logptr(contextptr) << "!!! BEWARE !!!\n";
+	*logptr(contextptr) << "Don't make upgrades\n";
+	*logptr(contextptr) << "from Numworks website\n";
+	*logptr(contextptr) << "They lock your calculator\n";
+	*logptr(contextptr) << "it's incompatible with KhiCAS\n";
       }
 #endif
       Bdisp_AllClr_VRAM();
@@ -15488,6 +15568,11 @@ namespace xcas {
 #endif // NUMWORKS
 
   int console_main(GIAC_CONTEXT,const char * sessionname){
+#ifdef NUMWORKS
+    // insure value not too high (_heap_size depends on launcher firmware)
+    if (pythonjs_heap_size>_heap_size-52*1024)
+      pythonjs_heap_size=_heap_size-52*1024;
+#endif
     mp_stack_ctrl_init();
     //volatile int stackTop;
     //mp_stack_set_top((void *)(&stackTop));

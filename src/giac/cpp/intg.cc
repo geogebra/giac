@@ -3842,7 +3842,7 @@ namespace giac {
     vector <gen_op_context> vv;
     vv.push_back(min2piecewise);
     vv.push_back(max2piecewise);
-    gen r=subst(g,vu,vv,quotesubst,contextptr);
+    gen r=subst(g,vu,vv,true,contextptr);
     r=when2piecewise(r,contextptr);
     return r;
   }

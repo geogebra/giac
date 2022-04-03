@@ -4720,6 +4720,7 @@ int yyparse ();
 /*----------.
 | yyparse.  |
 `----------*/
+
 #ifdef YYPARSE_PARAM
 #if (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
@@ -4742,7 +4743,6 @@ yyparse (scanner)
 #endif
 #endif
 {
-  //yydebug=1;
 /* The lookahead symbol.  */
 int yychar;
 
@@ -5132,7 +5132,7 @@ yyreduce:
 
 /* Line 1806 of yacc.c  */
 #line 235 "input_parser.yy"
-    { if ((yyvsp[(3) - (3)]).type==_IDNT) { const char * ch=(yyvsp[(3) - (3)]).print(context0).c_str(); if (ch[0]=='_' && unit_conversion_map().find(ch+1) != unit_conversion_map().end()) (yyval)=symbolic(at_convert,gen(makevecteur((yyvsp[(1) - (3)]),symbolic(at_unit,makevecteur(1,(yyvsp[(3) - (3)])))) ,_SEQ__VECT)); else (yyval)=parser_symb_sto((yyvsp[(1) - (3)]),(yyvsp[(3) - (3)])); } else (yyval)=parser_symb_sto((yyvsp[(1) - (3)]),(yyvsp[(3) - (3)])); }
+    { if ((yyvsp[(3) - (3)]).type==_IDNT) { string s=(yyvsp[(3) - (3)]).print(context0); const char * ch=s.c_str(); if (ch[0]=='_' && unit_conversion_map().find(ch+1) != unit_conversion_map().end()) (yyval)=symbolic(at_convert,gen(makevecteur((yyvsp[(1) - (3)]),symbolic(at_unit,makevecteur(1,(yyvsp[(3) - (3)])))) ,_SEQ__VECT)); else (yyval)=parser_symb_sto((yyvsp[(1) - (3)]),(yyvsp[(3) - (3)])); } else (yyval)=parser_symb_sto((yyvsp[(1) - (3)]),(yyvsp[(3) - (3)])); }
     break;
 
   case 21:
