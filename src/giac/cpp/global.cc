@@ -249,7 +249,7 @@ const char * console_prompt(const char * s){
 #define SIG1(x) (ROTRIGHT(x,17) ^ ROTRIGHT(x,19) ^ ((x) >> 10))
 
   /**************************** VARIABLES *****************************/
-  static const WORD k[64] = {
+  static const WORD32 k[64] = {
     0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
     0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
     0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
@@ -263,7 +263,7 @@ const char * console_prompt(const char * s){
   /*********************** FUNCTION DEFINITIONS ***********************/
   void giac_sha256_transform(SHA256_CTX *ctx, const BYTE data[])
   {
-    WORD a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
+    WORD32 a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
 
     for (i = 0, j = 0; i < 16; ++i, j += 4)
       m[i] = (data[j] << 24) | (data[j + 1] << 16) | (data[j + 2] << 8) | (data[j + 3]);
@@ -318,7 +318,7 @@ const char * console_prompt(const char * s){
 
   void giac_sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len)
   {
-    WORD i;
+    WORD32 i;
 
     for (i = 0; i < len; ++i) {
       ctx->data[ctx->datalen] = data[i];
@@ -333,7 +333,7 @@ const char * console_prompt(const char * s){
 
   void giac_sha256_final(SHA256_CTX *ctx, BYTE hash[])
   {
-    WORD i;
+    WORD32 i;
 
     i = ctx->datalen;
 
@@ -1159,39 +1159,70 @@ int dfu_exec(const char * s_){
 }
 
 bool dfu_get_scriptstore_addr(size_t & start,size_t & taille){
+  // first try multi-boot
+  const char * slots[]={"0x90000000","0x90180000","0x90400000"};
+  const char * slots1[]={"0x90010000","0x90190000","0x90410000"};
+  unsigned char r[32];
+  for (int j=0;j<sizeof(slots)/sizeof(char *);++j){
+    unlink("__platf");
+    char cmd[256];
+    strcpy(cmd,"dfu-util -i0 -a0 -s ");
+    strcat(cmd,slots[j]);
+    strcat(cmd,":0x20 -U __platf");
+    if (dfu_exec(cmd))
+      return false;
+    FILE * f=fopen("__platf","r");
+    if (!f){ return false; }
+    int i=fread(r,1,32,f);
+    fclose(f);
+    if (i!=32)
+      return false;
+    // check valid slot: for f0 0d c0 de at offset 8, 9, a, b
+    bool externalinfo=r[8]==0xf0 && r[9]==0x0d && r[10]==0xc0 && r[11]==0xde;
+    if (!externalinfo)
+      break;
+    unlink("__platf");
+    strcpy(cmd,"dfu-util -i0 -a0 -s ");
+    strcat(cmd,slots1[j]);
+    strcat(cmd,":0x20 -U __platf");
+    if (dfu_exec(cmd))
+      return false;
+    f=fopen("__platf","r");
+    if (!f){ return false; }
+    i=fread(r,1,32,f);
+    fclose(f);
+    if (i!=32)
+      return false;
+    start=((r[15]*256U+r[14])*256+r[13])*256+r[12];
+    if (r[15]!=0x20) // ram is at 0x20000000 (+256K)
+      continue;
+    taille=((r[19]*256U+r[18])*256+r[17])*256+r[16];
+    unlink("__platf");   // check 4 bytes at start address
+    if (dfu_exec(("dfu-util -i0 -a0 -s "+giac::print_INT_(start)+":0x4 -U __platf").c_str()))
+      continue;
+    f=fopen("__platf","r");
+    if (!f){ return false; }
+    i=fread(r,1,4,f);
+    fclose(f);
+    if (i!=4)
+      return false;
+    if (*r==0xee0bddba) // ba dd 0b ee begin of scriptstore
+      return true;
+  }
+  // no valid slot, try without bootloader
   unlink("__platf");
-  if (dfu_exec("dfu-util -i0 -a0 -s 0x90000000:0x20 -U __platf"))
+  if (dfu_exec("dfu-util -i0 -a0 -s 0x080001c4:0x20 -U __platf"))
     return false;
   FILE * f=fopen("__platf","r");
   if (!f){ return false; }
-  unsigned char r[32];
   int i=fread(r,1,32,f);
   fclose(f);
-  unlink("__platf");  
-  // check for f0 0d c0 de at offset 8, 9, a, b
-  bool externalinfo=r[8]==0xf0 && r[9]==0x0d && r[10]==0xc0 && r[11]==0xde;
-  if (externalinfo){
-    if (dfu_exec("dfu-util -i0 -a0 -s 0x90010000:0x20 -U __platf"))
-      return false;
-  }
-  else {
-    if (dfu_exec("dfu-util -i0 -a0 -s 0x080001c4:0x20 -U __platf"))
-      return false;
-  }
-  f=fopen("__platf","r");
-  if (!f){ return false; }
-  i=fread(r,1,32,f);
-  if (externalinfo){
-    start=((r[15]*256U+r[14])*256+r[13])*256+r[12];
-    taille=((r[19]*256U+r[18])*256+r[17])*256+r[16];
-  }
-  else {
-    start=((r[23]*256U+r[22])*256+r[21])*256+r[20];
-    taille=((r[27]*256U+r[26])*256+r[25])*256+r[24];
-  }
+  if (i!=32)
+    return false;
+  start=((r[23]*256U+r[22])*256+r[21])*256+r[20];
+  taille=((r[27]*256U+r[26])*256+r[25])*256+r[24];
   // taille=(taille/32768)*32768; // do not care of end of scriptstore
-  fclose(f);
-  return i==32;
+  return true;
 }
 
 bool dfu_get_scriptstore(const char * fname){
@@ -1214,8 +1245,20 @@ bool dfu_send_rescue(const char * fname){
   return !dfu_exec(s.c_str());
 }
 
-bool dfu_send_firmware(const char * fname){
-  string s=string("dfu-util -i0 -a0 -D ")+ fname;
+char hex2char(int i){
+  i &= 0xf;
+  if (i>=0 && i<=9)
+    return '0'+i;
+  return 'A'+(i-10);
+}
+
+// send to 0x90000000+offset*0x10000
+bool dfu_send_firmware(const char * fname,int offset){
+  string s=string("dfu-util -i0 -a0 -s 0x90"); 
+  s += hex2char(offset/16);
+  s += hex2char(offset);
+  s += "0000 -D ";
+  s += fname;
   return !dfu_exec(s.c_str());
 }
 
@@ -1230,14 +1273,50 @@ bool dfu_get_epsilon_internal(const char * fname){
   return !dfu_exec(s.c_str());
 }
 
-bool dfu_get_epsilon(const char * fname){
+bool dfu_get_slot(const char * fname,int slot){
   unlink(fname);
-  string s=string("dfu-util -i 0 -a 0 -s 0x90000000:0x120000 -U ")+ fname;
-  return !dfu_exec(s.c_str());
+  string s=string("dfu-util -i 0 -a 0 -s ");
+  switch (slot){
+  case 1:
+    s += "0x90000000:0x130000";
+    break;
+  case 2:
+    s += "0x90180000:0x80000";
+    break;
+  default:
+    return false;
+  } 
+  s += "-U ";
+  s += fname;
+  if (dfu_exec(s.c_str()))
+    return false;
+  // exam mode modifies flash sector at offset 0x1000 
+  // restore this part to initial values
+  FILE * f=fopen(fname,"r");
+  if (!f) return false;
+  unsigned char buf[0x130000];
+  int l=slot==1?0x130000:0x80000;
+  int i=fread(buf,1,l,f);
+  fclose(f);
+  if (i!=l)
+    return false;
+  for (int j=0x1000;j<0x2000;++j)
+    buf[j]=0xff;
+  for (int j=0x2000;j<0x3000;++j)
+    buf[j]=0xff;
+  f=fopen(fname,"w");
+  if (!f) return false;
+  i=fwrite(buf,1,l,f);
+  fclose(f);
+  if (i!=l)
+    return false;
+  return true;
 }
 
+#if 0
 // check that we can really read/write on the Numworks at 0x90120000
 // and get the same
+// SHOULD NOT BE USED ANYMORE
 bool dfu_check_epsilon2(const char * fname){
   FILE * f=fopen(fname,"wb");
   int n=0xe0000;
@@ -1271,6 +1350,7 @@ bool dfu_check_epsilon2(const char * fname){
   fclose(f);
   return i==n;
 }
+#endif
 
 // check that we can really read/write on the Numworks at 0x90740000
 // and get the same
@@ -1491,6 +1571,8 @@ namespace giac {
     // 00
     // type 
     // record data
+    if (*ptr!=0xee0bddba)  // ba dd 0b ee
+      return false; 
     int pos=4; ptr+=4;
     for (;pos<nwstoresize1;){
       size_t L=ptr[1]*256+ptr[0]; 
@@ -1742,25 +1824,33 @@ namespace giac {
       }
     }
     char epsilon[]="epsilon__",apps[]="apps__";
-    *logptr(contextptr) << "Extraction du firmware interne epsilon\n" ;
+#if 0 // internal not readable anymore
+    *logptr(contextptr) << "Extraction du secteur amorce\n" ;
     if (!dfu_get_epsilon_internal(epsilon)) return false;
-    *logptr(contextptr) << "Verification de signature interne epsilon\n" ;
-    if (!sha256_check(sig.c_str(),epsilon,"delta.internal.bin")) return false;
-    *logptr(contextptr) << "Extraction du firmware externe epsilon\n" ;
-    if (!dfu_get_epsilon(epsilon)) return false;
-    *logptr(contextptr) << "Verification de signature externe epsilon\n" ;
-    if (!sha256_check(sig.c_str(),epsilon,"delta.external.bin")) return false;
+    *logptr(contextptr) << "Verification de signature secteur amorce\n" ;
+    if (!sha256_check(sig.c_str(),epsilon,"bootloader.bin")) return false;
+#endif
+    *logptr(contextptr) << "Extraction du firmware externe slot 1\n" ;
+    if (!dfu_get_slot(epsilon,1)) return false;
+    *logptr(contextptr) << "Verification de signature externe slot 1\n" ;
+    if (!sha256_check(sig.c_str(),epsilon,"khi.A.bin")) return false;
+    *logptr(contextptr) << "Extraction du firmware externe slot 2\n" ;
+    if (!dfu_get_slot(epsilon,2)) return false;
+    *logptr(contextptr) << "Verification de signature externe slot 2\n" ;
+    if (!sha256_check(sig.c_str(),epsilon,"khi.B.bin")) return false;
     *logptr(contextptr) << "Signature firmware conforme\nExtraction des applications\n" ;
     if (!dfu_get_apps(apps)) return false;
     *logptr(contextptr) << "Verification de signature applications externes\n" ;
     if (!sha256_check(sig.c_str(),apps,"apps.tar")) return false;
     const char eps2name[]="eps2__";
     if (withoverwrite && 
-	(!dfu_check_epsilon2(eps2name) || !dfu_check_apps2(eps2name))){
+	( // !dfu_check_epsilon2(eps2name) || 
+	  !dfu_check_apps2(eps2name)
+	  )){
       *logptr(contextptr) << "Le test d'ecriture et relecture a echoue.\nLe firwmare n'est peut-etre pas conforme ou la flash est endommagee.\n";
       return false;
     }
-    *logptr(contextptr) << "Signature applications conforme\nCalculatrice conforme à la reglementation\nCertification par le logiciel Xcas\nInstitut Fourier\nUniversité de Grenoble\nAssurez-vous d'avoir téléchargé Xcas sur\nwww-fourier.ujf-grenoble.fr/~parisse/install_fr.html\n" ;
+    *logptr(contextptr) << "Signature applications conforme\nCalculatrice conforme à la reglementation\nCertification par le logiciel Xcas\nInstitut Fourier\nUniversité de Grenoble Alpes\nAssurez-vous d'avoir téléchargé Xcas sur\nwww-fourier.ujf-grenoble.fr/~parisse/install_fr.html\n" ;
     return true;
   }
 #endif

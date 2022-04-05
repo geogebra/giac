@@ -114,7 +114,8 @@ bool dfu_get_scriptstore(const char * fname);
 bool dfu_send_scriptstore(const char * fname);
 bool dfu_send_rescue(const char * fname);
 const int nwstoresize1=0x8000,nwstoresize2=0x8014;
-bool dfu_send_firmware(const char * fname);
+// send to 0x90000000+offset*0x10000
+bool dfu_send_firmware(const char * fname,int offset);
 bool dfu_send_apps(const char * fname);
 bool dfu_update_khicas(const char * fname); 
 
@@ -199,13 +200,13 @@ extern "C" {
 
 /**************************** DATA TYPES ****************************/
 typedef unsigned char BYTE;             // 8-bit byte
-typedef unsigned int  WORD;             // 32-bit word, change to "long" for 16-bit machines
+typedef unsigned int  WORD32;             // 32-bit word, change to "long" for 16-bit machines
 
 typedef struct {
 	BYTE data[64];
-	WORD datalen;
+	WORD32 datalen;
 	unsigned long long bitlen;
-	WORD state[8];
+	WORD32 state[8];
 } SHA256_CTX;
 
 /*********************** FUNCTION DECLARATIONS **********************/
