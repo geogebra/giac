@@ -8214,12 +8214,16 @@ namespace giac {
     double eps2=epsilon(contextptr); eps2=eps2*eps2;
     if (eps2<=0)
       eps2=1e-14;
+    int N=_floor(abs(z,contextptr),contextptr).val;
+    if (N>705) return undef;
+    N=1.2*N;
     for (int n=0;;){
       tmp=znsurfact/(a+n);
       reim(tmp,tmpr,tmpi,contextptr);
       reim(res,resr,resi,contextptr);
-      if (is_greater(eps2*(resr*resr+resi*resi),tmpr*tmpr+tmpi*tmpi,contextptr))
+      if (n>N && is_greater(eps2*(resr*resr+resi*resi),tmpr*tmpr+tmpi*tmpi,contextptr)){
 	break;
+      }
       res += tmp;
       ++n;
       znsurfact = znsurfact *(-z)/n;
