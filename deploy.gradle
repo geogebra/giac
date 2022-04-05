@@ -172,7 +172,7 @@ publishing {
             }
         }
         mavenZip(MavenPublication) {
-            artifactId = 'javagiac'
+            artifactId = 'igiac'
             groupId = 'fr.ujf-grenoble'
             version = ggrev
             artifact cocoapodsZip
