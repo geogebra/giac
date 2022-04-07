@@ -1198,7 +1198,7 @@ bool dfu_get_scriptstore_addr(size_t & start,size_t & taille){
       continue;
     taille=((r[19]*256U+r[18])*256+r[17])*256+r[16];
     unlink("__platf");   // check 4 bytes at start address
-    if (dfu_exec(("dfu-util -i0 -a0 -s "+giac::print_INT_(start)+":0x4 -U __platf").c_str()))
+    if (dfu_exec(("dfu-util -i0 -a0 -s "+giac::print_INT_(start)+":0x4:force -U __platf").c_str()))
       continue;
     f=fopen("__platf","r");
     if (!f){ return false; }
@@ -1206,7 +1206,7 @@ bool dfu_get_scriptstore_addr(size_t & start,size_t & taille){
     fclose(f);
     if (i!=4)
       return false;
-    if (*r==0xee0bddba) // ba dd 0b ee begin of scriptstore
+    if (r[0]==0xba && r[1]==0xdd && r[2]==0x0b && r[3]==0xee) // ba dd 0b ee begin of scriptstore
       return true;
   }
   // no valid slot, try without bootloader
@@ -1273,6 +1273,12 @@ bool dfu_get_epsilon_internal(const char * fname){
   return !dfu_exec(s.c_str());
 }
 
+bool dfu_send_bootloader(const char * fname){
+  unlink(fname);
+  string s=string("dfu-util -i 0 -a 0 -s 0x08000000 -D ")+ fname;
+  return !dfu_exec(s.c_str());
+}
+
 bool dfu_get_slot(const char * fname,int slot){
   unlink(fname);
   string s=string("dfu-util -i 0 -a 0 -s ");
@@ -1286,13 +1292,13 @@ bool dfu_get_slot(const char * fname,int slot){
   default:
     return false;
   } 
-  s += "-U ";
+  s += " -U ";
   s += fname;
   if (dfu_exec(s.c_str()))
     return false;
   // exam mode modifies flash sector at offset 0x1000 
   // restore this part to initial values
-  FILE * f=fopen(fname,"r");
+  FILE * f=fopen(fname,"rb");
   if (!f) return false;
   unsigned char buf[0x130000];
   int l=slot==1?0x130000:0x80000;
@@ -1303,8 +1309,8 @@ bool dfu_get_slot(const char * fname,int slot){
   for (int j=0x1000;j<0x2000;++j)
     buf[j]=0xff;
   for (int j=0x2000;j<0x3000;++j)
-    buf[j]=0xff;
-  f=fopen(fname,"w");
+    buf[j]=0;
+  f=fopen(fname,"wb");
   if (!f) return false;
   i=fwrite(buf,1,l,f);
   fclose(f);
@@ -1341,7 +1347,7 @@ bool dfu_check_epsilon2(const char * fname){
   s=string("dfu-util -i 0 -a 0 -s 0x90120000:0xe0000 -U ")+ fname;
   if (dfu_exec(s.c_str()))
     return false;
-  f=fopen(fname,"r");
+  f=fopen(fname,"rb");
   for (i=0;i<n;++i){
     char ch=fgetc(f);
     if (ch!=ptr[i])
@@ -1378,7 +1384,7 @@ bool dfu_check_apps2(const char * fname){
   s=string("dfu-util -i 0 -a 0 -s 0x90740000:0xa0000 -U ")+ fname;
   if (dfu_exec(s.c_str()))
     return false;
-  f=fopen(fname,"r");
+  f=fopen(fname,"rb");
   for (i=0;i<n;++i){
     char ch=fgetc(f);
     if (ch!=ptr[i])
@@ -1557,7 +1563,7 @@ namespace giac {
 
 #if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
   bool scriptstore2map(const char * fname,nws_map & m){
-    FILE * f=fopen(fname,"r");
+    FILE * f=fopen(fname,"rb");
     if (!f)
       return false;
     unsigned char buf[nwstoresize1];

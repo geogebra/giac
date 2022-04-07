@@ -2256,7 +2256,9 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     }
 #endif
     gen g(_VARS(0,contextptr));
-    if (g.type!=_VECT || g._VECTptr->empty()){
+    if (g.type!=_VECT
+	//|| g._VECTptr->empty()
+	){
       confirm((lang==1)?"Pas de variables. Exemples pour en creer":"No variables. Examples to create",(lang==1)?"a=1 ou f(x):=sin(x^2)":"a=1 or f(x):=sin(x^2)",true);
       return undef;
     }
@@ -2304,7 +2306,12 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     smallmenu.height=12;
     smallmenu.scrollbar=1;
     smallmenu.scrollout=1;
-    smallmenu.title = (char*)"Variables";
+    string vars="Variables";
+#ifdef NUMWORKS
+    vars += ", free >= ";
+    vars += print_INT_(_heap_size-((int)_heap_ptr-(int)_heap_base));
+#endif
+    smallmenu.title = (char*) vars.c_str();
     //MsgBoxPush(5);
     int sres = doMenu(&smallmenu);
     //MsgBoxPop();
@@ -9612,7 +9619,7 @@ namespace xcas {
 
 #ifdef NUMWORKS
 
-  BYTE bootloader_hash[]={140,62,252,137,128,165,8,243,135,8,134,222,255,97,235,199,193,22,6,141,85,189,34,181,5,49,41,224,103,124,135,12,};
+  BYTE bootloader_hash[]={182,79,185,173,200,33,200,89,80,52,199,156,232,114,246,116,224,144,59,169,52,22,48,232,66,192,12,12,65,184,95,144,};// {240,149,147,17,99,67,219,190,128,31,188,225,88,191,154,94,142,45,3,248,242,148,116,155,222,153,80,91,251,190,158,224,};//{140,62,252,137,128,165,8,243,135,8,134,222,255,97,235,199,193,22,6,141,85,189,34,181,5,49,41,224,103,124,135,12,};
   const int bootloader_size=65480;
   // check bootloade code, skipping exam mode buffer sector
   bool bootloader_sha256_check(size_t addr){
@@ -12141,6 +12148,108 @@ namespace xcas {
       confirm((lang==1)?"Fin du mode examen":"End exam mode","enter: OK");
   }    
 
+#ifdef NUMWORKS
+/* begin section (c) B. Parisse, write exam mode in *all* firmwares 
+   code is dual-licensed for use in Epsilon and here
+ */
+// write exam mode mode to flash at offset pos/8
+void write_exammode(unsigned char * ptr,int pos,int mode,int modulo){
+  int curmode=pos%modulo;
+  if (curmode == mode)
+    return;
+  int delta=(mode+modulo-curmode)%modulo; // 0<delta<modulo, number of bits that we will set to 0
+  unsigned char * target = ptr + pos/8;
+  int pos8=pos % 8; // number of bits already set to 0 at target
+  pos8 += delta; // 0<pos8<modulo+7
+  unsigned char postab[]={0b11111111,0b1111111,0b111111,0b11111,0b1111,0b111,0b11,0b1,0}; // postab[i] is a byte with i bits set to 0 
+  unsigned char tab[2];
+  bool writenext=pos8>8;
+  tab[0]=postab[writenext?8:pos8];
+  tab[1]=postab[writenext?pos8-8:0];
+#if 1 // KHICAS
+  WriteMemory((char *)target, (const char *)tab, writenext?2:1);
+#else
+  target[0]=tab[0];
+  if (writenext) target[1]=tab[1];
+#endif
+}
+
+// check that region is split in two parts: bits set to 0 followed by bits set to 1, returns position of the first 1 bit or -1
+int pos_01(unsigned * start,int l){
+  unsigned *ptr=start,* end=start+l/sizeof(unsigned);
+  for (;ptr<end;++ptr){
+    if (*ptr)
+      break;
+  }
+  if (ptr==end)
+    return -1;
+  int pos=(ptr-start)*32;
+  unsigned char * ptr8=(unsigned char *) ptr;
+  if (*ptr8==0){
+    pos+=8; ++ptr8;
+  }
+  if (*ptr8==0){
+    pos+=8; ++ptr8;
+  }
+  if (*ptr8==0){
+    pos+=8; ++ptr8;
+  }
+  switch (*ptr8){
+  case 0b1: pos+=7; break; // 7 bits are already set to 0
+  case 0b11: pos+=6; break;
+  case 0b111: pos+=5; break;
+  case 0b1111: pos+=4; break;
+  case 0b11111: pos+=3; break;
+  case 0b111111: pos+=2; break;
+  case 0b1111111: pos+=1; break;
+  case 0b11111111: break;
+  default: return -1;
+  }
+  ++ptr;
+  for (;ptr<end;++ptr){
+    if (*ptr!=0xffffffff)
+      return -1;
+  }
+  return pos;
+}
+
+char print_hex(int val){
+  val &= 0xf;
+  if (val>=0 && val<=9)
+    return '0'+val;
+  return 'A'+(val-10);
+}
+
+void print_hex(unsigned val,char * ptr){
+  for (int i=0;i<8;++i){
+    ptr[i]=print_hex(val>>(28-4*i));
+  }
+}
+
+void set_exammode(int mode,int modulo){
+  if (mode<0 || mode>=modulo)
+    return;
+  // scan external flash every dflash bytes
+  unsigned * flashptr=(unsigned *) 0x90000000;
+  unsigned dflash=0x10000,ntests=8*1024*1024/dflash/sizeof(unsigned);
+  for (unsigned i=0;i<ntests;++i){
+    unsigned * ptr=flashptr+i*dflash;
+    // kernel header?
+    if (*ptr!=0xffffffff || *(ptr+1)!=0xffffffff || *(ptr+2)!= 0xdec00df0 /* f0 0d c0 de*/)
+      continue;
+    ptr += 0x1000/sizeof(unsigned); // exam mode buffer?
+    int pos=pos_01(ptr,0x1000);
+    if (pos==-1)
+      continue;
+    if (pos>=0x1000-8){
+      erase_sector((const char *)ptr);
+      pos=0;
+    }
+    write_exammode((unsigned char *)ptr,pos,mode,modulo);
+  }
+}
+/* end section (c) B. Parisse, */
+#endif
   
   void menu_setup(GIAC_CONTEXT){
     Menu smallmenu;
@@ -12169,7 +12278,7 @@ namespace xcas {
     smallmenuitems[7].text = (char*)"Greek&English";
     smallmenuitems[8].text = (char*)"Deutsch&English";
     smallmenuitems[9].text = (char *) ((lang==1)?"Raccourcis clavier (0)":"Shortcuts (0)");
-#ifdef NUMWORKS
+#if 0 // def NUMWORKS
     smallmenuitems[10].text = (char*) ((lang==1)?"Backup examen (e^x)":"Exam backup (e^x)");
 #else
     smallmenuitems[10].text = (char*) ((lang==1)?"Mode examen (e^x)":"Exam mode (e^x)");
@@ -12338,11 +12447,48 @@ namespace xcas {
 #endif // NSPIRE_NEWLIB
 #ifdef NUMWORKS
 #ifdef DEVICE
-	  if (do_confirm(lang==1?"Restaurer le backup du dernier examen?":"Restore last backup before last exam?")){
+	  if (inexammode()){
+	    do_confirm(lang==1?"Connectez la calculatrice!":"Connect calculator!");
+	    break;
+	  }
+	  const char * tab[]={lang==1?"Restaurer le backup?":"Restore last backup",lang==1?"Backup, puis mode examen":"Backup then exam mode",lang==1?"Mode examen sans backup":"Exam mode without backup",0};
+	  int choix=select_item(tab,"Mode examen",true);
+	  if (choix<0 || choix>2)
+	    break;
+	  if (choix==0){
 	    if (extapp_restorebackup(-1))
 	      do_confirm(lang==1?"Restauration du backup reussie!":"Backup restore success!");
 	    else
-	      do_confirm(lang==1?"Mode exam actif ou pas de backup trouve!":"Exam mode enabled or no backup found!");
+	      do_confirm(lang==1?"Pas de backup trouve!":"No backup found!");
+	  }
+	  else {
+	    if (choix==1){
+	      int L=32*1024,slot=0;
+	      size_t backupaddr=0x90800000-64*1024,storageaddr=0;
+	      size_t addr[]={0x90000000,0x90180000,0x90400000};
+	      for (;slot<sizeof(addr)/sizeof(size_t);++slot){
+		unsigned char * r=(unsigned char *) addr[slot];
+		bool externalinfo=r[8]==0xf0 && r[9]==0x0d && r[10]==0xc0 && r[11]==0xde;
+		if (!externalinfo)
+		  continue;
+		r += 0x10000;
+		if (r[15]!=0x20) // ram is at 0x20000000 (+256K)
+		  continue;
+		size_t start=((r[15]*256U+r[14])*256+r[13])*256+r[12];
+		r=(unsigned char *)start;
+		if (r[0]==0xba && r[1]==0xdd && r[2]==0x0b && r[3]==0xee){ // ba dd 0b ee begin of scriptstore
+		  storageaddr=start;
+		  break;
+		}
+	      }
+	      //confirm("Storage @",hexa_print_INT_(storageaddr).c_str());
+	      if (storageaddr){
+		erase_sector((const char *)backupaddr);
+		WriteMemory((char *)backupaddr,(const char *)storageaddr,L);
+	      }
+	    } // if (choix==1)
+	    set_exammode(1,4);
+	    erase_sector(0); // reset
 	  }
 #endif
 	  // if (do_confirm(lang==1?"Le mode examen se lance depuis Parametres":"Enter Exam mode from Settings")) shutdown_state=1;
@@ -13703,11 +13849,11 @@ namespace xcas {
     // check internal flash sha256 signature
     size_t internal_flash_start=0x08000000;
     if (bootloader_sha256_check(internal_flash_start)){
-      confirm("Amorcage calculatrice certifie!","OK?");
+      confirm(lang==1?"Amorcage calculatrice certifie!":"Boot sector certified!",lang==1?"Acces amorcage par reset+4":"Access boot with reset+4");
       Bdisp_AllClr_VRAM();
       return;
     }
-    PrintMini(0,0,"Amorcage non certifie.",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+    PrintMini(0,0,lang==1?"Amorcage non certifie.":"Boot sector not certified.",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
     std::vector<fileinfo_t> v=tar_fileinfo(flash_buf,0);
     int i=0;
     for (;i<v.size();++i){
@@ -13720,20 +13866,20 @@ namespace xcas {
     if (i<v.size() && !bootloader_sha256_check(romaddr))
       i=v.size();
     if (i==v.size()){
-      PrintMini(0,18,"Pour mettre a jour:",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini(0,18,lang==1?"Pour mettre a jour:":"Please upgrade from:",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       PrintMini(0,36,"www-fourier.univ-grenoble-alpes.fr",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       PrintMini(0,54,"/~parisse/nw",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       int key; GetKey(&key);
     }
     else {
-      if (confirm("Mise a jour de l'amorcage ?","OK/Annul.")){
+      if (confirm(lang==1?"Mise a jour de l'amorcage ?":"Update bootsector?","OK/Annul.")){
 	// sector size=16K -> erase 4 sector for 64K
 	erase_sector((const char *) internal_flash_start);
 	erase_sector((const char *) (internal_flash_start+16*1024));
 	erase_sector((const char *) (internal_flash_start+32*1024));
 	erase_sector((const char *) (internal_flash_start+48*1024));
 	WriteMemory((char *)internal_flash_start,(const char *) romaddr,bootloader_size);
-	confirm("Mise a jour faite","OK?");
+	confirm(lang==1?"Mise a jour faite":"Update done",lang==1?"Acces amorcage par reset+4":"Access boot with reset+4");
       }
     }
     Bdisp_AllClr_VRAM();

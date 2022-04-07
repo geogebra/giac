@@ -113,6 +113,7 @@ bool dfu_get_scriptstore_addr(size_t & start,size_t & taille);
 bool dfu_get_scriptstore(const char * fname);
 bool dfu_send_scriptstore(const char * fname);
 bool dfu_send_rescue(const char * fname);
+bool dfu_send_bootloader(const char * fname);
 const int nwstoresize1=0x8000,nwstoresize2=0x8014;
 // send to 0x90000000+offset*0x10000
 bool dfu_send_firmware(const char * fname,int offset);
