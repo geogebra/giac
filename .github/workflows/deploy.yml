@@ -84,5 +84,5 @@ jobs:
       run: ./gradlew javagiacWin32JarClang
     - name: publish
       run: |
-        mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-win32-natives-windows-i586.jar -Dclassifier=natives-windows-i586 -DgroupId=com.github -DartifactId=javagiac-win32 -Dversion=$CI_REF_NAME_SLUG
+        mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-win32-natives-windows-i586.jar -Dclassifier=natives-windows-i586 -DgroupId=com.github -DartifactId=javagiac-win32 -Dversion=%CI_REF_NAME_SLUG%
       shell: cmd
