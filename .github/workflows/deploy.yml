@@ -14,6 +14,9 @@ jobs:
     steps:
     - uses: FranzDiebold/github-env-vars-action@v2
     - uses: actions/checkout@v3
+    - uses: s4u/maven-settings-action@v2.6.0
+      with:
+        servers: '[{"id": "github", "configuration": {"httpHeaders": {"property": {"name": "Authorization","value": "Bearer ${{ secrets.GITHUB_TOKEN }}"}}}}]'
     - name: prerequisites
       run: sudo apt update && sudo apt install build-essential default-jdk
     - name: build
@@ -23,8 +26,6 @@ jobs:
         mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 \
           -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-linux64-natives-linux-amd64.jar \
           -Dclassifier=natives-linux-amd64 -DgroupId=com.github -DartifactId=javagiac -Dversion=$CI_REF_NAME_SLUG
-      env:
-        GITHUB_TOKEN: ${{ secrets.PAT }}
 
   mac-jnidll-gradle:
     runs-on: macos-latest
