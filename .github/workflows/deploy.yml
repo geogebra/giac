@@ -21,7 +21,7 @@ jobs:
       run: |
         mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 \
           -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-linux64-natives-linux-amd64.jar \
-          -Dclassifier=natives-linux-amd64 -DgroupId=com.github -DartifactId=javagiac -Dversion=${CI_RUN_NUMBER}
+          -Dclassifier=natives-linux-amd64 -DgroupId=com.github -DartifactId=javagiac -Dversion=${{CI_REF_NAME_SLUG}}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -40,6 +40,6 @@ jobs:
       run: |
         mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 \
           -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-mac-natives-macosx-universal.jar \
-          -Dclassifier=natives-macosx-universal -DgroupId=com.github -DartifactId=javagiac -Dversion=${CI_RUN_NUMBER}
+          -Dclassifier=natives-macosx-universal -DgroupId=com.github -DartifactId=javagiac -Dversion=${{CI_REF_NAME_SLUG}}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
