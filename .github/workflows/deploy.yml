@@ -33,6 +33,10 @@ jobs:
       packages: write
     steps:
     - uses: FranzDiebold/github-env-vars-action@v2
+    - uses: s4u/maven-settings-action@v2.5.0
+        with:
+          servers: '[
+          {"id": "github","configuration": {"httpHeaders": {"property": {"name": "Authorization","value": "Bearer ${{ secrets.GITHUB_TOKEN }}"}}}}]'
     - uses: actions/checkout@v3
     - name: prerequisites
       run: brew install coreutils java11
@@ -43,5 +47,3 @@ jobs:
         mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 \
           -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-mac-natives-macosx-universal.jar \
           -Dclassifier=natives-macosx-universal -DgroupId=com.github -DartifactId=javagiac -Dversion=$CI_REF_NAME_SLUG
-      env:
-        GITHUB_TOKEN: ${{ secrets.PAT }}
