@@ -12,6 +12,7 @@ jobs:
       contents: read
       packages: write
     steps:
+    - uses: FranzDiebold/github-env-vars-action@v2
     - uses: actions/checkout@v3
     - name: prerequisites
       run: sudo apt update && sudo apt install build-essential default-jdk
@@ -31,6 +32,7 @@ jobs:
       contents: read
       packages: write
     steps:
+    - uses: FranzDiebold/github-env-vars-action@v2
     - uses: actions/checkout@v3
     - name: prerequisites
       run: brew install coreutils java11
