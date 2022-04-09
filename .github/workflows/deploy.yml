@@ -21,7 +21,7 @@ jobs:
       run: |
         mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 \
           -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-linux64-natives-linux-amd64.jar \
-          -Dclassifier=natives-linux-amd64
+          -Dclassifier=natives-linux-amd64 -DgroupId=com.github -DartifactId=javagiac -Dversion=${CI_RUN_NUMBER}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -35,11 +35,11 @@ jobs:
     - name: prerequisites
       run: brew install coreutils java11
     - name: build
-      run: ./gradlew javagiacMacJar
+      run: ./gradlew javagiacMacJarLocal
     - name: publish
       run: |
         mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 \
           -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-mac-natives-macosx-universal.jar \
-          -Dclassifier=natives-macosx-universal
+          -Dclassifier=natives-macosx-universal -DgroupId=com.github -DartifactId=javagiac -Dversion=${CI_RUN_NUMBER}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

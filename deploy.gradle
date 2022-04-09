@@ -91,7 +91,17 @@ task javagiacLinux32Jar (dependsOn: 'compileLinux32MacJavagiacRemotely', type: J
 }
 
 task javagiacMacJar (dependsOn: 'compileLinux32MacJavagiacRemotely', type: Jar) {
-    description 'Creates the Linux 32 bit .jar package for the Java Giac library.'
+    description 'Creates the Mac .jar package for the Java Giac library.'
+    baseName = 'javagiac-mac'
+    destinationDir = javagiacDir
+    from "${buildDir}/binaries/javagiacSharedLibrary/osx_amd64" // FIXME: unify
+    include '*.jnilib'
+    classifier 'natives-macosx-universal'
+}
+
+// This is a verbatim copy of javagiacMacJar, without dependency. FIXME: unify
+task javagiacMacJarLocal (type: Jar) {
+    description 'Creates the Mac .jar package for the Java Giac library.'
     baseName = 'javagiac-mac'
     destinationDir = javagiacDir
     from "${buildDir}/binaries/javagiacSharedLibrary/osx_amd64" // FIXME: unify
