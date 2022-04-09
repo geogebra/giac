@@ -76,6 +76,7 @@ jobs:
           C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-Syuu' '--overwrite' '*'"
           rem C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-S' '--needed' '--overwrite' '*' 'mingw-w64-clang-i686-cc' 'mingw-w64-clang-i686-cmake' 'mingw-w64-clang-i686-make' 'mingw-w64-clang-i686-gmp' 'mingw-w64-clang-i686-mpfr'"
           C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-S' '--needed' '--overwrite' '*' 'mingw-w64-clang-i686-cc' 'mingw-w64-clang-i686-cmake' 'mingw-w64-clang-i686-make'"
+          choco install maven
       shell: cmd
     - name: build
       run: mkdir cbuild && cd cbuild && CC=clang CXX=clang++ cmake -G "MinGW Makefiles" .. && mingw32-make
@@ -86,3 +87,4 @@ jobs:
         mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 \
           -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-win32-natives-windows-i586.jar \
           -Dclassifier=natives-windows-i586 -DgroupId=com.github -DartifactId=javagiac-win32 -Dversion=$CI_REF_NAME_SLUG
+      shell: cmd
