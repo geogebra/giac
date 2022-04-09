@@ -33,10 +33,10 @@ jobs:
       packages: write
     steps:
     - uses: FranzDiebold/github-env-vars-action@v2
-    - uses: s4u/maven-settings-action@v2.5.0
-      with:
-      servers: '[{"id": "github","configuration": {"httpHeaders": {"property": {"name": "Authorization","value": "Bearer ${{ secrets.GITHUB_TOKEN }}"}}}}]'
     - uses: actions/checkout@v3
+    - uses: s4u/maven-settings-action@v2.6.0
+      with:
+        servers: '[{"id": "github", "configuration": {"httpHeaders": {"property": {"name": "Authorization","value": "Bearer ${{ secrets.GITHUB_TOKEN }}"}}}}]'
     - name: prerequisites
       run: brew install coreutils java11
     - name: build
