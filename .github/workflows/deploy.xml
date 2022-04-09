@@ -1,8 +1,9 @@
 name: publish
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - '*'
 
 jobs:
   linux-jnidll-gradle:
@@ -22,4 +23,4 @@ jobs:
           -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-linux64-natives-linux-amd64.jar \
           -Dclassifier=natives-linux-amd64
       env:
-        GITHUB_TOKEN: ${{ secrets.PAT }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
