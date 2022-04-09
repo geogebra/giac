@@ -31,7 +31,7 @@ jobs:
       contents: read
       packages: write
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
     - name: prerequisites
       run: brew install coreutils java11
     - name: build
