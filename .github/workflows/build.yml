@@ -120,7 +120,7 @@ jobs:
       run: brew install coreutils java11
       # run: brew install gmp mpfr coreutils java11
     - name: build
-      run: ./gradlew javagiacOsx_am64SharedLibrary
+      run: ./gradlew javagiacOsx_amd64SharedLibrary
 
   windows_msys2_clang64-native-cmake:
     runs-on: windows-latest
