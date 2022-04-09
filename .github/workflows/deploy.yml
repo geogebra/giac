@@ -24,3 +24,22 @@ jobs:
           -Dclassifier=natives-linux-amd64
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  mac-jnidll-gradle:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v1
+    - name: prerequisites
+      run: brew install coreutils java11
+    - name: build
+      run: ./gradlew javagiacMacJar
+    - name: publish
+      run: |
+        mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 \
+          -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-mac-natives-macosx-universal.jar \
+          -Dclassifier=natives-macosx-universal
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
