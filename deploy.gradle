@@ -100,7 +100,7 @@ task javagiacMacJar (dependsOn: 'compileLinux32MacJavagiacRemotely', type: Jar) 
 }
 
 // This is a verbatim copy of javagiacMacJar, without dependency. FIXME: unify
-task javagiacMacJarLocal (type: Jar) {
+task javagiacMacJarLocal (dependsOn: 'javagiacOsx_am64SharedLibrary', type: Jar) {
     description 'Creates the Mac .jar package for the Java Giac library.'
     baseName = 'javagiac-mac'
     destinationDir = javagiacDir
