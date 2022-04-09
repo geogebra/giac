@@ -42,6 +42,15 @@ task javagiacWin32Jar (dependsOn: ':javagiacWin32SharedLibrary', type: Jar) {
     classifier 'natives-windows-i586'
 }
 
+task javagiacWin32JarClang (type: Jar) {
+    description 'Create the Windows 32 bit .jar package for the Java Giac library (via clang).'
+    baseName = 'javagiac-win32'
+    destinationDir = javagiacDir
+    from "cbuild" // Make sure the DLL is compiled and put into this folder first.
+    include '*.dll'
+    classifier 'natives-windows-i586'
+}
+
 // Unsure if this is needed or not. Otherwise there is no .pom file for Java Giac (which is probably a problem).
 task javagiacPomJar (type: Jar) {
     description 'Creates empty .jar package for the Java Giac library.'

@@ -47,3 +47,42 @@ jobs:
         mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 \
           -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-mac-natives-macosx-universal.jar \
           -Dclassifier=natives-macosx-universal -DgroupId=com.github -DartifactId=javagiac-mac -Dversion=$CI_REF_NAME_SLUG
+
+  windows_msys2_clang32-native-cmake:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      packages: write
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: FranzDiebold/github-env-vars-action@v2
+    - uses: actions/checkout@v3
+    - uses: s4u/maven-settings-action@v2.6.0
+      with:
+        servers: '[{"id": "github", "configuration": {"httpHeaders": {"property": {"name": "Authorization","value": "Bearer ${{ secrets.GITHUB_TOKEN }}"}}}}]'
+    - name: prerequisites
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: CLANG32
+        update: true
+        install: >-
+          base-devel
+    - name: prerequisites2
+      run: |
+          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'echo' '[clang32]' >> '/etc/pacman.conf'"
+          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'echo' 'Include = /etc/pacman.d/mirrorlist.mingw' >> '/etc/pacman.conf'"
+          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-Syuu' '--overwrite' '*'"
+          rem C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-S' '--needed' '--overwrite' '*' 'mingw-w64-clang-i686-cc' 'mingw-w64-clang-i686-cmake' 'mingw-w64-clang-i686-make' 'mingw-w64-clang-i686-gmp' 'mingw-w64-clang-i686-mpfr'"
+          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c "'pacman' '--noconfirm' '-S' '--needed' '--overwrite' '*' 'mingw-w64-clang-i686-cc' 'mingw-w64-clang-i686-cmake' 'mingw-w64-clang-i686-make'"
+      shell: cmd
+    - name: build
+      run: mkdir cbuild && cd cbuild && CC=clang CXX=clang++ cmake -G "MinGW Makefiles" .. && mingw32-make
+    - name: jar
+      run: ./gradlew javagiacWin32JarClang
+    - name: publish
+      run: |
+        mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 \
+          -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-win32-natives-windows-i586.jar \
+          -Dclassifier=natives-windows-i586 -DgroupId=com.github -DartifactId=javagiac-win32 -Dversion=$CI_REF_NAME_SLUG
