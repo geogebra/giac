@@ -1,0 +1,25 @@
+name: publish
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  linux-jnidll-gradle:
+    runs-on: ubuntu-18.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v3
+    - name: prerequisites
+      run: sudo apt update && sudo apt install build-essential default-jdk
+    - name: build
+      run: ./gradlew javagiacLinux64Jar
+    - name: publish
+      run: |
+        mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 \
+          -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-linux64-natives-linux-amd64.jar \
+          -Dclassifier=natives-linux-amd64
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
