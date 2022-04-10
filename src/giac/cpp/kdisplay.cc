@@ -9617,9 +9617,8 @@ namespace xcas {
 #endif
 #endif
 
-#ifdef NUMWORKS
-
-  BYTE bootloader_hash[]={182,79,185,173,200,33,200,89,80,52,199,156,232,114,246,116,224,144,59,169,52,22,48,232,66,192,12,12,65,184,95,144,};// {240,149,147,17,99,67,219,190,128,31,188,225,88,191,154,94,142,45,3,248,242,148,116,155,222,153,80,91,251,190,158,224,};//{140,62,252,137,128,165,8,243,135,8,134,222,255,97,235,199,193,22,6,141,85,189,34,181,5,49,41,224,103,124,135,12,};
+#if defined NUMWORKS && defined DEVICE
+  BYTE bootloader_hash[]={145,97,235,44,217,252,126,56,63,66,158,81,68,171,219,132,100,59,44,167,98,50,239,103,21,253,169,235,185,9,2,100,};
   const int bootloader_size=65480;
   // check bootloade code, skipping exam mode buffer sector
   bool bootloader_sha256_check(size_t addr){
@@ -12153,102 +12152,244 @@ namespace xcas {
    code is dual-licensed for use in Epsilon and here
  */
 // write exam mode mode to flash at offset pos/8
-void write_exammode(unsigned char * ptr,int pos,int mode,int modulo){
-  int curmode=pos%modulo;
-  if (curmode == mode)
-    return;
-  int delta=(mode+modulo-curmode)%modulo; // 0<delta<modulo, number of bits that we will set to 0
-  unsigned char * target = ptr + pos/8;
-  int pos8=pos % 8; // number of bits already set to 0 at target
-  pos8 += delta; // 0<pos8<modulo+7
-  unsigned char postab[]={0b11111111,0b1111111,0b111111,0b11111,0b1111,0b111,0b11,0b1,0}; // postab[i] is a byte with i bits set to 0 
-  unsigned char tab[2];
-  bool writenext=pos8>8;
-  tab[0]=postab[writenext?8:pos8];
-  tab[1]=postab[writenext?pos8-8:0];
+  void write_exammode(unsigned char * ptr,int pos,int mode,int modulo){
+    int curmode=pos%modulo;
+    if (curmode == mode)
+      return;
+    int delta=(mode+modulo-curmode)%modulo; // 0<delta<modulo, number of bits that we will set to 0
+    unsigned char * target = ptr + pos/8;
+    int pos8=pos % 8; // number of bits already set to 0 at target
+    pos8 += delta; // 0<pos8<modulo+7
+    unsigned char postab[]={0b11111111,0b1111111,0b111111,0b11111,0b1111,0b111,0b11,0b1,0}; // postab[i] is a byte with i bits set to 0 
+    unsigned char tab[2];
+    bool writenext=pos8>8;
+    tab[0]=postab[writenext?8:pos8];
+    tab[1]=postab[writenext?pos8-8:0];
 #if 1 // KHICAS
-  WriteMemory((char *)target, (const char *)tab, writenext?2:1);
+    WriteMemory((char *)target, (const char *)tab, writenext?2:1);
 #else
-  target[0]=tab[0];
-  if (writenext) target[1]=tab[1];
+    target[0]=tab[0];
+    if (writenext) target[1]=tab[1];
 #endif
-}
+  }
 
-// check that region is split in two parts: bits set to 0 followed by bits set to 1, returns position of the first 1 bit or -1
-int pos_01(unsigned * start,int l){
-  unsigned *ptr=start,* end=start+l/sizeof(unsigned);
-  for (;ptr<end;++ptr){
-    if (*ptr)
-      break;
-  }
-  if (ptr==end)
-    return -1;
-  int pos=(ptr-start)*32;
-  unsigned char * ptr8=(unsigned char *) ptr;
-  if (*ptr8==0){
-    pos+=8; ++ptr8;
-  }
-  if (*ptr8==0){
-    pos+=8; ++ptr8;
-  }
-  if (*ptr8==0){
-    pos+=8; ++ptr8;
-  }
-  switch (*ptr8){
-  case 0b1: pos+=7; break; // 7 bits are already set to 0
-  case 0b11: pos+=6; break;
-  case 0b111: pos+=5; break;
-  case 0b1111: pos+=4; break;
-  case 0b11111: pos+=3; break;
-  case 0b111111: pos+=2; break;
-  case 0b1111111: pos+=1; break;
-  case 0b11111111: break;
-  default: return -1;
-  }
-  ++ptr;
-  for (;ptr<end;++ptr){
-    if (*ptr!=0xffffffff)
+  // check that region is split in two parts: bits set to 0 followed by bits set to 1, returns position of the first 1 bit or -1
+  int pos_01(unsigned * start,int l){
+    unsigned *ptr=start,* end=start+l/sizeof(unsigned);
+    for (;ptr<end;++ptr){
+      if (*ptr)
+	break;
+    }
+    if (ptr==end)
       return -1;
+    int pos=(ptr-start)*32;
+    unsigned char * ptr8=(unsigned char *) ptr;
+    if (*ptr8==0){
+      pos+=8; ++ptr8;
+    }
+    if (*ptr8==0){
+      pos+=8; ++ptr8;
+    }
+    if (*ptr8==0){
+      pos+=8; ++ptr8;
+    }
+    switch (*ptr8){
+    case 0b1: pos+=7; break; // 7 bits are already set to 0
+    case 0b11: pos+=6; break;
+    case 0b111: pos+=5; break;
+    case 0b1111: pos+=4; break;
+    case 0b11111: pos+=3; break;
+    case 0b111111: pos+=2; break;
+    case 0b1111111: pos+=1; break;
+    case 0b11111111: break;
+    default: return -1;
+    }
+    ++ptr;
+    for (;ptr<end;++ptr){
+      if (*ptr!=0xffffffff)
+	return -1;
+    }
+    return pos;
   }
-  return pos;
-}
 
-char print_hex(int val){
-  val &= 0xf;
-  if (val>=0 && val<=9)
-    return '0'+val;
-  return 'A'+(val-10);
-}
-
-void print_hex(unsigned val,char * ptr){
-  for (int i=0;i<8;++i){
-    ptr[i]=print_hex(val>>(28-4*i));
+  char print_hex(int val){
+    val &= 0xf;
+    if (val>=0 && val<=9)
+      return '0'+val;
+    return 'A'+(val-10);
   }
-}
 
-void set_exammode(int mode,int modulo){
-  if (mode<0 || mode>=modulo)
-    return;
-  // scan external flash every dflash bytes
-  unsigned * flashptr=(unsigned *) 0x90000000;
-  unsigned dflash=0x10000,ntests=8*1024*1024/dflash/sizeof(unsigned);
-  for (unsigned i=0;i<ntests;++i){
-    unsigned * ptr=flashptr+i*dflash;
-    // kernel header?
-    if (*ptr!=0xffffffff || *(ptr+1)!=0xffffffff || *(ptr+2)!= 0xdec00df0 /* f0 0d c0 de*/)
-      continue;
-    ptr += 0x1000/sizeof(unsigned); // exam mode buffer?
+  void print_hex(unsigned val,char * ptr){
+    for (int i=0;i<8;++i){
+      ptr[i]=print_hex(val>>(28-4*i));
+    }
+  }
+
+  void set_exammode(int mode,int modulo){
+    if (mode<0 || mode>=modulo)
+      return;
+    // scan external flash every dflash bytes
+    unsigned * flashptr=(unsigned *) 0x90000000;
+    unsigned dflash=0x10000,ntests=8*1024*1024/dflash/sizeof(unsigned);
+    for (unsigned i=0;i<ntests;++i){
+      unsigned * ptr=flashptr+i*dflash;
+      // kernel header?
+      if (*ptr!=0xffffffff || *(ptr+1)!=0xffffffff || *(ptr+2)!= 0xdec00df0 /* f0 0d c0 de*/)
+	continue;
+      ptr += 0x1000/sizeof(unsigned); // exam mode buffer?
+      int pos=pos_01(ptr,0x1000);
+      if (pos==-1)
+	continue;
+      if (pos>=0x1000-8){
+	erase_sector((const char *)ptr);
+	pos=0;
+      }
+      write_exammode((unsigned char *)ptr,pos,mode,modulo);
+    }
+  }
+
+  const size_t baseaddr[]={0x90000000,0x90180000,0x90400000};
+  void boot_firmware(int slot){
+    const int taille=int(sizeof(baseaddr)/sizeof(size_t));
+    if (slot<0 || slot>taille)
+      slot=taille;
+    unsigned * ptr=(unsigned *) 0x08004000;
     int pos=pos_01(ptr,0x1000);
     if (pos==-1)
-      continue;
-    if (pos>=0x1000-8){
+      return;
+    if (pos>=0x8000-8){
       erase_sector((const char *)ptr);
       pos=0;
     }
-    write_exammode((unsigned char *)ptr,pos,mode,modulo);
+    write_exammode((unsigned char *)ptr,pos,slot,4);
+    wait_1ms(10); // Ion::Timing::msleep(10);
+    erase_sector(0); // Ion::Device::Reset::core();
   }
-}
-/* end section (c) B. Parisse, */
+
+  const size_t kernelheader=0xdec00df0;
+  const size_t userheader=0xDEC0EDFE;
+  const size_t omegaheader=0xEFBEADDE;
+  const size_t upsilonheader=0x55707369;
+
+  // return 0 if invalid, 1 for Khi, 2 for Omega, 3 for Upsilon, 4 for Epsilon<=18.2.3
+  int is_valid(int slot){ 
+    if (slot<0 || slot>=int(sizeof(baseaddr)/sizeof(size_t)))
+      return 0;
+    // kernel header
+    size_t * addr=(size_t *) baseaddr[slot];
+    if (addr[0]!=0xffffffff || addr[1]!=0xffffffff || addr[2]!=kernelheader || addr[7]!=kernelheader)
+      return 0;
+    // userland header
+    addr=(size_t *) (baseaddr[slot]+0x10000);
+    if (addr[0]!=userheader || addr[9]!=userheader)
+      return 0;
+    if (addr[10]==omegaheader){
+      char * version=(char *)&addr[11];
+      if (version[1]=='.')
+	return 2; // Omega
+      return 1; // Khi
+    }
+    if (addr[10]==upsilonheader)
+      return 3;
+    // epsilon version
+    char * version=(char *)&addr[1];
+    if (strcmp(version,"18.2.3")>0)
+      return 0;
+    return 4;
+  }
+
+  size_t find_storage(){
+    // find storage
+    int slot=0;
+    size_t addr[]={0x90000000,0x90180000,0x90400000};
+    for (;slot<sizeof(addr)/sizeof(size_t);++slot){
+      unsigned char * r=(unsigned char *) addr[slot];
+      bool externalinfo=r[8]==0xf0 && r[9]==0x0d && r[10]==0xc0 && r[11]==0xde;
+      if (!externalinfo)
+	continue;
+      r += 0x10000;
+      if (r[15]!=0x20) // ram is at 0x20000000 (+256K)
+	continue;
+      size_t start=((r[15]*256U+r[14])*256+r[13])*256+r[12];
+      r=(unsigned char *)start;
+      if (r[0]==0xba && r[1]==0xdd && r[2]==0x0b && r[3]==0xee){ // ba dd 0b ee begin of scriptstore
+	return start;
+      }
+    }
+    return 0;
+  }    
+
+  bool save_backup(int no){
+    if (no!=1 && no!=0)
+      return false;
+    int L=32*1024;
+    size_t backupaddr=0x90800000-2*L;
+    size_t storageaddr=find_storage();
+    //confirm("Storage @",hexa_print_INT_(storageaddr).c_str());
+    if (storageaddr){
+      char * sptr=(char *)storageaddr;
+      int L=32*1024;
+      if (no==0){
+	// check if sector is already formatted
+	unsigned * ptr=(unsigned *) (backupaddr);
+	for (int i=0;i<L/2;++i){
+	  if (ptr[i]!=0xffffffff){ // it's not, format
+	    erase_sector((const char *)backupaddr);
+	    break;
+	  }
+	}
+	if (sptr[4]==0 && sptr[5]==0){
+	  return false; // nothing to save 
+	}
+	WriteMemory((char *)backupaddr,(const char *)storageaddr,L);
+	return true;
+      }
+      if (no==1){
+	if (sptr[4]==0 && sptr[5]==0){
+	  return false; // nothing to save 
+	}
+	// check if sector is already formatted
+	unsigned * ptr=(unsigned *) (backupaddr+L);
+	for (int i=0;i<L/4;++i){
+	  if (ptr[i]!=0xffffffff){ // it's not, format
+	    char * buf=(char *)malloc(L);
+	    memcpy(buf,(char *)backupaddr,L);
+	    erase_sector((const char *)backupaddr);
+	    WriteMemory((char *)backupaddr,buf,L);
+	    free(buf);
+	    break;
+	  }
+	}
+	WriteMemory((char *)(backupaddr+L),(const char *)storageaddr,L);
+	return true;
+      } 
+      return true; // never reached
+    }
+    return false;
+  }
+
+  // 0 or 1 restore, 2 or 3 check if there is something to restore
+  bool restore_backup(int no){
+    if (no<0)
+      return false;
+    int L=32*1024;
+    size_t backupaddr=0x90800000-2*L;
+    size_t storageaddr=find_storage();
+    //confirm("Storage @",hexa_print_INT_(storageaddr).c_str());
+    if (!storageaddr)
+      return false;
+    char * sptr=(char *)(backupaddr+(no & 1)*L);
+    // ba dd 0b ee
+    if (sptr[0]!=0xba || sptr[1]!=0xdd || sptr[2]!=0x0b || sptr[3]!=0xee )
+      return false;
+    if (sptr[4]==0 && sptr[5]==0)
+      return false; // nothing to restore
+    if (no>=2)
+      return true;
+    memcpy((char *)storageaddr,sptr,L);
+    return true;
+  }
+  /* end section (c) B. Parisse, */
 #endif
   
   void menu_setup(GIAC_CONTEXT){
@@ -12278,8 +12419,8 @@ void set_exammode(int mode,int modulo){
     smallmenuitems[7].text = (char*)"Greek&English";
     smallmenuitems[8].text = (char*)"Deutsch&English";
     smallmenuitems[9].text = (char *) ((lang==1)?"Raccourcis clavier (0)":"Shortcuts (0)");
-#if 0 // def NUMWORKS
-    smallmenuitems[10].text = (char*) ((lang==1)?"Backup examen (e^x)":"Exam backup (e^x)");
+#ifdef NUMWORKS
+    smallmenuitems[10].text = (char*) ((lang==1)?"Backup, mode examen (e^x)":"Backup, exam mode (e^x)");
 #else
     smallmenuitems[10].text = (char*) ((lang==1)?"Mode examen (e^x)":"Exam mode (e^x)");
 #endif
@@ -12447,48 +12588,41 @@ void set_exammode(int mode,int modulo){
 #endif // NSPIRE_NEWLIB
 #ifdef NUMWORKS
 #ifdef DEVICE
-	  if (inexammode()){
-	    do_confirm(lang==1?"Connectez la calculatrice!":"Connect calculator!");
-	    break;
-	  }
-	  const char * tab[]={lang==1?"Restaurer le backup?":"Restore last backup",lang==1?"Backup, puis mode examen":"Backup then exam mode",lang==1?"Mode examen sans backup":"Exam mode without backup",0};
+	  const char * tab[]={lang==1?"Sauvegarde multi-firmwares":"Backup for multi-firmware",lang==1?"Restauration multifirmwares":"Restore multi-firmware backup",lang==1?"Lancer le mode examen":"Run exam mode",lang==1?"Backup du mode examen":"Restore exam mode backup",0};
 	  int choix=select_item(tab,"Mode examen",true);
-	  if (choix<0 || choix>2)
+	  if (choix<0 || choix>4)
 	    break;
 	  if (choix==0){
-	    if (extapp_restorebackup(-1))
-	      do_confirm(lang==1?"Restauration du backup reussie!":"Backup restore success!");
-	    else
-	      do_confirm(lang==1?"Pas de backup trouve!":"No backup found!");
+	    if (!save_backup(1))
+	      confirm(lang==1?"Rien a sauvegarder":"Nothing to save","OK?");
+	    break;
 	  }
-	  else {
-	    if (choix==1){
-	      int L=32*1024,slot=0;
-	      size_t backupaddr=0x90800000-64*1024,storageaddr=0;
-	      size_t addr[]={0x90000000,0x90180000,0x90400000};
-	      for (;slot<sizeof(addr)/sizeof(size_t);++slot){
-		unsigned char * r=(unsigned char *) addr[slot];
-		bool externalinfo=r[8]==0xf0 && r[9]==0x0d && r[10]==0xc0 && r[11]==0xde;
-		if (!externalinfo)
-		  continue;
-		r += 0x10000;
-		if (r[15]!=0x20) // ram is at 0x20000000 (+256K)
-		  continue;
-		size_t start=((r[15]*256U+r[14])*256+r[13])*256+r[12];
-		r=(unsigned char *)start;
-		if (r[0]==0xba && r[1]==0xdd && r[2]==0x0b && r[3]==0xee){ // ba dd 0b ee begin of scriptstore
-		  storageaddr=start;
-		  break;
-		}
+	  if (choix==1){
+	    if (restore_backup(3)){
+	      if (confirm(lang==1?"Les donnees actuelles vont etre effacees":"Current data will be erased!","OK/Back?")==KEY_CTRL_F1){
+		confirm(restore_backup(1)?"Success!":"Failure!","OK?");
 	      }
-	      //confirm("Storage @",hexa_print_INT_(storageaddr).c_str());
-	      if (storageaddr){
-		erase_sector((const char *)backupaddr);
-		WriteMemory((char *)backupaddr,(const char *)storageaddr,L);
-	      }
-	    } // if (choix==1)
-	    set_exammode(1,4);
-	    erase_sector(0); // reset
+	    }
+	    else
+	      confirm(lang==1?"Pas de donnees":"No data.","OK/Back?");	      
+	    break;
+	  }
+	  if (choix==2){
+	    if (confirm(lang==1?"Sauvegarde, effacement puis mode examen":"Backup, clear then exam mode","OK/Back?")==KEY_CTRL_F1){
+	      if (!save_backup(0))
+		confirm(lang==1?"Rien a sauvegarder":"Nothing to save","OK?");
+	      // save to exam mode backup sector and format reset backup sector
+	      set_exammode(1,4);
+	      erase_sector(0); // means reset
+	    }
+	  }
+	  if (choix==3){
+	    if (inexammode()){ 
+	      confirm(lang==1?"Sortez d'abord du mode examen!":"Leave exam mode first!",lang==1?"(Connectez la calculatrice)":"(Connect calculator)");
+	      break;
+	    }
+	    confirm(restore_backup(0)?"Success!":"Failure!","OK?");
+	    break;
 	  }
 #endif
 	  // if (do_confirm(lang==1?"Le mode examen se lance depuis Parametres":"Enter Exam mode from Settings")) shutdown_state=1;
@@ -13872,7 +14006,7 @@ void set_exammode(int mode,int modulo){
       int key; GetKey(&key);
     }
     else {
-      if (confirm(lang==1?"Mise a jour de l'amorcage ?":"Update bootsector?","OK/Annul.")){
+      if (confirm(lang==1?"Mise a jour de l'amorcage ?":"Update bootsector?","OK/Annul.")==KEY_CTRL_F1){
 	// sector size=16K -> erase 4 sector for 64K
 	erase_sector((const char *) internal_flash_start);
 	erase_sector((const char *) (internal_flash_start+16*1024));
@@ -14466,7 +14600,11 @@ void set_exammode(int mode,int modulo){
       if (key==KEY_CTRL_MENU){
 #if 1
 	Menu smallmenu;
+#if defined NUMWORKS && defined DEVICE
+	smallmenu.numitems=20;
+#else
 	smallmenu.numitems=17;
+#endif
 	MenuItem smallmenuitems[smallmenu.numitems];
       
 	smallmenu.items=smallmenuitems;
@@ -14503,6 +14641,12 @@ void set_exammode(int mode,int modulo){
 #else
 	  smallmenuitems[16].text = (char*) ((lang==1)?"Quitter (HOME)":"Quit");
 #endif
+#if defined NUMWORKS && defined DEVICE
+	  smallmenuitems[16].text = (char*) ((lang==1)?"Reboot autre firmware":"Reboot alt. firmware");
+	  smallmenuitems[17].text = (char*) ((lang==1)?"Sauvegarde multi-firmware":"Backup multi-firmware");
+	  smallmenuitems[18].text = (char*) ((lang==1)?"Restauration multi-firmware":"Restore multi-firmware");
+	  smallmenuitems[19].text = (char*) ((lang==1)?"Quitter (HOME)":"Quit");
+#endif
 	  if (exam_mode)
 	    smallmenuitems[16].text = (char*)((lang==1)?"Quitter le mode examen":"Quit exam mode");
 	  if (nspire_exam_mode==2)
@@ -14511,6 +14655,34 @@ void set_exammode(int mode,int modulo){
 	    return KEY_SHUTDOWN;
 	  int sres = doMenu(&smallmenu);
 	  if(sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
+#if defined NUMWORKS && defined DEVICE
+	    if (smallmenu.selection==17){
+	      int b1=is_valid(0),b2=is_valid(1),b3=is_valid(2);
+	      const char * boot_tab[]={b1?"Slot 1":"Invalid slot 1",b2?"Slot 2":"Invalid slot 2",b3?"Slot 3":"Invalid slot 3","Bootloader","Cancel/Annuler",0};
+	      int choix=select_item(boot_tab,"Reboot firmware",true);
+	      if (choix>=0 && choix<=2 && !is_valid(choix)){
+		break;
+	      }
+	      if (choix>=0 && choix<=3){
+		if (confirm(lang==1?"Les donnees seront perdues!":"Data will be lost!",lang==1?"OK/Back?":"OK/Back?")==KEY_CTRL_F1)
+		  boot_firmware(choix);
+	      }
+	      break;
+	    }
+	    if (smallmenu.selection==18){
+	      if (!save_backup(1))
+		confirm(lang==1?"Rien a sauvegarder":"Nothing to save","OK?");
+	      break;
+	    }
+	    if (smallmenu.selection==19){
+	      if (restore_backup(3)){
+		if (confirm(lang==1?"Les donnees actuelles vont etre effacees":"Current data will be erased!","OK/Back?")==KEY_CTRL_F1){
+		  confirm(restore_backup(1)?"Success!":"Failure!","OK?");
+		}
+	      }
+	      break;
+	    }
+#endif
 	    if (smallmenu.selection==smallmenu.numitems){
 	      if (nspire_exam_mode==2)
 		check_nspire_exam_mode(contextptr);
