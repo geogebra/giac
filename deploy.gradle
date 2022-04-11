@@ -48,6 +48,7 @@ task javagiacWin32JarClang (type: Jar) {
     destinationDir = javagiacDir
     from "cbuild" // Make sure the DLL is compiled and put into this folder first.
     include '*.dll'
+    rename 'libjavagiac.dll', 'javagiac.dll'
     classifier 'natives-windows-i586'
 }
 
@@ -78,6 +79,7 @@ task javagiacWin64JarClang (type: Jar) {
     destinationDir = javagiacDir
     from "cbuild" // Make sure the DLL is compiled and put into this folder first.
     include '*.dll'
+    rename 'libjavagiac.dll', 'javagiac64.dll'
     classifier 'natives-windows-amd64'
 }
 
