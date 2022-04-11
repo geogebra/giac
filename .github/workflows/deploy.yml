@@ -117,8 +117,6 @@ jobs:
       run: |
           choco install maven
       shell: cmd
-    - name: build
-      run: mkdir cbuild && cd cbuild && CC=clang CXX=clang++ cmake -G "MinGW Makefiles" .. && mingw32-make
     - name: jar
       run: ./gradlew javagiacWin64JarClang
     - name: publish
