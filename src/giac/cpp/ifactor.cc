@@ -411,6 +411,12 @@ namespace giac {
   }
 #endif
 
+  int modulo(const gen & a,unsigned b){
+    if (a.type==_INT_)
+      return a.val % b;
+    return modulo(*a._ZINTptr,b);
+  }
+
 #if defined RTOS_THREADX || defined BESTA_OS || defined NSPIRE
   typedef unsigned short pui_t ;
   typedef unsigned short ushort_t;
@@ -431,7 +437,7 @@ namespace giac {
 #if defined(EMCC) || defined(EMCC2)
 #include <map>
 #endif
-#if (defined EMCC || defined EMCC2 || defined(HASH_MAP_NAMESPACE)) && defined(PRIMES32)
+#if (defined EMCC || defined EMCC2 || defined(HASH_MAP_NAMESPACE)) && defined(PRIMES32) && !defined(ADDITIONAL_PRIMES_HASHMAP)
 #define ADDITIONAL_PRIMES_HASHMAP
 #endif
 #endif // RTOS_THREADX || BESTA_OS
@@ -4148,12 +4154,24 @@ namespace giac {
 
   gen _ifactors(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    if (args.type==_VECT && args.subtype==_SEQ__VECT && args._VECTptr->size()==2 && args._VECTptr->back()==at_matrix){
+    if (args.type==_VECT && args.subtype==_SEQ__VECT && args._VECTptr->size()==2 ){
       gen g=args._VECTptr->front();
-      g=_ifactors(g,contextptr);
-      if (g.type!=_VECT || g._VECTptr->size()%2)
-	return g;
-      return _matrix(makesequence(g._VECTptr->size()/2,2,g),contextptr);
+      gen b=args._VECTptr->back();
+      if (b==at_matrix){
+	g=_ifactors(g,contextptr);
+	if (g.type!=_VECT || g._VECTptr->size()%2)
+	  return g;
+	return _matrix(makesequence(g._VECTptr->size()/2,2,g),contextptr);
+      }
+#ifndef EMCC
+      if (b.type==_SYMB){
+	gen res;
+	// b is assumed to be a minimal polynomial check if g is a norm 
+	if (!pari_intnorm(g,b,lvar(b),res,contextptr))
+	  return gensizeerr(gettext("Not implemented. Try to compile with PARI"));
+	return res;
+      }
+#endif
     }
     if (args.type==_VECT)
       return apply(args,_ifactors,contextptr);
@@ -4742,8 +4760,66 @@ namespace giac {
   }
 
   gen _znprimroot(const gen & p,GIAC_CONTEXT){
-    if (p.type==_INT_ && is_probab_prime_p(p))
-      return makemod(generator(p.val),p);
+    if (p==2) return 1;
+    if (p==4) return 3;
+    gen o=p-1,q=p; // order
+    if (modulo(p,2)==0){
+      q=p/2;
+      if (modulo(q,2)==0)
+	return undef;
+    }
+    int cyclic=0;
+    if (is_probab_prime_p(q))
+      cyclic=1;
+    else {
+      // is q a power of a prime?
+      double d=evalf_double(q,1,contextptr)._DOUBLE_val;
+      int maxpow=int(std::ceil(std::log(d)/std::log(3)));
+      for (int i=2;i<=maxpow;++i){
+	if ( (i>2 && i%2==0) ||
+	     (i>3 && i%3==0) ||
+	     (i>5 && i%5==0) ||
+	     (i>7 && i%7==0) )
+	  continue;
+	gen u;
+	if (i==2)
+	  u=isqrt(q);
+	else if (i==4)
+	  u=isqrt(isqrt(q));
+	else {
+	  double x=std::pow(d,1./i);
+	  u=longlong(x);
+	}
+	if (pow(u,i,contextptr)==q){
+	  cyclic=2;
+	  o=q*(1-inv(u,contextptr));
+	  break;
+	}
+      }
+    }
+    if (cyclic){
+      if (cyclic==1 && p.type==_INT_) 
+	return makemod(generator(p.val),p);
+      gen g=prime_factors(o,true,contextptr);
+      if (g.type!=_VECT) return undef;
+      vecteur & v=*g._VECTptr;
+      vecteur w;
+      for (int i=0;i<v.size();++i){
+	w.push_back(o/v[i]);
+      }
+      for (int a=2;a<65536;++a){
+	if (gcd(a,p)!=1)
+	  continue;
+	int i;
+	for (i=0;i<w.size();++i){
+	  if (powmod(a,w[i],p)==1)
+	    break;
+	}
+	if (i==w.size())
+	  return makemod(a,p);
+      }
+      return undef;
+    }
 #ifdef HAVE_LIBPARI
     if (!is_integer(p))
       return gentypeerr(contextptr);
@@ -4783,6 +4859,36 @@ namespace giac {
     return znorder(k,p,phi,v);
   }
 
+  gen znorder(const gen & k,const gen & p,const gen & phi,const vecteur & v){
+    gen o=1;
+    for (int i=0;i<v.size();i+=2){
+      gen pi=v[i];
+      if (is_greater(1,pi,context0))
+	continue;
+      int mi=v[i+1].val;
+      gen pimi=pow(pi,mi);
+      gen a=powmod(k,phi/pimi,p);
+      while (a!=1){
+	o = o*pi;
+	a=powmod(a,pi,p);
+      }
+    }
+    return o;
+  }
+
+  gen znorder(gen & k,const gen & p){
+    k=k % p;
+    if (gcd(k,p)!=1)
+      return 0;
+    if (k==1)
+      return 1;
+    gen phi=_euler(p,context0);
+    gen v=_ifactors(phi,context0);
+    if (v.type!=_VECT)
+      return undef;
+    return znorder(k,p,phi,*v._VECTptr);
+  }
+
   gen _znorder(const gen & args,GIAC_CONTEXT){
     if (args.type==_MOD)
       return _znorder(makevecteur(*args._MODptr,*(args._MODptr+1)),contextptr);
@@ -4794,9 +4900,11 @@ namespace giac {
       return 0;
     return _pari(makesequence(string2gen("znorder",false),makemod(k,p)),contextptr);
 #endif
-    if (k.type!=_INT_ || p.type!=_INT_  || p.val<2)
-      return gentypeerr("PARI not compiled in => currently, znorder(k,p) expects integers<2^31");
-    return znorder(k.val,p.val);
+    if (is_greater(1,p,contextptr))
+      return undef;
+    if (k.type==_INT_ && p.val==_INT_ )
+      return znorder(k.val,p.val);
+    return znorder(k,p);
   }
   static const char _znorder_s []="znorder";
   static define_unary_function_eval (__znorder,&_znorder,_znorder_s);
@@ -5110,8 +5218,8 @@ namespace giac {
     switch (t) {
     case 0: 
       mpz_mul(xz,xz,xz); mpz_tdiv_r(xz,xz,Nz); // x = longlong(x*x) % N;  
-      mpz_mul_si(az,az,2); mpz_tdiv_r(az,az,nz);  // a = longlong(a*2) % n;  
-      mpz_mul_si(bz,bz,2); mpz_tdiv_r(bz,bz,nz); // b = longlong(b*2) % n;  
+      mpz_mul_ui(az,az,2); mpz_tdiv_r(az,az,nz);  // a = longlong(a*2) % n;  
+      mpz_mul_ui(bz,bz,2); mpz_tdiv_r(bz,bz,nz); // b = longlong(b*2) % n;  
       break;
     case 1: 
       mpz_mul(xz,*alpha._ZINTptr,xz); mpz_tdiv_r(xz,xz,Nz); // x = longlong(x*alpha) % N;  
@@ -5248,6 +5356,98 @@ namespace giac {
     gen res=baby(a,b,N,order);
     if (order!=0)
       return res % order;
+    return res;
+  }
+
+  // Find a list of prime factors 
+  // such that g/factors^multiplicity<sqrt(g) if full==false
+  // if not found return undef
+  gen prime_factors(const gen &g0,bool full,GIAC_CONTEXT){
+    gen g(g0);
+    vecteur res;
+    if (full){
+      g=_ifactors(g0,contextptr);
+      if (g.type!=_VECT)
+	return undef;
+      vecteur & v=*g._VECTptr;
+      for (int i=0;i<v.size();i+=2){
+	if (is_greater(v[i],1,contextptr))
+	  res.push_back(v[i]);
+      }
+      return res;
+    }
+    gen gstop=isqrt(g);
+    // trivial factor
+    for (int i=0;i<sizeof(giac_primes)/sizeof(short int);++i){
+      int p=giac_primes[i];
+      if (modulo(g,p))
+	continue;
+      res.push_back(p);
+      for (;;){
+	g=g/p;
+	if (modulo(g,p))
+	  break;
+      }
+      if (is_greater(gstop,g,contextptr))
+	return res;
+      if (is_greater(g0,g*g,contextptr)){
+	res.push_back(g);
+	return res;
+      }
+    }
+    // pollard(a,k,contextptr) -> factor or -1/0
+    for (;;){
+      if (is_greater(gstop,g,contextptr))
+	return res;
+      if (is_probab_prime_p(g)){
+	// leave the user compute a certificate for this prime factor...
+	res.push_back(g);
+	return res;
+      }
+      gen b=pollard(g,1,contextptr);
+      if (!is_greater(b,2,contextptr)){
+	// _ecm_factor(n,contextptr) -> factor or undef
+	b=_ecm_factor(g,contextptr);
+	if (is_undef(b))
+	  return undef; // could not partial factor
+      }
+      gen c=_ifactors(b,contextptr);
+      if (c.type!=_VECT)
+	return undef;
+      vecteur & v=*c._VECTptr;
+      for (int i=0;i<v.size();i+=2){
+	if (is_greater(v[i],2,contextptr))
+	  res.push_back(v[i]);
+      }
+      g=g/b;
+    }
+    return undef; // could not partial factor (never reached)
+  }
+
+  gen prime_cert(const gen & g,GIAC_CONTEXT){
+    if (!is_probab_prime_p(g))
+      return 0;
+    gen o=g-1; // order
+    gen lf=prime_factors(o,false,contextptr); // partial list of prime factors
+    if (lf.type!=_VECT)
+      return undef;
+    vecteur & v=*lf._VECTptr;
+    // for each element p of v, we must find a such that 
+    // * a^o==1 mod g
+    // * gcd(a^(o/p)-1,g)==1
+    vecteur res;
+    for (int i=0;i<v.size();++i){
+      gen p=v[i];
+      for (int a=2;;++a){
+	if (a==RAND_MAX) return undef;
+	if (powmod(a,o,g)!=1)
+	  continue;
+	if (gcd(powmod(a,o/p,g)-1,g)==1){
+	  res.push_back(makevecteur(p,a,p.type==_INT_?1:0));
+	  break;
+	}
+      }
+    }
     return res;
   }
 #ifndef NO_NAMESPACE_GIAC

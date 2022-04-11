@@ -6981,12 +6981,12 @@ namespace giac {
     gen args(args0);
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     int certif=0;
-#ifdef HAVE_LIBPARI
     if (args0.type==_VECT && args0.subtype==_SEQ__VECT && args0._VECTptr->size()==2 && args0._VECTptr->back().type==_INT_){
       args=args0._VECTptr->front();
       certif=args0._VECTptr->back().val;
     }
-#endif
+    if (certif==1)
+      return prime_cert(args,contextptr);
     if (args.type==_VECT)
       return apply(args,_is_prime,contextptr);
     if (!is_integral(args))
@@ -6995,6 +6995,8 @@ namespace giac {
     gen res=pari_isprime(args,certif);
     if (res.type!=_STRNG)
       return res;
+#else
+    if (certif) return gensizeerr("Compile with PARI for prime certificate");
 #endif
     return is_probab_prime_p(args);
   }
@@ -8212,12 +8214,16 @@ namespace giac {
     double eps2=epsilon(contextptr); eps2=eps2*eps2;
     if (eps2<=0)
       eps2=1e-14;
+    int N=_floor(abs(z,contextptr),contextptr).val;
+    if (N>705) return undef;
+    N=1.2*N;
     for (int n=0;;){
       tmp=znsurfact/(a+n);
       reim(tmp,tmpr,tmpi,contextptr);
       reim(res,resr,resi,contextptr);
-      if (is_greater(eps2*(resr*resr+resi*resi),tmpr*tmpr+tmpi*tmpi,contextptr))
+      if (n>N && is_greater(eps2*(resr*resr+resi*resi),tmpr*tmpr+tmpi*tmpi,contextptr)){
 	break;
+      }
       res += tmp;
       ++n;
       znsurfact = znsurfact *(-z)/n;

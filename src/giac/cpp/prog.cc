@@ -18,6 +18,10 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 using namespace std;
+#ifdef __MINGW_H
+#define HAVE_NO_PWD_H
+#endif
+
 #ifndef HAVE_NO_PWD_H
 #ifndef BESTA_OS
 #include <pwd.h>
@@ -6344,7 +6348,7 @@ namespace giac {
 	python_contextptr=contextptr;
 	python_console()="";
 	gen g;
-	if (!gr && !xc && !turt && !pix ){
+	if ( strcmp(ptr,",") && !xc && !turt && !pix ){
 	  (*micropy_ptr)(ptr);
 	}
 	context * cascontextptr=(context *)caseval("caseval contextptr");
@@ -9209,6 +9213,8 @@ namespace giac {
     }
     if ( (v[0].type!=_INT_) || (v[1].type!=_INT_) )
       return gensizeerr(contextptr);
+    if (v[0].val==0)
+      return symbolic(at_matrix,g); // used by PARI in bnfinit
     int l(giacmax(v[0].val,1)),c(giacmax(v[1].val,1));
     if (l*longlong(c)>LIST_SIZE_LIMIT)
       return gendimerr(contextptr);
@@ -9240,6 +9246,7 @@ namespace giac {
     }
     if (v[2].type==_VECT){
       vecteur w=*v[2]._VECTptr;
+      if (is_undef(w)) return gensizeerr(contextptr); // w.clear();
       int s=int(w.size());
       if (ckmatrix(w)){
 	int ss=0;

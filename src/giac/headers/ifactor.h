@@ -92,6 +92,11 @@ namespace giac {
   gen bernoulli_rat(int k);
 
   gen logb(const gen & a,const gen &b,const gen & N,GIAC_CONTEXT,gen order=0);
+  gen prime_cert(const gen & g,GIAC_CONTEXT);
+  // Find a list of prime factors 
+  // such that g/factors^multiplicity<sqrt(g) if full==false
+  // if not found return undef
+  gen prime_factors(const gen &g0,bool full,GIAC_CONTEXT);
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac

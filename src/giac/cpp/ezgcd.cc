@@ -331,7 +331,7 @@ namespace giac {
     product=product-r2sym(pcur,lv,context0)*pow(lc,int(Pis.size())-1,context0);
     // solve equation wrt la
     gen systemeg=_coeff(gen(makevecteur(product,mainvar),_SEQ__VECT),context0);
-    if (systemeg.type!=_VECT)
+    if (systemeg.type!=_VECT || systemeg._VECTptr->empty())
       return false;
     vecteur syst;
     const_iterateur it=systemeg._VECTptr->begin(),itend=systemeg._VECTptr->end();
@@ -339,6 +339,7 @@ namespace giac {
       if (!is_zero(*it))
 	syst.push_back(*it);
     }
+    gen first=systemeg._VECTptr->front();
     // to solve syst wrt la, we search all linear equations
     // if none return false, otherwise solve system, subst 
     while (!syst.empty()){
@@ -361,6 +362,7 @@ namespace giac {
       gen tmp=recursive_normal(subst(syst,indet,sols,false,context0),context0);
       if (tmp.type!=_VECT)
 	return false;
+      first=subst(first,indet,sols,false,context0);
       syst.clear();
       const_iterateur it=tmp._VECTptr->begin(),itend=tmp._VECTptr->end();
       for (;it!=itend;++it){
@@ -368,12 +370,16 @@ namespace giac {
 	  syst.push_back(*it);
       }
     }
+    first=recursive_normal(first,context0);
+    if (!is_zero(first))
+      return false;
     // subst la values
     Pis=subst(Pis,la,la_val,false,context0);
     for (unsigned int i=0;i<Pis.size();++i){
       gen tmp=sym2r(Pis[i],lv,context0),num,den;
       fxnd(tmp,num,den);
-      if (num.type!=_POLY)
+      if (num.type!=_POLY || den.type==_POLY) // add den.type==_POLY, from p:=-144*x*x*x-72*x*y*y+192*x*x+32*y*y+32*x*y-96*x+16*z; for j from 1 to 20000 do if(size(factors(p))>6) then print(j); fi; od;  fails at j:14342
+
 	return false;
       const polynome & N=*num._POLYptr;
       f.push_back(facteur<polynome>(N/lgcd(N),mult));

@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
   s.version = '${version}'
   s.summary = 'Giac library'
   s.platform = :ios, '11.0'
-  s.source = { :http => 'https://dev.geogebra.org/maven2/fr/ujf-grenoble/javagiac/${version}/javagiac-${version}.zip'}
+  s.source = { :http => 'https://dev.geogebra.org/maven2/fr/ujf-grenoble/igiac/${version}/igiac-${version}.zip'}
   s.requires_arc = false
   s.authors = 'Bernard Parisse', 'GeoGebra Team'
   s.homepage = 'http://dev.geogebra.org'

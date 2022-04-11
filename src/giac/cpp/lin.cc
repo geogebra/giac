@@ -1584,7 +1584,7 @@ namespace giac {
 #ifndef KHICAS
 	  if (nstep<8000) nstep=8000;
 #endif
-	  Ci=plotimplicit(m[i],vx,vy,xmin,xmax,ymin,ymax,nstep,0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,contextptr,3);
+	  Ci=plotimplicit(m[i],vx,vy,xmin,xmax,ymin,ymax,nstep,0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,true,contextptr,3);
 	  cache.push_back(makevecteur(key,Ci));
 	}
 	if (Ci.type==_VECT && Ci._VECTptr->empty()){

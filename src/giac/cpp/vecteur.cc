@@ -4332,6 +4332,8 @@ namespace giac {
   static bool ichinrem_inplace(matrice & a,const matrice &b,const gen & amod, int bmod,int fullreduction){
     gen U,v,d;
     egcd(amod,bmod,U,v,d);
+    if (U.type==_INT_)
+      U.uncoerce();
     if (!is_one(d) || U.type!=_ZINT)
       return false;
     int u=mpz_get_si(*U._ZINTptr);
@@ -7122,7 +7124,9 @@ namespace giac {
     // modular algorithm
     if ( ( (algorithm==RREF_GUESS && (
 				      fullreduction==2 || 
-				      rref_or_det_or_lu==1)) || modular ) && is_integer_matrice(a) && as<=a0s && as>=20){
+				      rref_or_det_or_lu==1)) || modular ) && is_integer_matrice(a) && as<=a0s 
+	 && as>=20
+	 ){
       int Res=mrref_int(a,res,pivots,det,l,lmax,c,cmax,fullreduction,dont_swap_below,convert_internal,algorithm,rref_or_det_or_lu,modular,permutation,contextptr);
       if (Res>=0)
 	return Res;
