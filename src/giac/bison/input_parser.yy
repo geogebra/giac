@@ -232,7 +232,7 @@ exp	: T_NUMBER		{$$ = $1;}
          const giac::context * contextptr = giac_yyget_extra(scanner);
          gen g=symbolic(at_of,gen(makevecteur($3,$6) ,_SEQ__VECT)); $$=parser_symb_sto($1,g); 
         }
-	| exp TI_STO symbol { if ($3.type==_IDNT) { const char * ch=$3.print(context0).c_str(); if (ch[0]=='_' && unit_conversion_map().find(ch+1) != unit_conversion_map().end()) $$=symbolic(at_convert,gen(makevecteur($1,symbolic(at_unit,makevecteur(1,$3))) ,_SEQ__VECT)); else $$=parser_symb_sto($1,$3); } else $$=parser_symb_sto($1,$3); }
+	| exp TI_STO symbol { if ($3.type==_IDNT) { string s=$3.print(context0); const char * ch=s.c_str(); if (ch[0]=='_' && unit_conversion_map().find(ch+1) != unit_conversion_map().end()) $$=symbolic(at_convert,gen(makevecteur($1,symbolic(at_unit,makevecteur(1,$3))) ,_SEQ__VECT)); else $$=parser_symb_sto($1,$3); } else $$=parser_symb_sto($1,$3); }
 	| exp TI_STO T_UNARY_OP { $$=symbolic(at_convert,gen(makevecteur($1,$3) ,_SEQ__VECT)); }
 	| exp TI_STO T_PLUS { $$=symbolic(at_convert,gen(makevecteur($1,$3) ,_SEQ__VECT)); }
 	| exp TI_STO T_FOIS { $$=symbolic(at_convert,gen(makevecteur($1,$3) ,_SEQ__VECT)); }

@@ -7,7 +7,7 @@ computer algebra system, developed and maintained by Bernard Parisse.
 This repository is maintained by the [GeoGebra](https://www.geogebra.org)
 Team. It supports various ports of Giac, including a native version, a
 Java Native Interface DLL, a HTML/WebAssembly version, a node.js port,
-and an Android version.
+an Android and an iOS version.
 
 ## Authors and contributors
 

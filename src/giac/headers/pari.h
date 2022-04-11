@@ -46,6 +46,7 @@ namespace giac {
   bool pari_nffactor(const gen & p,const gen & pmin,const vecteur & lv,gen & res,GIAC_CONTEXT);
   bool pari_galoisconj(const gen & g,vecteur & w,GIAC_CONTEXT);
   bool pari_allocatemem(size_t mem,GIAC_CONTEXT);
+  bool pari_intnorm(const gen & N, const gen & pmin,const vecteur & lv,gen & res,GIAC_CONTEXT);
 
 #ifndef NO_NAMESPACE_GIAC
 }

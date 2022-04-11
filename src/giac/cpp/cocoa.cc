@@ -15485,6 +15485,20 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  if (rqi==-RAND_MAX)
 	    *logptr(contextptr) << "Overflow in rur, computing revlex gbasis\n";
 	  if (rqi<0){
+	    if (rur_error_ifnot0dimensional){
+	      res.clear();
+	      mpz_clear(zd);
+	      mpz_clear(zu);
+	      mpz_clear(zu1);
+	      mpz_clear(zd1);
+	      mpz_clear(zabsd1);
+	      mpz_clear(zsqrtm);
+	      mpz_clear(zq);
+	      mpz_clear(zur);
+	      mpz_clear(zr);
+	      mpz_clear(ztmp);
+	      return 1;
+	    }
 	    rur=0;
 	    continue;
 	  }
@@ -15865,7 +15879,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  if (debug_infolevel)
 	    CERR << CLOCK()*1e-6 << " end rational reconstruction " << '\n';
 	  // now check if W[i] is a Groebner basis over Q, if so it's the answer
-	  if (rur && rur_certify(res,W[i],rur_gbasis?gbasis_size:0,contextptr)){ 
+	  if (rur && rur!=2 && rur_certify(res,W[i],rur_gbasis?gbasis_size:0,contextptr)){ 
 	    swap(res,W[i]);
 	    if (rur_gbasis)
 	      res.erase(res.begin(),res.begin()+gbasis_size);

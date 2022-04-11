@@ -2282,7 +2282,7 @@ namespace giac {
       if (u._SYMBptr->sommet==at_pow){
 	gen tmpu=u._SYMBptr->feuille,tmpfx;
 	if (tmpu.type==_VECT && tmpu._VECTptr->size()==2){
-	  gen expo=inv(tmpu._VECTptr->back(),contextptr);
+	  gen expo=ratnormal(inv(tmpu._VECTptr->back(),contextptr),contextptr);
 	  tmpu=tmpu._VECTptr->front();
 	  if (expo.type==_INT_){ 
 	    if (is_linear_wrt(tmpu,gen_x,a,b,contextptr)){
@@ -2752,6 +2752,53 @@ namespace giac {
     // Step2: detection of f(u)*u' 
     vecteur v(1,gen_x);
     rlvarx(e,gen_x,v);
+    // detect constants and gcd for linear args
+    gen curgcd(v.size()<=2?1:0); bool allsame=true;
+    for (int i=1;i<v.size();++i){
+      if (v[i].type!=_SYMB)
+	continue;
+      gen vf=v[i]._SYMBptr->feuille;
+      gen vf1=derive(vf,gen_x,contextptr);
+      vf1=ratnormal(vf1,contextptr);
+      if (is_zero(vf1) && gen_x.type==_IDNT){
+	vf=limit(vf,*gen_x._IDNTptr,0,1,contextptr);
+	if (!is_undef(vf)){
+	  gen e1=complex_subst(e,v[i],v[i]._SYMBptr->sommet(vf,contextptr),contextptr);
+	  vecteur w(1,gen_x);
+	  rlvarx(e1,gen_x,w);
+	  if (w.size()<v.size()){
+	    v=w;
+	    e=e1;
+	  }
+	}
+      }
+      if (!is_constant_wrt(vf1,gen_x,contextptr)){
+	curgcd=1;
+	continue;
+      }
+      if (vf1.type==_VECT) 
+	vf1=_gcd(vf1,contextptr);
+      if (curgcd!=0 && vf1!=curgcd)
+	allsame=false;
+      curgcd=gcd(vf1,curgcd);
+    }
+    if (!allsame && curgcd!=0 && curgcd!=1){
+      gen e1=complex_subst(e,gen_x,inv(curgcd,contextptr)*gen_x,contextptr);
+      v=vecteur(1,gen_x);
+      rlvarx(e1,gen_x,v);
+      vecteur vrep(v);
+      for (int i=1;i<v.size();++i){
+	if (v[i].type!=_SYMB)
+	  continue;
+	gen vf=ratnormal(v[i]._SYMBptr->feuille,contextptr);
+	vrep[i]=symbolic(v[i]._SYMBptr->sommet,vf);
+      }
+      if (v!=vrep) e1=complex_subst(e1,v,vrep,contextptr);
+      gen E1=integrate_id_rem(e1,gen_x,remains_to_integrate,contextptr,intmode);
+      remains_to_integrate=complex_subst(remains_to_integrate,gen_x,curgcd*gen_x,contextptr);
+      E1=complex_subst(E1,gen_x,curgcd*gen_x,contextptr);
+      return E1/curgcd;
+    }
     if (!lop(v,at_rootof).empty()){
       remains_to_integrate=e_orig;
       return 0;
@@ -2809,7 +2856,7 @@ namespace giac {
 	{
 	  gen e2=_texpand(ratnormal(fu,contextptr),contextptr);
 	  if (!is_undef(e2)){
-	    vecteur v2=lvarx(e2,gen_x),vf=lvarx(fu,gen_x);
+	    vecteur v2=lvarx(e2,gen_x),vf=lvarx(fu,gen_x); 
 	    if (v2.size()<vf.size())
 	      fu=e2;
 	  }
@@ -3795,7 +3842,7 @@ namespace giac {
     vector <gen_op_context> vv;
     vv.push_back(min2piecewise);
     vv.push_back(max2piecewise);
-    gen r=subst(g,vu,vv,quotesubst,contextptr);
+    gen r=subst(g,vu,vv,true,contextptr);
     r=when2piecewise(r,contextptr);
     return r;
   }

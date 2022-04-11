@@ -1376,7 +1376,7 @@ namespace giac {
     if (f_.is_symb_of_sommet(at_equal) 
 	//|| is_inequation(f_)
 	){
-      return plotimplicit(equal2diff(f_),x__IDNT_e,y__IDNT_e,function_xmin,function_xmax,function_ymin,function_ymax,nstep,jstep,epsilon(contextptr),attributs,false,contextptr,3);
+      return plotimplicit(equal2diff(f_),x__IDNT_e,y__IDNT_e,function_xmin,function_xmax,function_ymin,function_ymax,nstep,jstep,epsilon(contextptr),attributs,false,true,contextptr,3);
       return string2gen("Try plot(["+f_._SYMBptr->feuille.print(contextptr)+"],"+vars.print(contextptr)+"). (In)equations can not be plotted.",false);
     }
     gen f=when2piecewise(f_,contextptr);
@@ -2197,7 +2197,7 @@ namespace giac {
   }
 
 
-  static void read_option(const vecteur & v,double xmin,double xmax,double ymin,double ymax,double zmin,double zmax,vecteur & attributs, int & nstep,int & jstep,int & kstep,bool unfactored,GIAC_CONTEXT){
+  static void read_option(const vecteur & v,double xmin,double xmax,double ymin,double ymax,double zmin,double zmax,vecteur & attributs, int & nstep,int & jstep,int & kstep,bool & unfactored,GIAC_CONTEXT){
     read_attributs(v,attributs,contextptr);
     const_iterateur it=v.begin(),itend=v.end();
     for (;it!=itend;++it){
@@ -5720,7 +5720,9 @@ namespace giac {
     if (e.type!=_VECT || e._VECTptr->size()<2)
       return undef;
     vecteur v(*e._VECTptr);
+    int c=calc_mode(contextptr); calc_mode(0,contextptr);
     gen p=projection(ee,f,contextptr);
+    calc_mode(c,contextptr);
     gen projete=subst(v[0],v[1],p,false,contextptr);
     return distance2pp(projete,f,contextptr);
   }
@@ -5751,8 +5753,10 @@ namespace giac {
       else
 	t=projection(a,b,p,contextptr);
       if (is_undef(t)) return t;
-      if (subtype==_LINE__VECT || (ck_is_positive(t,contextptr) && (subtype==_HALFLINE__VECT || ck_is_greater(1,t,contextptr))))
-	newres=distance2pp(t*b+(1-t)*a,p,contextptr);
+      if (subtype==_LINE__VECT || (ck_is_positive(t,contextptr) && (subtype==_HALFLINE__VECT || ck_is_greater(1,t,contextptr)))){
+	c=ratnormal(t*b+(1-t)*a,contextptr);
+	newres=distance2pp(c,p,contextptr);
+      }
       else
 	newres=distance2pp(b,p,contextptr);
       if (subtype==_LINE__VECT || ck_is_greater(res,newres,contextptr))
@@ -5900,15 +5904,33 @@ namespace giac {
       gen ief=*(e._CPLXptr+1)-*(f._CPLXptr+1);
       return ref*ref+ief*ief;
     }
-    gen ef=e-f;
-    return pow(re(ef,contextptr),2)+pow(im(ef,contextptr),2);
+    gen ef=e-f,r,i;
+    reim(ef,r,i,contextptr);
+    return pow(r,2)+pow(i,2);
 #endif
   }
 
   gen distance2(const gen & f1,const gen & f2,GIAC_CONTEXT){
     gen e1(remove_at_pnt(f1)),e2(f2);
     if (e2.is_symb_of_sommet(at_equal)){
-      e2=_plotimplicit(e2,contextptr);
+      bool pnt=e1.type!=_VECT;
+      if (!pnt && e1.type==_SYMB)
+	pnt=e1._SYMBptr->sommet!=at_curve && e1._SYMBptr->sommet!=at_cercle && e1._SYMBptr->sommet!=at_hypersphere && e1._SYMBptr->sommet!=at_hypersurface && e1._SYMBptr->sommet!=at_hyperplan;
+      if (pnt){
+	gen e3=e2._SYMBptr->feuille;
+	if (e3.type==_VECT && e3._VECTptr->size()==2){
+	  e3=e3._VECTptr->back()-e3._VECTptr->front();
+	  gen a,A,b,c;
+	  if (is_linear_wrt(e3,x__IDNT_e,a,A,contextptr) && is_linear_wrt(A,y__IDNT_e,b,c,contextptr) && (a!=0 || b!=0)){
+	    // line a*x+b*y+c=0 to point
+	    gen r,i;
+	    reim(e1,r,i,contextptr);
+	    A=a*r+b*i+c;
+	    return pow(A,2)/(pow(a,2)+pow(b,2));
+	  }
+	}
+      }
+      e2=plotimplicit(e2,x__IDNT_e,y__IDNT_e,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,20*gnuplot_pixels_per_eval,0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,false,contextptr,1);
       if (e2.type==_VECT && !e2._VECTptr->empty())
 	e2=e2._VECTptr->front();
     }
@@ -6740,8 +6762,20 @@ namespace giac {
       v=(*a._VECTptr);
       if (v.empty())
 	return gensizeerr(contextptr);
-      if ( (v.front().type==_VECT) && (v.front()._VECTptr->size()) )
+      if (v.size()==2 && v.front().type==_VECT && v.back().type==_VECT){
+	vecteur & vf=*v.front()._VECTptr;
+	int l=vf.size();
+	vecteur & v1=*v.back()._VECTptr;
+	if (v1.size()==2){
+	  gen v11=_floor(v1.front(),contextptr);
+	  if (v11.type==_INT_ && v11.val>=0 && v11.val<l){
+	    v=makevecteur(vf[v11.val],v1[1]);
+	  }
+	}
+      }
+      if ( (v.front().type==_VECT) && (v.front()._VECTptr->size()) ){
 	v.front()=v.front()._VECTptr->front();
+      }
       if ( (v.front().type!=_SYMB) || (v.front()._SYMBptr->sommet!=at_pnt))
 	v=make_VECTifnot_VECT(v.front());
     }
@@ -9325,6 +9359,26 @@ namespace giac {
     res=r2e(anum,v,contextptr);
     return res;
   }
+
+  void clean_reim(gen & g,GIAC_CONTEXT){
+    // cleanup re/im
+    vecteur vv(lvar(g)),vvrep(vv);
+    bool needrep=false;
+    for (int i=0;i<vv.size();++i){
+      gen vvi=vv[i];
+      if (vvi.type!=_SYMB || has_i(vvi)) continue;
+      if (vvi._SYMBptr->sommet==at_re){
+	needrep=true;
+	vvrep[i]=vvi._SYMBptr->feuille;
+      }
+      if (vvi._SYMBptr->sommet==at_im){
+	needrep=true;
+	vvrep[i]=0;
+      }
+    }
+    if (needrep)
+      g=subst(g,vv,vvrep,false,contextptr);
+  }
   
   static gen equation(const gen & arg,const gen & x,const gen & y, const gen & z,GIAC_CONTEXT){
     if (arg.type==_VECT){
@@ -9417,10 +9471,27 @@ namespace giac {
 	double T=1;
 	if (find_curve_parametrization(e,m,v[1],T,tmin,tmax,false,contextptr))
 	  v[0]=m;
-	gen xt=re(v[0],contextptr);
+	gen v0=v[0];
+	gen xt,yt;
+	// temporary replace ln by ln(abs())
+	vecteur lnop(lop(v0,at_ln)),lnrep(lnop); bool needrep=false;
+	for (int i=0;i<lnop.size();++i){
+	  gen lnarg=lnop[i]._SYMBptr->feuille;
+	  if (!lnarg.is_symb_of_sommet(at_abs) && !has_i(lnarg)){
+	    lnrep[i]=symbolic(at_ln,symbolic(at_abs,lnarg));
+	    needrep=true;
+	  }
+	}
+	if (needrep)
+	  v0=subst(v0,lnop,lnrep,false,contextptr);
+	reim(v0,xt,yt,contextptr);
 	rewrite_with_t_real(xt,v[1],contextptr);
-	gen yt=im(v[0],contextptr);
 	rewrite_with_t_real(yt,v[1],contextptr);
+	if (needrep){
+	  xt=subst(xt,lnrep,lnop,false,contextptr);
+	  yt=subst(yt,lnrep,lnop,false,contextptr);
+	}
+	clean_reim(xt,contextptr); clean_reim(yt,contextptr);
 	// if xt and yt are rational fractions of v[1], use the resultant
 	if (lvarxpow(makevecteur(xt,yt),v[1]).size()<=1){
 	  // return _resultant(makevecteur(xt-x,yt-y,v[1]),contextptr);
@@ -13030,9 +13101,28 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
 #endif // RTOS_THREADX
   }
 
-  gen plotimplicit(const gen& f_orig,const gen&x,const gen & y,double xmin,double xmax,double ymin,double ymax,int nxstep,int nystep,double eps,const vecteur & attributs,bool unfactored,const context * contextptr,int ckgeo2d){
+  gen plotimplicit(const gen& f_orig,const gen&x,const gen & y,double xmin,double xmax,double ymin,double ymax,int nxstep,int nystep,double eps,const vecteur & attributs,bool unfactored,bool cklinear,const context * contextptr,int ckgeo2d){
     if ( (x.type!=_IDNT) || (y.type!=_IDNT) )
       return gensizeerr(gettext("Variables must be free"));
+    gen a,b,c,d;
+    if (cklinear && is_linear_wrt(f_orig,y,a,b,contextptr) && a!=0){
+      if (is_linear_wrt(b,x,c,d,contextptr)){
+	// a*y+c*x+d=0 -> droite(-d/a*i,1+(-d-c)/a*i)
+	gen A=-d/a*cst_i,B=A+1-c/a*cst_i;
+	return _droite(makesequence(A,B),contextptr);
+      }
+      // y=-b/a
+      return plotfunc(-b/a,x,attributs,0,xmin,xmax,ymin,ymax,-5,5,nxstep,0,false,contextptr);
+    }
+    if (cklinear && is_linear_wrt(f_orig,x,a,b,contextptr) && a!=0){
+      if (is_constant_wrt(b,y,contextptr)){
+	// a*x+b=0 -> droite(-d/a*i,1+(-d-c)/a*i)
+	return _droite(f_orig,contextptr);
+      }
+      // x=-b/a
+      gen d=_droite(makesequence(0,1+cst_i),contextptr);
+      return symetrie(d,plotfunc(-b/a,y,attributs,0,xmin,xmax,ymin,ymax,-5,5,nxstep,0,false,contextptr),contextptr);
+    }
     bool cplx=complex_mode(contextptr);
     if (cplx){
       complex_mode(false,contextptr);
@@ -13051,7 +13141,7 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
   gen _plotimplicit(const gen & args,const context * contextptr){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_VECT)
-      return plotimplicit(remove_equal(args),vx_var,y__IDNT_e,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,20*gnuplot_pixels_per_eval,0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,contextptr,3);
+      return plotimplicit(remove_equal(args),vx_var,y__IDNT_e,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,20*gnuplot_pixels_per_eval,0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,true,contextptr,3);
     // vecteur v(plotpreprocess(args));
     vecteur v(*args._VECTptr);
     if (v.size()<2)
@@ -13082,12 +13172,12 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
       dim3=readrange(v[3],gnuplot_zmin,gnuplot_zmax,z,zmin,zmax,contextptr);
     else
       zmin=zmax=0.0;
-    bool unfactored=false;
+    bool unfactored=false,cklinear=true;
     read_option(v,xmin,xmax,ymin,ymax,zmin,zmax,attributs,nstep,jstep,kstep,unfactored,contextptr);
     if (dim3)
-      return plotimplicit(remove_equal(v[0]),x,y,z,xmin,xmax,ymin,ymax,zmin,zmax,nstep,jstep,kstep,epsilon(contextptr),attributs,unfactored,contextptr);
+      return plotimplicit(remove_equal(v[0]),x,y,z,xmin,xmax,ymin,ymax,zmin,zmax,nstep,jstep,kstep,epsilon(contextptr),attributs,unfactored,cklinear,contextptr);
     else
-      return plotimplicit(remove_equal(v[0]),x,y,xmin,xmax,ymin,ymax,nstep,jstep,epsilon(contextptr),attributs,unfactored,contextptr,3);
+      return plotimplicit(remove_equal(v[0]),x,y,xmin,xmax,ymin,ymax,nstep,jstep,epsilon(contextptr),attributs,unfactored,cklinear,contextptr,3);
   }
   static const char _plotimplicit_s []="plotimplicit";
   static define_unary_function_eval (__plotimplicit,&_plotimplicit,_plotimplicit_s);

@@ -1267,6 +1267,11 @@ namespace giac {
 	else
 	  testval=(l+m)/2;
       }
+      if (has_op(testval,*at_rootof)){
+	testval=evalf_double(testval,1,contextptr);
+	if (testval.type==_CPLX && is_zero(*(testval._CPLXptr+1),contextptr))
+	  testval=*testval._CPLXptr;
+      }
       gen test=eval(subst(e0,x,testval,false,contextptr),eval_level(contextptr),contextptr);
       // additional numeric check
       if (e0.type==_SYMB && e0._SYMBptr->feuille.type==_VECT && e0._SYMBptr->feuille._VECTptr->size()==2){
@@ -2140,7 +2145,7 @@ namespace giac {
     //if (!surd1.empty()) expr=subst(expr,surd1,surd2,false,contextptr);
     // Remark: algebraic extension could also be solved using resultant
     vecteur ls(lvarfracpow(expr,x,contextptr));
-    if (!ls.empty()){ // Use auxiliary variables
+    if (!ls.empty()){  // Use auxiliary variables
       int s=int(ls.size())/3;
       vecteur substin,substout,equations,listvars(lvarx(expr,x,true));
       // remove ls from listvars, add aux var instead
@@ -2150,8 +2155,17 @@ namespace giac {
 	if (j)
 	  listvars.erase(listvars.begin()+j-1);
       }
-      if (listvars.size()!=1)
+      if (listvars.size()!=1){
+	// try factorization before err, e.g. (sqrt(x))^-1*exp(x)+2*sqrt(x)*exp(x)
+	gen tryf=factor(expr,false,contextptr);
+	if (tryf.is_symb_of_sommet(at_neg))
+	  tryf=tryf._SYMBptr->feuille;
+	if (tryf.is_symb_of_sommet(at_prod) || tryf.is_symb_of_sommet(at_pow)){
+	  // recurse
+	  return solve_cleaned(tryf,e_check,x,isolate_mode,contextptr);
+	}
 	return vecteur(1,gensizeerr(gettext("Unable to isolate ")+gen(listvars).print(contextptr)+gettext(" solving equation ")+expr.print(contextptr)));
+      }
       vecteur assumedvars;
       for (int i=0;i<s;++i){
 	gen lsvar=ls[3*i+2];
@@ -7130,6 +7144,14 @@ namespace giac {
   gen _rur_gbasis(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
     if (g.type==_INT_){
+      if (g.val==-1){ 
+	rur_error_ifnot0dimensional=true;
+	return string2gen("rur: if not 0 dimensional return error code",false);
+      }
+      if (g.val==-2){ 
+	rur_error_ifnot0dimensional=false;
+	return string2gen("rur: if not 0 dimensional, compute gbasis",false);
+      }
       if (g.val<=0) *logptr(contextptr) << "rur: do not compute gbasis over Q\n";
       if (g.val==1) *logptr(contextptr) << "rur: compute gbasis over Q\n";
       if (g.val>1) *logptr(contextptr) << "rur: compute gbasis over Q if total nmumber of monomials is <=" << g.val << "\n";

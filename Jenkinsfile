@@ -9,7 +9,7 @@ pipeline {
         stage('Java and JS') {
           agent {label 'deploy2'}
           environment {
-            MAVEN = credentials('maven')
+            MAVEN = credentials('maven-repo')
             MAC = credentials('mac-giac')
             NPM = credentials('npm-registry')
             ANDROID_SDK_ROOT='/var/lib/jenkins/.android-sdk'
@@ -19,6 +19,7 @@ pipeline {
           }
           steps {
             sh '''
+               export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
               ./gradlew downloadEmsdk installEmsdk activateEmsdk
               ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --info --refresh-dependencies
               ./gradlew :updateGiac --no-daemon -Prevision=$SVN_REVISION --info'''
@@ -27,10 +28,12 @@ pipeline {
         stage('Objective C') {
           agent {label 'mac'}
           environment {
-            MAVEN = credentials('maven')
+            MAVEN = credentials('maven-repo')
           }
           steps {
-            sh './gradlew clean publishPodspec -Prevision=$SVN_REVISION'
+            sh '''
+                export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
+                ./gradlew clean publishPodspec -Prevision=$SVN_REVISION'''
           }
         }
       }

@@ -354,7 +354,13 @@ namespace giac {
     case t_VECSMALL:
       return t_VECSMALL2gen(G);
     case t_MAT:
-      return _tran(t_VEC2gen(G,vars,1,lg(G)),context0);
+      { 
+	int l=lg(G);
+	if (l==1 || lg((GEN) G[1])==1)
+	  return symbolic(at_matrix,makesequence(0,l-1));
+	gen g=t_VEC2gen(G,vars,1,lg(G));
+	return _tran(g,context0);
+      }
     case t_LIST:
       return t_VEC2gen(G,vars,2,list_nmax(G));
     case t_STR:
@@ -561,6 +567,23 @@ namespace giac {
     return g;
   }
 
+  bool ckplainmat(const vecteur & v){
+    int l=v.size();
+    if (!l)
+      return false;
+    for (int i=0;i<l;++i){
+      if (v[i].type!=_VECT)
+	return false;
+      vecteur & w=*v[i]._VECTptr;
+      int m=w.size();
+      for (int j=0;j<m;j++){
+	if (w[j].type==_VECT)
+	  return false;
+      }
+    }
+    return true;
+  }
+
   static GEN ingen2GEN(const gen & e,const vecteur & vars,GIAC_CONTEXT){
     switch (e.type){
     case _INT_:
@@ -574,10 +597,37 @@ namespace giac {
     case _DOUBLE_: case _REAL:
       return real2GEN(e,contextptr);
     case _VECT:
-      if (ckmatrix(e))
+      if (ckmatrix(e) && ckplainmat(*e._VECTptr))
 	return mat2GEN(e,vars,contextptr);
       else
 	return vect2GEN(e,vars,contextptr);
+    }
+    if (e.is_symb_of_sommet(at_matrix)){
+      gen f=e._SYMBptr->feuille;
+      if (f.type==_VECT && f._VECTptr->size()==2){
+	vecteur & v=*f._VECTptr;
+	gen l=v.front(),c=v.back();
+	if (l.type==_INT_ && c.type==_INT_){
+	  int n=c.val,m=l.val;
+	  GEN res=cgetg(n+1,t_MAT);
+	  for (int i=1;i<=n;++i){
+	    GEN resi=gel(res,i)=cgetg(m+1,t_COL);
+	    for (int j=1;j<=m;++j){
+	      gel(resi,j)=stoi(0);
+	    }
+	  }
+	  return res;
+	}
+      }
+    }
+    if (0 && e.is_symb_of_sommet(at_tran)){ 
+      gen f=e._SYMBptr->feuille;
+      if (f.type==_VECT && f._VECTptr->empty()){
+	// transpose of "empty" matrix (returned by a previous call to bnfinit)
+	GEN res;
+	res=cgetg(1,f.subtype==99?t_COL:(f.subtype==98?t_VECSMALL:t_VEC));
+	return res;
+      }
     }
     // add vars to e
     string s=pariprint(e,0,contextptr);
@@ -853,7 +903,6 @@ namespace giac {
 	} // end if (i!=pari_function_table.end())
       } // end if vstr!=""
       if (vstr=="" && vs==2){
-	ensure_pari_is_ready now;
 	long av=avma;
 	gen res= GEN2gen(gen2GEN(v[1],vars,contextptr),vars);
 	avma=av;
@@ -1024,6 +1073,25 @@ namespace giac {
     return true;
   }
 
+  // pmin==for ex. x^2+7 for Q[i*sqrt(7)], N=11 ->returns [x+2, -x+2]
+  bool pari_intnorm(const gen & N, const gen & pmin,const vecteur & lv,gen & res,GIAC_CONTEXT){
+    gen tmp;
+    ensure_pari_is_ready now;
+    long av=avma;
+    void * save_pari_stack_limit = PARI_stack_limit;
+    PARI_stack_limit=0;
+    GEN P = gen2GEN(pmin,lv,contextptr);
+    GEN Ng = gen2GEN(N,lv,contextptr);
+    int prec=decimal_digits(contextptr);
+    if (prec<30)
+      prec=30;
+    GEN K = bnfinit0(P,0,0,prec);
+    tmp=GEN2gen(bnfisintnorm(K,Ng),lv);
+    avma=av;
+    PARI_stack_limit=save_pari_stack_limit;
+    res=tmp;
+    return true;
+  }
 #ifndef NO_NAMESPACE_GIAC
 }
 #endif // ndef NO_NAMESPACE_GIAC
@@ -1116,6 +1184,9 @@ namespace giac {
     return 0;
   }
 
+  bool pari_intnorm(const gen & N, const gen & pmin,const vecteur & lv,gen & res,GIAC_CONTEXT){
+    return false;
+  }
   bool pari_polroots(const vecteur & p,vecteur & res,long prec,GIAC_CONTEXT){
     return false;
   }
