@@ -86,3 +86,42 @@ jobs:
       run: |
         mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-win32-natives-windows-i586.jar -Dclassifier=natives-windows-i586 -DgroupId=com.github -DartifactId=javagiac-win32 -Dversion=%CI_REF_NAME_SLUG%
       shell: cmd
+
+  windows_msys2_clang64-native-cmake:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      packages: write
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: FranzDiebold/github-env-vars-action@v2
+    - uses: actions/checkout@v3
+    - uses: s4u/maven-settings-action@v2.6.0
+      with:
+        servers: '[{"id": "github", "configuration": {"httpHeaders": {"property": {"name": "Authorization","value": "Bearer ${{ secrets.GITHUB_TOKEN }}"}}}}]'
+    - name: prerequisites
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: CLANG64
+        update: true
+        install: >-
+          base-devel
+          mingw-w64-clang-x86_64-cc
+          mingw-w64-clang-x86_64-cmake
+          mingw-w64-clang-x86_64-make
+    - name: build
+      run: mkdir cbuild && cd cbuild && CC=clang CXX=clang++ cmake -G "MinGW Makefiles" .. && mingw32-make
+    - name: prerequisites2
+      run: |
+          choco install maven
+      shell: cmd
+    - name: build
+      run: mkdir cbuild && cd cbuild && CC=clang CXX=clang++ cmake -G "MinGW Makefiles" .. && mingw32-make
+    - name: jar
+      run: ./gradlew javagiacWin64JarClang
+    - name: publish
+      run: |
+        mvn --batch-mode deploy:deploy-file -Durl=https://maven.pkg.github.com/kovzol/giac-1 -DrepositoryId=github -Dfile=build/distributions/javagiac/javagiac-win64-natives-windows-amd64.jar -Dclassifier=natives-windows-amd64 -DgroupId=com.github -DartifactId=javagiac-win64 -Dversion=%CI_REF_NAME_SLUG%
+      shell: cmd

@@ -72,6 +72,15 @@ task javagiacWin64Jar (dependsOn: ':javagiacWin64SharedLibrary', type: Jar) {
     classifier 'natives-windows-amd64'
 }
 
+task javagiacWin64JarClang (type: Jar) {
+    description 'Create the Windows 64 bit .jar package for the Java Giac library (via clang).'
+    baseName = 'javagiac-win64'
+    destinationDir = javagiacDir
+    from "cbuild" // Make sure the DLL is compiled and put into this folder first.
+    include '*.dll'
+    classifier 'natives-windows-amd64'
+}
+
 task testJavagiacWin64 (dependsOn: 'javagiacWin64Jar') {
     description 'Tests the Windows 64 bit version of Java Giac. [incubating]'
 }
