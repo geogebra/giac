@@ -479,7 +479,7 @@ model {
             target('maccatalyst_x86_64') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
-                    iosClangCompilerArgs(args, macosSdk, "x86_64", minIosVersion, iosTarget("x86_64", "13.0", catalystPostfix))
+                    iosClangCompilerArgs(args, macosSdk, "x86_64", minIosVersion, iosTarget("x86_64", "14.0", catalystPostfix))
                 }
                 path clangMacosxPath
 
@@ -487,7 +487,7 @@ model {
             target('maccatalyst_arm64') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
-                    iosClangCompilerArgs(args, macosSdk, "arm64", minIosVersion, iosTarget("arm64", "13.0", catalystPostfix))
+                    iosClangCompilerArgs(args, macosSdk, "arm64", minIosVersion, iosTarget("arm64", "14.0", catalystPostfix))
                 }
                 path clangMacosxPath
             }
