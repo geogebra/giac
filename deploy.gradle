@@ -7,16 +7,11 @@ ext.workspaceUrl = 'https://deploy.geogebra.org/job/GeoGebra-build/ws/'
 
 ext.macServerSvnCommand = '/usr/local/bin/svn'
 
-// To sign the .jar files
-// Remote file copying and remote execution (via ssh)
-ext.compileLinux32JavagiacKey = file(System.env.LINUX32_SSH ?: '/dev/null')
-
 ssh.settings {
-  knownHosts = allowAnyHosts
+    knownHosts = allowAnyHosts
 }
 
 
-def ggMavenRepoUrl = 'scp://dev.geogebra.org:22077/var/www/maven2'
 def ggMavenRepoUser = System.env.MAVEN_USR
 def ggMavenRepoPass = System.env.MAVEN_PSW
 
@@ -33,15 +28,6 @@ remotes {
     }
 }
 
-task javagiacWin32Jar (dependsOn: ':javagiacWin32SharedLibrary', type: Jar) {
-    description 'Create the Windows 32 bit .jar package for the Java Giac library.'
-    baseName = 'javagiac-win32'
-    destinationDir = javagiacDir
-    from "${buildDir}/libs/javagiac/shared/win32"
-    include '*.dll'
-    classifier 'natives-windows-i586'
-}
-
 // Unsure if this is needed or not. Otherwise there is no .pom file for Java Giac (which is probably a problem).
 task javagiacPomJar (type: Jar) {
     description 'Creates empty .jar package for the Java Giac library.'
@@ -49,21 +35,31 @@ task javagiacPomJar (type: Jar) {
     destinationDir = javagiacDir
 }
 
-task testJavagiacWin32 (dependsOn: 'javagiacWin32Jar') {
+task javagiacWin32JarClang (type: Jar) {
+    description 'Create the Windows 32 bit .jar package for the Java Giac library (via clang).'
+    baseName = 'javagiac-win32'
+    destinationDir = javagiacDir
+    from "cbuild" // Make sure the DLL is compiled and put into this folder first.
+    include '*.dll'
+    rename 'libjavagiac.dll', 'javagiac.dll'
+    classifier 'natives-windows-i586'
+}
+
+task testJavagiacWin32 (dependsOn: 'javagiacWin32JarClang') {
     description 'Tests the Windows 32 bit version of Java Giac. [incubating]'
 }
 
-task javagiacWin64Jar (dependsOn: ':javagiacWin64SharedLibrary', type: Jar) {
-    description 'Creates the Windows 64 bit .jar package for the Java Giac library.'
+task javagiacWin64JarClang (type: Jar) {
+    description 'Create the Windows 64 bit .jar package for the Java Giac library (via clang).'
     baseName = 'javagiac-win64'
     destinationDir = javagiacDir
-    from "${buildDir}/libs/javagiac/shared/win64"
+    from "cbuild64" // Make sure the DLL is compiled and put into this folder first.
     include '*.dll'
-    rename 'javagiac.dll', 'javagiac64.dll'
+    rename 'libjavagiac.dll', 'javagiac64.dll'
     classifier 'natives-windows-amd64'
 }
 
-task testJavagiacWin64 (dependsOn: 'javagiacWin64Jar') {
+task testJavagiacWin64 (dependsOn: 'javagiacWin64JarClang') {
     description 'Tests the Windows 64 bit version of Java Giac. [incubating]'
 }
 
@@ -81,26 +77,13 @@ task testJavagiacLinux64 (dependsOn: 'javagiacLinux64Jar') {
     description 'Tests the Linux 64 bit version of Java Giac. [incubating]'
 }
 
-task javagiacLinux32Jar (dependsOn: 'compileLinux32MacJavagiacRemotely', type: Jar) {
-    description 'Creates the Linux 32 bit .jar package for the Java Giac library.'
-    baseName = 'javagiac-linux32'
-    destinationDir = javagiacDir
-    from "${buildDir}/libs/javagiac/shared/linux32" // FIXME: unify
-    include '*.so'
-    classifier 'natives-linux-i586'
-}
-
-task javagiacMacJar (dependsOn: 'compileLinux32MacJavagiacRemotely', type: Jar) {
+task javagiacMacJar (dependsOn: 'compileMacJavagiacRemotely', type: Jar) {
     description 'Creates the Linux 32 bit .jar package for the Java Giac library.'
     baseName = 'javagiac-mac'
     destinationDir = javagiacDir
     from "${buildDir}/binaries/javagiacSharedLibrary/osx_amd64" // FIXME: unify
     include '*.jnilib'
     classifier 'natives-macosx-universal'
-}
-
-task testJavagiacLinux32 (dependsOn: 'javagiacLinux32Jar') {
-    description 'Tests the Linux 32 bit version of Java Giac. [incubating]'
 }
 
 task testJavagiacMac (dependsOn: 'javagiacMacJar') {
@@ -115,16 +98,14 @@ task testJavagiacAndroidX86 (dependsOn: 'javagiacAndroidx86SharedLibrary') {
     description 'Tests the Android x86 version of Java Giac. [incubating]'
 }
 
-task testJavagiac (dependsOn: ['testJavagiacLinux64', 'testJavagiacLinux32',
-    'testJavagiacWin32', 'testJavagiacWin64', 'testJavagiacMac', 'testJavagiacAndroidArm', 'testJavagiacAndroidX86']) {
+task testJavagiac (dependsOn: ['testJavagiacLinux64',
+                               'testJavagiacWin32', 'testJavagiacWin64', 'testJavagiacMac', 'testJavagiacAndroidArm', 'testJavagiacAndroidX86']) {
     description 'Tests the Linux, Windows, Mac and Android versions of the Java Giac library. [incubating]'
 }
 
-task compileLinux32MacJavagiacRemotely () {
+task compileMacJavagiacRemotely () {
     description 'Compiles the Linux 32 bit and Mac versions of the Java Giac library remotely (parallel).'
-    def outputLinux32Dir = "${buildDir}/libs/javagiac/shared/linux32" // FIXME: unify
     def outputMacDir = "${buildDir}/binaries/javagiacSharedLibrary/osx_amd64" // FIXME: unify
-    def outputLinux32 = "$outputLinux32Dir/libjavagiac.so"
     def outputMac = "$outputMacDir/libjavagiac.jnilib"
     // outputs.file output // be never UP-TO-DATE
     doLast {
@@ -139,8 +120,8 @@ task compileLinux32MacJavagiacRemotely () {
     }
 }
 
-task javagiacJars (dependsOn: ['javagiacMacJar', 'javagiacLinux32Jar', 'javagiacLinux64Jar',
-    'javagiacWin32Jar', 'javagiacWin64Jar']) {
+task javagiacJars (dependsOn: ['javagiacMacJar', 'javagiacLinux64Jar',
+                               'javagiacWin32JarClang', 'javagiacWin64JarClang']) {
     description 'Creates the native .jar files for Windows, Linux and Mac for Java Giac.'
 }
 
@@ -161,9 +142,8 @@ publishing {
             groupId = 'fr.ujf-grenoble'
             version = ggrev
             artifact javagiacLinux64Jar
-            artifact javagiacLinux32Jar
-            artifact javagiacWin64Jar
-            artifact javagiacWin32Jar
+            artifact javagiacWin64JarClang
+            artifact javagiacWin32JarClang
             artifact javagiacMacJar
             artifact javagiacPomJar
             pom {
@@ -261,4 +241,3 @@ allprojects {
         }
     }
 }
-
