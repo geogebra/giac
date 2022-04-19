@@ -30,6 +30,7 @@ extern char* fmenu_cfg;
 
 #ifdef MICROPY_LIB
 extern "C" {
+  void py_ck_ctrl_c();
   int do_file(const char *file);
   char * micropy_init(int stack_size,int heap_size);
   int micropy_eval(const char * line);
@@ -85,13 +86,24 @@ extern "C" {
   bool c_proot(c_complex * x,int n); // poly root
   bool c_pcoeff(c_complex * x,int n); // root->coeffs
   bool c_fft(c_complex * x,int n,bool inverse); // FFT
-  void turtle_freeze();
   void console_freeze();
   void c_sprint_double(char * s,double d);
   extern int python_stack_size,python_heap_size;
   extern int xcas_python_eval;
   extern char * python_heap;
   int python_init(int stack_size,int heap_size);
+  void turtle_freeze();
+  void c_turtle_forward(double d);
+  void c_turtle_left(double d);
+  void c_turtle_up(int i);
+  void c_turtle_goto(double x,double y);
+  void c_turtle_cap(double x);
+  void c_turtle_crayon(int i);
+  void c_turtle_rond(int x,int y,int z);
+  void c_turtle_disque(int x,int y,int z,int centered);
+  void c_turtle_fill(int i);
+  void c_turtle_fillcolor(double r,double g,double b,int entier);
+  void c_turtle_getposition(double * x,double * y);
 }
 extern int lang;
 extern short int nspirelua;

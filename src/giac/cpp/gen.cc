@@ -16844,7 +16844,7 @@ void sprint_double(char * s,double d){
 	  if (islogo(g))
 	    xcas::displaylogo();
 	  else {
-	    if ( (g.type==_SYMB || (warn_symb_program_sto && g.type==_VECT)) && taille(g,256)<=256)
+	    if ( (g.type==_SYMB || (warn_symb_program_sto && g.type==_VECT && !g._VECTptr->empty() && g._VECTptr->front().type!=_STRNG)) && taille(g,256)<=256)
 	      g=xcas::eqw(g,true,&C);
 	  }
 	}

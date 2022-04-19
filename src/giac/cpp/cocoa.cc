@@ -15879,7 +15879,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  if (debug_infolevel)
 	    CERR << CLOCK()*1e-6 << " end rational reconstruction " << '\n';
 	  // now check if W[i] is a Groebner basis over Q, if so it's the answer
-	  if (rur && rur!=2 && rur_certify(res,W[i],rur_gbasis?gbasis_size:0,contextptr)){ 
+	  if (rur && rur!=2 && rur_certify(res,W[i],rur_gbasis?gbasis_size:0,contextptr)){ // rur!=2 was added otherwise crash for eliminate([-v5+1,-v6,v7-1,v8-1,v10^2-v6^2-v5^2+2*v6-1,v9^2-1,v9*m-v10,v9*n-1],[v1,v2,v3,v4,v5,v6,v7,v8,v10,v9,n])
 	    swap(res,W[i]);
 	    if (rur_gbasis)
 	      res.erase(res.begin(),res.begin()+gbasis_size);

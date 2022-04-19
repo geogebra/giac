@@ -33,6 +33,8 @@
 #define is_cx2 false
 #endif
 
+
+
 #ifdef KHICAS
 
 #ifdef NUMWORKS
@@ -65,6 +67,14 @@ const int xwaspy_shift=33; // must be between 32 and 63, reflect in xcas.js and 
 #include <ctype.h>
 #include "input_lexer.h"
 #include "input_parser.h"
+#if defined NUMWORKS && defined DEVICE
+  void py_ck_ctrl_c(){
+    if (giac::ctrl_c || giac::interrupted)
+      raisememerr();
+  }
+#else
+  void py_ck_ctrl_c(){}
+#endif
 //giac::context * contextptr=0;
 int clip_ymin=0;
 int lang=1;
@@ -2307,7 +2317,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     smallmenu.scrollbar=1;
     smallmenu.scrollout=1;
     string vars="Variables";
-#ifdef NUMWORKS
+#if defined NUMWORKS && defined DEVICE
     vars += ", free >= ";
     vars += print_INT_(_heap_size-((int)_heap_ptr-(int)_heap_base));
 #endif
@@ -2639,6 +2649,24 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     return status;
   }
 
+#if defined NUMWORKS && defined DEVICE
+  bool ck_turtle_size(){
+    vector<logo_turtle> & v=turtle_stack();
+    if (v.size()<v.capacity())
+      return true;
+    int l=2*v.size();
+    if (1024+l*sizeof(logo_turtle)<_heap_size-((int)_heap_ptr-(int)_heap_base))
+      return true;
+    ctrl_c=interrupted=true;
+    return false;
+  }
+
+#else
+  int ck_turtle_size(){
+      return 1;
+  }
+#endif
+
   bool set_turtle_state(const vecteur & v,GIAC_CONTEXT){
     if (v.size()>=2 && v[0].type==_DOUBLE_ && v[1].type==_DOUBLE_){
       vecteur w(v);
@@ -2651,6 +2679,8 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	w.push_back(0);
       if (w[2].type==_DOUBLE_ && w[3].type==_INT_ && w[4].type==_INT_){
 	(*turtleptr)=vecteur2turtle(w);
+	if (!ck_turtle_size())
+	  return false;
 #ifdef TURTLETAB
 	turtle_stack_push_back(*turtleptr);
 #else
@@ -2671,6 +2701,14 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   }
 
   static gen update_turtle_state(bool clrstring,GIAC_CONTEXT){
+#if defined NUMWORKS && defined DEVICE
+    if (!ck_turtle_size()){
+      if (ctrl_c || interrupted)
+	return undef;
+      ctrl_c=true; interrupted=true;
+      return gensizeerr("Not enough memory");
+    }
+#else
 #ifdef TURTLETAB
     if (turtle_stack_size>=MAX_LOGO)
       return gensizeerr("Not enough memory");
@@ -2680,14 +2718,28 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       return gensizeerr("Not enough memory");
     }
 #endif
+#endif
     if (clrstring)
       (*turtleptr).s=-1;
     (*turtleptr).theta = (*turtleptr).theta - floor((*turtleptr).theta/360)*360;
+    bool push=true;
+    if (push){
 #ifdef TURTLETAB
-    turtle_stack_push_back((*turtleptr));
+      turtle_stack_push_back((*turtleptr));
 #else
-    turtle_stack().push_back((*turtleptr));
+      if (!turtle_stack().empty()){
+	logo_turtle & t=turtle_stack().back();
+	if (t.equal_except_nomark(*turtleptr)){
+	  t.theta=turtleptr->theta;
+	  t.mark=turtleptr->mark;
+	  t.visible=turtleptr->visible;
+	  t.color=turtleptr->color;
+	  push=false;
+	}
+      }
+      turtle_stack().push_back((*turtleptr));
 #endif
+    }
     gen res=turtle_state(contextptr);
 #if defined EMCC || defined (EMCC2) // should directly interact with canvas
     return gen(turtlevect2vecteur(turtle_stack()),_LOGO__VECT);
@@ -3281,7 +3333,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       turtle_fill_color= g.val;
       return g;
     }
-    if (is_zero(g)){ // 0.0
+    if (g.type!=_VECT && is_zero(g)){ // 0.0
       turtle_fill_begin=turtle_stack().size();
       return 1;
     }
@@ -3301,6 +3353,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       turtleptr->radius=-absint(n);
       gen res=update_turtle_state(true,contextptr);
       if (turtle_fill_color>=0){
+	turtleptr->radius=0;
 	_crayon(c,contextptr);
       }
       return res;
@@ -9618,7 +9671,8 @@ namespace xcas {
 #endif
 
 #if defined NUMWORKS && defined DEVICE
-  BYTE bootloader_hash[]={145,97,235,44,217,252,126,56,63,66,158,81,68,171,219,132,100,59,44,167,98,50,239,103,21,253,169,235,185,9,2,100,};
+  BYTE bootloader_hash[]={155,80,255,243,255,8,4,206,190,40,94,73,40,159,52,94,187,207,89,165,126
+			  ,57,88,197,125,135,209,126,107,23,17,154,};
   const int bootloader_size=65480;
   // check bootloade code, skipping exam mode buffer sector
   bool bootloader_sha256_check(size_t addr){
@@ -12403,8 +12457,10 @@ namespace xcas {
     smallmenu.title = (char *)"Config";
   
 #ifdef NUMWORKS
+#ifdef DEVICE
     string titles="Config (Memory "+print_INT_(_heap_size)+")";
     smallmenu.title = (char*) titles.c_str();
+#endif
     smallmenuitems[0].type = MENUITEM_CHECKBOX;
     smallmenuitems[0].text = (char*)"x,n,t -> t";
 #endif
@@ -13978,12 +14034,12 @@ namespace xcas {
     edptr->pos=0;
     return 2;
   }
-#ifdef NUMWORKS
+#if defined NUMWORKS && defined DEVICE
   void numworks_certify_internal(){
     // check internal flash sha256 signature
     size_t internal_flash_start=0x08000000;
     if (bootloader_sha256_check(internal_flash_start)){
-      confirm(lang==1?"Amorcage calculatrice certifie!":"Boot sector certified!",lang==1?"Acces amorcage par reset+4":"Access boot with reset+4");
+      confirm(lang==1?"Amorcage calculatrice certifie!":"Boot sector certified!",lang==1?"Acces amorcage par Power ln":"Access boot with Power ln");
       Bdisp_AllClr_VRAM();
       return;
     }
@@ -14013,7 +14069,7 @@ namespace xcas {
 	erase_sector((const char *) (internal_flash_start+32*1024));
 	erase_sector((const char *) (internal_flash_start+48*1024));
 	WriteMemory((char *)internal_flash_start,(const char *) romaddr,bootloader_size);
-	confirm(lang==1?"Mise a jour faite":"Update done",lang==1?"Acces amorcage par reset+4":"Access boot with reset+4");
+	confirm(lang==1?"Mise a jour faite":"Update done",lang==1?"Acces amorcage par Power ln":"Access boot with Power ln");
       }
     }
     Bdisp_AllClr_VRAM();
@@ -15886,7 +15942,7 @@ namespace xcas {
 #endif // NUMWORKS
 
   int console_main(GIAC_CONTEXT,const char * sessionname){
-#ifdef NUMWORKS
+#if defined NUMWORKS && defined DEVICE
     // insure value not too high (_heap_size depends on launcher firmware)
     if (pythonjs_heap_size>_heap_size-52*1024)
       pythonjs_heap_size=_heap_size-52*1024;
@@ -16714,6 +16770,92 @@ c_complex c_det(c_complex *x,int n){
 
 void c_sprint_double(char * s,double d){
   giac::sprint_double(s,d);
+}
+
+void c_turtle_forward(double d){
+  context * cascontextptr=(context *)caseval("caseval contextptr");
+  //const context * contextptr=caseval_context();
+  giac::_avance(d,cascontextptr);
+  py_ck_ctrl_c();
+}
+
+void c_turtle_left(double d){
+  context * cascontextptr=(context *)caseval("caseval contextptr");
+  giac::_tourne_gauche(d,cascontextptr);
+  py_ck_ctrl_c();
+}
+
+void c_turtle_up(int i){
+  context * cascontextptr=(context *)caseval("caseval contextptr");
+  if (i)
+    giac::_leve_crayon(0,cascontextptr);
+  else
+    giac::_baisse_crayon(0,cascontextptr);
+  py_ck_ctrl_c();
+}
+
+void c_turtle_goto(double x,double y){
+  context * cascontextptr=(context *)caseval("caseval contextptr");
+  giac::_position(makesequence(x,y),cascontextptr);
+  py_ck_ctrl_c();
+}
+
+void c_turtle_cap(double x){
+  context * cascontextptr=(context *)caseval("caseval contextptr");
+  giac::_cap(x,cascontextptr);
+  py_ck_ctrl_c();
+}
+
+void c_turtle_crayon(int i){
+  context * cascontextptr=(context *)caseval("caseval contextptr");
+  giac::_crayon(i,cascontextptr);
+  py_ck_ctrl_c();
+}
+
+void c_turtle_rond(int x,int y,int z){
+  context * cascontextptr=(context *)caseval("caseval contextptr");
+  giac::_rond(makesequence(x,y,z),cascontextptr);
+  py_ck_ctrl_c();
+}
+
+void c_turtle_disque(int x,int y,int z,int centre){
+  context * cascontextptr=(context *)caseval("caseval contextptr");
+  if (centre)
+    giac::_disque_centre(makesequence(x,y,z),cascontextptr);
+  else
+    giac::_disque(makesequence(x,y,z),cascontextptr);
+  py_ck_ctrl_c();
+}
+
+void c_turtle_fill(int i){
+  gen arg(vecteur(0));
+  if (i==0) 
+    arg.subtype=_SEQ__VECT;
+  context * cascontextptr=(context *)caseval("caseval contextptr");
+  giac::_polygone_rempli(arg,cascontextptr);
+  py_ck_ctrl_c();
+}
+
+void c_turtle_fillcolor(double r,double g,double b,int entier){
+  context * cascontextptr=(context *)caseval("caseval contextptr");
+  if (entier)
+    giac::_polygone_rempli(makesequence(int(r),int(g),int(b)),cascontextptr);
+  else
+    giac::_polygone_rempli(makesequence(r,g,b),cascontextptr);
+  py_ck_ctrl_c();
+}
+
+void c_turtle_getposition(double * x,double * y){
+  context * cascontextptr=(context *)caseval("caseval contextptr");
+  gen arg(vecteur(0)); arg.subtype=_SEQ__VECT;
+  giac::gen g=giac::_position(arg,cascontextptr);
+  if (g.type==_VECT && g._VECTptr->size()==2){
+    gen a=g._VECTptr->front(),b=g._VECTptr->back();
+    a=evalf_double(a,1,cascontextptr);
+    b=evalf_double(b,1,cascontextptr);
+    *x=a._DOUBLE_val;
+    *y=b._DOUBLE_val;
+  }
 }
 
 // auto-shutdown

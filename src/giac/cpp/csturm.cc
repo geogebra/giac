@@ -1894,7 +1894,7 @@ namespace giac {
     else {
 #ifdef HAVE_LIBPTHREAD
       int nthreads=threads_allowed?threads:1;
-      if (nthreads>1){
+      if (nthreads>1 && p.size()>64){
 	pthread_t tab0;
 	thread_vas_t tmp0={&v,&res1,1,0,0,1,contextptr};
 	for (int i=0;i<v.size();++i){

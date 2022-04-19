@@ -1577,7 +1577,7 @@ namespace giac {
     // 00
     // type 
     // record data
-    if (*ptr!=0xee0bddba)  // ba dd 0b ee
+    if (*((unsigned *)ptr)!=0xee0bddba)  // ba dd 0b ee
       return false; 
     int pos=4; ptr+=4;
     for (;pos<nwstoresize1;){
