@@ -654,6 +654,9 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     // bit 0-8=radius, bit9-17 angle1, bit 18-26 angle2, bit 27=1 filled  or 0 
     // <0 fill a polygon from previous turtle positions
     logo_turtle(): x(100),y(100),theta(0),visible(true),mark(true),direct(true),color(0),turtle_width(1),radius(0) {}
+    inline bool equal_except_nomark(const logo_turtle &t) const {
+      return x==t.x && y==t.y && turtle_width==t.turtle_width && s==t.s && radius==t.radius;
+    }
   };
 #else // KHICAS
   struct logo_turtle {
@@ -669,6 +672,9 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     // <0 fill a polygon from previous turtle positions
     std::string s;
     void * widget;
+    inline bool equal_except_nomark(const logo_turtle &t) const {
+      return x==t.x && y==t.y  && turtle_width==t.turtle_width && s==t.s &&  radius==t.radius;
+    }
 #ifdef IPAQ
     logo_turtle(): x(70),y(70),theta(0),visible(true),mark(true),direct(true),color(0),turtle_width(1),radius(0),widget(0) {}
 #else

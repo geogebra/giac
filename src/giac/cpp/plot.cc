@@ -5930,7 +5930,7 @@ namespace giac {
 	  }
 	}
       }
-      e2=plotimplicit(e2,x__IDNT_e,y__IDNT_e,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,20*gnuplot_pixels_per_eval,0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,false,contextptr,1);
+      e2=plotimplicit(equal2diff(e2),x__IDNT_e,y__IDNT_e,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,20*gnuplot_pixels_per_eval,0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,true /* cklinear */ ,contextptr,3);
       if (e2.type==_VECT && !e2._VECTptr->empty())
 	e2=e2._VECTptr->front();
     }
@@ -14485,11 +14485,32 @@ gen _vers(const gen & g,GIAC_CONTEXT){
     return turtle2gen(turtle(contextptr));
   }
 
+  int ck_turtle_size(GIAC_CONTEXT){
+    vector<logo_turtle> & v=turtle_stack(contextptr);
+    if (v.size()<v.capacity())
+      return 1;
+    return 2;
+  }
+
   static gen update_turtle_state(bool clrstring,GIAC_CONTEXT){
+    int x=ck_turtle_size(contextptr);
     if (clrstring)
       turtle(contextptr).s="";
     turtle(contextptr).theta = turtle(contextptr).theta - floor(turtle(contextptr).theta/360)*360;
-    turtle_stack(contextptr).push_back(turtle(contextptr));
+    bool push=true;
+    if (!turtle_stack(contextptr).empty()){
+      logo_turtle & t=turtle_stack(contextptr).back();
+      if (t.equal_except_nomark(turtle(contextptr))){
+	logo_turtle & src=turtle(contextptr);
+	t.theta=src.theta;
+	t.mark=src.mark;
+	t.visible=src.visible;
+	t.color=src.color;
+	push=false;
+      }
+    }
+    if (push)
+      turtle_stack(contextptr).push_back(turtle(contextptr));
     gen res=turtle_state(contextptr);
 #if defined(EMCC) || defined(EMCC2) // should directly interact with canvas
     return gen(turtlevect2vecteur(turtle_stack(contextptr)),_LOGO__VECT);
@@ -15080,7 +15101,7 @@ gen _vers(const gen & g,GIAC_CONTEXT){
       turtle_fill_color= g.val;
       return g;
     }
-    if (is_zero(g)){ // will only work with 0.0
+    if (g.type!=_VECT && is_zero(g)){ // will only work with 0.0
       turtle_fill_begin=turtle_stack(contextptr).size();
       return 1;
     }
@@ -15106,6 +15127,7 @@ gen _vers(const gen & g,GIAC_CONTEXT){
       gen res=update_turtle_state(true,contextptr);
       if (turtle_fill_color>=0){
 	turtle(contextptr).color=c;
+	turtle(contextptr).radius=0;
 	res=update_turtle_state(true,contextptr);
       }
       return res;
