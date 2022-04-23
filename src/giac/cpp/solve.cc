@@ -6677,6 +6677,11 @@ namespace giac {
 	} // end resultant not 0
       } // end #var=2
       gen G=_gbasis(makesequence(eq,var,change_subtype(_RUR_REVLEX,_INT_GROEBNER)),contextptr);
+      if (G.type==_VECT && G._VECTptr->size()==1){
+	if (!is_zero(G._VECTptr->front()))
+	  return vecteur(0); // system was equivalent to 1=0
+	gensizeerr("solve.cc internal error");
+      }
       if (G.type==_VECT && G._VECTptr->size()==var.size()+4 && G._VECTptr->front().type==_INT_ && G._VECTptr->front().val==_RUR_REVLEX){
 	vecteur Gv=*G._VECTptr,S;
 	gen rurvar=var.front();
