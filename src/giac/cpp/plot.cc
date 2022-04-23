@@ -5610,7 +5610,7 @@ namespace giac {
 	  else
 	    sol=solve(eq,v[1],0,contextptr);
 	}
-	if (calc_mode(contextptr)==1 && sol.empty())
+	if (calc_mode(contextptr)==2 && sol.empty())
 	  return undef;
 	sol.push_back(v[3]);
 	// find smallest 
@@ -5720,7 +5720,7 @@ namespace giac {
     if (e.type!=_VECT || e._VECTptr->size()<2)
       return undef;
     vecteur v(*e._VECTptr);
-    int c=calc_mode(contextptr); calc_mode(0,contextptr);
+    int c=calc_mode(contextptr); calc_mode(2,contextptr); // was set to 0 for distance(point(3,4), y=sin(x)) but then distance(point(a,b),y=x^2); return abs(a-b^2), see if (calc_mode(contextptr)==2 && sol.empty()) return undef in projection
     gen p=projection(ee,f,contextptr);
     calc_mode(c,contextptr);
     gen projete=subst(v[0],v[1],p,false,contextptr);
