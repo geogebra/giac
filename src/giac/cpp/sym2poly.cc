@@ -2364,6 +2364,11 @@ namespace giac {
 	f=min_pol(*(pp._EXTptr+1)); // f is a _VECT
       if (is_undef(f))
 	return f;
+      if (keep_algext(contextptr)){
+	gen value=r2sym(*pp._EXTptr,lt,ltend,contextptr);
+	f=r2sym(f,lt,ltend,contextptr);
+	return algebraic_EXTension(value,f);
+      }
       if (f._VECTptr->size()==3){
 	gen value;
 	if (!has_rootof_value(f,value,contextptr))

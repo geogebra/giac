@@ -808,6 +808,8 @@ namespace giac {
     step_infolevel(contextptr)=savestep;
     gprintf(step_extrema1,gettext("Derivative of %gen with respect to %gen is %gen\nSolving %gen with respect to %gen answer %gen"),makevecteur(arg,var,d,deq,var,s.type==_VECT?change_subtype(s,_SEQ__VECT):s),contextptr);
     calc_mode(c,contextptr);
+    if (c==1 && s.type==_VECT) 
+      s.subtype=0;
     vecteur ls=lidnt(s);
     for (int i=0;i<int(ls.size());++i){
       if (ls[i]==var || (var.type==_VECT && equalposcomp(*var._VECTptr,ls[i])))

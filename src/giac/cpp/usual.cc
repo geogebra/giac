@@ -9163,10 +9163,12 @@ namespace giac {
 	// by series expansion at x=0
 	// x*sum( (-1)^n*(x^2)^n/n!/(2*n+1),n=0..inf)
 	complex_long_double z2=z*z,res=0,pi=1;
+	//*logptr(contextptr) << "erf z " << z << '\n';
 	for (long_double n=0;;){
 	  res += pi/(2*n+1);
 	  ++n;
 	  pi = -pi*z2/n;
+	  // if (n<10) *logptr(contextptr) << "res " << res << "\n pi " << pi << '\n';
 	  if (complex_long_abs(pi)<1e-17)
 	    break;
 	}
