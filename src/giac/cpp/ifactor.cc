@@ -4163,7 +4163,7 @@ namespace giac {
 	  return g;
 	return _matrix(makesequence(g._VECTptr->size()/2,2,g),contextptr);
       }
-#ifndef EMCC
+#if !defined EMCC && defined HAVE_LIBPARI
       if (b.type==_SYMB){
 	gen res;
 	// b is assumed to be a minimal polynomial check if g is a norm 
@@ -4774,7 +4774,7 @@ namespace giac {
     else {
       // is q a power of a prime?
       double d=evalf_double(q,1,contextptr)._DOUBLE_val;
-      int maxpow=int(std::ceil(std::log(d)/std::log(3)));
+      int maxpow=int(std::ceil(std::log(d)/std::log(3.0)));
       for (int i=2;i<=maxpow;++i){
 	if ( (i>2 && i%2==0) ||
 	     (i>3 && i%3==0) ||

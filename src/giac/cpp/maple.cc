@@ -508,7 +508,7 @@ namespace giac {
   gen _time(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
     if (a.type==_VECT && a.subtype==_SEQ__VECT){
-#if defined VISUALC || defined __MINGW_H
+#if !defined GIAC_HAS_STO_38 && (defined VISUALC || defined __MINGW_H)
     struct _timeb timebuffer;
     _ftime(&timebuffer);
     return timebuffer.time+double(timebuffer.millitm)/1000;
@@ -567,7 +567,7 @@ namespace giac {
     eval(a,level,contextptr);
     return (emcctime()-t1)/1e6;
 #endif
-#if defined VISUALC || defined __MINGW_H
+#if !defined GIAC_HAS_STO_38 && (defined VISUALC || defined __MINGW_H)
     struct _timeb timebuffer0,timebuffer1;
     _ftime(&timebuffer0);
     for (;i<1000;){ // do it 10 times more

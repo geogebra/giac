@@ -9671,8 +9671,7 @@ namespace xcas {
 #endif
 
 #if defined NUMWORKS && defined DEVICE
-  BYTE bootloader_hash[]={155,80,255,243,255,8,4,206,190,40,94,73,40,159,52,94,187,207,89,165,126
-			  ,57,88,197,125,135,209,126,107,23,17,154,};
+  BYTE bootloader_hash[]={116,198,71,80,107,25,110,250,180,171,154,127,1,174,88,153,108,172,2,218,82,101,93,157,148,76,37,33,102,53,12,136,};
   const int bootloader_size=65480;
   // check bootloade code, skipping exam mode buffer sector
   bool bootloader_sha256_check(size_t addr){

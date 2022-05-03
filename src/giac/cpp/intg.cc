@@ -5855,7 +5855,7 @@ namespace giac {
       gen af=evalf_double(v[2],1,contextptr),bf=evalf_double(v[3],1,contextptr);
       if (v[1].type==_IDNT && (is_inf(af) || af.type==_DOUBLE_) && (is_inf(bf) || bf.type==_DOUBLE_)){
 	vecteur w;
-#ifndef NSPIRE
+#if !defined FXCG && !defined NSPIRE
 	my_ostream * ptr=logptr(contextptr);
 	logptr(0,contextptr);
 #endif
@@ -5878,7 +5878,7 @@ namespace giac {
 	  v0=v[0];
 	}
 #endif
-#ifndef NSPIRE
+#if !defined FXCG && !defined NSPIRE
 	logptr(ptr,contextptr);
 #endif
 	for (unsigned i=0;i<w.size();++i){

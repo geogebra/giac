@@ -3039,7 +3039,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 	}
       } // end for (int thread=0;thread<nthreads;++thread)
 #if 1
-      gcd_call_param<int> * gcd_call_param_v=(gcd_call_param<int> *)alloca(nthreads*sizeof(gcd_call_param<int>));
+      ALLOCA(gcd_call_param<int>,gcd_call_param_v,nthreads*sizeof(gcd_call_param<int>)); // gcd_call_param<int> * gcd_call_param_v=(gcd_call_param<int> *)alloca(nthreads*sizeof(gcd_call_param<int>));
       for (int i=0;i<nthreads;++i)
 	gcd_call_param_v[i]=gcd_par;
 #else

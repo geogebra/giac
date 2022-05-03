@@ -14115,7 +14115,7 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
   }
 
 #if !defined KHICAS // in kdisplay.cc
-#if defined RTOS_THREADX || defined NSPIRE || defined FXCG
+#if defined NSPIRE || defined FXCG
   logo_turtle vecteur2turtle(const vecteur & v){
     return logo_turtle();
   }
