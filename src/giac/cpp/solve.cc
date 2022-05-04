@@ -4254,6 +4254,8 @@ namespace giac {
       res.pop_back();
       return res;
     }
+    if (ckmatrix(sl,false,false)) // check whether sl has undef inside
+      return vecteur(x.size(),undef);
     A=sxa(sl,x,contextptr);
     vecteur B,R(x);
     gen rep;
