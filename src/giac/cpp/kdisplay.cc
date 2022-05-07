@@ -156,6 +156,10 @@ int khicas_addins_menu(GIAC_CONTEXT); // in kadd.cc
 #ifdef MICROPY_LIB
 extern "C" const char * const * mp_vars();
 #endif
+#if defined NUMWORKS && defined DEVICE
+extern "C" void extapp_clipboardStore(const char *text);
+extern "C" const char * extapp_clipboardText();
+#endif
 
 // Numworks Logo commands
 #ifndef NO_NAMESPACE_GIAC
@@ -211,10 +215,14 @@ namespace giac {
   }
   
   void copy_clipboard(const string & s,bool status){
+#if defined NUMWORKS && defined DEVICE
+    extapp_clipboardStore(s.c_str());
+#else
     if (1 || clip_pasted) // adding to clipboard is sometimes annoying
       *clipboard()=s;
     else
       *clipboard()+=s;
+#endif
     clip_pasted=false;
     if (status){
       DefineStatusMessage((char*)((lang==1)?"Selection copiee vers presse-papiers.":"Selection copied to clipboard"), 1, 0, 0);
@@ -224,6 +232,9 @@ namespace giac {
   
   const char * paste_clipboard(){
     clip_pasted=true;
+#if defined NUMWORKS && defined DEVICE
+    return extapp_clipboardText();
+#endif
     return clipboard()->c_str();
   }
   
