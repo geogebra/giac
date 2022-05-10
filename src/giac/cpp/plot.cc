@@ -1650,7 +1650,7 @@ namespace giac {
 	nu=int(std::sqrt(double(nstep)));
 	nv=int(std::sqrt(double(nstep)));
       }
-#ifdef KHICAS
+#if defined KHICAS || defined GIAC_HAS_STO_38
       if (nu*nv>900 && densityplot!=2){
 #if 1 // def DEVICE
 	nu=nv=30;
@@ -1770,7 +1770,7 @@ namespace giac {
 	    if (fval._DOUBLE_val>fmax)
 	      fmax=fval._DOUBLE_val;
 	  }
-#ifdef KHICAS // FIXME format is not translatable, etc.
+#if defined KHICAS || defined GIAC_HAS_STO_38 // FIXME format is not translatable, etc.
 	  if (!densityplot){
 	    tmp.push_back(x); tmp.push_back(y); tmp.push_back(fval);
 	  } 
@@ -14526,6 +14526,11 @@ gen _vers(const gen & g,GIAC_CONTEXT){
 
   gen _avance(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
+    /* os_draw_string_small(50,50,0x0,0xffffff,"avance tortue",false);
+       Sleep(1000);
+       int k=getkey(true);
+       os_draw_string_small(50,50,0x0,0xffffff,print_INT_(k).c_str(),false);
+       Sleep(1000); */
     // logo instruction
     double i;
     if (g.type!=_INT_){

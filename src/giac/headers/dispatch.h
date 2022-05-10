@@ -488,18 +488,21 @@ namespace giac {
 #else // KHICAS
 #ifdef GIAC_HAS_STO_38
     _WHITE=0,
+    _RED=0xff0000,
+    _GREEN=0xff00,
+    _YELLOW=0xffff00,
+    _BLUE=0xff,
+    _MAGENTA=0xff00ff,
+    _CYAN=0xffff,
+    _BLACK=7,
 #else
     _BLACK=0,
-#endif
     _RED=1,
     _GREEN=2,
     _YELLOW=3,
     _BLUE=4,
     _MAGENTA=5,
     _CYAN=6,
-#ifdef GIAC_HAS_STO_38
-    _BLACK=7,
-#else
     _WHITE=7,
 #endif
 #endif // KHICAS

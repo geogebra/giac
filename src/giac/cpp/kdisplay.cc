@@ -5764,6 +5764,84 @@ namespace xcas {
       if (jmax>LCD_HEIGHT_PX) jmax=LCD_HEIGHT_PX;
       jmin -= LCD_HEIGHT_PX/2;
       jmax -= LCD_HEIGHT_PX/2;      
+      // effective min/max for hypersurfaces
+      double yx=2*xscale*i+yc-xc;
+      vector<int> eff_jmin(hypv.size());
+      vector<int> eff_jmax(hypv.size());
+      for (int k=0;h>1 && k<hypv.size();k+=2){
+	int jmin=RAND_MAX,jmax=0;
+	vector< vector<float3d> >::const_iterator sbeg=hypv[k],send=hypv[k+1],sprec,scur;
+	vector<float3d>::const_iterator itprec,itcur,itprecend;
+	for (sprec=sbeg,scur=sprec+1;scur<send;++sprec,++scur){
+	  itprec=sprec->begin(); 
+	  itprecend=sprec->end();
+	  itcur=scur->begin();
+	  double yx1,yx2=*(itprec+1)-*itprec,yx3,yx4=*(itcur+1)-*itcur;
+	  for (itprec+=3,itcur+=3;itprec<itprecend;itprec+=3,itcur+=3){
+	    yx1=yx2;
+	    yx2=*(itprec+1)-*itprec;
+	    yx3=yx4;
+	    yx4=*(itcur+1)-*itcur;
+	    if (yx<yx1 && yx<yx2 && yx<yx3 && yx<yx4){
+	      for (;;){
+		// per iteration: 2 incr, 1 test, 2 read, 2 comp, && , test
+		itprec+=3;itcur+=3;
+		if (itprec<itprecend && yx<(yx2=*(itprec+1)-*itprec) && yx<(yx4=*(itcur+1)-*itcur)){
+		  itprec+=3;itcur+=3;
+		  if (itprec<itprecend && yx<(yx2=*(itprec+1)-*itprec) && yx<(yx4=*(itcur+1)-*itcur)){
+		    itprec+=3;itcur+=3;
+		    if (itprec<itprecend && yx<(yx2=*(itprec+1)-*itprec) && yx<(yx4=*(itcur+1)-*itcur)){
+		      itprec+=3;itcur+=3;
+		      if (itprec<itprecend && yx<(yx2=*(itprec+1)-*itprec) && yx<(yx4=*(itcur+1)-*itcur)){
+			continue;
+		      }
+		    }
+		  }
+		}
+		break;
+	      }
+	      if (yx<yx2 && yx<yx4) continue;
+	    } // end yx<yxk
+	    else if (yx>yx1 && yx>yx2 && yx>yx3 && yx>yx4){
+	      for (;;){
+		// per iteration: 2 incr, 1 test, 2 read, 2 comp, && , test
+		itprec+=3;itcur+=3;
+		if (itprec<itprecend && yx>(yx2=*(itprec+1)-*itprec) && yx>(yx4=*(itcur+1)-*itcur)){
+		  itprec+=3;itcur+=3;
+		  if (itprec<itprecend && yx>(yx2=*(itprec+1)-*itprec) && yx>(yx4=*(itcur+1)-*itcur)){
+		    itprec+=3;itcur+=3;
+		    if (itprec<itprecend && yx>(yx2=*(itprec+1)-*itprec) && yx>(yx4=*(itcur+1)-*itcur)){
+		      itprec+=3;itcur+=3;
+		      if (itprec<itprecend && yx>(yx2=*(itprec+1)-*itprec) && yx>(yx4=*(itcur+1)-*itcur)){
+			continue;
+		      }
+		    }
+		  }
+		}
+		break;
+	      }
+	      if (yx>yx2 && yx>yx4) continue;
+	    }
+	    // found one quad intersecting plane
+	    double x1=*(itprec-3),x2=*(itprec),x3=*(itcur-3),x4=*(itcur);
+	    double y1=*(itprec-2),y2=*(itprec+1),y3=*(itcur-2),y4=*(itcur+1);
+	    double z1=*(itprec-1),z2=*(itprec+2),z3=*(itcur-1),z4=*(itcur+2);
+	    double j;
+	    j=((x1+x2+x3)/3-xc+(y1+y2+y3)/3-yc)/2/yscale-lcdz*(z1+z2+z3)/3 ;
+	    if (j<jmin)
+	      jmin=j;
+	    if (j>jmax)
+	      jmax=j;
+	    j=((x4+x2+x3)/3-xc+(y4+y2+y3)/3-yc)/2/yscale-lcdz*(z4+z2+z3)/3 ;
+	    if (j<jmin)
+	      jmin=j;
+	    if (j>jmax)
+	      jmax=j;
+	  }
+	}
+	eff_jmin[k]=jmin;
+	eff_jmax[k]=jmax;
+      }
       double zmin[10]={220.220,220,220,220,220,220,220,220,220},
 	zmax[10]={0,0,0,0,0,0,0,0,0,0},
 	zmin2[10]={220.220,220,220,220,220,220,220,220,220},
@@ -5787,6 +5865,8 @@ namespace xcas {
 	    //x>=xmin && x<=xmax && y>=ymin && y<=ymax
 	    ){
 	  for (int k=0;k<hypv.size();k+=2){
+	    if (h>1 && (j<eff_jmin[k] || j>eff_jmax[k]) )
+	      continue;
 	    vector< vector<float3d> >::const_iterator sbeg=hypv[k],send=hypv[k+1],sprec,scur;
 	    vector<float3d>::const_iterator itprec,itcur,itprecend;
 	    int4 color=hyp_color[k]; 
@@ -6567,8 +6647,10 @@ namespace xcas {
       double h=LCD_HEIGHT_PX-STATUS_AREA_PX;
       double window_w=window_xmax-window_xmin,window_h=window_ymax-window_ymin;
       double tst=h/w*window_w/window_h;
-      if (tst>0.7 && tst<1.4)
+      double tst2=(window_xmax-window_zmin)/window_h;
+      if (tst>0.7 && tst<1.4 && (!is3d || (tst2>0.7 && tst2<1.4))){
 	do_ortho=true;
+      }
     }
     if (do_ortho )
       orthonormalize(false);
@@ -8327,15 +8409,15 @@ namespace xcas {
 	break;
       }
       if (key==KEY_CHAR_NORMAL || key=='>'){ // shift-+
-	if (is3d && gr.precision<9)
+	if (gr.is3d && gr.precision<9)
 	  gr.precision++;
       }
       if (key=='\\' || key=='<'){ // shift--
-	if (is3d && gr.precision>1)
+	if (gr.is3d && gr.precision>1)
 	 gr.precision--;
       }
       if (key==KEY_CTRL_UP){
-	if (is3d){
+	if (gr.is3d){
 	  int curprec=gr.precision;
 	  gr.precision += 2;
 	  if (gr.precision>9) gr.precision=9;
@@ -8364,7 +8446,7 @@ namespace xcas {
 	gr.up((gr.window_ymax-gr.window_ymin)/2);
       }
       if (key==KEY_CTRL_DOWN) {
-	if (is3d){
+	if (gr.is3d){
 	  int curprec=gr.precision;
 	  gr.precision += 2;
 	  if (gr.precision>9) gr.precision=9;
@@ -8393,7 +8475,7 @@ namespace xcas {
 	gr.down((gr.window_ymax-gr.window_ymin)/2);
       }
       if (key==KEY_CTRL_LEFT) {
-	if (is3d){
+	if (gr.is3d){
 	  int curprec=gr.precision;
 	  gr.precision += 2;
 	  if (gr.precision>9) gr.precision=9;
@@ -8415,7 +8497,7 @@ namespace xcas {
       }
       if (key==KEY_SHIFT_LEFT) { gr.left((gr.window_xmax-gr.window_xmin)/2); }
       if (key==KEY_CTRL_RIGHT) {
-	if (is3d){
+	if (gr.is3d){
 	  int curprec=gr.precision;
 	  gr.precision += 2;
 	  if (gr.precision>9) gr.precision=9;
@@ -8451,7 +8533,7 @@ namespace xcas {
       if (key==KEY_CHAR_DIV) {
 	gr.orthonormalize();
       }
-      if (is3d){
+      if (gr.is3d){
 	if (key==KEY_CHAR_0){
 	  gr.hide2nd=!gr.hide2nd;
 	}
