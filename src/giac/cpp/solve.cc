@@ -4626,7 +4626,7 @@ namespace giac {
     bool guess_first=is_undef(guess);
     // Main loop with random initialization
     int j=1;
-    for (;j<=5 ;j++,niter += 5){ 
+    for (;j<=NEWTON_MAX_RANDOM_RESTART;j++,niter += 5){ 
       if (guess_first){
 	a=newton_rand(j,real,rand_xmin,rand_xmax,f,contextptr);
       }
