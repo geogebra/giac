@@ -231,9 +231,11 @@ namespace xcas {
     std::vector<double3> sphere_centerv;
     std::vector<double> sphere_radiusv;
     giac::vecteur sphere_quadraticv; // matrix of the transformed quad. form
+    std::vector<bool> sphere_isclipped;
     std::vector< std::vector<double3> > polyedrev;
     std::vector<double3> polyedre_abcv;
     std::vector<double> polyedre_xyminmax;
+    std::vector<bool> polyedre_faceisclipped;
     std::vector<double3> linev; // 2 double3 per object
     std::vector<short> linetypev;
     std::vector<const char *> lines; // legende

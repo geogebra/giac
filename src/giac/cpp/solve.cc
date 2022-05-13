@@ -4625,7 +4625,7 @@ namespace giac {
       invdf=mtran(*invdf._VECTptr);
     bool guess_first=is_undef(guess);
     // Main loop with random initialization
-    int j=1;
+    int j=1; //NEWTON_MAX_RANDOM_RESTART=20;
     for (;j<=NEWTON_MAX_RANDOM_RESTART;j++,niter += 5){ 
       if (guess_first){
 	a=newton_rand(j,real,rand_xmin,rand_xmax,f,contextptr);

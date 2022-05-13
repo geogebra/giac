@@ -5992,9 +5992,13 @@ namespace xcas {
 	    // std::cout << k << " " << x << " " << y << " " << color.u << "\n";
 	    double a=abc.x,b=abc.y,c=abc.z;
 	    z=a*x+b*y+c;
-	    double X,Y,Z;
-	    do_transform(invtransform,x,y,z,X,Y,Z);
-	    if (X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax && Z>=window_zmin && Z<=window_zmax){
+	    bool is_clipped=polyedre_faceisclipped[k];
+	    if (!is_clipped){
+	      double X,Y,Z;
+	      do_transform(invtransform,x,y,z,X,Y,Z);
+	      is_clipped=X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax && Z>=window_zmin && Z<=window_zmax;
+	    }
+	    if (is_clipped){
 #ifdef ABC3D
 	      update12(found,found2,
 		       a,b,c,z,
@@ -6012,19 +6016,19 @@ namespace xcas {
 	    }
 	  } // end if inside(cur,x,y)
 	}
-	for (int k=0;k<sphere_centerv.size();++k){
-	  double3 c=sphere_centerv[k];
+	for (int k=0;k<int(sphere_centerv.size());++k){
+	  const double3 & c=sphere_centerv[k];
 	  double R=sphere_radiusv[k];
-	  matrice & m=*sphere_quadraticv[k]._VECTptr;
-	  int4 color=sphere_color[k];
-	  vecteur & m0=*m[0]._VECTptr;
-	  vecteur & m1=*m[1]._VECTptr;
-	  vecteur & m2=*m[2]._VECTptr;
-	  double v0=x-c.x,v1=y-c.y,v2=0;
-	  double a=m2[2]._DOUBLE_val,b=2*m0[2]._DOUBLE_val*v0+2*m1[2]._DOUBLE_val*v1,C=m0[0]._DOUBLE_val*v0*v0+2*m0[1]._DOUBLE_val*v0*v1+m1[1]._DOUBLE_val*v1*v1-R*R;
+	  const matrice & m=*sphere_quadraticv[k]._VECTptr;
+	  const vecteur & m0=*m[0]._VECTptr;
+	  const vecteur & m1=*m[1]._VECTptr;
+	  const vecteur & m2=*m[2]._VECTptr;
+	  double v0=x-c.x,v1=y-c.y;
+	  double a=m2[2]._DOUBLE_val,b=2*(m0[2]._DOUBLE_val*v0+m1[2]._DOUBLE_val*v1),C=(m0[0]._DOUBLE_val*v0+2*m0[1]._DOUBLE_val*v1)*v0+m1[1]._DOUBLE_val*v1*v1-R*R;
 	  double delta=b*b-4*a*C;
 	  if (delta<0)
 	    continue;
+	  const int4 & color=sphere_color[k];
 	  delta=std::sqrt(delta);
 	  double sol1,sol2;
 	  if (b>0){
@@ -6035,11 +6039,15 @@ namespace xcas {
 	    sol1=2*C/(-b+delta);//(-b-delta)/2/a;
 	    sol2=(-b+delta)/2/a;
 	  }
-	  v2=sol1;
+	  double v2=sol1;
 	  z=v2+c.z;
-	  double X,Y,Z;
-	  do_transform(invtransform,x,y,z,X,Y,Z);
-	  if (X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax && Z>=window_zmin && Z<=window_zmax){
+	  bool is_clipped=sphere_isclipped[k];
+	  if (!is_clipped){
+	    double X,Y,Z;
+	    do_transform(invtransform,x,y,z,X,Y,Z);
+	    is_clipped=X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax && Z>=window_zmin && Z<=window_zmax;
+	  }
+	  if (is_clipped){
 	    double w0=v0*m0[0]._DOUBLE_val+v1*m1[0]._DOUBLE_val+v2*m2[0]._DOUBLE_val;
 	    double w1=v0*m0[1]._DOUBLE_val+v1*m1[1]._DOUBLE_val+v2*m2[1]._DOUBLE_val;
 	    double w2=v0*m0[2]._DOUBLE_val+v1*m1[2]._DOUBLE_val+v2*m2[2]._DOUBLE_val;
@@ -6061,10 +6069,16 @@ namespace xcas {
 		     upcolor,downcolor,downupcolor,downdowncolor);
 #endif
 	  }
+	  if (delta<=0) continue; // delta==0, twice the same point
 	  v2=sol2;
 	  z=v2+c.z;
-	  do_transform(invtransform,x,y,z,X,Y,Z);
-	  if (delta>0 && X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax && Z>=window_zmin && Z<=window_zmax){
+	  is_clipped=sphere_isclipped[k];
+	  if (!is_clipped){
+	    double X,Y,Z;
+	    do_transform(invtransform,x,y,z,X,Y,Z);
+	    is_clipped=X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax && Z>=window_zmin && Z<=window_zmax;
+	  }
+	  if (is_clipped){
 	    double w0=v0*m0[0]._DOUBLE_val+v1*m1[0]._DOUBLE_val+v2*m2[0]._DOUBLE_val;
 	    double w1=v0*m0[1]._DOUBLE_val+v1*m1[1]._DOUBLE_val+v2*m2[1]._DOUBLE_val;
 	    double w2=v0*m0[2]._DOUBLE_val+v1*m1[2]._DOUBLE_val+v2*m2[2]._DOUBLE_val;
@@ -6585,7 +6599,7 @@ namespace xcas {
     int s;
     bool ortho=autoscaleg(g,vx,vy,vz,contextptr);
     autoscaleminmax(vx,window_xmin,window_xmax,fullview);
-    double zf=1+1e-14;
+    double zf=is3d?1.03:1+1e-14;
     zoomx(zf,false,false);
     autoscaleminmax(vy,window_ymin,window_ymax,fullview);
     zoomy(zf,false,false);
@@ -6759,7 +6773,7 @@ namespace xcas {
     sphere_centerv.clear(); sphere_radiusv.clear(); sphere_quadraticv.clear();
     linev.clear(); linetypev.clear(); curvev.clear();
     pointv.clear(); points.clear();
-    plan_color.clear();sphere_color.clear();polyedre_color.clear();line_color.clear();curve_color.clear(); hyp_color.clear(); point_color.clear();
+    plan_color.clear();sphere_color.clear();polyedre_color.clear();polyedre_faceisclipped.clear();line_color.clear();curve_color.clear(); hyp_color.clear(); point_color.clear();
     // rotate+translate+scale g
     vecteur v;
     aplatir(gen2vecteur(g),v);
@@ -6850,11 +6864,12 @@ namespace xcas {
       if (G.is_symb_of_sommet(at_hypersphere)){
 	vecteur hyp=*G._SYMBptr->feuille._VECTptr;
 	gen c=evalf_double(hyp[0],1,contextptr);
-	double X,Y,Z;
-	do_transform(transform,c[0]._DOUBLE_val,c[1]._DOUBLE_val,c[2]._DOUBLE_val,X,Y,Z);
+	double x=c[0]._DOUBLE_val,y=c[1]._DOUBLE_val,z=c[2]._DOUBLE_val,X,Y,Z;
+	do_transform(transform,x,y,z,X,Y,Z);
 	sphere_centerv.push_back(double3(X,Y,Z));
 	gen R=evalf(hyp[1],1,contextptr);
-	sphere_radiusv.push_back(R._DOUBLE_val);
+	double r=R._DOUBLE_val;
+	sphere_radiusv.push_back(r);
 	double * mat=invtransform;
 	matrice qmat(makevecteur(
 				 makevecteur(mat[0],mat[4],mat[8]),
@@ -6864,6 +6879,9 @@ namespace xcas {
 	qmat=mmult(mtran(qmat),qmat);
 	sphere_quadraticv.push_back(qmat);
 	sphere_color.push_back(int4(u,d,du,dd));
+	bool isclipped=x>=window_xmin+r && x<=window_xmax-r && y>=window_ymin+r && y<=window_ymax-r && z>=window_zmin+r && z<=window_zmax-r;
+	// check if distance of center to window_x/y/xmin/max is <=R
+	sphere_isclipped.push_back(isclipped);
 	continue;
       }
       if (G.is_symb_of_sommet(at_hyperplan)){
@@ -6929,6 +6947,7 @@ namespace xcas {
 	polyedre_color.reserve(polyedre_color.size()+p.size());
 	polyedre_xyminmax.reserve(polyedre_xyminmax.size()+2*p.size());
 	for (int j=0;j<p.size();++j){
+	  bool is_clipped=false;
 	  gen g=p[j];
 	  if (g.type==_VECT){
 	    vector<double3> cur;
@@ -6937,8 +6956,11 @@ namespace xcas {
 	    for (int k=0;k<w.size();++k){
 	      gen P=evalf_double(w[k],1,contextptr);
 	      if (P.type==_VECT && P._VECTptr->size()==3){
+		double x=P[0]._DOUBLE_val,y=P[1]._DOUBLE_val,z=P[2]._DOUBLE_val;
+		if (is_clipped && (x<window_xmin || x>window_xmax || y<window_ymin || y>window_ymax || z<window_zmin || z>window_zmax) )
+		  is_clipped=false;
 		double X,Y,Z;
-		do_transform(transform,P[0]._DOUBLE_val,P[1]._DOUBLE_val,P[2]._DOUBLE_val,X,Y,Z);
+		do_transform(transform,x,y,z,X,Y,Z);
 		cur.push_back(double3(X,Y,Z));
 	      }
 	    }
@@ -6981,6 +7003,7 @@ namespace xcas {
 	      polyedre_color.push_back(int4(u,d,du,dd));
 	      polyedre_xyminmax.push_back(facemin);
 	      polyedre_xyminmax.push_back(facemax);
+	      polyedre_faceisclipped.push_back(is_clipped);
 	    } // end cur.size()>=3
 	  } // end g.type==_VECT
 	}
