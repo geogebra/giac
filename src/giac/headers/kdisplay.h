@@ -228,6 +228,7 @@ namespace xcas {
     std::vector< std::vector< std::vector<float3d> > > surfacev;
     std::vector<double3> plan_pointv; // point in plan 
     std::vector<double3> plan_abcv; // plan equation z=a*x+b*y+c
+    std::vector<bool> plan_filled;
     std::vector<double3> sphere_centerv;
     std::vector<double> sphere_radiusv;
     giac::vecteur sphere_quadraticv; // matrix of the transformed quad. form
@@ -235,7 +236,7 @@ namespace xcas {
     std::vector< std::vector<double3> > polyedrev;
     std::vector<double3> polyedre_abcv;
     std::vector<double> polyedre_xyminmax;
-    std::vector<bool> polyedre_faceisclipped;
+    std::vector<bool> polyedre_faceisclipped,polyedre_filled;
     std::vector<double3> linev; // 2 double3 per object
     std::vector<short> linetypev;
     std::vector<const char *> lines; // legende

@@ -476,10 +476,10 @@ namespace giac {
   };
 
   enum color_values {
-#ifdef KHICAS
+#if defined KHICAS || defined GIAC_HAS_STO_38
     _BLACK=0,
     _RED=0xf800,
-    _GREEN=0x0400,
+    _GREEN=0x07e0,
     _YELLOW=0xffe0,
     _BLUE=0x001f,
     _MAGENTA=0xf81f,

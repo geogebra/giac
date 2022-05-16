@@ -1517,7 +1517,12 @@ namespace giac {
     }
     s=int(polylines.size());
     for (int i=0;i<s;++i){
-      other.push_back(symb_pnt(polylines[i],contextptr));
+      gen cur=polylines[i];
+      if (cur.type==_VECT && !cur._VECTptr->empty()){
+	if (cur._VECTptr->front()!=cur._VECTptr->back())
+	  cur._VECTptr->push_back(cur._VECTptr->front());
+      }
+      other.push_back(symb_pnt(cur,contextptr));
     }
     return other;
   }
@@ -1551,6 +1556,136 @@ namespace giac {
     }
     return segments2polygone(res,contextptr);
   }
+
+ static bool graham_sort_function(const gen & a,const gen & b){
+   vecteur & v=*a._VECTptr;
+   vecteur & w=*b._VECTptr;
+   return is_strictly_greater(w[1],v[1],context0) || (v[1]==w[1] && is_strictly_greater(w[2],v[2],context0)) ;
+ }
+
+  // find 2*area of intersection of polyhedron p with horizontal plane z
+  gen area_polyedre_z(const vecteur & p, const gen & z,GIAC_CONTEXT){
+    const_iterateur it=p.begin(),itend=p.end();
+    // find edges intersections with plane z
+    vecteur lx,ly;
+    for (;it!=itend;++it){
+      if (it->type!=_VECT)
+	continue;
+      vecteur v=*it->_VECTptr;
+      int s=int(v.size());
+      if (s<3)
+	continue;
+      for (int i=0;i<s;++i){
+	gen A(v[i?i-1:s-1]),B(v[i]);
+	if ( A.type!=_VECT || A._VECTptr->size()!=3 ||
+	     B.type!=_VECT || B._VECTptr->size()!=3 )
+	  return undef;
+	gen x1(A._VECTptr->front()),y1((*A._VECTptr)[1]),z1(A._VECTptr->back());
+	gen x2(B._VECTptr->front()),y2((*B._VECTptr)[1]),z2(B._VECTptr->back());
+	if (z1==z2 || is_strictly_positive((z-z1)*(z-z2),contextptr))
+	  continue;
+	gen t=(z-z1)/(z2-z1);
+	lx.push_back(x1+t*(x2-x1)); ly.push_back(y1+t*(y2-y1));
+      }
+    }
+    // sort lx/ly like for finding convexhull 
+    gen ymin=ly[0],ycur,xmin=lx[0],xcur;
+    for (int j=1;j<lx.size();++j){
+      ycur=ly[j],xcur=lx[j];
+      if ( is_strictly_greater(ymin,ycur,contextptr) ||
+	   (ycur==ymin && is_strictly_greater(xmin,xcur,contextptr)) ){
+	ymin=ycur; xmin=xcur;
+      }
+    }
+    vecteur ls;
+    for (int j=0;j<lx.size();++j){
+      ycur=ly[j]; xcur=lx[j];
+      gen dy=ycur-ymin,dx=xcur-xmin;
+      if (dx!=0 || dy!=0){
+	ls.push_back(makevecteur(makevecteur(dx,dy),arg(dx+cst_i*dy,contextptr),dx*dx+dy*dy));
+      }
+    }
+    sort(ls.begin(),ls.end(),graham_sort_function);
+    // compute 2*area
+    gen res=0;
+    for (size_t i=1;i<ls.size();++i){
+      vecteur prec=*ls[i-1]._VECTptr->front()._VECTptr;
+      vecteur cur=*ls[i]._VECTptr->front()._VECTptr;
+      res +=  cur[1]*prec[0]-cur[0]*prec[1];
+    }
+    return abs(res,contextptr);
+  }
+
+  static bool infe(const gen & a,const gen &b){
+    return is_strictly_greater(b,a,context0);
+  }
+
+  gen volume_polyedre(const vecteur & p,GIAC_CONTEXT){
+    const_iterateur it=p.begin(),itend=p.end();
+    // collect vertices z from polyhedron faces
+    vecteur Z;
+    for (;it!=itend;++it){
+      if (it->type!=_VECT)
+	continue;
+      vecteur v=*it->_VECTptr;
+      int s=int(v.size());
+      if (s<3)
+	continue;
+      for (int i=0;i<s;++i)
+	Z.push_back(v[i][2]);
+    }
+    sort(Z.begin(),Z.end(),infe);
+    // remove multiple occurences
+    vecteur tmp; tmp.swap(Z);
+    Z.push_back(tmp[0]);
+    for (size_t i=1;i<tmp.size();++i){
+      if (tmp[i]!=Z.back())
+	Z.push_back(tmp[i]);
+    }
+    if (Z.size()<2) // inside a plane z=cst
+      return 0;
+    // compute volume by Simpson formula
+    int s=Z.size();
+    gen prev=area_polyedre_z(p,Z.front(),contextptr);
+    gen V=0;
+    for (int i=1;i<s;++i){
+      gen mid=area_polyedre_z(p,(Z[i-1]+Z[i])/2,contextptr);
+      gen nxt=area_polyedre_z(p,Z[i],contextptr);
+      gen dz=Z[i]-Z[i-1];
+      V += (prev+4*mid+nxt)*dz;
+      prev=nxt;
+    }
+    return V/12;
+  }
+
+  gen _volume(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG && args.subtype==-1) return  args;
+    gen g=remove_at_pnt(args);
+    if (g.type==_VECT && g.subtype==_POLYEDRE__VECT)
+      return volume_polyedre(*g._VECTptr,contextptr);
+    if (g.is_symb_of_sommet(at_hypersphere)){
+      gen & f=g._SYMBptr->feuille;
+      if (f.type!=_VECT || f._VECTptr->size()!=2)
+	return gensizeerr(contextptr);
+      gen R=f._VECTptr->back();
+      return (4*pow(R,3))/3*cst_pi;
+    }
+    if (g.type!=_VECT || g._VECTptr->size()<4)
+      return gensizeerr(contextptr);
+    if (g._VECTptr->size()==4){
+      vecteur & v=*g._VECTptr;
+      gen a(v[0]),b(v[1]),c(v[2]),d(v[3]);
+      gen ab(b-a),ac(c-a),ad(d-a);
+      return abs(_scalar_product(makesequence(_cross(makesequence(ab,ac),contextptr),ad),contextptr),contextptr)/6;
+    }
+    g=_polyedre(args,contextptr);
+    if (g.type==_VECT && g.subtype==_POLYEDRE__VECT)
+      return volume_polyedre(*g._VECTptr,contextptr);
+    return gensizeerr(contextptr);    
+  }
+  static const char _volume_s []="volume";
+  static define_unary_function_eval (__volume,&_volume,_volume_s);
+  define_unary_function_ptr5( at_volume ,alias_at_volume,&__volume,0,true);
 
   vecteur interhyperplan(const gen & p1,const gen & p2,GIAC_CONTEXT){
     vecteur P1,n1,P2,n2;

@@ -5666,7 +5666,8 @@ namespace xcas {
     return (-xy+m.y-m.x)/(v.x-v.y);
   }
 
-  void get_colors(gen attr,int & upcolor,int & downcolor,int & downupcolor,int & downdowncolor){
+  // returns true if filled, false otherwise
+  bool get_colors(gen attr,int & upcolor,int & downcolor,int & downupcolor,int & downdowncolor){
     if (attr.is_symb_of_sommet(at_pnt)){
       attr=attr[1];
     }
@@ -5684,6 +5685,9 @@ namespace xcas {
       g >>= 2;
       downdowncolor=rgb888to565((r<<16)|(g<<8)|b);
     }
+    if (attr.type==_INT_)
+      return attr.val & 0x40000000;
+    return false;
   }
 
 #define ABC3D
@@ -5948,6 +5952,30 @@ namespace xcas {
 	  }
 	}
       }
+      vector<bool> spheres(sphere_centerv.size()); // is plane y-x=yx intersecting sphere
+      for (int k=0;k<int(sphere_centerv.size());++k){
+	const double3 & c=sphere_centerv[k];
+	double xc=c.x,yc=c.y;
+	double r=sphere_radiusv[k];
+	const matrice & m=*sphere_quadraticv[k]._VECTptr;
+	const vecteur & m0=*m[0]._VECTptr;
+	const vecteur & m1=*m[1]._VECTptr;
+	const vecteur & m2=*m[2]._VECTptr;
+	double m00=m0[0]._DOUBLE_val,m01=m0[1]._DOUBLE_val,m02=m0[2]._DOUBLE_val,m11=m1[1]._DOUBLE_val,m12=m1[2]._DOUBLE_val,m22=m2[2]._DOUBLE_val;
+	/* q0:=m00*x^2+2*m01*x*y+2*m02*x*z+m11*y^2+2*m12*y*z+m22*z^2; q:=subst(q0,[x,y],[x-xc,y-yc]);
+	   a,b,c:=coeffs(q(y=yx+x)-r^2,x);
+	   delta:=b^2-4*a*c; 
+	   // if delta<0 for all z, there is no intersection
+	   // delta is a second order polynomial in z, check discriminant
+	   A,B,C:=coeffs(delta,z);
+	   D:=B^2-4*A*C;  // if D<0 no intersection
+	*/
+	double A=4*m02*m02+4*m12*m12-4*m00*m22-8*m01*m22+8*m02*m12-4*m11*m22,
+	  B=-8*m00*m12*xc+8*m00*m12*yc-8*m00*m12*yx+8*m01*m02*xc-8*m01*m02*yc+8*m01*m02*yx-8*m01*m12*xc+8*m01*m12*yc-8*m01*m12*yx+8*m02*m11*xc-8*m02*m11*yc+8*m02*m11*yx,
+	  C=4*m01*m01*xc*xc+4*m01*m01*yc*yc+4*m01*m01*yx*yx-4*m00*m11*xc*xc-4*m00*m11*yc*yc-4*m00*m11*yx*yx-8*m01*m01*xc*yc+8*m01*m01*xc*yx-8*m01*m01*yc*yx+8*m00*m11*xc*yc-8*m00*m11*xc*yx+8*m00*m11*yc*yx+4*m00*r*r+8*m01*r*r+4*m11*r*r,
+	  D=B*B-4*A*C;
+	spheres[k]=D>=0;
+      }
       double zmin[10]={220.220,220,220,220,220,220,220,220,220},
 	zmax[10]={0,0,0,0,0,0,0,0,0,0},
 	zmin2[10]={220.220,220,220,220,220,220,220,220,220},
@@ -6017,6 +6045,8 @@ namespace xcas {
 	  } // end if inside(cur,x,y)
 	}
 	for (int k=0;k<int(sphere_centerv.size());++k){
+	  if (!spheres[k])
+	    continue;
 	  const double3 & c=sphere_centerv[k];
 	  double R=sphere_radiusv[k];
 	  const matrice & m=*sphere_quadraticv[k]._VECTptr;
@@ -6102,6 +6132,8 @@ namespace xcas {
 	  }
 	} // end hypersphere loop
 	for (int k=0;k<plan_abcv.size();++k){
+	  if (!plan_filled[k])
+	    continue;
 	  double3 abc=plan_abcv[k];
 	  int4 color=plan_color[k];
 	  // z=a*x+b*y+c
@@ -6253,22 +6285,24 @@ namespace xcas {
       } // end lines rendering
 #endif
       // points rendering
-      for (int j=0;j<pointv.size();++j){
-	double3 m=pointv[j];
-	int4 c=point_color[j];
+      for (int j=0;j<int(pointv.size());++j){
+	const double3 & m=pointv[j];
 	if (m.x<i+horiz || m.x>=i+horiz+w)
 	  continue;
+	const int4 & c=point_color[j];
 	int k=m.x-i-horiz,color=-1;
 	double mz=LCD_HEIGHT_PX/2-lcdz*m.z;
-	if (mz>=zmax[k])
+	double dz=(zmax[k]-zmin[k])*1e-3;
+	if (mz>=zmax[k]-dz)
 	  color=c.u;
-	else if (mz<=zmin[k])
-	  color=c.d;
+	else if (mz<=zmin[k]+dz)
+	  color=c.u; // c.d?
 	else color=c.du;
 	drawRectangle(m.x,m.y,3,3,color);
 	if (points[j]){
-	  int dx=os_draw_string(0,0,color,0,points[j],true); // fake print
-	  os_draw_string(m.x-dx,m.y,c.u,0,points[j]);
+	  // int dx=RAND_MAX+os_draw_string(-RAND_MAX,0,color,0,points[j],false); // fake print
+	  int dx=os_draw_string_small(0,0,color,0,points[j],true); // fake print
+	  os_draw_string_small(m.x-dx,m.y,color,0,points[j],false); 
 	}
       } // end points rendering
     } // end pixel horizontal loop on i
@@ -6327,6 +6361,7 @@ namespace xcas {
       double tmin_=usetmax?tmin:tmax,
 	tmax_=usetmax?tmin:tmax;
       for (int k=0;k<plan_abcv.size();++k){
+	if (!plan_filled[k]) continue;
 	// z >= z_plan=a*x+b*y+c where (x,y,z)=m+t*v
 	// m.z+t*v.z >= a*m.x+t*a*v.x+b*m.y+t*b*v.y+c
 	// t*(v.z-a*v.x-b.v.y) >= a*m.x+b*m.y+c-m.z
@@ -6371,6 +6406,7 @@ namespace xcas {
       }
       vector<double> interpoly;
       for (int k=0;k<polyedre_abcv.size();++k){
+	if (!polyedre_filled[k]) continue;
 	double3 abc=polyedre_abcv[k];
 	double a=abc.x,b=abc.y,c=abc.z;
 	// intersect z=a*x+b*y+c with line m+t*v
@@ -6768,8 +6804,8 @@ namespace xcas {
       transform[i]=mat[i];
     inv4(transform,invtransform);
     surfacev.clear();
-    polyedrev.clear(); polyedre_xyminmax.clear(); polyedre_abcv.clear();// polyedre_normalv.clear();
-    plan_pointv.clear(); plan_abcv.clear();
+    polyedrev.clear(); polyedre_xyminmax.clear(); polyedre_abcv.clear(); polyedre_faceisclipped.clear(); polyedre_filled.clear();
+    plan_pointv.clear(); plan_abcv.clear(); plan_filled.clear();
     sphere_centerv.clear(); sphere_radiusv.clear(); sphere_quadraticv.clear();
     linev.clear(); linetypev.clear(); curvev.clear();
     pointv.clear(); points.clear();
@@ -6780,11 +6816,12 @@ namespace xcas {
     for (int i=0;i<v.size();++i){
       int u=default_upcolor,d=default_downcolor,du=default_downupcolor,dd=default_downdowncolor;
       const char * ptr=0;
+      bool fill_polyedre=false;
       if (v[i].is_symb_of_sommet(at_pnt)){
 	vecteur & attrv=*v[i]._SYMBptr->feuille._VECTptr;
 	if (attrv.size()>1){
 	  gen attr=attrv[1];
-	  get_colors(attr,u,d,du,dd);
+	  fill_polyedre=get_colors(attr,u,d,du,dd);
 	  if (attrv.size()>2){
 	    attr=attrv[2];
 	    if (attr.type==_STRNG)
@@ -6885,6 +6922,7 @@ namespace xcas {
 	continue;
       }
       if (G.is_symb_of_sommet(at_hyperplan)){
+	plan_filled.push_back(fill_polyedre);
 	vecteur hyp=*G._SYMBptr->feuille._VECTptr;
 	gen hyp1=evalf_double(hyp[1],1,contextptr);
 	vecteur & hyp1v=*hyp1._VECTptr;
@@ -6990,14 +7028,16 @@ namespace xcas {
 		continue;
 	      cur.push_back(cur.front());
 	      double facemin=1e306,facemax=-1e306;
-	      for (int l=1;l<cur.size();++l){
-		double xy=cur[l].y-cur[l].x;
-		if (xy<facemin)
-		  facemin=xy;
-		if (xy>facemax)
-		  facemax=xy;
-		// replace unused z coordinate by slope
-		// cur[l].z=(cur[l].y-cur[l-1].y)/(cur[l].x-cur[l-1].x);
+	      if (fill_polyedre){
+		for (int l=1;l<cur.size();++l){
+		  double xy=cur[l].y-cur[l].x;
+		  if (xy<facemin)
+		    facemin=xy;
+		  if (xy>facemax)
+		    facemax=xy;
+		  // replace unused z coordinate by slope
+		  // cur[l].z=(cur[l].y-cur[l-1].y)/(cur[l].x-cur[l-1].x);
+		}
 	      }
 	      polyedrev.push_back(vector<double3>(0)); polyedrev.back().swap(cur); // polyedrev.push_back(cur);
 	      polyedre_color.push_back(int4(u,d,du,dd));
@@ -7597,66 +7637,113 @@ namespace xcas {
       clear_abort();
       if (show_edges){
 	// polyhedrons
-	for (int k=0;k<polyedrev.size();++k){
+	for (int k=0;k<int(polyedrev.size());++k){
 	  const vector<double3> & cur=polyedrev[k]; // current face
-	  int4 col=polyedre_color[k];
-	  for (int l=1;l<cur.size();++l){
-	    const double3 & p=cur[l-1];
+	  const int4 & col=polyedre_color[k];
+	  for (int l=1;l<int(cur.size());++l){
+	    const double3 & p=cur[l?l-1:cur.size()-1];
 	    const double3 & c=cur[l];
-#if 1
 	    // is edge visible?
 	    double3 m(p.x/2+c.x/2,p.y/2+c.y/2,p.z/2+c.z/2);
 	    double xy=m.x+m.y;
 	    int mi,mj;
 	    XYZ2ij(m,mi,mj);
-	    int kk;
-	    for (kk=0;kk<polyedrev.size();++kk){
+	    int kk,jmin=RAND_MAX,jmax=-RAND_MAX;
+	    for (kk=0;kk<int(polyedrev.size());++kk){
 	      if (k==kk)
 		continue;
 	      const vector<double3> & Cur=polyedrev[kk];
-	      int ll; int jmin=RAND_MAX,jmax=-RAND_MAX; 
-	      for (ll=1;ll<Cur.size();++ll){
-		const double3 & P=Cur[ll-1];
+	      int ll;
+	      // first check if point is in face
+	      for (ll=1;ll<int(Cur.size());++ll){
+		const double3 & P=Cur[ll?ll-1:Cur.size()-1];
 		const double3 & C=Cur[ll];
 		double3 M(P.x/2+C.x/2,P.y/2+C.y/2,P.z/2+C.z/2);
 		if (M.x==m.x && M.y==m.y && M.z==m.z){
-		  ll=Cur.size()-1;
-		  continue; // edge PC has same midpoint, ignore face
+		  break; // edge PC has same midpoint, will ignore face
 		}
-		if (M.x+M.y<xy){
-		  ll=Cur.size()-1;
-		  continue;
-		}
+	      }
+	      if (ll<int(Cur.size())) // point is in face, ignore face
+		continue;
+	      double3 M0; bool found1st=false;
+	      for (ll=1;ll<int(Cur.size());++ll){
+		const double3 & P=Cur[ll?ll-1:Cur.size()-1];
+		const double3 & C=Cur[ll];
 		// intersect plane y-x=m.y-m.x with PC edge P+t*PC
 		double PCx=C.x-P.x,PCy=C.y-P.y,dPC=PCy-PCx;
 		// P.y-P.x + t*dPC=m.y-m.x
-		if (dPC==0)
+		if (dPC==0) // edge is parallel
 		  continue;
 		double t=((m.y-m.x)+(P.x-P.y))/dPC;
-		if (t<=0 || t>=1)
+		if (t<0 || t>1)
 		  continue;
 		double x=P.x+t*PCx;
 		double y=P.y+t*PCy;
 		double z=P.z+t*(C.z-P.z);
-		int i,j;
-		XYZ2ij(double3(x,y,z),i,j);
-		if (j<jmin) jmin=j;
-		if (j>jmax) jmax=j;
-		if (mj>jmin && mj<jmax)
+		if (!found1st){
+		  M0=double3(x,y,z);
+		  found1st=true;
+		  continue;
+		}
+		if (x==M0.x && y==M0.y && z==M0.z)
+		  continue;
+		// segment([x,y,z],M0) has same y-x as m,
+		// find segment position for same y+x as m [x,y,z]+t*(M0-[x,y,z])
+		// yx=x+y+t*(M0.x-x+M0.y-y)
+		double M0xy=M0.x-x+M0.y-y;
+		int i1,j1,i2,j2; // N.B. i1,i2 should be the same as mi
+		if (std::abs(M0xy)<1e-14)
+		  t=-1;
+		else
+		  t=(xy-x-y)/M0xy;
+		if (t<=0 || t>=1){
+		  if (x+y<=xy) // segment is behind midpoint m
+		    continue;
+		  XYZ2ij(M0,i1,j1); 
+		  XYZ2ij(double3(x,y,z),i2,j2);
+		  if (j1>j2) swapint(j1,j2);
+		  if (jmin>j1) jmin=j1;
+		  if (jmax<j2) jmax=j2;
+		  if (jmin<mj && mj<jmax){
+		    break;
+		  }
+		  continue;
+		}
+		// find segment part that might mask midpoint m
+		double X = x+t*(M0.x-x);
+		double Y = y+t*(M0.y-y);
+		double Z = z+t*(M0.z-z);
+		XYZ2ij(double3(X,Y,Z),i1,j1);
+		if (x+y<=xy)
+		  XYZ2ij(M0,i2,j2);
+		else
+		  XYZ2ij(double3(x,y,z),i2,j2);
+		if (j1>j2) swapint(j1,j2);
+		if (jmin>j1) jmin=j1;
+		if (jmax<j2) jmax=j2;
+		if (jmin<mj && mj<jmax){
 		  break;
-	      }
-	      if (ll<Cur.size()) // means edge is not visible
+		}
+	      } // end for
+	      if (ll<int(Cur.size())){
+		// means edge is not visible
 		break;
+	      }
 	    }
-	    if (kk<polyedrev.size())
+	    // polyedre attribute: filled/not filled
+	    bool filled=polyedre_filled[k];
+	    bool hidden=kk<int(polyedrev.size());
+	    if (filled && hidden)
 	      continue;
-#endif
 	    int i1,j1,i2,j2;
 	    XYZ2ij(p,i1,j1);
 	    XYZ2ij(c,i2,j2);
+	    if (i1>i2 || (i1==i2 && j1>j2)){
+	      swapint(i1,i2); swapint(j1,j2);
+	    }
 	    drawLine(i1,j1,i2,j2,
 		     // col.d | 0x400000
-		     col.u | 0x400000
+		     col.u | ((hidden || filled)?0x400000:0)
 		     );
 	  }
 	}
@@ -7773,7 +7860,9 @@ namespace xcas {
 	      vi[1]=p[k].j;
 	      P.push_back(vi);
 	    }
-	    draw_polygon(P,upcolor | 0x400000,contextptr);
+	    draw_polygon(P,upcolor 
+			 // | 0x400000
+			 ,contextptr);
 	    if (nameptr){
 	      int x=os_draw_string(0,0,0,upcolor,nameptr,true);
 	      os_draw_string(P[0][0]-x,P[0][1],upcolor,0,nameptr);

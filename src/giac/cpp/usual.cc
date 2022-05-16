@@ -6452,8 +6452,8 @@ namespace giac {
 
   static symbolic symb_quorem(const gen & a,const gen & b){    return symbolic(at_quorem,makevecteur(a,b));  }
   gen quorem(const gen & a,const gen & b){
-    if ((a.type!=_VECT) || (b.type!=_VECT))
-      return symb_quorem(a,b);
+    if (a.type!=_VECT || b.type!=_VECT)
+      return quorem(gen2vecteur(a),gen2vecteur(b));
     if (b._VECTptr->empty())
       return gensizeerr(gettext("Division by 0"));
     vecteur q,r;
@@ -6472,7 +6472,8 @@ namespace giac {
       return _revlist(_greduce(gen(v,_SEQ__VECT),contextptr),contextptr);
     }
     vecteur & a =*args._VECTptr;
-    if ( (a.front().type==_VECT) && (a[1].type==_VECT))
+    if ( // a.front().type==_VECT && 
+	a[1].type==_VECT )
       return quorem(a.front(),a[1]);
     if ( (a.front().type==_POLY) && (a[1].type==_POLY)){
       int dim=a.front()._POLYptr->dim;

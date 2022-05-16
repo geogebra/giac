@@ -6066,10 +6066,20 @@ namespace giac {
   gen _aire(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type==_VECT && !args._VECTptr->empty() && args._VECTptr->front().is_symb_of_sommet(at_pnt) && args._VECTptr->back().is_symb_of_sommet(at_pnt)){
-      gen res=0;
-      for (unsigned i=0;i<args._VECTptr->size();++i)
-	res += _aire((*args._VECTptr)[i],contextptr);
-      return res;
+      gen res=remove_at_pnt(args._VECTptr->front());
+      bool loop=true;
+      if (res.type==_VECT && res.subtype==_POINT__VECT)
+	loop=false;
+      else if (res.type<_IDNT)
+	loop=false;
+      else if (res.type==_SYMB && has_i(res))
+	loop=false;
+      if (loop){
+	res=0;
+	for (unsigned i=0;i<args._VECTptr->size();++i)
+	  res += _aire((*args._VECTptr)[i],contextptr);
+	return res;
+      }
     }
     gen g=args;
     if (g.is_symb_of_sommet(at_equal)){
@@ -6175,7 +6185,7 @@ namespace giac {
     }
     gen res;
     for (int i=3;i<s;++i){
-      gen cote1(v[i-2]-v[0]),cote2(v[i-1]-v[0]);
+      gen cote1(remove_at_pnt(v[i-2])-v[0]),cote2(remove_at_pnt(v[i-1])-v[0]);
       if (cote1.type==_VECT && cote2.type==_VECT)
 	res += l2norm(cross(*cote1._VECTptr,*cote2._VECTptr,contextptr),contextptr);
       else
