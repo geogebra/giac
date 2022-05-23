@@ -262,6 +262,7 @@ namespace giac {
 
   bool has_undef_stringerr(const gen & g,std::string & err);
   gen _is_polynomial(const gen & args,GIAC_CONTEXT);
+  bool is_periodic(const gen & f,const gen & x,gen & periode,GIAC_CONTEXT);
 
   // step by step utilities
   // poi=point of interest, tvi=table of variation

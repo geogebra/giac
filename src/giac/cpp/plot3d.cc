@@ -1557,6 +1557,49 @@ namespace giac {
     return segments2polygone(res,contextptr);
   }
 
+#if 1
+  gen volume_polyedre(const vecteur & p,GIAC_CONTEXT){
+    const_iterateur it=p.begin(),itend=p.end();
+    gen V=0,c=0; int n=0;
+    // find isobarycenter
+    for (it=p.begin();it!=itend;++it){
+      if (it->type!=_VECT)
+	continue;
+      vecteur v=*it->_VECTptr;
+      int s=int(v.size());
+      if (s && v.front()==v.back())
+	--s;
+      if (s<3)
+	continue;
+      for (int i=0;i<s;++i)
+	c += v[i];
+      n += s;
+    }
+    c = c/n;
+    for (it=p.begin();it!=itend;++it){
+      if (it->type!=_VECT)
+	continue;
+      vecteur v=*it->_VECTptr;
+      int s=int(v.size());
+      if (s && v.front()==v.back())
+	--s;
+      if (s<3)
+	continue;
+      gen a=v[0];
+      for (int i=2;i<s;++i){
+	gen cote1=v[i-1]-a,cote2=v[i]-a;
+	gen n=cross(*cote1._VECTptr,*cote2._VECTptr,contextptr);
+	gen ps=dotvecteur(a,n,contextptr);
+	if (is_positive(dotvecteur(a-c,n),contextptr))
+	  V += ps;
+	else
+	  V -= ps;
+      }
+    }
+    return V/6;
+  }
+
+#else
  static bool graham_sort_function(const gen & a,const gen & b){
    vecteur & v=*a._VECTptr;
    vecteur & w=*b._VECTptr;
@@ -1600,7 +1643,7 @@ namespace giac {
     vecteur ls;
     for (int j=0;j<lx.size();++j){
       ycur=ly[j]; xcur=lx[j];
-      gen dy=ycur-ymin,dx=xcur-xmin;
+      gen dy=normal(ycur-ymin,contextptr),dx=normal(xcur-xmin,contextptr);
       if (dx!=0 || dy!=0){
 	ls.push_back(makevecteur(makevecteur(dx,dy),arg(dx+cst_i*dy,contextptr),dx*dx+dy*dy));
       }
@@ -1613,7 +1656,7 @@ namespace giac {
       vecteur cur=*ls[i]._VECTptr->front()._VECTptr;
       res +=  cur[1]*prec[0]-cur[0]*prec[1];
     }
-    return abs(res,contextptr);
+    return res;//abs(res,contextptr);
   }
 
   static bool infe(const gen & a,const gen &b){
@@ -1647,16 +1690,20 @@ namespace giac {
     // compute volume by Simpson formula
     int s=Z.size();
     gen prev=area_polyedre_z(p,Z.front(),contextptr);
+    // CERR << 0 << " " << prev << '\n';
     gen V=0;
     for (int i=1;i<s;++i){
       gen mid=area_polyedre_z(p,(Z[i-1]+Z[i])/2,contextptr);
+      // CERR << i << " " << evalf(mid,1,contextptr) << '\n';
       gen nxt=area_polyedre_z(p,Z[i],contextptr);
+      // CERR << i << " " << evalf(nxt,1,contextptr) << '\n';
       gen dz=Z[i]-Z[i-1];
       V += (prev+4*mid+nxt)*dz;
       prev=nxt;
     }
     return V/12;
   }
+#endif
 
   gen _volume(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;

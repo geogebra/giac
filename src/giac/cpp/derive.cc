@@ -1112,10 +1112,30 @@ namespace giac {
     tmp.insert(tmp.begin(),symbolic(at_ou,gen(res,_SEQ__VECT)));
     return symbolic(at_and,gen(tmp,_SEQ__VECT));
   }
+  void domain_auto_assume(const gen & f,const gen & x,GIAC_CONTEXT){
+    vecteur range;
+    find_range(x,range,contextptr);
+    if (range.size()>=1 && range.front().type==_VECT){
+      range=*range.front()._VECTptr;
+      if (range.size()==2 && range[0]==minus_inf && range[1]==plus_inf){
+	gen periode;
+	if (is_periodic(f,x,periode,contextptr)){
+	  gen hyp=symb_and(symbolic(at_superieur_egal,makesequence(x,0)),symbolic(at_inferieur_egal,makesequence(x,periode)));
+	  *logptr(contextptr) << "Periodic function. Auto assume" << hyp << "\n";
+	  giac_assume(hyp,contextptr);
+	}
+      }
+    }
+  }
   gen _domain(const gen & args,GIAC_CONTEXT){
     if (is_undef(args)) return args;
-    if (args.type!=_VECT || args.subtype!=_SEQ__VECT)
-      return domain(args,vx_var,0,contextptr);
+    if (args.type!=_VECT || args.subtype!=_SEQ__VECT){
+      gen xval=assumeeval(vx_var,contextptr);
+      domain_auto_assume(args,vx_var,contextptr);
+      gen res=domain(args,vx_var,0,contextptr);
+      restorepurge(xval,vx_var,contextptr);
+      return res;
+    }
     vecteur v=*args._VECTptr;
     if (v.size()<2)
       return gensizeerr(contextptr);
@@ -1125,7 +1145,11 @@ namespace giac {
       v.push_back(0);
     if (v[2].type!=_INT_)
       return gensizeerr(contextptr);
-    return domain(v[0],v[1],v[2].val,contextptr);
+    gen xval=assumeeval(vx_var,contextptr);
+    domain_auto_assume(v[0],v[1],contextptr);
+    gen res=domain(v[0],v[1],v[2].val,contextptr);
+    restorepurge(xval,vx_var,contextptr);
+    return res;
   }
   static const char _domain_s []="domain";
   static define_unary_function_eval (__domain,&_domain,_domain_s);

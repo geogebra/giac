@@ -6804,11 +6804,14 @@ namespace giac {
     return has_num_coeff(an)?an:recursive_normal(an,contextptr);
   }
   bool get_fourier(vecteur & v){
+    if (v.size()<2) return false;
     if (v.size()==2) 
       v=makevecteur(v[0],vx_var,cst_two_pi,v[1],-cst_pi);
     if (v.size()==3) 
       v=makevecteur(v[0],v[1],cst_two_pi,v[2],-cst_pi);
     if (v.size()==4) v.push_back(0);
+    if (equalposcomp(lidnt(v[3]),v[1]))
+      return false;
     return v.size()==5;
   }
   gen _fourier_an(const gen & args,GIAC_CONTEXT){
