@@ -88,7 +88,8 @@ extern "C" {
   void os_set_pixel(int x,int y,int c);
   void os_fill_rect(int x,int y,int w,int h,int c);
   inline void drawRectangle(int x,int y,int w,int h,int c){
-    os_fill_rect(x,y,w,h,c);
+    if (w>=0 && h>=0)
+      os_fill_rect(x,y,w,h,c);
   }
   int os_get_pixel(int x,int y);
   /* returns new x position */

@@ -5305,16 +5305,14 @@ namespace xcas {
 	}
 	return;
       }
-      if (z>=*zmax){ // mark only 1 point
+      if (z>*zmax){ // mark only 1 point
 	color=downcolor;
-	// drawRectangle(ih,*zmax,1,z-*zmax,color);
-	// drawRectangle(ih,*zmax,1,z-*zmax,_BLACK);
+	drawRectangle(ih,*zmax+1,1,z-*zmax-1,_BLACK);
 	*zmax=z;
       }
-      if (z<=*zmin){ // mark 1 point
+      if (z<*zmin){ // mark 1 point
 	color=upcolor;
-	//drawRectangle(ih,z,1,*zmin-z,color);
-	//drawRectangle(ih,z,1,*zmin-z,_BLACK);
+	drawRectangle(ih,z+1,1,*zmin-z-1,_BLACK);
 	*zmin=z;
       }
       if (color>=0) os_set_pixel(ih,z,color);
@@ -5800,6 +5798,42 @@ namespace xcas {
     double zG; // altitude for gravity center 
   }  ; // data struct for hypesurface triangulation cache
 
+#define HYPERQUAD
+#ifdef HYPERQUAD
+  
+  void compute(double yx,double3 * cur,hypertriangle_t & res){
+    double xmin=1e307,xmax=-1e307,ymin=1e307,ymax=-1e307;
+    for (int l=0;l<4;++l){
+      int prev=l==0?3:l-1;
+      double3 & d3=cur[prev];
+      double x0=d3.x,y0=d3.y,x1=cur[l].x,y1=cur[l].y;
+      double yx0=y0-x0,yx1=y1-x1,m=yx1-yx0;
+      if (m==0){
+	if (yx==yx1){
+	  if (x0>xmax) xmax=x0; if (x0<xmin) xmin=x0;
+	  if (x1>xmax) xmax=x1; if (x1<xmin) xmin=x1;
+	  if (y0>ymax) ymax=y0; if (y0<ymin) ymin=y0;
+	  if (y1>ymax) ymax=y1; if (y1<ymin) ymin=y1;
+	}
+	continue;
+      }
+      double t=(yx-yx0)/m;
+      if (t>=0 && t<=1){
+	double X=x0+t*(x1-x0),Y=y0+t*(y1-y0);
+	if (X>xmax) xmax=X; if (X<xmin) xmin=X;
+	if (Y>ymax) ymax=Y; if (Y<ymin) ymin=Y;
+      }
+    }
+    res.zG=(cur[0].z+cur[1].z+cur[2].z+cur[3].z)/4;
+    res.xmin=xmin; res.xmax=xmax; res.ymin=ymin; res.ymax=ymax;
+    find_abc(cur[0].x,cur[1].x,cur[2].x,
+	     cur[0].y,cur[1].y,cur[2].y,
+	     cur[0].z,cur[1].z,cur[2].z,
+	     res.a,res.b,res.c);
+  }
+
+  
+#else
   void compute(double yx,double3 * cur,hypertriangle_t & res){
     res.zG=(cur[0].z+cur[1].z+cur[2].z)/3;
     double xmin=1e307,xmax=-1e307,ymin=1e307,ymax=-1e307;
@@ -5829,6 +5863,7 @@ namespace xcas {
 	     cur[0].z,cur[1].z,cur[2].z,
 	     res.a,res.b,res.c);
   }
+#endif
   
   void update_hypertri(const vector<hypertriangle_t> & hypertriangles,double x,double y,
 		       bool & found,bool &found2,
@@ -5837,35 +5872,52 @@ namespace xcas {
 		       int & upcolor,int & downcolor,int & downupcolor,int & downdowncolor){
     vector<hypertriangle_t>::const_iterator it=hypertriangles.begin(),itend=hypertriangles.end();
     for (;it!=itend;++it){
+      if (x<it->xmin){
+	++it;
+	if (it==itend) break;
+	if (x<it->xmin){
+	  ++it;
+	  if (it==itend) break;
+	  if (x<it->xmin){
+	    ++it;
+	    if (it==itend) break;
+	  }
+	}
+      }
+      else if (x>it->xmax){
+	++it;
+	if (it==itend) break;
+	if (x>it->xmax){
+	  ++it;
+	  if (it==itend) break;
+	  if (x>it->xmax){
+	    ++it;
+	    if (it==itend) break;
+	  }
+	}
+      }
       const hypertriangle_t & cur=*it;
       if (x<cur.xmin || x>cur.xmax || y<cur.ymin || y>cur.ymax)
 	continue;
-      if (!found){
+      if (!found || cur.zG>curz1){
+	if (found){
+	  found2=true;
+	  curabc2=curabc1;
+	  curz2=curz1;
+	}
 	found=true;
 	curabc1.x=cur.a; curabc1.y=cur.b; curabc1.z=cur.c;
 	curz1=cur.zG;
 	upcolor=cur.colorptr->u; downcolor=cur.colorptr->d;
 	continue;
       }
-      if (cur.zG<curz1){
-	// no need to update cur, perhaps cur2?
-	if (found2 && curz2<cur.zG)
-	  continue;
+      if (cur.zG>curz2){
 	found2=true;
 	curabc2.x=cur.a; curabc2.y=cur.b; curabc2.z=cur.c;
 	curz2=cur.zG;
 	downupcolor=cur.colorptr->du; downdowncolor=cur.colorptr->dd;
 	continue;
       }
-      if (!found2 || curz1<curz2){
-	found2=true;
-	curabc2=curabc1; 
-	curz2=curz1;
-	downupcolor=cur.colorptr->du; downdowncolor=cur.colorptr->dd;
-      }
-      curabc1.x=cur.a; curabc1.y=cur.b; curabc1.z=cur.c;
-      curz1=cur.zG;
-      upcolor=cur.colorptr->u; downcolor=cur.colorptr->d;
     } // end loop on k
   }
   
@@ -5885,12 +5937,12 @@ namespace xcas {
     vecteur attrv(gen2vecteur(g));
     std::vector< std::vector< vector<float3d> >::const_iterator > hypv; // 3 iterateurs per hypersurface
     int upcolor,downcolor,downupcolor,downdowncolor;
-    for (int i=0;i<attrv.size();++i){
+    for (int i=0;i<int(attrv.size());++i){
       gen attr=attrv[i];
       upcolor=upcolor_;downcolor=downcolor_;downupcolor=downupcolor_;downdowncolor=downdowncolor_;
       get_colors(attrv[i],upcolor,downcolor,downupcolor,downdowncolor);
     }
-    for (int i=0;i<surfacev.size();++i){
+    for (int i=0;i<int(surfacev.size());++i){
       hypv.push_back(surfacev[i].begin());
       hypv.push_back(surfacev[i].end());
     }
@@ -5994,7 +6046,7 @@ namespace xcas {
       }
       // hypersurfaces: find triangles
       hypertriangles.clear();
-      double3 tri[3]; 
+      double3 tri[4]; 
       for (int k=0;k<int(hypv.size());k+=2){
 	vector< vector<float3d> >::const_iterator sbeg=hypv[k],send=hypv[k+1],sprec,scur;
 	vector<float3d>::const_iterator itprec,itcur,itprecend;
@@ -6053,6 +6105,19 @@ namespace xcas {
 	    double y1=*(itprec-2),y2=*(itprec+1),y3=*(itcur-2),y4=*(itcur+1);
 	    double z1=*(itprec-1),z2=*(itprec+2),z3=*(itcur-1),z4=*(itcur+2);
 	    yx1=y1-x1; yx2=y2-x2; yx3=y3-x3; yx4=y4-x4;
+#ifdef HYPERQUAD
+	    tri[0]=double3(x1,y1,z1);
+	    tri[1]=double3(x2,y2,z2);
+	    tri[2]=double3(x4,y4,z4);
+	    tri[3]=double3(x3,y3,z3);
+	    double x123=(x1+x2+x3)/3,y123=(y1+y2+y3)/3,z123=(z1+z2+z3)/3,X,Y,Z;
+	    do_transform(invtransform,x123,y123,z123,X,Y,Z);
+	    if (Z>=window_zmin && Z<=window_zmax && X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax ){
+	      hypertriangle_t res; res.colorptr=&hyp_color[k];
+	      compute(yx,tri,res);
+	      hypertriangles.push_back(res);
+	    }
+#else // HYPERQUAD
 	    tri[1]=double3(x2,y2,z2);
 	    tri[2]=double3(x3,y3,z3);
 	    if ( (yx>yx1 && yx>yx2 && yx>yx3) ||
@@ -6081,6 +6146,7 @@ namespace xcas {
 		hypertriangles.push_back(res);
 	      }
 	    }
+#endif // HYPERQUAD
 	  }
 	}
       }
@@ -6134,6 +6200,7 @@ namespace xcas {
 	if (plan_filled[k]){ only_hypertri=false; break; }
       }
       if (only_hypertri){
+	if (hypertriangles.empty()) continue;
 	for (int j=jmax;j>=jmin;j-=h,x-=yscale*h,y-=yscale*h){
 	  bool found=false,found2=false;
 	  update_hypertri(hypertriangles,x,y,found,found2,curabc1,curz1,curabc2,curz2,upcolor,downcolor,downupcolor,downdowncolor);
@@ -6356,7 +6423,7 @@ namespace xcas {
       }
       // now render line/segments/curves: find intersection with plane
       // y-x=yc-xc+xscale*(2*i+I), 0<=I<w
-      for (int j=0;j<curvev.size();++j){
+      for (int j=0;j<int(curvev.size());++j){
 	vector<double3> & cur=curvev[j];
 	int s=cur.size();
 	if (s<2) continue;
@@ -6477,7 +6544,7 @@ namespace xcas {
     } // end pixel horizontal loop on i
 #ifndef OLD_LINE_RENDERING
     // new line rendering
-    for (int j=0;j<linetypev.size();j++){
+    for (int j=0;j<int(linetypev.size());j++){
       double mx,my,mz,vx,vy,vz;
       double3 m=linev[2*j];
       do_transform(invtransform,m.x,m.y,m.z,mx,my,mz);
@@ -6529,7 +6596,7 @@ namespace xcas {
       bool usetmax=v.x+v.y==0?v.z>=0:v.x+v.y>0; 
       double tmin_=usetmax?tmin:tmax,
 	tmax_=usetmax?tmin:tmax;
-      for (int k=0;k<plan_abcv.size();++k){
+      for (int k=0;k<int(plan_abcv.size());++k){
 	if (!plan_filled[k]) continue;
 	// z >= z_plan=a*x+b*y+c where (x,y,z)=m+t*v
 	// m.z+t*v.z >= a*m.x+t*a*v.x+b*m.y+t*b*v.y+c
@@ -6545,7 +6612,7 @@ namespace xcas {
 	if (tmin_>t)
 	  tmin_=t;
       }
-      for (int k=0;k<sphere_centerv.size();++k){
+      for (int k=0;k<int(sphere_centerv.size());++k){
 	// sphere interesect line 
 	double3 c=sphere_centerv[k];
 	double R=sphere_radiusv[k];
@@ -6574,7 +6641,7 @@ namespace xcas {
 	}
       }
       vector<double> interpoly;
-      for (int k=0;k<polyedre_abcv.size();++k){
+      for (int k=0;k<int(polyedre_abcv.size());++k){
 	if (!polyedre_filled[k]) continue;
 	double3 abc=polyedre_abcv[k];
 	double a=abc.x,b=abc.y,c=abc.z;
@@ -6599,7 +6666,7 @@ namespace xcas {
 	  tmax_=t;
       }
       vecteur sv(gen2vecteur(g));
-      for (int k=0;k<sv.size();++k){
+      for (int k=0;k<int(sv.size());++k){
 	gen surf=remove_at_pnt(sv[k]);
 	if (surf.is_symb_of_sommet(at_hypersurface)){
 	  const vecteur & hyp=*surf._SYMBptr->feuille._VECTptr;
@@ -7217,6 +7284,7 @@ namespace xcas {
 	      polyedre_xyminmax.push_back(facemin);
 	      polyedre_xyminmax.push_back(facemax);
 	      polyedre_faceisclipped.push_back(is_clipped);
+	      polyedre_filled.push_back(fill_polyedre);
 	    } // end cur.size()>=3
 	  } // end g.type==_VECT
 	}
