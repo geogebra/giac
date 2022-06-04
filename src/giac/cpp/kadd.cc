@@ -314,7 +314,7 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
       xcas::textArea text;
       text.editable=false;
       text.clipline=-1;
-      text.title = (char*)((lang==1)?"Calcul d'un pret":"Finance help");
+      text.title = (char*)((lang==1)?(mode==-1?"Calcul d'un pret":"Interet d'un placement"):"Finance help");
       text.allowF1=true;
       text.python=python_compat(contextptr);
       std::vector<xcas::textElement> & elem=text.elements;
@@ -399,9 +399,9 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
 int khicas_addins_menu(GIAC_CONTEXT){
   Menu smallmenu;
 #ifdef NUMWORKS
-  smallmenu.numitems=10; // INCREMENT IF YOU ADD AN APPLICATION
+  smallmenu.numitems=11; // INCREMENT IF YOU ADD AN APPLICATION
 #else
-  smallmenu.numitems=9; // INCREMENT IF YOU ADD AN APPLICATION
+  smallmenu.numitems=10; // INCREMENT IF YOU ADD AN APPLICATION
 #endif  
   // and uncomment first smallmenuitems[app_number].text="Reserved"
   // replace by your application name
@@ -415,14 +415,15 @@ int khicas_addins_menu(GIAC_CONTEXT){
   smallmenuitems[1].text = (char*)((lang==1)?"Table periodique":"Periodic table");
   smallmenuitems[2].text = (char*)((lang==1)?"Pret":"Mortgage");
   smallmenuitems[3].text = (char*)((lang==1)?"Epargne":"TVM");
-  smallmenuitems[4].text = (char*)((lang==1)?"Exemple simple: Syracuse":"Simple example; Syracuse");
-  smallmenuitems[5].text = (char*)((lang==1)?"Exemple de jeu: Mastermind":"Game example: Mastermind");
-  smallmenuitems[6].text = (char*)((lang==1)?"Fractale de Mandelbrot":"Mandelbrot fractal");
-  // smallmenuitems[5].text = (char*)"Mon application"; // adjust numitem !
-  // smallmenuitems[6].text = (char*)"Autre application";
-  // smallmenuitems[7].text = (char*)"Encore une autre";
-  // smallmenuitems[8].text = (char*)"Une avant-derniere";
-  // smallmenuitems[9].text = (char*)"Une derniere";
+  smallmenuitems[4].text = (char*)((lang==1)?"Table caracteres":"Char table");
+  smallmenuitems[5].text = (char*)((lang==1)?"Exemple simple: Syracuse":"Simple example; Syracuse");
+  smallmenuitems[6].text = (char*)((lang==1)?"Exemple de jeu: Mastermind":"Game example: Mastermind");
+  smallmenuitems[7].text = (char*)((lang==1)?"Fractale de Mandelbrot":"Mandelbrot fractal");
+  // smallmenuitems[8].text = (char*)"Mon application"; // adjust numitem !
+  // smallmenuitems[9].text = (char*)"Autre application";
+  // smallmenuitems[10].text = (char*)"Encore une autre";
+  // smallmenuitems[11].text = (char*)"Une avant-derniere";
+  // smallmenuitems[12].text = (char*)"Une derniere";
 #ifdef NUMWORKS
   smallmenuitems[smallmenu.numitems-3].text = (char*)((lang==1)?"Personnaliser la flash":"Customize flash");
 #endif
@@ -477,7 +478,8 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	    ptr=strcpy(ptr,",")+strlen(ptr);
 	  ptr=strcpy(ptr,electroneg+4)+strlen(ptr);
 	}
-	return Console_Input(console_buf);
+	copy_clipboard(console_buf,true);
+	// return Console_Input(console_buf);
       }
       if (smallmenu.selection==3){
 	finance(-1,contextptr);
@@ -488,6 +490,14 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	continue;
       }
       if (smallmenu.selection==5){
+	int c=chartab();
+	if (c>=0){
+	  char buf[2]={c,0};
+	  copy_clipboard(buf,true);
+	}
+	break;
+      }
+      if (smallmenu.selection==6){
 	// Exemple simple d'application tierce: la suite de Syracuse
 	// on entre la valeur de u0
 	double d; int i;
@@ -509,12 +519,15 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	}
 	// representation graphique de la liste en appelant la commande Xcas listplot
 	displaygraph(_listplot(v,contextptr),contextptr);
+	// copie vers presse-papier en l'affichant
+	copy_clipboard(gen(v).print(contextptr),true);
+	continue;
 	// on entre la liste en ligne de commande et on quitte
 	return Console_Input(gen(v).print(contextptr).c_str());
       }
-      if (smallmenu.selection==6) // mastermind, on ne quitte pas
+      if (smallmenu.selection==7) // mastermind, on ne quitte pas
 	mastermind(contextptr);
-      if (smallmenu.selection==7)
+      if (smallmenu.selection==8)
 	fractale(contextptr);
     } // end sres==menu_selection
     Console_Disp(1,contextptr);
@@ -1356,8 +1369,11 @@ void sheet_cmdline(tableur &t,GIAC_CONTEXT){
     if (g1.type==_VECT){
       doit=false;
       matrice & m=*g1._VECTptr;
-      if (!ckmatrix(m) && t.movedown)
-	m=mtran(vecteur(1,m));
+      if (!ckmatrix(m)){
+	m=vecteur(1,m);
+	if (t.movedown)
+	  m=mtran(m);
+      }
       matrice clip=t.clip;
       makespreadsheetmatrice(m,contextptr);
       t.clip=m;
@@ -1427,6 +1443,8 @@ giac::gen sheet(GIAC_CONTEXT){
   if (!sheetptr)
     sheetptr=new_tableur(contextptr);
   tableur & t=*sheetptr;
+  sheet_eval(t,contextptr,true);
+  t.changed=false;
   bool status_freeze=false;
   t.keytooltip=false;
   for (;;){
@@ -1668,7 +1686,7 @@ giac::gen sheet(GIAC_CONTEXT){
     if ( (key >= KEY_CTRL_F1 && key <= KEY_CTRL_F6) ||
 	  (key >= KEY_CTRL_F7 && key <= KEY_CTRL_F14) 
 	 ){
-      const char tmenu[]= "F1 stat1d\nsum(\nmean(\nstddev(\nmedian(\nhistogram(\nbarplot(\nboxwhisker(\nF2 stat2d\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\npolygonscatterplot(\nF3 seq\nrange(\nseq(\ntableseq(\nplotseq(\ntablefunc(\nrandvector(\nrandmatrix(\nF4 edt\nedit_cell\nundo\ncopy_down\ncopy_right\ninsert_row\ninsert_col\nerase_row\nerase_col\nF6 graph\nreserved\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF: arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF7 real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF= misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \n\n";
+      const char tmenu[]= "F1 stat1d\nsum(\nmean(\nstddev(\nmedian(\nhistogram(\nbarplot(\nboxwhisker(\nF2 stat2d\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\npolygonscatterplot(\nF3 seq\nrange(\nseq(\ntableseq(\nplotseq(\ntablefunc(\nrandvector(\nrandmatrix(\nF4 edt\n$\n:\nedit_cell\nundo\ncopy_down\ncopy_right\ninsert_row\ninsert_col\nF6 graph\nreserved\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF: arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF7 real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF= misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \n\n";
       const char * s=console_menu(key,(char *)tmenu,0);
       if (s && strlen(s)){
 	if (strcmp(s,"undo")==0){

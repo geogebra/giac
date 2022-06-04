@@ -493,6 +493,8 @@ namespace giac {
   // exec=0 or MENU_RETURN_SELECTION, KEY_CHAR_ANS or KEY_CTRL_EXE
   std::string help_insert(const char * cmdline,int & back,int exec,const giac::context *,bool warn=true);
   void copy_clipboard(const std::string & s,bool status);
+  int chartab();
+
 #define TEXT_MODE_NORMAL 0
 #define TEXT_MODE_INVERT 1
 #define MENUITEM_NORMAL 0

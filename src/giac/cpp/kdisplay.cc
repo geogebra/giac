@@ -203,6 +203,46 @@ namespace giac {
     lock_alpha();
   }
 
+  int chartab(){
+    static int row=0,col=0;
+    for (;;){
+      col &= 0xf;
+      if (row<0) row=5; else if (row>5) row=0;
+      // display table
+      drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
+      os_draw_string(0,0,_BLACK,_WHITE,lang==1?"Selectionner caractere":"Select char");
+      for (int r=0;r<6;++r){
+	for (int c=0;c<16;++c){
+	  char buf[2]={char(32+16*r+c),0}; 
+	  os_draw_string(20*c,20+20*r,_BLACK,(r==row && c==col?color_gris:_WHITE),buf);
+	}
+      }
+      string s("Current ");
+      int cur=32+16*row+col;
+      s += char(cur);
+      s += " ";
+      s += print_INT_(cur);
+      s += " ";
+      s += hexa_print_INT_(cur);
+      os_draw_string(0,160,_BLACK,_WHITE,s.c_str());
+      os_draw_string(0,180,_BLACK,_WHITE,lang==1?"EXE: copier caractere":"EXE: copy char");
+      // interaction
+      int key=getkey(1);
+      if (key==KEY_CTRL_EXIT)
+	return -1;
+      if (key==KEY_CTRL_OK || key==KEY_CTRL_EXE)
+	return cur;
+      if (key==KEY_CTRL_LEFT)
+	--col;
+      if (key==KEY_CTRL_RIGHT)
+	++col;
+      if (key==KEY_CTRL_UP)
+	--row;
+      if (key==KEY_CTRL_DOWN)
+	++row;
+    }
+  }
+
   void delete_clipboard(){}
 
   bool clip_pasted=true;
@@ -943,6 +983,7 @@ namespace giac {
     {"csolve(equation,x)", 0, "Resolution exacte dans C d'une equation en x (ou d'un systeme polynomial).","x^2+x+1=0", 0, CAT_CATEGORY_SOLVE | (CAT_CATEGORY_COMPLEXNUM << 8) | XCAS_ONLY},
     {"cube(A,B,C)", 0, "Cube d'arete AB avec une face dans le plan ABC", "[0,0,0],[1,0,0],[0,1,0]","[0,0,0],[0,2,sqrt(5)/2+3/2],[0,0,1]", CAT_CATEGORY_3D},
     {"curl(u,vars)", 0, "Rotationnel du vecteur u.", "[2*x*y,x*z,y*z],[x,y,z]", 0, CAT_CATEGORY_LINALG | XCAS_ONLY},
+    {"curvature([x(t),y(t)],t,t0)", 0, "Courbure de la courbe parametree [x(t),y(t)] en t0", "[t,t^2],t,1", "[t,t^2],t", CAT_CATEGORY_CALCULUS | (CAT_CATEGORY_2D << 8) | XCAS_ONLY},
     {"cyan", "cyan", "Option d'affichage", "#display=cyan", 0, CAT_CATEGORY_PROGCMD},
     {"cylinder(A,v,r,[h])", 0, "Cylindre d'axe A,v de rayon r et de hauteur optionnelle h", "[0,0,0],[0,1,0],2", "[0,0,0],[0,1,0],2,3", CAT_CATEGORY_3D},
     {"debug(f(args))", 0, "Execute la fonction f en mode pas a pas.", 0, 0, CAT_CATEGORY_PROG | XCAS_ONLY},
@@ -989,6 +1030,7 @@ namespace giac {
     {"float(x)", 0, "Convertit x en nombre approche (flottant).", "pi", 0, CAT_CATEGORY_REAL},
     {"floor(x)", 0, "Partie entiere de x", "pi", 0, CAT_CATEGORY_REAL},
     {"fonction f(x)", "fonction", "Definition de fonction (Xcas). Par exemple\nfonction f(x)\n local y;\ny:=x*x;\nreturn y;\nffonction", 0, 0, CAT_CATEGORY_PROG | XCAS_ONLY},
+    {"frenet([x(t),y(t)],t,t0)", 0, "Courbure, centre de courbure et repere de Frenet de la courbe parametree [x(t),y(t)] en t0", "[t,t^2],t,1", "[t,t^2],t", CAT_CATEGORY_CALCULUS | (CAT_CATEGORY_2D << 8) | XCAS_ONLY},
     {"from arit import *", "from arit import *", "Instruction pour utiliser les fonctions d'arithmetique entiere en Python", "#from arit import *", "#import arit", CAT_CATEGORY_ARIT},
     {"from cas import *", "from cas import *", "Permet d'utiliser le calcul formel depuis Python", "#from cas import *", "#import cas", CAT_CATEGORY_ALGEBRA|(CAT_CATEGORY_CALCULUS<<8)},
     {"from cmath import *", "from cmath import *", "Instruction pour utiliser les fonctions de maths sur les complexes (trigo, exponentielle, log, ...) en Python", "#from cmath import *;i=1j", "#import cmath", CAT_CATEGORY_COMPLEXNUM},
@@ -1070,6 +1112,7 @@ namespace giac {
     {"numer(x)", 0, "Numerateur de x.", "3/4", 0, CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
     {"octahedron(A,B,C)", 0, "Octaedre d'arete AB avec une face dans le plan ABC", "[0,0,0],[3,0,0],[0,1,0]", 0, CAT_CATEGORY_3D},
     {"odesolve(f(t,y),[t,y],[t0,y0],t1)", 0, "Solution approchee d'equation differentielle y'=f(t,y) et y(t0)=y0, valeur en t1 (ajouter curve pour les valeurs intermediaires de y)", "sin(t*y),[t,y],[0,1],2", "0..pi,(t,v)->{[-v[1],v[0]]},[0,1]", CAT_CATEGORY_SOLVE | XCAS_ONLY},
+    {"osculating_circle([x(t),y(t)],t,t0)", 0, "Cercle osculateur de la courbe parametree [x(t),y(t)] en t0", "[t,t^2],t,1", "[t,t^2],t", CAT_CATEGORY_CALCULUS | (CAT_CATEGORY_2D << 8) | XCAS_ONLY},
     {"parabole(F,A)", 0, "Parabole donnee par foyer et sommet", "-2-i,2+i", 0, CAT_CATEGORY_2D},
     {"parameq(objet)", 0, "Equations parametriques. Utiliser equation pour une equation cartesienne", "circle(0,1)", "ellipse(-1,1,3)", CAT_CATEGORY_2D | (CAT_CATEGORY_3D << 8) },
     {"partfrac(p,x)", 0, "Decomposition en elements simples. Raccourci p=>+", "1/(x^4-1)", 0, CAT_CATEGORY_ALGEBRA | XCAS_ONLY},
@@ -5312,7 +5355,7 @@ namespace xcas {
       }
       if (z<*zmin){ // mark 1 point
 	color=upcolor;
-	drawRectangle(ih,z+1,1,*zmin-z-1,_BLACK);
+	// drawRectangle(ih,z+1,1,*zmin-z-1,_BLACK);
 	*zmin=z;
       }
       if (color>=0) os_set_pixel(ih,z,color);
@@ -5411,14 +5454,12 @@ namespace xcas {
 	}
 	if (z>=*zmax){ // mark only 1 point
 	  color=downcolor;
-	  // drawRectangle(ih,*zmax,1,z-*zmax,color);
-	  // drawRectangle(ih,*zmax,1,z-*zmax,_BLACK);
+	  drawRectangle(ih,*zmax+1,1,z-*zmax-1,_BLACK);
 	  *zmax=z;
 	}
 	if (z<=*zmin){ // mark 1 point
 	  color=upcolor;
-	  //drawRectangle(ih,z,1,*zmin-z,color);
-	  //drawRectangle(ih,z,1,*zmin-z,_BLACK);
+	// drawRectangle(ih,z+1,1,*zmin-z-1,_BLACK);
 	  *zmin=z;
 	}
 	if (color>=0) os_set_pixel(ih,z,color);
@@ -5666,30 +5707,21 @@ namespace xcas {
 		double & cura1,double & curb1,double & curc1,double & curz1,
 		double & cura2,double & curb2,double & curc2,double & curz2,
 		int & u,int & d,int & du,int & dd){
-    if (found){
-      if (z<curz1){
-	// no need to update cur, perhaps cur2?
-	if (found2 && curz2<z)
-	  return;
+    if (!found || z>curz1){
+      if (found){ // update cur2
 	found2=true;
-	cura2=a; curb2=b; curc2=c; curz2=z;
-	du=downupcolor; dd=downdowncolor;
-	return;
+	cura2=cura1; curb2=curb1; curc2=curc1; curz2=curz1;
       }
-      else { // need to update cur, and perhaps cur2
-	if (!found2 || curz1<curz2){
-	  found2=true;
-	  cura2=cura1; curb2=curb1; curc2=curc1; curz2=curz1;
-	  du=downupcolor; dd=downdowncolor;
-	}
-	cura1=a; curb1=b; curc1=c; curz1=z;
-	u=upcolor; d=downcolor;
-	return;
-      }
+      found=true;
+      cura1=a; curb1=b; curc1=c; curz1=z;
+      u=upcolor; d=downcolor;
+      return;
     }
-    found=true;
-    cura1=a; curb1=b; curc1=c; curz1=z;
-    u=upcolor; d=downcolor;
+    if (z>curz2){
+      found2=true;
+      cura2=a; curb2=b; curc2=c; curz2=z;
+      du=downupcolor; dd=downdowncolor;
+    }
   }
 	      
   
@@ -6046,6 +6078,7 @@ namespace xcas {
       }
       // hypersurfaces: find triangles
       hypertriangles.clear();
+      double hyperxymax=-1e307,hyperxymin=1e307;
       double3 tri[4]; 
       for (int k=0;k<int(hypv.size());k+=2){
 	vector< vector<float3d> >::const_iterator sbeg=hypv[k],send=hypv[k+1],sprec,scur;
@@ -6110,7 +6143,10 @@ namespace xcas {
 	    tri[1]=double3(x2,y2,z2);
 	    tri[2]=double3(x4,y4,z4);
 	    tri[3]=double3(x3,y3,z3);
-	    double x123=(x1+x2+x3)/3,y123=(y1+y2+y3)/3,z123=(z1+z2+z3)/3,X,Y,Z;
+	    double x123=(x1+x2+x3+x4)/4,y123=(y1+y2+y3+y4)/4,z123=(z1+z2+z3+z4)/4,X,Y,Z;
+	    double xy123=x123+y123;
+	    if (xy123<hyperxymin) hyperxymin=xy123;
+	    if (xy123>hyperxymax) hyperxymax=xy123;
 	    do_transform(invtransform,x123,y123,z123,X,Y,Z);
 	    if (Z>=window_zmin && Z<=window_zmax && X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax ){
 	      hypertriangle_t res; res.colorptr=&hyp_color[k];
@@ -6125,6 +6161,9 @@ namespace xcas {
 	      ; // not intersecting
 	    else {
 	      double x123=(x1+x2+x3)/3,y123=(y1+y2+y3)/3,z123=(z1+z2+z3)/3,X,Y,Z;
+	      double xy123=x123+y123;
+	      if (xy123<hyperxymin) hyperxymin=xy123;
+	      if (xy123>hyperxymax) hyperxymax=xy123;
 	      do_transform(invtransform,x123,y123,z123,X,Y,Z);
 	      if (Z>=window_zmin && Z<=window_zmax && X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax ){
 		tri[0]=double3(x1,y1,z1);
@@ -6138,6 +6177,9 @@ namespace xcas {
 	      ; // not intersecting
 	    else {
 	      double x423=(x4+x2+x3)/3,y423=(y4+y2+y3)/3,z423=(z4+z2+z3)/3,X,Y,Z;
+	      double xy423=x423+y423;
+	      if (xy423<hyperxymin) hyperxymin=xy423;
+	      if (xy423>hyperxymax) hyperxymax=xy423;
 	      do_transform(invtransform,x423,y423,z423,X,Y,Z);
 	      if (Z>=window_zmin && Z<=window_zmax && X>=window_xmin && X<=window_xmax && Y>=window_ymin && Y<=window_ymax ){
 		tri[0]=double3(x4,y4,z4);
@@ -6186,8 +6228,6 @@ namespace xcas {
       double cur2x1,cur2x2,cur2x3,cur2y1,cur2y2,cur2y3,cur2z1=-1e306,cur2z2=-1e306,cur2z3=-1e306;
 #endif
       int u,d,du,dd;
-      x = yscale*(jmax-(h-1)/2.0)-xscale*(i+(w-1)/2.0) + xc;
-      y = yscale*(jmax-(h-1)/2.0)+xscale*(i+(w-1)/2.0) + yc;
       // loop earlier if there are only hypersurfaces
       bool only_hypertri=true;
       for (int ki=0;ki<int(polyedrei.size());++ki){
@@ -6201,6 +6241,13 @@ namespace xcas {
       }
       if (only_hypertri){
 	if (hypertriangles.empty()) continue;
+	int effjmax=(hyperxymax-xc-yc)/yscale/2.0,effjmin=(hyperxymin-xc-yc)/yscale/2.0;
+	if (effjmax+1<jmax)
+	  jmax=effjmax+1;
+	if (effjmin-1>jmin)
+	  jmin=effjmin-1;
+	x = yscale*(jmax-(h-1)/2.0)-xscale*(i+(w-1)/2.0) + xc;
+	y = yscale*(jmax-(h-1)/2.0)+xscale*(i+(w-1)/2.0) + yc;
 	for (int j=jmax;j>=jmin;j-=h,x-=yscale*h,y-=yscale*h){
 	  bool found=false,found2=false;
 	  update_hypertri(hypertriangles,x,y,found,found2,curabc1,curz1,curabc2,curz2,upcolor,downcolor,downupcolor,downdowncolor);
@@ -6234,13 +6281,16 @@ namespace xcas {
 	}
       }
       else {
+	x = yscale*(jmax-(h-1)/2.0)-xscale*(i+(w-1)/2.0) + xc;
+	y = yscale*(jmax-(h-1)/2.0)+xscale*(i+(w-1)/2.0) + yc;
 	for (int j=jmax;j>=jmin;j-=h,x-=yscale*h,y-=yscale*h){
 	  if (0 && i==-35 && j==-44)
 	    u=0; // debug
 	  // x = yscale*(j-(h-1)/2.0)-xscale*(i+(w-1)/2.0) + xc;
 	  // y = yscale*(j-(h-1)/2.0)+xscale*(i+(w-1)/2.0) + yc;
 	  bool found=false,found2=false;
-	  update_hypertri(hypertriangles,x,y,found,found2,curabc1,curz1,curabc2,curz2,upcolor,downcolor,downupcolor,downdowncolor);
+	  if (x+y>=hyperxymin && x+y<=hyperxymax)
+	    update_hypertri(hypertriangles,x,y,found,found2,curabc1,curz1,curabc2,curz2,upcolor,downcolor,downupcolor,downdowncolor);
 	  for (int ki=0;ki<int(polyedrei.size());++ki){
 	    int k=polyedrei[ki];
 	    vector<double3> & cur=polyedrev[k];
@@ -6782,7 +6832,7 @@ namespace xcas {
     return true;
   }
 
-  Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),window_zmin(gnuplot_zmin),window_zmax(gnuplot_zmax),g(g_),display_mode(0x45),show_axes(1),show_edges(1),show_names(1),labelsize(16),precision(2),contextptr(cptr) {
+  Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),window_zmin(gnuplot_zmin),window_zmax(gnuplot_zmax),g(g_),display_mode(0x45),show_axes(1),show_edges(1),show_names(1),labelsize(16),precision(1),contextptr(cptr) {
     diffusionz=5; diffusionz_limit=5; hide2nd=false; interval=false;
     default_upcolor=giac3d_default_upcolor;
     default_downcolor=giac3d_default_downcolor;
@@ -6799,7 +6849,7 @@ namespace xcas {
       update_rotation();
       if (surfacev.empty()){
 	// no hypersurface inside, 2 for polyhedron
-	precision=2;
+	precision=1;
       }
     }
   }
@@ -16325,6 +16375,11 @@ namespace xcas {
       vecteur & v=*g._VECTptr;
       for (int j=0;j<t.ncols;++j){
 	gen vj=v[j];
+	if (vj.type==_VECT && vj._VECTptr->size()==3){
+	  vecteur vjv=*vj._VECTptr;
+	  vjv[1]=0;
+	  vj=gen(vjv,vj.subtype);
+	}
 	printcell_current_col(contextptr)=j;
 	s += vj.print(contextptr);
 	if (j==t.ncols-1)
