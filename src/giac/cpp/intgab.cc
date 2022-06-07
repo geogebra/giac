@@ -199,7 +199,8 @@ namespace giac {
     if (res)
       return res;
     gen f1=f,f2=subst(f,x,-x,false,contextptr);
-    if (lvar(f)==vecteur(1,x)){ // rational case
+    vecteur v=lvar(f);
+    if (v==vecteur(1,x)){ // rational case
       if (is_zero(normal(f1-f2,contextptr)))
 	return 1;
       if (is_zero(normal(f1+f2,contextptr)))

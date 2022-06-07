@@ -3065,7 +3065,7 @@ namespace giac {
     if (has_embedded_fractions(f.num) || has_embedded_fractions(f.den)){
       gen res=r2sym(f,l,contextptr);
       purgeassumelist(L,contextptr);
-      return normal(res,distribute_div,contextptr);
+      return L.empty()?res:normal(res,distribute_div,contextptr);
     }
     if (distribute_div && f.num.type==_POLY && f.num._POLYptr->dim && f.den.type<_POLY){
       gen res=r2sym(gen(*f.num._POLYptr/f.den),l,contextptr);
