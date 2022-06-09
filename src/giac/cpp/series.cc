@@ -1616,6 +1616,11 @@ namespace giac {
 	    return false;
 	  for (int i=1;i<ordre;i++){
 	    gen add= limit(fdiff,*k._IDNTptr,upper,-1,contextptr)-limit(fdiff,*k._IDNTptr,lower,1,contextptr);
+	    gen chk=limit(add/pow(x,2*i-2),x,0,1,contextptr);
+	    if (!is_zero(chk)){
+	      ordre=2*i-3;
+	      break;
+	    }
 	    add=add*bernoulli(2*i)/factorial(2*i);
 	    eff += add; // fdiff flimdiff 2 fois
 	    fdiff=derive(fdiff,k,contextptr);
@@ -1623,11 +1628,16 @@ namespace giac {
 	    if (is_undef(fdiff))
 	      return false;
 	  }
+	  // find order of add
 	  // must do a recursive call since eff may contain new functions
-	  gen coeff,mrv_var,exponent; 
+	  // FIXME: "Parameters" might depend on x, search for effg 
+	  // example series(sum(k/n*ln(k/n), k = 1 .. n ),n=inf);
+	  gen Coeff,Mrv_var,Exponent; 
 	  eff =subst(eff,x,inv(x,contextptr),true,contextptr);
-	  if (!mrv_lead_term(eff,x,coeff,mrv_var,exponent,s,ordre,contextptr,true))
+	  if (!mrv_lead_term(eff,x,Coeff,Mrv_var,Exponent,s,ordre,contextptr,true))
 	    return false;
+	  ptruncate(s,ordre,contextptr); // add remainder term
+	  s=subst(s,x,inv(x,contextptr),true,contextptr);
 	  lvx_s.push_back(s);
 	  continue;
 	  // never reached setsizeerr();
@@ -2342,7 +2352,7 @@ namespace giac {
 	  gen tmp;
 	  if (v[i]._SYMBptr->feuille.type==_VECT && v[i]._SYMBptr->feuille._VECTptr->size()==4){
 	    vecteur & vv=*v[i]._SYMBptr->feuille._VECTptr;
-	    if (derive(vv[2],x,contextptr)==0 && derive(vv[2],x,contextptr)==0)
+	    if (derive(vv[2],x,contextptr)==0 && derive(vv[3],x,contextptr)==0)
 	      continue;
 	  }
 	  if (!convert_to_euler_mac_laurin(v[i],x,tmp,contextptr))
@@ -2945,7 +2955,14 @@ namespace giac {
     bool dont_invert=is_zero(in_limit(faster_var.front(),x,plus_inf,0,contextptr));
     vecteur faster_var_tmp(faster_var);
     stable_sort(faster_var.begin(),faster_var.end(),symb_size_less_t());
-    identificateur w(" w");
+    vecteur ecopyv(lidnt(ecopy));
+    string ws("w");
+    identificateur w(ws); 
+    // create free identifier, not present in ecopy
+    while (equalposcomp(ecopyv,w)){
+      ws+='_';
+      w=identificateur(ws);
+    }
     vecteur faster_var_subst(1,w);
     gen g=faster_var.front()._SYMBptr->feuille;
     iterateur it=faster_var.begin()+1,itend=faster_var.end();
@@ -2970,6 +2987,8 @@ namespace giac {
       f=subst(f,w,inv(w,contextptr),false,contextptr);
     if (faster_var.front().is_symb_of_sommet(at_exp)){
       // replace ln(exp(g)^k*...) by k*g+ln(...)
+      // where g=ln(w)
+      gen effg(g); // symbolic(at_ln,w)); does not work
       vecteur lf(lop(f,at_ln)),lf1,lf2;
       iterateur it=lf.begin(),itend=lf.end();
       for (;it!=itend;++it){
@@ -2979,7 +2998,7 @@ namespace giac {
 	  if (!is_zero(p.front().exponent))
 	    argln=argln*symbolic(at_pow,gen(makevecteur(w,-p.front().exponent),_SEQ__VECT));
 	  lf1.push_back(*it);
-	  lf2.push_back(p.front().exponent*(dont_invert?g:-g)+symbolic(at_ln,argln));
+	  lf2.push_back(p.front().exponent*(dont_invert?effg:-effg)+symbolic(at_ln,argln));
 	}
       }
       if (!lf1.empty())
@@ -3584,14 +3603,14 @@ namespace giac {
       gen f0=f._VECTptr->front();
       gen x =f[1];
       if (x.type!=_IDNT){
-	*logptr(contextptr) << gettext("Unable to convert to euler mac laurin");
+	*logptr(contextptr) << gettext("Unable to convert to euler mac laurin") << ' ';
 	return false;
       }
       gen f0prime=derive(f0,x,contextptr), f03=derive(f0prime,x,contextptr);
       f03=derive(f03,x,contextptr);
       if (is_undef(f03)) return false;
       l=in_limit(f03/f0prime,n,plus_inf,1,contextptr);
-      if (!is_zero(l))
+      if (!is_zero(l)) 
 	return false;
       gen remains;
       gen F0=integrate_gen_rem(f0,x,remains,0,contextptr);
