@@ -6074,6 +6074,8 @@ namespace giac {
 	loop=false;
       else if (res.type==_SYMB && has_i(res))
 	loop=false;
+      if (res.is_symb_of_sommet(at_curve))
+	loop=true; /* workaround for ggb area([circle(x^(2)+4y^(2)=1)]) */
       if (loop){
 	res=0;
 	for (unsigned i=0;i<args._VECTptr->size();++i)
