@@ -2940,7 +2940,7 @@ namespace giac {
     }
   }
 
-  gen normal(const gen & e,bool distribute_div,GIAC_CONTEXT){
+  gen normal(const gen & e,bool distribute_div,bool allow_embeded_recursion,GIAC_CONTEXT){
     if (has_num_coeff(e))
       return ratnormal(e,contextptr);
     // COUT << e << "\n";
@@ -3065,7 +3065,7 @@ namespace giac {
     if (has_embedded_fractions(f.num) || has_embedded_fractions(f.den)){
       gen res=r2sym(f,l,contextptr);
       purgeassumelist(L,contextptr);
-      return L.empty()?res:normal(res,distribute_div,contextptr);
+      return allow_embeded_recursion?normal(res,distribute_div,false,contextptr):res;
     }
     if (distribute_div && f.num.type==_POLY && f.num._POLYptr->dim && f.den.type<_POLY){
       gen res=r2sym(gen(*f.num._POLYptr/f.den),l,contextptr);
@@ -3091,6 +3091,10 @@ namespace giac {
       // second will remove them
     }
     return ee; // ratnormal(ee,contextptr); // for sqrt(1-a^2)/sqrt(1-a)
+  }
+
+  gen normal(const gen & e,bool distribute_div,GIAC_CONTEXT){
+    return normal(e,distribute_div,true,contextptr);
   }
 
   gen normal(const gen & e,GIAC_CONTEXT){

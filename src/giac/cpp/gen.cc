@@ -4669,7 +4669,7 @@ namespace giac {
       if (a.type==_INT_){
 	longlong tmp=((longlong) a.val+b.val);
 	a.val=(int)tmp;
-	if (a.val==tmp)
+	if (a.val==tmp && tmp!=-2147483648)
 	  return a;
 	return a=tmp;
       }
@@ -5475,7 +5475,7 @@ namespace giac {
       if (a.type==_INT_){
 	longlong tmp=((longlong) a.val-b.val);
 	a.val=(int)tmp;
-	if (a.val==tmp)
+	if (a.val==tmp && tmp!=-2147483648)
 	  return a;
 	return a=tmp;
       }

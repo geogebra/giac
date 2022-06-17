@@ -1771,6 +1771,8 @@ namespace giac {
       gen g_=eval(g,1,contextptr);
       if (g_.type==_STRNG)
 	g_=gen(*g_._STRNGptr,contextptr);
+      if (is_integer(g_))
+	return g_;
       return _floor(evalf(g_,1,contextptr),contextptr);
     }
     else

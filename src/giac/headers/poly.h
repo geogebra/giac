@@ -999,15 +999,15 @@ namespace giac {
       if (!a0.Texactquotient(b0,q,allowrational))
 	return false;
       qdeg=rdeg-bdeg;
-      if (qdeg){
-	if (it!=itend && it->index.front()==rdeg-1)
-	  a1=Tnextcoeff<T>(it,itend);
+      if (1 && qdeg && it!=itend && it->index.front()==rdeg-1){ // FIXME, fails for integrate((e*x+d)^(3/2)*(c*x^2+b*x+a)^p,x);
+	a1=Tnextcoeff<T>(it,itend);
 #if defined GIAC_VECTOR || defined NSPIRE // fix for * on arm compiler
 	tensor<T> tmp(q.dim);
 	tmp.coord=q.coord*b1.coord;
 	a1.TSub(tmp,a1);
 #else
-	a1.TSub(q*b1,a1); // a1=a1-q*b1; 
+	a1.TSub(q*b1,a1);  
+	// a1=a1-q*b1; 
 #endif
 	q=q.untrunc1(qdeg);
 	if (!a1.Texactquotient(b0,q1,allowrational))
@@ -1036,7 +1036,8 @@ namespace giac {
       tmp.coord=q.coord*b.coord;
       r.TSub(tmp,r); // r=r-q*b;       
 #else
-      r.TSub(q*b,r); // r=r-q*b; 
+      r.TSub(q*b,r); 
+      //r=r-q*b; 
 #endif
       if (r.coord.empty())
 	return true;

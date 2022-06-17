@@ -1379,6 +1379,8 @@ namespace giac {
 	      res= col0.front();
 	      return 2;
 	    }
+	    if (col0.size()<k-1)
+	      return 2;
 	    reverse(col0.begin(),col0.end()); // C at the beginning, Q at the end
 	    C=2*horner(vecteur(col0.begin(),col0.begin()+k-1),gen_x);
 	    Q=2*horner(vecteur(col0.begin()+k-1,col0.end()),gen_x);
