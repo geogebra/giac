@@ -388,7 +388,8 @@ mpz_class smod(const mpz_class & a,int reduce){
     pcontxn.reserve(256); current.reserve(256); tmp.reserve(256); reste.reserve(256);
     for (;it!=itend;){
       current.clear();
-      current.push_back(it->g);
+      if (!is_zero(it->g))
+	current.push_back(it->g);
       curu=it->u;
       ++it;
       for (;it!=itend;++it){
@@ -396,12 +397,13 @@ mpz_class smod(const mpz_class & a,int reduce){
 	if ( newu < u ){
 	  break;
 	}
-	if (curu>newu+var2)
+	if (curu>newu+var2 && !current.empty())
 	  current.insert(current.end(),(curu-newu)/var2-1,T(0));
-	current.push_back(it->g);
+	if (!is_zero(it->g) || !current.empty())
+	  current.push_back(it->g);
 	curu=newu;
       }
-      if (curu>u)
+      if (curu>u && !current.empty())
 	current.insert(current.end(),(curu-u)/var2,T(0));
 #ifdef TIMEOUT
       control_c();
@@ -418,7 +420,8 @@ mpz_class smod(const mpz_class & a,int reduce){
     u=(p.front().u/var)*var;
     for (;it!=itend;){
       current.clear();
-      current.push_back(it->g);
+      if (!is_zero(it->g))
+	current.push_back(it->g);
       curu=it->u;
       ++it;
       for (;it!=itend;++it){
@@ -426,12 +429,13 @@ mpz_class smod(const mpz_class & a,int reduce){
 	if ( newu < u ){
 	  break;
 	}
-	if (curu>newu+var2)
+	if (curu>newu+var2 && !current.empty())
 	  current.insert(current.end(),(curu-newu)/var2-1,T(0));
-	current.push_back(it->g);
+	if (!is_zero(it->g) || !current.empty())
+	  current.push_back(it->g);
 	curu=newu;
       }
-      if (curu>u)
+      if (curu>u && !current.empty())
 	current.insert(current.end(),(curu-u)/var2,T(0));
 #ifdef TIMEOUT
       control_c();

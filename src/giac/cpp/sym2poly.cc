@@ -2740,6 +2740,22 @@ namespace giac {
     return symbolic(at_prod,gen(res,_SEQ__VECT));
   }
 
+  gen rewrite_exp_integer(const gen & e,GIAC_CONTEXT){
+    vecteur v(lop(e,at_exp));
+    if (v.size()<2)
+      return e;
+    gen g;
+    for (unsigned i=0;i<v.size();++i)
+      g=gcd(g,v[i]._SYMBptr->feuille); // gcd of arg of exp
+    vecteur w(v);
+    for (unsigned i=0;i<v.size();++i){
+      gen r=ratnormal(v[i]._SYMBptr->feuille/g,contextptr);
+      if (r.type==_INT_ && r.val!=1)
+	w[i]=symbolic(at_pow,makesequence(symb_exp(g),r));
+    }
+    return v==w?e:subst(e,v,w,false,contextptr);
+  }
+
   static gen in_normalize_sqrt(const gen & e,vecteur & L,bool keep_abs,GIAC_CONTEXT){
     if (complex_mode(contextptr) || has_i(e)) 
       return e;
@@ -2862,7 +2878,7 @@ namespace giac {
 
   gen normalize_sqrt(const gen & e,GIAC_CONTEXT,bool keep_abs){
     vecteur L;
-    return in_normalize_sqrt(e,L,keep_abs,contextptr);
+    return in_normalize_sqrt(rewrite_exp_integer(e,contextptr),L,keep_abs,contextptr);
   }
 
   static bool has_embedded_fractions(const gen & g){

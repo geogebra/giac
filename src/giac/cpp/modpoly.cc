@@ -6899,6 +6899,9 @@ namespace giac {
     memcpy(b,&*q.begin(),bs*sizeof(int));
     int * t;
     for (;b!=bend;swapab=!swapab){
+      if (*b % m==0){ // make sure leading coeff of b is not 0
+	++b; continue;
+      }
       rem(a,aend,b,bend,m,qcur,0);
       t=a; a=b; b=t;
       t=aend; aend=bend; bend=t;      

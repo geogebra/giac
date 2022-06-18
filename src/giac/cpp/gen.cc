@@ -6025,7 +6025,7 @@ namespace giac {
       if (ab>>31)
 	tmp=ab;
 #else
-      if (tmp.val!=ab)
+      if (tmp.val!=ab || tmp==-2147483648)
 	tmp=ab;
 #endif
       return;
