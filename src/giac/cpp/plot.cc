@@ -8961,7 +8961,7 @@ namespace giac {
       if (s){
 	vecteur attributs(1,default_color(contextptr));
 	int a=read_attributs(v,attributs,contextptr);
-	if (a!=s){
+	if (a==s-1 && attributs!=vecteur(1,default_color(contextptr))){
 	  gen res=_plot(a==1?v.front():gen(vecteur(v.begin(),v.begin()+a)),contextptr);
 	  if (res.type==_VECT){
 	    vecteur w=*res._VECTptr;
