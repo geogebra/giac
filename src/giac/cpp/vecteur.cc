@@ -7867,6 +7867,29 @@ namespace giac {
       y.push_back(x[permutation[i]]);
   }
 
+  /* Addition by L. Marohnić.
+   * This function permutes the vector V according to the permutation P.
+   * if COPY_P=true then P is copied first, so that the original is
+   * unchanged in the end. Otherwise, P is used as a workspace so its
+   * original content is destroyed. */
+  void apply_permutation(vecteur &v,vector<int> &p,bool keep_p) {
+    vector<int> pc;
+    if (keep_p) pc=p;
+    vector<int> &P=keep_p?pc:p;
+    int n=v.size(),i,curr,next;
+    for (i=0;i<n;++i) {
+      curr=i;
+      next=P[curr];
+      while (next!=i) {
+        swapgen(v[curr],v[next]);
+        P[curr]=curr;
+        curr=next;
+        next=P[next];
+      }
+      P[curr]=curr;
+    }
+  }
+  
   /*
   vector<int> perminv(const vector<int> & p);
   // solve LU x= b (permutation P)
@@ -11493,7 +11516,7 @@ namespace giac {
 	  A[i + j * rows].i=0;
 	  continue;
 	}
-	if (g.type==_CPLX && g._CPLXptr->type==_DOUBLE_ && (*g._CPLXptr+1).type==_DOUBLE_){
+	if (g.type==_CPLX && g._CPLXptr->type==_DOUBLE_ && (g._CPLXptr+1)->type==_DOUBLE_){  // FIX by L. Marohnić
 	  A[i + j * rows].r = g._CPLXptr->_DOUBLE_val;
 	  A[i + j * rows].i = (g._CPLXptr+1)->_DOUBLE_val;
 	}
@@ -15668,6 +15691,581 @@ namespace giac {
   static define_unary_function_eval (__lu,&lu,_lu_s);
   define_unary_function_ptr5( at_lu ,alias_at_lu,&__lu,0,true);
 
+  /* Solve indefinite system A*x=b, x in R^N (b!=NULL), or determine
+   * the inertia (p,n,z) of real and symmetric matrix A (b==NULL) */
+#ifdef HAVE_LIBLAPACK
+  bool solve_indef(double *A,double *WORK,int *IPIV,double *b,int N,int NRHS,int *p,int *n,int *z,GIAC_CONTEXT) {
+    char UPLO='L';
+    int INFO,LWORK=-1,LDA=N,LDB=N,i;
+    if (b!=NULL) { // solve A*x=b, A must be factorized
+      dsytrs_(&UPLO,&N,&NRHS,A,&LDA,IPIV,b,&LDB,&INFO);
+    } else { // factorize A and compute inertia
+      if (WORK==NULL) {
+        double TMP_WORK;
+        dsytrf_(&UPLO,&N,A,&LDA,IPIV,&TMP_WORK,&LWORK,&INFO);
+        if (INFO!=0)
+          return false;
+        LWORK=(int)TMP_WORK;
+        WORK=new double[LWORK+1];
+        *WORK=TMP_WORK;
+      } else LWORK=(int)*WORK;
+      dsytrf_(&UPLO,&N,A,&LDA,IPIV,WORK+1,&LWORK,&INFO);
+      *p=*n=*z=0;
+      if (INFO>=0) for (i=0;i<N;++i) {
+        if (IPIV[i]>0) {
+          if (is_zero(A[i+i*N],contextptr)) ++(*z);
+          else if (is_positive(A[i+i*N],contextptr)) ++(*p);
+          else ++(*n);
+        } else {
+          ++(*p);
+          ++(*n);
+          ++i;
+        }
+      }
+    }
+    return INFO>=0;
+  }
+#endif
+  bool solve_indef(matrice &A,const vecteur *b,vecteur &x,int *p,int *n,int *z,GIAC_CONTEXT) {
+    int N=A.size(),i,j;
+    if (b!=NULL) { // solve A*x=b, A must be factorized, X contains the permutation
+      if (int(x.size())!=N || !ckmatrix(*b) || mcols(*b)!=N)
+        return false;
+      if (N==1) {
+        x=divvecteur(*b,A[0][0]);
+        return true;
+      }
+      vector<int> perm=vecteur_2_vector_int(x);
+      x.clear();
+      x.reserve(b->size());
+      vecteur z(N),u(N),y(N),xi(N);
+      for (const_iterateur it=b->begin();it!=b->end();++it) {
+        const vecteur &bi=*it->_VECTptr,&dlow=*A[0]._VECTptr;
+        for (i=0;i<N;++i) {
+          z[i]=bi[perm[i]];
+          const vecteur &ri=*A[i]._VECTptr;
+          for (j=0;j<i;++j)
+            z[i]-=ri[j]*z[j];
+        }
+        for (i=0;i<N;++i) {
+          if (i==N-1 || is_zero(dlow[i+1],contextptr)) {
+            u[i]=z[i]/A[i][i];
+          } else {
+            const gen &A11=A[i][i],&A22=A[i+1][i+1],&A21=dlow[i+1];
+            gen d=A11*A22-pow(A21,2);
+            u[i]=(z[i]*A22-z[i+1]*A21)/d;
+            u[i+1]=(z[i+1]*A11-z[i]*A21)/d;
+            ++i;
+          }
+        }
+        for (i=N;i-->0;) {
+          y[i]=u[i];
+          for (j=i+1;j<N;++j) y[i]-=A[j][i]*y[j];
+        }
+        for (i=0;i<N;++i)
+          xi[perm[i]]=y[i];
+        x.push_back(xi);
+      }
+    } else { // factorize A and compute intertia, store the permutation in X
+      *p=*n=*z=0;
+      if (N==1) {
+        if (A[0][0]>0) ++(*p);
+        else if (A[0][0]<0) ++(*n);
+        else ++(*z);
+        return true;
+      }
+      vector<int> perm;
+      bool sing;
+      if (!ldl(A,perm,0,sing,0,contextptr) || sing)
+        return false;
+      x=vector_int_2_vecteur(perm);
+      const vecteur &dlow=*A[0]._VECTptr;
+      for (i=0;i<N;++i) {
+        const gen &Aii=A[i][i];
+        if (i==N-1 || is_zero(dlow[i+1],contextptr)) { // 1x1 block
+          if (is_zero(Aii,contextptr))
+            ++(*z);
+          else if (is_positive(Aii,contextptr))
+            ++(*p);
+          else if (is_positive(-Aii,contextptr))
+            ++(*n);
+          else return false; // unable to compare
+        } else { // 2x2 block
+          ++(*p);
+          ++(*n);
+          ++i;
+        }
+      }
+    }
+    return true;
+  }
+
+  /* Swap rows/columns k and l in symmetric/Hermitian matrix A
+  * and elements k and l in vector P. Set H to true for Hermitian
+  * matrix A and to false otherwise. */
+  void ldl_swap_rc(matrice &a,int k,int l,vector<int> &p,bool h,GIAC_CONTEXT) {
+    int I=k<l?k:l,J=k<l?l:k,i,n=a.size();
+    vecteur &rI=*a[I]._VECTptr,&rJ=*a[J]._VECTptr;
+    gen tmp;
+    if (h) for (i=I+1;i<J;++i) {
+      tmp=rJ[i];
+      rJ[i]=conj(a[i][I],contextptr);
+      a[i]._VECTptr->at(I)=conj(tmp,contextptr);
+    } else for (i=I+1;i<J;++i) swapgen(rJ[i],a[i]._VECTptr->at(I));
+    for (i=0;i<I;++i) swapgen(rI[i],rJ[i]);
+    for (i=J+1;i<n;++i) swapgen(a[i]._VECTptr->at(I),a[i]._VECTptr->at(J));
+    if (h) rJ[I]=conj(rJ[I],contextptr);
+    swapgen(rI[I],rJ[J]);
+    std::swap(p[k],p[l]);
+  }
+
+  /* Bunch & Kaufman LDL factorization of an indefinite symmetric/Hermitian matrix A.
+  * Factorization is performed in-place. PERM defines the permutation matrix.
+  * The lower sub-diagonal is stored to A[0,1:N-1]. SING is true iff A is singular.
+  * MAT_TYPE should be set to 1 for real numeric, 2 for complex numeric, 3 for
+  * complex Hermitian and 0 for general (symbolic) matrix A. */
+  bool ldl(matrice &a,vector<int> &perm,int mat_type,bool &sing,double time_limit,GIAC_CONTEXT) {
+    int N=a.size(),i,j,k,p,r,s,ip;
+    if (int(perm.size())!=N) perm.resize(N);
+    for (vector<int>::iterator it=perm.begin();it!=perm.end();++it)
+      *it=int(it-perm.begin());
+    sing=false;
+  #ifdef HAVE_LIBLAPACK
+    /*
+    * DSYTRF/ZSYTRF computes the factorization of a real/complex
+    * symmetric/Hermitian matrix A using Bunch-Kaufman diagonal
+    * pivoting method.  The form of the factorization is
+    * 
+    * A = L*D*L**T
+    * 
+    * where L is a product of permutation and unit lower triangular
+    * matrices, and D is symmetric and block diagonal with 1-by-1 and
+    * 2-by-2 diagonal blocks.
+    * 
+    * This is the blocked version of the algorithm, calling Level 3 BLAS.
+    */
+    if (mat_type>1 && N>1) { // numeric matrix, use LAPACK
+      char UPLO='L'; // operate on the lower triangle of A
+      int LDA=N,INFO,*IPIV=new int[N],LWORK=-1;
+      gen elem;
+      double *A_DBL=NULL,*WORK_DBL=NULL;
+      doublef2c_complex *A_CPLX=NULL,*WORK_CPLX=NULL;
+      if (mat_type==2) A_DBL=new double[N*N];
+      else A_CPLX=new doublef2c_complex[N*N];
+      iterateur it=a.begin(),itend=a.end(),jt,jtend,rt1,rt2,rtend;
+      for (i=0;it!=itend;++it,++i) {
+        if (it->type!=_VECT)
+          return false; // A is not a matrix
+        jt=it->_VECTptr->begin();
+        jtend=jt+i+1;
+        for (j=0;jt!=jtend;++jt,++j) {
+          elem=evalf_double(*jt,1,contextptr);
+          if (elem.type==_DOUBLE_) {
+            if (mat_type==2) A_DBL[i+j*N]=elem._DOUBLE_val;
+            else {
+              A_CPLX[i+j*N].r=elem._DOUBLE_val;
+              A_CPLX[i+j*N].i=0;
+            }
+          } else if (mat_type>2 && elem.type==_CPLX && elem._CPLXptr->type==_DOUBLE_ && (elem._CPLXptr+1)->type==_DOUBLE_) {
+            A_CPLX[i+j*N].r=elem._CPLXptr->_DOUBLE_val;
+            A_CPLX[i+j*N].i=(elem._CPLXptr+1)->_DOUBLE_val;
+          } else return false;
+        }
+      }
+      if (LWORK==-1) { // get WORK array size
+        if (mat_type==2) {
+          double TMP_WORK;
+          dsytrf_(&UPLO,&N,A_DBL,&LDA,IPIV,&TMP_WORK,&LWORK,&INFO);
+          if (INFO!=0)
+            return false;
+          LWORK=(int)TMP_WORK;
+        } else {
+          doublef2c_complex TMP_WORK;
+          if (mat_type==3)
+            zsytrf_(&UPLO,&N,A_CPLX,&LDA,IPIV,&TMP_WORK,&LWORK,&INFO);
+          else
+            zhetrf_(&UPLO,&N,A_CPLX,&LDA,IPIV,&TMP_WORK,&LWORK,&INFO);
+          if (INFO!=0)
+            return false;
+          LWORK=(int)TMP_WORK.r;
+        }
+      }
+      if (LWORK>0) {
+        if (mat_type==2) WORK_DBL=new double[LWORK];
+        else WORK_CPLX=new doublef2c_complex[LWORK];
+      }
+      if (mat_type==2)
+        dsytrf_(&UPLO,&N,A_DBL,&LDA,IPIV,WORK_DBL,&LWORK,&INFO);
+      else if (mat_type==3)
+        zsytrf_(&UPLO,&N,A_CPLX,&LDA,IPIV,WORK_CPLX,&LWORK,&INFO);
+      else
+        zhetrf_(&UPLO,&N,A_CPLX,&LDA,IPIV,WORK_CPLX,&LWORK,&INFO);
+      if (INFO<0) { // illegal argument value
+        delete[] IPIV;
+        if (mat_type==2) {
+          delete[] A_DBL;
+          if (WORK_DBL!=NULL) delete[] WORK_DBL;
+        } else {
+          delete[] A_CPLX;
+          if (WORK_CPLX!=NULL) delete[] WORK_CPLX;
+        }
+        return false; // LAPACK error
+      }
+      if (INFO>0)
+        sing=true; // there is at least one zero at the diagonal of D
+      vecteur &dlow=*a[0]._VECTptr; // the lower sub-diagonal
+      std::fill(dlow.begin()+1,dlow.end(),0);
+      vector<int> base_perm(perm),col_perm(N);
+      for (j=0;j<N;++j) {
+        ip=IPIV[j];
+        if (ip>0) {
+          k=j+j*N;
+          a[j]._VECTptr->at(j)=mat_type==2?gen(A_DBL[k]):gen(A_CPLX[k].r,A_CPLX[k].i);
+          if (--ip!=j) std::swap(perm[j],perm[ip]);
+          std::copy(base_perm.begin(),base_perm.end(),col_perm.begin());
+          bool skip=false;
+          for (i=j+1;i<N;++i) {
+            if (!skip) {
+              ip=IPIV[i];
+              if (ip>0) {
+                if (--ip!=i) std::swap(col_perm[i],col_perm[ip]);
+              } else {
+                if (++ip!=-i-1) std::swap(col_perm[i+1],col_perm[-ip]);
+                skip=true;
+              }
+            } else skip=false;
+            k=col_perm[i]+j*N;
+            a[i]._VECTptr->at(j)=mat_type==2?gen(A_DBL[k]):gen(A_CPLX[k].r,A_CPLX[k].i);
+          }
+        } else {
+          k=j+j*N;
+          a[j]._VECTptr->at(j)=mat_type==2?gen(A_DBL[k]):gen(A_CPLX[k].r,A_CPLX[k].i);
+          k+=N+1;
+          a[j+1]._VECTptr->at(j+1)=mat_type==2?gen(A_DBL[k]):gen(A_CPLX[k].r,A_CPLX[k].i);
+          if (++ip!=-j-1) std::swap(perm[j+1],perm[-ip]);
+          k-=N;
+          dlow[j+1]=mat_type==2?gen(A_DBL[k]):gen(A_CPLX[k].r,A_CPLX[k].i);
+          a[j+1]._VECTptr->at(j)=0;
+          std::copy(base_perm.begin(),base_perm.end(),col_perm.begin());
+          bool skip=false;
+          for (i=j+2;i<N;++i) {
+            if (!skip) {
+              ip=IPIV[i];
+              if (ip>0) {
+                if (--ip!=i) std::swap(col_perm[i],col_perm[ip]);
+              } else {
+                if (++ip!=-i-1) std::swap(col_perm[i+1],col_perm[-ip]);
+                skip=true;
+              }
+            } else skip=false;
+            k=col_perm[i]+j*N;
+            a[i]._VECTptr->at(j)=mat_type==2?gen(A_DBL[k]):gen(A_CPLX[k].r,A_CPLX[k].i);
+            k+=N;
+            a[i]._VECTptr->at(j+1)=mat_type==2?gen(A_DBL[k]):gen(A_CPLX[k].r,A_CPLX[k].i);
+          }
+          ++j;
+        }
+      } 
+      delete[] IPIV;
+      if (mat_type==2) {
+        delete[] A_DBL;
+        if (WORK_DBL!=NULL) WORK_DBL;
+      } else {
+        delete[] A_CPLX;
+        if (WORK_CPLX!=NULL) delete[] WORK_CPLX;
+      }
+      return true;
+    }
+  #endif
+    clock_t time0=clock();
+    gen alpha=(1+sqrt(17,contextptr))/8;
+    if (N==1) return true; // nothing to do
+    bool h=mat_type==1 || mat_type==4; // matrix A is Hermitian
+    vecteur &ws1=*a[0]._VECTptr,&ws2=*a[1]._VECTptr; // workspace
+    int t0,t1;
+    for (k=0;k<N;++k) {
+      const gen &akk=a[k][k];
+      gen lambda=0,sigma=0,e,Akk=symb_abs(akk),symc=undef;
+      // determine whether (and how) to pivot
+      t0=rand_max2;
+      for (i=k+1;i<N;++i) {
+        if (time_limit>0 && double(clock()-time0)/CLOCKS_PER_SEC>time_limit) return false;
+        const gen &aik=a[i][k];
+        e=symb_abs(aik);
+        if (aik.type==_SYMB) {
+          if (is_strictly_positive(lambda,contextptr))
+            continue;
+          if ((t1=taille(aik,1000))<t0) {
+            t0=t1;
+            r=i;
+            symc=e;
+          }
+        } else if (is_strictly_greater(e,lambda,contextptr)) {
+          r=i;
+          lambda=_eval(e,contextptr);
+        }
+      }
+      if (is_exactly_zero(lambda)) {
+        if (is_undef(symc)) { // no need for pivoting
+          if (akk.type!=_SYMB && is_zero(akk,contextptr))
+            sing=true;
+          if (k+1<N) ws1[k+1]=0;
+          continue;
+        } else lambda=symc;
+      }
+      if (akk.type!=_SYMB && lambda.type!=_SYMB && is_greater(Akk,alpha*lambda,contextptr)) {
+        r=k;
+        s=1;
+      } else {
+        symc=undef;
+        t0=rand_max2;
+        for (i=k;i<N;++i) {
+          if (i==r) continue;
+          if (time_limit>0 && double(clock()-time0)/CLOCKS_PER_SEC>time_limit) return false;
+          const gen &air=i<r?a[r][i]:a[i][r];
+          e=symb_abs(air);
+          if (air.type==_SYMB) {
+            if (is_strictly_positive(sigma,contextptr))
+              continue;
+            if ((t1=taille(air,1000))<t0) {
+              t0=t1;
+              p=i;
+              symc=e;
+            }
+          } else if (is_strictly_greater(e,sigma,contextptr)) {
+            p=i;
+            sigma=_eval(e,contextptr);
+          }
+        }
+        if (is_exactly_zero(sigma) && !is_undef(symc))
+          sigma=symc;
+        const gen &arr=a[r][r];
+        if (akk.type!=_SYMB && lambda.type!=_SYMB && is_greater(sigma*Akk,alpha*pow(lambda,2),contextptr)) {
+          r=k;
+          s=1;
+        } else if (arr.type!=_SYMB && sigma.type!=_SYMB && is_greater(symb_abs(arr),alpha*sigma,contextptr))
+          s=1;
+        else {
+          if (p>r) {
+            s=r;
+            r=p;
+            p=s;
+          }
+          s=2;
+        }
+      }
+      // pivot
+      iterateur it;
+      if (s==1) { // 1x1 pivot
+        if (r!=k) ldl_swap_rc(a,r,k,perm,h,contextptr);
+        const gen &akk=a[k][k];
+        for (i=k+1;i<N;++i) {
+          if (time_limit>0 && double(clock()-time0)/CLOCKS_PER_SEC>time_limit) return false;
+          it=a[i]._VECTptr->begin()+k;
+          ws1[i]=*it/akk;
+          for (j=k+1;j<=i;++j) {
+            *(++it)-=ws1[i]*(h?conj(a[j][k],contextptr):a[j][k]);
+          }
+        }
+        // update L
+        for (i=k+1;i<N;++i) {
+          a[i]._VECTptr->at(k)=ws1[i];
+        }
+        if (k+1<N) ws1[k+1]=0;
+      } else if (s==2) { // 2x2 pivot
+        if (p==k && r!=k+1) ldl_swap_rc(a,r,k+1,perm,h,contextptr);
+        else if (p==k+1) ldl_swap_rc(a,r,k,perm,h,contextptr);
+        else if (p>k+1) {
+          ldl_swap_rc(a,r,k,perm,h,contextptr);
+          ldl_swap_rc(a,p,k+1,perm,h,contextptr);
+        }
+        const gen &e11=a[k][k],&e21=a[k+1][k],&e22=a[k+1][k+1];
+        gen e12=h?conj(e21,contextptr):e21,D=e11*e22-e12*e21;
+        for (i=k+2;i<N;++i) {
+          it=a[i]._VECTptr->begin()+k;
+          const gen &aik=*it,&aik1=*(++it);
+          ws1[i]=(aik*e22-aik1*e21)/D;
+          ws2[i]=(aik1*e11-aik*e12)/D;
+          for (j=k+2;j<=i;++j) {
+            if (time_limit>0 && double(clock()-time0)/CLOCKS_PER_SEC>time_limit) return false;
+            *(++it)-=(h?conj(a[j][k],contextptr):a[j][k])*ws1[i]+(h?conj(a[j][k+1],contextptr):a[j][k+1])*ws2[i];
+          }
+        }
+        // update L
+        for (i=k+2;i<N;++i) {
+          if (time_limit>0 && double(clock()-time0)/CLOCKS_PER_SEC>time_limit) return false;
+          it=a[i]._VECTptr->begin()+k;
+          *it=ws1[i];
+          *(it+1)=ws2[i];
+        }
+        ws1[k+1]=e21; // store the lower sub-diagonal
+        a[k+1]._VECTptr->at(k)=0;
+        if (k+2<N) ws1[k+2]=0;
+        ++k;
+      }
+    }
+    return true;
+  }
+
+  gen _ldl(const gen &g,GIAC_CONTEXT) {
+    if (g.type==_STRNG && g.subtype==-1) return g;
+    if (g.type!=_VECT)
+      return gentypeerr(contextptr);
+    if (g._VECTptr->empty())
+      return gendimerr(contextptr);
+    bool has_opts=g.subtype==_SEQ__VECT,h=false,packed=false;
+    const gen &first=has_opts?g._VECTptr->front():g;
+    if (!is_squarematrix(first))
+      return gensizeerr(gettext("Expected a square matrix"));
+    if (has_opts) for (const_iterateur opt=g._VECTptr->begin()+1;opt!=g._VECTptr->end();++opt) {
+      if (*opt==at_hermite)
+        h=true;
+      else if (*opt==at_zip)
+        packed=true;
+    }
+    matrice a;
+    vecteur p,d,dlow;
+    int N=first._VECTptr->size(),i,as=array_start(contextptr);
+    a=*_matrix(makesequence(N,N,0),contextptr)._VECTptr;
+    for (i=0;i<N;++i) {
+      const_iterateur rt=first._VECTptr->at(i)._VECTptr->begin();
+      std::copy(rt,rt+i+1,a[i]._VECTptr->begin());
+    }
+    vector<int> perm;
+    int mat_type=h?1:0; // general (symbolic) matrix
+    if (is_fully_numeric(g)) {
+      mat_type=h?4:3; // complex (Hermitian) numeric
+      if (is_zero(im(g,contextptr),contextptr))
+        mat_type=2; // real numeric
+    }
+    bool sing;
+    log_output_redirect lor(contextptr);
+    if (!ldl(a,perm,mat_type,sing,0,contextptr))
+      return gensizeerr(gettext("LAPACK LDL error"));
+    if (sing)
+      //*logptr(contextptr) << gettext("Warning") << ": " << gettext("matrix is singular") << "\n"
+      ;
+    vecteur &row1=*a[0]._VECTptr;
+    dlow=vecteur(row1.begin()+1,row1.end());
+    std::fill(row1.begin()+1,row1.end(),0);
+    p.resize(N);
+    if (packed) {
+      for (i=0;i<N;++i) {
+        p[i]=perm[i]+as;
+        if (i<N-1) a[i]._VECTptr->at(i+1)=dlow[i];
+      }
+    } else {
+      d.resize(N);
+      iterateur dt=d.begin(),pt=p.begin();
+      for (i=0;i<N;++i,++dt,++pt) {
+        gen &aii=a[i]._VECTptr->at(i);
+        *dt=aii;
+        aii=1;
+        *pt=perm[i]+as;
+      }
+    }
+    if (N>=2) { // clear workspace
+      vecteur &row2=*a[1]._VECTptr;
+      std::fill(row2.begin()+2,row2.end(),0);
+    }
+    if (packed)
+      return makesequence(p,a);
+    return makesequence(p,a,ratnormal(_diag(makesequence(dlow,d,h?conj(dlow,contextptr):dlow),contextptr),contextptr));
+  }
+  static const char _ldl_s []="ldl";
+  static define_unary_function_eval (__ldl,&_ldl,_ldl_s);
+  define_unary_function_ptr5(at_ldl,alias_at_ldl,&__ldl,0,true)
+
+  gen _inertia(const gen &g,GIAC_CONTEXT) {
+    if (g.type==_STRNG && g.subtype==-1) return g;
+    if (g.type!=_VECT)
+      return gentypeerr(contextptr);
+    if (g._VECTptr->empty())
+      return gendimerr(contextptr);
+    bool do_solve=g.subtype==_SEQ__VECT,is_b_matrix=false;
+    int pos=-1;
+    if (do_solve) {
+      if (g._VECTptr->size()<2 || g._VECTptr->size()>3)
+        return gendimerr(contextptr);
+      if (!is_squarematrix(g._VECTptr->front()) || g._VECTptr->at(1).type!=_VECT)
+        return gentypeerr(contextptr);
+      if (g._VECTptr->size()==3) {
+        if (!is_integer(g._VECTptr->back()))
+          return gentypeerr(contextptr);
+        pos=g._VECTptr->back().val;
+        if (pos<0 || pos>int(g._VECTptr->front()._VECTptr->size()))
+          return gensizeerr(contextptr);
+      }
+    } else if (!is_squarematrix(g))
+      return gentypeerr(contextptr);
+    const matrice &mat=do_solve?*g._VECTptr->front()._VECTptr:*g._VECTptr;
+    int N=mat.size(),M,p,n,z,i,j;
+    vecteur sol;
+    matrice bmat;
+    if (do_solve) {
+      if (ckmatrix(g._VECTptr->at(1))) {
+        bmat=*g._VECTptr->at(1)._VECTptr;
+        is_b_matrix=true;
+      } else bmat=vecteur(1,g._VECTptr->at(1));
+      if (mcols(bmat)!=N)
+        return gendimerr(contextptr);
+      M=mrows(bmat);
+    }
+#ifdef HAVE_LIBLAPACK
+    if (is_fully_numeric(mat)) {
+      double *A=new double[N*N],*WORK=NULL;
+      int *IPIV=new int[N];
+      const_iterateur it=mat.begin(),itend=mat.end(),jt,jtend;
+      gen e;
+      bool ok=true;
+      for (i=0;ok&&it!=itend;++it,++i) {
+        for (jt=it->_VECTptr->begin(),jtend=jt+i+1,j=0;jt!=jtend;++jt,++j) {
+          e=evalf_double(*jt,1,contextptr);
+          if (e.type!=_DOUBLE_) {
+            ok=false;
+            break;
+          }
+          A[i+j*N]=e._DOUBLE_val;
+        }
+      }
+      if (ok) {
+        if ((ok=solve_indef(A,WORK,IPIV,NULL,N,M,&p,&n,&z,contextptr)) && do_solve && z==0 && (pos<0 || p==pos)) {
+          double *B=new double[N*M];
+          matrice2lapack(mtran(bmat),B,contextptr);
+          if (ok=solve_indef(A,WORK,IPIV,B,N,M,NULL,NULL,NULL,contextptr)) {
+            lapack2matrice(B,N,M,sol);
+            sol=mtran(sol);
+          }
+          delete[] B;
+        }
+      }
+      delete[] A;
+      delete[] IPIV;
+      if (WORK!=NULL) delete[] WORK;
+      if (!ok) return gensizeerr(contextptr);
+      vecteur res=makevecteur(p,n,z);
+      return do_solve?makesequence(res,!is_b_matrix&&sol.size()==1?sol[0]:sol):res;
+    }
+#endif
+    matrice A=*_matrix(makesequence(N,N),contextptr)._VECTptr;
+    const_iterateur rt=mat.begin(),rtend=mat.end(),ct,ctend;
+    for (i=0;rt!=rtend;++rt,++i) {
+      for (j=0,ct=rt->_VECTptr->begin(),ctend=rt->_VECTptr->end();ct!=ctend;++ct,++j)
+        A[i]._VECTptr->at(j)=*ct;
+    }
+    if (!solve_indef(A,NULL,sol,&p,&n,&z,contextptr))
+      return gensizeerr(contextptr);
+    if (do_solve && z==0 && (pos<0 || p==pos)) {
+      if (!solve_indef(A,&bmat,sol,NULL,NULL,NULL,contextptr))
+        return gensizeerr(contextptr);
+    } else sol.clear();
+    vecteur res=makevecteur(p,n,z);
+    return do_solve?makesequence(res,!is_b_matrix&&sol.size()==1?sol[0]:sol):res;
+  }
+  static const char _inertia_s []="inertia";
+  static define_unary_function_eval (__inertia,&_inertia,_inertia_s);
+  define_unary_function_ptr5(at_inertia,alias_at_inertia,&__inertia,0,true)
+  
   bool matrice2lapack(const matrice & m,double * A,GIAC_CONTEXT){
     const_iterateur it=m.begin(),itend=m.end();
     gen g;

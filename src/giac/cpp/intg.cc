@@ -2776,13 +2776,29 @@ namespace giac {
       }
       if (!is_constant_wrt(vf1,gen_x,contextptr)){
 	curgcd=1;
-	continue;
+	break;
       }
       if (vf1.type==_VECT) 
 	vf1=_gcd(vf1,contextptr);
-      if (curgcd!=0 && vf1!=curgcd)
+      if (curgcd!=0 && vf1!=curgcd){
 	allsame=false;
+      }
       curgcd=gcd(vf1,curgcd);
+    }
+    if (!allsame && curgcd==1){ // translate if exists b!=0 with f(x+b)
+      for (int i=1;i<v.size();++i){
+	if (v[i].type!=_SYMB)
+	  continue;
+	gen vf=v[i]._SYMBptr->feuille,a,b;
+	if (is_linear_wrt(vf,gen_x,a,b,contextptr) && (a==1||a==-1)){ 
+	  if (b==0) break; // 
+	  gen e1=complex_subst(e,gen_x,a*(gen_x-b),contextptr);
+	  gen E1=integrate_id_rem(e1,gen_x,remains_to_integrate,contextptr,intmode);
+	  remains_to_integrate=complex_subst(remains_to_integrate,gen_x,a*gen_x+b,contextptr);
+	  E1=complex_subst(E1,gen_x,a*gen_x+b,contextptr);
+	  return a*E1/curgcd;
+	}
+      }
     }
     if (!allsame && curgcd!=0 && curgcd!=1){
       gen e1=complex_subst(e,gen_x,inv(curgcd,contextptr)*gen_x,contextptr);
@@ -2792,7 +2808,7 @@ namespace giac {
       for (int i=1;i<v.size();++i){
 	if (v[i].type!=_SYMB)
 	  continue;
-	gen vf=ratnormal(v[i]._SYMBptr->feuille,contextptr);
+	gen vf=expand(ratnormal(v[i]._SYMBptr->feuille,contextptr),contextptr);
 	vrep[i]=symbolic(v[i]._SYMBptr->sommet,vf);
       }
       if (v!=vrep) e1=complex_subst(e1,v,vrep,contextptr);

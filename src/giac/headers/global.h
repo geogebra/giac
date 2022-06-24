@@ -18,6 +18,7 @@
  */
 #ifndef _GIAC_GLOBAL_H
 #define _GIAC_GLOBAL_H
+//#define USE_OBJET_BIDON
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif

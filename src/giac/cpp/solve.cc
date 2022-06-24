@@ -4549,7 +4549,7 @@ namespace giac {
     for (int j=1;j<5;j++,niter2 *=2, niter1 *=2){ 
       gen a;
       int b;
-      //on prend un d�part au hasard (a=x0=un _DOUBLE_)
+      //on prend un d�part au hasard (a=x0=un _DOUBLE_)
       // a=gen(2.0);
       if (guess_first)
 	a=j*4*(rand()/(RAND_MAX+1.0)-0.5);
@@ -8153,13 +8153,9 @@ namespace giac {
     return gensizeerr(contextptr);
   }
 #else // GIAC_HAS_STO_38
-  struct gen_context {
-    gen g; //  should be a vector [function,conditions,variables]
-    const context * contextptr;
-  };
   // state is a pointer of type gen_context
   int cobyla_giac_function(int n, int m, double *x, double *f, double *con,void *state){
-    gen_context * gptr=(gen_context *)state;
+    cobyla_gc * gptr=(cobyla_gc *)state;
     if (gptr->g.type!=_VECT || gptr->g._VECTptr->size()!=3)
       return 1; //error
     gen F=(*gptr->g._VECTptr)[0];
@@ -8171,7 +8167,7 @@ namespace giac {
     for (int i=0;i<n;++i)
       values[i]=x[i];
     gen Fx=subst(F,variables,values,false,gptr->contextptr);
-    Fx=evalf_double(Fx,1,gptr->contextptr);
+    Fx=_evalf(Fx,gptr->contextptr); // changed evalf_double to _evalf which allows for quoted objectives (L. Marohnić)
     if (Fx.type!=_DOUBLE_)
       return 1;
     *f=Fx._DOUBLE_val;
@@ -8212,7 +8208,7 @@ namespace giac {
 	*it=it->_SYMBptr->feuille._VECTptr->back()-it->_SYMBptr->feuille._VECTptr->front();
     }
     gen fcv=makevecteur(f,con,variables);
-    gen_context gc={fcv,contextptr};
+    cobyla_gc gc={fcv,contextptr};
     int n=variables.size(),m=con.size(),message(debug_infolevel),maxfun(1000);
     gen maxiter(maxiter0);
     gen eps0d=evalf_double(eps0,1,contextptr);
@@ -8222,11 +8218,14 @@ namespace giac {
       maxfun=maxiter.val;
     if (int(guess.size())!=n)
       return gendimerr(contextptr);
+/*
 #ifdef VISUALC
     double x[100];
 #else
     double x[n];
 #endif
+*/
+    double *x=new double[n]; // added by L. Marohnić
     for (int i=0;i<n;++i){
       gen tmp=evalf_double(guess[i],1,contextptr);
       if (tmp.type!=_DOUBLE_)
@@ -8245,6 +8244,7 @@ namespace giac {
     vecteur res(n);
     for (int i=0;i<n;++i)
       res[i]=x[i];
+    delete[] x;
     if (cres==0)
       return res;
     return makevecteur(string2gen(gettext("Unable to minimize at given precision, last value "),false),res); // changed 2021/feb/22 to be able to process the result further
@@ -8252,7 +8252,31 @@ namespace giac {
     return undef;
   }
 
+  int giac_cobyla(cobyla_gc *gc,vecteur &x0,int &maxiter,double eps,int msg) {
+    int n = gc->g._VECTptr->at(2)._VECTptr->size(), m = gc->g._VECTptr->at(1)._VECTptr->size();
+    double *x;
+    try {
+     x = new double[n];
+    } catch (const std::bad_alloc &e) {
+      return COBYLA_ENOMEM;
+    }
+    for (int i = 0; i < n; ++i)
+    {
+      gen tmp = evalf_double(x0[i], 1, gc->contextptr);
+      if (tmp.type != _DOUBLE_)
+        return COBYLA_EINVAL;
+      x[i] = tmp._DOUBLE_val;
+    }
+    int cres = cobyla(n, m, x, x[0] / 100, eps, msg, &maxiter, cobyla_giac_function, gc);
+    vecteur res(n);
+    for (int i = 0; i < n; ++i)
+      x0[i] = x[i];
+    delete[] x;
+    return cres;
+  }
+
 #endif // GIAC_HAS_STO_38
+
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac

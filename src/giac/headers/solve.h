@@ -155,6 +155,20 @@ namespace giac {
   // returns an error or the vecteur of coordinates of variables
   // and sets min_value to f at this point
   gen fmin_cobyla(const gen & f,const vecteur & constraints,const vecteur & variables,const vecteur & guess,const gen & eps0,const gen & maxiter0,GIAC_CONTEXT);
+  // gen-context struct (moved from solve.cc by L. Marohnić)
+  typedef struct gen_context {
+    gen g; //  should be a vector [function,conditions,variables]
+    const context * contextptr;
+  } cobyla_gc;
+  // minimize F subject to CON. (added by L. Marohnić)
+  // F: the expression to be minimized
+  // CON: list of expressions that must be positive for feasibility
+  // X: list of variables
+  // X0: on input, initial point; on output, the last obtained point
+  // MAXITER: on input, maximum allowed number of function evaluations; on output, the total number of evaluations
+  // EPS: tolerance, a positive number
+  // MSG: verbosity level for COBYLA algorithm; from 0 (no output) to 3 (full output)
+  int giac_cobyla(cobyla_gc *gc,vecteur &x0,int &maxiter,double eps=1e-8,int msg=0);
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac

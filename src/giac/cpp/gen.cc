@@ -14181,6 +14181,8 @@ void sprint_double(char * s,double d){
 	return "lp_heuristic";
       case _NLP_PRESOLVE:
 	return "nlp_presolve";
+      case _NLP_METHOD:
+ 	return "nlp_method";      
       case _NLP_SAMPLES:
 	return "nlp_samples";
       case _NLP_INTEGER:
@@ -14193,6 +14195,10 @@ void sprint_double(char * s,double d){
 	return "nlp_binaryvariables";
       case _NLP_NONNEGINT:
 	return "nlp_nonnegint";
+      case _NLP_TOLERANCE:
+ 	return "nlp_tolerance";
+      case _NLP_VERBOSE:
+ 	return "nlp_verbose";
       case _NLP_FEAS_TOL:
 	return "nlp_feasibilitytolerance";
       case _NLP_INT_TOL:

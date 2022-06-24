@@ -7251,14 +7251,14 @@ namespace xcas {
 	  S.reserve(V.size());
 	  for (int j=0;j<V.size();++j){
 	    gen Vj=V[j];
-	    vecteur vj=*Vj._VECTptr;
+	    const vecteur & vj=*Vj._VECTptr;
 	    S.push_back(vector<float3d>(0));
 	    vector<float3d> &S_=S.back();
 	    S_.reserve(vj.size());
 	    for (int k=0;k<vj.size();k+=3){
 	      double X,Y,Z;
 	      do_transform(mat,vj[k]._DOUBLE_val,vj[k+1]._DOUBLE_val,vj[k+2]._DOUBLE_val,X,Y,Z);
-	      vj[k]=X; vj[k+1]=Y; vj[k+2]=Z;
+	      // vj[k]=X; vj[k+1]=Y; vj[k+2]=Z;
 	      S_.push_back(X); S_.push_back(Y); S_.push_back(Z);
 	    }
 	  }

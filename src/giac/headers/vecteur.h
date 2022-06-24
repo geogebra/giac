@@ -260,6 +260,7 @@ namespace giac {
   bool multvectvector_int_vector_int(const std::vector< std::vector<int> > & M,const std::vector<int> & v,int modulo,std::vector<int> & Mv);
   void tran_vect_vector_int(const std::vector< std::vector<int> > & N,std::vector< std::vector<int> > & tN);
   void apply_permutation(const std::vector<int> & permutation,const std::vector<int> &x,std::vector<int> & y);
+  void apply_permutation(vecteur &v,std::vector<int> &p,bool keep_p=false); // efficient sorting of v w.r.t. p, added by L. Marohnic
   void vecteur2vector_int(const vecteur & v,int modulo,std::vector<int> & res);
   
   enum matrix_algorithms {
@@ -483,6 +484,27 @@ namespace giac {
 
   gen _cholesky(const gen & a,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_cholesky ;
+  // additions by L. Marohnić:
+  struct log_output_redirect { // redirecting log output to string
+    log_output_redirect(GIAC_CONTEXT) { old=logptr(ctx=contextptr)->rdbuf(buffer.rdbuf()); }
+    ~log_output_redirect() { logptr(ctx)->rdbuf(old); }
+    std::string get_buffer_string() const { return buffer.str(); }
+  private:
+    const context *ctx;
+    std::stringstream buffer;
+    std::streambuf *old;
+  };
+  // LDL decomposition, inertia computation and solve_indef for fast system solving using the factorization
+  bool ldl(matrice & a,std::vector<int> & perm,int mat_type,bool &sing,double time_limit,GIAC_CONTEXT);
+#ifdef HAVE_LIBLAPACK
+  bool solve_indef(double *A,double *WORK,int *IPIV,double *b,int N,int NRHS,int *p,int *n,int *z,GIAC_CONTEXT);
+#endif
+  bool solve_indef(matrice &A,const vecteur *b,vecteur &x,int *p,int *n,int *z,GIAC_CONTEXT);
+  gen _ldl(const gen & a,GIAC_CONTEXT);
+  extern const unary_function_ptr * const  at_ldl ;
+  gen _inertia(const gen & a,GIAC_CONTEXT);
+  extern const unary_function_ptr * const  at_inertia ;
+  // end additions by L. Marohnić
   gen _svd(const gen & a,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_svd ;
   gen _basis(const gen & a,GIAC_CONTEXT);

@@ -9281,6 +9281,11 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     giac::freeze=true;
   }
 
+  int rgb888to565(int c){
+    int r=(c>>16)&0xff,g=(c>>8)&0xff,b=c&0xff;
+    return (((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
+  }
+
   int rgb565to888(int c){
     c &= 0xffff;
     int r=(c>>11)&0x1f,g=(c>>5)&0x3f,b=c&0x1f;
