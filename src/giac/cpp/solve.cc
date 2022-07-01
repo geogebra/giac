@@ -8255,11 +8255,16 @@ namespace giac {
   int giac_cobyla(cobyla_gc *gc,vecteur &x0,int &maxiter,double eps,int msg) {
     int n = gc->g._VECTptr->at(2)._VECTptr->size(), m = gc->g._VECTptr->at(1)._VECTptr->size();
     double *x;
+#ifndef NO_STDEXCEPT
     try {
      x = new double[n];
     } catch (const std::bad_alloc &e) {
       return COBYLA_ENOMEM;
     }
+#else
+    x = (double *) malloc (n*sizeof(double));
+    if (!x) return COBYLA_ENOMEM;
+#endif
     for (int i = 0; i < n; ++i)
     {
       gen tmp = evalf_double(x0[i], 1, gc->contextptr);
@@ -8271,7 +8276,11 @@ namespace giac {
     vecteur res(n);
     for (int i = 0; i < n; ++i)
       x0[i] = x[i];
+#ifndef NO_STDEXCEPT
     delete[] x;
+#else
+    free(x);
+#endif
     return cres;
   }
 

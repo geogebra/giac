@@ -567,6 +567,7 @@ namespace giac {
   }
 #endif
 
+  bool gnuplot_opengl=false;
 #ifdef WITH_GNUPLOT
   vecteur plot_instructions;
 
@@ -12220,8 +12221,9 @@ namespace giac {
       g=_floor(g,0);
       if (g.type!=_INT_)
 	return false; // setsizeerr(contextptr);
-#ifdef WITH_GNUPLOT
       int i=g.val;
+      gnuplot_opengl=(i/4) %2;
+#ifdef WITH_GNUPLOT
       gnuplot_hidden3d=(i %2)!=0;
       i =i/2;
       gnuplot_pm3d=(i%2)!=0;
@@ -12273,7 +12275,7 @@ namespace giac {
     v.push_back(axes);
     v.push_back(class_min);
     v.push_back(class_size);
-    v.push_back(int(gnuplot_hidden3d+2*gnuplot_pm3d));
+    v.push_back(int(gnuplot_hidden3d+2*gnuplot_pm3d+4*gnuplot_opengl));
     return symbolic(at_xyztrange,v);
   }
   gen _xyztrange(const gen & args,GIAC_CONTEXT){

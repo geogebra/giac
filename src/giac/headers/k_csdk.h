@@ -27,6 +27,7 @@ extern "C" {
   void os_hide_graph(); // hide graph, not used anymore
   void os_redraw(); // force redraw of window class hierarchy
 #ifdef NUMWORKS
+  void raisememerr();
   extern unsigned _heap_size;
   extern void * _heap_ptr;
   extern void * _heap_base;

@@ -484,6 +484,7 @@ namespace giac {
 
   gen _cholesky(const gen & a,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_cholesky ;
+#ifndef KHICAS
   // additions by L. Marohnić:
   struct log_output_redirect { // redirecting log output to string
     log_output_redirect(GIAC_CONTEXT) { old=logptr(ctx=contextptr)->rdbuf(buffer.rdbuf()); }
@@ -494,6 +495,7 @@ namespace giac {
     std::stringstream buffer;
     std::streambuf *old;
   };
+#endif
   // LDL decomposition, inertia computation and solve_indef for fast system solving using the factorization
   bool ldl(matrice & a,std::vector<int> & perm,int mat_type,bool &sing,double time_limit,GIAC_CONTEXT);
 #ifdef HAVE_LIBLAPACK

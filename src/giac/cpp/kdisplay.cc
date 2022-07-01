@@ -6240,7 +6240,7 @@ namespace xcas {
 	if (plan_filled[k]){ only_hypertri=false; break; }
       }
       if (only_hypertri){
-	if (hypertriangles.empty()) continue;
+	if (hypertriangles.empty()) goto suite3d;
 	int effjmax=(hyperxymax-xc-yc)/yscale/2.0,effjmin=(hyperxymin-xc-yc)/yscale/2.0;
 	if (effjmax+1<jmax)
 	  jmax=effjmax+1;
@@ -6464,6 +6464,7 @@ namespace xcas {
 	  }
 	} // end pixel vertical loop on j
       } // end else only_hypertri
+    suite3d:
       // update jmintab/jmaxtab
       if (i+horiz+w<jmintabsize){
 	for (int I=0;I<w;++I){

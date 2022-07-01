@@ -5601,11 +5601,18 @@ void giac_yyfree (void * ptr , yyscan_t yyscanner)
 	  }
 	}
 	bool instring=false;
-	// stupid match of bracket then parenthesis
-	int l=s.size(),nb=0,np=0;
+	// stupid match of bracket then parenthesis then quotes
+	int l=s.size(),nb=0,np=0,nq=0;
 	int i=0;
 	if (lexer_close_parenthesis(contextptr)){
 	  for (;i<l;++i){
+	    if (!instring && s[i]=='\''){
+	      nq++;
+	      if (nq%2==1 && i>2 && s[i-2]=='\'' && s[i-1]=='='){
+		s.insert(s.begin()+i-1,' ');
+		++l;
+	      }
+	    }
 	    if (!instring && i && s[i]=='/' && s[i-1]=='/'){
 	      // skip comment until end of line
 	      for (;i<l;++i){

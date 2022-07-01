@@ -16803,7 +16803,7 @@ void sprint_double(char * s,double d){
       if (is3d(last)){
 	int worker=0;
 	worker=EM_ASM_INT_V({
-	    if (typeof(UI.disable3d) !== 'undefined' && UI.disable3d)
+	    if (typeof(UI)!=="undefined" && typeof(UI.disable3d) !== 'undefined' && UI.disable3d)
 	      return UI.disable3d;
 	    if (Module.worker) return 1; else return 0;
 	});
@@ -16884,12 +16884,12 @@ void sprint_double(char * s,double d){
 #if !defined GIAC_GGB 
 #if defined EMCC || defined EMCC2
 	double add_evalf=EM_ASM_DOUBLE_V({
-	    if (typeof(UI.add_evalf)!="undefined")
+	    if (typeof(UI)!=="undefined" && typeof(UI.add_evalf)!="undefined")
 	      return UI.add_evalf*1.0;
 	    return 1.0;
 	  }),
 	  js_bigint=EM_ASM_DOUBLE_V({
-	      if (typeof(UI.js_bigint)!="undefined")
+	      if (typeof(UI)!=="undefined" && typeof(UI.js_bigint)!="undefined")
 	      return UI.js_bigint*1.0;
 	    return 0.0;
 	  });

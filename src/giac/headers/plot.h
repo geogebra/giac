@@ -246,6 +246,7 @@ namespace giac {
    when all fork/child etc. will be removed */
   extern vecteur plot_instructions;
 #endif
+  extern bool gnuplot_opengl;
   int gnuplot_show_pnt(const symbolic & e,GIAC_CONTEXT);
 
   gen rationalparam2equation(const gen & at_orig,const gen & t_orig,const gen &x,const gen & y,GIAC_CONTEXT);

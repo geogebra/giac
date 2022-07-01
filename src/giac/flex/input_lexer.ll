@@ -1039,11 +1039,18 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 	  }
 	}
 	bool instring=false;
-	// stupid match of bracket then parenthesis
-	int l=s.size(),nb=0,np=0;
+	// stupid match of bracket then parenthesis then quotes
+	int l=s.size(),nb=0,np=0,nq=0;
 	int i=0;
 	if (lexer_close_parenthesis(contextptr)){
 	  for (;i<l;++i){
+	    if (!instring && s[i]=='\''){
+	      nq++;
+	      if (nq%2==1 && i>2 && s[i-2]=='\'' && s[i-1]=='='){
+		s.insert(s.begin()+i-1,' ');
+		++l;
+	      }
+	    }
 	    if (!instring && i && s[i]=='/' && s[i-1]=='/'){
 	      // skip comment until end of line
 	      for (;i<l;++i){
