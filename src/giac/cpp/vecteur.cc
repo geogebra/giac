@@ -16139,7 +16139,7 @@ namespace giac {
         mat_type=2; // real numeric
     }
     bool sing;
-#ifndef KHICAS
+#if !defined KHICAS && !defined GIAC_HAS_STO_38
     log_output_redirect lor(contextptr);
 #endif
     if (!ldl(a,perm,mat_type,sing,0,contextptr))

@@ -2017,8 +2017,20 @@ namespace giac {
     }
     if (expr.is_symb_of_sommet(at_neg))
       expr=expr._SYMBptr->feuille;
-    if (expr.is_symb_of_sommet(at_inv))
+    if (expr.is_symb_of_sommet(at_inv)){
+      // if expr has tan inside, subst tan by 1/x then x->0 if it's 0 we have additional solutions if arg of tan=pi/2
+      vecteur lv(lvarx(expr,x));
+      if (lv.size()==1 && lv[0].is_symb_of_sommet(at_tan)){
+	gen chk=subst(expr,lv[0],inv(x,contextptr),false,contextptr);
+	chk=limit(chk,x,0,0,contextptr);
+	if (chk==0){
+	  chk=cos(lv[0]._SYMBptr->feuille,contextptr);
+	  vecteur v1(solve_cleaned(chk,e_check,x,isolate_mode,contextptr));
+	  return v1;
+	}
+      }
       return vecteur(0);
+    }
     if (expr.is_symb_of_sommet(at_prod)){
       vecteur v=gen2vecteur(expr._SYMBptr->feuille),res;
       for (unsigned i=0;i<v.size();++i){

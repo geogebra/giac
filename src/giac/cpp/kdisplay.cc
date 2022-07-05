@@ -14568,7 +14568,7 @@ namespace xcas {
       numworks_certify_internal();
       Bdisp_AllClr_VRAM();
       int x=0,y=0;
-      PrintMini(x,y,"KhiCAS 1.7 (c) 2022 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE);
+      PrintMini(x,y,"KhiCAS 1.9 (c) 2022 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE);
       y +=18;
       PrintMini(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
       y += 18;
