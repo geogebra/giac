@@ -1963,7 +1963,10 @@ namespace giac {
       if (real && has_i(tmp))
 	continue;
 #ifdef HAVE_LIBMPFR
-      tmp=_evalf(makesequence(tmp,100),contextptr);
+      if (has_op(sol[i],*at_LambertW)) // workaround for solve([(a)*(k)=1, (a)*(exp((3)*(k)))=(3)*(e)],[a, k]);, eval with 100 digits in moyal.cc takes too much time
+	tmp=_evalf(makesequence(tmp,30),contextptr);
+      else
+	tmp=_evalf(makesequence(tmp,100),contextptr);
 #endif
       tmp=evalf_double(tmp,1,contextptr);
       if (real && tmp.type==_CPLX)
