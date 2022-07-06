@@ -7,7 +7,6 @@ apply from: '../repositories.gradle'
 
 dependencies {
     api 'com.google.gwt:gwt-dev:2.9.0',
-        'com.google.gwt:gwt-user:2.9.0',
         'org.gwtproject.resources:gwt-resources-api:HEAD-SNAPSHOT'
     annotationProcessor 'org.gwtproject.resources:gwt-resources-processor:HEAD-SNAPSHOT'
 }
