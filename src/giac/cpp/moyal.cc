@@ -4241,6 +4241,8 @@ namespace giac {
     complex<double> w; 
     // initial guess
     w=2.0*(M_E*z+1.0);
+    if (std::abs(w)<1e-13)
+      return -1.0;
     if (std::abs(w)<0.1 && (n==0 || ( n==1 && z.imag()<0) || (n==-1 && z.imag()>0))){
       // near -1/e, set p=sqrt(2(ez+1)), -1+p-1/3*p^2+11/72*p^3+...
       w=std::sqrt(w);
