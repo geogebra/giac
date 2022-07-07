@@ -6656,45 +6656,55 @@ namespace giac {
     }
     int varsize=int(var.size());
 #if 1 // trying with rational univariate rep., assuming radical ideal of dim 0
-    if (varsize<=GROEBNER_VARS && varsize==int(eq.size())){
-      double eps=epsilon(contextptr);
-      if (varsize==2){ // try by resultant
-	//eq=*eqs._VECTptr;
-	gen r=_resultant(makesequence(eq[0],eq[1],var[0]),contextptr);
-	if (!is_zero(r)){
-	  // solve r w.r.t. var[1]
-	  vecteur S,res;
-	  if (convertapprox){
-	    gen p=_symb2poly(makesequence(r,var[1]),contextptr);
-	    p=evalf(p,1,contextptr);
-	    p=_proot(p,contextptr);
-	    if (p.type!=_VECT) return vecteur(1,gensizeerr(contextptr));
-	    S=*p._VECTptr;
-	  }
-	  else
-	    S=solve(r,var[1],complexmode,contextptr);
-	  for (int i=0;i<int(S.size());++i){
-	    gen y=S[i];
-	    if (has_num_coeff(y)){
-	      vecteur T=solve(subst(eq[0],var[1],y,false,contextptr),var[0],complexmode,contextptr);
+    double eps=epsilon(contextptr);
+    if (varsize==2 && eq.size()>=2){ // try by resultant
+      //eq=*eqs._VECTptr;
+      gen r=0;
+      for (size_t i=1;i<eq.size();++i)
+	r=gcd(r,_resultant(makesequence(eq[0],eq[i],var[0]),contextptr),contextptr);
+      if (!is_zero(r)){
+	// solve r w.r.t. var[1]
+	vecteur S,res;
+	if (convertapprox){
+	  gen p=_symb2poly(makesequence(r,var[1]),contextptr);
+	  p=evalf(p,1,contextptr);
+	  p=_proot(p,contextptr);
+	  if (p.type!=_VECT) return vecteur(1,gensizeerr(contextptr));
+	  S=*p._VECTptr;
+	}
+	else
+	  S=solve(r,var[1],complexmode,contextptr);
+	for (int i=0;i<int(S.size());++i){
+	  gen y=S[i];
+	  if (has_num_coeff(y)){
+	    vecteur T=solve(subst(eq[0],var[1],y,false,contextptr),var[0],complexmode,contextptr);
+	    for (size_t k=1;k<eq.size();++k){
+	      vecteur newT;
 	      for (int j=0;j<int(T.size());++j){
 		gen x=T[j];
-		gen tst=subst(subst(eq[1],var[1],y,false,contextptr),var[0],x,false,contextptr);
+		gen tst=subst(subst(eq[k],var[1],y,false,contextptr),var[0],x,false,contextptr);
 		if (is_greater(1e-6,abs(tst,contextptr),contextptr))
-		  res.push_back(makevecteur(x,y));
+		  newT.push_back(x);
 	      }	    
+	      newT.swap(T);
 	    }
-	    else {
-	      gen G=gcd(subst(eq[0],var[1],y,false,contextptr),subst(eq[1],var[1],y,false,contextptr));
-	      vecteur T=solve(G,var[0],complexmode,contextptr);
-	      for (int j=0;j<int(T.size());++j){
-		res.push_back(makevecteur(T[j],y));
-	      }
+	    for (int k=0;k<T.size();++k)
+	      res.push_back(makevecteur(T[k],y));
+	  }
+	  else {
+	    gen G=subst(eq[0],var[1],y,false,contextptr);
+	    for (size_t j=1;j<eq.size();++j)
+	      G=gcd(G,subst(eq[j],var[1],y,false,contextptr),contextptr);
+	    vecteur T=solve(G,var[0],complexmode,contextptr);
+	    for (int j=0;j<int(T.size());++j){
+	      res.push_back(makevecteur(T[j],y));
 	    }
 	  }
-	  return res;
-	} // end resultant not 0
-      } // end #var=2
+	}
+	return res;
+      } // end resultant not 0
+    } // end #var=2
+    if (varsize<=GROEBNER_VARS && varsize==int(eq.size())){
       gen G=_gbasis(makesequence(eq,var,change_subtype(_RUR_REVLEX,_INT_GROEBNER)),contextptr);
       if (G.type==_VECT && G._VECTptr->size()==1){
 	if (!is_zero(G._VECTptr->front()))
