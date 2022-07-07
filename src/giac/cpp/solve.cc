@@ -6654,6 +6654,27 @@ namespace giac {
 	return vecteur(1,gensizeerr(gen(l).print(contextptr)+gettext(" is not rational w.r.t. ")+it->print(contextptr)));
       }
     }
+    // if one equation factors recurse with each factor
+    for (size_t i=0;i<eq.size();++i){
+      vecteur vi=factors(eq[i],var[0],contextptr);
+      if (vi.size()/2==0) continue;
+      if (is_cinteger(vi[vi.size()-2])){
+	vi.pop_back();
+	vi.pop_back();
+      }
+      if (vi.size()>2){
+	vecteur res;
+	for (size_t j=0;j<vi.size();j+=2){
+	  if (is_strictly_positive(vi[j+1],contextptr)){
+	    eq[i]=vi[j];
+	    vecteur sol=gsolve(eq,var,complexmode,evalf_after,contextptr);
+	    res=mergevecteur(res,sol);
+	  }
+	}
+	return res;
+      }
+    }
+    // end recurse if one equation factors
     int varsize=int(var.size());
 #if 1 // trying with rational univariate rep., assuming radical ideal of dim 0
     double eps=epsilon(contextptr);
@@ -6704,7 +6725,7 @@ namespace giac {
 	return res;
       } // end resultant not 0
     } // end #var=2
-    if (varsize<=GROEBNER_VARS && varsize==int(eq.size())){
+    if (varsize<=GROEBNER_VARS && varsize<=int(eq.size())){
       gen G=_gbasis(makesequence(eq,var,change_subtype(_RUR_REVLEX,_INT_GROEBNER)),contextptr);
       if (G.type==_VECT && G._VECTptr->size()==1){
 	if (!is_zero(G._VECTptr->front()))
