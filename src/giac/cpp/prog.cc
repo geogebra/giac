@@ -8594,6 +8594,8 @@ namespace giac {
 	gen tmp=eval(*it,1,contextptr);
 	if (it->type==_IDNT){
 	  gen tmp2=*it;
+	  if (tmp.type==_USER)
+	    tmp=tmp._USERptr->giac_constructor(contextptr);
 	  inf << symb_sto(tmp,tmp2) << ";" << '\n';
 	}
 	else

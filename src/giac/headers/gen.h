@@ -1275,6 +1275,7 @@ namespace giac {
       return s.c_str();
     }
     virtual std::string texprint (GIAC_CONTEXT) const { return "Nothing_to_print_tex"; }
+    virtual gen giac_constructor (GIAC_CONTEXT) const { return *this; }
     virtual gen eval(int level,const context * contextptr) const {return *this;};
     virtual gen evalf(int level,const context * contextptr) const {return *this;};
     virtual gen makegen(int i) const { return string2gen("makegen not redefined"); } ;

@@ -53,7 +53,7 @@ using namespace std;
 #include <stdexcept>
 #include <algorithm>
 #if !defined RTOS_THREADX
-#include <vector>
+//#include <vector>
 #endif
 #if !defined BESTA_OS && !defined FXCG
 #include <cerrno>

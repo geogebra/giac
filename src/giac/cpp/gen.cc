@@ -9037,7 +9037,7 @@ namespace giac {
 #ifdef HAVE_LIBMPFR
 	// FIXME?? try to avoid rounding error with more digits
 	if (fabs(approx._DOUBLE_val)<1e-5 && (a-b).type!=_FRAC){
-	  gen tmp=accurate_evalf(eval(a-b,1,contextptr),1000);
+	  gen tmp=accurate_evalf(eval(a-b,1,contextptr),1100); // 1100 bits exceeds double precision, if a and b are equal up to double precision, this will be rounded to 0.0
 	  tmp=evalf_double(tmp,1,contextptr);
 	  if (tmp.type==_DOUBLE_)
 	    approx=tmp;
@@ -14237,6 +14237,24 @@ void sprint_double(char * s,double d){
         return "bandwidth";
       case _KDE_BINS:
         return "bins";
+      case _ANN_LEARNING_RATE:
+        return "learning_rate";
+      case _ANN_WEIGHT_DECAY:
+        return "weight_decay";
+      case _ANN_RELU:
+        return "ReLU";
+      case _ANN_HALF_MSE:
+        return "MSE";
+      case _ANN_CROSS_ENTROPY:
+        return "cross_entropy";
+      case _ANN_LOG_LOSS:
+        return "log_loss";
+      case _ANN_BLOCK_SIZE:
+        return "block_size";
+      case _ANN_MOMENTUM:
+        return "momentum";
+      case _ANN_TOPOLOGY:
+        return "topology";
       }
     }
     if (subtype==_INT_MUPADOPERATOR){

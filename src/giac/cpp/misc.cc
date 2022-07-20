@@ -2281,7 +2281,10 @@ namespace giac {
 
   gen _charpoly(const gen & args,GIAC_CONTEXT){
     string s;
-    if (is_graphe(args.subtype==_SEQ__VECT?args._VECTptr->front():args,s,contextptr))
+    gen arg0=args.type==_VECT && !args._VECTptr->empty() && args.subtype==_SEQ__VECT?args._VECTptr->front():args;
+    if (ckmatrix(arg0))
+      return _pcar(args,contextptr);
+    if (is_graphe(arg0,s,contextptr))
       return _graph_charpoly(args,contextptr);
     return _pcar(args,contextptr);
   }

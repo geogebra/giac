@@ -396,12 +396,14 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
   return 0;
 }
 
+void geoapp(GIAC_CONTEXT);
+
 int khicas_addins_menu(GIAC_CONTEXT){
   Menu smallmenu;
 #ifdef NUMWORKS
-  smallmenu.numitems=11; // INCREMENT IF YOU ADD AN APPLICATION
+  smallmenu.numitems=12; // INCREMENT IF YOU ADD AN APPLICATION
 #else
-  smallmenu.numitems=10; // INCREMENT IF YOU ADD AN APPLICATION
+  smallmenu.numitems=11; // INCREMENT IF YOU ADD AN APPLICATION
 #endif  
   // and uncomment first smallmenuitems[app_number].text="Reserved"
   // replace by your application name
@@ -412,13 +414,14 @@ int khicas_addins_menu(GIAC_CONTEXT){
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
   smallmenuitems[0].text = (char*)((lang==1)?"Tableur":"Spreadsheet");
-  smallmenuitems[1].text = (char*)((lang==1)?"Table periodique":"Periodic table");
-  smallmenuitems[2].text = (char*)((lang==1)?"Pret":"Mortgage");
-  smallmenuitems[3].text = (char*)((lang==1)?"Epargne":"TVM");
-  smallmenuitems[4].text = (char*)((lang==1)?"Table caracteres":"Char table");
-  smallmenuitems[5].text = (char*)((lang==1)?"Exemple simple: Syracuse":"Simple example; Syracuse");
-  smallmenuitems[6].text = (char*)((lang==1)?"Exemple de jeu: Mastermind":"Game example: Mastermind");
-  smallmenuitems[7].text = (char*)((lang==1)?"Fractale de Mandelbrot":"Mandelbrot fractal");
+  smallmenuitems[1].text = (char*)((lang==1)?"Geometrie":"Geometry");
+  smallmenuitems[2].text = (char*)((lang==1)?"Table periodique":"Periodic table");
+  smallmenuitems[3].text = (char*)((lang==1)?"Pret":"Mortgage");
+  smallmenuitems[4].text = (char*)((lang==1)?"Epargne":"TVM");
+  smallmenuitems[5].text = (char*)((lang==1)?"Table caracteres":"Char table");
+  smallmenuitems[6].text = (char*)((lang==1)?"Exemple simple: Syracuse":"Simple example; Syracuse");
+  smallmenuitems[7].text = (char*)((lang==1)?"Exemple de jeu: Mastermind":"Game example: Mastermind");
+  smallmenuitems[8].text = (char*)((lang==1)?"Fractale de Mandelbrot":"Mandelbrot fractal");
   // smallmenuitems[8].text = (char*)"Mon application"; // adjust numitem !
   // smallmenuitems[9].text = (char*)"Autre application";
   // smallmenuitems[10].text = (char*)"Encore une autre";
@@ -442,7 +445,9 @@ int khicas_addins_menu(GIAC_CONTEXT){
       // Attention les entrees sont decalees de 1
       if (smallmenu.selection==1) // tableur
 	sheet(contextptr);
-      if (smallmenu.selection==2){ // table periodique
+      if (smallmenu.selection==2) // geometry
+	geoapp(contextptr);
+      if (smallmenu.selection==3){ // table periodique
 	const char * name,*symbol;
 	char protons[32],nucleons[32],mass[32],electroneg[32];
 	int res=periodic_table(name,symbol,protons,nucleons,mass,electroneg);
@@ -481,15 +486,15 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	copy_clipboard(console_buf,true);
 	// return Console_Input(console_buf);
       }
-      if (smallmenu.selection==3){
+      if (smallmenu.selection==4){
 	finance(-1,contextptr);
 	continue;
       }
-      if (smallmenu.selection==4){
+      if (smallmenu.selection==5){
 	finance(1,contextptr);
 	continue;
       }
-      if (smallmenu.selection==5){
+      if (smallmenu.selection==6){
 	int c=chartab();
 	if (c>=0){
 	  char buf[2]={c,0};
@@ -497,7 +502,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	}
 	break;
       }
-      if (smallmenu.selection==6){
+      if (smallmenu.selection==7){
 	// Exemple simple d'application tierce: la suite de Syracuse
 	// on entre la valeur de u0
 	double d; int i;
@@ -525,9 +530,9 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	// on entre la liste en ligne de commande et on quitte
 	return Console_Input(gen(v).print(contextptr).c_str());
       }
-      if (smallmenu.selection==7) // mastermind, on ne quitte pas
+      if (smallmenu.selection==8) // mastermind, on ne quitte pas
 	mastermind(contextptr);
-      if (smallmenu.selection==8)
+      if (smallmenu.selection==9)
 	fractale(contextptr);
     } // end sres==menu_selection
     Console_Disp(1,contextptr);
@@ -1789,4 +1794,9 @@ giac::gen sheet(GIAC_CONTEXT){
 }
 
 
+
+void geoapp(GIAC_CONTEXT){
+  if (!geoptr)
+    geoptr=new_geo(contextptr);
+}
 #endif

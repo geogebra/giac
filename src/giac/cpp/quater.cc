@@ -441,6 +441,10 @@ namespace giac {
     return "";
   }
 
+  gen galois_field::giac_constructor(GIAC_CONTEXT) const {
+    return symbolic(at_galois_field,makesequence(p,P,x,a));
+  }
+
   string galois_field::texprint(GIAC_CONTEXT) const {
     gen xid(x);
     gen A(a);

@@ -15372,7 +15372,7 @@ namespace giac {
     gen g;
     int res=GSL_SUCCESS;
     for (int i = 0; it!=itend; ++i,++it){
-      g=it->evalf(1,contextptr);
+      g=it->evalf_double(1,contextptr);
       if (g.type==_DOUBLE_)
 	gsl_vector_set (w, i, g._DOUBLE_val);
       else {
@@ -15406,6 +15406,32 @@ namespace giac {
     return res;
   }
 
+  // Added by L. Marohnić
+  // Copies the submatrix of m starting at (i0,j0) with n1 rows and n2 columns to GSL matrix w.
+  // If transp=true, then w contains the transposed submatrix.
+  int matrice2gsl_matrix(const matrice & m,int i0,int j0,int n1,int n2,bool transp,gsl_matrix * w,GIAC_CONTEXT) {
+    gen g;
+    const_iterateur it=m.begin()+i0,jt;
+    int res=GSL_SUCCESS,i,j,rc=n1>0?n1:(mrows(m)-i0),cc=n2>0?n2:(mcols(m)-j0);
+    if (w->size1<(transp?cc:rc) || w->size2<(transp?rc:cc))
+      return !GSL_SUCCESS;
+    for (i=0; i<rc; ++i,++it){
+      if (it->type!=_VECT)
+	return !GSL_SUCCESS;
+      vecteur & v =*it->_VECTptr;
+      for (j=0,jt=v.begin()+j0;j<cc;++j,++jt){
+	g=evalf_double(*jt,1,contextptr);
+	if (g.type==_DOUBLE_)
+	  gsl_matrix_set(w,transp?j:i,transp?i:j,g._DOUBLE_val);
+	else {
+	  res=!GSL_SUCCESS;
+	  gsl_matrix_set(w,transp?j:i,transp?i:j,nan());	  
+	}
+      }
+    }
+    return res;
+  }
+
   int matrice2gsl_matrix(const matrice & m,gsl_matrix * w,GIAC_CONTEXT){
     int s1=w->size1,s2=w->size2;
 #ifdef DEBUG_SUPPORT
@@ -15413,6 +15439,7 @@ namespace giac {
     if (mrows(m)!=s1 || mcols(m)!=s2)
       setdimerr();
 #endif
+    return matrice2gsl_matrix(m,0,0,0,0,false,w,contextptr); // change by L. Marohnić
     gen g;
     const_iterateur it=m.begin(),itend=m.end();
     int res=GSL_SUCCESS;
@@ -15444,7 +15471,8 @@ namespace giac {
   
   // this function does not deallocate the gsl vector
   // call gsl_matrix_free(v) for this
-  matrice gsl_matrix2matrice(const gsl_matrix * v){
+  // Addition by L. Marohnić: if transp=true, then the result is transposed (sub)matrix v.
+  matrice gsl_matrix2matrice(const gsl_matrix * v,bool transp){
     matrice res;
     int s1=v->size1,s2=v->size2;
     res.reserve(s1);
@@ -15452,7 +15480,7 @@ namespace giac {
       vecteur tmp;
       tmp.reserve(s2);
       for (int j=0;j<s2;++j){
-	tmp.push_back(gsl_matrix_get(v,i,j));
+	tmp.push_back(gsl_matrix_get(v,transp?j:i,transp?i:j));
       }
       res.push_back(tmp);
     }
@@ -15694,27 +15722,27 @@ namespace giac {
   /* Solve indefinite system A*x=b, x in R^N (b!=NULL), or determine
    * the inertia (p,n,z) of real and symmetric matrix A (b==NULL) */
 #ifdef HAVE_LIBLAPACK
-  bool solve_indef(double *A,double *WORK,int *IPIV,double *b,int N,int NRHS,int *p,int *n,int *z,GIAC_CONTEXT) {
+  bool solve_indef(double *A,double **WORK,int *IPIV,double *b,int N,int NRHS,int *p,int *n,int *z) {
     char UPLO='L';
     int INFO,LWORK=-1,LDA=N,LDB=N,i;
     if (b!=NULL) { // solve A*x=b, A must be factorized
       dsytrs_(&UPLO,&N,&NRHS,A,&LDA,IPIV,b,&LDB,&INFO);
     } else { // factorize A and compute inertia
-      if (WORK==NULL) {
+      if (*WORK==NULL) {
         double TMP_WORK;
         dsytrf_(&UPLO,&N,A,&LDA,IPIV,&TMP_WORK,&LWORK,&INFO);
         if (INFO!=0)
           return false;
         LWORK=(int)TMP_WORK;
-        WORK=new double[LWORK+1];
-        *WORK=TMP_WORK;
-      } else LWORK=(int)*WORK;
-      dsytrf_(&UPLO,&N,A,&LDA,IPIV,WORK+1,&LWORK,&INFO);
+        *WORK=new double[LWORK+1];
+        **WORK=TMP_WORK;
+      } else LWORK=(int)**WORK;
+      dsytrf_(&UPLO,&N,A,&LDA,IPIV,*WORK+1,&LWORK,&INFO);
       *p=*n=*z=0;
       if (INFO>=0) for (i=0;i<N;++i) {
         if (IPIV[i]>0) {
-          if (is_zero(A[i+i*N],contextptr)) ++(*z);
-          else if (is_positive(A[i+i*N],contextptr)) ++(*p);
+          if (A[i+i*N]==0) ++(*z);
+          else if (A[i+i*N]>0) ++(*p);
           else ++(*n);
         } else {
           ++(*p);
@@ -16231,10 +16259,10 @@ namespace giac {
         }
       }
       if (ok) {
-        if ((ok=solve_indef(A,WORK,IPIV,NULL,N,M,&p,&n,&z,contextptr)) && do_solve && z==0 && (pos<0 || p==pos)) {
+        if ((ok=solve_indef(A,&WORK,IPIV,NULL,N,M,&p,&n,&z)) && do_solve && z==0 && (pos<0 || p==pos)) {
           double *B=new double[N*M];
           matrice2lapack(mtran(bmat),B,contextptr);
-          if (ok=solve_indef(A,WORK,IPIV,B,N,M,NULL,NULL,NULL,contextptr)) {
+          if (ok=solve_indef(A,&WORK,IPIV,B,N,M,NULL,NULL,NULL)) {
             lapack2matrice(B,N,M,sol);
             sol=mtran(sol);
           }

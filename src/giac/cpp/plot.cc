@@ -11855,6 +11855,8 @@ namespace giac {
       is >> type;
       if (type==_FL_WIDGET_POINTER && fl_widget_unarchive_function)
 	return fl_widget_unarchive_function(is);
+    case _USER:
+      return unarchive(is,contextptr);
     case _ZINT:
       return unarchivezint(is,contextptr);
 #if 0 // ndef USE_GMP_REPLACEMENTS
@@ -12023,6 +12025,8 @@ namespace giac {
 	if (galois_field * gf=dynamic_cast<galois_field *>(e._USERptr)){
 	  return os << et << "GF(" << gf->p << "," << gf->P << "," << gf->x << "," << gf->a << ")" << '\n';
 	}
+	os << et << " ";
+	return archive(os,e._USERptr->giac_constructor(contextptr),contextptr);
       }
 #endif
     default:

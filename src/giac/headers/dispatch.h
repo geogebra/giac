@@ -624,6 +624,15 @@ namespace giac {
     _NLP_METHOD = 162,
     _NLP_TOLERANCE = 163,
     _NLP_VERBOSE = 164,
+    _ANN_HALF_MSE = 165,           // MSE
+    _ANN_CROSS_ENTROPY = 166,      // cross_entropy
+    _ANN_LOG_LOSS = 167,           // log_loss
+    _ANN_BLOCK_SIZE = 168,         // block_size
+    _ANN_MOMENTUM = 169,           // momentum
+    _ANN_TOPOLOGY = 170,            // topology
+    _ANN_LEARNING_RATE = 171,      // learning_rate
+    _ANN_WEIGHT_DECAY = 172,       // weight_decay
+    _ANN_RELU = 173,               // ReLU
   };
 
   enum mupad_operator {
