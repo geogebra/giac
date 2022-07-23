@@ -3856,7 +3856,7 @@ namespace xcas {
     x=os_draw_string_small(x,y,mode==4?bg:c,mode==4?c:bg,s);// PrintMiniMini( &x, &y, (unsigned char *)s, mode,c, 0 );
     return;
   }
-  
+
   int text_width(int fontsize,const char * s){
 #ifdef NSPIRE_NEWLIB
     int x=0;
@@ -3872,6 +3872,10 @@ namespace xcas {
 #endif
   }
 
+  int fl_width(const char * s){
+    return text_width(14,s);
+  }
+  
   void fl_arc(int x,int y,int rx,int ry,int theta1_deg,int theta2_deg,int c=COLOR_BLACK){
     rx/=2;
     ry/=2;
@@ -6833,7 +6837,9 @@ namespace xcas {
     return true;
   }
 
-  Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),window_zmin(gnuplot_zmin),window_zmax(gnuplot_zmax),g(g_),display_mode(0x45),show_axes(1),show_edges(1),show_names(1),labelsize(16),precision(1),contextptr(cptr) {
+  Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),window_zmin(gnuplot_zmin),window_zmax(gnuplot_zmax),g(g_),display_mode(0x45),show_axes(1),show_edges(1),show_names(1),labelsize(16),precision(1),contextptr(cptr),hp(0),npixels(5),couleur(0) {
+    current_i=LCD_WIDTH_PX/2;
+    current_j=LCD_HEIGHT_PX/2;
     diffusionz=5; diffusionz_limit=5; hide2nd=false; interval=false;
     default_upcolor=giac3d_default_upcolor;
     default_downcolor=giac3d_default_downcolor;
@@ -6846,8 +6852,8 @@ namespace xcas {
     q=quaternion_double(0,0,0);//rotation_2_quaternion_double(0.707,0.707,0,1); 
     update_scales();
     autoscale(false,!is3d);
+    update_rotation();
     if (is3d){
-      update_rotation();
       if (surfacev.empty()){
 	// no hypersurface inside, 2 for polyhedron
 	precision=1;
@@ -7009,9 +7015,56 @@ namespace xcas {
     }
   }
 
+  vecteur mark_selected(const vecteur & v,const vector<int> & selected){
+    return v;
+  }
+
+  vecteur Graph2d::selected_names(bool allobjects,bool withdef) const {
+    vector<int>::const_iterator it=selected.begin(),itend=selected.end();
+    vecteur res;
+    for (;it!=itend;++it){
+      gen g=symbolic_instructions[*it];
+      if (g.is_symb_of_sommet(at_sto)){
+	gen tmp=g._SYMBptr->feuille[0];
+	if (allobjects || tmp.is_symb_of_sommet(at_point) || tmp.is_symb_of_sommet(at_element))
+	  res.push_back(withdef?g:g._SYMBptr->feuille[1]);
+      }
+    }
+    return res;
+  }
+
+  void Graph2d::adjust_cursor_point_type(){
+    if (hp){
+      double newx,newy,newz;
+      find_xyz(current_i,current_j,current_depth,newx,newy,newz);
+      int pos=-1;
+      gen orig;
+      gen res=geometry_round(newx,newy,newz,find_eps(),orig,pos);
+      if (mode==0){
+	if (pos>=0)
+	  selected=vector<int>(1,pos);
+	else
+	  selected.clear();
+      }
+      cursor_point_type=pos>=0?6:3;
+    }
+  }
+
+  void Graph2d::update_g(){
+    if (hp){
+      adjust_cursor_point_type();
+      find_title_plot(title_tmp,plot_tmp);
+      vecteur v(mergevecteur(get_current_animation(),trace_instructions));
+      v.push_back(plot_tmp);
+      // geometry: update g from plot_instructions
+      g=mergevecteur(mark_selected(plot_instructions,selected),v);      
+    }
+  }    
+
   void Graph2d::update(){
+    update_g();
     update_scales();
-    if (is3d) update_rotation();
+    update_rotation();
   }
   
   void mult4(double * c,double k,double * res){
@@ -7065,6 +7118,8 @@ namespace xcas {
   }
 
   void Graph2d::update_rotation(){
+    if (!is3d)
+      return;
     solid3d=false;
     double rx,ry,rz,theta;
     get_axis_angle_deg(q,rx,ry,rz,theta);
@@ -7902,7 +7957,115 @@ namespace xcas {
       IJmin=IJ;
   }
 
+  int roundint (double r) {
+    int tmp = static_cast<int> (r);
+    tmp += (r-tmp>=.5) - (r-tmp<=-.5);
+    return tmp;
+  }
+
+  bool Graph2d::find_dxdy(double & dx, double & dy) const {
+    double xmin=window_xmin,xmax=window_xmax;
+    int hp=LCD_WIDTH_PX-1;
+    dx=(xmax-xmin)/hp;
+    double ymin=window_ymin,ymax=window_ymax;
+    int vp=LCD_HEIGHT_PX-1;
+    dy=(ymax-ymin)/vp;
+    return abs(dx-dy) < 0.000001;
+  }
+
+  void Graph2d::find_xy(double i,double j,double & x,double & y) const {
+    double xmin=window_xmin,xmax=window_xmax;
+    x=xmin+i*(xmax-xmin)/LCD_WIDTH_PX;
+    double ymin=window_ymin,ymax=window_ymax;
+    y=ymax-j*(ymax-ymin)/LCD_HEIGHT_PX;
+  }
+
+  void Graph2d::round_xy(double & x, double & y) const {
+    double dx,dy;
+    find_dxdy(dx,dy);
+    double range = pow(10,log10(1.0/dx));
+    x = roundint(x * range) / range;
+    y = roundint(y * range) / range;
+  }
+  
+  void round3(double & x,double xmin,double xmax){
+    double dx=std::abs(xmax-xmin);
+    double logdx=std::log10(dx);
+    int ndec=int(logdx)-3;
+    double xpow=std::pow(10.0,ndec);
+    int newx=x>=0?int(x/xpow+0.5):int(x/xpow-0.5);
+    x=newx*xpow;
+  }
+
+  
+  void Graph2d::draw_decorations(const gen & title_tmp){
+    if (args_tmp.empty()){ // add selected names
+      char s[256]; strcpy(s,modestr.c_str());
+      int pos=0,modestrsize=modestr.size();
+      pos += modestrsize;
+      s[pos++]=' ';
+      if (mode!=0 && drag_name.type==_IDNT){
+	strcpy(s+pos,drag_name._IDNTptr->id_name);
+	pos += strlen(drag_name._IDNTptr->id_name);
+      }
+      else {
+	if (mode==0 || mode==255){ // print selected names in Pointer mode
+	  vecteur v;
+	  if (mode==0) v=selected_names(true,false);
+	  int vs=v.size();
+	  if (!vs){ // print current coordinates
+	    double i=current_i,j=current_j,x,y;
+	    find_xy(i,j,x,y);
+	    // round to maximum pixel range
+	    round_xy(x,y);
+	    sprintf(s+pos," %.3g,%.3g",x,y);
+	    pos=strlen(s);
+	  }
+	  for (int i=0;i<vs && pos<100;++i){
+	    if (v[i].type==_IDNT){
+	      strcpy(s+pos,v[i]._IDNTptr->id_name);
+	      pos += strlen(v[i]._IDNTptr->id_name);
+	      if (i<vs-1){
+		s[pos++]=',';
+	      }
+	    }
+	  }
+	}
+      }
+      s[pos]=0;
+      os_draw_string_small_(LCD_WIDTH_PX-fl_width(s),LCD_HEIGHT_PX-14,s);
+    }
+    if (mode && title.size()<100 && (!title.empty() || !is_zero(title_tmp))){
+      std::string mytitle;
+      if (!is_zero(title_tmp) && function_final.type==_FUNC){
+	if (function_final==at_point && title_tmp.is_symb_of_sommet(at_point))
+	  mytitle=title_tmp.print(contextptr);
+	else
+	  mytitle=function_final._FUNCptr->ptr()->s+('('+title_tmp.print(contextptr)+')'); // gen(symbolic(*function_final._FUNCptr,title_tmp)).print(contextptr);
+      }
+      else
+	mytitle=title;
+      if (!mytitle.empty()){
+	int dt=int(fl_width(mytitle.c_str()));
+	if (dt>LCD_WIDTH_PX)
+	  dt=LCD_WIDTH_PX;
+	os_draw_string_small_((LCD_WIDTH_PX-dt)/2,LCD_HEIGHT_PX-14,mytitle.c_str());
+      }
+    }
+    if (hp){ // draw cursor at current_i,current_j
+      fl_line(current_i-5,current_j,current_i+5,current_j,_BLUE);
+      fl_line(current_i,current_j-5,current_i,current_j+5,_BLUE);
+      if (cursor_point_type==6){
+	fl_line(current_i-2,current_j+2,current_i+2,current_j+2,_RED);
+	fl_line(current_i-2,current_j+2,current_i+2,current_j+2,_RED);
+	fl_line(current_i-2,current_j-2,current_i-2,current_j+2,_RED);
+	fl_line(current_i+2,current_j-2,current_i+2,current_j+2,_RED);
+      }
+    }
+  }
+
   void Graph2d::draw(){
+    if (hp) history_plot(contextptr).clear();
     if (is3d){
       if (lang==1)
 	statuslinemsg("Toolbox: aide");
@@ -8209,6 +8372,8 @@ namespace xcas {
       DefineStatusMessage((char*)"+-: zoom, pad: move, EXIT: quit", 1, 0, 0);
 #endif
       DisplayStatusArea();
+      if (hp)
+	draw_decorations(title_tmp);
       return;
     }
     int save_clip_ymin=clip_ymin;
@@ -8305,6 +8470,8 @@ namespace xcas {
     // draw
     fltk_draw(*this,g,x_scale,y_scale,clip_x,clip_y,clip_w,clip_h,contextptr);
     clip_ymin=save_clip_ymin;
+    if (hp)
+      draw_decorations(title_tmp);
   }
   
   void Graph2d::left(double d){ 
@@ -8631,38 +8798,837 @@ namespace xcas {
 	}
       }
     }
-    // UI
-#ifdef NSPIRE_NEWLIB
-    DefineStatusMessage((char*)"+-: zoom, pad: move, esc: quit", 1, 0, 0);
+    return gr.ui();
+  }
+
+  vecteur Graph2d::get_current_animation() const {
+    if (animation_instructions_pos>=0 && animation_instructions_pos<animation_instructions.size())
+      return gen2vecteur(animation_instructions[animation_instructions_pos]);
+    return 0;
+  }
+
+  void Graph2d::find_title_plot(gen & title_tmp,gen & plot_tmp){
+    plot_tmp=0;
+    if (//in_area &&
+	hp && mode && !args_tmp.empty()){
+      if (args_tmp.size()>=2){
+	gen function=(mode==int(args_tmp.size()))?function_final:function_tmp;
+	if (function.type==_FUNC){
+	  bool dim2=!is3d;
+	  vecteur args2=args_tmp;
+	  if ( *function._FUNCptr==(dim2?at_cercle:at_sphere)){
+	    gen argv1;
+#ifdef NO_STDEXCEPT
+	    argv1=evalf(args_tmp.back(),1,contextptr);
+	    argv1=evalf_double(argv1,1,contextptr);
 #else
-    DefineStatusMessage((char*)"+-: zoom, pad: move, EXIT: quit", 1, 0, 0);
+	    try {
+	      argv1=evalf(args_tmp.back(),1,contextptr);
+	      argv1=evalf_double(argv1,1,contextptr);
+	    }
+	    catch (std::runtime_error & e){
+	      argv1=undef;
+	    }
 #endif
-    DisplayStatusArea();
+	    if (argv1.is_symb_of_sommet(at_pnt) ||argv1.type==_IDNT){
+	      argv1=remove_at_pnt(argv1);
+	      if ( (argv1.type==_VECT && argv1.subtype==_POINT__VECT) || argv1.type==_CPLX || argv1.type==_IDNT)
+		args2.back()=args_tmp.back()-args_tmp.front();
+	    }
+	  }
+	  if (function==at_ellipse)
+	    ;
+	  title_tmp=gen(args2,_SEQ__VECT);
+	  bool b=approx_mode(contextptr);
+	  if (!b)
+	    approx_mode(true,contextptr);
+	  plot_tmp=symbolic(*function._FUNCptr,title_tmp);
+	  if (!lidnt(title_tmp).empty())
+	    ; // cerr << plot_tmp << '\n';
+	  bool bb=io_graph(contextptr);
+	  int locked=0;
+	  if (bb){
+#ifdef HAVE_LIBPTHREAD
+	    // cerr << "plot title lock" << '\n';
+	    locked=pthread_mutex_trylock(&interactive_mutex);
+#endif
+	    if (!locked)
+	      io_graph(false,contextptr);
+	  }
+	  plot_tmp=protecteval(plot_tmp,1,contextptr);
+	  if (bb && !locked){
+	    io_graph(bb,contextptr);
+#ifdef HAVE_LIBPTHREAD
+	    pthread_mutex_unlock(&interactive_mutex);
+	    // cerr << "plot title unlock" << '\n';
+#endif
+	  }
+	  if (!b)
+	    approx_mode(false,contextptr);	
+	} // end function.type==_FUNC
+	else
+	  title_tmp=gen(args_tmp,_SEQ__VECT);
+      } // end size()>=2
+      else	
+	title_tmp=args_tmp;
+    }
+  }
+
+  void Graph2d::eval(int start){
+    int level=prog_eval_level_val(contextptr);
+    for (size_t i=start;i<symbolic_instructions.size();++i){
+      g=symbolic_instructions[i];
+      set_abort();
+      g=protecteval(g,level,contextptr);
+      clear_abort();
+      giac::ctrl_c=false;
+      kbd_interrupted=giac::interrupted=false;
+      if (i<plot_instructions.size())
+	plot_instructions[i]=g;
+      else
+	plot_instructions.push_back(g);
+    }
+    update_g();
+  }
+
+  double Graph2d::find_eps() const {
+    double dx=window_xmax-window_xmin;
+    double dy=window_ymax-window_ymin;
+    double dz=window_zmax-window_zmin;
+    double eps,epsx,epsy;
+    int L=LCD_WIDTH_PX;
+    epsx=(npixels*dx)/L;
+    epsy=(npixels*dy)/(is3d?L:LCD_HEIGHT_PX);
+    eps=(epsx<epsy)?epsy:epsx;
+    if (is3d && dz>dy && dz >dx){
+      eps=npixels*dz/L;
+      eps *= 2;
+    }
+    return eps;
+  }
+
+  void Graph2d::set_gen_value(int n,const giac::gen & g,bool exec){
+    // set n-th entry value, if n==-1 add a level
+    if (!hp) return;
+    if (n==-1 || n>=symbolic_instructions.size()){
+      symbolic_instructions.push_back(g);
+      n=symbolic_instructions.size()-1;
+    } else symbolic_instructions[n]=g;
+    hp->set_string_value(n,g.print(contextptr));
+    if (exec)
+      eval(n);
+  }
+
+  void  Graph2d::find_xyz(double i,double j,double k,double & x,double & y,double & z) const {
+    if (is3d){ // FIXME
+    }
+    else {
+      z=k;
+      x=window_xmin+i*(window_xmax-window_xmin)/LCD_WIDTH_PX;
+      y=window_ymax-j*(window_ymax-window_ymin)/LCD_HEIGHT_PX;
+    }
+  }
+
+  gen geometry_round_numeric(double x,double y,double eps,bool approx){
+    return approx?gen(x,y):exact_double(x,eps)+cst_i*exact_double(y,eps);
+  }
+
+  gen geometry_round_numeric(double x,double y,double z,double eps,bool approx){
+    return approx?makevecteur(x,y,z):makevecteur(exact_double(x,eps),exact_double(y,eps),exact_double(z,eps));
+  }
+
+  gen int2color(int couleur_){
+    gen col;
+    if (couleur_){
+      gen tmp;
+      int val;
+      vecteur colv;
+      if ( (val=(couleur_ & 0x0000ffff))){
+	tmp=val;
+	tmp.subtype=_INT_COLOR;
+	colv.push_back(tmp);
+      }
+      if ((val =(couleur_ & 0x00070000))){
+	tmp=val;
+	tmp.subtype=_INT_COLOR;
+	colv.push_back(tmp);
+      }
+      if ((val =(couleur_ & 0x00380000))){
+	tmp=val;
+	tmp.subtype=_INT_COLOR;
+	colv.push_back(tmp);
+      }
+      if ((val =(couleur_ & 0x01c00000))){
+	tmp=val;
+	tmp.subtype=_INT_COLOR;
+	colv.push_back(tmp);
+      }
+      if ((val =(couleur_ & 0x0e000000))){
+	tmp=val;
+	tmp.subtype=_INT_COLOR;
+	colv.push_back(tmp);
+      }
+      if ((val =(couleur_ & 0x30000000))){
+	tmp=val;
+	tmp.subtype=_INT_COLOR;
+	colv.push_back(tmp);
+      }
+      if ((val =(couleur_ & 0x40000000))){
+	tmp=val;
+	tmp.subtype=_INT_COLOR;
+	colv.push_back(tmp);
+      }
+      if ((val =(couleur_ & 0x80000000))){
+	tmp=val;
+	tmp.subtype=_INT_COLOR;
+	colv.push_back(tmp);
+      }
+      if (colv.size()==1)
+	col=colv.front();
+      else
+	col=symbolic(at_plus,gen(colv,_SEQ__VECT));
+    }
+    return col;
+  }
+
+  std::string print_color(int couleur){
+    return int2color(couleur).print(context0);
+  }
+
+  giac::gen add_attributs(const giac::gen & g,int couleur_,GIAC_CONTEXT) {
+    if (g.type!=_SYMB)
+      return g;
+    gen & f=g._SYMBptr->feuille;
+    if (g._SYMBptr->sommet==at_couleur && f.type==_VECT && !f._VECTptr->empty()){
+      gen col=couleur_;
+      col.subtype=_INT_COLOR;
+      vecteur v(*f._VECTptr);
+      v.back()=col;
+      return symbolic(at_couleur,gen(v,_SEQ__VECT));
+    }
+    if (couleur_==default_color(contextptr))
+      return g;
+    if (g._SYMBptr->sommet==at_of){
+      gen col=couleur_;
+      col.subtype=_INT_COLOR;
+      return symbolic(at_couleur,gen(makevecteur(g,col),_SEQ__VECT));
+    }
+    vecteur v =gen2vecteur(f);
+    gen col=int2color(couleur_);
+    v.push_back(symbolic(at_equal,gen(makevecteur(at_display,col),_SEQ__VECT)));
+    return symbolic(g._SYMBptr->sommet,(v.size()==1 && f.type!=_VECT)?f:gen(v,f.type==_VECT?f.subtype:_SEQ__VECT));
+  }
+
+  void Graph2d::do_handle(const gen & g){
+    if (hp){
+      set_gen_value(hp_pos,g,true);
+    }
+  }
+
+  void Graph2d::set_mode(const giac::gen & f_tmp,const giac::gen & f_final,int m,const string & help){
+    approx=true;
+    mode=m;
+    selected.clear();
+    redraw();
+    args_help.clear();
+    if (mode!=0 && mode!=255){
+      int oldmode=calc_mode(contextptr);
+      calc_mode(0,contextptr);
+      gen g(help,contextptr);
+      calc_mode(oldmode,contextptr);
+      if (g.type==_VECT){
+	const_iterateur it = g._VECTptr->begin(),itend=g._VECTptr->end();
+	for (;it!=itend;++it)
+	  args_help.push_back(it->print(contextptr));
+      }
+      else
+	args_help.push_back(g.print(contextptr));
+    }
+    if (mode==255)
+      modestr=gettext("Frame");
+    else
+      modestr=mode?gen2string(f_final):gettext("Pointer");
+    if (mode>=-1){
+      pushed=false;
+      moving=moving_frame=false;
+      // history_pos=-1;
+      mode=m;
+      function_final=f_final;
+      function_tmp=f_tmp;
+      args_tmp.clear();
+    }
+  }
+
+  vecteur Graph2d::selection2vecteur(const vector<int> & v){
+    int n=v.size();
+    vecteur res(n);
+    for (int i=0;i<n;++i){
+      res[i]=plot_instructions[v[i]];
+    }
+    return res;
+  }
+
+  int findfirstclosedcurve(const vecteur & v){
+    int s=v.size();
+    for (int i=0;i<s;++i){
+      gen g=remove_at_pnt(v[i]);
+      if (g.is_symb_of_sommet(at_cercle))
+	return i;
+      if (g.type==_VECT && g.subtype==_GROUP__VECT){
+	vecteur & w=*g._VECTptr;
+	if (!w.empty() && w.front()==w.back())
+	  return i;
+      }
+    }
+    return -1;
+  }
+
+  void Graph2d::geometry_round(double x,double y,double z,double eps,gen & tmp,GIAC_CONTEXT)  {
+    tmp=geometry_round_numeric(x,y,eps,approx);
+    selected=nearest_point(plot_instructions,geometry_round_numeric(x,y,eps,true),eps,contextptr);
+    // bug bonux: when a figure is saved, plot_instructions is saved
+    // if there are sequences in plot_instructions
+    // they are not put back in an individual level
+    while (!selected.empty() && selected.back()>=hp->elements.size())
+      selected.pop_back();
+  }
+
+  gen Graph2d::geometry_round(double x,double y,double z,double eps,gen & original,int & pos,bool selectfirstlevel,bool setscroller) {
+    if (!hp)
+      return undef;
+    gen tmp;
+    pos=-1;
+    geometry_round(x,y,z,eps,tmp,contextptr);
+    if (selected.empty())
+      return tmp;
+    if (function_final==at_areaatraw || function_final==at_areaat || function_final==at_perimeteratraw || function_final==at_perimeterat){
+      int p=findfirstclosedcurve(selection2vecteur(selected));
+      if (p>0){
+	pos=p;
+      }
+    }
+    if (pos==-1){
+      if (selectfirstlevel){
+	sort(selected.begin(),selected.end());
+	// patch so that we move element and not the curve
+	int p=findfirstpoint(selection2vecteur(selected));
+	if (p>0){
+	  pos=p;
+	}
+      }
+      else
+	pos=findfirstpoint(selection2vecteur(selected));
+    }
+    gen g=symbolic_instructions[ (pos<0)?(pos=selected.front()):(pos=selected[pos]) ];
+    if (pos>=0 && pos<hp->elements.size()){
+      // hp->_sel_begin=hp->_sel_end=pos;
+      // if (setscroller) hp->line=pos;
+    }
+    if (g.is_symb_of_sommet(at_plus) && g._SYMBptr->feuille.type==_VECT && !g._SYMBptr->feuille._VECTptr->empty())
+      g=g._SYMBptr->feuille._VECTptr->front();
+    if (g.is_symb_of_sommet(at_sto) && g._SYMBptr->feuille.type==_VECT ){
+      vecteur & v = *g._SYMBptr->feuille._VECTptr;
+      if (v.size()==2){
+	original = v[0];
+	tmp = v[1];
+	if (tmp.type==_IDNT){
+	  gen valeur=protecteval(original,1,contextptr);
+	  if (valeur.is_symb_of_sommet(at_pnt)){
+	    gen & valf = valeur._SYMBptr->feuille;
+	    if (valf.type==_VECT){
+	      vecteur & valv = *valf._VECTptr;
+	      int s=v.size();
+	      if (s>1){
+		gen valv1=valv[1];
+		if (valv1.type==_VECT && valv1._VECTptr->size()>2){
+		  tmp=symbolic(at_extract_measure,v[1]);
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    }
+    return tmp;
+  }
+
+  void Graph2d::autoname_plus_plus(){
+    if (hp){
+      string s=autoname(contextptr);
+      giac::autoname_plus_plus(s);
+      autoname(s,contextptr);
+    }
+  }
+  
+  int Graph2d::geo_handle(int event,int key){
+    double eps=find_eps();
+    int pos;
+    gen tmp,tmp2,decal;
+    if ( pushed && !moving && !moving_frame && mode ==0 && in_area && event==FL_DRAG){
+      // FIXME? redraw();
+      return 1;
+    }
+    if (mode>=2 && event==FL_MOVE && args_tmp.size()>mode)
+      event=FL_RELEASE;
+    if ( in_area && ((mode!=1 && event==FL_DRAG) || event==FL_PUSH || event==FL_RELEASE || (mode>=2 && event==FL_MOVE)) ){
+      double newx,newy,newz;
+      find_xyz(current_i,current_j,current_depth,newx,newy,newz);
+      round3(newx,window_xmin,window_xmax);
+      round3(newy,window_ymin,window_ymax);
+      if (is3d)
+	round3(newz,window_zmin,window_zmax);
+      tmp=geometry_round(newx,newy,newz,eps,tmp2,pos,mode==0 || (args_tmp.size()==mode && function_final.type==_FUNC && equalposcomp(transformation_functions,*function_final._FUNCptr)),event==FL_RELEASE);
+      if (tmp.type==_VECT && tmp._VECTptr->size()==3){
+	tmp.subtype=_SEQ__VECT;
+	tmp=symbolic(at_point,tmp);
+      }
+      else {
+	if (tmp.type!=_IDNT && !tmp.is_symb_of_sommet(at_extract_measure)){
+	  tmp=symbolic(at_point,makevecteur(re(tmp,contextptr),im(tmp,contextptr)));
+	}
+      }
+    }
+    double newx,newy,newz;
+    if (is3d){
+      double x1,y1,z1,x2,y2,z2;
+      find_xyz(current_i,current_j,current_depth,x1,y1,z1);
+      find_xyz(push_i,push_j,push_depth,x2,y2,z2);
+      newx=x1-x2; newy=y1-y2; newz=z1-z2;
+    } else {
+      int dw=LCD_WIDTH_PX,dh=LCD_HEIGHT_PX;
+      double dx=window_xmax-window_xmin;
+      double dy=window_ymax-window_ymin;
+      double x_scale=dx/dw,y_scale=dy/dh;
+      newx=(current_i-push_i)*x_scale;
+      newy=(push_j-current_j)*y_scale;
+      newz=0;
+    }
+    round3(newx,window_xmin,window_xmax);
+    round3(newy,window_ymin,window_ymax);      
+    if (is3d){
+      round3(newz,window_zmin,window_zmax);
+      decal=in_area?geometry_round_numeric(newx,newy,newz,eps,approx):0;
+    }
+    else
+      decal=in_area?geometry_round_numeric(newx,newy,eps,approx):0;
+    // cerr << in_area << " " << decal << '\n';
+    if (mode==0 || mode==255) {
+      if (event==FL_PUSH){ 
+	// select object && flag to move it 
+	if (mode==0 && pos>=0){
+	  if (tmp.type==_IDNT){
+	    drag_original_value=tmp2;
+	    drag_name=tmp;
+	  }
+	  else {
+	    drag_original_value=symbolic_instructions[pos];
+	    drag_name=0;
+	  }
+	  hp_pos=pos;
+	  moving = true;
+	}
+	else { // nothing selected, move frame
+	  if (!(display_mode & 0x80)) // disabled by default in 3-d 
+	    moving_frame=true;
+	}
+	return 1;
+      }
+      if (moving_frame && (event==FL_DRAG || event==FL_RELEASE) ){
+	window_xmin -= newx;
+	window_xmax -= newx;
+	window_ymin -= newy;
+	window_ymax -= newy;
+	window_zmin -= newz;
+	window_zmax -= newz;
+	push_i = current_i;
+	push_j = current_j;
+	redraw();
+	if (event==FL_RELEASE)
+	  moving_frame=false;
+	return 1;
+      }
+      if (mode==255)
+	return 0;
+      if (moving && (event==FL_DRAG || event==FL_RELEASE) ){
+	// cerr << current_i << " " << current_j << '\n';
+	// avoid point()+complex+complex+complex
+	gen newval;
+	if (drag_original_value.is_symb_of_sommet(at_plus) && drag_original_value._SYMBptr->feuille.type==_VECT && drag_original_value._SYMBptr->feuille._VECTptr->size()>=2){
+	  vecteur v=*drag_original_value._SYMBptr->feuille._VECTptr;
+	  if (v[1].is_symb_of_sommet(at_nop))
+	    v[1]=v[1]._SYMBptr->feuille;
+	  newval=symbolic(at_plus,makevecteur(v[0],symbolic(at_nop,ratnormal(_plus(vecteur(v.begin()+1,v.end()),contextptr)+decal))));
+	}
+	else {
+	  newval=is_zero(decal)?drag_original_value:symbolic(at_plus,makevecteur(drag_original_value,symbolic(at_nop,decal)));
+	}
+	int dclick = 0 || drag_original_value.type==_VECT;
+	if (!dclick){
+	  if (drag_name.type==_IDNT)
+	    do_handle(symbolic(at_sto,makevecteur(in_area?newval:drag_original_value,drag_name)));
+	  else
+	    do_handle(in_area?newval:drag_original_value);
+	}
+	if (event==FL_RELEASE)
+	  moving=false;
+	selected.clear();
+	redraw();
+	return 1;
+      }
+      return 0;
+    }
+    selected.clear();
+    if (mode==1){
+      if (function_final!=at_point){
+	if (event==FL_RELEASE){
+	  string args=autoname(contextptr)+":=";
+	  if (function_final.type==_FUNC)
+	    args += function_final._FUNCptr->ptr()->s;
+	  args +="(";
+	  if (function_final==at_plotode)
+	    args += fcnfield + "," + fcnvars + "," +tmp.print(contextptr) + ",plan)";
+	  else
+	    args += tmp.print(contextptr) + ")";
+	  autoname_plus_plus();
+	  set_gen_value(-1,gen(args,contextptr),true);
+	}
+	if (event==FL_PUSH || event==FL_DRAG || event==FL_RELEASE)
+	  return 1;
+	return 0;
+      }
+      // point|segment mode
+      if (event==FL_RELEASE){
+	hp_pos=-1;
+	if (hp && !args_tmp.empty() && (std::abs(push_i-current_i)>npixels || std::abs(push_j-current_j)>npixels || (is3d && std::abs(push_depth-current_depth) >0)) ){
+	  // make a segment
+	  gen val1,val2;
+	  if (in_area && args_tmp.front().is_symb_of_sommet(at_point)){
+	    val1=gen(autoname(contextptr),contextptr);
+	    // put in last history pack level
+	    set_gen_value(-1,symbolic(at_sto,makevecteur(add_attributs(args_tmp.front(),couleur,contextptr),val1)),false);
+	    hp_pos=hp->elements.size()-1;
+	    autoname_plus_plus();
+	  }
+	  else 
+	    val1=args_tmp.front();
+	  if (in_area && tmp.is_symb_of_sommet(at_point)){
+	    val2=gen(autoname(contextptr),contextptr);
+	    gen tmp3=symbolic(at_sto,makevecteur(add_attributs(tmp,couleur,contextptr),val2));
+	    set_gen_value(-1,tmp3,false);
+	    if (hp_pos<0) hp_pos=hp->elements.size()-1;
+	    autoname_plus_plus();
+	  }
+	  else 
+	    val2=tmp;
+	  if (in_area){
+	    gen tmp3=add_attributs(symbolic(at_segment,makevecteur(val1,val2)),couleur,contextptr);
+	    string v1v2=val1.print(contextptr)+val2.print(contextptr);
+	    gen g1g2(v1v2,contextptr);
+	    if (g1g2.type!=_IDNT)
+	      g1g2=gen(v1v2+"_",contextptr);
+	    tmp3=symbolic(at_sto,makevecteur(tmp3,g1g2));
+	    set_gen_value(-1,tmp3,false);
+	    if (hp_pos<0) hp_pos=hp->elements.size()-1;
+	    eval(hp_pos);
+	  }
+	  return 1;
+	}
+	if (in_area && tmp.type!=_IDNT)
+	  do_handle(symbolic(at_sto,makevecteur(add_attributs(tmp,couleur,contextptr),gen(autoname(contextptr),contextptr))));
+	// element
+	if (tmp.type==_IDNT && tmp2.type==_SYMB && !equalposcomp(point_sommet_tab_op,tmp2._SYMBptr->sommet)){
+	  // tmp2 is the geo object, find parameter value
+	  double newx,newy,newz;
+	  find_xyz(current_i,current_j,current_depth,newx,newy,newz);
+	  round3(newx,window_xmin,window_xmax);
+	  round3(newy,window_ymin,window_ymax);
+	  gen t=projection(evalf(tmp2,1,contextptr),gen(newx,newy),contextptr);
+	  if (is_undef(t))
+	    return 0;
+	  gen tmp3=symbolic(at_element,( (t.type<_IDNT || t.type==_VECT)?gen(makevecteur(tmp,t),_SEQ__VECT):tmp));
+	  tmp3=symbolic(at_sto,makevecteur(add_attributs(tmp3,couleur,contextptr),gen(autoname(contextptr),contextptr)));
+	  set_gen_value(-1,tmp3,false);
+	  if (hp_pos<0) hp_pos=hp->elements.size()-1;
+	  eval(hp_pos);
+	}
+	return 1;
+      }
+      if (event==FL_PUSH){
+	args_tmp=vecteur(1,tmp);
+	return 1;
+      }
+      if (event==FL_DRAG){
+	redraw();
+	return 1;
+      }
+      return 0;
+    }
+    gen tmpval=remove_at_pnt(tmp.eval(1,contextptr));
+    gen somm=symbolic(at_sommets,tmp);
+    int npoints=1;
+    if (!equalposcomp(nosplit_polygon_function,*function_final._FUNCptr)){
+      if (tmpval.type==_VECT && tmpval.subtype==_GROUP__VECT)
+	npoints=tmpval._VECTptr->size();
+      if (tmpval.is_symb_of_sommet(at_cercle))
+	npoints=is3d?3:2;
+    }
+    unsigned args_size=args_tmp.size();
+    // mode>=2
+    if (event==FL_MOVE || event==FL_DRAG || event==FL_RELEASE || event==FL_PUSH){
+      if (args_size<args_tmp_push_size)
+	args_tmp_push_size=args_size;
+      args_tmp.erase(args_tmp.begin()+args_tmp_push_size,args_tmp.end());
+    }
+    unsigned new_args_size=args_tmp.size();
+    gen tmp_push=tmp;
+    bool swapargs=false;
+    if (npoints==2 && (new_args_size==2 || new_args_size==1) && (function_final==at_angleat || function_final==at_angleatraw) ){
+      // search if args_tmp[0] or args_tmp[1] is a vertex of tmp
+      gen tmp2=remove_at_pnt(evalf(tmp,1,contextptr));
+      gen somm=symbolic(at_sommets,tmp);
+      if (tmp2.type==_VECT && tmp2._VECTptr->size()==2){
+	gen tmpa=remove_at_pnt(evalf(args_tmp[0],1,contextptr));
+	gen tmpb=new_args_size==2?remove_at_pnt(evalf(args_tmp[1],1,contextptr)):undef;
+	if (npoints==2 && tmpa==tmp2._VECTptr->front() && tmpb!=tmp2._VECTptr->back()){
+	  tmp=symbolic(at_at,gen(makevecteur(somm,1),_SEQ__VECT));
+	  npoints=1;
+	}
+	if (npoints==2 && tmpa==tmp2._VECTptr->back() && tmpb!=tmp2._VECTptr->front()){
+	  tmp=symbolic(at_at,gen(makevecteur(somm,0),_SEQ__VECT));
+	  npoints=1;
+	}
+	if (npoints==2 && tmpb==tmp2._VECTptr->front() && tmpa!=tmp2._VECTptr->back() ){
+	  swapargs=true;
+	  tmp=symbolic(at_at,gen(makevecteur(somm,1),_SEQ__VECT));
+	  npoints=1;
+	}
+	if (npoints==2 && tmpb==tmp2._VECTptr->back() && tmpa!=tmp2._VECTptr->front()){
+	  swapargs=true;
+	  tmp=symbolic(at_at,gen(makevecteur(somm,0),_SEQ__VECT));
+	  npoints=1;
+	}
+      }
+    }
+    if (npoints+args_tmp.size()>mode)
+      npoints=1;
+    if (event==FL_MOVE || event==FL_DRAG || event==FL_RELEASE){
+      if (args_size && args_tmp_push_size && args_push!=tmp_push){
+	// replace by current mouse position
+	if (npoints==1)
+	  args_tmp.push_back(tmp);
+	else {
+	  gen somm=symbolic(at_sommets,tmp);
+	  for (int i=0;i<npoints;++i){
+	    args_tmp.push_back(symbolic(at_at,gen(makevecteur(somm,i),_SEQ__VECT)));
+	  }
+	}
+	redraw();
+	if (event!=FL_RELEASE || (abs(push_i-current_i)<=5 && abs(push_j-current_j)<=5))
+	  return 1;
+      }
+    }
+    if (event==FL_PUSH){
+      if (swapargs)
+	swapgen(args_tmp[0],args_tmp[1]);
+      args_push=tmp_push;
+      if (npoints==1)
+	args_tmp.push_back(tmp);
+      else {
+	for (int i=0;i<npoints;++i){
+	  args_tmp.push_back(symbolic(at_at,gen(makevecteur(somm,i),_SEQ__VECT)));
+	}
+      }
+      args_tmp_push_size=args_tmp.size();
+      redraw();
+      return 1;
+    }
+    if (event==FL_RELEASE){
+      int s=args_tmp.size();
+      args_tmp_push_size=s;
+      if (mode>1 && s>=mode){
+	if (s>mode){ 
+	  args_tmp=vecteur(args_tmp.begin(),args_tmp.begin()+mode);
+	  s=mode;
+	}
+	gen tmp_plot;
+	if (in_area && function_final.type==_FUNC) {
+	  gen res,objname=gen(autoname(contextptr),contextptr);
+	  hp_pos=hp->elements.size()-1; if (hp_pos<0) hp_pos=0;
+	  // hp->update_pos=hp_pos;
+	  int pos0=hp_pos;
+	  unary_function_ptr * ptr=function_final._FUNCptr;
+	  int ifinal=mode;
+	  if (equalposcomp(measure_functions,*ptr))
+	    ifinal--;
+	  // first replace points in args_tmp by assignations
+	  for (int i=0;i<ifinal;++i){
+	    tmp_plot=args_tmp[i];
+	    if (tmp_plot.is_symb_of_sommet(at_point)){
+	      tmp_plot=symbolic(at_sto,makevecteur(add_attributs(tmp_plot,couleur,contextptr),objname));
+	      args_tmp[i]=objname;
+	      set_gen_value(hp_pos,tmp_plot,false);
+	      add_entry(hp_pos+1);
+	      ++hp_pos;
+	      autoname_plus_plus();
+	      objname=gen(autoname(contextptr),contextptr);
+	    }
+	  }
+	  vecteur argv=args_tmp;
+	  if (*ptr==(is3d?at_sphere:at_cercle)){
+	    gen argv1;
+#ifdef NO_STDEXCEPT
+	    argv1=evalf(args_tmp.back(),1,contextptr);
+	    argv1=evalf_double(argv1,1,contextptr);
+#else
+	    try {
+	      argv1=evalf(args_tmp.back(),1,contextptr);
+	      argv1=evalf_double(argv1,1,contextptr);
+	    }
+	    catch (std::runtime_error & e){
+	      argv1=undef;
+	    }
+#endif
+	    if (argv1.is_symb_of_sommet(at_pnt) ||argv1.type==_IDNT){
+	      argv1=remove_at_pnt(argv1);
+	      if ( (argv1.type==_VECT && argv1.subtype==_POINT__VECT) || argv1.type==_CPLX || argv1.type==_IDNT)
+	      argv.back()=args_tmp.back()-args_tmp.front();
+	    }
+	  }
+	  tmp_plot=symbolic(*ptr,gen(argv,_SEQ__VECT));
+#ifdef NO_STDEXCEPT
+	  res=evalf(tmp_plot,1,contextptr);
+#else
+	  try {
+	    res=evalf(tmp_plot,1,contextptr);
+	  }
+	  catch (std::runtime_error & err){
+	    res=undef;
+	  }
+#endif
+	  tmp_plot=symbolic(at_sto,makevecteur(add_attributs(tmp_plot,couleur,contextptr),objname));
+	  set_gen_value(hp_pos,tmp_plot,false);
+	  add_entry(hp_pos+1);
+	  ++hp_pos;
+	  if (res.is_symb_of_sommet(at_pnt)){
+	    res=remove_at_pnt(res);
+	    int ns=0;
+	    if (res.type==_VECT && res.subtype==_GROUP__VECT && (ns=res._VECTptr->size())>2){
+	      vecteur l;
+	      if (res._VECTptr->back()==res._VECTptr->front())
+		--ns;
+	      if (function_final.type==_FUNC && equalposcomp(transformation_functions,*function_final._FUNCptr)){
+		vecteur argv;
+		gen objn,som=symbolic(at_sommets,objname);
+		for (int i=1;i<=ns;++i){
+		  tmp_plot=symbolic(at_at,gen(makevecteur(som,i-1),_SEQ__VECT));
+		  objn=gen(autoname(contextptr)+print_INT_(i),contextptr);
+		  argv.push_back(objn);
+		  set_gen_value(hp_pos,symbolic(at_sto,gen(makevecteur(tmp_plot,objn),_SEQ__VECT)),false);
+		  add_entry(hp_pos+1);
+		  ++hp_pos;
+		}
+		for (int i=1;i<=ns;++i){
+		  tmp_plot=symbolic(at_segment,makevecteur(argv[i-1],argv[i%ns]));
+		  set_gen_value(hp_pos,symbolic(at_sto,makevecteur(add_attributs(tmp_plot,couleur,contextptr),gen(autoname(contextptr)+print_INT_(ns+i),contextptr))),false);
+		  add_entry(hp_pos+1);
+		  ++hp_pos;
+		}		
+	      }
+	      else {
+		for (int i=mode;i<ns;++i){
+		  tmp_plot=symb_at(
+				   symbolic(at_sommets,gen(autoname(contextptr),contextptr))
+				   ,i,contextptr);
+		  gen newname=gen(autoname(contextptr)+print_INT_(i),contextptr);
+		  set_gen_value(hp_pos,symbolic(at_sto,makevecteur(tmp_plot,newname)),false);
+		  args_tmp.push_back(newname);
+		  add_entry(hp_pos+1);
+		  ++hp_pos;
+		}
+		for (int i=1;i<=ns;++i){
+		  tmp_plot=symbolic(at_segment,makevecteur(args_tmp[i-1],args_tmp[i%ns]));
+		  set_gen_value(hp_pos,symbolic(at_sto,makevecteur(add_attributs(tmp_plot,couleur,contextptr),gen(autoname(contextptr)+print_INT_(ns+i),contextptr))),false);
+		  add_entry(hp_pos+1);
+		  ++hp_pos;
+		}
+	      }
+	    } // if res.type==_VECT
+	  }
+	  autoname_plus_plus();
+	  // hp->undo_position=save_undo_position;
+	  eval(pos0);
+	}
+	args_tmp.clear();
+	args_tmp_push_size=0;
+      }
+      redraw();
+      return 1;
+    }
+    return 0;
+  }
+
+  int Graph2d::ui(){
+    Graph2d & gr=*this;
+    // UI
     int saveprecision=gr.precision;
     gr.precision += 2; // fast draw first
     gr.draw();
     gr.precision=saveprecision;    
-    bool redraw=true;
+    gr.must_redraw=true;
+#ifdef NSPIRE_NEWLIB
+    const char * msg="+-: zoom, pad: move, esc: quit";
+#else
+    const char * msg="+-: zoom, pad: move, EXIT: quit";
+#endif
+    DefineStatusMessage((char *)msg,1,0,0);
+    DisplayStatusArea();
     for (;;){
       int saveprec=gr.precision;
       if (gr.doprecise){
 	gr.doprecise=false;
 	gr.precision=1;//gr.precision-=2;
       }
-      if (redraw)
+      if (gr.must_redraw)
 	gr.draw();
-      redraw=true;
+      if (hp){
+	string msg=hp->filename+":"+modestr;
+	DefineStatusMessage((char *)msg.c_str(),1,0,0);
+	DisplayStatusArea();
+      }
+      gr.must_redraw=true;
       gr.precision=saveprec;
-      DisplayStatusArea();
+      if (!hp){
 #ifdef NUMWORKS
-      os_draw_string(0,LCD_HEIGHT_PX-STATUS_AREA_PX-17,COLOR_BLACK,COLOR_WHITE,"toolbox: cfg");
+	os_draw_string(0,LCD_HEIGHT_PX-STATUS_AREA_PX-17,COLOR_BLACK,COLOR_WHITE,"toolbox: cfg");
 #else
-      os_draw_string(0,LCD_HEIGHT_PX-STATUS_AREA_PX-17,COLOR_BLACK,COLOR_WHITE,"menu: cfg");
+	os_draw_string(0,LCD_HEIGHT_PX-STATUS_AREA_PX-17,COLOR_BLACK,COLOR_WHITE,"menu: cfg");
 #endif
+      }
       int key=-1;
       GetKey(&key);
       if (key==KEY_SHUTDOWN)
 	return key;
+      if (hp && (key==KEY_CTRL_MENU || key==KEY_CTRL_F6)){
+	const char *
+	  tab[]={
+		 lang==1?"Mode repere":"Frame mode",
+		 lang==1?"Pointeur":"Pointer",
+		 lang==1?"Point":"Point",
+		 lang==1?"Segment":"Segment",
+		 lang==1?"Triangle":"Triangle",
+		 lang==1?"Cercle":"Circle",
+		 0};
+	const int s=sizeof(tab)/sizeof(char *);
+	int choix=select_item(tab,"Mode examen",true);
+	if (choix<0 || choix>s)
+	  continue;
+	gen ftmp[]={0,0,at_point,at_segment,at_polygone_ouvert,at_cercle};
+	gen ffinal[]={0,0,at_point,at_segment,at_triangle,at_cercle};
+	int mode[]={255,0,1,2,3,2};
+	const char * help[]={"","","","","",""};
+	set_mode(ftmp[choix],ffinal[choix],mode[choix],help[choix]);
+	continue;
+      }      
 #if 1
       if (key==KEY_CTRL_CATALOG || key==KEY_BOOK ){
 	char menu_xmin[32],menu_xmax[32],menu_ymin[32],menu_ymax[32],menu_zmin[32],menu_zmax[32];
@@ -8781,9 +9747,36 @@ namespace xcas {
 	}
       }
 #endif
+      if (hp && key==KEY_CTRL_OK){
+	if (!moving){
+	  pushed=true;
+	  push_i=current_i;
+	  push_j=current_j;
+	  geo_handle(FL_PUSH,KEY_CTRL_OK);
+	  if (moving){
+	    update_g();
+	    continue;
+	  }
+	}
+	int res=geo_handle(FL_RELEASE,KEY_CTRL_OK);
+	pushed=false;
+	update_g();
+	continue;
+      }
+      if (hp && (pushed || moving || !args_tmp.empty()) && key==KEY_CTRL_EXIT && mode!=255){
+	if (mode==0) // restore original value
+	  do_handle(symbolic(at_sto,makevecteur(drag_original_value,drag_name)));
+	pushed=false;
+	moving=moving_frame=false;
+	args_tmp.clear();
+	args_help.clear();
+	selected.clear();
+	update_g();
+	continue;
+      }
       if (key==KEY_CTRL_EXIT || key==KEY_CTRL_OK){
 	os_hide_graph();
-	break;
+	return key;
       }
       if (key==KEY_CHAR_NORMAL || key=='>'){ // shift-+
 	if (gr.is3d && gr.precision<9)
@@ -8794,6 +9787,16 @@ namespace xcas {
 	 gr.precision--;
       }
       if (key==KEY_CTRL_UP){
+	if (hp && (!is3d || mode!=255)){
+	  --current_j;
+	  if (current_j<0){
+	    gr.up((gr.window_ymax-gr.window_ymin)/5);
+	    current_j += LCD_HEIGHT_PX/5;
+	  }
+	  geo_handle(moving?FL_DRAG:FL_MOVE,key);
+	  update_g();
+	  continue;
+	}
 	if (gr.is3d){
 	  int curprec=gr.precision;
 	  gr.precision += 2;
@@ -8807,7 +9810,7 @@ namespace xcas {
 	    gr.q=rotation_2_quaternion_double(0.707,0.707,0,15)*gr.q;// quaternion_double(15,0,0)*gr.q;
 	    gr.update_rotation();
 	    gr.draw();
-	    redraw=gr.solid3d;
+	    gr.must_redraw=gr.solid3d;
 #ifndef SIMU
 	    if (!iskeydown(KEY_CTRL_UP))
 	      break;
@@ -8821,9 +9824,29 @@ namespace xcas {
 	gr.up((gr.window_ymax-gr.window_ymin)/5);
       }
       if (key==KEY_CTRL_PAGEUP) {
+	if (hp && (!is3d || mode!=255)){
+	  current_j-=LCD_HEIGHT_PX/5;;
+	  if (current_j<0){
+	    gr.up((gr.window_ymax-gr.window_ymin)/2);
+	    current_j += LCD_HEIGHT_PX/2;
+	  }
+	  geo_handle(moving?FL_DRAG:FL_MOVE,key);
+	  update_g();
+	  continue;
+	}
 	gr.up((gr.window_ymax-gr.window_ymin)/2);
       }
       if (key==KEY_CTRL_DOWN) {
+	if (hp && (!is3d || mode!=255)){
+	  ++current_j;
+	  if (current_j>=LCD_HEIGHT_PX-24){
+	    gr.down((gr.window_ymax-gr.window_ymin)/5);
+	    current_j -= LCD_HEIGHT_PX/5;
+	  }
+	  geo_handle(moving?FL_DRAG:FL_MOVE,key);
+	  update_g();
+	  continue;
+	}
 	if (gr.is3d){
 	  int curprec=gr.precision;
 	  gr.precision += 2;
@@ -8837,7 +9860,7 @@ namespace xcas {
 	    gr.q=rotation_2_quaternion_double(0.707,0.707,0,-15)*gr.q; // quaternion_double(-15,0,0)*gr.q;
 	    gr.update_rotation();
 	    gr.draw();
-	    redraw=gr.solid3d;
+	    gr.must_redraw=gr.solid3d;
 #ifndef SIMU
 	    if (!iskeydown(KEY_CTRL_DOWN))
 	      break;
@@ -8851,9 +9874,29 @@ namespace xcas {
 	gr.down((gr.window_ymax-gr.window_ymin)/5);
       }
       if (key==KEY_CTRL_PAGEDOWN) {
+	if (hp && (!is3d || mode!=255)){
+	  current_j += LCD_HEIGHT_PX/5;
+	  if (current_j>=LCD_HEIGHT_PX-24){
+	    gr.down((gr.window_ymax-gr.window_ymin)/2);
+	    current_j -= LCD_HEIGHT_PX/2;
+	  }
+	  geo_handle(moving?FL_DRAG:FL_MOVE,key);
+	  update_g();
+	  continue;
+	}
 	gr.down((gr.window_ymax-gr.window_ymin)/2);
       }
       if (key==KEY_CTRL_LEFT) {
+	if (hp && (!is3d || mode!=255)){
+	  --current_i;
+	  if (current_i<0){
+	    gr.left((gr.window_xmax-gr.window_xmin)/5);
+	    current_i += LCD_WIDTH_PX/5;
+	  }
+	  geo_handle(moving?FL_DRAG:FL_MOVE,key);
+	  update_g();
+	  continue;
+	}
 	if (gr.is3d){
 	  int curprec=gr.precision;
 	  gr.precision += 2;
@@ -8862,7 +9905,7 @@ namespace xcas {
 	    gr.q=quaternion_double(0,15,0)*gr.q;
 	    gr.update_rotation();
 	    gr.draw();
-	    redraw=gr.solid3d;
+	    gr.must_redraw=gr.solid3d;
 #ifndef SIMU
 	    if (!iskeydown(KEY_CTRL_LEFT))
 	      break;
@@ -8875,8 +9918,30 @@ namespace xcas {
 	}
 	gr.left((gr.window_xmax-gr.window_xmin)/5);
       }
-      if (key==KEY_SHIFT_LEFT) { gr.left((gr.window_xmax-gr.window_xmin)/2); }
+      if (key==KEY_SHIFT_LEFT) {
+	if (hp && (!is3d || mode!=255)){
+	  current_i -= LCD_WIDTH_PX/5;
+	  if (current_i<0){
+	    gr.left((gr.window_xmax-gr.window_xmin)/2);
+	    current_i += LCD_WIDTH_PX/2;
+	  }
+	  geo_handle(moving?FL_DRAG:FL_MOVE,key);
+	  update_g();
+	  continue;
+	}
+	gr.left((gr.window_xmax-gr.window_xmin)/2);
+      }
       if (key==KEY_CTRL_RIGHT) {
+	if (hp && (!is3d || mode!=255)){
+	  ++current_i;
+	  if (current_i>=LCD_WIDTH_PX){
+	    gr.right((gr.window_xmax-gr.window_xmin)/5);
+	    current_i -= LCD_WIDTH_PX/5;
+	  }
+	  geo_handle(moving?FL_DRAG:FL_MOVE,key);
+	  update_g();
+	  continue;
+	}
 	if (gr.is3d){
 	  int curprec=gr.precision;
 	  gr.precision += 2;
@@ -8885,7 +9950,7 @@ namespace xcas {
 	    gr.q=quaternion_double(0,-15,0)*gr.q;
 	    gr.update_rotation();
 	    gr.draw();
-	    redraw=gr.solid3d;
+	    gr.must_redraw=gr.solid3d;
 #ifndef SIMU
 	    if (!iskeydown(KEY_CTRL_RIGHT))
 	      break;
@@ -8898,7 +9963,19 @@ namespace xcas {
 	}
 	gr.right((gr.window_xmax-gr.window_xmin)/5);
       }
-      if (key==KEY_SHIFT_RIGHT) { gr.right((gr.window_xmax-gr.window_xmin)/5); }
+      if (key==KEY_SHIFT_RIGHT) {
+	if (hp && (!is3d || mode!=255)){
+	  current_i += LCD_WIDTH_PX/5;
+	  if (current_i>=LCD_WIDTH_PX){
+	    gr.right((gr.window_xmax-gr.window_xmin)/2);
+	    current_i -= LCD_WIDTH_PX/2;
+	  }
+	  geo_handle(moving?FL_DRAG:FL_MOVE,key);
+	  update_g();
+	  continue;
+	}
+	gr.right((gr.window_xmax-gr.window_xmin)/2);
+      }
       if (key==KEY_CHAR_PLUS) {
 	gr.zoom(0.7);
       }
@@ -10570,6 +11647,43 @@ namespace xcas {
     fix_newlines(edptr);
   }
 
+  void textArea::set_string_value(int n,const string & s){    
+    if (n==-1 || n>=elements.size()){
+      textElement t; t.s=s;
+      if (!elements.empty())
+	t.newLine=1;
+      elements.push_back(t);
+    }
+    else {
+      elements[n].s=s;
+      if (n)
+	elements[n].newLine=1;
+    }
+    changed=true;
+  }
+
+  void textArea::add_entry(int n){
+    textElement t; 
+    if (n==-1 || n>=elements.size()){
+      t.newLine=1;
+      elements.push_back(t);
+    }
+    else {
+      if (n) t.newLine=1;
+      elements.insert(elements.begin()+n,t);
+    }
+  }
+
+  void Graph2d::add_entry(int n){
+    if (!hp)
+      return;
+    if (n==-1 || n>=symbolic_instructions.size()){
+      symbolic_instructions.push_back(0);
+      n=symbolic_instructions.size();
+    }
+    hp->add_entry(n);
+  }
+
   int find_indentation(const std::string & s){
     size_t indent=0;
     for (;indent<s.size();++indent){
@@ -11181,6 +12295,11 @@ namespace xcas {
 	else
 	  deltax=27;
       }
+    }
+    if (v.empty()){
+      textElement cur;
+      cur.s="";
+      v.push_back(cur);
     }
     int & clipline=text->clipline;
     int & clippos=text->clippos;
@@ -12194,7 +13313,7 @@ namespace xcas {
 	}
 	continue;
       case KEY_CTRL_OK:
-	if (text->allowEXE || !text->editable) return TEXTAREA_RETURN_EXE;
+	if (text->gr || text->allowEXE || !text->editable) return TEXTAREA_RETURN_EXE;
 	if (search.size()){
 	  for (;;){
 	    if (!move_to_word(text,search,replace,isFirstDraw,totalTextY,scroll,textY,contextptr))
@@ -16364,6 +17483,7 @@ namespace xcas {
   }
 #endif
 
+  Graph2d * geoptr=0;
   tableur * sheetptr=0;
 
   string print_tableur(const tableur & t,GIAC_CONTEXT){

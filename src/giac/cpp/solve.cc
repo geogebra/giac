@@ -7873,13 +7873,20 @@ namespace giac {
 	    } 
 	  }
 	  // make resultant of all equations except posi with cureq, curvar
+	  gen G=_gcd(eqs,contextptr);
+	  // if G depends on bestvar, then we can not deduce anything
+	  if (!is_zero(derive(G,bestvar,contextptr))){
+	    *logptr(contextptr) << gettext("No relation found, if following equation holds 0=") << G << '\n';
+	    return undef;
+	  }
 	  vecteur neweq;
 	  for (int i=0;i<neq;++i){
 	    if (i==bestpos) continue;
 	    gen a=_simp2(makesequence(eqs[i],besteq),contextptr);
 	    if (a.type!=_VECT || a._VECTptr->size()!=2)
 	      return gensizeerr(contextptr);
-	    gen r=_resultant(makesequence(a._VECTptr->front(),a._VECTptr->back(),bestvar),contextptr)*_gcd(makesequence(eqs[i],besteq),contextptr);;
+	    gen G=_gcd(makesequence(eqs[i],besteq),contextptr);
+	    gen r=_resultant(makesequence(a._VECTptr->front(),a._VECTptr->back(),bestvar),contextptr)*G;
 	    vecteur vr(lidnt(r));
 	    if (!vr.empty()){
 	      gen dr=_diff(makesequence(r,vr[0]),contextptr);

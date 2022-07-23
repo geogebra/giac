@@ -396,7 +396,7 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
   return 0;
 }
 
-void geoapp(GIAC_CONTEXT);
+int geoapp(GIAC_CONTEXT);
 
 int khicas_addins_menu(GIAC_CONTEXT){
   Menu smallmenu;
@@ -1793,10 +1793,85 @@ giac::gen sheet(GIAC_CONTEXT){
   }
 }
 
-
-
-void geoapp(GIAC_CONTEXT){
+int geoapp(GIAC_CONTEXT){
+  if (!geoptr){
+    geoptr=new Graph2d(0,contextptr);
+    geoptr->orthonormalize();
+  }
   if (!geoptr)
-    geoptr=new_geo(contextptr);
+    return -1;
+  if (!geoptr->hp){
+    geoptr->hp=new textArea;
+    geoptr->hp->filename="figure.py";
+  }
+  if (!geoptr->hp)
+    return -2;
+  textArea * text=geoptr->hp;
+  text->editable=true;
+  text->clipline=-1;
+  text->gr=geoptr;
+  geoptr->set_mode(0,0,255,""); // start in frame mode
+  // main loop: alternate between plot and symb view
+  // start in plot view
+  // end plot view with EXIT or OK -> symb view editor
+  // end with OK or EXIT: OK will modify, EXIT will leave geo app
+  // (press twice EXIT to leave geo app from plot view)
+  for (;;){
+    geoptr->eval();
+    geoptr->update();
+    if ( (geoptr->is3d=giac::is3d(geoptr->g)) )
+      geoptr->update_rotation();
+    int key=geoptr->ui();
+    if (key==KEY_SHUTDOWN)
+      return key;
+    // symb view editor
+    for (;;){
+      key=doTextArea(text,contextptr);
+      if (key== TEXTAREA_RETURN_EXIT || key==KEY_SHUTDOWN)
+	return key;
+      // key was OK, parse step: synchronize symbolic_instructions from text
+      bool corrige=false;
+      std::vector<textElement> & v=text->elements;
+      geoptr->symbolic_instructions.resize(v.size());
+      int pos=-1,i=0;
+      for (;i<int(v.size());++i){
+	std::string s=v[i].s; 
+	giac::python_compat(0,contextptr);
+	freeze=true;
+	giac::gen g(s,contextptr);
+	freeze=false;
+	g=equaltosto(g,contextptr);
+	int lineerr=giac::first_error_line(contextptr);
+	char status[256]={0};
+	geoptr->symbolic_instructions[i]=g;
+	if (lineerr){
+	  std::string tok=giac::error_token_name(contextptr);
+	  if (lineerr==1){
+	    pos=v[i].s.find(tok);
+	    const std::string & err=v[i].s;
+	    if (pos>=err.size())
+	      pos=-1;
+	  }
+	  else {
+	    tok=(lang==1)?"la fin":"end";
+	    pos=0;
+	  }
+	  if (pos>=0)
+	    sprintf(status,(lang==1)?"Erreur ligne %i a %s":"Error line %i at %s",i+1,tok.c_str());
+	  else
+	    sprintf(status,(lang==1)?"Erreur ligne %i %s":"Error line %i %s",i+1,(pos==-2?((lang==1)?", : manquant ?":", missing :?"):""));
+	  if (confirm(status,(lang==1)?"OK: corrige, back: continue":"OK: fix",1)==KEY_CTRL_F1){
+	    corrige=true; break;
+	  }
+	}
+      } // loop on lines
+      if (corrige){
+	text->line=i;
+	if (pos>=0 && pos<v[i].s.size()) text->pos=pos;
+      }
+      else
+	break;
+    } // end edition loop
+  } // end plot/symb view infinite loop
 }
 #endif

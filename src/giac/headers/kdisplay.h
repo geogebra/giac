@@ -164,6 +164,60 @@ namespace xcas {
   void replace_selection(Equation & eq,const giac::gen & tmp,giac::gen * gsel,const std::vector<int> * gotoptr,const giac::context *);
   int eqw_select_leftright(xcas::Equation & g,bool left,int exchange,const giac::context *);
 
+  typedef short int color_t;
+  typedef struct
+  {
+    std::string s;
+    color_t color=giac::_BLACK;
+    short int newLine=0; // if 1, new line will be drawn before the text
+    short int spaceAtEnd=0;
+    short int lineSpacing=0;
+    short int minimini=0;
+    int nlines=1;
+  } textElement;
+
+#define TEXTAREATYPE_NORMAL 0
+#define TEXTAREATYPE_INSTANT_RETURN 1
+  class Graph2d;
+  typedef struct
+  {
+    int x=0;
+    int y=0;
+    int line=0,undoline=0;
+    int pos=0,undopos=0;
+    int clipline,undoclipline;
+    int clippos,undoclippos;
+    int width=LCD_WIDTH_PX;
+    int lineHeight=17;
+    std::vector<textElement> elements,undoelements;
+    const char* title = NULL;
+    std::string filename;
+    int scrollbar=1;
+    bool allowEXE=false; //whether to allow EXE to exit the screen
+    bool allowF1=false; //whether to allow F1 to exit the screen
+    bool OKparse=true;
+    bool editable=false;
+    bool changed=false;
+    int python=0;
+    int type=TEXTAREATYPE_NORMAL;
+    int cursorx,cursory; // where the last cursor was displayed
+    Graph2d * gr=0;
+    void set_string_value(int n,const std::string & s); // set n-th entry value
+    void add_entry(int pos);
+  } textArea;
+
+#define TEXTAREA_RETURN_EXIT 0
+#define TEXTAREA_RETURN_EXE 1
+#define TEXTAREA_RETURN_F1 2
+  int doTextArea(textArea* text,const giac::context * contextptr); //returns 0 when user EXITs, 1 when allowEXE is true and user presses EXE, 2 when allowF1 is true and user presses F1.
+  std::string merge_area(const std::vector<textElement> & v);
+  void save_script(const char * filename,const std::string & s);
+  void add(textArea *edptr,const std::string & s);
+
+  extern textArea * edptr;
+  std::string get_searchitem(std::string & replace);
+  int check_leave(textArea * text);
+  void reload_edptr(const char * filename,textArea *edptr,const giac::context *);
   typedef double float3d;
   // typedef float float3d;
   struct double3 {
@@ -212,7 +266,17 @@ namespace xcas {
 #define giac3d_default_downcolor 12345
 #define giac3d_default_downupcolor 18432 // 12297
 #define giac3d_default_downdowncolor 22539
+
+  enum {
+	FL_PUSH=0,
+	FL_MOVE=1,
+	FL_DRAG=2,
+	FL_RELEASE=3,
+	FL_KEYBOARD=4,
+  };
   
+  giac::gen add_attributs(const giac::gen & g,int couleur_,const giac::context *) ;
+
   class Graph2d{
   public:
     double window_xmin,window_xmax,window_ymin,window_ymax,window_zmin,window_zmax,
@@ -223,7 +287,7 @@ namespace xcas {
     // only 12 used, last line [0,0,0,1], usual matrices, not transposed
     int display_mode,show_axes,show_edges,show_names,labelsize,lcdz,default_upcolor,default_downcolor,default_downupcolor,default_downdowncolor;
     short int precision,diffusionz,diffusionz_limit;
-    bool is3d,doprecise,hide2nd,interval,solid3d;
+    bool is3d,doprecise,hide2nd,interval,solid3d,must_redraw;
     double Ai,Aj,Bi,Bj,Ci,Cj,Di,Dj,Ei,Ej,Fi,Fj,Gi,Gj,Hi,Hj; // visualization cube coordinates
     std::vector< std::vector< std::vector<float3d> > > surfacev;
     std::vector<double3> plan_pointv; // point in plan 
@@ -244,8 +308,61 @@ namespace xcas {
     std::vector<double3> pointv; 
     std::vector<const char *> points; // legende
     std::vector<int4> hyp_color,plan_color,sphere_color,polyedre_color,line_color,curve_color,point_color;
-    giac::gen g;
+    giac::gen g; // normal graph instructions
     const giac::context * contextptr;
+    /* geometry data */
+    double current_i,current_j;
+    int mode=0; // 0 pointer, 1 1-arg, 2 2-args, etc.
+    // plot_tmp=function_tmp(args_tmp) or function_final(args_tmp)
+    // depends whether args.tmp.size()==mode
+    giac::gen function_tmp,function_final,args_push; 
+    giac::vecteur args_tmp; // WARNING should only contain numeric value
+    unsigned args_tmp_push_size;
+    std::vector<std::string> args_help;
+    std::string title,x_axis_name,x_axis_unit,y_axis_name,y_axis_unit,z_axis_name,z_axis_unit,fcnfield,fcnvars;
+    int npixels; // max # of pixels distance for click
+    giac::vecteur plot_instructions,symbolic_instructions,animation_instructions,trace_instructions;
+    double animation_dt; // rate for animated plot
+    bool paused;
+    double animation_last; // clock value at last display
+    int animation_instructions_pos;
+    int rotanim_type,rotanim_danim,rotanim_nstep;
+    double rotanim_rx,rotanim_ry,rotanim_rz,rotanim_tstep;
+    int couleur; // used for new point creation in geometry
+    bool approx; // exact or approx click mouse?
+    std::vector<int> selected; // all items selected in plot_instructions
+    giac::gen drag_original_value,drag_name;
+    int hp_pos; // Position in hp for modification
+    xcas::textArea * hp; // null pointer if normal graph (not geometry)
+    giac::gen title_tmp,plot_tmp;
+    std::string modestr;
+    double push_depth,current_depth;
+    int push_i,push_j,cursor_point_type; // position of mouse push/drag
+    bool pushed=false,moving=false,moving_frame=false,in_area=true;
+    /* end geometry data */
+    void adjust_cursor_point_type();
+    void autoname_plus_plus();
+    void do_handle(const giac::gen & g);
+    void redraw() { must_redraw=true; }
+    void geometry_round(double x,double y,double z,double eps,giac::gen & tmp,const giac::context *) ;
+    giac::gen geometry_round(double x,double y,double z,double eps,giac::gen & original,int & pos,bool selectfirstlevel=false,bool setscroller=false);
+    giac::vecteur selection2vecteur(const std::vector<int> & v);
+    void set_mode(const giac::gen & f_tmp,const giac::gen & f_final,int m,const std::string & help);
+    void add_entry(int pos);
+    double find_eps() const;
+    void find_xyz(double i,double j,double k,double & x,double & y,double & z) const;
+    void set_gen_value(int n,const giac::gen & g,bool exec=true); // set n-th entry value
+    int geo_handle(int event,int key);
+    int ui();
+    giac::vecteur selected_names(bool allobjects,bool withdef) const;
+    void find_title_plot(giac::gen & title_tmp,giac::gen & plot_tmp);
+    void draw_decorations(const giac::gen & title_tmp);
+    bool find_dxdy(double & dx, double & dy) const;
+    void find_xy(double i,double j,double & x,double & y) const ;    
+    void round_xy(double & x, double & y) const;
+    void eval(int start=0); // eval symbolic_instructions to plot_instructions
+    void update_g(); // geometry: plot_instructions, trace/animation -> g
+    giac::vecteur get_current_animation() const;
     bool findij(const giac::gen & e0,double x_scale,double y_scale,double & i0,double & j0,const giac::context * ) const;
     void xyz2ij(const double3 & d,int &i,int &j) const; // d not transformed
     void xyz2ij(const double3 & d,double &i,double &j) const; // d not transformed
@@ -271,6 +388,8 @@ namespace xcas {
     Graph2d(const giac::gen & g_,const giac::context * );
   };
 
+  extern Graph2d * geoptr;
+  
   struct Turtle {
     void draw();
 #ifdef TURTLETAB
@@ -288,56 +407,6 @@ namespace xcas {
   int displaygraph(const giac::gen & ge, const giac::context * contextptr);
   int displaylogo();
   giac::gen eqw(const giac::gen & ge,bool editable,const giac::context * contextptr);
-  typedef short int color_t;
-  typedef struct
-  {
-    std::string s;
-    color_t color=giac::_BLACK;
-    short int newLine=0; // if 1, new line will be drawn before the text
-    short int spaceAtEnd=0;
-    short int lineSpacing=0;
-    short int minimini=0;
-    int nlines=1;
-  } textElement;
-
-#define TEXTAREATYPE_NORMAL 0
-#define TEXTAREATYPE_INSTANT_RETURN 1
-  typedef struct
-  {
-    int x=0;
-    int y=0;
-    int line=0,undoline=0;
-    int pos=0,undopos=0;
-    int clipline,undoclipline;
-    int clippos,undoclippos;
-    int width=LCD_WIDTH_PX;
-    int lineHeight=17;
-    std::vector<textElement> elements,undoelements;
-    const char* title = NULL;
-    std::string filename;
-    int scrollbar=1;
-    bool allowEXE=false; //whether to allow EXE to exit the screen
-    bool allowF1=false; //whether to allow F1 to exit the screen
-    bool OKparse=true;
-    bool editable=false;
-    bool changed=false;
-    int python=0;
-    int type=TEXTAREATYPE_NORMAL;
-    int cursorx,cursory; // where the last cursor was displayed
-  } textArea;
-
-#define TEXTAREA_RETURN_EXIT 0
-#define TEXTAREA_RETURN_EXE 1
-#define TEXTAREA_RETURN_F1 2
-  int doTextArea(textArea* text,const giac::context * contextptr); //returns 0 when user EXITs, 1 when allowEXE is true and user presses EXE, 2 when allowF1 is true and user presses F1.
-  std::string merge_area(const std::vector<textElement> & v);
-  void save_script(const char * filename,const std::string & s);
-  void add(textArea *edptr,const std::string & s);
-
-  extern textArea * edptr;
-  std::string get_searchitem(std::string & replace);
-  int check_leave(textArea * text);
-  void reload_edptr(const char * filename,textArea *edptr,const giac::context *);
   void print(int &X,int&Y,const char * buf,int color,bool revert,bool fake,bool minimini);
 
   void save_session(const giac::context * );
