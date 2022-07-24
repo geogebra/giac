@@ -7877,7 +7877,7 @@ namespace giac {
 	  // if G depends on bestvar, then we can not deduce anything
 	  if (!is_zero(derive(G,bestvar,contextptr))){
 	    *logptr(contextptr) << gettext("No relation found, if following equation holds 0=") << G << '\n';
-	    return undef;
+	    return vecteur(0);
 	  }
 	  vecteur neweq;
 	  for (int i=0;i<neq;++i){
