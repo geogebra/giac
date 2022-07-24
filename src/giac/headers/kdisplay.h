@@ -203,7 +203,7 @@ namespace xcas {
     int cursorx,cursory; // where the last cursor was displayed
     Graph2d * gr=0;
     void set_string_value(int n,const std::string & s); // set n-th entry value
-    void add_entry(int pos);
+    int add_entry(int pos); // return line position
   } textArea;
 
 #define TEXTAREA_RETURN_EXIT 0

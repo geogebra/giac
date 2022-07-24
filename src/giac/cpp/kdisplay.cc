@@ -7016,7 +7016,27 @@ namespace xcas {
   }
 
   vecteur mark_selected(const vecteur & v,const vector<int> & selected){
-    return v;
+    vecteur w(v);
+    vector<int> s(selected); sort(s.begin(),s.end());
+    int pos=0;
+    for (int i=0;i<w.size();++i){
+      if (pos>=s.size())
+	break;
+      if (i==s[pos]){
+	++pos;
+	gen g=w[i];
+	if (g.is_symb_of_sommet(at_pnt)){
+	  g=g._SYMBptr->feuille;
+	  if (g.type==_VECT && g._VECTptr->size()>=2){
+	    vecteur gv(*g._VECTptr);
+	    gv[1]=_BLUE;
+	    g=gen(gv,g.subtype);
+	    w[i]=symbolic(at_pnt,g);
+	  }
+	}
+      }
+    }
+    return w;
   }
 
   vecteur Graph2d::selected_names(bool allobjects,bool withdef) const {
@@ -7055,9 +7075,9 @@ namespace xcas {
       adjust_cursor_point_type();
       find_title_plot(title_tmp,plot_tmp);
       vecteur v(mergevecteur(get_current_animation(),trace_instructions));
-      v.push_back(plot_tmp);
+      if (!is_undef(plot_tmp)) v.push_back(plot_tmp);
       // geometry: update g from plot_instructions
-      g=mergevecteur(mark_selected(plot_instructions,selected),v);      
+      g=mergevecteur(selected.empty()?plot_instructions:mark_selected(plot_instructions,selected),v);      
     }
   }    
 
@@ -8009,9 +8029,9 @@ namespace xcas {
 	pos += strlen(drag_name._IDNTptr->id_name);
       }
       else {
-	if (mode==0 || mode==255){ // print selected names in Pointer mode
+	if (1 || mode==0 || mode==255){ // print selected names 
 	  vecteur v;
-	  if (mode==0) v=selected_names(true,false);
+	  if (mode!=255) v=selected_names(true,false);
 	  int vs=v.size();
 	  if (!vs){ // print current coordinates
 	    double i=current_i,j=current_j,x,y;
@@ -8065,6 +8085,7 @@ namespace xcas {
   }
 
   void Graph2d::draw(){
+    waitforvblank();
     if (hp) history_plot(contextptr).clear();
     if (is3d){
       if (lang==1)
@@ -8808,7 +8829,7 @@ namespace xcas {
   }
 
   void Graph2d::find_title_plot(gen & title_tmp,gen & plot_tmp){
-    plot_tmp=0;
+    title_tmp=plot_tmp=0;
     if (//in_area &&
 	hp && mode && !args_tmp.empty()){
       if (args_tmp.size()>=2){
@@ -8876,6 +8897,7 @@ namespace xcas {
 
   void Graph2d::eval(int start){
     int level=prog_eval_level_val(contextptr);
+    plot_instructions.resize(symbolic_instructions.size());
     for (size_t i=start;i<symbolic_instructions.size();++i){
       g=symbolic_instructions[i];
       set_abort();
@@ -9453,7 +9475,9 @@ namespace xcas {
 	gen tmp_plot;
 	if (in_area && function_final.type==_FUNC) {
 	  gen res,objname=gen(autoname(contextptr),contextptr);
-	  hp_pos=hp->elements.size()-1; if (hp_pos<0) hp_pos=0;
+	  hp_pos=hp->elements.size();
+	  if (hp_pos && hp->elements[hp_pos-1].s.empty())
+	    --hp_pos;
 	  // hp->update_pos=hp_pos;
 	  int pos0=hp_pos;
 	  unary_function_ptr * ptr=function_final._FUNCptr;
@@ -9592,6 +9616,11 @@ namespace xcas {
 	gr.draw();
       if (hp){
 	string msg=hp->filename+":"+modestr;
+	// help
+	int help_pos=args_tmp.empty()?0:args_tmp.size()-1;
+	if (help_pos<args_help.size()){
+	  msg += " "+args_help[help_pos];
+	}
 	DefineStatusMessage((char *)msg.c_str(),1,0,0);
 	DisplayStatusArea();
       }
@@ -9599,38 +9628,287 @@ namespace xcas {
       gr.precision=saveprec;
       if (!hp){
 #ifdef NUMWORKS
-	os_draw_string(0,LCD_HEIGHT_PX-STATUS_AREA_PX-17,COLOR_BLACK,COLOR_WHITE,"toolbox: cfg");
+	os_draw_string(0,LCD_HEIGHT_PX-STATUS_AREA_PX-17,COLOR_BLACK,COLOR_WHITE,"home: cfg");
 #else
-	os_draw_string(0,LCD_HEIGHT_PX-STATUS_AREA_PX-17,COLOR_BLACK,COLOR_WHITE,"menu: cfg");
+	os_draw_string(0,LCD_HEIGHT_PX-STATUS_AREA_PX-17,COLOR_BLACK,COLOR_WHITE,"doc: cfg");
 #endif
       }
       int key=-1;
       GetKey(&key);
       if (key==KEY_SHUTDOWN)
 	return key;
-      if (hp && (key==KEY_CTRL_MENU || key==KEY_CTRL_F6)){
+      if (hp){
+	char ch=key;
+	if (ch>='a')
+	  ch -= 'a'-'A';
+	if (ch>='A' && ch<='Z'){
+	  gen tmp=gen(string("")+ch,contextptr);
+	  if (tmp.type==_IDNT){
+	    tmp=evalf(tmp,1,contextptr);
+	    if (tmp.is_symb_of_sommet(at_pnt)){
+	      tmp=remove_at_pnt(tmp);
+	      if (tmp.is_symb_of_sommet(at_cercle))
+		tmp=(tmp._SYMBptr->feuille[0]+tmp._SYMBptr->feuille[1])/2;
+	      if (tmp.type==_SYMB)
+		tmp=tmp._SYMBptr->feuille;
+	      if (tmp.type==_VECT && !tmp._VECTptr->empty())
+		tmp=tmp._VECTptr->front();
+	      if (tmp.type==_DOUBLE_ || tmp.type==_CPLX){
+		double x_scale=LCD_WIDTH_PX/(window_xmax-window_xmin);
+		double y_scale=LCD_HEIGHT_PX/(window_ymax-window_ymin);
+		double i,j;
+		findij(tmp,x_scale,y_scale,i,j,contextptr);
+		current_i=int(i+.5);
+		current_j=int(j+.5);
+		adjust_cursor_point_type();
+		geo_handle(moving?FL_DRAG:FL_MOVE,key);
+		continue;
+	      }
+	    }
+	  }
+	}
+      }
+      if (hp && (key==KEY_CTRL_CATALOG || key==KEY_BOOK )){
 	const char *
 	  tab[]={
-		 lang==1?"Mode repere":"Frame mode",
+		 lang==1?"Mode repere":"Frame mode", // 0
 		 lang==1?"Pointeur":"Pointer",
-		 lang==1?"Point":"Point",
-		 lang==1?"Segment":"Segment",
-		 lang==1?"Triangle":"Triangle",
+		 lang==1?"Point":"Point", // 2
 		 lang==1?"Cercle":"Circle",
+		 lang==1?"Triangle":"Triangle", // 4
+		 lang==1?"Points":"Points",
+		 lang==1?"Droites":"Lines", // 6
+		 lang==1?"Polygones":"Polygones",
+		 lang==1?"Coniques":"Conics", // 8
+		 lang==1?"Courbes":"Curves", // 9
+		 lang==1?"Transformations":"Transforms",
+		 lang==1?"Mesures":"Mesures", // 11
 		 0};
 	const int s=sizeof(tab)/sizeof(char *);
-	int choix=select_item(tab,"Mode examen",true);
+	int choix=select_item(tab,"Mode",true);
 	if (choix<0 || choix>s)
 	  continue;
-	gen ftmp[]={0,0,at_point,at_segment,at_polygone_ouvert,at_cercle};
-	gen ffinal[]={0,0,at_point,at_segment,at_triangle,at_cercle};
-	int mode[]={255,0,1,2,3,2};
-	const char * help[]={"","","","","",""};
-	set_mode(ftmp[choix],ffinal[choix],mode[choix],help[choix]);
+	if (choix<=4){
+	  gen ftmp[]={0,0,at_point,at_segment,at_segment};
+	  gen ffinal[]={0,0,at_point,at_cercle,at_triangle};
+	  int mode[]={255,0,1,2,3};
+	  const char * help[]={"","","Point","Center,Point","Point1,Point2,Point3"};
+	  set_mode(ftmp[choix],ffinal[choix],mode[choix],help[choix]);
+	  continue;
+	}
+	draw(); // for small choosebox, we must clean up previous choosebox
+	if (choix==5){ // Points
+	  const char *
+	    tab[]={
+		   lang==1?"Point":"Point",
+		   lang==1?"Milieu":"Middle point",
+		   lang==1?"Centre":"Center",
+		   lang==1?"Intersection unique":"Single intersection",
+		   lang==1?"Liste d'intersections":"List of intersections",
+		   lang==1?"Element":"Element",
+		   0};
+	  const int s=sizeof(tab)/sizeof(char *);
+	  int choix=select_item(tab,"Points",true);
+	  if (choix<0 || choix>s)
+	    continue;
+	  gen ftmp[]={at_point,at_segment,at_centre,at_inter_unique,at_inter,at_element};
+	  gen ffinal[]={at_point,at_milieu,at_centre,at_inter_unique,at_inter,at_element};
+	  int mode[]={1,2,1,2,2,1};
+	  const char * help[]={
+			       "Point",
+			       "Point1,Point2",
+			       "Circle",
+			       "Line1,Line2",
+			       "Curve1,Curve2",
+			       "Curve",
+	  };
+	  set_mode(ftmp[choix],ffinal[choix],mode[choix],help[choix]);
+	  continue;
+	}
+	if (choix==6){ // Droites
+	  const char *
+	    tab[]={
+		   lang==1?"Segment":"Segment", 
+		   lang==1?"Vecteur":"Vector",
+		   lang==1?"Demi-droite":"Halfline",
+		   lang==1?"Droite":"Line",
+		   lang==1?"Parallele":"Parallel",
+		   lang==1?"Perpendiculaire":"Perpendicular",
+		   lang==1?"Mediatrice":"Perpen_bisector",
+		   lang==1?"Bissectrice":"Bisector",
+		   lang==1?"Mediane":"Median line",
+		   lang==1?"Tangente":"Tangent",
+		   0};
+	  const int s=sizeof(tab)/sizeof(char *);
+	  int choix=select_item(tab,"Droites, segments...",true);
+	  if (choix<0 || choix>s)
+	    continue;
+	  gen ftmp[]={at_segment,at_vector,at_demi_droite,at_droite,at_parallele,at_perpendiculaire,at_mediatrice,at_segment,at_segment,at_segment};
+	  gen ffinal[]={at_segment,at_vector,at_demi_droite,at_droite,at_parallele,at_perpendiculaire,at_mediatrice,at_bissectrice,at_mediane,at_tangent};
+	  int mode[]={2,2,2,2,2,2,2,3,3,2};
+	  const char * help[]={
+			       "Point1,Point2",
+			       "Point1,Point2",
+			       "Point1,Point2",
+			       "Point1,Point2",
+			       "Point,Line",
+			       "Point,Line",
+			       "Point1,Point2",
+			       "Sommet_angle,Point2,Point3",
+			       "Sommet_angle,Point2,Point3",
+			       "Curve,Point"
+	  };
+	  set_mode(ftmp[choix],ffinal[choix],mode[choix],help[choix]);
+	  continue;
+	}
+	if (choix==7){ // Polygons
+	  const char *
+	    tab[]={
+		   lang==1?"Triangle":"Triangle",
+		   lang==1?"Triangle equilateral":"Equilateral triangle",
+		   lang==1?"Carre":"Square",
+		   lang==1?"Quadrilatere":"Quadrilateral",
+		   lang==1?"Polygone":"Polygon",
+		   0};
+	  const int s=sizeof(tab)/sizeof(char *);
+	  int choix=select_item(tab,"Droites, segments...",true);
+	  if (choix<0 || choix>s)
+	    continue;
+	  gen ftmp[]={at_polygone_ouvert,at_segment,at_segment,at_polygone_ouvert,at_polygone_ouvert};
+	  gen ffinal[]={at_triangle,at_triangle_equilateral,at_carre,at_quadrilatere,at_polygone};
+	  int mode[]={3,2,2,4,5};
+	  int m=mode[choix];
+	  if (choix==4){
+	    double d=5;
+	    if (inputdouble(lang==1?"Nombre de sommets?":"Number of vertices?",d,contextptr) && d==int(d) && d>=3 && d<20){
+	      m=d;
+	    }
+	    else continue;
+	  }
+	  const char * help[]={
+			       "Point1,Point2,Point3",
+			       "Point1,Point2",
+			       "Point1,Point2",
+			       "Point1,Point2,Point3,Point4",
+			       "Point1,Point2,Point3,Point4,Point5",
+	  };
+	  set_mode(ftmp[choix],ffinal[choix],m,help[choix]);
+	  continue;
+	}
+	if (choix==8){ // Conics
+	  const char *
+	    tab[]={
+		   lang==1?"ellipse":"ellipse",
+		   lang==1?"hyperbole":"hyperbola",
+		   lang==1?"parabole":"parabola",
+		   0};
+	  const int s=sizeof(tab)/sizeof(char *);
+	  int choix=select_item(tab,"Conic",true);
+	  if (choix<0 || choix>s)
+	    continue;
+	  gen ftmp[]={at_segment,at_segment,at_segment};
+	  gen ffinal[]={at_ellipse,at_hyperbole,at_parabole};
+	  int mode[]={3,3,2};
+	  const char * help[]={
+			       "Focus1,Focus2,Point_on_ellipse",
+			       "Focus1,Focus2,Point_on_hyperbola",
+			       "Focus,Point_or_line",
+	  };
+	  set_mode(ftmp[choix],ffinal[choix],mode[choix],help[choix]);
+	  continue;
+	}
+	if (choix==9){ // Curves
+	  const char *
+	    tab[]={
+		   lang==1?"Fonction plot(sin(x))":"Function plot(sin(x))",
+		   lang==1?"Param. plotparam([x^2,x^3])":"Param. plotparam([x^2,x^3])",
+		   lang==1?"Polaire plotpolar(x)":"Polar plotpolar(x)",
+		   lang==1?"Implicit plot(x^2+y^4=6)":"Implicit plot(x^2+y^4=6)",
+		   lang==1?"Champ des tangentes":"Plotfield",
+		   lang==1?"Solution equa. diff.":"Diff. equa. solution",
+		   0};
+	  const int s=sizeof(tab)/sizeof(char *);
+	  int choix=select_item(tab,"Courbe",true);
+	  if (choix<0 || choix>s)
+	    continue;
+	  const char * cmd[]={"plot()","plotparam()","plotpolar()","plot()","plotfield()","plotode()"};
+	  hp->line=hp->add_entry(-1);
+	  string mycmd=autoname(contextptr)+":="+cmd[choix];
+	  autoname_plus_plus();
+	  hp->set_string_value(hp->line,mycmd);
+	  hp->pos=mycmd.size()-1;
+	  return KEY_CTRL_OK;
+	}
+	if (choix==10){ // Transforms
+	  const char *
+	    tab[]={
+		   lang==1?"symetrie":"reflexion",
+		   lang==1?"rotation":"rotation",
+		   lang==1?"translation":"translation",
+		   lang==1?"projection":"projection",
+		   lang==1?"homothetie":"homothety",
+		   lang==1?"similitude":"similarity",
+		   // lang==1?"":"",
+		   // lang==1?"":"",
+		   0};
+	  const int s=sizeof(tab)/sizeof(char *);
+	  int choix=select_item(tab,"Transform",true);
+	  if (choix<0 || choix>s)
+	    continue;
+	  gen ftmp[]={at_segment,at_polygone_ouvert,at_segment,at_segment,at_segment,at_polygone_ouvert};
+	  gen ffinal[]={at_symetrie,at_rotation,at_translation,at_projection,at_homothetie,at_similitude};
+	  int mode[]={2,3,2,2,2,3};
+	  const char * help[]={
+			       "Symmetry_center_axis,Object",
+			       "Center,Angle,Object",
+			       "Vector,Object",
+			       "Curve,Object",
+			       "Center,Ratio,Object",
+			       "Center,Ratio,Angle,Object"
+	  };
+	  set_mode(ftmp[choix],ffinal[choix],mode[choix],help[choix]);
+	  continue;
+	}
+	if (choix==11){ // Mesures
+	  const char *
+	    tab[]={
+		   lang==1?"distance":"distance",
+		   lang==1?"angle":"angle",
+		   lang==1?"aire":"area",
+		   lang==1?"perimetre":"perimeter",
+		   lang==1?"pente":"slope",
+		   lang==1?"distance seule":"distance raw",
+		   lang==1?"angle seul":"angle raw",
+		   lang==1?"aire seule":"area raw",
+		   lang==1?"perimetre seul":"perimeter raw",
+		   lang==1?"pente seule":"slope raw",
+		   0};
+	  const int s=sizeof(tab)/sizeof(char *);
+	  int choix=select_item(tab,"Mesures",true);
+	  if (choix<0 || choix>s)
+	    continue;
+	  gen ftmp[]={at_segment,at_triangle,at_areaat,at_perimeterat,at_slopeat,at_segment,at_triangle,at_areaatraw,at_perimeteratraw,at_slopeatraw};
+	  gen ffinal[]={at_distanceat,at_angleat,at_areaat,at_perimeterat,at_slopeat,at_distanceatraw,at_angleatraw,at_areaatraw,at_perimeteratraw,at_slopeatraw};
+	  int mode[]={3,4,2,2,2,3,4,2,2,2};
+	  const char * help[]={
+			       "Object1,Object2,Position",
+			       "Angle_vertex,Direction1,Direction2,Position",
+			       "Object,Position",
+			       "Object,Position",
+			       "Object,Position",
+			       "Object1,Object2,Position",
+			       "Angle_vertex,Direction1,Direction2,Position",
+			       "Object,Position",
+			       "Object,Position",
+			       "Object,Position",
+	  };
+	  set_mode(ftmp[choix],ffinal[choix],mode[choix],help[choix]);
+	  continue;
+	}
 	continue;
       }      
-#if 1
-      if (key==KEY_CTRL_CATALOG || key==KEY_BOOK ){
+
+      if (key==KEY_CTRL_MENU || key==KEY_CTRL_F6){
 	char menu_xmin[32],menu_xmax[32],menu_ymin[32],menu_ymax[32],menu_zmin[32],menu_zmax[32];
 	for (;;){
 	  string s;
@@ -9746,7 +10024,7 @@ namespace xcas {
 	  }
 	}
       }
-#endif
+
       if (hp && key==KEY_CTRL_OK){
 	if (!moving){
 	  pushed=true;
@@ -9763,14 +10041,16 @@ namespace xcas {
 	update_g();
 	continue;
       }
-      if (hp && (pushed || moving || !args_tmp.empty()) && key==KEY_CTRL_EXIT && mode!=255){
-	if (mode==0) // restore original value
+      if (hp && key==KEY_CTRL_EXIT && mode!=255){
+	if (mode==0){ // restore original value and reeval
 	  do_handle(symbolic(at_sto,makevecteur(drag_original_value,drag_name)));
+	  // eval();
+	}
+	if (args_tmp.empty())
+	  set_mode(0,0,255,"");
 	pushed=false;
 	moving=moving_frame=false;
 	args_tmp.clear();
-	args_help.clear();
-	selected.clear();
 	update_g();
 	continue;
       }
@@ -11662,16 +11942,23 @@ namespace xcas {
     changed=true;
   }
 
-  void textArea::add_entry(int n){
+  int textArea::add_entry(int n){
     textElement t; 
     if (n==-1 || n>=elements.size()){
-      t.newLine=1;
-      elements.push_back(t);
+      if (elements.empty())
+	elements.push_back(t);
+      else {
+	t.newLine=1;
+	if (!elements.back().s.empty())
+	  elements.push_back(t);
+      }
+      n=elements.size()-1;
     }
     else {
       if (n) t.newLine=1;
       elements.insert(elements.begin()+n,t);
     }
+    return n;
   }
 
   void Graph2d::add_entry(int n){
@@ -12607,7 +12894,10 @@ namespace xcas {
     if (editable){
       waitforvblank();
       drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
-      PrintMiniMini(0,205,text->python>0?"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 lin|8 list|9arit":"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 matr|8 cplx",4,44444,giac::_BLACK);
+      if (text->gr)
+	PrintMiniMini(0,205,"shift-1 pnts|2 lines|3 undo|4 tri.|5 +-|6 curves|7 polygon|8 3d|9 solid",4,giac::_CYAN,giac::_BLACK);
+      else
+	PrintMiniMini(0,205,text->python>0?"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 lin|8 list|9arit":"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 matr|8 cplx",4,44444,giac::_BLACK);
       //draw_menu(1);
     }
 #ifdef SCROLLBAR
@@ -13182,12 +13472,16 @@ namespace xcas {
 	       (key >= KEY_CTRL_F6 && key <= KEY_CTRL_F16)
 	       ){
 	    string le_menu;
-	    if (xcas_python_eval==1)//text->python?
-	      le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF: plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\nmul(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\n";
-	    if (xcas_python_eval<=0)
-	      le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nvar\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF< plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF: misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
-	    if (xcas_python_eval>=0)
-	      le_menu += "F= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\nF? geo\npoint(\nline(\nsegment(\ncircle(\ntriangle(\nplane(\nsphere(\nsingle_inter(\nF@ color\ncolor=\nred\ncyan\ngreen\nblue\nmagenta\nyellow\nlegend(";
+	    if (text->gr) { // geometry menu
+	      le_menu="F1 points\npoint(\nmidpoint(\ncenter(\nelement(\nsingle_inter(\ninter(\nF2 lines\nsegment(\nline(\nhalf_line(\nvector(\nparallel(\nperpendicular(\ntangent(\nF4 triangle\ntriangle(\ntriangle_equilateral(\nmedian(\nperpen_bisector(\nbisector(\nF6 curves\ncircle(\nellipse(\nhyperbola(\nparabola(\nplot(\nplotparam(\nplotpolar(\nplotode(\nF7 polygon\nsquare(\nrectangle(\nquadrilateral(\nhexagon(\npolygon(\nisopolygon(\nF8 3d\nplane(\nsphere(\ncone(\nhalf_cone(\ncylinder(\nF9 solids\npyramid(\nprism(\ncube(\noctahedron(\ndodecahedron(\nicosahedron(";
+	    } else {
+	      if (xcas_python_eval==1)//text->python?
+		le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF: plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\nmul(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\n";
+	      if (xcas_python_eval<=0)
+		le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nvar\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF< plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF: misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
+	      if (xcas_python_eval>=0)
+		le_menu += "F= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\nF? geo\npoint(\nline(\nsegment(\ncircle(\ntriangle(\nplane(\nsphere(\nsingle_inter(\nF@ color\ncolor=\nred\ncyan\ngreen\nblue\nmagenta\nyellow\nlegend(";
+	    } // else not geometry
 	    const char * ptr=console_menu(key,(char*)(le_menu.c_str()),2);
 	    if (!ptr){
 	      show_status(text,search,replace);
@@ -18130,7 +18424,7 @@ int select_item(const char ** ptr,const char * title,bool askfor1){
   Menu smallmenu;
   smallmenu.numitems=nitems; 
   smallmenu.items=smallmenuitems;
-  smallmenu.height=12;
+  smallmenu.height=nitems<12?nitems+1:12;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
   smallmenu.title = (char*) title;

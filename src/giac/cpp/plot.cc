@@ -3487,8 +3487,8 @@ namespace giac {
 #else
     ee.subtype=-1;
 #endif
-    history_plot(contextptr).push_back(ee);
 #ifndef KHICAS
+    history_plot(contextptr).push_back(ee);
     if (io_graph(contextptr))
       __interactive.op(ee,contextptr);
 #endif

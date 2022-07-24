@@ -1796,6 +1796,12 @@ giac::gen sheet(GIAC_CONTEXT){
 int geoapp(GIAC_CONTEXT){
   if (!geoptr){
     geoptr=new Graph2d(0,contextptr);
+    geoptr->window_xmin=-5;
+    geoptr->window_ymin=-5;
+    geoptr->window_zmin=-5;
+    geoptr->window_xmax=5;
+    geoptr->window_ymax=5;
+    geoptr->window_zmax=5;
     geoptr->orthonormalize();
   }
   if (!geoptr)
@@ -1803,6 +1809,7 @@ int geoapp(GIAC_CONTEXT){
   if (!geoptr->hp){
     geoptr->hp=new textArea;
     geoptr->hp->filename="figure.py";
+    geoptr->hp->python=0;
   }
   if (!geoptr->hp)
     return -2;
