@@ -339,7 +339,10 @@ namespace xcas {
     double push_depth,current_depth;
     int push_i,push_j,cursor_point_type; // position of mouse push/drag
     bool pushed=false,moving=false,moving_frame=false,in_area=true;
+    bool moving_param; double param_orig,param_value,param_min,param_max,param_step;
+    int nparams;
     /* end geometry data */
+    giac::vecteur param(double d) const;
     void adjust_cursor_point_type();
     void autoname_plus_plus();
     void do_handle(const giac::gen & g);

@@ -6837,9 +6837,9 @@ namespace xcas {
     return true;
   }
 
-  Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),window_zmin(gnuplot_zmin),window_zmax(gnuplot_zmax),g(g_),display_mode(0x45),show_axes(1),show_edges(1),show_names(1),labelsize(16),precision(1),contextptr(cptr),hp(0),npixels(5),couleur(0) {
-    current_i=LCD_WIDTH_PX/2;
-    current_j=LCD_HEIGHT_PX/2;
+  Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),window_zmin(gnuplot_zmin),window_zmax(gnuplot_zmax),g(g_),display_mode(0x45),show_axes(1),show_edges(1),show_names(1),labelsize(16),precision(1),contextptr(cptr),hp(0),npixels(5),couleur(0),nparams(0) {
+    current_i=LCD_WIDTH_PX/4;
+    current_j=LCD_HEIGHT_PX/4;
     diffusionz=5; diffusionz_limit=5; hide2nd=false; interval=false;
     default_upcolor=giac3d_default_upcolor;
     default_downcolor=giac3d_default_downcolor;
@@ -7634,7 +7634,40 @@ namespace xcas {
     int mxw=LCD_WIDTH_PX,myw=LCD_HEIGHT_PX-STATUS_AREA_PX;
     double i0,j0,i0save,j0save,i1,j1;
     int fs=f.size();
-    if ((fs==4) && (s==at_parameter)){
+    if (fs>=4 && s==at_parameter && f[0].type==_IDNT){
+      // display parameter from the left upper, f[0] name and f[3] value
+      char ch[128];
+      strcpy(ch,f[0]._IDNTptr->id_name);
+      int pos=strlen(ch);
+      ch[pos]='=';
+      ++pos;
+      ch[pos]=0;
+      gen g=evalf_double(f[3],1,contextptr);
+      if (g.type==_DOUBLE_)
+        strcpy(ch+pos,g.print(contextptr).c_str());
+      else {
+        ch[pos]='?';
+        ++pos;
+        ch[pos]=0;
+      }
+      ++Mon_image.nparams;
+      int dw=fl_width(ch);
+      int fheight=14;
+      int ypos=(fheight+1)*Mon_image.nparams+fheight;
+      drawRectangle(1,ypos,dw,fheight-1,Mon_image.is3d?_BLACK:_WHITE);
+      os_draw_string_small_(1,ypos-fheight,ch);
+      if (Mon_image.pushed && Mon_image.moving_param){
+        drawLine(64,ypos-2,192,ypos-2,Mon_image.is3d?_WHITE:_BLACK);
+        drawLine(64,ypos,64,ypos-fheight,Mon_image.is3d?_WHITE:_BLACK);
+        drawLine(192,ypos,192,ypos-fheight,Mon_image.is3d?_WHITE:_BLACK);
+	os_draw_string_small_(65,ypos-fheight-2,f[1].print(contextptr).c_str());
+	os_draw_string_small_(193,ypos-fheight-2,f[2].print(contextptr).c_str());
+	gen gxpos=64+128*(g-f[1])/(f[2]-f[1]);
+	if (gxpos.type==_DOUBLE_){
+	  int xpos=gxpos._DOUBLE_val;
+	  drawLine(xpos,ypos,xpos,ypos-fheight,_RED);
+	}
+      }
       return ;
     }
     string the_legend;
@@ -8017,6 +8050,25 @@ namespace xcas {
     x=newx*xpow;
   }
 
+  vecteur Graph2d::param(double d) const {
+    const_iterateur it=plot_instructions.begin(),itend=plot_instructions.end();
+    vecteur res;
+    double pos=0.5;
+    for (int i=0 ;it!=itend;++i,++it){
+      gen tmp=*it;
+      if (tmp.is_symb_of_sommet(at_parameter)){
+	tmp=tmp._SYMBptr->feuille;
+	if (tmp.type==_VECT && tmp._VECTptr->size()>=4){
+	  if (std::abs(d-pos)<0.50001){
+	    res.push_back(tmp);
+	    res.push_back(i);
+	  }
+	  ++pos;
+	}
+      }
+    }
+    return res;
+  }
   
   void Graph2d::draw_decorations(const gen & title_tmp){
     if (args_tmp.empty()){ // add selected names
@@ -8032,6 +8084,14 @@ namespace xcas {
 	if (1 || mode==0 || mode==255){ // print selected names 
 	  vecteur v;
 	  if (mode!=255) v=selected_names(true,false);
+	  if (v.empty() && current_i<=192 && current_j<14*nparams+21){
+	    double d=current_j/14.-1;
+	    v=param(d);
+	    if (v.size()!=2)
+	      v.clear();
+	    else
+	      v=vecteur(1,v.front()[0]);
+	  }
 	  int vs=v.size();
 	  if (!vs){ // print current coordinates
 	    double i=current_i,j=current_j,x,y;
@@ -8086,6 +8146,7 @@ namespace xcas {
 
   void Graph2d::draw(){
     waitforvblank();
+    nparams=0; // reset number of parameters (shown from left upper)
     if (hp) history_plot(contextptr).clear();
     if (is3d){
       if (lang==1)
@@ -9072,7 +9133,7 @@ namespace xcas {
       modestr=mode?gen2string(f_final):gettext("Pointer");
     if (mode>=-1){
       pushed=false;
-      moving=moving_frame=false;
+      moving_param=moving=moving_frame=false;
       // history_pos=-1;
       mode=m;
       function_final=f_final;
@@ -9186,6 +9247,8 @@ namespace xcas {
     double eps=find_eps();
     int pos;
     gen tmp,tmp2,decal;
+    if (event==FL_PUSH)
+      moving_param=false;
     if ( pushed && !moving && !moving_frame && mode ==0 && in_area && event==FL_DRAG){
       // FIXME? redraw();
       return 1;
@@ -9206,7 +9269,23 @@ namespace xcas {
       }
       else {
 	if (tmp.type!=_IDNT && !tmp.is_symb_of_sommet(at_extract_measure)){
-	  tmp=symbolic(at_point,makevecteur(re(tmp,contextptr),im(tmp,contextptr)));
+	  bool done=false;
+	  if (mode==0 && event==FL_PUSH && current_i<192 && current_j<14*nparams+21){
+	    double d=current_j/14.-1;
+	    vecteur vp=param(d);
+	    if (vp.size()==2){
+	      tmp=vp[0][0];
+	      tmp2=vp[0];
+	      pos=vp[1].val;
+	      done=moving_param=true;
+	      param_min=evalf_double(tmp2[1],1,contextptr)._DOUBLE_val;
+	      param_max=evalf_double(tmp2[2],1,contextptr)._DOUBLE_val;
+	      param_step=evalf_double(tmp2[4],1,contextptr)._DOUBLE_val;
+	      param_orig=param_value=evalf_double(tmp2[3],1,contextptr)._DOUBLE_val;
+	    }
+	  }
+	  if (!done)
+	    tmp=symbolic(at_point,makevecteur(re(tmp,contextptr),im(tmp,contextptr)));
 	}
       }
     }
@@ -9271,25 +9350,51 @@ namespace xcas {
       }
       if (mode==255)
 	return 0;
+      if (moving_param && (event==FL_DRAG || event==FL_RELEASE) ){
+	// key ->
+	if (key==KEY_CTRL_EXIT)
+	  param_value=param_orig;
+	if (key==KEY_CTRL_LEFT)
+	  param_value -= param_step;
+	if (key==KEY_SHIFT_LEFT)
+	  param_value -= 10*param_step;
+	if (key==KEY_CTRL_RIGHT)
+	  param_value += param_step;
+	if (key==KEY_SHIFT_RIGHT)
+	  param_value += 10*param_step;
+	if (param_value<param_min)
+	  param_value=param_min;
+	if (param_value>param_max)
+	  param_value=param_max;
+	current_i=64+128*(param_value-param_min)/(param_max-param_min);
+	gen newval=symbolic(at_element,makesequence(symb_interval(param_min,param_max),param_value));
+	do_handle(symbolic(at_sto,makevecteur(newval,drag_name)));
+	if (event==FL_RELEASE){
+	  moving_param=moving=false;
+	}
+	return 1;
+      }
       if (moving && (event==FL_DRAG || event==FL_RELEASE) ){
 	// cerr << current_i << " " << current_j << '\n';
 	// avoid point()+complex+complex+complex
-	gen newval;
-	if (drag_original_value.is_symb_of_sommet(at_plus) && drag_original_value._SYMBptr->feuille.type==_VECT && drag_original_value._SYMBptr->feuille._VECTptr->size()>=2){
-	  vecteur v=*drag_original_value._SYMBptr->feuille._VECTptr;
-	  if (v[1].is_symb_of_sommet(at_nop))
-	    v[1]=v[1]._SYMBptr->feuille;
-	  newval=symbolic(at_plus,makevecteur(v[0],symbolic(at_nop,ratnormal(_plus(vecteur(v.begin()+1,v.end()),contextptr)+decal))));
-	}
-	else {
-	  newval=is_zero(decal)?drag_original_value:symbolic(at_plus,makevecteur(drag_original_value,symbolic(at_nop,decal)));
+	gen newval=drag_original_value;
+	if (in_area && key!=KEY_CTRL_EXIT){
+	  if (drag_original_value.is_symb_of_sommet(at_plus) && drag_original_value._SYMBptr->feuille.type==_VECT && drag_original_value._SYMBptr->feuille._VECTptr->size()>=2){
+	    vecteur v=*drag_original_value._SYMBptr->feuille._VECTptr;
+	    if (v[1].is_symb_of_sommet(at_nop))
+	      v[1]=v[1]._SYMBptr->feuille;
+	    newval=symbolic(at_plus,makevecteur(v[0],symbolic(at_nop,ratnormal(_plus(vecteur(v.begin()+1,v.end()),contextptr)+decal))));
+	  }
+	  else {
+	    newval=is_zero(decal)?drag_original_value:symbolic(at_plus,makevecteur(drag_original_value,symbolic(at_nop,decal)));
+	  }
 	}
 	int dclick = 0 || drag_original_value.type==_VECT;
 	if (!dclick){
 	  if (drag_name.type==_IDNT)
-	    do_handle(symbolic(at_sto,makevecteur(in_area?newval:drag_original_value,drag_name)));
+	    do_handle(symbolic(at_sto,makevecteur(newval,drag_name)));
 	  else
-	    do_handle(in_area?newval:drag_original_value);
+	    do_handle(newval);
 	}
 	if (event==FL_RELEASE)
 	  moving=false;
@@ -9681,8 +9786,9 @@ namespace xcas {
 		 lang==1?"Polygones":"Polygones",
 		 lang==1?"Coniques":"Conics", // 8
 		 lang==1?"Courbes":"Curves", // 9
+		 lang==1?"Curseur":"Cursor", // 10
 		 lang==1?"Transformations":"Transforms",
-		 lang==1?"Mesures":"Mesures", // 11
+		 lang==1?"Mesures":"Mesures", // 12
 		 0};
 	const int s=sizeof(tab)/sizeof(char *);
 	int choix=select_item(tab,"Mode",true);
@@ -9839,7 +9945,27 @@ namespace xcas {
 	  hp->pos=mycmd.size()-1;
 	  return KEY_CTRL_OK;
 	}
-	if (choix==10){ // Transforms
+	if (choix==10){
+	  gen param=0;
+	  for (char ch='a';ch<='z';++ch){
+	    gen tmp(string("")+ch,contextptr);
+	    if (tmp.type!=_IDNT) continue;
+	    param=tmp.eval(1,contextptr);
+	    if (param==tmp)
+	      break;
+	  }
+	  if (param==0){
+	    confirm(lang==1?"Plus de variables libres.":"No more free variable available",lang==1?"Essayez purge(a) ou purge(b) ou ...":"Try purge(a) or purge(b) or ...");
+	    continue;
+	  }
+	  hp->line=hp->add_entry(-1);
+	  string mycmd=param.print()+":=element(0..1,0.5)";
+	  autoname_plus_plus();
+	  hp->set_string_value(hp->line,mycmd);
+	  hp->pos=mycmd.size()-1;
+	  return KEY_CTRL_OK;	  
+	}
+	if (choix==11){ // Transforms
 	  const char *
 	    tab[]={
 		   lang==1?"symetrie":"reflexion",
@@ -9869,7 +9995,7 @@ namespace xcas {
 	  set_mode(ftmp[choix],ffinal[choix],mode[choix],help[choix]);
 	  continue;
 	}
-	if (choix==11){ // Mesures
+	if (choix==12){ // Mesures
 	  const char *
 	    tab[]={
 		   lang==1?"distance":"distance",
@@ -10026,6 +10152,8 @@ namespace xcas {
       }
 
       if (hp && key==KEY_CTRL_OK){
+	if (mode==255)
+	  return key;
 	if (!moving){
 	  pushed=true;
 	  push_i=current_i;
@@ -10043,8 +10171,8 @@ namespace xcas {
       }
       if (hp && key==KEY_CTRL_EXIT && mode!=255){
 	if (mode==0){ // restore original value and reeval
-	  do_handle(symbolic(at_sto,makevecteur(drag_original_value,drag_name)));
-	  // eval();
+	  geo_handle(FL_RELEASE,KEY_CTRL_EXIT);
+	  // do_handle(symbolic(at_sto,makevecteur(drag_original_value,drag_name)));
 	}
 	if (args_tmp.empty())
 	  set_mode(0,0,255,"");
