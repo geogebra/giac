@@ -75,8 +75,6 @@ if (System.env['EXT_GMPMPFR'] != null && System.env['EXT_GMPMPFR'] == "emgiac") 
     LlvmGmpA = "$emgiacSourceDir/giac/libgmp.a"
 }
 
-def emsdkUrlFolder = 'https://s3.amazonaws.com/mozilla-games/emscripten/releases'
-def emsdkTgzFile = 'emsdk-portable.tar.gz'
 def emsdkDir = file('emsdk')
 def emsdkRunDir = file("$emsdkDir")
 
