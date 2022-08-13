@@ -16,6 +16,13 @@ pipeline {
         stash name: "giac-clang", includes: "cbuild*/**"
       }
     }
+    stage('Mac') {
+      agent {label 'mac'}
+      steps {
+        sh "export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary"
+        stash name: 'giac-mac', includes: 'build/binaries/javagiacSharedLibrary/osx_amd64/libjavagiac.jnilib'
+      }
+    }
     stage('Build') {
       parallel {
         stage('Java and JS') {
@@ -30,7 +37,8 @@ pipeline {
             PATH="$crosscompilers/x86/bin:$crosscompilers/x86_64/bin:$crosscompilers/arm/bin:$crosscompilers/arm64/bin:$PATH"
           }
           steps {
-            unstash name: "giac-clang"
+            unstash name: 'giac-clang'
+            unstash name: 'giac-mac'
             sh '''
                export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
               ./gradlew downloadEmsdk installEmsdk activateEmsdk
