@@ -7,7 +7,6 @@
 
 
 plugins {
-    id 'org.hidetake.ssh' version '2.10.1'
     id 'visual-studio'
     id 'cpp'
     id 'de.undercouch.download' version '3.1.1'
@@ -26,11 +25,11 @@ project.setDescription('Giac CAS for GeoGebra')
  *
  * Emscripten related settings.
  *
- * Currently we use version 2.0.16, other versions may not work correctly,
- * or may have problems in some Giac commands and results. By default, 2.0.16 will be used.
+ * Currently we use version 3.1.18, other versions may not work correctly,
+ * or may have problems in some Giac commands and results.
  *
  * 1. You will need to download the correct toolchain version by running the tasks downloadEmsdk,
- *    then optionally set EMSCRIPTEN_VERSION=tag-2.0.16, and run the task installEmsdk.
+ *    then optionally set EMSCRIPTEN_VERSION=tag-X.Y.Z, and run the task installEmsdk.
  *    (Always take care of using the correct emscripten version and also the appropriate clang compiler,
  *    otherwise you may encounter extremely strange problems on compilation time or runtime.
  *    Newer emscripten versions usually do sanity checks during the compilation and inform you
@@ -38,19 +37,19 @@ project.setDescription('Giac CAS for GeoGebra')
  *    (You may need additional tools to compile it including cmake.)
  *
  * 2. Hopefully you have the correct versions of GMP and MPFR in src/giac.js/prebuilt/. If not, you
- *    need to compile the correct version. The provided tasks may compile an incorrect version for
- *    2.0.16, but it should work for the older ones. The related tasks are: emConfigureGmp,
- *    emMakeGmp, emConfigureMpfr, emMakeMpfr. (The correct GMP and MPFR versions can be tested
+ *    need to compile the correct version. The prebuilt libraries are compatible with the default Emscripten version.
+ *    For other Emscripten versions you may have to recompile them from source using these tasks: emConfigureGmp,
+ *    emMakeGmp, emConfigureMpfr, emMakeMpfr. These tasks are not executed as part of the build by default
+ *    and may not even be compatible with the default Emscripten version. (The correct GMP and MPFR versions can be tested
  *    by entering some big integer/real computations.) First you may need to set some environmental
  *    variables or hardcoded script variables manually. FIXME
  *    The compilation can be influenced by using the environmental variable EXT_GMPMPFR (local/emgiac).
- *    Luckily, the current prebuilt files should work properly with 2.0.16.
  *
  * 3. Run the createGiacWasmJs task. It will recompile all C++ files and then re-link the library.
  *    It can be fine-tuned by using the EMSCRIPTEN_VERSION environmental variables
  *    (but usually not required to use them). That, is you usually need the following command line:
  *
- *    $ EMSCRIPTEN_VERSION=tag-2.0.16 ../gradlew clean activateEmsdk createGiacWasmJs
+ *    $ EMSCRIPTEN_VERSION=tag-X.Y.Z ../gradlew clean activateEmsdk createGiacWasmJs
  *
  *    This command line will work only after you already ran downloadEmsdk and installEmsdk
  *    (as described above).
@@ -78,7 +77,7 @@ if (System.env['EXT_GMPMPFR'] != null && System.env['EXT_GMPMPFR'] == "emgiac") 
 def emsdkDir = file('emsdk')
 def emsdkRunDir = file("$emsdkDir")
 
-def emscriptenVersion = 'tag-2.0.16'
+def emscriptenVersion = 'tag-3.1.18'
 if (System.env['EMSCRIPTEN_VERSION'] != null) {
     emscriptenVersion = System.env['EMSCRIPTEN_VERSION'];
 }
@@ -392,11 +391,11 @@ model {
         }
         maccatalyst_x86_64 {
             architecture 'x86_64'
-            operatingSystem 'maccatalyst'   
+            operatingSystem 'maccatalyst'
         }
         maccatalyst_arm64 {
             architecture 'arm64'
-            operatingSystem 'maccatalyst'   
+            operatingSystem 'maccatalyst'
         }
     }
 
@@ -531,7 +530,7 @@ model {
             binaries.all {
                 giacCommonDefines(cppCompiler)
                 giacSpecificSettings(cppCompiler, linker, targetPlatform)
-                if (targetPlatform.operatingSystem.name == 'ios' 
+                if (targetPlatform.operatingSystem.name == 'ios'
                     || targetPlatform.operatingSystem.name == 'iphonesimulator'
                     || targetPlatform.operatingSystem.name == 'maccatalyst') {
                     giacIosDefines(cppCompiler)
@@ -714,7 +713,7 @@ def mergeLibraries(name, output, clangPath, String... libraries) {
 }
 
 task simpleInterfaceIosStaticLibrary(dependsOn: [
-    'simpleInterfaceIos_arm64StaticLibrary', 
+    'simpleInterfaceIos_arm64StaticLibrary',
     'simpleInterfaceIphonesimulator_x86_64StaticLibrary',
     'simpleInterfaceIphonesimulator_arm64StaticLibrary',
     'simpleInterfaceMaccatalyst_x86_64StaticLibrary',
@@ -722,7 +721,7 @@ task simpleInterfaceIosStaticLibrary(dependsOn: [
 ])
 
 task giacIosStaticLibrary(dependsOn: [
-    'giacIos_arm64StaticLibrary', 
+    'giacIos_arm64StaticLibrary',
     'giacIphonesimulator_x86_64StaticLibrary',
     'giacIphonesimulator_arm64StaticLibrary',
     'giacMaccatalyst_x86_64StaticLibrary',
@@ -746,32 +745,32 @@ task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'g
         def output = "${buildDir}/libs/merged"
         ["arm64"].each {
             mergeLibraries("Giac", "${output}/ios_${it}", clangIosPath,
-                "${buildDir}/libs/giac/static/ios_${it}/libgiac.a", 
-                "${buildDir}/libs/simpleInterface/static/ios_${it}/libSimpleInterface.a", 
-                "src/jni/prebuilt/ios/${it}/libgmp.a", 
+                "${buildDir}/libs/giac/static/ios_${it}/libgiac.a",
+                "${buildDir}/libs/simpleInterface/static/ios_${it}/libSimpleInterface.a",
+                "src/jni/prebuilt/ios/${it}/libgmp.a",
                 "src/jni/prebuilt/ios/${it}/libmpfr.a")
         }
         ["arm64", "x86_64"].each {
             mergeLibraries("Giac", "${output}/iphonesimulator_${it}", clangIphonesimulatorPath,
-                "${buildDir}/libs/giac/static/iphonesimulator_${it}/libgiac.a", 
-                "${buildDir}/libs/simpleInterface/static/iphonesimulator_${it}/libSimpleInterface.a", 
-                "src/jni/prebuilt/iphonesimulator/${it}/libgmp.a", 
+                "${buildDir}/libs/giac/static/iphonesimulator_${it}/libgiac.a",
+                "${buildDir}/libs/simpleInterface/static/iphonesimulator_${it}/libSimpleInterface.a",
+                "src/jni/prebuilt/iphonesimulator/${it}/libgmp.a",
                 "src/jni/prebuilt/iphonesimulator/${it}/libmpfr.a")
         }
         ["arm64", "x86_64"].each {
             mergeLibraries("Giac", "${output}/maccatalyst_${it}", clangIphonesimulatorPath,
-                "${buildDir}/libs/giac/static/maccatalyst_${it}/libgiac.a", 
-                "${buildDir}/libs/simpleInterface/static/maccatalyst_${it}/libSimpleInterface.a", 
-                "src/jni/prebuilt/maccatalyst/${it}/libgmp.a", 
+                "${buildDir}/libs/giac/static/maccatalyst_${it}/libgiac.a",
+                "${buildDir}/libs/simpleInterface/static/maccatalyst_${it}/libSimpleInterface.a",
+                "src/jni/prebuilt/maccatalyst/${it}/libgmp.a",
                 "src/jni/prebuilt/maccatalyst/${it}/libmpfr.a")
         }
 
         lipo("Giac", "${output}/ios", clangIosPath, "${output}/ios_arm64/Giac.a")
         lipo("Giac", "${output}/iphonesimulator", clangIphonesimulatorPath,
-            "${output}/iphonesimulator_arm64/Giac.a", 
+            "${output}/iphonesimulator_arm64/Giac.a",
             "${output}/iphonesimulator_x86_64/Giac.a")
         lipo("Giac", "${output}/maccatalyst", clangIphonesimulatorPath,
-            "${output}/maccatalyst_arm64/Giac.a", 
+            "${output}/maccatalyst_arm64/Giac.a",
             "${output}/maccatalyst_x86_64/Giac.a")
     }
 }

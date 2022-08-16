@@ -3,30 +3,12 @@
 // All rights reserved
 // @author Zoltan Kovacs <zoltan@geogebra.org>
 
-ext.workspaceUrl = 'https://deploy.geogebra.org/job/GeoGebra-build/ws/'
-
-ext.macServerSvnCommand = '/usr/local/bin/svn'
-
-ssh.settings {
-    knownHosts = allowAnyHosts
-}
-
-
 def ggMavenRepoUser = System.env.MAVEN_USR
 def ggMavenRepoPass = System.env.MAVEN_PSW
 
 def distDir = "$buildDir/distributions"
 def javagiacDir = file("$distDir/javagiac/")
 def ggbGiacJsDir = file("$distDir/giac.js/")
-
-remotes {
-    macServer {
-        host = '140.78.116.142'
-        port = 22
-        user = System.env.MAC_USR
-        password = System.env.MAC_PSW
-    }
-}
 
 // Unsure if this is needed or not. Otherwise there is no .pom file for Java Giac (which is probably a problem).
 task javagiacPomJar (type: Jar) {
@@ -77,7 +59,7 @@ task testJavagiacLinux64 (dependsOn: 'javagiacLinux64Jar') {
     description 'Tests the Linux 64 bit version of Java Giac. [incubating]'
 }
 
-task javagiacMacJar (dependsOn: 'compileMacJavagiacRemotely', type: Jar) {
+task javagiacMacJar (type: Jar) {
     description 'Creates the Linux 32 bit .jar package for the Java Giac library.'
     baseName = 'javagiac-mac'
     destinationDir = javagiacDir
@@ -101,23 +83,6 @@ task testJavagiacAndroidX86 (dependsOn: 'javagiacAndroidx86SharedLibrary') {
 task testJavagiac (dependsOn: ['testJavagiacLinux64',
                                'testJavagiacWin32', 'testJavagiacWin64', 'testJavagiacMac', 'testJavagiacAndroidArm', 'testJavagiacAndroidX86']) {
     description 'Tests the Linux, Windows, Mac and Android versions of the Java Giac library. [incubating]'
-}
-
-task compileMacJavagiacRemotely () {
-    description 'Compiles the Linux 32 bit and Mac versions of the Java Giac library remotely (parallel).'
-    def outputMacDir = "${buildDir}/binaries/javagiacSharedLibrary/osx_amd64" // FIXME: unify
-    def outputMac = "$outputMacDir/libjavagiac.jnilib"
-    // outputs.file output // be never UP-TO-DATE
-    doLast {
-        ssh.run {
-            session(remotes.macServer) {
-                execute "cd giac; $macServerSvnCommand update -r$ggrev --non-interactive --trust-server-cert"
-                execute "cd giac; export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary -Prevision=$ggrev"
-                file(outputMacDir).mkdirs()
-                get from: "giac/build/binaries/javagiacSharedLibrary/osx_amd64/libjavagiac.jnilib", into: outputMac // FIXME: unify
-            }
-        }
-    }
 }
 
 task javagiacJars (dependsOn: ['javagiacMacJar', 'javagiacLinux64Jar',

@@ -4,16 +4,27 @@ pipeline {
   agent none
 
   stages {
-    stage('Win') {
-      agent {label 'winbuild'}
-      environment {
-        MAVEN = credentials('maven-repo')
-      }
-      steps {
-        bat "C:\\msys64\\usr\\bin\\env.exe MSYSTEM=CLANG32 C:\\msys64\\usr\\bin\\bash -l -c \"cd ${env.WORKSPACE.replace('\\','/').replace('C:','/c')}; bash ./recompile-msys.sh cbuild\""
-        bat "C:\\msys64\\usr\\bin\\env.exe MSYSTEM=CLANG64 C:\\msys64\\usr\\bin\\bash -l -c \"cd ${env.WORKSPACE.replace('\\','/').replace('C:','/c')}; bash ./recompile-msys.sh cbuild64\""
-        bat './gradlew javagiacWin32JarClang --info'
-        stash name: "giac-clang", includes: "cbuild*/**"
+    stage('Mac, Windows binaries') {
+      parallel {
+        stage('Win') {
+          agent {label 'winbuild'}
+          environment {
+            MAVEN = credentials('maven-repo')
+          }
+          steps {
+            bat "C:\\msys64\\usr\\bin\\env.exe MSYSTEM=CLANG32 C:\\msys64\\usr\\bin\\bash -l -c \"cd ${env.WORKSPACE.replace('\\','/').replace('C:','/c')}; bash ./recompile-msys.sh cbuild\""
+            bat "C:\\msys64\\usr\\bin\\env.exe MSYSTEM=CLANG64 C:\\msys64\\usr\\bin\\bash -l -c \"cd ${env.WORKSPACE.replace('\\','/').replace('C:','/c')}; bash ./recompile-msys.sh cbuild64\""
+            bat './gradlew javagiacWin32JarClang --info'
+            stash name: "giac-clang", includes: "cbuild*/**"
+          }
+        }
+        stage('Mac') {
+          agent {label 'mac'}
+          steps {
+            sh "export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary"
+            stash name: 'giac-mac', includes: 'build/binaries/javagiacSharedLibrary/osx_amd64/libjavagiac.jnilib'
+          }
+        }
       }
     }
     stage('Build') {
@@ -30,7 +41,8 @@ pipeline {
             PATH="$crosscompilers/x86/bin:$crosscompilers/x86_64/bin:$crosscompilers/arm/bin:$crosscompilers/arm64/bin:$PATH"
           }
           steps {
-            unstash name: "giac-clang"
+            unstash name: 'giac-clang'
+            unstash name: 'giac-mac'
             sh '''
                export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
               ./gradlew downloadEmsdk installEmsdk activateEmsdk
