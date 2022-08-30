@@ -3854,7 +3854,12 @@ namespace giac {
     if (s==2 && v[1].type==_IDNT){ 
       // no initial guess, check for poly-like equation
       vecteur lv(lvar(v0));
-      lv=lvar(evalf(lv,1,contextptr));
+      if (contextptr && contextptr->quoted_global_vars){
+	contextptr->quoted_global_vars->push_back(lv[1]);
+	lv=lvar(evalf(lv,1,contextptr)); // this should not evalf v[1], otherwise x:=10; solve(x^(3/2)=3.,x); will fail
+	contextptr->quoted_global_vars->pop_back();
+      } else
+	lv=lvar(evalf(lv,1,contextptr)); 
       int lvs=int(lv.size());
       bool poly=true;
       for (unsigned i=0;i<lv.size();++i){
@@ -7761,6 +7766,10 @@ namespace giac {
 	    eqs.erase(eqs.begin()+i);
 	    for (unsigned k=0;k<eqs.size();++k){
 	      eqs[k]=_numer(subst(eqs[k],elim[j],elimj,false,contextptr),contextptr);
+	      if (is_zero(eqs[k])){
+		eqs.erase(eqs.begin()+k);
+		--k;
+	      }
 	    }
 	    elim.erase(elim.begin()+j);
 	    gen res=_eliminate(makesequence(eqs,elim,symb_equal(at_irem,modular),symb_equal(at_eliminate,gbasis_param.eliminate_flag)),contextptr);

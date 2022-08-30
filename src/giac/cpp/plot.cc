@@ -8963,7 +8963,7 @@ namespace giac {
 	vecteur attributs(1,default_color(contextptr));
 	int a=read_attributs(v,attributs,contextptr);
 	if (a==s-1 && attributs!=vecteur(1,default_color(contextptr))){
-	  gen res=_plot(a==1?v.front():gen(vecteur(v.begin(),v.begin()+a)),contextptr);
+	  gen res=_plot(a==1?v.front():gen(vecteur(v.begin(),v.begin()+a),g.subtype),contextptr);
 	  if (res.type==_VECT){
 	    vecteur w=*res._VECTptr;
 	    for (int i=0;i<w.size();++i){
@@ -11083,6 +11083,16 @@ namespace giac {
 	vecteur & valv = *valf._VECTptr;
 	int s = int(valv.size());
 	if (s>1){
+	  gen valv0=valv[0];
+	  if (valv0.is_symb_of_sommet(at_legende)){
+	    valv0=valv0._SYMBptr->feuille;
+	    valv0=valv0[1];
+	    if (valv0.type==_STRNG){
+	      valv0=gen(*valv0._STRNGptr,contextptr);
+	      if (valv0.type<=_SYMB)
+		return valv0;
+	    }
+	  }
 	  gen valv1=valv[1];
 	  if (valv1.type==_VECT && valv1._VECTptr->size()>2){
 	    tmp=(*valv1._VECTptr)[1];
@@ -16602,6 +16612,16 @@ gen _vers(const gen & g,GIAC_CONTEXT){
   // moved from plot3d.cc for implicittex_plot_sommets_alias
   gen _plot3d(const gen & g,const context * contextptr){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if (g.type!=_VECT){
+      vecteur v(lidnt(eval(g,1,contextptr)));
+      if (v.size()==2)
+	return _plot3d(makesequence(g,v.front(),v.back()),contextptr);
+      if (v.size()==1){
+	gen z=v.front();
+	gen G=subst(g,z,x__IDNT_e+cst_i*y__IDNT_e,false,contextptr);
+	return _plot3d(makesequence(G,x__IDNT_e,y__IDNT),contextptr);
+      }
+    }
     if (g.type!=_VECT || g._VECTptr->size()<2)
       return symbolic(at_plot3d,g);
     vecteur v=*g._VECTptr;

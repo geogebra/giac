@@ -3131,6 +3131,8 @@ namespace giac {
     if (g.type==_FUNC)
       return 1;
     if (g.type==_VECT){
+      if (g.subtype==_PNT__VECT)
+	return 0;
       const_iterateur it=g._VECTptr->begin(),itend=g._VECTptr->end();
       for (;it!=itend;++it){
 	if (it->type==_STRNG)

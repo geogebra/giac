@@ -975,16 +975,26 @@ namespace giac {
       }
     }
     if (g.type==_VECT ){
-      if (!curve && g.subtype==_GROUP__VECT && !has_i(g) && !g._VECTptr->empty() && g._VECTptr->front().type!=_VECT){ // "compressed" hypersurface
+      if (!curve && g.subtype==_GROUP__VECT && !g._VECTptr->empty() && g._VECTptr->front().type!=_VECT){ // "compressed" hypersurface?
 	vecteur v=*evalf_double(g,1,contextptr)._VECTptr;
 	int s=v.size();
 	if (s%3==0){
-	  for (int i=0;i<s;i+=3){
-	    vx.push_back(v[i]._DOUBLE_val);
-	    vy.push_back(v[i+1]._DOUBLE_val);
-	    vz.push_back(v[i+2]._DOUBLE_val);
+	  int i;
+	  for (i=0;i<s;i+=3){
+	    if (v[i].type!=_DOUBLE_ || v[i+1].type!=_DOUBLE_)
+	      break;
 	  }
-	  return false;
+	  if (i==s){
+	    for (int i=0;i<s;i+=3){
+	      vx.push_back(v[i]._DOUBLE_val);
+	      vy.push_back(v[i+1]._DOUBLE_val);
+	      if (v[i+2].type==_CPLX)
+		vz.push_back(abs(v[i+2],contextptr)._DOUBLE_val);
+	      else 
+		vz.push_back(v[i+2]._DOUBLE_val);
+	    }
+	    return false;
+	  }
 	}
       }
       bool ortho=false;

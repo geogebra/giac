@@ -1743,6 +1743,8 @@ namespace giac {
     }
     sort(xymin.begin(),xymin.end());
     for (int i=1;i<xymin.size();++i){
+      if (fabs(xymin[i-1]-xymin[i])<1e-8)
+	continue;
       gen chk=makevecteur((xymin[i-1]+xymin[i])/2,ymin);
       if (is_ok(m,-1,vars,chk,contextptr))
 	branches.push_back(makevecteur(gen(xymin[i-1],ymin),gen(xymin[i],ymin)));
@@ -1754,6 +1756,8 @@ namespace giac {
     }
     sort(xymax.begin(),xymax.end());
     for (int i=1;i<xymax.size();++i){
+      if (fabs(xymax[i-1]-xymax[i])<1e-8)
+	continue;
       if (is_ok(m,-1,vars,makevecteur((xymax[i-1]+xymax[i])/2,ymax),contextptr))
 	branches.push_back(makevecteur(gen(xymax[i-1],ymax),gen(xymax[i],ymax)));
     }
@@ -1764,6 +1768,8 @@ namespace giac {
     }
     sort(yxmin.begin(),yxmin.end());
     for (int i=1;i<yxmin.size();++i){
+      if (fabs(yxmin[i-1]-yxmin[i])<1e-8)
+	continue;
       if (is_ok(m,-1,vars,makevecteur(xmin,(yxmin[i-1]+yxmin[i])/2),contextptr))
 	branches.push_back(makevecteur(gen(xmin,yxmin[i-1]),gen(xmin,yxmin[i])));
     }
@@ -1774,6 +1780,8 @@ namespace giac {
     }
     sort(yxmax.begin(),yxmax.end());
     for (int i=1;i<yxmax.size();++i){
+      if (fabs(yxmax[i-1]-yxmax[i])<1e-8)
+	continue;
       if (is_ok(m,-1,vars,makevecteur(xmax,(yxmax[i-1]+yxmax[i])/2),contextptr))
 	branches.push_back(makevecteur(gen(xmax,yxmax[i-1]),gen(xmax,yxmax[i])));
     }

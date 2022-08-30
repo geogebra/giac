@@ -728,10 +728,10 @@ namespace giac {
 	  if (!rootof_trylock()){
 	    if (lvptr){
 	      gen vexpr=r2e(v,vecteur(lvptr->begin()+1,lvptr->end()),contextptr);
-	      symbolic_rootof_list()[vexpr]=gaa+k*gbb;
+	      symbolic_rootof_list()[vexpr]=k*gaa+gbb;
 	    }
 	    else
-	      symbolic_rootof_list()[v]=gaa+k*gbb;
+	      symbolic_rootof_list()[v]=k*gaa+gbb;
 	    rootof_unlock();
 	  }
 	}

@@ -413,8 +413,8 @@ int khicas_addins_menu(GIAC_CONTEXT){
   smallmenu.height=12;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
-  smallmenuitems[0].text = (char*)((lang==1)?"Tableur":"Spreadsheet");
-  smallmenuitems[1].text = (char*)((lang==1)?"Geometrie":"Geometry");
+  smallmenuitems[0].text = (char*)((lang==1)?"Geometrie":"Geometry");
+  smallmenuitems[1].text = (char*)((lang==1)?"Tableur":"Spreadsheet");
   smallmenuitems[2].text = (char*)((lang==1)?"Table periodique":"Periodic table");
   smallmenuitems[3].text = (char*)((lang==1)?"Pret":"Mortgage");
   smallmenuitems[4].text = (char*)((lang==1)?"Epargne":"TVM");
@@ -443,10 +443,10 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	handle_flash(contextptr);
 #endif
       // Attention les entrees sont decalees de 1
-      if (smallmenu.selection==1) // tableur
-	sheet(contextptr);
-      if (smallmenu.selection==2) // geometry
+      if (smallmenu.selection==1) // geometry
 	geoapp(contextptr);
+      if (smallmenu.selection==2) // tableur
+	sheet(contextptr);
       if (smallmenu.selection==3){ // table periodique
 	const char * name,*symbol;
 	char protons[32],nucleons[32],mass[32],electroneg[32];
@@ -523,7 +523,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	  v.push_back(i);
 	}
 	// representation graphique de la liste en appelant la commande Xcas listplot
-	displaygraph(_listplot(v,contextptr),contextptr);
+	displaygraph(_listplot(v,contextptr),symbolic(at_listplot,v),contextptr);
 	// copie vers presse-papier en l'affichant
 	copy_clipboard(gen(v).print(contextptr),true);
 	continue;
@@ -1163,7 +1163,7 @@ void sheet_graph(tableur &t,GIAC_CONTEXT){
   vecteur v;
   sheet_pnt(t.m,v);
   gen g(v);
-  check_do_graph(g,2,contextptr);
+  check_do_graph(g,0,2,contextptr);
 }
 
 int sheet_menu_menu(tableur & t,GIAC_CONTEXT){
@@ -1794,91 +1794,54 @@ giac::gen sheet(GIAC_CONTEXT){
 }
 
 int geoapp(GIAC_CONTEXT){
-  if (!geoptr){
-    geoptr=new Graph2d(0,contextptr);
-    geoptr->window_xmin=-5;
-    geoptr->window_ymin=-5;
-    geoptr->window_zmin=-5;
-    geoptr->window_xmax=5;
-    geoptr->window_ymax=5;
-    geoptr->window_zmax=5;
-    geoptr->orthonormalize();
-  }
-  if (!geoptr)
-    return -1;
-  if (!geoptr->hp){
-    geoptr->hp=new textArea;
-    geoptr->hp->filename="figure.py";
-    geoptr->hp->python=0;
-  }
-  if (!geoptr->hp)
-    return -2;
+  int res=newgeo(contextptr);
+  if (res<0) return res;
+  // load a figure?
   textArea * text=geoptr->hp;
-  text->editable=true;
-  text->clipline=-1;
-  text->gr=geoptr;
-  geoptr->set_mode(0,0,255,""); // start in frame mode
-  // main loop: alternate between plot and symb view
-  // start in plot view
-  // end plot view with EXIT or OK -> symb view editor
-  // end with OK or EXIT: OK will modify, EXIT will leave geo app
-  // (press twice EXIT to leave geo app from plot view)
-  for (;;){
-    geoptr->eval();
-    geoptr->update();
-    if ( (geoptr->is3d=giac::is3d(geoptr->g)) )
-      geoptr->update_rotation();
-    int key=geoptr->ui();
-    if (key==KEY_SHUTDOWN)
-      return key;
-    // symb view editor
-    for (;;){
-      key=doTextArea(text,contextptr);
-      if (key== TEXTAREA_RETURN_EXIT || key==KEY_SHUTDOWN)
-	return key;
-      // key was OK, parse step: synchronize symbolic_instructions from text
-      bool corrige=false;
-      std::vector<textElement> & v=text->elements;
-      geoptr->symbolic_instructions.resize(v.size());
-      int pos=-1,i=0;
-      for (;i<int(v.size());++i){
-	std::string s=v[i].s; 
-	giac::python_compat(0,contextptr);
-	freeze=true;
-	giac::gen g(s,contextptr);
-	freeze=false;
-	g=equaltosto(g,contextptr);
-	int lineerr=giac::first_error_line(contextptr);
-	char status[256]={0};
-	geoptr->symbolic_instructions[i]=g;
-	if (lineerr){
-	  std::string tok=giac::error_token_name(contextptr);
-	  if (lineerr==1){
-	    pos=v[i].s.find(tok);
-	    const std::string & err=v[i].s;
-	    if (pos>=err.size())
-	      pos=-1;
-	  }
-	  else {
-	    tok=(lang==1)?"la fin":"end";
-	    pos=0;
-	  }
-	  if (pos>=0)
-	    sprintf(status,(lang==1)?"Erreur ligne %i a %s":"Error line %i at %s",i+1,tok.c_str());
-	  else
-	    sprintf(status,(lang==1)?"Erreur ligne %i %s":"Error line %i %s",i+1,(pos==-2?((lang==1)?", : manquant ?":", missing :?"):""));
-	  if (confirm(status,(lang==1)?"OK: corrige, back: continue":"OK: fix",1)==KEY_CTRL_F1){
-	    corrige=true; break;
-	  }
-	}
-      } // loop on lines
-      if (corrige){
-	text->line=i;
-	if (pos>=0 && pos<v[i].s.size()) text->pos=pos;
+  vector<string> fign,figs;
+  vecteur V(gen2vecteur(giac::_VARS(0,contextptr)));
+  for (int i=0;i<V.size();++i){
+    gen tmp(V[i]);
+    gen val=eval(tmp,1,contextptr);
+    if (val.type==_VECT && val._VECTptr->size()==2 && val._VECTptr->front()==at_pnt){
+      vecteur & v=*val._VECTptr;
+      if (v[1].type==_STRNG){
+	fign.push_back(tmp.print(contextptr));
+	figs.push_back(*v[1]._STRNGptr);
       }
-      else
-	break;
-    } // end edition loop
-  } // end plot/symb view infinite loop
+    }
+  }
+  if (1 || !figs.empty()){
+    if (0 && figs.size()==1){
+      text->elements.clear();
+      add(text,figs[0]);
+      text->filename=fign[0];
+    }
+    else {
+      const char * tab[figs.size()+3]={0};
+      for (int i=0;i<figs.size();++i)
+	tab[i]=fign[i].c_str();
+      tab[figs.size()]=lang==1?"Nouvelle figure 2d":"New 2d figure";
+      tab[figs.size()+1]=lang==1?"Nouvelle figure 3d":"New 3d figure";
+      int s=select_item(tab,lang==1?"Choisir figure":"Choose figure",true);
+      if (s>=0 && s<sizeof(tab)/sizeof(char *) && tab[s]){
+	text->elements.clear();
+	if (s<figs.size()){
+	  add(text,figs[s]);
+	  text->filename=fign[s]+".py";
+	  geoparse(text,contextptr);
+	}
+	else {
+	  geoptr->plot_instructions.clear();
+	  geoptr->symbolic_instructions.clear();
+	  geoptr->is3d=(s==figs.size()+1);
+	  geoptr->orthonormalize();
+	  text->filename="figure"+print_INT_(figs.size()+1)+".py";
+	}
+      }
+      else return -3;
+    }
+  }
+  return geoloop(geoptr);
 }
 #endif
