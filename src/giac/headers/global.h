@@ -816,6 +816,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
 
   context * clone_context(const context *);
   void init_context(context * ptr);
+  void clear_context(context * ptr);
 
   extern const context * context0;
   std::vector<context *> & context_list();

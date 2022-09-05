@@ -7453,6 +7453,27 @@ namespace giac {
   static define_unary_function_eval (__inferieur_strict_sort,&_inferieur_strict_sort,_inferieur_strict_sort_s);
   define_unary_function_ptr5( at_inferieur_strict_sort ,alias_at_inferieur_strict_sort,&__inferieur_strict_sort,0,true);
 
+#if 0
+  void mysort(iterateur it,iterateur itend,const gen & f,GIAC_CONTEXT){
+    int s=itend-it;
+    for (;;){
+      bool ok=true;
+      for (int i=0;i<s-1;++i){
+	if (!is_zero(f(makesequence(*(it+i+1),*(it+i)),contextptr))){
+	  ok=false;
+	  swapgen(*(it+i+1),*(it+i));
+	}
+      }
+      if (ok)
+	return;
+    }
+  }
+#else
+  void mysort(iterateur it,iterateur itend,const gen & f,GIAC_CONTEXT){
+    sort(it,itend,gen_sort(f,contextptr));
+  }
+#endif
+
   gen _sort(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     if (args.type==_SYMB)
@@ -7516,7 +7537,7 @@ namespace giac {
 	return gen(v,subtype);
       }
     }
-    sort(v.begin(),v.end(),gen_sort(f,contextptr));
+    mysort(v.begin(),v.end(),f,contextptr);
     if (rev)
       reverse(v.begin(),v.end());
     return gen(v,subtype);

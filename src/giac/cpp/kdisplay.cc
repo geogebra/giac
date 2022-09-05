@@ -462,17 +462,15 @@ namespace giac {
 		menuitem[0]='0'+cur;
 		menuitem[1]=' ';
 		menuitem[2]=0;
-		strcpy(menuitem+2,menu->items[curitem].text);
 	      }
 	      else {
 		menuitem[0]=cur>=10?('0'+(cur/10)):' ';
 		menuitem[1]='0'+(cur%10);
 		menuitem[2]=' ';
 		menuitem[3]=0;
-		strcpy(menuitem+3,menu->items[curitem].text);
 	      }
 	    }
-	    //strncat(menuitem, menu->items[curitem].text, 68);
+	    strncat(menuitem, menu->items[curitem].text, 250);
 	    if(menu->items[curitem].type != MENUITEM_SEPARATOR) {
 	      //make sure we have a string big enough to have background when item is selected:          
 	      // MB_ElementCount is used instead of strlen because multibyte chars count as two with strlen, while graphically they are just one char, making fillerRequired become wrong
@@ -2280,6 +2278,109 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     return i;
   }
 
+  // geo_print / geoprint
+  std::string _pnt2string(const giac::gen & g,const giac::context * contextptr){
+    unsigned ta=taille(g,100);
+    if (ta>100)
+      return "Done";
+    if (g.is_symb_of_sommet(giac::at_pnt)){
+      giac::gen & f=g._SYMBptr->feuille;
+      giac::gen fp=remove_at_pnt(g);
+      if (fp.is_symb_of_sommet(giac::at_hyperplan)){
+	return gettext("plan")+string("(")+_equation(g,contextptr).print(contextptr)+string(")");
+      }
+      if (f.type==giac::_VECT && !f._VECTptr->empty()){
+	giac::gen f0=f._VECTptr->front();
+	if (f0.is_symb_of_sommet(giac::at_legende)){
+	  return g.print(contextptr);
+	}
+	if (f0.is_symb_of_sommet(giac::at_curve)){
+	  giac::gen f1=f[0]._SYMBptr->feuille;
+	  if (f1.type==giac::_VECT && !f1._VECTptr->empty() ){
+	    giac::gen f1f=f1._VECTptr->front();
+	    if (f1f.type==giac::_VECT && f1f._VECTptr->size()>=4){
+	      giac::vecteur f1v=*f1f._VECTptr;
+	      return "plotparam("+_pnt2string(f1v[0],contextptr)+","+f1v[1].print(contextptr)+"="+f1v[2].print(contextptr)+".."+f1v[3].print(contextptr)+")";
+	    }
+	  }
+	}
+	if (f0.is_symb_of_sommet(giac::at_cercle) && f0._SYMBptr->feuille.type==giac::_VECT){
+	  if (f0._SYMBptr->feuille._VECTptr->size()==3 && ((*f0._SYMBptr->feuille._VECTptr)[2]!=giac::cst_two_pi || (*f0._SYMBptr->feuille._VECTptr)[1]!=0))
+	    return f0.print(contextptr);
+	  giac::gen centre,rayon;
+	  if (!giac::centre_rayon(f0,centre,rayon,true,0))
+	    return "cercle_error";
+	  if (!complex_mode(contextptr) && (centre.type<giac::_IDNT || centre.type==giac::_FRAC) )
+	    return gettext("circle")+string("(point(")+giac::re(centre,contextptr).print(contextptr)+","+giac::im(centre,contextptr).print(contextptr)+"),"+rayon.print(contextptr)+")";
+	  else
+	    return gettext("circle")+string("(point(")+centre.print(contextptr)+"),"+rayon.print(contextptr)+")";
+	}
+	if (f0.type==giac::_VECT &&f0.subtype!=giac::_POINT__VECT){
+	  std::string s=gettext("polygon")+string("(");
+	  giac::const_iterateur it=f0._VECTptr->begin(),itend=f0._VECTptr->end();
+	  if ( itend-it==2){ 
+	    switch(f0.subtype){
+	    case giac::_LINE__VECT:
+	      s=gettext("line")+string("(");
+	      break;
+	    case giac::_HALFLINE__VECT:
+	      s=gettext("half_line")+string("(");
+	      break;
+	    case giac::_GROUP__VECT:
+	      s=gettext("segment")+string("(");
+	      break;
+	    }
+	    if (f0.subtype==giac::_LINE__VECT && it->type!=giac::_VECT){ // 2-d line
+	      s += _equation(g,contextptr).print(contextptr) + ")";
+	      return s;
+	    }
+	  }
+	  for (;it!=itend;){
+	    s += "point(";
+	    if (!complex_mode(contextptr) && (it->type<giac::_IDNT || it->type==giac::_FRAC) )
+	      s += giac::re(*it,contextptr).print(contextptr)+","+giac::im(*it,contextptr).print(contextptr);
+	    else {
+	      gen f=*it;
+	      if (f.type==_VECT && f.subtype==_POINT__VECT)
+		f.subtype=_SEQ__VECT;
+	      s += f.print(contextptr);
+	    }
+	    s+=")";
+	    ++it;
+	    s += it==itend?")":",";
+	  }
+	  return s;
+	}
+	if ( (f0.type!=giac::_FRAC && f0.type>=giac::_IDNT) || is3d(g) || complex_mode(contextptr)){
+	  if (f0.type==_VECT && f0.subtype==_POINT__VECT)
+	    f0.subtype=_SEQ__VECT;
+	  return "point("+f0.print(contextptr)+")";
+	}
+	else
+	  return "point("+giac::re(f0,contextptr).print(contextptr)+","+giac::im(f0,contextptr).print(contextptr)+")";
+      }
+    } 
+    if (g.type==giac::_VECT && !g._VECTptr->empty() && g._VECTptr->back().is_symb_of_sommet(giac::at_pnt)){
+      std::string s = "[";
+      giac::const_iterateur it=g._VECTptr->begin(),itend=g._VECTptr->end();
+      for (;it!=itend;){
+	s += _pnt2string(*it,contextptr);
+	++it;
+	s += it==itend?"]":",";
+      }
+      return s;
+    }
+    return g.print(contextptr);
+  }
+
+  std::string pnt2string(const giac::gen & g,const giac::context * contextptr){
+    int p=python_compat(contextptr);
+    python_compat(0,contextptr);    
+    string s=_pnt2string(g,contextptr);
+    python_compat(p,contextptr);
+    return s;
+  }
+  
   gen select_var(GIAC_CONTEXT){
     kbd_interrupted=giac::ctrl_c=giac::interrupted=false;
 #ifdef QUICKJS
@@ -2353,8 +2454,8 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	vector<int> vi(9);
 	tailles(w,vi);
 	total += vi[8];
-	if (vi[8]<400)
-	  vs[i]+=":="+w.print(contextptr);
+	if (vi[8]<w.is_symb_of_sommet(at_pnt)?1500:500)
+	  vs[i]+=":="+pnt2string(w,contextptr);
 	else {
 	  vs[i] += " ~";
 	  vs[i] += giac::print_INT_(vi[8]);
@@ -8424,7 +8525,11 @@ namespace xcas {
       xyz2ij(G,Gi,Gj,G3);
       xyz2ij(H,Hi,Hj,H3);
       set_abort();
+      int prec=precision;
+      if (mode==0 && precision<3)
+	precision += 2;
       glsurface(precision,precision,lcdz,contextptr,default_upcolor,default_downcolor,default_downupcolor,default_downdowncolor);
+      precision=prec;
       clear_abort();
       if (show_edges){
 	// polyhedrons
@@ -10032,11 +10137,24 @@ namespace xcas {
   }
 
   void geosave(textArea * text,GIAC_CONTEXT){
-    gen tmp(remove_extension(text->filename),contextptr);
-    if (tmp.type==_IDNT)
+    string s=remove_extension(text->filename);
+    gen tmp(s,contextptr);
+    if (tmp.type==_IDNT){
       sto(makevecteur(at_pnt,string2gen(merge_area(text->elements),false)),tmp,contextptr);
-    else
-      confirm(lang==1?"Impossible de sauvegarder":"Unable to save",lang==1?"Nom de fichier incompatible":"Incompatible file name");
+      return;
+    }
+    else {
+      for (int i=0;i<10;++i){
+	string s1=s+print_INT_(i);
+	tmp=gen(s1,contextptr);
+	if (tmp.type==_IDNT){
+	  confirm(lang==1?"Nom de sauvegarde reserve":"Unable to use reserved name",((lang==1?"Nom utilise ":"Name used ")+s1).c_str());
+	  sto(makevecteur(at_pnt,string2gen(merge_area(text->elements),false)),tmp,contextptr);
+	  return;
+	}
+      }
+    }
+    confirm(lang==1?"Nom de sauvegarde reserve":"Unable to use reserved name",lang==1?"Sauvegarde impossible":"Unable to save");
   }
 
   void geohelp(GIAC_CONTEXT){
@@ -10711,6 +10829,9 @@ namespace xcas {
 	    }
 	  }
 	}
+	gr.draw();
+	gr.must_redraw=false;
+	continue;
       }
 
       if (hp && key==KEY_CTRL_OK){
@@ -11018,8 +11139,17 @@ namespace xcas {
 	if (key==KEY_CHAR_RPAR && gr.diffusionz>2)
 	  gr.diffusionz--;
       }
-      if (key==KEY_CTRL_VARS) {
+      if (key==KEY_CHAR_SIN) {
 	gr.show_axes=!gr.show_axes;
+	gr.update();
+	gr.draw();
+	gr.must_redraw=false;
+      }
+      if (key==KEY_CTRL_VARS){
+	select_var(contextptr);
+	gr.update();
+	gr.draw();
+	gr.must_redraw=false;
       }
     }
     // aborttimer = Timer_Install(0, check_execution_abort, 100); if (aborttimer > 0) { Timer_Start(aborttimer); }
@@ -15563,6 +15693,8 @@ namespace xcas {
     }
     Line[Last_Line].str=0;
     Last_Line=start;
+    if (start<Start_Line)
+      Start_Line=start;
     int savestartline=Start_Line;
     Start_Line=Last_Line>LINE_DISP_MAX?Last_Line-LINE_DISP_MAX:0;
     Cursor.x=0;
@@ -15576,18 +15708,31 @@ namespace xcas {
       //int j=Last_Line;
       Console_NewLine(LINE_TYPE_INPUT, 1);
       // Line[j].type=LINE_TYPE_INPUT;
+      Console_Disp(1,contextptr);
+      Bdisp_PutDisp_DD();
       run(v[i].c_str(),6,contextptr); /* show logo and graph but not eqw */
       // j=Last_Line;
       Console_NewLine(LINE_TYPE_OUTPUT, 1);    
       // Line[j].type=LINE_TYPE_OUTPUT;
-      Console_Disp(1,contextptr);
-      Bdisp_PutDisp_DD();
     }
+    int cl=Current_Line;
     Cursor.y += (Start_Line-savestartline);
+    if (Cursor.y<0) Cursor.y=0;
     Start_Line=savestartline;
+    if (Current_Line>cl || Cursor.y>10){
+      if (cl>10){
+	Start_Line=cl-10;
+	Cursor.y=10;
+      }
+      else {
+	Start_Line=0;
+	Cursor.y=cl;
+      }
+    }
+    Console_Disp(1,contextptr);
+    Bdisp_PutDisp_DD();
     return 0;
   }
-
 
   string khicas_state(GIAC_CONTEXT){
     giac::gen g(giac::_VARS(-1,contextptr)); 

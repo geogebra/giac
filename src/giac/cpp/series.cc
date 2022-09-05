@@ -516,15 +516,53 @@ namespace giac {
       }
     }
     new_seq.push_back( monome(res ,old_pow ));
+    final_seq.clear();
+    sparse_poly1::const_iterator it=new_seq.begin();
+    sparse_poly1::const_iterator itend=new_seq.end();
+    const int MAXS=512;
+    int m=MAXS,M=-MAXS,N=itend-it;
+    final_seq.reserve(N);
+#ifdef FXCG
+    if (N<MAXS){
+      for (;it!=itend;++it){
+	if (it->exponent.type!=_INT_)
+	  break;
+	int cur=it->exponent.val;
+	if (cur<m)
+	  m=cur;
+	if (cur>M)
+	  M=cur;
+      }
+      if (it==itend){
+	gen tab[M-m+1];
+	memset(tab,sizeof(tab),0);
+	for (it=new_seq.begin();it!=itend;++it){
+	  tab[it->exponent.val-m] += it->coeff;
+	}
+	for (int i=m;i<=M;++i){
+	  gen res=tab[i-m];
+	  if (is_zero(res))
+	    continue;
+	  if (is_undef(res)){
+	    final_seq.push_back(monome(res,i));
+	    return true;
+	  }
+	  if (series_flags(contextptr) & 0x1)
+	    res=recursive_normal(res,contextptr);
+	  if (!is_zero(res))
+	    final_seq.push_back(monome(res,i));
+	}
+	return true;
+      }
+    }
+#endif
     // COUT << new_seq << '\n';
     // sort by asc. power
     sort( new_seq.begin(),new_seq.end(),monome_less());
     // COUT << "Sorted" << new_seq << '\n';
     // add terms with same power
-    sparse_poly1::const_iterator it=new_seq.begin();
-    sparse_poly1::const_iterator itend=new_seq.end();
-    final_seq.clear();
-    final_seq.reserve(itend-it);
+    it=new_seq.begin();
+    // itend=new_seq.end();
     while (it!=itend){
       gen res=it->coeff;
       gen pow=it->exponent;
@@ -2532,8 +2570,18 @@ namespace giac {
       return gen(res,e0.subtype);
     }
     if (_about(x,contextptr)!=x){
-      identificateur xprime(" "+print_INT_(giac_rand(contextptr)));
-      return in_limit(quotesubst(e0,x,xprime,contextptr),xprime,lim_point,direction,contextptr);
+      vecteur l(lvar(e0));
+      for (int i=0;;++i){
+	gen X("x"+print_INT_(i),contextptr);
+	if (X.type!=_IDNT || equalposcomp(l,X))
+	  continue;
+	if (_about(X,contextptr)!=X)
+	  continue;
+	return in_limit(quotesubst(e0,x,X,contextptr),*X._IDNTptr,lim_point,direction,contextptr);
+      }
+      // never reached
+      gen xprime("x"+print_INT_(giac_rand(contextptr)),contextptr);
+      return in_limit(quotesubst(e0,x,xprime,contextptr),*xprime._IDNTptr,lim_point,direction,contextptr);
     }
     gen e=Heavisidetosign(when2sign(piecewise2when(e0,contextptr),contextptr),contextptr);
     // Adjust direction for +/- inf limits
@@ -2545,9 +2593,10 @@ namespace giac {
     if (has_i(lop(e,at_ln)))
       e=recursive_normal(expln2trig(e,contextptr),contextptr);
     vecteur vsign(loptab(e,sign_floor_ceil_round_tab));
-    if (0 && direction && !vsign.empty() && !equalposcomp(sign_floor_ceil_round_tab,e._SYMBptr->sommet)){
+    if (//0 && 
+	direction && !vsign.empty() && !equalposcomp(sign_floor_ceil_round_tab,e._SYMBptr->sommet)){
       // evaluate vsign first
-      vecteur res;
+      vecteur res(vsign.size());
       for (int i=0;i<int(vsign.size());++i){
 	res[i]=in_limit(vsign[i],x,lim_point,direction,contextptr);
       }
@@ -2954,7 +3003,11 @@ namespace giac {
     // At the end replace w by 1/w if w -> plus_inf
     bool dont_invert=is_zero(in_limit(faster_var.front(),x,plus_inf,0,contextptr));
     vecteur faster_var_tmp(faster_var);
+#if 1 // FXCG
+    tri_rlvarx(faster_var); 
+#else
     stable_sort(faster_var.begin(),faster_var.end(),symb_size_less_t());
+#endif
     vecteur ecopyv(lidnt(ecopy));
     string ws("w");
     identificateur w(ws); 

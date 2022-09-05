@@ -4307,8 +4307,8 @@ namespace giac {
 	primitive=integrate_chknum(v[0],x,rem,contextptr);
 	primitive=eval(primitive,1,contextptr);
 	restorepurge(xval,x,contextptr);
-	gen rs=limit(primitive,*x._IDNTptr,borne_sup,-1,contextptr);
 	gen ri=limit(primitive,*x._IDNTptr,borne_inf,1,contextptr);
+	gen rs=limit(primitive,*x._IDNTptr,borne_sup,-1,contextptr);
 	res=rs-ri;
       }
       else {
