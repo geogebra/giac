@@ -2749,8 +2749,12 @@ namespace giac {
 
   // static symbolic symb_acosh(const gen & e){  return symbolic(at_cosh,e);  }
   static gen acoshasln(const gen & x,GIAC_CONTEXT){
-    if (re(x,contextptr)==x)
-      return ln(x+sqrt(x*x-1,contextptr),contextptr); // avoid multiple sqrt but it's the opposite for example for x non real
+    if (re(x,contextptr)==x){
+      gen res=ln(x+sqrt(x*x-1,contextptr),contextptr);
+      if (is_positive(-x,contextptr))
+	return -res; // avoid multiple sqrt but it's the opposite for example for x non real
+      return res;
+    }
     return ln(x+sqrt(x+1,contextptr)*sqrt(x-1,contextptr),contextptr);
   }
   gen acosh(const gen & e0,GIAC_CONTEXT){

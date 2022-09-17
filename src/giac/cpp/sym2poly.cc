@@ -4098,6 +4098,11 @@ namespace giac {
       }
     }
     if (v[0].type==_VECT && v[1].type==_VECT){ 
+#ifdef FXCG
+	gen res;
+	subresultant(*v[0]._VECTptr,*v[1]._VECTptr,res);
+	return res;
+#else
       gen g1,g2;
       int t1=coefftype(*v[0]._VECTptr,g1),t2=coefftype(*v[1]._VECTptr,g2);
       double eps=epsilon(contextptr);
@@ -4121,7 +4126,7 @@ namespace giac {
 	  vecteur2vector_int(B,m.val,b);
 	  return makemod(resultant_int(a,b,tmp1,tmp2,m.val),m);
 	}
-#if defined INT128 && !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
+#if defined INT128 && !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H 
 	if (m.type==_ZINT && sizeinbase2(m)<61){
 	  longlong p=mpz_get_si(*m._ZINTptr);
 	  int n=giacmax(A.size(),B.size());
@@ -4136,6 +4141,7 @@ namespace giac {
 #endif
 	return makemod(mod_resultant(A,B,eps),m);
       }
+#endif // FXCG
       // not very efficient...
       gen g(identificateur("tresultant"));
       v[0]=_poly2symb(makesequence(v[0],g),contextptr);

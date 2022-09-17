@@ -412,9 +412,9 @@ namespace giac {
     intvar_counter=0;
     realvar_counter=0;
     if (args==at_solve) return 1;
-    gen res= _rm_all_vars(args,contextptr);
-    clear_context((context *) contextptr);
+    //clear_context((context *) contextptr);
     init_context((context *) ((void *) contextptr));
+    gen res= _rm_all_vars(args,contextptr);
     *logptr(contextptr) << "============== restarted ===============" << '\n';
     if (args.type==_VECT && args.subtype==_SEQ__VECT && args._VECTptr->empty())
       _srand(_time(gen(vecteur(0),_SEQ__VECT),contextptr),contextptr);

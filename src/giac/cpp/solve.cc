@@ -2907,6 +2907,12 @@ namespace giac {
 	      gen res2=_solve(makesequence(symb_equal(ratnormal(a1/a12,contextptr),ratnormal(a2/a12,contextptr)),v.back()),contextptr);
 	      return gen(mergevecteur(gen2vecteur(res1),gen2vecteur(res2)),res1.subtype);
 	    }
+	    if (w.size()>=3){
+	      gen tst=tsimplify(_lin(a1/a2,contextptr),contextptr);
+	      w=lvarx(tst,v.back());
+	      if (w.size()==1)
+		return _solve(makesequence(tst-1,v.back()),contextptr);
+	    }
 	    gen a1arg,a2arg; 
 	    bool a1log=is_log10(a1,a1arg),a2log=is_log10(a2,a2arg);
 	    if (a1log && a2log){

@@ -56,6 +56,7 @@ using namespace std;
 #ifdef FXCG
 extern "C" {
 #include <keyboard.h>
+  void ck_getkey(int * keyptr);
 }
 #endif
 #ifdef KHICAS
@@ -2209,12 +2210,28 @@ namespace giac {
     int key=getkey(0);
     return key;
 #else
+#ifdef FXCG
+    clear_abort();
+      int key;
+      ck_getkey(&key);
+    set_abort();
+    if (key==KEY_CTRL_LEFT)
+      return 0;
+    if (key==KEY_CTRL_UP)
+      return 1;
+    if (key==KEY_CTRL_DOWN)
+      return 2;
+    if (key==KEY_CTRL_RIGHT)
+      return 3;
+    if (key==KEY_CTRL_EXE)
+      return 4;
+    if (key==KEY_CTRL_EXIT)
+      return 5;
+    return key;
+#else
     if (interactive_op_tab && interactive_op_tab[4])
       return interactive_op_tab[4](g,contextptr);
     if ( g.type==_STRNG && g.subtype==-1) return  g;
-#ifdef FXCG
-    return PRGM_GetKey();
-#else
     char ch;
     CERR << "Waiting for a keystroke in konsole screen" << '\n';
     CIN >> ch;
@@ -2231,7 +2248,11 @@ namespace giac {
   define_unary_function_ptr5( at_getKey ,alias_at_getKey,&__getKey,0,true);
 
   static const char _get_key_s[]="get_key";
+#ifdef FXCG
+  static define_unary_function_eval(__get_key,&_getKey,_get_key_s);
+#else  
   unary_function_eval __get_key(0,&_getKey,_get_key_s);
+#endif
   define_unary_function_ptr5( at_get_key ,alias_at_get_key,&__get_key,0,true);
 
   gen _keydown(const gen & g,GIAC_CONTEXT){

@@ -120,13 +120,19 @@ namespace giac {
     return true;
   }
 
+  gen makeline(const gen & a,const gen &b){
+    return gen(makevecteur(a,b),_LINE__VECT);
+  }  
+
   vecteur galoisconj(const vecteur & v,GIAC_CONTEXT){
     vecteur res;
     if (galoisconj_cached(v,res))
       return res;
     gen g=symb_horner(v,vx_var);
+#ifndef FXCG
     if (pari_galoisconj(g,res,contextptr))
       return res;
+#endif
     if (int(v.size())>MAX_COMMON_ALG_EXT_ORDER_SIZE) return res;
     // factor v over rootof(v) if degree is small
     g=_factors(makesequence(g,rootof(g,contextptr)),contextptr);
@@ -1326,6 +1332,7 @@ namespace giac {
   static define_unary_function_eval (__max_algext,&max_algext,_max_algext_s);
   define_unary_function_ptr5( at_max_algext ,alias_at_max_algext,&__max_algext,0,true);
 
+#ifndef FXCG
   // set_timeout(), set_timeout(15), set_timeout(20,30)
   gen set_timeout(const gen & args,GIAC_CONTEXT){
     gen g=args;
@@ -1362,7 +1369,8 @@ namespace giac {
   static const char _set_timeout_s []="set_timeout";
   static define_unary_function_eval (__set_timeout,&set_timeout,_set_timeout_s);
   define_unary_function_ptr5( at_set_timeout ,alias_at_set_timeout,&__set_timeout,0,true);
-
+#endif
+  
   static vecteur sturm(const gen & g){
     if (g.type!=_POLY)
       return vecteur(1,g);

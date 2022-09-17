@@ -30,6 +30,7 @@ namespace giac {
   struct unary_function_ptr;
   struct symbolic;
 
+  gen makeline(const gen & a,const gen &b);
   bool proot_cached(const vecteur & v,double eps,vecteur & res);
   bool proot_cache(const vecteur & v,double eps,const vecteur & res);
 
