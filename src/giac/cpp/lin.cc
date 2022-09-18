@@ -693,7 +693,7 @@ namespace giac {
       if (!n)
 	return gensizeerr(contextptr);
       if (std::pow(double(n),double(k))>MAX_PROD_EXPAND_SIZE)
-	return pow(v[0],v[1],contextptr);
+	return recursive_ratnormal(symb_pow(v[0],v[1]),contextptr);
       vecteur res;
       gen p;
       for (int i=k;i>=0;--i){

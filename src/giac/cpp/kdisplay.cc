@@ -13466,6 +13466,8 @@ namespace xcas {
 	waitforvblank();
       int textX=text->x,saveY=textY;
       if(v[cur].newLine) {
+	if (v[cur].lineSpacing>4) // avoid large skip
+	  v[cur].lineSpacing=4;
 	textY=textY+text->lineHeight+v[cur].lineSpacing;
       }
       if (!isFirstDraw && clipline==-1){

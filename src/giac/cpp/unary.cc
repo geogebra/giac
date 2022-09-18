@@ -107,6 +107,9 @@ namespace giac {
 
   */
   const char * unary_function_eval::print(GIAC_CONTEXT) const { 
+#ifdef FXCG
+    return s;
+#else
     if (abs_calc_mode(contextptr)==38){ 
       if (calc_mode(contextptr)==38){
 	const char * maj = hp38_display_in_maj(s);
@@ -124,6 +127,7 @@ namespace giac {
       }
     }
     return s;
+#endif
   }
 
 #else //  NO_UNARY_FUNCTION_COMPOSE
@@ -158,6 +162,7 @@ namespace giac {
   */
 
   const char * unary_function_abstract::print(GIAC_CONTEXT) const { 
+#ifndef FXCG
     if (abs_calc_mode(contextptr)==38){ 
       if (calc_mode(contextptr)==38){
 	const char * maj = hp38_display_in_maj(s);
@@ -165,6 +170,7 @@ namespace giac {
       }
       return s;
     }
+#endif
     int lang=language(contextptr);
     multimap<string,localized_string>::iterator it=back_lexer_localization_map().find(s),backend=back_lexer_localization_map().end(),itend=back_lexer_localization_map().upper_bound(s);
     if (it!=backend){
@@ -205,12 +211,14 @@ namespace giac {
   */
 
   gen apply(const gen & e,const unary_function_ptr & f,GIAC_CONTEXT){
+#ifndef FXCG
     if (e.type==_MAP){
       gen_map res;
       gen g(res);
       map_apply(*e._MAPptr,f,*g._MAPptr,contextptr);
       return g;
     }
+#endif
     if (e.type!=_VECT)
       return f(e,contextptr);
     const_iterateur it=e._VECTptr->begin(),itend=e._VECTptr->end();
@@ -258,12 +266,14 @@ namespace giac {
   }
 
   gen apply(const gen & e, gen (* f) (const gen &,const context *),GIAC_CONTEXT ){
+#ifndef FXCG
     if (e.type==_MAP){
       gen_map res;
       gen g(res);
       map_apply(*e._MAPptr,*g._MAPptr,contextptr,f);
       return g;
     }
+#endif
     if (e.type!=_VECT)
       return f(e,contextptr);
     const_iterateur it=e._VECTptr->begin(),itend=e._VECTptr->end();
@@ -321,12 +331,14 @@ namespace giac {
   }
 
   gen apply(const gen & e, const context * contextptr,const gen_op_context & f ){
+#ifndef FXCG
     if (e.type==_MAP){
       gen_map res;
       gen g(res);
       map_apply(*e._MAPptr,*g._MAPptr,contextptr,f);
       return g;
     }
+#endif
     if (e.type!=_VECT)
       return f(e,contextptr);
     const_iterateur it=e._VECTptr->begin(),itend=e._VECTptr->end();
@@ -615,6 +627,9 @@ namespace giac {
   }
     
   string texprintsommetasoperator(const gen & feuille,const char * sommetstr_orig,GIAC_CONTEXT){
+#ifdef FXCG
+    return "";
+#else
     if (feuille.type!=_VECT)
       return feuille.print(contextptr);
     string sommetstr(sommetstr_orig);
@@ -640,6 +655,8 @@ namespace giac {
 	s += sommetstr + gen2tex(*itb,contextptr);
       ++itb;
     }
+    return s;
+#endif
   }
 
 #ifdef NO_UNARY_FUNCTION_COMPOSE
