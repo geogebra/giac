@@ -235,16 +235,16 @@ int fractale(GIAC_CONTEXT){
   double d=10;
   if (inputdouble(lang?"Number of iterations? (default 10)":"Nombre d'iterations? (defaut 10)",d,contextptr) && d>=1 && d<=20)
     Nmax=d;
-  double w=2.7/X;
-  double h=-1.87/Y;
+  float w=2.7/X;
+  float h=-1.87/Y;
   for (int y=0;y<=Y/2;++y){
-    complex<double> c(-2.1,h*y+0.935);
-    for (int x=0;x<X;++x){
-      complex<double> z(0);
+    complex<float> c(-2.1,h*y+0.935);
+    for (int x=0;x<X;++x){ 
+      complex<float> z(0);
       int j;
       for (j=0;j<Nmax;++j){
 	z=z*z+c;
-	if (abs(z)>2)
+	if (norm(z)>4) // this is more efficient than abs(z)>2
 	  break;
       }
       int color=126*j+2079;
@@ -252,7 +252,7 @@ int fractale(GIAC_CONTEXT){
       os_set_pixel(x,(Y-y),color);
       c = c+w;
     }
-    sync_screen();
+    if (y%16==0) sync_screen();
   }
   statuslinemsg("Ecran fige. Taper EXIT");
   getkey(1);

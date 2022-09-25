@@ -12684,6 +12684,21 @@ namespace xcas {
     for (size_t i=1;i<edptr->elements.size();++i){
       edptr->elements[i].newLine=1;
     }
+  for (size_t i=0;i<edptr->elements.size();++i){
+    string S=edptr->elements[i].s;
+    const int cut=160;
+    if (S.size()>cut){
+      // string too long, cut it
+      int j;
+      for (j=(4*cut)/5;j>=(2*cut)/5;--j){
+	if (!giac::isalphanum(S[j]))
+	  break;
+      }
+      textElement elem; elem.newLine=1; elem.s=S.substr(j,S.size()-j);
+      edptr->elements[i].s=S.substr(0,j);
+      edptr->elements.insert(edptr->elements.begin()+i+1,elem);
+    }
+  }
   }
 
   void fix_mini(textArea * edptr){

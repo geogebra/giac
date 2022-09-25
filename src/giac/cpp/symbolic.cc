@@ -1658,8 +1658,12 @@ namespace giac {
 
 
   unsigned taille(const gen & g,unsigned max){
+    if (g.type==_ZINT)
+      return 1+mpz_sizeinbase(*g._ZINTptr,16)/4;
     if (g.type<=_IDNT)
       return 1;
+    if (g.type==_STRNG)
+      return g._STRNGptr->size()/4+1;
     if (g.type==_FRAC)
       return 1+taille(g._FRACptr->num,max)+taille(g._FRACptr->den,max);
     if (g.type==_SYMB){

@@ -3006,6 +3006,14 @@ namespace giac {
   }
   gen _solve(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
+    if (is_equal(args) && args._SYMBptr->feuille[1]==0 && args._SYMBptr->feuille[0].type==_INT_){
+      int v=args._SYMBptr->feuille[0].val;
+      if (v==16 || v==10 || v==8 || v==2){
+	*logptr(contextptr) << "Integer format set to " << v << '\n';
+	integer_format(v,contextptr);
+	return vecteur(0);
+      }
+    }
     gen res=_solve_uncompressed(args,contextptr);
     if (res.type==_VECT){
       vecteur v=*res._VECTptr;

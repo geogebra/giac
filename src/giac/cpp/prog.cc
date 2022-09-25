@@ -8539,6 +8539,18 @@ namespace giac {
   static define_unary_function_eval (__read32,&_read32,_read32_s);
   define_unary_function_ptr5( at_read32 ,alias_at_read32 ,&__read32,0,true);
 
+  gen _addr(const gen & g,GIAC_CONTEXT){
+    vecteur & ptr=*g._VECTptr;
+#ifdef SMARTPTR64
+    return (longlong) (&ptr);
+#else
+    return (longlong) (unsigned) (&ptr);
+#endif
+  }
+  static const char _addr_s []="addr";
+  static define_unary_function_eval (__addr,&_addr,_addr_s);
+  define_unary_function_ptr5( at_addr ,alias_at_addr,&__addr,0,true);
+
 #ifdef NSPIRE_NEWLIB
   gen _read_nand(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1)
