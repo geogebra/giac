@@ -7114,6 +7114,7 @@ namespace xcas {
   }
 
   Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),window_zmin(gnuplot_zmin),window_zmax(gnuplot_zmax),g(g_),display_mode(0x45),show_axes(1),show_edges(1),show_names(1),labelsize(16),precision(1),contextptr(cptr),hp(0),npixels(5),couleur(0),nparams(0) {
+    tracemode=false; tracemode_n=0; tracemode_i=0;
     current_i=LCD_WIDTH_PX/3;
     current_j=LCD_HEIGHT_PX/3;
     push_depth=current_depth=0;
@@ -8418,7 +8419,7 @@ namespace xcas {
 	      find_xy(i,j,x,y);
 	      // round to maximum pixel range
 	      round_xy(x,y);
-	      sprintf(s+pos," %.3g,%.3g",x,y);
+	      sprintf(s+pos," x=%.3g,y=%.3g",x,y);
 	    }
 	    pos=strlen(s);
 	  }
@@ -8434,7 +8435,16 @@ namespace xcas {
 	}
       }
       s[pos]=0;
-      os_draw_string_small_(LCD_WIDTH_PX-fl_width(s),LCD_HEIGHT_PX-14,s);
+      if (tracemode){
+	os_draw_string_small_(LCD_WIDTH_PX-fl_width(s),2,s);
+	// additional infos available
+	if (tracemode_add.size())
+	  os_draw_string_small_(0,2,tracemode_add.c_str());
+	if (tracemode_disp.type!=_INT_)
+	  fltk_draw(*this,tracemode_disp,x_scale,y_scale,0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,contextptr);
+      }
+      else
+	os_draw_string_small_(LCD_WIDTH_PX-fl_width(s),LCD_HEIGHT_PX-14,s);
     }
     if (mode && title.size()<100 && (!title.empty() || !is_zero(title_tmp))){
       std::string mytitle;
@@ -8453,8 +8463,8 @@ namespace xcas {
 	os_draw_string_small_((LCD_WIDTH_PX-dt)/2,LCD_HEIGHT_PX-14,mytitle.c_str());
       }
     }
-    if (hp){ // draw cursor at current_i,current_j
-      int taille=mode==255?2:5;
+    if (hp || tracemode){ // draw cursor at current_i,current_j
+      int taille=(mode==255 && !tracemode) ?2:5;
       fl_line(current_i-taille,current_j,current_i+taille,current_j,is3d?_CYAN:_BLUE);
       fl_line(current_i,current_j-taille,current_i,current_j+taille,is3d?_CYAN:_BLUE);
       if (cursor_point_type==6){
@@ -8846,12 +8856,12 @@ namespace xcas {
 	}
       }      
 #ifdef NSPIRE_NEWLIB
-      DefineStatusMessage((char*)"+-: zoom, pad: move, esc: quit", 1, 0, 0);
+      DefineStatusMessage((char*)"+-: zoom, menu: menu, esc: quit", 1, 0, 0);
 #else
-      DefineStatusMessage((char*)"+-: zoom, pad: move, EXIT: quit", 1, 0, 0);
+      DefineStatusMessage((char*)"+-: zoom, home: menu, EXIT: quit", 1, 0, 0);
 #endif
       DisplayStatusArea();
-      if (hp)
+      if (hp || tracemode)
 	draw_decorations(title_tmp);
       return;
     }
@@ -8949,7 +8959,7 @@ namespace xcas {
     // draw
     fltk_draw(*this,g,x_scale,y_scale,clip_x,clip_y,clip_w,clip_h,contextptr);
     clip_ymin=save_clip_ymin;
-    if (hp)
+    if (hp || tracemode)
       draw_decorations(title_tmp);
   }
   
@@ -9237,6 +9247,7 @@ namespace xcas {
     xcas::Graph2d gr(ge,contextptr);
     if (gs!=0) gr.symbolic_instructions=gen2vecteur(gs);
     gr.show_axes=global_show_axes;
+    gr.tracemode=true;  gr.tracemode_set();
     // initial setting for x and y
     if (ge.type==_VECT){
       const_iterateur it=ge._VECTptr->begin(),itend=ge._VECTptr->end();
@@ -9534,6 +9545,89 @@ namespace xcas {
     if (hp){
       set_gen_value(hp_pos,g,true);
     }
+  }
+
+  void Graph2d::tracemode_set(){
+    if (plot_instructions.empty())
+      plot_instructions=gen2vecteur(g);
+    // handle curves with more than one connected component
+    vecteur tracemode_v;
+    for (int i=0;i<plot_instructions.size();++i){
+      gen g=plot_instructions[i];
+      if (g.type==_VECT && !g._VECTptr->empty() && g._VECTptr->front().is_symb_of_sommet(at_curve)){
+	vecteur & v=*g._VECTptr;
+	for (int j=0;j<v.size();++j)
+	  tracemode_v.push_back(v[j]);
+      }
+      else
+	tracemode_v.push_back(g);
+    }
+    gen G;
+    if (tracemode_n<0)
+      tracemode_n=tracemode_v.size()-1;
+    bool retry=tracemode_n>0;
+    for (;tracemode_n<tracemode_v.size();++tracemode_n){
+      G=tracemode_v[tracemode_n];
+      if (G.is_symb_of_sommet(at_pnt))
+	break;
+    }
+    if (tracemode_n>=tracemode_v.size()){
+      // retry
+      if (retry){
+	for (tracemode_n=0;tracemode_n<tracemode_v.size();++tracemode_n){
+	  G=tracemode_v[tracemode_n];
+	  if (G.is_symb_of_sommet(at_pnt))
+	    break;
+	}
+      }
+      if (tracemode_n>=tracemode_v.size()){
+	tracemode=false;
+	return;
+      }
+    }
+    G=remove_at_pnt(G);
+    gen parameq,x,y,t,tmin,tmax,tstep;
+    // extract position at tracemode_i
+    if (G.is_symb_of_sommet(at_curve)){
+      gen c=G._SYMBptr->feuille[0];
+      parameq=c[0];
+      reim(parameq,x,y,contextptr);
+      t=c[1];
+      tmin=c[2];
+      tmax=c[3];
+      G=G._SYMBptr->feuille[1];
+      if (G.type==_VECT){
+	vecteur &Gv=*G._VECTptr;
+	tstep=(tmax-tmin)/(Gv.size()-1);
+      }
+    }
+    if (G.is_symb_of_sommet(at_cercle)){
+      G=G._SYMBptr->feuille[0];
+    }
+    if (G.type==_VECT){
+      vecteur & v=*G._VECTptr;
+      if (tracemode_i>=v.size())
+	tracemode_i=0;
+      if (tracemode_i<0)
+	tracemode_i=v.size()-1;
+      G=v[tracemode_i];
+    }
+    double x_scale=LCD_WIDTH_PX/(window_xmax-window_xmin);
+    double y_scale=LCD_HEIGHT_PX/(window_ymax-window_ymin);
+    double i,j;
+    findij(G,x_scale,y_scale,i,j,contextptr);
+    current_i=int(i+.5);
+    current_j=int(j+.5);
+  }
+
+  void Graph2d::invert_tracemode(){
+    if (is3d){
+      tracemode=false;
+      return;
+    }
+    tracemode=!tracemode;
+    if (tracemode)
+      tracemode_set();
   }
 
   void Graph2d::set_mode(const giac::gen & f_tmp,const giac::gen & f_final,int m,const string & help){
@@ -10165,8 +10259,8 @@ namespace xcas {
     text.allowF1=false;
     text.python=false;
     add(&text,lang==1?
-	"haut/bas/droit/gauche: change point de vue\ny^x ou e^x: trace 3d precis\nEsc/Back: quitte ou interrompt le trace 3d en cours\n( et ): modifie le rendu des surfaces raides 3d\n0: surfaces cachees 3d ON/OFF\n.: remplissage surface 3d raide ON/OFF\n5 reset 3d view\n7,8,9,1,2,3: deplacement 3d\n\nGeometrie\nF4: change le mode\nLe mode repere (shift 7) permet de changer le point de vue\nLe mode pointeur (shift 8) permet de bouger un objet et les objets dependants avec enter/OK et les touches de deplacement\nLes autres modes permettent de creer des objets\nEsc/Back: permet de passer en vue symbolique et de creer/modifier des objets par des commandes, taper enter/OK pour revenir en vue graphique\n4,6: modifie la profondeur du clic":
-	"up/down/right/left: modify viewpoint\nEsc/Back: leave or interrupt 3d rendering\ny^x or e^x: precise 3d\n( and ): modify stiff surfaces 3d rendering\n0: hidden 3d surfaces ON/OFF\n.: fill stiff 3d surfacesON/OFF\n5 reset 3d view\n7,8,9,1,2,3: move 3d view\n\nGeometry\nF4: change geometry mode\nFrame mode (shift F1): modify viewpoint\nPointer mode (shift F2): select an object and move it with enter/OK and cursor keys\nOther modes: create an object\nEsc/Back: go to symbolic view where you can create/modify objects with commands, press enter/OK to go back to graphic view");
+	"haut/bas/droit/gauche: deplace pointeur ou change point de vue\ny^x ou e^x: trace 3d precis\nEsc/Back: quitte ou interrompt le trace 3d en cours\n( et ): modifie le rendu des surfaces raides 3d\n0: surfaces cachees 3d ON/OFF\n.: remplissage surface 3d raide ON/OFF\n5 reset 3d view\n7,8,9,1,2,3: deplacement 3d\n\nGeometrie\nF4: change le mode\nLe mode repere (shift 7) permet de changer le point de vue\nLe mode pointeur (shift 8) permet de bouger un objet et les objets dependants avec enter/OK et les touches de deplacement\nLes autres modes permettent de creer des objets\nEsc/Back: permet de passer en vue symbolique et de creer/modifier des objets par des commandes, taper enter/OK pour revenir en vue graphique\n4,6: modifie la profondeur du clic":
+	"up/down/right/left: move pointer or modify viewpoint\nEsc/Back: leave or interrupt 3d rendering\ny^x or e^x: precise 3d\n( and ): modify stiff surfaces 3d rendering\n0: hidden 3d surfaces ON/OFF\n.: fill stiff 3d surfacesON/OFF\n5 reset 3d view\n7,8,9,1,2,3: move 3d view\n\nGeometry\nF4: change geometry mode\nFrame mode (shift F1): modify viewpoint\nPointer mode (shift F2): select an object and move it with enter/OK and cursor keys\nOther modes: create an object\nEsc/Back: go to symbolic view where you can create/modify objects with commands, press enter/OK to go back to graphic view");
     int exec=doTextArea(&text,contextptr);
   }
 
@@ -10274,14 +10368,13 @@ namespace xcas {
     gr.draw();
     gr.precision=saveprecision;    
     gr.must_redraw=true;
-#ifdef NSPIRE_NEWLIB
-    const char * msg="+-: zoom, pad: move, esc: quit";
-#else
-    const char * msg="+-: zoom, pad: move, EXIT: quit";
-#endif
-    DefineStatusMessage((char *)msg,1,0,0);
-    DisplayStatusArea();
     for (;;){
+#ifdef NSPIRE_NEWLIB
+      DefineStatusMessage((char*)"+-: zoom, menu: menu, esc: quit", 1, 0, 0);
+#else
+      DefineStatusMessage((char*)"+-: zoom, home: menu, EXIT: quit", 1, 0, 0);
+#endif
+      DisplayStatusArea();
       int saveprec=gr.precision;
       if (gr.doprecise){
 	gr.doprecise=false;
@@ -10301,7 +10394,7 @@ namespace xcas {
       }
       gr.must_redraw=true;
       gr.precision=saveprec;
-      if (!hp){
+      if (0 && !hp){
 #ifdef NUMWORKS
 	os_draw_string(0,LCD_HEIGHT_PX-STATUS_AREA_PX-17,COLOR_BLACK,COLOR_WHITE,"home: cfg");
 #else
@@ -10316,9 +10409,17 @@ namespace xcas {
 	geohelp(contextptr);
 	continue;
       }
+      if (key==KEY_CTRL_XTT)
+	invert_tracemode();
+      if (!hp && key==KEY_CTRL_F7)
+	invert_tracemode();
       if (hp){
-	if (key==KEY_CTRL_F7 )
-	  set_mode(0,0,255,"");
+	if (key==KEY_CTRL_F7 ){
+	  if (mode==255)
+	    invert_tracemode();
+	  else
+	    set_mode(0,0,255,"");
+	}
 	if (key==KEY_CTRL_F8 )
 	  set_mode(0,0,0,"");
 	if (key==KEY_CTRL_F9 )
@@ -10681,7 +10782,8 @@ namespace xcas {
 	continue;
       }      
 
-      if (key==KEY_CTRL_MENU || key==KEY_CTRL_F6){
+      if (key==KEY_CTRL_MENU || key==KEY_CTRL_F6 ||
+	  (!hp && (key==KEY_CTRL_CATALOG || key==KEY_BOOK))){
 	char menu_xmin[32],menu_xmax[32],menu_ymin[32],menu_ymax[32],menu_zmin[32],menu_zmax[32],menu_depth[32];
 	for (;;){
 	  string s;
@@ -10705,25 +10807,29 @@ namespace xcas {
 	  smallmenu.items=smallmenuitems;
 	  smallmenu.height=12;
 	  //smallmenu.title = "KhiCAS";
-	  smallmenuitems[0].text = (char *) menu_xmin;
-	  smallmenuitems[1].text = (char *) menu_xmax;
-	  smallmenuitems[2].text = (char *) menu_ymin;
-	  smallmenuitems[3].text = (char *) menu_ymax;
-	  smallmenuitems[4].text = (char *) menu_zmin;
-	  smallmenuitems[5].text = (char *) menu_zmax;
-	  smallmenuitems[6].text = (char *) menu_depth;
-	  smallmenuitems[7].text = (char *) ((lang==1)?"Aide":"Help");
-	  smallmenuitems[8].text = (char*) (lang==1?"Sauvegarder figure":"Save figure");
-	  smallmenuitems[9].text = (char*) (lang==1?"Sauvegarder comme":"Save as");
-	  smallmenuitems[10].text = (char*)((lang==1)?"Quitter":"Quit");
-	  smallmenuitems[11].text = (char*) "Orthonormalize /";
-	  smallmenuitems[12].text = (char*) "Autoscale *";
-	  smallmenuitems[13].text = (char *) ("Zoom in +");
-	  smallmenuitems[14].text = (char *) ("Zoom out -");
-	  smallmenuitems[15].text = (char *) ("Y-Zoom out (-)");
-	  smallmenuitems[16].text = (char*) ((lang==1)?"Voir axes":"Show axes");
-	  smallmenuitems[17].text = (char*) ((lang==1)?"Cacher axes":"Hide axes");
-	  smallmenuitems[18].text = (char*) ((lang==1)?"Effacer trace":"Clear trace");
+	  smallmenuitems[0].text = (char *) ((lang==1)?"Aide":"Help");
+	  smallmenuitems[1].text = (char*) ((lang==1)?"Courbes: mode trace":"Curves: tracemode");
+	  smallmenuitems[1].type = MENUITEM_CHECKBOX;
+	  smallmenuitems[1].value = gr.tracemode;
+	  smallmenuitems[2].text = (char *) menu_xmin;
+	  smallmenuitems[3].text = (char *) menu_xmax;
+	  smallmenuitems[4].text = (char *) menu_ymin;
+	  smallmenuitems[5].text = (char *) menu_ymax;
+	  smallmenuitems[6].text = (char *) menu_zmin;
+	  smallmenuitems[7].text = (char *) menu_zmax;
+	  smallmenuitems[8].text = (char *) menu_depth;
+	  smallmenuitems[9].text = (char*) (lang==1?"Sauvegarder figure":"Save figure");
+	  smallmenuitems[10].text = (char*) (lang==1?"Sauvegarder comme":"Save as");
+	  smallmenuitems[11].text = (char*)((lang==1)?"Quitter":"Quit");
+	  smallmenuitems[12].text = (char*) "Orthonormalize /";
+	  smallmenuitems[13].text = (char*) "Autoscale *";
+	  smallmenuitems[14].text = (char *) ("Zoom in +");
+	  smallmenuitems[15].text = (char *) ("Zoom out -");
+	  smallmenuitems[16].text = (char *) ("Y-Zoom out (-)");
+	  smallmenuitems[17].text = (char*) ((lang==1)?"Voir axes":"Show axes");
+	  smallmenuitems[17].type = MENUITEM_CHECKBOX;
+	  smallmenuitems[17].value = gr.show_axes;
+	  smallmenuitems[18].text = (char*) ((lang==1)?"Effacer traces geometrie":"Clear geometry traces");
 	  drawRectangle(0,180,LCD_WIDTH_PX,60,_BLACK);
 	  int sres = doMenu(&smallmenu);
 	  if (sres == MENU_RETURN_EXIT)
@@ -10732,48 +10838,54 @@ namespace xcas {
 	    const char * ptr=0;
 	    string s1; double d;
 	    if (smallmenu.selection==1){
+	      geohelp(contextptr); continue;
+	      // gr.q=quaternion_double(0,0,0); gr.update();
+	    }
+	    if (smallmenu.selection==2)
+	      gr.invert_tracemode();
+	    if (smallmenu.selection==3){
 	      d=gr.window_xmin;
 	      if (inputdouble(menu_xmin,d,200,contextptr)){
 		gr.window_xmin=d;
 		gr.update();
 	      }
 	    }
-	    if (smallmenu.selection==2){
+	    if (smallmenu.selection==4){
 	      d=gr.window_xmax;
 	      if (inputdouble(menu_xmax,d,200,contextptr)){
 		gr.window_xmax=d;
 		gr.update();
 	      }
 	    }
-	    if (smallmenu.selection==3){
+	    if (smallmenu.selection==5){
 	      d=gr.window_ymin;
 	      if (inputdouble(menu_ymin,d,200,contextptr)){
 		gr.window_ymin=d;
 		gr.update();
 	      }
 	    }
-	    if (smallmenu.selection==4){
+	    if (smallmenu.selection==6){
 	      d=gr.window_ymax;
 	      if (inputdouble(menu_ymax,d,200,contextptr)){
 		gr.window_ymax=d;
 		gr.update();
 	      }
 	    }
-	    if (smallmenu.selection==5){
+	    if (smallmenu.selection==7){
 	      d=gr.window_zmin;
 	      if (inputdouble(menu_zmin,d,200,contextptr)){
 		gr.window_zmin=d;
 		gr.update();
 	      }
 	    }
-	    if (smallmenu.selection==6){
+	    if (smallmenu.selection==8){
 	      d=gr.window_zmax;
 	      if (inputdouble(menu_zmax,d,200,contextptr)){
 		gr.window_zmax=d;
 		gr.update();
 	      }
 	    }
-	    if (smallmenu.selection==7){
+	    if (smallmenu.selection==9){
 	      d=gr.current_depth;
 	      if (inputdouble(menu_depth,d,200,contextptr)){
 		if (d<-1) d=-1;
@@ -10782,16 +10894,12 @@ namespace xcas {
 		gr.update();
 	      }
 	    }
-	    if (smallmenu.selection==8){
-	      geohelp(contextptr); continue;
-	      // gr.q=quaternion_double(0,0,0); gr.update();
-	    }
-	    if (hp && smallmenu.selection==9){
+	    if (hp && smallmenu.selection==10){
 	      // save
 	      geosave(hp,contextptr);
 	      continue;
 	    }
-	    if (smallmenu.selection==9 || smallmenu.selection==10){
+	    if (smallmenu.selection==10 || smallmenu.selection==11){
 	      // save as
 	      char filename[MAX_FILENAME_SIZE+1];
 	      if (get_filename(filename,".py") && newgeo(contextptr)==0){
@@ -10807,22 +10915,20 @@ namespace xcas {
 		}
 	      }
 	    }
-	    if (smallmenu.selection==11)
-	      return -4;
 	    if (smallmenu.selection==12)
-	      gr.orthonormalize();
+	      return -4;
 	    if (smallmenu.selection==13)
-	      gr.autoscale();	
+	      gr.orthonormalize();
 	    if (smallmenu.selection==14)
-	      gr.zoom(0.7);	
+	      gr.autoscale();	
 	    if (smallmenu.selection==15)
-	      gr.zoom(1/0.7);	
+	      gr.zoom(0.7);	
 	    if (smallmenu.selection==16)
-	      gr.zoomy(1/0.7);
+	      gr.zoom(1/0.7);	
 	    if (smallmenu.selection==17)
-	      gr.show_axes=true;	
+	      gr.zoomy(1/0.7);
 	    if (smallmenu.selection==18)
-	      gr.show_axes=false;	
+	      gr.show_axes=!gr.show_axes;	
 	    if (smallmenu.selection==19){
 	      gr.trace_instructions.clear();
 	      update_g();
@@ -10882,6 +10988,11 @@ namespace xcas {
 	 gr.precision--;
       }
       if (key==KEY_CTRL_UP){
+	if (tracemode){
+	  ++tracemode_n;
+	  tracemode_set();
+	  continue;
+	}
 	if (hp && mode!=255){
 	  --current_j;
 	  if (current_j<0){
@@ -10919,6 +11030,11 @@ namespace xcas {
 	gr.up((gr.window_ymax-gr.window_ymin)/16);
       }
       if (key==KEY_CTRL_PAGEUP) {
+	if (tracemode){
+	  tracemode_n+=2;
+	  tracemode_set();
+	  continue;
+	}
 	if (hp && mode!=255){
 	  current_j-=LCD_HEIGHT_PX/5;;
 	  if (current_j<0){
@@ -10932,6 +11048,11 @@ namespace xcas {
 	gr.up((gr.window_ymax-gr.window_ymin)/4);
       }
       if (key==KEY_CTRL_DOWN) {
+	if (tracemode){
+	  --tracemode_n;
+	  tracemode_set();
+	  continue;
+	}
 	if (hp && mode!=255){
 	  ++current_j;
 	  if (current_j>=LCD_HEIGHT_PX-24){
@@ -10969,6 +11090,11 @@ namespace xcas {
 	gr.down((gr.window_ymax-gr.window_ymin)/16);
       }
       if (key==KEY_CTRL_PAGEDOWN) {
+	if (tracemode){
+	  tracemode_n-=2;
+	  tracemode_set();
+	  continue;
+	}
 	if (hp && mode!=255){
 	  current_j += LCD_HEIGHT_PX/5;
 	  if (current_j>=LCD_HEIGHT_PX-24){
@@ -10982,6 +11108,11 @@ namespace xcas {
 	gr.down((gr.window_ymax-gr.window_ymin)/4);
       }
       if (key==KEY_CTRL_LEFT) {
+	if (tracemode){
+	  --tracemode_i;
+	  tracemode_set();
+	  continue;
+	}
 	if (hp && mode!=255){
 	  --current_i;
 	  if (current_i<0){
@@ -11014,6 +11145,11 @@ namespace xcas {
 	gr.left((gr.window_xmax-gr.window_xmin)/16);
       }
       if (key==KEY_SHIFT_LEFT) {
+	if (tracemode){
+	  tracemode_i-=5;
+	  tracemode_set();
+	  continue;
+	}
 	if (hp && mode!=255){
 	  current_i -= LCD_WIDTH_PX/5;
 	  if (current_i<0){
@@ -11027,6 +11163,11 @@ namespace xcas {
 	gr.left((gr.window_xmax-gr.window_xmin)/4);
       }
       if (key==KEY_CTRL_RIGHT) {
+	if (tracemode){
+	  ++tracemode_i;
+	  tracemode_set();
+	  continue;
+	}
 	if (hp && mode!=255){
 	  ++current_i;
 	  if (current_i>=LCD_WIDTH_PX){
@@ -11059,6 +11200,11 @@ namespace xcas {
 	gr.right((gr.window_xmax-gr.window_xmin)/16);
       }
       if (key==KEY_SHIFT_RIGHT) {
+	if (tracemode){
+	  tracemode_i+=5;
+	  tracemode_set();
+	  continue;
+	}
 	if (hp && mode!=255){
 	  current_i += LCD_WIDTH_PX/5;
 	  if (current_i>=LCD_WIDTH_PX){

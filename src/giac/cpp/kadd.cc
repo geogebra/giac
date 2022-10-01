@@ -154,6 +154,8 @@ void mastermind_disp(const vector<int> & solution,const vector< vector<int> > & 
       //CERR << solution << " " << essai << " " << bien << " " << mal << endl;
     }
   }
+  os_draw_string(10,y0+20*4+2,COLOR_GREEN,_WHITE,"=");
+  os_draw_string(10,y0+20*5+2,COLOR_MAGENTA,_WHITE,"~");
   int y=170;
   int x=os_draw_string_small_(x0,y,"0");
   draw_filled_circle(x+10,y+10,10,COLOR_BLUE);
@@ -229,33 +231,228 @@ int mastermind(GIAC_CONTEXT){
   return 0;
 }
 
+// Newton iteration for polynomial
+// with simult Horner evaluation of p and p' at x
+complex<double> horner_newton(const vector<std::complex<double>> & p,const std::complex<double> &x){
+  complex<double> num,den;
+  vector<std::complex<double>>::const_iterator it=p.begin(),itend=p.end();
+  int n=itend-it-1; 
+  for (;n;--n,++it){
+    num *= x;
+    den *= x;
+    num += *it;
+    den += double(n)*(*it);
+  } // end for
+  // last step
+  num *= x;
+  num += *it;
+  return x-num/den;
+}
+
+complex<double> horner_newton(const vector<double> & p,const std::complex<double> &x){
+  vector<double>::const_iterator it=p.begin(),itend=p.end();
+  int n=itend-it-1; 
+  complex<double> num=*it*x+*(it+1),den=(double(n)*(*it))*x+double(n-1)*(*(it+1));
+  for (it+=2,n-=2;n;--n,++it){
+    num *= x;
+    den *= x;
+    num += *it;
+    den += double(n)*(*it);
+  } // end for
+  // last step
+  num *= x;
+  num += *it;
+  return x-num/den;
+}
+
 int fractale(GIAC_CONTEXT){
   freeze=true;
-  int X=320,Y=222,Nmax=10;
-  double d=10;
-  if (inputdouble(lang?"Number of iterations? (default 10)":"Nombre d'iterations? (defaut 10)",d,contextptr) && d>=1 && d<=20)
-    Nmax=d;
-  float w=2.7/X;
-  float h=-1.87/Y;
-  for (int y=0;y<=Y/2;++y){
-    complex<float> c(-2.1,h*y+0.935);
-    for (int x=0;x<X;++x){ 
-      complex<float> z(0);
-      int j;
-      for (j=0;j<Nmax;++j){
-	z=z*z+c;
-	if (norm(z)>4) // this is more efficient than abs(z)>2
-	  break;
-      }
-      int color=126*j+2079;
-      os_set_pixel(x,y,color);
-      os_set_pixel(x,(Y-y),color);
-      c = c+w;
+  int X=320,Y=222,Nmax=16,Nmaxmin=5,Nmaxmax=50;
+  bool mandel=do_confirm("EXE: Mandelbrot, Back: bassins racines");
+  vecteur P; vector<complex<double>> p,Z;
+  double np=0; complex<double> na;
+  // if the polynomial is x^np+a=0
+  // Newton iteration is x-(x^n+a)/(n*x^(n-1))=((n-1)*x-a)/(n*x^(n-1))
+  vector<double> pr;
+  bool real=true;
+  if (!mandel){ // Input Julia
+    string s;
+    inputline("Polynome (x^3-1)?","",s,false,65,contextptr);
+    if (s.empty()) s="x^3-1";
+    gen g(s,contextptr);
+    g=_symb2poly(g,contextptr);
+    if (g.type!=_VECT || g._VECTptr->size()<3 || g._VECTptr->size()>9){
+      do_confirm("Not a polynomial or degree<2 or degree>8");
+      return 0;
     }
-    if (y%16==0) sync_screen();
+    P=*g._VECTptr;
+    if (!convert(P,p,true)){
+      do_confirm("Unable to convert");
+      return 0;
+    }
+    // detect x^n+a==0
+    np=P.size()-1;
+    for (int i=1;i<p.size()-1;++i){
+      if (p[i]!=0){
+	np=0;
+	break;
+      }
+    }
+    if (np){
+      na=p.back()/p.front()/double(np);
+      np=(np-1)/np;
+    }
+    for (int i=0;i<p.size();++i){
+      if (p[i].imag()!=0){
+	real=false;
+	break;
+      }
+      pr.push_back(p[i].real());
+    }
+    gen R=_proot(P,contextptr);
+    if (R.type==_VECT && !convert(*R._VECTptr,Z,true)){
+      do_confirm("Unable to find polynomial roots");
+      return 0;
+    }
   }
-  statuslinemsg("Ecran fige. Taper EXIT");
-  getkey(1);
+  float xmin=-2.1,xmax=0.6,ymin=-0.935,ymax=0.935;
+  if (!mandel){
+    xmin=-1.35; xmax=1.35; 
+  }
+  while (1){
+    os_fill_rect(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,COLOR_BLACK);
+    float w=(xmax-xmin)/X;
+    float h=(ymin-ymax)/Y;
+    bool sym=real && ymin<0 && ymax>0;
+    int Ysym=2*ymax/(ymax-ymin)*Y-1;
+    for (int y=0;y<Y;++y){
+      int ysym=Ysym-y; // symmetric pixel
+      if (mandel){
+	complex<float> c(xmin,h*y+ymax);
+	for (int x=0;x<X;++x){
+	  int j=0;
+	  complex<float> z(0);
+	  for (j=0;j<Nmax;++j){
+	    z*=z; z+=c;
+	    if (norm(z)>4) // this is more efficient than abs(z)>2
+	      break;
+	  }
+	  int color=126*j+2079;
+	  os_set_pixel(x,y,color);
+	  if (sym && ysym>0 && ysym<Y){
+	    os_set_pixel(x,ysym,color);
+	  }
+	  c = c+w;
+	}
+      }
+      else {
+	complex<double> c(xmin,h*y+ymax);
+	for (int x=0;x<X;++x){
+	  complex<double> z(c),zp;
+	  int nrac=Z.size(),j;
+	  // Newton iterations
+	  for (j=0;j<Nmax;++j){
+	    if (norm(z)>1e20)
+	      break;
+	    zp=z;
+	    if (np){
+	      z *=z ;
+	      for (int i=3;i<P.size()-1;++i)
+		z *= zp;
+	      z=np*zp-na/z;
+	    }
+	    else
+	      z=real?horner_newton(pr,zp):horner_newton(p,zp);
+	    if (norm(z-zp)<1e-8){
+	      // find nearest root
+	      for (int i=0;i<nrac;++i){
+		if (norm(z-Z[i])<1e-8){
+		  nrac=i;
+		  break;
+		}
+	      }
+	      break;
+	    }
+	  }
+	  int color=0;
+	  if (nrac<Z.size()){
+	    int r_,g_,b_; arc_en_ciel(25*nrac+j,r_,g_,b_);
+	    color=(((r_*32)/256)<<11) | (((g_*64)/256)<<5) | (b_*32/256);
+	  }
+	  os_set_pixel(x,y,color);	
+	  if (sym && ysym>0 && ysym<Y){
+	    if (nrac<Z.size()){
+	      z=conj(Z[nrac]);
+	      // find nearest root
+	      for (int i=0;i<Z.size();++i){
+		if (norm(z-Z[i])<1e-8){
+		  nrac=i;
+		  break;
+		}
+	      }
+	      int r_,g_,b_; arc_en_ciel(25*nrac+j,r_,g_,b_);
+	      color=(((r_*32)/256)<<11) | (((g_*64)/256)<<5) | (b_*32/256);
+	    }
+	    os_set_pixel(x,ysym,color);
+	  }
+	  c = c+double(w);	  
+	}
+      }
+      if (sym && (ysym==y || ysym==y-1))
+	y=2*y-1;
+      if (y%16==0) sync_screen();
+    }
+    lkey: 
+    statuslinemsg("Back: quit, +-: zoom, keypad: move, ml: iter");
+    int k=getkey(1);
+    if (k==KEY_CTRL_EXIT)
+      break;
+    float dx=xmax-xmin,dy=ymax-ymin;
+    if (k==KEY_CTRL_LEFT){
+      xmin -= dx/10;
+      xmax -= dx/10;
+      continue;
+    }
+    if (k==KEY_CTRL_RIGHT){
+      xmin += dx/10;
+      xmax += dx/10;
+      continue;
+    }
+    if (k==KEY_CTRL_DOWN){
+      ymin -= dy/10;
+      ymax -= dy/10;
+      continue;
+    }
+    if (k==KEY_CTRL_UP){
+      ymin += dy/10;
+      ymax += dy/10;
+      continue;
+    }
+    float xc=(xmin+xmax)/2,yc=(ymin+ymax)/2;
+    if (k=='-'){
+      dx *=1.5; dy*=1.5;
+      xmin = xc-dx/2;
+      xmax = xc+dx/2;
+      ymin = yc-dy/2;
+      ymax = yc+dy/2;
+      continue;
+    }
+    if (k=='+'){
+      dx /=1.5; dy/=1.5;
+      xmin = xc-dx/2;
+      xmax = xc+dx/2;
+      ymin = yc-dy/2;
+      ymax = yc+dy/2;
+      continue;
+    }
+    if ( (k=='l' || k=='<' || k==KEY_CHAR_ROOT) && Nmax>Nmaxmin){
+      --Nmax; continue;
+    }
+    if ( (k=='m' || k=='>' || k=='7' || k==KEY_CHAR_SQUARE) && Nmax<Nmaxmax){
+      ++Nmax; continue;
+    }
+    goto lkey;
+  }
   return 0;
 }
 
@@ -421,7 +618,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
   smallmenuitems[5].text = (char*)((lang==1)?"Table caracteres":"Char table");
   smallmenuitems[6].text = (char*)((lang==1)?"Exemple simple: Syracuse":"Simple example; Syracuse");
   smallmenuitems[7].text = (char*)((lang==1)?"Exemple de jeu: Mastermind":"Game example: Mastermind");
-  smallmenuitems[8].text = (char*)((lang==1)?"Fractale de Mandelbrot":"Mandelbrot fractal");
+  smallmenuitems[8].text = (char*)((lang==1)?"Exemples de fractales":"Fractals examples");
   // smallmenuitems[8].text = (char*)"Mon application"; // adjust numitem !
   // smallmenuitems[9].text = (char*)"Autre application";
   // smallmenuitems[10].text = (char*)"Encore une autre";

@@ -287,7 +287,7 @@ namespace xcas {
     // only 12 used, last line [0,0,0,1], usual matrices, not transposed
     int display_mode,show_axes,show_edges,show_names,labelsize,lcdz,default_upcolor,default_downcolor,default_downupcolor,default_downdowncolor;
     short int precision,diffusionz,diffusionz_limit;
-    bool is3d,doprecise,hide2nd,interval,solid3d,must_redraw;
+    bool is3d,doprecise,hide2nd,interval,solid3d,must_redraw,tracemode;
     double Ai,Aj,Bi,Bj,Ci,Cj,Di,Dj,Ei,Ej,Fi,Fj,Gi,Gj,Hi,Hj; // visualization cube coordinates
     std::vector< std::vector< std::vector<float3d> > > surfacev;
     std::vector<double3> plan_pointv; // point in plan 
@@ -308,7 +308,7 @@ namespace xcas {
     std::vector<double3> pointv; 
     std::vector<const char *> points; // legende
     std::vector<int4> hyp_color,plan_color,sphere_color,polyedre_color,line_color,curve_color,point_color;
-    giac::gen g; // normal graph instructions
+    giac::gen g; // concatenation of plot_instructions, trace_instructions...
     const giac::context * contextptr;
     /* geometry data */
     double current_i,current_j;
@@ -341,6 +341,7 @@ namespace xcas {
     bool pushed=false,moving=false,moving_frame=false,in_area=true;
     bool moving_param; double param_orig,param_value,param_min,param_max,param_step;
     int nparams;
+    int tracemode_n,tracemode_i; string tracemode_add; giac::gen tracemode_disp;
     /* end geometry data */
     giac::vecteur param(double d) const;
     void adjust_cursor_point_type();
@@ -351,6 +352,8 @@ namespace xcas {
     giac::gen geometry_round(double x,double y,double z,double eps,giac::gen & original,int & pos,bool selectfirstlevel=false,bool setscroller=false);
     giac::vecteur selection2vecteur(const std::vector<int> & v);
     void set_mode(const giac::gen & f_tmp,const giac::gen & f_final,int m,const std::string & help);
+    void invert_tracemode();
+    void tracemode_set();
     void add_entry(int pos);
     double find_eps() const;
     void find_xyz(double i,double j,double k,double & x,double & y,double & z) const;

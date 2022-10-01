@@ -1084,24 +1084,28 @@ namespace giac {
     k %= 126;
     if (k<0)
       k += 126;
-    if (k<21){
-      r=251; g=0; b=12*k;
+    if (k<63){
+      if (k<21){
+	r=251; g=0; b=12*k; return;
+      }
+      if (k>=21 && k<42){
+	r=251-(12*(k-21)); g=0; b=251; return ;
+      } 
+      if (k>=42 && k<63){
+	r=0; g=(k-42)*12; b=251; return;
+      }
     }
-    if (k>=21 && k<42){
-      r=251-(12*(k-21)); g=0; b=251;
-    } 
-    if (k>=42 && k<63){
-      r=0; g=(k-42)*12; b=251;
-    } 
-    if (k>=63 && k<84){
-      r=0; g=251; b=251-(k-63)*12;
-    } 
-    if (k>=84 && k<105){
-      r=(k-84)*12; g=251; b=0;
-    } 
-    if (k>=105 && k<126){
-      r=251; g=251-(k-105)*12; b=0;
-    } 
+    else {
+      if (k>=63 && k<84){
+	r=0; g=251; b=251-(k-63)*12; return;
+      } 
+      if (k>=84 && k<105){
+	r=(k-84)*12; g=251; b=0; return;
+      } 
+      if (k>=105 && k<126){
+	r=251; g=251-(k-105)*12; b=0; return;
+      }
+    }
   }
 
   static const int arc_en_ciel_colors=15;
@@ -1536,7 +1540,7 @@ namespace giac {
 	  if (debug_infolevel)
 	    CERR << y << " not real at " << i << " value " << yy << " type " << int(yy.type) << '\n';
 	  if (!chemin.empty())
-	    res.push_back(pnt_attrib(symb_curve(gen(makevecteur(vars+cst_i*f,vars,xmin,i,showeq),_PNT__VECT),gen(chemin,_GROUP__VECT)),attributs.empty()?color:attributs,contextptr));
+	    res.push_back(pnt_attrib(symb_curve(gen(makevecteur(vars+cst_i*f,vars,xmin,i-step,showeq),_PNT__VECT),gen(chemin,_GROUP__VECT)),attributs.empty()?color:attributs,contextptr));
 	  xmin=i;
 	  chemin.clear();
 	  continue;
@@ -1578,7 +1582,7 @@ namespace giac {
 	      CERR << y << " step at " << i << " " << yy << '\n';
 	      CERR << "curve " << chemin.size() << " " << chemin.front() << " .. " << chemin.back() << '\n';
 	    }
-	    res.push_back(pnt_attrib(symb_curve(gen(makevecteur(vars+cst_i*f,vars,xmin,i,showeq),_PNT__VECT),gen(chemin,_GROUP__VECT)),attributs.empty()?color:attributs,contextptr));
+	    res.push_back(pnt_attrib(symb_curve(gen(makevecteur(vars+cst_i*f,vars,xmin,i-step,showeq),_PNT__VECT),gen(chemin,_GROUP__VECT)),attributs.empty()?color:attributs,contextptr));
 	  }
 	  xmin=i;
 	  chemin=vecteur(1,gen(i,j));
@@ -8716,7 +8720,13 @@ namespace giac {
 	chemin.push_back(gen(i,j));
       else {
 	if (!chemin.empty())
-	  res.push_back(symb_pnt(symb_curve(gen(makevecteur(fC,vars,function_tmin,t,0,equation,parameq,vparam),_PNT__VECT),gen(chemin,_GROUP__VECT)),attribut,contextptr));
+	  res.push_back(symb_pnt(symb_curve(gen(makevecteur(fC,vars,function_tmin,
+#if 0
+							    t,
+#else
+							    t-function_tstep,
+#endif
+							    0,equation,parameq,vparam),_PNT__VECT),gen(chemin,_GROUP__VECT)),attribut,contextptr));
 	function_tmin=t;
 	chemin=vecteur(1,gen(i,j));
       }
@@ -8724,7 +8734,13 @@ namespace giac {
       oldj=j;
     }
     if (!chemin.empty())
-      res.push_back(symb_pnt(symb_curve(gen(makevecteur(fC,vars,function_tmin,function_tmax,0,equation,parameq,vparam),_PNT__VECT),gen(chemin,_GROUP__VECT)),attribut,contextptr));
+      res.push_back(symb_pnt(symb_curve(gen(makevecteur(fC,vars,function_tmin,
+#if 0
+							function_tmax,
+#else
+							t-function_tstep,
+#endif
+							0,equation,parameq,vparam),_PNT__VECT),gen(chemin,_GROUP__VECT)),attribut,contextptr));
     leave(protect,localvar,newcontextptr);
     // io_graph(old_io_graph,contextptr);
 #if !defined(WIN32) && defined(WITH_GNUPLOT)

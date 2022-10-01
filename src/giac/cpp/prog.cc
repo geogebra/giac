@@ -8540,12 +8540,13 @@ namespace giac {
   define_unary_function_ptr5( at_read32 ,alias_at_read32 ,&__read32,0,true);
 
   gen _addr(const gen & g,GIAC_CONTEXT){
+    if (g.type==_VECT && g.subtype==_SEQ__VECT && g._VECTptr->size()==2){
+      gen & obj=g._VECTptr->front();
+      vecteur & ptr=*obj._VECTptr;
+      return makevecteur((longlong) (&ptr),(int) taille(obj,RAND_MAX),tailles(obj));
+    }
     vecteur & ptr=*g._VECTptr;
-#ifdef SMARTPTR64
     return (longlong) (&ptr);
-#else
-    return (longlong) (unsigned) (&ptr);
-#endif
   }
   static const char _addr_s []="addr";
   static define_unary_function_eval (__addr,&_addr,_addr_s);

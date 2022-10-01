@@ -7109,7 +7109,7 @@ namespace giac {
 	  const_iterateur xt=xsol.begin(),xtend=xsol.end();
 	  for (;xt!=xtend;++xt){
 	    // current[xpos]=*xt;
-	    if (is_inequation(*xt)){ // FIXME is_inequation
+	    if (is_inequation(*xt) || xt->is_symb_of_sommet(at_and) || xt->is_symb_of_sommet(at_ou)){ // FIXME is_inequation
 	      gen id=lidnt(*xt);
 	      if (id.type==_VECT && id._VECTptr->size()==1){
 		id=id._VECTptr->front();

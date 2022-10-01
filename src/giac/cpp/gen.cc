@@ -3384,6 +3384,8 @@ namespace giac {
       return makemod(_MODptr->conj(contextptr),*(_MODptr+1));
     case _EXT:
       return algebraic_EXTension(_EXTptr->conj(contextptr),*(_EXTptr+1));
+    case _POLY:
+      return apply(*_POLYptr,contextptr,giac_conj);
     default: 
       return gentypeerr(gettext("Conj"));
     }
