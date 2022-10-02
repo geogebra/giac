@@ -7114,7 +7114,7 @@ namespace xcas {
   }
 
   Graph2d::Graph2d(const giac::gen & g_,const giac::context * cptr):window_xmin(gnuplot_xmin),window_xmax(gnuplot_xmax),window_ymin(gnuplot_ymin),window_ymax(gnuplot_ymax),window_zmin(gnuplot_zmin),window_zmax(gnuplot_zmax),g(g_),display_mode(0x45),show_axes(1),show_edges(1),show_names(1),labelsize(16),precision(1),contextptr(cptr),hp(0),npixels(5),couleur(0),nparams(0) {
-    tracemode=false; tracemode_n=0; tracemode_i=0;
+    tracemode=0; tracemode_n=0; tracemode_i=0;
     current_i=LCD_WIDTH_PX/3;
     current_j=LCD_HEIGHT_PX/3;
     push_depth=current_depth=0;
@@ -7267,7 +7267,7 @@ namespace xcas {
 	double window_xcenter=(window_xmin+window_xmax)/2;
 	double window_wsize=w/h*window_h;
 	window_xmin=window_xcenter-window_wsize/2;
-      window_xmax=window_xcenter+window_wsize/2;
+	window_xmax=window_xcenter+window_wsize/2;
       }
       if (window_h < window_hsize*0.99) { // enlarge vertically
 	double window_ycenter=(window_ymin+window_ymax)/2;
@@ -8436,11 +8436,11 @@ namespace xcas {
       }
       s[pos]=0;
       if (tracemode){
-	os_draw_string_small_(LCD_WIDTH_PX-fl_width(s),2,s);
-	// additional infos available
 	if (tracemode_add.size())
-	  os_draw_string_small_(0,2,tracemode_add.c_str());
-	if (tracemode_disp.type!=_INT_)
+	  os_draw_string_small_(0,0,tracemode_add.c_str());
+	else
+	  os_draw_string_small_(LCD_WIDTH_PX-fl_width(s),0,s);	  
+	if (!tracemode_disp.empty())
 	  fltk_draw(*this,tracemode_disp,x_scale,y_scale,0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,contextptr);
       }
       else
@@ -8856,9 +8856,9 @@ namespace xcas {
 	}
       }      
 #ifdef NSPIRE_NEWLIB
-      DefineStatusMessage((char*)"+-: zoom, menu: menu, esc: quit", 1, 0, 0);
+      DefineStatusMessage((char*)"shift-1: help, menu: menu, esc: quit", 1, 0, 0);
 #else
-      DefineStatusMessage((char*)"+-: zoom, home: menu, EXIT: quit", 1, 0, 0);
+      DefineStatusMessage((char*)"shift-1: help, home: menu, back: quit", 1, 0, 0);
 #endif
       DisplayStatusArea();
       if (hp || tracemode)
@@ -9247,7 +9247,9 @@ namespace xcas {
     xcas::Graph2d gr(ge,contextptr);
     if (gs!=0) gr.symbolic_instructions=gen2vecteur(gs);
     gr.show_axes=global_show_axes;
-    gr.tracemode=true;  gr.tracemode_set();
+    gr.init_tracemode();
+    if (gr.tracemode & 4)
+      gr.orthonormalize(true);
     // initial setting for x and y
     if (ge.type==_VECT){
       const_iterateur it=ge._VECTptr->begin(),itend=ge._VECTptr->end();
@@ -9547,9 +9549,18 @@ namespace xcas {
     }
   }
 
-  void Graph2d::tracemode_set(){
+void Graph2d::tracemode_set(int operation){
     if (plot_instructions.empty())
       plot_instructions=gen2vecteur(g);
+    gen sol(undef);
+    if (operation==1 || operation==7){
+      double d=tracemode_mark;
+      if (!inputdouble(lang==1?"Valeur du parametre?":"Parameter value",d,contextptr))
+	return;
+      if (operation==7)
+	tracemode_mark=d;
+      sol=d;
+    }
     // handle curves with more than one connected component
     vecteur tracemode_v;
     for (int i=0;i<plot_instructions.size();++i){
@@ -9586,19 +9597,97 @@ namespace xcas {
       }
     }
     G=remove_at_pnt(G);
+    tracemode_disp.clear();
     gen parameq,x,y,t,tmin,tmax,tstep;
     // extract position at tracemode_i
     if (G.is_symb_of_sommet(at_curve)){
       gen c=G._SYMBptr->feuille[0];
       parameq=c[0];
+      // simple expand for i*ln(x)
+      bool b=do_lnabs(contextptr);
+      do_lnabs(false,contextptr);
       reim(parameq,x,y,contextptr);
+      do_lnabs(b,contextptr);
       t=c[1];
+      gen x1=derive(x,t,contextptr);
+      gen x2=derive(x1,t,contextptr);
+      gen y1=derive(y,t,contextptr);
+      gen y2=derive(y1,t,contextptr);
+      sto(x,gen("x0",contextptr),contextptr);
+      sto(x1,gen("x1",contextptr),contextptr);
+      sto(x2,gen("x2",contextptr),contextptr);
+      sto(y,gen("y0",contextptr),contextptr);
+      sto(y1,gen("y1",contextptr),contextptr);
+      sto(y2,gen("y2",contextptr),contextptr);
       tmin=c[2];
       tmax=c[3];
+      tmin=evalf_double(tmin,1,contextptr);
+      tmax=evalf_double(tmax,1,contextptr);
+      if (tmin._DOUBLE_val>tracemode_mark)
+	tracemode_mark=tmin._DOUBLE_val;
+      if (tmax._DOUBLE_val<tracemode_mark)
+	tracemode_mark=tmax._DOUBLE_val;
       G=G._SYMBptr->feuille[1];
       if (G.type==_VECT){
 	vecteur &Gv=*G._VECTptr;
 	tstep=(tmax-tmin)/(Gv.size()-1);
+      }
+      double eps=1e-6; // epsilon(contextptr)
+      double curt=(tmin+tracemode_i*tstep)._DOUBLE_val;
+      if (abs(curt-tracemode_mark)<tstep._DOUBLE_val)
+	curt=tracemode_mark;
+      if (operation==1)
+	curt=sol._DOUBLE_val;
+      if (operation==6)
+	sol=tracemode_mark=curt;
+      if (operation==2){ // root near curt
+	sol=newton(y,t,curt,NEWTON_DEFAULT_ITERATION,eps,1e-12,true,tmin._DOUBLE_val,tmax._DOUBLE_val,1,0,1,contextptr);
+	if (sol.type==_DOUBLE_){
+	  confirm(lang==1?"Racine en":"Root at",sol.print(contextptr).c_str());
+	}
+      }
+      if (operation==3){ // horizontal tangent near curt
+	sol=newton(y1,t,curt,NEWTON_DEFAULT_ITERATION,eps,1e-12,true,tmin._DOUBLE_val,tmax._DOUBLE_val,1,0,1,contextptr);
+	if (sol.type==_DOUBLE_){
+	  confirm(lang==1?"y'=0, extremum/pt singulier en":"y'=0, extremum/singular pt at",sol.print(contextptr).c_str());
+	}
+      }
+      if (operation==4){ // vertical tangent near curt
+	if (x1==1)
+	  do_confirm(lang==1?"Outil pour courbes parametriques!":"Tool for parametric curves!");
+	else {
+	  sol=newton(x1,t,curt,NEWTON_DEFAULT_ITERATION,eps,1e-12,true,tmin._DOUBLE_val,tmax._DOUBLE_val,1,0,1,contextptr);
+	  if (sol.type==_DOUBLE_){
+	    confirm("x'=0, vertical or singular",sol.print(contextptr).c_str());
+	  }
+	}
+      }
+      if (operation==5){ // inflexion
+	sol=newton(x1*y2-x2*y1,t,curt,NEWTON_DEFAULT_ITERATION,eps,1e-12,true,tmin._DOUBLE_val,tmax._DOUBLE_val,1,0,1,contextptr);
+	if (sol.type==_DOUBLE_){
+	  confirm("x'*y''-x''*y'=0",sol.print(contextptr).c_str());
+	}
+      }
+      gen M(put_attributs(_point(subst(parameq,t,tracemode_mark,false,contextptr),contextptr),vecteur(1,_POINT_WIDTH_4 | _BLUE),contextptr));
+      tracemode_disp.push_back(M);      
+      gen f;
+      if (operation==8)
+	f=y*derive(x,t,contextptr);
+      if (operation==9){
+	f=sqrt(pow(x1,2,contextptr)+pow(y1,2,contextptr),contextptr);
+	operation=8;
+      }
+      if (operation==8){
+	gen res;
+	string ss="int("+f.print(contextptr)+","+t.print(contextptr)+"="+print_DOUBLE_(tracemode_mark,3)+".."+print_DOUBLE_(curt,3)+")";
+	if (!tegral(f,t,tracemode_mark,curt,1e-6,1<<10,res,false,contextptr))
+	  confirm("Numerical Integration Error",ss.c_str());
+	else
+	  confirm(ss.c_str(),res.print(contextptr).c_str());
+      }
+      if (operation>=1 && operation<=7 && sol.type==_DOUBLE_ && !is_zero(tstep)){
+	tracemode_i=(sol._DOUBLE_val-tmin._DOUBLE_val)/tstep._DOUBLE_val;
+	G=subst(parameq,t,sol._DOUBLE_val,false,contextptr);
       }
     }
     if (G.is_symb_of_sommet(at_cercle)){
@@ -9606,11 +9695,60 @@ namespace xcas {
     }
     if (G.type==_VECT){
       vecteur & v=*G._VECTptr;
-      if (tracemode_i>=v.size())
-	tracemode_i=0;
-      if (tracemode_i<0)
-	tracemode_i=v.size()-1;
-      G=v[tracemode_i];
+      int i=std::floor(tracemode_i);
+      double id=tracemode_i-i;
+      if (i>=int(v.size()-1)){
+	tracemode_i=i=v.size()-1;
+	id=0;
+      }
+      if (i<0){
+	tracemode_i=i=0;
+	id=0;
+      }
+      G=v[i];
+      if (!is_zero(tstep) && id>0)
+	G=v[i]+id*tstep*(v[i+1]-v[i]);
+    }
+    G=evalf(G,1,contextptr);
+    gen Gx,Gy; reim(G,Gx,Gy,contextptr);
+    Gx=evalf_double(Gx,1,contextptr);
+    Gy=evalf_double(Gy,1,contextptr);
+    tracemode_add="";
+    if (Gx.type==_DOUBLE_ && Gy.type==_DOUBLE_){
+      tracemode_add += "x="+print_DOUBLE_(Gx._DOUBLE_val,3)+",y="+print_DOUBLE_(Gy._DOUBLE_val,3);
+      if (tstep!=0){
+	gen curt=tmin+tracemode_i*tstep;
+	if (curt.type==_DOUBLE_){
+	  if (t!=x)
+	    tracemode_add += ", t="+print_DOUBLE_(curt._DOUBLE_val,3);
+	  if (tracemode & 2){
+	    gen G1=derive(parameq,t,contextptr);
+	    gen G1t=subst(G1,t,curt,false,contextptr);
+	    gen G1x,G1y; reim(G1t,G1x,G1y,contextptr);
+	    gen m=evalf_double(G1y/G1x,1,contextptr);
+	    if (m.type==_DOUBLE_)
+	      tracemode_add += ", m="+print_DOUBLE_(m._DOUBLE_val,3);
+	    gen T(_vector(makesequence(_point(G,contextptr),_point(G+G1t,contextptr)),contextptr));
+	    tracemode_disp.push_back(T);
+	    gen G2(derive(G1,t,contextptr));
+	    gen G2t=subst(G2,t,curt,false,contextptr);
+	    gen G2x,G2y; reim(G2t,G2x,G2y,contextptr);
+	    gen det(G1x*G2y-G2x*G1y);
+	    gen Tn=sqrt(G1x*G1x+G1y*G1y,contextptr);
+	    gen R=evalf_double(Tn*Tn*Tn/det,1,contextptr);
+	    gen centre=G+R*(-G1y+cst_i*G1x)/Tn;
+	    if (tracemode & 4){
+	      gen N(_vector(makesequence(_point(G,contextptr),_point(centre,contextptr)),contextptr));
+	      tracemode_disp.push_back(N);
+	    }
+	    if (tracemode & 8){
+	      if (R.type==_DOUBLE_)
+		tracemode_add += ", R="+print_DOUBLE_(R._DOUBLE_val,3);
+	      tracemode_disp.push_back(_cercle(makesequence(centre,R),contextptr));
+	    }
+	  }
+	}
+      }
     }
     double x_scale=LCD_WIDTH_PX/(window_xmax-window_xmin);
     double y_scale=LCD_HEIGHT_PX/(window_ymax-window_ymin);
@@ -9625,9 +9763,10 @@ namespace xcas {
       tracemode=false;
       return;
     }
-    tracemode=!tracemode;
-    if (tracemode)
-      tracemode_set();
+    if (!tracemode)
+      init_tracemode();
+    else
+      tracemode=0;
   }
 
   void Graph2d::set_mode(const giac::gen & f_tmp,const giac::gen & f_final,int m,const string & help){
@@ -10259,8 +10398,8 @@ namespace xcas {
     text.allowF1=false;
     text.python=false;
     add(&text,lang==1?
-	"haut/bas/droit/gauche: deplace pointeur ou change point de vue\ny^x ou e^x: trace 3d precis\nEsc/Back: quitte ou interrompt le trace 3d en cours\n( et ): modifie le rendu des surfaces raides 3d\n0: surfaces cachees 3d ON/OFF\n.: remplissage surface 3d raide ON/OFF\n5 reset 3d view\n7,8,9,1,2,3: deplacement 3d\n\nGeometrie\nF4: change le mode\nLe mode repere (shift 7) permet de changer le point de vue\nLe mode pointeur (shift 8) permet de bouger un objet et les objets dependants avec enter/OK et les touches de deplacement\nLes autres modes permettent de creer des objets\nEsc/Back: permet de passer en vue symbolique et de creer/modifier des objets par des commandes, taper enter/OK pour revenir en vue graphique\n4,6: modifie la profondeur du clic":
-	"up/down/right/left: move pointer or modify viewpoint\nEsc/Back: leave or interrupt 3d rendering\ny^x or e^x: precise 3d\n( and ): modify stiff surfaces 3d rendering\n0: hidden 3d surfaces ON/OFF\n.: fill stiff 3d surfacesON/OFF\n5 reset 3d view\n7,8,9,1,2,3: move 3d view\n\nGeometry\nF4: change geometry mode\nFrame mode (shift F1): modify viewpoint\nPointer mode (shift F2): select an object and move it with enter/OK and cursor keys\nOther modes: create an object\nEsc/Back: go to symbolic view where you can create/modify objects with commands, press enter/OK to go back to graphic view");
+	"shift-2: tangente, pente\nshift-3: normale\nshift-4: cercle osculateur\nshift-5: deplacer parametre\nshift-7: infos courbe on/off\nhaut/bas/droit/gauche: deplace pointeur ou change point de vue\ny^x ou e^x: trace 3d precis\nEsc/Back: quitte ou interrompt le trace 3d en cours\n( et ): modifie le rendu des surfaces raides 3d\n0: surfaces cachees 3d ON/OFF\n.: remplissage surface 3d raide ON/OFF\n5 reset 3d view\n7,8,9,1,2,3: deplacement 3d\n\nGeometrie\nF4: change le mode\nLe mode repere (shift 7) permet de changer le point de vue\nLe mode pointeur (shift 8) permet de bouger un objet et les objets dependants avec enter/OK et les touches de deplacement\nLes autres modes permettent de creer des objets\nEsc/Back: permet de passer en vue symbolique et de creer/modifier des objets par des commandes, taper enter/OK pour revenir en vue graphique\n4,6: modifie la profondeur du clic":
+	"shift-2: tangent, slope\nshift-3: normal\nshift-4: osculating circle\nshift-5: enter parameter value\nshift-7: curve infos on/off\nup/down/right/left: move pointer or modify viewpoint\nEsc/Back: leave or interrupt 3d rendering\ny^x or e^x: precise 3d\n( and ): modify stiff surfaces 3d rendering\n0: hidden 3d surfaces ON/OFF\n.: fill stiff 3d surfacesON/OFF\n5 reset 3d view\n7,8,9,1,2,3: move 3d view\n\nGeometry\nF4: change geometry mode\nFrame mode (shift F1): modify viewpoint\nPointer mode (shift F2): select an object and move it with enter/OK and cursor keys\nOther modes: create an object\nEsc/Back: go to symbolic view where you can create/modify objects with commands, press enter/OK to go back to graphic view");
     int exec=doTextArea(&text,contextptr);
   }
 
@@ -10358,6 +10497,16 @@ namespace xcas {
       }
     } else s="";
     return s;
+  }
+
+  void Graph2d::init_tracemode(){
+    tracemode_mark=0.0;
+    double w=LCD_WIDTH_PX;
+    double h=LCD_HEIGHT_PX-STATUS_AREA_PX;
+    double window_w=window_xmax-window_xmin,window_h=window_ymax-window_ymin;
+    double r=h/w*window_w/window_h;
+    tracemode=(r>0.7 && r<1.4)?7:3;
+    tracemode_set();
   }  
 
   int Graph2d::ui(){
@@ -10370,9 +10519,9 @@ namespace xcas {
     gr.must_redraw=true;
     for (;;){
 #ifdef NSPIRE_NEWLIB
-      DefineStatusMessage((char*)"+-: zoom, menu: menu, esc: quit", 1, 0, 0);
+      DefineStatusMessage((char*)"shift-1: help, menu: menu, esc: quit", 1, 0, 0);
 #else
-      DefineStatusMessage((char*)"+-: zoom, home: menu, EXIT: quit", 1, 0, 0);
+      DefineStatusMessage((char*)"shift-1: help, home: menu, back: quit", 1, 0, 0);
 #endif
       DisplayStatusArea();
       int saveprec=gr.precision;
@@ -10409,7 +10558,53 @@ namespace xcas {
 	geohelp(contextptr);
 	continue;
       }
-      if (key==KEY_CTRL_XTT)
+      if (key==KEY_CTRL_F2){
+	if (tracemode & 2)
+	  tracemode &= ~2;
+	else
+	  tracemode |= 2;
+	tracemode_set();
+	continue;
+      }
+      if (key==KEY_CTRL_F3){
+	if (tracemode & 4)
+	  tracemode &= ~4;
+	else
+	  tracemode |= 4;
+	tracemode_set();
+	continue;
+      }
+      if (key==KEY_CTRL_F4){
+	if (tracemode & 8)
+	  tracemode &= ~8;
+	else {
+	  tracemode |= 8;
+	  orthonormalize(true);
+	}
+	tracemode_set();
+	continue;
+      }
+      if (key==KEY_CTRL_F5){
+	const char *
+	  tab[]={
+		 lang==1?"Entrer t ou x":"Set t or x",
+		 lang==1?"y=0, racine":"y=0, root",
+		 "y'=0, extremum",
+		 lang==1?"x'=0 (parametriques)":"x'=0 (parametric)",
+		 "Inflexion",
+		 lang==1?"Marquer la position":"Mark position",
+		 lang==1?"Entrer t ou x, marquer":"Set t or x, mark",
+		 lang==1?"Aire":"Area",
+		 lang==1?"Longueur d'arc":"Arc length",
+		 0};
+	const int s=sizeof(tab)/sizeof(char *);
+	int choix=select_item(tab,"Points",true);
+	if (choix<0 || choix>s)
+	  continue;
+	tracemode_set(choix+1);
+	continue;
+      }
+      if (key==KEY_CTRL_XTT || key=='\t')
 	invert_tracemode();
       if (!hp && key==KEY_CTRL_F7)
 	invert_tracemode();
@@ -11109,7 +11304,10 @@ namespace xcas {
       }
       if (key==KEY_CTRL_LEFT) {
 	if (tracemode){
-	  --tracemode_i;
+	  if (tracemode_i!=int(tracemode_i))
+	    tracemode_i=std::floor(tracemode_i);
+	  else
+	    --tracemode_i;
 	  tracemode_set();
 	  continue;
 	}
@@ -11164,7 +11362,10 @@ namespace xcas {
       }
       if (key==KEY_CTRL_RIGHT) {
 	if (tracemode){
-	  ++tracemode_i;
+	  if (int(tracemode_i)!=tracemode_i)
+	    tracemode_i=std::ceil(tracemode_i);
+	  else
+	    ++tracemode_i;
 	  tracemode_set();
 	  continue;
 	}

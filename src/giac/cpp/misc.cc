@@ -9440,10 +9440,10 @@ void sync_screen(){}
 
   //Uses the Bresenham line algorithm 
   void draw_line(int x1, int y1, int x2, int y2, int color,GIAC_CONTEXT) {
-    if ( (x1 & 0xfffff000) ||
-	 (x2 & 0xfffff000) ||
-	 (y1 & 0xfffff000) ||
-	 (y2 & 0xfffff000) 
+    if ( (absint(x1) & 0x7ffff000) ||
+	 (absint(x2) & 0x7ffff000) ||
+	 (absint(y1) & 0x7ffff000) ||
+	 (absint(y2) & 0x7ffff000) 
 	 )
       return;
     int w =(color & 0x00070000) >> 16;

@@ -1068,8 +1068,21 @@ namespace giac {
       if (s[i]=='.')
 	break;
     }
-    if (i+ndigits+1<l)
-      s[i+ndigits+1]=0;
+    i += ndigits+1;
+    if (i<l){
+      int j;
+      for (j=i;j<l;++j){
+	// exponent?
+	if (s[j]=='e' || s[j]=='E'){
+	  // move from j to l -> i
+	  for (;j<l;++j,++i){
+	    s[i]=s[j];
+	  }
+	  break;
+	}
+      }
+      s[i]=0;
+    }
 #else
     ndigits=ndigits<2?2:ndigits;
     ndigits=ndigits>15?15:ndigits;

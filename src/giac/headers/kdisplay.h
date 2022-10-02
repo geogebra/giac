@@ -287,7 +287,10 @@ namespace xcas {
     // only 12 used, last line [0,0,0,1], usual matrices, not transposed
     int display_mode,show_axes,show_edges,show_names,labelsize,lcdz,default_upcolor,default_downcolor,default_downupcolor,default_downdowncolor;
     short int precision,diffusionz,diffusionz_limit;
-    bool is3d,doprecise,hide2nd,interval,solid3d,must_redraw,tracemode;
+    bool is3d,doprecise,hide2nd,interval,solid3d,must_redraw;
+    int tracemode;
+    // bit0=(x,y), bit1=tangent(x',y'), m=pente (ou singulier),
+    // bit2=normal(-y',x'), bit3=osculateur, R_courbure
     double Ai,Aj,Bi,Bj,Ci,Cj,Di,Dj,Ei,Ej,Fi,Fj,Gi,Gj,Hi,Hj; // visualization cube coordinates
     std::vector< std::vector< std::vector<float3d> > > surfacev;
     std::vector<double3> plan_pointv; // point in plan 
@@ -341,7 +344,7 @@ namespace xcas {
     bool pushed=false,moving=false,moving_frame=false,in_area=true;
     bool moving_param; double param_orig,param_value,param_min,param_max,param_step;
     int nparams;
-    int tracemode_n,tracemode_i; string tracemode_add; giac::gen tracemode_disp;
+    int tracemode_n; double tracemode_i; string tracemode_add; giac::vecteur tracemode_disp; double tracemode_mark;
     /* end geometry data */
     giac::vecteur param(double d) const;
     void adjust_cursor_point_type();
@@ -353,13 +356,14 @@ namespace xcas {
     giac::vecteur selection2vecteur(const std::vector<int> & v);
     void set_mode(const giac::gen & f_tmp,const giac::gen & f_final,int m,const std::string & help);
     void invert_tracemode();
-    void tracemode_set();
+    void tracemode_set(int operation=0); // operation==1 if user is setting the value of t on a parametric curve, operation==2 for root, operation==3 for extremum, operation==4 mark current position, operation=5 for area
     void add_entry(int pos);
     double find_eps() const;
     void find_xyz(double i,double j,double k,double & x,double & y,double & z) const;
     void set_gen_value(int n,const giac::gen & g,bool exec=true); // set n-th entry value
     int geo_handle(int event,int key);
     int ui();
+    void init_tracemode();
     giac::vecteur selected_names(bool allobjects,bool withdef) const;
     void find_title_plot(giac::gen & title_tmp,giac::gen & plot_tmp);
     void draw_decorations(const giac::gen & title_tmp);
