@@ -9552,12 +9552,14 @@ namespace xcas {
 void Graph2d::tracemode_set(int operation){
     if (plot_instructions.empty())
       plot_instructions=gen2vecteur(g);
+    if (is_zero(plot_instructions.back())) // workaround for 0 at end in geometry (?)
+      plot_instructions.pop_back();
     gen sol(undef);
-    if (operation==1 || operation==7){
+    if (operation==1 || operation==8){
       double d=tracemode_mark;
       if (!inputdouble(lang==1?"Valeur du parametre?":"Parameter value",d,contextptr))
 	return;
-      if (operation==7)
+      if (operation==8)
 	tracemode_mark=d;
       sol=d;
     }
@@ -9596,8 +9598,12 @@ void Graph2d::tracemode_set(int operation){
 	return;
       }
     }
+    int p=python_compat(contextptr);
+    python_compat(0,contextptr);
+    gen G_orig(G);
     G=remove_at_pnt(G);
     tracemode_disp.clear();
+    string curve_infos1,curve_infos2;
     gen parameq,x,y,t,tmin,tmax,tstep;
     // extract position at tracemode_i
     if (G.is_symb_of_sommet(at_curve)){
@@ -9636,65 +9642,95 @@ void Graph2d::tracemode_set(int operation){
       double curt=(tmin+tracemode_i*tstep)._DOUBLE_val;
       if (abs(curt-tracemode_mark)<tstep._DOUBLE_val)
 	curt=tracemode_mark;
+      if (operation==-1){
+	if (x==t) curve_infos1="Function "+y.print(contextptr); else curve_infos1="Parametric "+x.print(contextptr)+","+y.print(contextptr);
+	curve_infos2 = t.print(contextptr)+"="+tmin.print(contextptr)+".."+tmax.print(contextptr)+',';
+	curve_infos2 += (x==t?"xstep=":"tstep=")+tstep.print(contextptr);
+      }
       if (operation==1)
 	curt=sol._DOUBLE_val;
-      if (operation==6)
+      if (operation==7)
 	sol=tracemode_mark=curt;
       if (operation==2){ // root near curt
 	sol=newton(y,t,curt,NEWTON_DEFAULT_ITERATION,eps,1e-12,true,tmin._DOUBLE_val,tmax._DOUBLE_val,1,0,1,contextptr);
 	if (sol.type==_DOUBLE_){
 	  confirm(lang==1?"Racine en":"Root at",sol.print(contextptr).c_str());
+	  sto(sol,gen("Zero",contextptr),contextptr);
 	}
       }
-      if (operation==3){ // horizontal tangent near curt
+      if (operation==4){ // horizontal tangent near curt
 	sol=newton(y1,t,curt,NEWTON_DEFAULT_ITERATION,eps,1e-12,true,tmin._DOUBLE_val,tmax._DOUBLE_val,1,0,1,contextptr);
 	if (sol.type==_DOUBLE_){
 	  confirm(lang==1?"y'=0, extremum/pt singulier en":"y'=0, extremum/singular pt at",sol.print(contextptr).c_str());
+	  sto(sol,gen("Extremum",contextptr),contextptr);
 	}
       }
-      if (operation==4){ // vertical tangent near curt
+      if (operation==5){ // vertical tangent near curt
 	if (x1==1)
 	  do_confirm(lang==1?"Outil pour courbes parametriques!":"Tool for parametric curves!");
 	else {
 	  sol=newton(x1,t,curt,NEWTON_DEFAULT_ITERATION,eps,1e-12,true,tmin._DOUBLE_val,tmax._DOUBLE_val,1,0,1,contextptr);
 	  if (sol.type==_DOUBLE_){
 	    confirm("x'=0, vertical or singular",sol.print(contextptr).c_str());
+	    sto(sol,gen("Vertical",contextptr),contextptr);
 	  }
 	}
       }
-      if (operation==5){ // inflexion
+      if (operation==6){ // inflexion
 	sol=newton(x1*y2-x2*y1,t,curt,NEWTON_DEFAULT_ITERATION,eps,1e-12,true,tmin._DOUBLE_val,tmax._DOUBLE_val,1,0,1,contextptr);
 	if (sol.type==_DOUBLE_){
 	  confirm("x'*y''-x''*y'=0",sol.print(contextptr).c_str());
+	  sto(sol,gen("Inflexion",contextptr),contextptr);
 	}
       }
       gen M(put_attributs(_point(subst(parameq,t,tracemode_mark,false,contextptr),contextptr),vecteur(1,_POINT_WIDTH_4 | _BLUE),contextptr));
       tracemode_disp.push_back(M);      
       gen f;
-      if (operation==8)
+      if (operation==9)
 	f=y*derive(x,t,contextptr);
-      if (operation==9){
+      if (operation==10){
 	f=sqrt(pow(x1,2,contextptr)+pow(y1,2,contextptr),contextptr);
-	operation=8;
       }
-      if (operation==8){
-	gen res;
-	string ss="int("+f.print(contextptr)+","+t.print(contextptr)+"="+print_DOUBLE_(tracemode_mark,3)+".."+print_DOUBLE_(curt,3)+")";
-	if (!tegral(f,t,tracemode_mark,curt,1e-6,1<<10,res,false,contextptr))
+      if (operation==9 || operation==10){
+	double a=tracemode_mark,b=curt;
+	if (a>b)
+	  swapdouble(a,b);
+	gen res=symbolic( (operation==9 && x==t?at_plotarea:at_integrate),
+			  makesequence(f,symb_equal(t,symb_interval(a,b))));
+	if (operation==9)
+	  tracemode_disp.push_back(giac::eval(res,1,contextptr));
+	string ss=res.print(contextptr);
+	if (!tegral(f,t,a,b,1e-6,1<<10,res,false,contextptr))
 	  confirm("Numerical Integration Error",ss.c_str());
-	else
+	else {
 	  confirm(ss.c_str(),res.print(contextptr).c_str());
+	  sto(res,gen((operation==9?"Area":"Arclength"),contextptr),contextptr);	  
+	}
       }
-      if (operation>=1 && operation<=7 && sol.type==_DOUBLE_ && !is_zero(tstep)){
+      if (operation>=1 && operation<=8 && sol.type==_DOUBLE_ && !is_zero(tstep)){
 	tracemode_i=(sol._DOUBLE_val-tmin._DOUBLE_val)/tstep._DOUBLE_val;
 	G=subst(parameq,t,sol._DOUBLE_val,false,contextptr);
       }
     }
     if (G.is_symb_of_sommet(at_cercle)){
+      if (operation==-1){
+	gen c,r;
+	centre_rayon(G,c,r,true,contextptr);
+	curve_infos1="Circle radius "+r.print(contextptr);
+	curve_infos2="Center "+_coordonnees(c,contextptr).print(contextptr);
+      }
       G=G._SYMBptr->feuille[0];
     }
     if (G.type==_VECT){
       vecteur & v=*G._VECTptr;
+      if (operation==-1 && curve_infos1.size()==0){
+	if (v.size()==2)
+	  curve_infos1=_equation(G_orig,contextptr).print(contextptr);
+	else if (v.size()==4)
+	  curve_infos1="Triangle";
+	else curve_infos1="Polygon";
+	curve_infos2=G.print(contextptr);
+      }
       int i=std::floor(tracemode_i);
       double id=tracemode_i-i;
       if (i>=int(v.size()-1)){
@@ -9710,9 +9746,75 @@ void Graph2d::tracemode_set(int operation){
 	G=v[i]+id*tstep*(v[i+1]-v[i]);
     }
     G=evalf(G,1,contextptr);
+    if (operation==3){ // intersect this curve with all other curves
+      vecteur V;
+      for (int j=0;j<tracemode_v.size();++j){
+	if (j==tracemode_n)
+	  continue;
+	gen H=tracemode_v[j];
+	gen I=_inter(makesequence(G_orig,H),contextptr);
+	if (I.type==_VECT)
+	  V=mergevecteur(V,*I._VECTptr);
+      }
+      sto(V,gen("Intersect",contextptr),contextptr);
+      tracemode_disp.clear();
+      tracemode_disp.push_back(put_attributs(V,vecteur(1,_POINT_WIDTH_6 | _RED),contextptr));
+      if (!V.empty()){
+	gen I1(undef),I2(undef),d1(plus_inf),d2(plus_inf);
+	for (int i=0;i<V.size();++i){
+	  gen cur=evalf_double(V[i],1,contextptr);
+	  if (i==0){
+	    I1=cur; d1=distance2pp(I1,G,contextptr);
+	    continue;
+	  }
+	  if (i==1){
+	    I2=cur; d2=distance2pp(I2,G,contextptr);
+	    if (is_strictly_greater(d1,d2,contextptr)){
+	      swapgen(I1,I2); swapgen(d1,d2);
+	    }
+	    continue;
+	  }
+	  gen d=distance2pp(cur,G,contextptr);
+	  if (is_strictly_greater(d1,d,contextptr)){
+	    I2=I1; d2=d1;
+	    I1=cur; d1=d;
+	    continue;
+	  }
+	  if (is_strictly_greater(d2,d,contextptr)){
+	    I2=cur; d2=d;
+	  }
+	} // end for loop in V
+	G=remove_at_pnt(I2);
+	I1=put_attributs(I1,vecteur(1,_POINT_WIDTH_6 | _BLUE),contextptr);
+	tracemode_disp.push_back(I1);      
+	if (is_undef(I2)) I2=I1;
+	I2=put_attributs(I2,vecteur(1,_POINT_WIDTH_6 | _BLUE),contextptr);
+	tracemode_disp.push_back(I2);      
+	// function curve: set nearest intersection as mark/position
+	if (t==x && !is_zero(tstep)){
+	  gen Ix,Iy;
+	  reim(remove_at_pnt(I1),Ix,Iy,contextptr);
+	  tracemode_mark=Ix._DOUBLE_val;
+	  reim(remove_at_pnt(I2),Ix,Iy,contextptr);
+	  tracemode_i=((Ix-tmin)/tstep)._DOUBLE_val;
+	}
+      }
+    } // end intersect
     gen Gx,Gy; reim(G,Gx,Gy,contextptr);
     Gx=evalf_double(Gx,1,contextptr);
     Gy=evalf_double(Gy,1,contextptr);
+    if (operation==-1){
+      if (curve_infos1.size()==0)
+	curve_infos1="Position "+Gx.print(contextptr)+","+Gy.print(contextptr);
+      if (G_orig.is_symb_of_sommet(at_pnt)){
+	gen f=G_orig._SYMBptr->feuille;
+	if (f.type==_VECT && f._VECTptr->size()==3){
+	  f=f._VECTptr->back();
+	  curve_infos1 = f.print(contextptr)+": "+curve_infos1;
+	}
+      }
+      confirm(curve_infos1.c_str(),curve_infos2.c_str());
+    }
     tracemode_add="";
     if (Gx.type==_DOUBLE_ && Gy.type==_DOUBLE_){
       tracemode_add += "x="+print_DOUBLE_(Gx._DOUBLE_val,3)+",y="+print_DOUBLE_(Gy._DOUBLE_val,3);
@@ -9756,13 +9858,10 @@ void Graph2d::tracemode_set(int operation){
     findij(G,x_scale,y_scale,i,j,contextptr);
     current_i=int(i+.5);
     current_j=int(j+.5);
+    python_compat(p,contextptr);
   }
 
   void Graph2d::invert_tracemode(){
-    if (is3d){
-      tracemode=false;
-      return;
-    }
     if (!tracemode)
       init_tracemode();
     else
@@ -10398,8 +10497,8 @@ void Graph2d::tracemode_set(int operation){
     text.allowF1=false;
     text.python=false;
     add(&text,lang==1?
-	"shift-2: tangente, pente\nshift-3: normale\nshift-4: cercle osculateur\nshift-5: deplacer parametre\nshift-7: infos courbe on/off\nhaut/bas/droit/gauche: deplace pointeur ou change point de vue\ny^x ou e^x: trace 3d precis\nEsc/Back: quitte ou interrompt le trace 3d en cours\n( et ): modifie le rendu des surfaces raides 3d\n0: surfaces cachees 3d ON/OFF\n.: remplissage surface 3d raide ON/OFF\n5 reset 3d view\n7,8,9,1,2,3: deplacement 3d\n\nGeometrie\nF4: change le mode\nLe mode repere (shift 7) permet de changer le point de vue\nLe mode pointeur (shift 8) permet de bouger un objet et les objets dependants avec enter/OK et les touches de deplacement\nLes autres modes permettent de creer des objets\nEsc/Back: permet de passer en vue symbolique et de creer/modifier des objets par des commandes, taper enter/OK pour revenir en vue graphique\n4,6: modifie la profondeur du clic":
-	"shift-2: tangent, slope\nshift-3: normal\nshift-4: osculating circle\nshift-5: enter parameter value\nshift-7: curve infos on/off\nup/down/right/left: move pointer or modify viewpoint\nEsc/Back: leave or interrupt 3d rendering\ny^x or e^x: precise 3d\n( and ): modify stiff surfaces 3d rendering\n0: hidden 3d surfaces ON/OFF\n.: fill stiff 3d surfacesON/OFF\n5 reset 3d view\n7,8,9,1,2,3: move 3d view\n\nGeometry\nF4: change geometry mode\nFrame mode (shift F1): modify viewpoint\nPointer mode (shift F2): select an object and move it with enter/OK and cursor keys\nOther modes: create an object\nEsc/Back: go to symbolic view where you can create/modify objects with commands, press enter/OK to go back to graphic view");
+	"x,n,t ou tab: etude courbe\nshift-2: info courbe\nshift-3: tangente, pente\nshift-4: normale\nshift-5: cercle osculateur\nshift-7: infos courbe on/off\nhaut/bas/droit/gauche: deplace pointeur ou change point de vue\nalpha-haut/bas/droit/gauche: modifie fenetre\ny^x ou e^x: trace 3d precis\nEsc/Back: quitte ou interrompt le trace 3d en cours\n( et ): modifie le rendu des surfaces raides 3d\n0: surfaces cachees 3d ON/OFF\n.: remplissage surface 3d raide ON/OFF\n5 reset 3d view\n7,8,9,1,2,3: deplacement 3d\n\nGeometrie\nF4: change le mode\nLe mode repere (shift 7) permet de changer le point de vue\nLe mode pointeur (shift 8) permet de bouger un objet et les objets dependants avec enter/OK et les touches de deplacement\nLes autres modes permettent de creer des objets\nEsc/Back: permet de passer en vue symbolique et de creer/modifier des objets par des commandes, taper enter/OK pour revenir en vue graphique\n4,6: modifie la profondeur du clic":
+	"x,n,t or tab: curve study\nshift-2: curve info\nshift-3: tangent, slope\nshift-4: normal\nshift-5: osculating circle\nshift-7: curve infos on/off\nup/down/right/left: move pointer or modify viewpoint\nalpha-up/down/right/left: move window\nEsc/Back: leave or interrupt 3d rendering\ny^x or e^x: precise 3d\n( and ): modify stiff surfaces 3d rendering\n0: hidden 3d surfaces ON/OFF\n.: fill stiff 3d surfacesON/OFF\n5 reset 3d view\n7,8,9,1,2,3: move 3d view\n\nGeometry\nF4: change geometry mode\nFrame mode (shift F1): modify viewpoint\nPointer mode (shift F2): select an object and move it with enter/OK and cursor keys\nOther modes: create an object\nEsc/Back: go to symbolic view where you can create/modify objects with commands, press enter/OK to go back to graphic view");
     int exec=doTextArea(&text,contextptr);
   }
 
@@ -10500,6 +10599,10 @@ void Graph2d::tracemode_set(int operation){
   }
 
   void Graph2d::init_tracemode(){
+    if (is3d){
+      tracemode=0;
+      return;
+    }
     tracemode_mark=0.0;
     double w=LCD_WIDTH_PX;
     double h=LCD_HEIGHT_PX-STATUS_AREA_PX;
@@ -10507,7 +10610,39 @@ void Graph2d::tracemode_set(int operation){
     double r=h/w*window_w/window_h;
     tracemode=(r>0.7 && r<1.4)?7:3;
     tracemode_set();
-  }  
+  }
+
+  void Graph2d::curve_infos(){
+    if (!tracemode)
+      init_tracemode();
+    const char *
+      tab[]={
+	     lang==1?"Infos objet (shift-2)":"Object infos (shift-2)",  // 0
+#ifdef NUMWORKS
+	     lang==1?"Quitte mode etude (x,n,t)":"Quit study mode (x,n,t)",
+#else
+	     lang==1?"Quitte mode etude (tab)":"Quit study mode (tab)",
+#endif
+	     lang==1?"Entrer t ou x":"Set t or x", // 1
+	     lang==1?"y=0, racine":"y=0, root",
+	     "Intersection", // 3
+	     "y'=0, extremum",
+	     lang==1?"x'=0 (parametriques)":"x'=0 (parametric)", // 5
+	     "Inflexion",
+	     lang==1?"Marquer la position":"Mark position",
+	     lang==1?"Entrer t ou x, marquer":"Set t or x, mark", // 8
+	     lang==1?"Aire":"Area",
+	     lang==1?"Longueur d'arc":"Arc length", // 10
+	     0};
+    const int s=sizeof(tab)/sizeof(char *);
+    int choix=select_item(tab,lang==1?"Etude courbes":"Curve study",true);
+    if (choix<0 || choix>s)
+      return;
+    if (choix==1)
+      tracemode=0;
+    else 
+      tracemode_set(choix-1);
+  }
 
   int Graph2d::ui(){
     Graph2d & gr=*this;
@@ -10552,6 +10687,7 @@ void Graph2d::tracemode_set(int operation){
       }
       int key=-1;
       GetKey(&key);
+      bool alph=alphawasactive(&key);
       if (key==KEY_SHUTDOWN)
 	return key;
       if (key==KEY_CTRL_F1){
@@ -10559,6 +10695,10 @@ void Graph2d::tracemode_set(int operation){
 	continue;
       }
       if (key==KEY_CTRL_F2){
+	tracemode_set(-1); // object info
+	continue;
+      }
+      if (key==KEY_CTRL_F3){
 	if (tracemode & 2)
 	  tracemode &= ~2;
 	else
@@ -10566,7 +10706,7 @@ void Graph2d::tracemode_set(int operation){
 	tracemode_set();
 	continue;
       }
-      if (key==KEY_CTRL_F3){
+      if (key==KEY_CTRL_F4){
 	if (tracemode & 4)
 	  tracemode &= ~4;
 	else
@@ -10574,7 +10714,7 @@ void Graph2d::tracemode_set(int operation){
 	tracemode_set();
 	continue;
       }
-      if (key==KEY_CTRL_F4){
+      if (key==KEY_CTRL_F5){
 	if (tracemode & 8)
 	  tracemode &= ~8;
 	else {
@@ -10584,28 +10724,10 @@ void Graph2d::tracemode_set(int operation){
 	tracemode_set();
 	continue;
       }
-      if (key==KEY_CTRL_F5){
-	const char *
-	  tab[]={
-		 lang==1?"Entrer t ou x":"Set t or x",
-		 lang==1?"y=0, racine":"y=0, root",
-		 "y'=0, extremum",
-		 lang==1?"x'=0 (parametriques)":"x'=0 (parametric)",
-		 "Inflexion",
-		 lang==1?"Marquer la position":"Mark position",
-		 lang==1?"Entrer t ou x, marquer":"Set t or x, mark",
-		 lang==1?"Aire":"Area",
-		 lang==1?"Longueur d'arc":"Arc length",
-		 0};
-	const int s=sizeof(tab)/sizeof(char *);
-	int choix=select_item(tab,"Points",true);
-	if (choix<0 || choix>s)
-	  continue;
-	tracemode_set(choix+1);
+      if (key==KEY_CTRL_XTT || key=='\t'){
+	curve_infos();
 	continue;
       }
-      if (key==KEY_CTRL_XTT || key=='\t')
-	invert_tracemode();
       if (!hp && key==KEY_CTRL_F7)
 	invert_tracemode();
       if (hp){
@@ -10686,6 +10808,7 @@ void Graph2d::tracemode_set(int operation){
 	}
       }
       if (hp && (key==KEY_CTRL_CATALOG || key==KEY_BOOK )){
+	tracemode=0;
 	const char *
 	  tab[]={
 		 lang==1?"Mode repere":"Frame mode", // 0
@@ -11003,9 +11126,11 @@ void Graph2d::tracemode_set(int operation){
 	  smallmenu.height=12;
 	  //smallmenu.title = "KhiCAS";
 	  smallmenuitems[0].text = (char *) ((lang==1)?"Aide":"Help");
-	  smallmenuitems[1].text = (char*) ((lang==1)?"Courbes: mode trace":"Curves: tracemode");
-	  smallmenuitems[1].type = MENUITEM_CHECKBOX;
-	  smallmenuitems[1].value = gr.tracemode;
+#ifdef NUMWORKS
+	  smallmenuitems[1].text = (char*) ((lang==1)?"Etude courbe (x,n,t)":"Curve study (x,n,t)");
+#else
+	  smallmenuitems[1].text = (char*) ((lang==1)?"Etude courbe (tab)":"Curve study (tab)");
+#endif
 	  smallmenuitems[2].text = (char *) menu_xmin;
 	  smallmenuitems[3].text = (char *) menu_xmax;
 	  smallmenuitems[4].text = (char *) menu_ymin;
@@ -11037,7 +11162,7 @@ void Graph2d::tracemode_set(int operation){
 	      // gr.q=quaternion_double(0,0,0); gr.update();
 	    }
 	    if (smallmenu.selection==2)
-	      gr.invert_tracemode();
+	      gr.curve_infos();
 	    if (smallmenu.selection==3){
 	      d=gr.window_xmin;
 	      if (inputdouble(menu_xmin,d,200,contextptr)){
@@ -11183,12 +11308,12 @@ void Graph2d::tracemode_set(int operation){
 	 gr.precision--;
       }
       if (key==KEY_CTRL_UP){
-	if (tracemode){
-	  ++tracemode_n;
+	if (tracemode && !alph){
+	  --tracemode_n;
 	  tracemode_set();
 	  continue;
 	}
-	if (hp && mode!=255){
+	if (hp && mode!=255 && !alph){
 	  --current_j;
 	  if (current_j<0){
 	    gr.up((gr.window_ymax-gr.window_ymin)/5);
@@ -11198,7 +11323,7 @@ void Graph2d::tracemode_set(int operation){
 	  update_g();
 	  continue;
 	}
-	if (gr.is3d){
+	if (gr.is3d && !alph){
 	  int curprec=gr.precision;
 	  gr.precision += 2;
 	  if (gr.precision>9) gr.precision=9;
@@ -11225,12 +11350,12 @@ void Graph2d::tracemode_set(int operation){
 	gr.up((gr.window_ymax-gr.window_ymin)/16);
       }
       if (key==KEY_CTRL_PAGEUP) {
-	if (tracemode){
-	  tracemode_n+=2;
+	if (tracemode && !alph){
+	  tracemode_n-=2;
 	  tracemode_set();
 	  continue;
 	}
-	if (hp && mode!=255){
+	if (hp && mode!=255 && !alph){
 	  current_j-=LCD_HEIGHT_PX/5;;
 	  if (current_j<0){
 	    gr.up((gr.window_ymax-gr.window_ymin)/2);
@@ -11243,12 +11368,12 @@ void Graph2d::tracemode_set(int operation){
 	gr.up((gr.window_ymax-gr.window_ymin)/4);
       }
       if (key==KEY_CTRL_DOWN) {
-	if (tracemode){
-	  --tracemode_n;
+	if (tracemode && !alph){
+	  ++tracemode_n;
 	  tracemode_set();
 	  continue;
 	}
-	if (hp && mode!=255){
+	if (hp && mode!=255 && !alph){
 	  ++current_j;
 	  if (current_j>=LCD_HEIGHT_PX-24){
 	    gr.down((gr.window_ymax-gr.window_ymin)/5);
@@ -11258,7 +11383,7 @@ void Graph2d::tracemode_set(int operation){
 	  update_g();
 	  continue;
 	}
-	if (gr.is3d){
+	if (gr.is3d && !alph){
 	  int curprec=gr.precision;
 	  gr.precision += 2;
 	  if (gr.precision>9) gr.precision=9;
@@ -11285,12 +11410,12 @@ void Graph2d::tracemode_set(int operation){
 	gr.down((gr.window_ymax-gr.window_ymin)/16);
       }
       if (key==KEY_CTRL_PAGEDOWN) {
-	if (tracemode){
-	  tracemode_n-=2;
+	if (tracemode && !alph){
+	  tracemode_n+=2;
 	  tracemode_set();
 	  continue;
 	}
-	if (hp && mode!=255){
+	if (hp && mode!=255 && !alph){
 	  current_j += LCD_HEIGHT_PX/5;
 	  if (current_j>=LCD_HEIGHT_PX-24){
 	    gr.down((gr.window_ymax-gr.window_ymin)/2);
@@ -11303,7 +11428,7 @@ void Graph2d::tracemode_set(int operation){
 	gr.down((gr.window_ymax-gr.window_ymin)/4);
       }
       if (key==KEY_CTRL_LEFT) {
-	if (tracemode){
+	if (tracemode && !alph){
 	  if (tracemode_i!=int(tracemode_i))
 	    tracemode_i=std::floor(tracemode_i);
 	  else
@@ -11311,7 +11436,7 @@ void Graph2d::tracemode_set(int operation){
 	  tracemode_set();
 	  continue;
 	}
-	if (hp && mode!=255){
+	if (hp && mode!=255 && !alph){
 	  --current_i;
 	  if (current_i<0){
 	    gr.left((gr.window_xmax-gr.window_xmin)/5);
@@ -11321,7 +11446,7 @@ void Graph2d::tracemode_set(int operation){
 	  update_g();
 	  continue;
 	}
-	if (gr.is3d){
+	if (gr.is3d && !alph){
 	  int curprec=gr.precision;
 	  gr.precision += 2;
 	  if (gr.precision>9) gr.precision=9;
@@ -11343,12 +11468,12 @@ void Graph2d::tracemode_set(int operation){
 	gr.left((gr.window_xmax-gr.window_xmin)/16);
       }
       if (key==KEY_SHIFT_LEFT) {
-	if (tracemode){
+	if (tracemode && !alph){
 	  tracemode_i-=5;
 	  tracemode_set();
 	  continue;
 	}
-	if (hp && mode!=255){
+	if (hp && mode!=255 && !alph){
 	  current_i -= LCD_WIDTH_PX/5;
 	  if (current_i<0){
 	    gr.left((gr.window_xmax-gr.window_xmin)/2);
@@ -11361,7 +11486,7 @@ void Graph2d::tracemode_set(int operation){
 	gr.left((gr.window_xmax-gr.window_xmin)/4);
       }
       if (key==KEY_CTRL_RIGHT) {
-	if (tracemode){
+	if (tracemode && !alph){
 	  if (int(tracemode_i)!=tracemode_i)
 	    tracemode_i=std::ceil(tracemode_i);
 	  else
@@ -11369,7 +11494,7 @@ void Graph2d::tracemode_set(int operation){
 	  tracemode_set();
 	  continue;
 	}
-	if (hp && mode!=255){
+	if (hp && mode!=255 && !alph){
 	  ++current_i;
 	  if (current_i>=LCD_WIDTH_PX){
 	    gr.right((gr.window_xmax-gr.window_xmin)/5);
@@ -11379,7 +11504,7 @@ void Graph2d::tracemode_set(int operation){
 	  update_g();
 	  continue;
 	}
-	if (gr.is3d){
+	if (gr.is3d && !alph){
 	  int curprec=gr.precision;
 	  gr.precision += 2;
 	  if (gr.precision>9) gr.precision=9;
@@ -11401,12 +11526,12 @@ void Graph2d::tracemode_set(int operation){
 	gr.right((gr.window_xmax-gr.window_xmin)/16);
       }
       if (key==KEY_SHIFT_RIGHT) {
-	if (tracemode){
+	if (tracemode && !alph){
 	  tracemode_i+=5;
 	  tracemode_set();
 	  continue;
 	}
-	if (hp && mode!=255){
+	if (hp && mode!=255 && !alph){
 	  current_i += LCD_WIDTH_PX/5;
 	  if (current_i>=LCD_WIDTH_PX){
 	    gr.right((gr.window_xmax-gr.window_xmin)/2);

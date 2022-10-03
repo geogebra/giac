@@ -9725,9 +9725,9 @@ namespace giac {
 	return _SYMBptr->sommet(f(i,contextptr),contextptr);
       vecteur lid(lidnt(*this));
       if (lid.size()==1 && !has_algebraic_program(*this)){
-	if (lid.front()==vx_var)
+	if (lid.front()==vx_var || lid.front()==t__IDNT_e || lid.front()==x__IDNT_e)
 	// suspect something like P:=x^3+1 then P(2)
-	  *logptr(contextptr) << "Warning, evaluating univariate expression of x(value) like if expression was a function.\nYou should write subst(" << *this << "," << lid.front() << "," << i << ")" << '\n';
+	  *logptr(contextptr) << "Warning, evaluating univariate expression like if expression was a function.\nYou should write subst(" << *this << "," << lid.front() << "," << i << ")" << '\n';
 	else
 	  return gensizeerr("Expression used like a function "+this->print(contextptr)+"\nYou should write subst("+this->print(contextptr)+","+lid.front().print(contextptr)+","+i.print(contextptr)+")");
 	return subst(*this,lid.front(),i,false,contextptr);
