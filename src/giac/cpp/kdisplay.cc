@@ -9643,9 +9643,32 @@ void Graph2d::tracemode_set(int operation){
       if (abs(curt-tracemode_mark)<tstep._DOUBLE_val)
 	curt=tracemode_mark;
       if (operation==-1){
-	if (x==t) curve_infos1="Function "+y.print(contextptr); else curve_infos1="Parametric "+x.print(contextptr)+","+y.print(contextptr);
-	curve_infos2 = t.print(contextptr)+"="+tmin.print(contextptr)+".."+tmax.print(contextptr)+',';
-	curve_infos2 += (x==t?"xstep=":"tstep=")+tstep.print(contextptr);
+	gen A,B,C,R; // detect ellipse/hyperbola
+	if (
+	    ( x!=t && c.type==_VECT && c._VECTptr->size()>7 && centre_rayon(G_orig,C,R,false,contextptr,true) ) ||
+	    is_quadratic_wrt(parameq,t,A,B,C,contextptr)
+	    ){
+	  if (C.type!=_VECT){ // x+i*y=A*t^2+B*t+C
+	    curve_infos1="Parabola";
+	    curve_infos2=_equation(G_orig,contextptr).print(contextptr);
+	  }
+	  else {
+	    vecteur V(*C._VECTptr);
+	    curve_infos1=V[0].print(contextptr);
+	    curve_infos1=curve_infos1.substr(1,curve_infos1.size()-2);
+	    curve_infos1+=" O=";
+	    curve_infos1+=V[1].print(contextptr);
+	    curve_infos1+=", F=";
+	    curve_infos1+=V[2].print(contextptr);
+	    // curve_infos1=change_subtype(C,_SEQ__VECT).print(contextptr);
+	    curve_infos2=change_subtype(R,_SEQ__VECT).print(contextptr);
+	  }
+	}
+	else {
+	  if (x==t) curve_infos1="Function "+y.print(contextptr); else curve_infos1="Parametric "+x.print(contextptr)+","+y.print(contextptr);
+	  curve_infos2 = t.print(contextptr)+"="+tmin.print(contextptr)+".."+tmax.print(contextptr)+',';
+	  curve_infos2 += (x==t?"xstep=":"tstep=")+tstep.print(contextptr);
+	}
       }
       if (operation==1)
 	curt=sol._DOUBLE_val;

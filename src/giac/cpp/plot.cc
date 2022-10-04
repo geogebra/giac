@@ -9806,7 +9806,11 @@ namespace giac {
       prod2frac(eq,num,den);
       eq=vecteur2prod(num);
       eq=normal(eq,contextptr);
-      vecteur res=solve(eq,*vf[1]._IDNTptr,0,contextptr);
+      gen solvex=vf[1];
+      gen xval=assumeeval(solvex,contextptr);
+      giac_assume(symb_and(symb_superieur_egal(solvex,tmin),symb_inferieur_egal(solvex,tmax)),contextptr);
+      vecteur res=solve(eq,*solvex._IDNTptr,0,contextptr);
+      restorepurge(xval,solvex,contextptr);
       int s=int(res.size());
       for (int i=0;i<s;++i){
 	res[i]=symb_pnt(subst(vf[0],vf[1],res[i],false,contextptr),contextptr);
