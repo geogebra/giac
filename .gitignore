@@ -1,3 +1,5 @@
 /local.properties
 .gradle
 .idea
+.gems
+build
