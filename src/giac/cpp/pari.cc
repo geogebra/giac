@@ -40,6 +40,14 @@ using namespace std;
 
 #ifdef HAVE_LIBPARI
 
+#ifndef ANYARG
+#ifdef __cplusplus
+#  define ANYARG ...
+#else
+#  define ANYARG
+#endif
+#endif
+
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif

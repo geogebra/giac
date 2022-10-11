@@ -2032,6 +2032,7 @@ int geoapp(GIAC_CONTEXT){
 	  geoptr->plot_instructions.clear();
 	  geoptr->symbolic_instructions.clear();
 	  geoptr->is3d=(s==figs.size()+1);
+	  geoptr->update_rotation();
 	  geoptr->orthonormalize();
 	  text->filename="figure"+print_INT_(figs.size()+1)+".py";
 	}

@@ -1890,12 +1890,12 @@ namespace giac {
 	// tmp=a*tmplv[0]+c*tmplv[1]+d
 	if (tmplv[0]._SYMBptr->sommet==at_sin && tmplv[1]._SYMBptr->sommet==at_cos){
 	  // a*sin(x)+c*cos(x)=C*sin(x+phi) where exp(i*phi)=a+i*c;
-	  gen phi=arg(halftan(a+cst_i*c,contextptr),contextptr);
+	  gen phi=is_zero(d)?atan(halftan(c/a,contextptr),contextptr):arg(halftan(a+cst_i*c,contextptr),contextptr);
 	  tmp=sqrt(a*a+c*c,contextptr)*sin(tmplv[0]._SYMBptr->feuille+phi,contextptr)+d;
 	}
 	if (tmplv[0]._SYMBptr->sommet==at_cos && tmplv[1]._SYMBptr->sommet==at_sin){
 	  // a*cos(x)+c*sin(x)=C*sin(x+phi) where exp(i*phi)=c+i*a;
-	  gen phi=arg(halftan(c+cst_i*a,contextptr),contextptr);
+	  gen phi=is_zero(d)?atan(halftan(a/c,contextptr),contextptr):arg(halftan(c+cst_i*a,contextptr),contextptr);
 	  tmp=sqrt(a*a+c*c,contextptr)*sin(tmplv[0]._SYMBptr->feuille+phi,contextptr)+d;
 	}
       }
@@ -1904,12 +1904,12 @@ namespace giac {
 	  // tmp=a*tmplv[0]+c*tmplv[1]+d
 	  if (tmplv[1]._SYMBptr->sommet==at_sin && tmplv[0]._SYMBptr->sommet==at_cos){
 	    // a*sin(x)+c*cos(x)=C*sin(x+phi) where exp(i*phi)=a+i*c;
-	    gen phi=arg(halftan(a+cst_i*c,contextptr),contextptr);
+	    gen phi=is_zero(d)?atan(halftan(c/a,contextptr),contextptr):arg(halftan(a+cst_i*c,contextptr),contextptr);
 	    tmp=sqrt(a*a+c*c,contextptr)*sin(tmplv[1]._SYMBptr->feuille+phi,contextptr)+d;
 	  }
 	  if (tmplv[1]._SYMBptr->sommet==at_cos && tmplv[0]._SYMBptr->sommet==at_sin){
 	    // a*cos(x)+c*sin(x)=C*sin(x+phi) where exp(i*phi)=c+i*a;
-	    gen phi=arg(halftan(c+cst_i*a,contextptr),contextptr);
+	    gen phi=is_zero(d)?atan(halftan(a/c,contextptr),contextptr):arg(halftan(c+cst_i*a,contextptr),contextptr);
 	    tmp=sqrt(a*a+c*c,contextptr)*sin(tmplv[1]._SYMBptr->feuille+phi,contextptr)+d;
 	  }
 	}
