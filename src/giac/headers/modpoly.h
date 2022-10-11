@@ -273,8 +273,8 @@ namespace giac {
   void fft(const std::vector<int> & f,const std::vector<int> & w ,std::vector<int> & res,int modulo);
   // res=a .* b mod p
   void fft_ab_p(const std::vector<int> &a,const std::vector<int> &b,std::vector<int> & res,int p);
-  // res=a ./ b mod p
-  void fft_aoverb_p(const std::vector<int> &a,const std::vector<int> &b,std::vector<int> & res,int p);
+  // res=a ./ b mod p, returns false if a division fails
+  bool fft_aoverb_p(const std::vector<int> &a,const std::vector<int> &b,std::vector<int> & res,int p);
   // reverse the table of root of unity^k for inverse fft
   void fft_reverse(std::vector<int> & W,int p);
 

@@ -2847,10 +2847,13 @@ namespace giac {
 	      if (!is_zero(res2))
 		res2=_simplify(_solve(makesequence(symb_equal(res2,0),var2),contextptr),contextptr);
 	      gen res3=derive(eq2,var2,contextptr);
-	      if (!is_zero(res3))
-		res3=_simplify(subst(eq2,var1,v1val,false,contextptr),contextptr);
 	      if (!is_zero(res3)){
-		res3=_simplify(_solve(makesequence(symb_equal(res3,0),var2),contextptr),contextptr);
+		res3 = subst(eq2,var1,v1val,false,contextptr);
+		res3=_simplify(res3,contextptr);
+	      }
+	      if (!is_zero(res3)){
+		res3=_solve(makesequence(symb_equal(res3,0),var2),contextptr);
+		res3=_simplify(res3,contextptr);
 		if (is_zero(res2))
 		  res2=res3;
 		else

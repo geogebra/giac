@@ -2557,12 +2557,13 @@ namespace giac {
 	  vector<int> A,B,Wp,tmp0;
 	  to_fft(a,p,w,Wp,N,tmp0,1,false,false); A.swap(tmp0);
 	  to_fft(b,p,w,Wp,N,tmp0,1,false,false); B.swap(tmp0);
-	  fft_aoverb_p(A,B,tmp0,p);
-	  fft_reverse(Wp,p); 
-	  from_fft(tmp0,p,Wp,q,true,false);
-	  fast_trim_inplace(q,p);
-	  if (q.size()==s)
-	    return 2;
+	  if (fft_aoverb_p(A,B,tmp0,p)){
+	    fft_reverse(Wp,p); 
+	    from_fft(tmp0,p,Wp,q,true,false);
+	    fast_trim_inplace(q,p);
+	    if (q.size()==s)
+	      return 2;
+	  }
 	}
       }
     }
@@ -5535,7 +5536,7 @@ namespace giac {
 #endif
   }
 
-  void fft_aoverb_p(const vector<int> &a,const vector<int> &b,vector<int> & res,int p){
+  bool fft_aoverb_p(const vector<int> &a,const vector<int> &b,vector<int> & res,int p){
     int s=a.size();
     res.resize(s);
     for (int i=0;i<s;++i){
@@ -5543,10 +5544,13 @@ namespace giac {
 	res[i]=0;
 	continue;
       }
-      int bi=invmod(b[i],p);
+      int bi=b[i];
+      if (bi==0) return false;
+      invmod(bi,p);
       bi += (bi>>31)&p;
       res[i]=(longlong(a[i])*bi)%p;
     }
+    return true;
   }
 
   void fft_ab_cd_p(const vector<int> &a,const vector<int> &b,const vector<int> & c,const vector<int> &d,vector<int> & res,int p){
