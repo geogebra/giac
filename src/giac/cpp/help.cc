@@ -1030,11 +1030,16 @@ namespace giac {
 	  if (t>29 && ((stmp=s.substr(0,29))=="</LI><LI CLASS=\"li-indexenv\">" || stmp=="</li><li class=\"li-indexenv\">")){
 	    s=s.substr(29,s.size()-29);
 	    t=int(s.size());
-	    if (!t || s[0]=='<') // skip index words with special color/font
+	    if (!t)
 	      continue;
+	    if (s[0]=='<'){ // skip index words with special color/font
+	      if (t<30 || s.substr(0,36)!="<span style=\"font-family:monospace\">")
+		continue;
+	      s=s.substr(36,s.size()-1);
+	    }
 	    int endcmd=int(s.find("<")); // position of end of commandname
 	    if (endcmd>2 && endcmd<t){
-	      string cmdname=s.substr(0,endcmd-2);
+	      string cmdname=s.substr(0,s[endcmd+1]=='/'?endcmd:endcmd-2);
 	      s=s.substr(endcmd,t-endcmd); // s has all the links
 	      vector<string> hrefs;
 	      for (;;){
