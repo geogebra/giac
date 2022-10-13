@@ -2036,6 +2036,8 @@ namespace giac {
       vecteur & ligne=*m[i]._VECTptr;
       gen res(plus_one);
       for (int j=0;j<c;++j){
+	if (ligne[j]>FFTMUL_SIZE) // exponent too large for further simplifications
+	  return e;
 	res=res*pow(independant[j],ligne[j],contextptr);
       }
       newl[i]=res;
