@@ -128,10 +128,11 @@ extern "C" {
 #endif
 
 #if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
-inline bool is_graphe(const giac::gen &g,std::string &disp_out,const giac::context *){ return false; }
+inline bool is_graphe(const giac::gen &g){ return false; }
 inline giac::gen _graph_vertices(const giac::gen &g,const giac::context *){ return g;}
 inline giac::gen _is_planar(const giac::gen &g,const giac::context *){ return g;}
 #else
+#include "signalprocessing.h"
 #include "graphtheory.h"
 #endif
 
@@ -7548,8 +7549,7 @@ namespace giac {
 
   gen _sommets(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    string s;
-    if (is_graphe(args,s,contextptr))
+    if (is_graphe(args))
       return _graph_vertices(args,contextptr);
     if (args.type==_VECT && args.subtype==_SEQ__VECT && args._VECTptr->size()==2){
       gen g=_sommets(args._VECTptr->front(),contextptr);
@@ -7570,8 +7570,7 @@ namespace giac {
 
   gen _faces(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    string s;
-    if (is_graphe(args,s,contextptr)){
+    if (is_graphe(args)){
       identificateur faces;
       gen ret=_is_planar(makesequence(args,faces),contextptr);
       gen retval=is_one(ret)?_eval(faces,contextptr):ret;
@@ -11190,6 +11189,33 @@ namespace giac {
 
   gen _couleur(const gen & a,GIAC_CONTEXT){
     if (is_undef(a)) return a;
+    /* display image, addition by L. Marohnić */
+    rgba_image *img;
+    gen x=0,y=0;
+    if (a.type==_VECT && a.subtype==_SEQ__VECT && a._VECTptr->size()>1 &&
+        (img=rgba_image::from_gen(a._VECTptr->front()))!=NULL) {
+      if ((a._VECTptr->size()>2 && (!is_real_number(x=a._VECTptr->at(1),contextptr) || !is_real_number(y=a._VECTptr->at(2),contextptr))))
+        return gensizeerr(gettext("Invalid image position"));
+      if (a._VECTptr->size()==2) {
+        if (a._VECTptr->back().type==_CPLX) {
+          x=re(a._VECTptr->back(),contextptr);
+          y=im(a._VECTptr->back(),contextptr);
+        } else if (is_real_number(a._VECTptr->back(),contextptr))
+          x=a._VECTptr->back();
+        else return gensizeerr(gettext("Invalid image position"));
+      }
+    } else img=rgba_image::from_gen(a);
+    if (img!=NULL) {
+      if (!img->assure_on_disk())
+        return gensizeerr(gettext("Failed to write image to disk"));
+      vecteur drawing;
+      drawing.push_back(symb_equal(change_subtype(_AXES,_INT_PLOT),0));
+      drawing.push_back(symb_equal(change_subtype(_GL_ORTHO,_INT_PLOT),1));
+      drawing.push_back(symbolic(at_rectangle,makesequence(gen(x,y),gen(x+img->width(),y),fraction(img->height(),img->width()),
+                        symb_equal(change_subtype(_GL_TEXTURE,_INT_PLOT),string2gen(img->file_name(),false)))));
+      return drawing;
+    }
+    /* end display image */
     if (a.type==_STRNG){
       *logptr(contextptr) << gettext("Use pencolor for the turtle") << '\n';
       return _couleur(gen(*a._STRNGptr,contextptr),contextptr);

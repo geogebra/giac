@@ -32,8 +32,10 @@
 #ifndef is_cx2
 #define is_cx2 false
 #endif
-
-
+int osok=1;
+// pour le mode examen cx2, il y a 2 endroits ou is_cx2 est utilise dans smallmenu.selection==1
+// soit par extinction des leds (marche avec OS 5.2)
+// soit comme sur la CX si l'ecriture en flash NAND marche un jour
 
 #ifdef KHICAS
 
@@ -15711,6 +15713,10 @@ void Graph2d::tracemode_set(int operation){
     smallmenuitems[10].text = (char*) ((lang==1)?"Backup, mode examen (e^x)":"Backup, exam mode (e^x)");
 #else
     smallmenuitems[10].text = (char*) ((lang==1)?"Mode examen (e^x)":"Exam mode (e^x)");
+    if (osok==0)
+      smallmenuitems[10].text = (char*) ((lang==1)?"Incompatible mode examen":"Exam mode incompatible");
+    if (osok==-1)
+      smallmenuitems[10].text = (char*) ((lang==1)?"Avertissement mode examen":"Exam mode warning");
 #endif
     smallmenuitems[11].text = (char*) ((lang==1)?"A propos":"About");
     smallmenuitems[14].text = (char*) "Quit";
@@ -15816,12 +15822,20 @@ void Graph2d::tracemode_set(int operation){
 	  giac::language(lang,contextptr);
 	  break;
 	}
-	if (smallmenu.selection == 11){
+	if (smallmenu.selection==11 && osok==-1){
+	  confirm(lang==1?"Activez une fois le mode examen TI":"Activate one time TI exam mode",lang==1?"pour utiliser ensuite celui de KhiCAS":"to enable KhiCAS exam mode");
+	  continue;
+	}
+	if (smallmenu.selection==11 && osok==0){
+	  confirm(lang==1?"Ce modele n'est pas compatible":"This model is not compatible",lang==1?"avec le mode examen de KhiCAS":"with KhiCAS exam mode");
+	  continue;
+	}
+	if (smallmenu.selection == 11 && osok>0){
 #ifdef NSPIRE_NEWLIB
 	  if (nspire_exam_mode==1
-	      && !is_cx2
+	      // && !is_cx2
 	      ){
-	    if (confirm((lang==1?"Quitter Xcas pour relancer le mode examen":"Leave Xcas to re-enter exam mode"),(lang==1?"!enter OK, esc annul":"enter OK, esc cancel."))!=KEY_CTRL_F1)
+	    if (confirm((lang==1?"Pour relancer le mode examen, il faudra":"To re-enter exam mode, you'll have"),(lang==1?"quitter Xcas. enter OK, esc annul":"to quit Xcas. enter OK, esc cancel."))!=KEY_CTRL_F1)
 	      break;
 	    do_restart(contextptr);
 	    clear_turtle_history(contextptr);
@@ -15838,7 +15852,7 @@ void Graph2d::tracemode_set(int operation){
 	    break;
 	  }
 	  else {
-	    if (//1 ||
+	    if (osok>0 ||
 		!is_cx2){
 	      if (do_confirm((lang==1)?"Lancer le mode examen avec CAS ?":"Run exam mode with CAS?")){
 		*logptr(contextptr) << (lang==1?"Patientez environ 2 minutes\n":"Please wait about 2 minutes\n");
@@ -19260,6 +19274,36 @@ void Graph2d::tracemode_set(int operation){
     sheetptr=0;
     shutdown=do_shutdown;
 #ifdef NSPIRE_NEWLIB
+    unsigned osid=0,osidcx52noncasnont=0;
+    osid=* (unsigned *) 0x10000020;
+    // values
+    // OS 5.2 cxcas 1040f3b0
+    // OS 5.2 cx2 ?
+    // OS 5.2 cx2t ?
+    // OS 5.3 cx2cas 10417da0
+    // OS 5.3 cx2 10416cc0
+    // OS 5.3 cx2t 10417460
+    osok=osid!=osidcx52noncasnont?1:0;
+    if ((osid & 0xffff0000)==0x10410000){
+      confirm("KhiCAS exammode is incompatible with OS 5.3","Downgrade to 5.2 with backSpire");
+    }
+    if (osok && is_cx2){
+      int N=0x800;
+      long int nand_offset = 5*64*N;
+      long int nand_size = 64*N;
+      char flashdata[N];
+      const char erased_char=(char) 255;
+      int i; 
+      for(i=0; i<nand_size; i+=N) {
+	read_nand(flashdata, N, nand_offset+i, 0, 0, NULL);
+	if (flashdata[0]==erased_char && flashdata[1]==erased_char && flashdata[2]==erased_char && flashdata[3]==erased_char && flashdata[4]==erased_char && flashdata[5]==erased_char && flashdata[6]==erased_char && flashdata[7]==erased_char)
+	  break;
+      }
+      if (i==nand_size){
+	confirm(lang==1?"Activez une fois le mode examen TI":"Activate one time TI exam mode",lang==1?"pour utiliser ensuite celui de KhiCAS":"to enable KhiCAS exam mode");
+	osok=-1;
+      }
+    }
     // detect if leds are blinking
     unsigned green=*(unsigned *) 0x90110b04;
     unsigned red=*(unsigned *) 0x90110b0c;

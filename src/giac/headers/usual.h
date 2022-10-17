@@ -945,6 +945,25 @@ namespace giac {
   gen * normal_cos_pi_12_ptr_();
 #endif
 
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#else
+  // additions by L. Marohnić:
+  std::string to_unix_path(const std::string &path);
+  std::string temp_file_name(const char *fallback_name,const char *ext=NULL);
+  bool ckfileexists(const char *fname);
+  class temp_file {
+    // TEMPORARY FILE CLASS
+    // This is a temporary file object that is accessed through the 'handle' member.
+    // The file is created and opened by constructor and automatically deleted by destructor.
+    std::string _fname;
+  public:
+    FILE *handle;
+    temp_file(const char *fallback_name,const char *ext=NULL);
+    ~temp_file();
+    bool fail() const { return handle==NULL; }
+  };
+#endif
+
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac
 #endif // ndef NO_NAMESPACE_GIAC

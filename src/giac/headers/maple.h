@@ -85,8 +85,8 @@ namespace giac {
   gen _Nullspace(const gen & g,GIAC_CONTEXT);
   gen _assign(const gen & g,GIAC_CONTEXT);
   gen _implicitplot3d(const gen & g,GIAC_CONTEXT);
-  gen _readwav(const gen & g,GIAC_CONTEXT);
-  gen _writewav(const gen & g,GIAC_CONTEXT);
+  //gen _readwav(const gen & g,GIAC_CONTEXT);
+  //gen _writewav(const gen & g,GIAC_CONTEXT);
   gen _animate(const gen & g,GIAC_CONTEXT);
   gen _animate3d(const gen & g,GIAC_CONTEXT);
   gen _even(const gen & g,GIAC_CONTEXT);

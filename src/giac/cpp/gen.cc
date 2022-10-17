@@ -14450,7 +14450,7 @@ void sprint_double(char * s,double d){
     case _VECT:
       if (subtype==_GRAPH__VECT){
 	string s;
-	if (is_graphe(*this,s,contextptr))
+	if (is_graphe(*this))
 	  return '"'+s+'"';
       }
       return print_VECT(*_VECTptr,subtype,contextptr);

@@ -53,9 +53,10 @@ using namespace std;
 #include "sparse.h"
 #include "giacintl.h"
 #if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
-inline bool is_graphe(const giac::gen &g,std::string &disp_out,const giac::context *){ return false; }
+inline bool is_graphe(const giac::gen &g){ return false; }
 inline giac::gen _graph_charpoly(const giac::gen &g,const giac::context *){ return g;}
 #else
+#include "signalprocessing.h"
 #include "graphtheory.h"
 #endif
 
@@ -2189,6 +2190,16 @@ namespace giac {
 
   gen _normalize(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
+#ifdef GIAC_LMCHANGES // changes by L. Marohnić
+    audio_clip *clip;
+    if (a.type==_VECT && a.subtype==_SEQ__VECT && a._VECTptr->size()==2 &&
+        (clip=audio_clip::from_gen(a._VECTptr->front()))!=NULL) {
+      if (!is_real_number(a._VECTptr->back(),contextptr))
+        return gentypeerr(contextptr);
+      clip->normalize(to_real_number(a._VECTptr->back(),contextptr).to_double(contextptr));
+      return *clip;
+    }
+#endif
     return a/_l2norm(a,contextptr);
   }
   static const char _normalize_s []="normalize";
@@ -2280,11 +2291,10 @@ namespace giac {
   define_unary_function_ptr5( at_eigenvalues ,alias_at_eigenvalues,&__eigenvalues,0,true);
 
   gen _charpoly(const gen & args,GIAC_CONTEXT){
-    string s;
     gen arg0=args.type==_VECT && !args._VECTptr->empty() && args.subtype==_SEQ__VECT?args._VECTptr->front():args;
     if (ckmatrix(arg0))
       return _pcar(args,contextptr);
-    if (is_graphe(arg0,s,contextptr))
+    if (is_graphe(arg0))
       return _graph_charpoly(args,contextptr);
     return _pcar(args,contextptr);
   }
@@ -6494,7 +6504,15 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 #endif
 
   gen _flatten(const gen & args,GIAC_CONTEXT){
-    if ( args.type==_STRNG && args.subtype==-1) return  args;
+    if (args.type==_STRNG && args.subtype==-1) return  args;
+#ifdef GIAC_LMCHANGES // changes by L. Marohnić
+    rgba_image *img=rgba_image::from_gen(args);
+    if (img!=NULL) {
+      vecteur flv;
+      img->flatten(flv);
+      return flv;
+    }
+#endif
     if (args.type!=_VECT) return gensizeerr(contextptr);
     vecteur res;
     aplatir(*args._VECTptr,res,true);

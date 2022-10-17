@@ -8561,7 +8561,7 @@ namespace giac {
       int n=args._VECTptr->back().val;
       if (n<=0 || !is_address(args._VECTptr->front(),addr)) 
 	return undef;
-      // void read_nandd(void* dest, int size, int nand_offset, int unknown, int percent_max, void* progress_cb); // terminer par (...,0,0,NULL)
+      // void read_nand(void* dest, int size, int nand_offset, int unknown, int percent_max, void* progress_cb); // terminer par (...,0,0,NULL)
       char * dest=(char *)malloc(4*n);
       read_nand(dest,4*n,addr,0,0,NULL);
       char buf[5]="aaaa";
@@ -8671,9 +8671,10 @@ namespace giac {
       return _read32(args,contextptr);
     if (args.type==_VECT){
       vecteur v=*args._VECTptr;
+      if (v.empty()) return gensizeerr(contextptr);
+      gen vf=v.front(),vb=v.back();
       size_t addr;
-      if (v.size()==2 && is_address(v.front(),addr)){
-	gen vb=v.back();
+      if (v.size()==2 && is_address(vf,addr)){
 	unsigned * ptr =(unsigned *) addr;
 	if (vb.type==_INT_){
 	  *ptr=vb.val;

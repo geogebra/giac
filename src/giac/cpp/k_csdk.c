@@ -341,6 +341,10 @@ void statuslinemsg(const char * msg){
   gui_gc_setColor(nspire_gc,c_rgb565to888(bg));
   gui_gc_fillRect(nspire_gc,0,0,SCREEN_WIDTH,nspire_statusarea);
   nspire_draw_string(0,0,exam_mode?0xffff:0,bg,Regular9,msg,false);
+  if (nspireemu)
+    nspire_draw_string(190,0,exam_mode?0xffff:0,bg,Regular9," emu ",false);
+  else
+    nspire_draw_string(190,0,exam_mode?0xffff:0,bg,Regular9," CAS ",false);    
 }
 
 void display_time(){
@@ -399,9 +403,11 @@ void statusline(int mode){
   int bg=exam_bg();
   gui_gc_setColor(nspire_gc,c_rgb565to888(bg));
   gui_gc_fillRect(nspire_gc,210,0,SCREEN_WIDTH-210,nspire_statusarea);
-  nspire_draw_string(220,0,exam_mode?0xffff:0,bg,Regular9,msg,false);
+  nspire_draw_string(224,0,exam_mode?0xffff:0,bg,Regular9,msg,false);
   if (nspireemu)
-    nspire_draw_string(210,0,exam_mode?0xffff:0,bg,Regular9,"emu",false);
+    nspire_draw_string(190,0,exam_mode?0xffff:0,bg,Regular9," emu ",false);
+  else
+    nspire_draw_string(190,0,0xf800,bg,Regular9," CAS ",false);    
   display_time();
   if (mode==0)
     return;
@@ -507,7 +513,7 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_MULTIPLY))	return SHIFTCTRL('*','\'','\"');
   if (isKeyPressed(KEY_NSPIRE_MINUS))		return SHIFTCTRL('-','_', '<');
   if (isKeyPressed(KEY_NSPIRE_NEGATIVE))	return SHIFTCTRL('-',KEY_CTRL_F12,KEY_CHAR_ANS);
-  if (isKeyPressed(KEY_NSPIRE_PLUS))		return SHIFTCTRL('+', '>','>');
+  if (isKeyPressed(KEY_NSPIRE_PLUS))		return SHIFTCTRL('+', KEY_CHAR_NORMAL,'>');
   if (isKeyPressed(KEY_NSPIRE_EQU))		return SHIFTCTRL('=', '|',KEY_CHAR_STORE);
   if (isKeyPressed(KEY_NSPIRE_LTHAN))		return NORMAL('<');
   if (isKeyPressed(KEY_NSPIRE_GTHAN))		return NORMAL('>');
@@ -525,7 +531,7 @@ int ascii_get(int* adaptive_cursor_state){
   
   // Special chars
   if (isKeyPressed(KEY_NSPIRE_SCRATCHPAD)) return SHIFTCTRL(KEY_CTRL_SETUP,KEY_LOAD,KEY_SAVE);
-  if (isKeyPressed(KEY_NSPIRE_VAR)) return CTRL(KEY_CTRL_VARS,KEY_CHAR_STORE);
+  if (isKeyPressed(KEY_NSPIRE_VAR)) return SHIFTCTRL(KEY_CTRL_VARS,KEY_CHAR_FACTOR,KEY_CHAR_STORE);
   if (isKeyPressed(KEY_NSPIRE_DOC))		return KEY_CTRL_MENU;
   if (isKeyPressed(KEY_NSPIRE_CAT))		return KEY_BOOK;
   if (isKeyPressed(KEY_NSPIRE_DEL))		return SHIFTCTRL(KEY_CTRL_DEL,KEY_CTRL_DEL,KEY_CTRL_AC);

@@ -107,6 +107,10 @@ clock_t times (struct tms *__buffer) {
 #include "derive.h"
 #include "ti89.h"
 #include "giacintl.h"
+#if 1 // defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#else
+#include "signalprocessing.h"
+#endif
 #ifdef HAVE_LIBGSL
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_fft_complex.h>
@@ -1861,6 +1865,7 @@ namespace giac {
     }
   }
 
+#if 0
   bool read_audio(vecteur & v,int & channels,int & sample_rate,int & bits_per_sample,unsigned int & data_size){
     convert_double_int(v);
     if (v.size()>1 && v[1].type!=_VECT)
@@ -2298,6 +2303,7 @@ namespace giac {
   define_unary_function_ptr5( at_writewav ,alias_at_writewav,&__writewav,0,true);
 
 #endif // RTOS_THREADX
+#endif
 
   static gen animate2d3d(const gen & g,bool dim3,GIAC_CONTEXT){
     int s=0,frames=10;
@@ -2463,9 +2469,11 @@ namespace giac {
 #endif // LIBPNG
 
   gen _writergb(const gen & g,GIAC_CONTEXT){
-    if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if ( g.type==_STRNG && g.subtype==-1) return g;
+    if (g.type!=_VECT || g.subtype!=_SEQ__VECT || g._VECTptr->size()!=2 || g._VECTptr->front().type!=_STRNG)
+      return gensizeerr(contextptr);
     vecteur v(gen2vecteur(g));
-    if (ckmatrix(v[1])){
+    if (v.size()>=2 && ckmatrix(v[1])){
       int l,c;
       mdims(*v[1]._VECTptr,l,c);
       vecteur w(1,makevecteur(v.size()==2?1:4,c,l));
@@ -2476,8 +2484,14 @@ namespace giac {
       }
       v=makevecteur(v[0],w);
     }
-    if (v.size()!=2 || v[0].type!=_STRNG || v[1].type!=_VECT)
+    if (v.size()<2 || v[0].type!=_STRNG || v[1].type!=_VECT)
       return gensizeerr();
+#if 1 // defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#else
+    rgba_image *img=rgba_image::from_gen(v[1]);
+    if (img!=NULL)
+      return img->write_png(v[0]._STRNGptr->c_str())==0?1:0;
+#endif
     vecteur w=*v[1]._VECTptr;
     // w[0]==[d,w,h], w[1..4]=data
     bool ok= writergb(*v[0]._STRNGptr,w);

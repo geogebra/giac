@@ -11224,6 +11224,63 @@ namespace giac {
 #endif
   }
 
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#else
+  // additions by L. Marohnić:
+  string to_unix_path(const string &path) {
+    string ret;
+    ret.reserve(path.size());
+    string::const_iterator it=path.begin(),itend=path.end();
+    for (;it!=itend;++it) {
+      switch (*it) {
+      case '\\':
+        ret.push_back('/');
+        break;
+      default:
+        ret.push_back(*it);
+        break;
+      }
+    }
+    return ret;
+  }
+  /* Create a temporary file name (using the fallback filename if tmpnam fails).
+   * Optionally, extension EXT may be specified, without the leading dot.*/
+  string temp_file_name(const char *fallback_name,const char *ext) {
+    char buf[L_tmpnam];
+    bool has_temp_file=(tmpnam(buf)!=NULL);
+    string tmpname(has_temp_file?buf:fallback_name);
+#ifdef _WIN32
+    string tmpdir=getenv("TEMP")?getenv("TEMP"):"c:\\Users\\Public\\";
+    tmpname=tmpdir+tmpname;
+    if (tmpname[tmpname.size()-1]=='.')
+        tmpname.erase(tmpname.begin()+tmpname.size()-1);
+#endif
+    if (ext!=NULL)
+      tmpname+="."+string(ext);
+    return tmpname;
+  }
+  /* Return true iff the file FNAME exists. */
+  bool ckfileexists(const char *fname) {
+    if (FILE *f=fopen(fname,"r")) {
+      fclose(f);
+      return true;
+    }
+    return false;
+  }
+  temp_file::temp_file(const char *fallback_name,const char *ext) {
+    _fname=temp_file_name(fallback_name,ext);
+    handle=fopen(_fname.c_str(),"wb+");
+  }
+  temp_file::~temp_file() {
+    if (ckfileexists(_fname.c_str())) {
+      if (handle!=NULL)
+        fclose(handle);
+      if (remove(_fname.c_str())!=0 && debug_infolevel)
+        cerr << gettext("Failed to remove temporary file") << " '" << _fname << "'\n";
+    }
+  }
+#endif
+
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac
 #endif // ndef NO_NAMESPACE_GIAC
