@@ -2190,7 +2190,7 @@ namespace giac {
 
   gen _normalize(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
-#ifdef GIAC_LMCHANGES // changes by L. Marohnić
+#if defined GIAC_LMCHANGES && !defined EMCC && !defined EMCC2 // changes by L. Marohnić
     audio_clip *clip;
     if (a.type==_VECT && a.subtype==_SEQ__VECT && a._VECTptr->size()==2 &&
         (clip=audio_clip::from_gen(a._VECTptr->front()))!=NULL) {
@@ -6505,7 +6505,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 
   gen _flatten(const gen & args,GIAC_CONTEXT){
     if (args.type==_STRNG && args.subtype==-1) return  args;
-#ifdef GIAC_LMCHANGES // changes by L. Marohnić
+#if defined GIAC_LMCHANGES && !defined EMCC && !defined EMCC2 // changes by L. Marohnić
     rgba_image *img=rgba_image::from_gen(args);
     if (img!=NULL) {
       vecteur flv;

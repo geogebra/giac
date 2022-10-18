@@ -2486,7 +2486,7 @@ namespace giac {
     }
     if (v.size()<2 || v[0].type!=_STRNG || v[1].type!=_VECT)
       return gensizeerr();
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined EMCC || defined EMCC2
 #else
     rgba_image *img=rgba_image::from_gen(v[1]);
     if (img!=NULL)

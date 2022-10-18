@@ -11189,6 +11189,8 @@ namespace giac {
 
   gen _couleur(const gen & a,GIAC_CONTEXT){
     if (is_undef(a)) return a;
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined EMCC || defined EMCC2
+#else    
     /* display image, addition by L. Marohnić */
     rgba_image *img;
     gen x=0,y=0;
@@ -11216,6 +11218,7 @@ namespace giac {
       return drawing;
     }
     /* end display image */
+#endif
     if (a.type==_STRNG){
       *logptr(contextptr) << gettext("Use pencolor for the turtle") << '\n';
       return _couleur(gen(*a._STRNGptr,contextptr),contextptr);

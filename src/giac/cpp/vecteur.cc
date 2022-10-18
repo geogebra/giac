@@ -15208,7 +15208,7 @@ namespace giac {
 
   // adapted by L. Marohnić for image loading and creation
   gen _image(const gen & a,GIAC_CONTEXT){
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined EMCC || defined EMCC2
     if ( a.type==_STRNG && a.subtype==-1) return  a;
 #else
     if (a.type==_STRNG) {
@@ -15409,6 +15409,8 @@ namespace giac {
   }
   gen _size(const gen &args,GIAC_CONTEXT){
     if (args.type==_STRNG && args.subtype==-1) return args;
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined EMCC || defined EMCC2
+#else
     /* size of image or audio clip, addition by L. Marohnić */
     audio_clip *clip=audio_clip::from_gen(args);
     rgba_image *img=rgba_image::from_gen(args);
@@ -15417,6 +15419,7 @@ namespace giac {
     if (img!=NULL)
       return makevecteur(img->width(),img->height());
     /* end audio clip or image size */
+#endif
     if (args.type==_STRNG)
       return (int) args._STRNGptr->size();
     if (args.type==_SYMB){
