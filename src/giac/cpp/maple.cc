@@ -107,14 +107,14 @@ clock_t times (struct tms *__buffer) {
 #include "derive.h"
 #include "ti89.h"
 #include "giacintl.h"
-#if 1 // defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
-#else
-#include "signalprocessing.h"
-#endif
 #ifdef HAVE_LIBGSL
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_fft_complex.h>
 #include <gsl/gsl_fft_real.h>
+#endif
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#else
+#include "signalprocessing.h"
 #endif
 #ifndef HAVE_PNG_H
 #undef HAVE_LIBPNG
@@ -2486,7 +2486,7 @@ namespace giac {
     }
     if (v.size()<2 || v[0].type!=_STRNG || v[1].type!=_VECT)
       return gensizeerr();
-#if 1 // defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
 #else
     rgba_image *img=rgba_image::from_gen(v[1]);
     if (img!=NULL)
