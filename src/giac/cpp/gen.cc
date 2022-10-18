@@ -64,7 +64,7 @@ using namespace std;
 #include "csturm.h"
 #include "sparse.h"
 #if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
-inline bool is_graphe(const giac::gen &g,std::string &disp_out,const giac::context *){ return false; }
+inline bool is_graphe(const giac::gen &g){ return false; }
 #else
 #include "graphtheory.h"
 #endif

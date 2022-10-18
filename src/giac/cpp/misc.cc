@@ -2190,6 +2190,8 @@ namespace giac {
 
   gen _normalize(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined EMCC || defined EMCC2
+#else
 #if defined GIAC_LMCHANGES && !defined EMCC && !defined EMCC2 // changes by L. Marohnić
     audio_clip *clip;
     if (a.type==_VECT && a.subtype==_SEQ__VECT && a._VECTptr->size()==2 &&
@@ -2199,6 +2201,7 @@ namespace giac {
       clip->normalize(to_real_number(a._VECTptr->back(),contextptr).to_double(contextptr));
       return *clip;
     }
+#endif
 #endif
     return a/_l2norm(a,contextptr);
   }
@@ -6505,6 +6508,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 
   gen _flatten(const gen & args,GIAC_CONTEXT){
     if (args.type==_STRNG && args.subtype==-1) return  args;
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined EMCC || defined EMCC2
+#else
 #if defined GIAC_LMCHANGES && !defined EMCC && !defined EMCC2 // changes by L. Marohnić
     rgba_image *img=rgba_image::from_gen(args);
     if (img!=NULL) {
@@ -6512,6 +6517,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       img->flatten(flv);
       return flv;
     }
+#endif
 #endif
     if (args.type!=_VECT) return gensizeerr(contextptr);
     vecteur res;
