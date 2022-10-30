@@ -9719,7 +9719,10 @@ namespace giac {
     // delta=ra^2-rb^2+AB^2
     gen delta=rayon_a2-rayon_b2+ab2;
     gen ab4=centre_a+delta/2/ab2*ab;
-    gen d_perp(sqrt(4*ab2*rayon_a2-pow(delta,2),contextptr)/2/ab2);
+    gen D=4*ab2*rayon_a2-pow(delta,2);
+    if (is_strictly_greater(0,D,contextptr))
+      return vecteur(0);
+    gen d_perp(sqrt(D,contextptr)/2/ab2);
     if (a2d){ // circle inter circle = 2 points (or 1)
       gen ab_perp(im(ab,contextptr)-cst_i*re(ab,contextptr));
       return makevecteur(symb_pnt(ratnormal(ab4+d_perp*ab_perp,contextptr),default_color(contextptr),contextptr),symb_pnt(ratnormal(ab4-d_perp*ab_perp,contextptr),default_color(contextptr),contextptr));
