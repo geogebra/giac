@@ -14761,7 +14761,7 @@ namespace giac {
 	      char_m=mergematrice(char_m,mtran(*cur_m._VECTptr));
 	    if (is_undef(char_m) || (!jordan && !is_zero(cur_m,contextptr)) ){
 #ifndef NO_STDEXCEPT
-	      throw(std::runtime_error("Not diagonalizable at eigenvalue "+x.print()));
+	      gensizeerr("Not diagonalizable at eigenvalue "+x.print());
 #endif
 	      return false;
 	    }
