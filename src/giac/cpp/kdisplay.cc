@@ -11128,6 +11128,11 @@ void Graph2d::tracemode_set(int operation){
       if (key==KEY_CTRL_MENU || key==KEY_CTRL_F6 ||
 	  (!hp && (key==KEY_CTRL_CATALOG || key==KEY_BOOK))){
 	char menu_xmin[32],menu_xmax[32],menu_ymin[32],menu_ymax[32],menu_zmin[32],menu_zmax[32],menu_depth[32];
+	Menu smallmenu;
+	smallmenu.numitems=22;
+	MenuItem smallmenuitems[smallmenu.numitems];
+	smallmenu.items=smallmenuitems;
+	smallmenu.height=12;
 	for (;;){
 	  string s;
 	  s="xmin "+print_DOUBLE_(gr.window_xmin,contextptr);
@@ -11144,11 +11149,6 @@ void Graph2d::tracemode_set(int operation){
 	  strcpy(menu_zmax,s.c_str());
 	  s="depth 3d "+print_DOUBLE_(gr.current_depth,contextptr);
 	  strcpy(menu_depth,s.c_str());
-	  Menu smallmenu;
-	  smallmenu.numitems=19;
-	  MenuItem smallmenuitems[smallmenu.numitems];
-	  smallmenu.items=smallmenuitems;
-	  smallmenu.height=12;
 	  //smallmenu.title = "KhiCAS";
 	  smallmenuitems[0].text = (char *) ((lang==1)?"Aide":"Help");
 #ifdef NUMWORKS
@@ -11174,7 +11174,16 @@ void Graph2d::tracemode_set(int operation){
 	  smallmenuitems[17].text = (char*) ((lang==1)?"Voir axes":"Show axes");
 	  smallmenuitems[17].type = MENUITEM_CHECKBOX;
 	  smallmenuitems[17].value = gr.show_axes;
-	  smallmenuitems[18].text = (char*) ((lang==1)?"Effacer traces geometrie":"Clear geometry traces");
+	  smallmenuitems[18].text = (char*) ((lang==1)?"Voir tangente (F3)":"Show tangent (F3)");
+	  smallmenuitems[18].type = MENUITEM_CHECKBOX;
+	  smallmenuitems[18].value = (gr.tracemode & 2)!=0;
+	  smallmenuitems[19].text = (char*) ((lang==1)?"Voir normale (F4)":"Show normal (F4)");
+	  smallmenuitems[19].type = MENUITEM_CHECKBOX;
+	  smallmenuitems[19].value = (gr.tracemode & 4)!=0;
+	  smallmenuitems[20].text = (char*) ((lang==1)?"Voir cercle (F5)":"Show circle (F5)");
+	  smallmenuitems[20].type = MENUITEM_CHECKBOX;
+	  smallmenuitems[20].value = (gr.tracemode & 8)!=0;
+	  smallmenuitems[21].text = (char*) ((lang==1)?"Effacer traces geometrie":"Clear geometry traces");
 	  drawRectangle(0,180,LCD_WIDTH_PX,60,_BLACK);
 	  int sres = doMenu(&smallmenu);
 	  if (sres == MENU_RETURN_EXIT)
@@ -11274,6 +11283,31 @@ void Graph2d::tracemode_set(int operation){
 	      gr.zoomy(1/0.7);
 	    if (smallmenu.selection==18)
 	      gr.show_axes=!gr.show_axes;	
+	    if (smallmenu.selection==19){
+	      if (gr.tracemode & 2)
+		gr.tracemode &= ~2;
+	      else
+		gr.tracemode |= 2;
+	      gr.tracemode_set();
+	    }
+	    if (smallmenu.selection==20){
+	      if (gr.tracemode & 4)
+		gr.tracemode &= ~4;
+	      else {
+		gr.tracemode |= 4;
+		gr.orthonormalize();
+	      }
+	      gr.tracemode_set();
+	    }
+	    if (smallmenu.selection==21){
+	      if (gr.tracemode & 8)
+		gr.tracemode &= ~8;
+	      else {
+		gr.tracemode |= 8;
+		gr.orthonormalize();
+	      }
+	      gr.tracemode_set();
+	    }
 	    if (smallmenu.selection==19){
 	      gr.trace_instructions.clear();
 	      update_g();
