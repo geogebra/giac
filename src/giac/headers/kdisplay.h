@@ -363,6 +363,7 @@ namespace xcas {
     void set_gen_value(int n,const giac::gen & g,bool exec=true); // set n-th entry value
     int geo_handle(int event,int key);
     int ui();
+    void curve_infos();
     void init_tracemode();
     giac::vecteur selected_names(bool allobjects,bool withdef) const;
     void find_title_plot(giac::gen & title_tmp,giac::gen & plot_tmp);

@@ -9808,6 +9808,8 @@ namespace giac {
     else {
       if (has_inf_or_undef(i))
 	return undef;
+      if (*this==x__IDNT_e || *this==t__IDNT_e)
+	return i;
       return symb_of(*this,i);
     }
   }

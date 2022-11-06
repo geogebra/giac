@@ -1071,6 +1071,8 @@ namespace giac {
     }
     i += ndigits+1;
     if (i<l){
+      if (s[i-1]=='e' || s[i-2]=='e')
+	return s;
       int j;
       for (j=i;j<l;++j){
 	// exponent?

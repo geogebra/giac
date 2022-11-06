@@ -8858,7 +8858,7 @@ namespace xcas {
 	}
       }      
 #ifdef NSPIRE_NEWLIB
-      DefineStatusMessage((char*)"shift-1: help, menu: menu, esc: quit", 1, 0, 0);
+      DefineStatusMessage((char*)"menu: menu, esc: quit", 1, 0, 0);
 #else
       DefineStatusMessage((char*)"shift-1: help, home: menu, back: quit", 1, 0, 0);
 #endif
@@ -9551,7 +9551,12 @@ namespace xcas {
     }
   }
 
-void Graph2d::tracemode_set(int operation){
+  std::string printn(const gen & g,int n){
+    if (g.type!=_DOUBLE_)
+      return g.print();
+    return giac::print_DOUBLE_(g._DOUBLE_val,n);
+  }
+  void Graph2d::tracemode_set(int operation){
     if (plot_instructions.empty())
       plot_instructions=gen2vecteur(g);
     if (is_zero(plot_instructions.back())) // workaround for 0 at end in geometry (?)
@@ -9838,7 +9843,55 @@ void Graph2d::tracemode_set(int operation){
 	  curve_infos1 = f.print(contextptr)+": "+curve_infos1;
 	}
       }
-      confirm(curve_infos1.c_str(),curve_infos2.c_str());
+      if (confirm(curve_infos1.c_str(),curve_infos2.c_str())==KEY_CTRL_F1 && tstep!=0){
+	double t0=tmin._DOUBLE_val,ts,tc=t0;
+	ts=find_tick(tstep._DOUBLE_val*5);
+	t0=int(t0/ts)*ts;
+	int ndisp=10,N=6,dy=0;
+	for (;;){
+#ifdef NUMWORKS
+	  statuslinemsg("Back: quit, up/down: move");
+#else
+	  statuslinemsg("esc: quit, up/down: move");
+#endif
+	  // table of values
+	  drawRectangle(0,dy,LCD_WIDTH_PX,LCD_HEIGHT_PX-dy,_WHITE);
+	  if (t==x){
+	    os_draw_string(0,dy,_BLACK,_WHITE,"x");
+	    os_draw_string(120,dy,_BLACK,_WHITE,y.print().c_str());
+	  }
+	  else {
+	    os_draw_string(0,dy,_BLACK,_WHITE,"t");
+	    os_draw_string(107,dy,_BLACK,_WHITE,"x");
+	    os_draw_string(214,dy,_BLACK,_WHITE,"y");
+	  }
+	  for (int i=1;i<=ndisp;++i){
+	    double tcur=tc+(i-1)*ts;
+	    os_draw_string(0,dy+i*18,_BLACK,_WHITE,printn(tcur,N).c_str());
+	    if (t==x){
+	      gen cur=subst(y,t,tcur,false,contextptr);
+	      os_draw_string(120,dy+i*18,_BLACK,_WHITE,printn(cur,N).c_str());
+	    }
+	    else {
+	      gen cur=subst(x,t,tcur,false,contextptr);
+	      os_draw_string(107,dy+i*18,_BLACK,_WHITE,printn(cur,N).c_str());
+	      cur=subst(y,t,tcur,false,contextptr);
+	      os_draw_string(214,dy+i*18,_BLACK,_WHITE,printn(cur,N).c_str());	      
+	    }
+	  }
+	  int key=getkey(1);
+	  if (key==KEY_CTRL_EXIT || key==KEY_CTRL_OK)
+	    break;
+	  if (key==KEY_CTRL_UP)
+	    tc -= (ndisp/2)*ts;
+	  if (key==KEY_CTRL_DOWN)
+	    tc += (ndisp/2)*ts;
+	  if (key=='+')
+	    ts /= 2;
+	  if (key=='-')
+	    ts *= 2;
+	}
+      }
     }
     tracemode_add="";
     if (Gx.type==_DOUBLE_ && Gy.type==_DOUBLE_){
@@ -17966,7 +18019,11 @@ void Graph2d::tracemode_set(int operation){
 	// smallmenuitems[2].text = (char*)(isRecording ? "Stop Recording" : "Record Script");
 	while(1) {
 	  // moved inside the loop because lang might change
+#ifdef NUMWORKS
 	  smallmenuitems[0].text = (char*)"Applications (shift ANS)";
+#else
+	  smallmenuitems[0].text = (char*)"Applications (shift doc)";
+#endif
 	  string sess=(lang==1)?"Enregistrer ":"Save ";
 	  sess += session_filename;
 	  smallmenuitems[1].text = (char *) (sess.c_str());
@@ -18200,7 +18257,7 @@ void Graph2d::tracemode_set(int operation){
 	return CONSOLE_SUCCEEDED;
 #endif
       }
-      if (key==KEY_SHIFT_ANS){ // 3rd party app
+      if (key==KEY_SHIFT_ANS || key==KEY_CTRL_SD){ // 3rd party app
 	int res=khicas_addins_menu(contextptr);
 	if (res==KEY_CTRL_MENU)
 	  return res;
@@ -19308,12 +19365,12 @@ void Graph2d::tracemode_set(int operation){
     sheetptr=0;
     shutdown=do_shutdown;
 #ifdef NSPIRE_NEWLIB
-    unsigned osid=0,osidcx52noncasnont=0;
+    unsigned osid=0,osidcx52noncasnont=0x1040E4D0;
     osid=* (unsigned *) 0x10000020;
     // values
     // OS 5.2 cxcas 1040f3b0
-    // OS 5.2 cx2 ?
-    // OS 5.2 cx2t ?
+    // OS 5.2 cx2 0x1040E4D0
+    // OS 5.2 cx2t 0x1040EAE0
     // OS 5.3 cx2cas 10417da0
     // OS 5.3 cx2 10416cc0
     // OS 5.3 cx2t 10417460
@@ -19321,6 +19378,7 @@ void Graph2d::tracemode_set(int operation){
     if ((osid & 0xffff0000)==0x10410000){
       confirm("KhiCAS exammode is incompatible with OS 5.3","Downgrade to 5.2 with backSpire");
     }
+#if 0
     if (osok && is_cx2){
       int N=0x800;
       long int nand_offset = 5*64*N;
@@ -19338,6 +19396,7 @@ void Graph2d::tracemode_set(int operation){
 	osok=-1;
       }
     }
+#endif
     // detect if leds are blinking
     unsigned green=*(unsigned *) 0x90110b04;
     unsigned red=*(unsigned *) 0x90110b0c;

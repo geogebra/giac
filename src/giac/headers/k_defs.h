@@ -196,3 +196,4 @@
 #define KEY_PRGM_ALPHA 77 
 #define KEY_PRGM_SHIFT 78
 #define KEY_PRGM_MENU 48
+#define KEY_CTRL_SD         39990
