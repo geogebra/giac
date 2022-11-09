@@ -8138,6 +8138,11 @@ namespace giac {
     return symbolic(at_Gamma,x);
 #endif
   }
+
+  // Gamma, to Mathematica Gamma (from Albert Chan
+  // https://www.hpmuseum.org/forum/thread-19088-post-166001.html#pid166001)
+  // CAS> gamma(a,x) := when(x<0, [Gamma(a),Gamma(a,x)] * [1+(-1)^a,-(-1)^a], Gamma(a,x))
+  //CAS> gamma(4/5,-6.)      → 238.757077078-172.62130796*i
   gen _Gamma(const gen & args,GIAC_CONTEXT) {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     return Gamma(args,contextptr);

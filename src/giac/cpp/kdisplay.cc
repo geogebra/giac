@@ -9865,19 +9865,25 @@ namespace xcas {
 	    os_draw_string(107,dy,_BLACK,_WHITE,"x");
 	    os_draw_string(214,dy,_BLACK,_WHITE,"y");
 	  }
+	  vecteur V;
 	  for (int i=1;i<=ndisp;++i){
 	    double tcur=tc+(i-1)*ts;
+	    vecteur L(1,tcur);
 	    os_draw_string(0,dy+i*18,_BLACK,_WHITE,printn(tcur,N).c_str());
 	    if (t==x){
 	      gen cur=subst(y,t,tcur,false,contextptr);
+	      L.push_back(cur);
 	      os_draw_string(120,dy+i*18,_BLACK,_WHITE,printn(cur,N).c_str());
 	    }
 	    else {
 	      gen cur=subst(x,t,tcur,false,contextptr);
+	      L.push_back(cur);
 	      os_draw_string(107,dy+i*18,_BLACK,_WHITE,printn(cur,N).c_str());
 	      cur=subst(y,t,tcur,false,contextptr);
+	      L.push_back(cur);
 	      os_draw_string(214,dy+i*18,_BLACK,_WHITE,printn(cur,N).c_str());	      
 	    }
+	    V.push_back(L);
 	  }
 	  int key=getkey(1);
 	  if (key==KEY_CTRL_EXIT || key==KEY_CTRL_OK)
@@ -9890,6 +9896,12 @@ namespace xcas {
 	    ts /= 2;
 	  if (key=='-')
 	    ts *= 2;
+	  if (key==KEY_CTRL_DEL && inputdouble("step",ts,contextptr))
+	    ts=fabs(ts);
+	  if (key==KEY_CTRL_LEFT)
+	    inputdouble("min",tc,contextptr);
+	  if (key==KEY_CTRL_CLIP)
+	    copy_clipboard(gen(V).print(contextptr),true);
 	}
       }
     }
