@@ -74,6 +74,7 @@ extern "C" {
   double r_det(double *,int);
   struct double_pair {
     double r,i;
+    double_pair operator +=(const double_pair &);
   } ;
   typedef struct double_pair c_complex;
   bool matrice2c_complexptr(const giac::matrice &M,c_complex *x);
@@ -98,12 +99,20 @@ extern "C" {
   void c_turtle_up(int i);
   void c_turtle_goto(double x,double y);
   void c_turtle_cap(double x);
-  void c_turtle_crayon(int i);
+  int c_turtle_crayon(int i);
   void c_turtle_rond(int x,int y,int z);
   void c_turtle_disque(int x,int y,int z,int centered);
   void c_turtle_fill(int i);
   void c_turtle_fillcolor(double r,double g,double b,int entier);
   void c_turtle_getposition(double * x,double * y);
+  void c_turtle_clear(int clrpos);
+  void c_turtle_show(int visible);
+  int c_turtle_getcap();
+  void c_turtle_towards(double x,double y);
+  int c_turtle_getcolor();
+  void c_turtle_color(int);
+  void c_turtle_fillcolor1(int c);
+  
 }
 extern int lang;
 extern short int nspirelua;

@@ -670,12 +670,12 @@ namespace giac {
 	      gen delta=-D*a/E*exp(a*F/E-b,contextptr);
 	      if (is_greater(m1,delta,contextptr))
 		return; // no solution
-	      gen sol=(_LambertW(delta,contextptr)-F/E)/a;
-	      v.push_back((sol-b)/a);
+	      gen sol=_LambertW(delta,contextptr)/a-F/E;
+	      v.push_back(sol);
 	      if (is_positive(delta,contextptr)|| delta==m1)
 		return;
-	      sol=(_LambertW(makesequence(delta,-1),contextptr)-F/E)/a;
-	      v.push_back((sol-b)/a);
+	      sol=_LambertW(makesequence(delta,-1),contextptr)/a-F/E;
+	      v.push_back(sol);
 	      return;
 	    }
 	  }

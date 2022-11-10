@@ -3424,7 +3424,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     return radius;
   }
 
-  static void turtle_move(int r,int theta2,GIAC_CONTEXT){
+  static void c_turtle_move(int r,int theta2){
     double theta0;
     if ((*turtleptr).direct)
       theta0=(*turtleptr).theta-90;
@@ -3441,6 +3441,9 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       (*turtleptr).theta -= 360;
   }
 
+  static void turtle_move(int r,int theta2,GIAC_CONTEXT){
+    c_turtle_move(r,theta2);
+  }
   gen _rond(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     int r,theta2,tmpr;
@@ -20138,13 +20141,6 @@ bool matrice2c_complexptr(const giac::matrice &M,c_complex *x){
   return true;
 }
 
-bool c_inv(c_complex * x,int n){
-  giac::matrice M(n);
-  c_complexptr2matrice(x,n,n,M);
-  M=giac::minv(M,giac::context0);
-  return matrice2c_complexptr(M,x);
-}
-
 bool c_proot(c_complex * x,int n){
   giac::matrice M(n);
   c_complexptr2matrice(x,n,0,M);
@@ -20190,15 +20186,560 @@ bool c_egv(c_complex * x,int n){
   return matrice2c_complexptr(*g._VECTptr,x);
 }
 
-bool c_eig(c_complex * x,c_complex * d,int n){
-  giac::matrice M(n);
-  c_complexptr2matrice(x,n,n,M);
-  gen g=giac::_jordan(M,giac::context0);
-  if (g.type!=_VECT || g._VECTptr->size()!=2 || !ckmatrix(g[0]) || !ckmatrix(g[1]))
-    return false;
-  return matrice2c_complexptr(*g[0]._VECTptr,x) && matrice2c_complexptr(*g[1]._VECTptr,d);
+c_complex operator +(const c_complex & a,const c_complex & b){
+  c_complex c={a.r+b.r,a.i+b.i};
+  return c;
 }
 
+c_complex c_complex::operator +=(const c_complex & b){
+  r += b.r;
+  i += b.i;
+  return *this;
+}
+
+
+c_complex operator -(const c_complex & a,const c_complex & b){
+  c_complex c={a.r-b.r,a.i-b.i};
+  return c;
+}
+
+c_complex operator -(const c_complex & a,double b){
+  c_complex c={a.r-b,a.i};
+  return c;
+}
+
+c_complex operator -(const c_complex & a){
+  c_complex c={-a.r,-a.i};
+  return c;
+}
+
+c_complex operator /(const c_complex & a,double d){
+  c_complex c={a.r/d,a.i/d};
+  return c;
+}
+
+c_complex operator *(const c_complex & a,double d){
+  c_complex c={a.r*d,a.i*d};
+  return c;
+}
+
+c_complex operator *(double d,const c_complex & a){
+  c_complex c={a.r*d,a.i*d};
+  return c;
+}
+
+c_complex operator *(const c_complex & a,const c_complex & b){
+  c_complex c={a.r*b.r-a.i*b.i,a.r*b.i+a.i*b.r};
+  return c;
+}
+
+//inline double absdouble(double x){ return x<0?-x:x;}
+double abs(const c_complex & c){
+  double X=absdouble(c.r),Y=absdouble(c.i);
+  if (X==0 && Y==0) return 0;
+  if (X<Y){
+    X/=Y;
+    return Y*sqrt(1+X*X);
+  }
+  Y/=X;
+  return X*sqrt(1+Y*Y);
+}
+
+double norm(const c_complex & c){
+  return c.r*c.r+c.i*c.i;
+}
+
+c_complex inv(const c_complex & a){
+  double n=abs(a);
+  c_complex c={a.r/n/n,-a.i/n/n};
+  return c;
+}
+
+bool is_zero(const c_complex & a){
+  return a.r==0 && a.i==0;
+}
+
+bool operator ==(const c_complex & a,const c_complex &b){
+  return a.r==b.r && a.i==b.i;
+}
+
+bool operator !=(const c_complex & a,const c_complex &b){
+  return a.r!=b.r || a.i!=b.i;
+}
+
+typedef vector< vector< c_complex> > cmatrice;
+typedef vector< c_complex> cvecteur;
+
+// v1=v1+c2*v2 
+void linear_combination(cvecteur & v1,const c_complex & c2,const cvecteur & v2,int cstart,int cend){
+  if (!is_zero(c2)){
+    cvecteur::iterator it1=v1.begin()+cstart,it1end=v1.end();
+    if (cend && cend>=cstart && cend<it1end-v1.begin())
+      it1end=v1.begin()+cend;
+    cvecteur::const_iterator it2=v2.begin()+cstart;
+    for (;it1!=it1end;++it1,++it2)
+      *it1 += c2*(*it2);
+  }
+}
+
+void crref(cmatrice & N,cvecteur & pivots,vector<int> & permutation,vector<int> & maxrankcols,c_complex & idet,int l, int lmax, int c,int cmax,int fullreduction,double eps,int rref_or_det_or_lu){
+  bool use_cstart=!c;
+  bool inverting=fullreduction==2;
+  int linit=l;//,previous_l=l;
+  // Reduction
+  c_complex pivot,temp;
+  // cvecteur vtemp;
+  int pivotline,pivotcol;
+  idet.r=1; idet.i=0;
+  pivots.clear();
+  pivots.reserve(cmax-c);
+  permutation.clear();
+  maxrankcols.clear();
+  for (int i=0;i<lmax;++i)
+    permutation.push_back(i);
+  bool noswap=true;
+  double epspivot=(eps<1e-13)?1e-13:eps;
+  for (;(l<lmax) && (c<cmax);){
+    pivot=N[l][c];
+    if (abs(pivot)<epspivot)
+      N[l][c].r=N[l][c].i=pivot.r=pivot.i=0;
+    if (rref_or_det_or_lu==3 && is_zero(pivot)){
+      idet.r=idet.i=0;
+      return;
+    }
+    if ( rref_or_det_or_lu==1 && l==lmax-1 ){
+      idet = (idet * pivot);
+      break;
+    }
+    pivotline=l;
+    pivotcol=c;
+    noswap=false;
+    // scan N current column for the best pivot available
+    for (int ltemp=l+1;ltemp<lmax;++ltemp){
+      temp=N[ltemp][c];
+      if (abs(temp)<epspivot)
+	temp.r=temp.i=N[ltemp][c].r=N[ltemp][c].i=0;
+      if (abs(temp)>abs(pivot)){
+	pivot=temp;
+	pivotline=ltemp;
+      }
+    }
+    if (!is_zero(pivot)){
+      epspivot=eps*abs(pivot);
+      maxrankcols.push_back(c);
+      if (l!=pivotline){
+	swap(N[l],N[pivotline]);
+	swap(permutation[l],permutation[pivotline]);
+	pivotline=l;
+	idet = -idet;
+      }
+      // save pivot for annulation test purposes
+      if (rref_or_det_or_lu!=1)
+	pivots.push_back(pivot);
+      // invert pivot 
+      temp=inv(pivot);
+      // multiply det
+      idet = idet * pivot ;
+      if (fullreduction || rref_or_det_or_lu<2){ // not LU decomp
+	cvecteur::iterator it=N[pivotline].begin(),itend=N[pivotline].end();
+	c_complex invpivot=inv(pivot);
+	for (;it!=itend;++it){
+	  *it = *it*invpivot;
+	}
+      }
+      // if there are 0 at the end, ignore them in linear combination
+      int effcmax=cmax-1;
+      const cvecteur & Npiv=N[pivotline];
+      for (;effcmax>=c;--effcmax){
+	if (!is_zero(Npiv[effcmax]))
+	  break;
+      }
+      ++effcmax;
+      if (fullreduction && inverting && noswap)
+	effcmax=giacmax(effcmax,c+1+lmax);
+      // make the reduction
+      if (fullreduction){
+	for (int ltemp=linit;ltemp<lmax;++ltemp){
+	  if (ltemp==l)
+	    continue;
+	  linear_combination(N[ltemp],-N[ltemp][pivotcol],N[l],(use_cstart?c:cmax),effcmax);
+	}
+      }
+      else {
+	for (int ltemp=l+1;ltemp<lmax;++ltemp){
+	  if (rref_or_det_or_lu>=2) // LU decomp
+	    N[ltemp][pivotcol] =  N[ltemp][pivotcol]*temp;
+	  linear_combination(N[ltemp],-N[ltemp][pivotcol],N[l],(rref_or_det_or_lu>0)?(c+1):(use_cstart?c:cmax),effcmax);
+	}
+      } // end else
+      // increment column number 
+      ++c;
+      // increment line number since reduction has been done
+      ++l;	  
+    } // end if (!is_zero(pivot)
+    else { // if pivot is 0 increment col
+      idet.r = idet.i=0;
+      if (rref_or_det_or_lu==1)
+	return;
+      c++;
+    }
+  }
+}
+
+void c_complextab2cmatrice(c_complex * x,int n,int m,cmatrice & M){
+  M.resize(n);
+  for (int i=0;i<n;++i){
+    M[i].resize(m);
+    cvecteur & v=M[i];
+    for (int j=0;j<m;++j){
+      v[j]=*x; ++x;
+    }
+  }
+}
+
+void cmatrice2c_complextab(const cmatrice &M,c_complex * x){
+  int n=M.size();
+  for (int i=0;i<n;++i){
+    const cvecteur & v=M[i];
+    int m=v.size();
+    for (int j=0;j<m;++j){
+      *x=v[j];
+      ++x;
+    }
+  }
+}
+
+// add identity matrix, modifies arref in place
+void add_identity(cmatrice & arref){
+  int s=int(arref.size());
+  for (int i=0;i<s;++i){
+    cvecteur &v=arref[i];
+    v.reserve(2*s);
+    for (int j=0;j<s;++j){
+      c_complex c={i==j?1.0:0.0,0};
+      v.push_back(c);
+    }
+  }
+}
+
+bool remove_identity(cmatrice & res){
+  int s=int(res.size());
+  // "shrink" res
+  for (int i=0;i<s;++i){
+    cvecteur & v = res[i];
+    if (is_zero(v[i]))
+      return false;
+    c_complex p=inv(v[i]);
+    cvecteur d(s);
+    for (int j=0;j<s;++j)
+      d[j]=p*v[s+j];
+    res[i].swap(d);
+  }
+  return true;
+}
+
+c_complex sqrt(const c_complex & c){
+  double r=c.r,i=c.i;
+  if (c.i==0) {
+    c_complex res={sqrt(c.r),0}; return res;
+  }
+  double rho=abs(c);
+  double arho=sqrt(2.0*(r+rho));
+  c_complex res={arho/2,i*arho/2/(r+rho)};
+  return res;
+}
+
+c_complex conj(const c_complex & c){
+  c_complex C={c.r,-c.i};
+  return C;
+}
+
+double real(const c_complex &c){
+  return c.r;
+}
+
+double imag(const c_complex &c){
+  return c.i;
+}
+
+  // conj(a)*A+conj(c)*C->C
+  // c*A-a*C->A
+  void bi_linear_combination( c_complex  a,vector< c_complex > & A, c_complex  c,vector< c_complex > & C,int cstart,int cend){
+    c_complex  * Aptr=&A.front()+cstart;
+    c_complex  * Cptr=&C.front()+cstart,* Cend=Cptr+(cend-cstart);
+    c_complex ac=conj(a),cc=conj(c);
+    for (;Cptr!=Cend;++Aptr,++Cptr){
+      c_complex  tmp=c*(*Aptr)-a*(*Cptr);
+      *Cptr=ac*(*Aptr)+cc*(*Cptr);
+      *Aptr=tmp;
+    }
+  }
+
+  void hessenberg_ortho(cmatrice & H,cmatrice & P,int firstrow,int n,bool compute_P,int already_zero){
+    int nH=int(H.size());
+    if (n<0 || n>nH) 
+      n=nH;
+    if (firstrow<0 || firstrow>n)
+      firstrow=0;
+    c_complex  t,u,tc,uc;
+    double norme;
+    for (int m=firstrow;m<n-2;++m){
+      // if initial Hessenberg check for a non zero coeff in the column m below ligne m+1
+      int i=m+1;
+      int nend=n;
+      if (already_zero){
+	if (i+already_zero<n)
+	  nend=i+already_zero;
+      }
+      else {
+	double pivot=0;
+	int pivotline=0;
+	for (;i<nend;++i){
+	  double t=abs(H[i][m]);
+	  if (t>pivot){
+	    pivotline=i;
+	    pivot=t;
+	  }
+	}
+	if (pivot==0)
+	  continue;
+	i=pivotline;
+	// exchange line and columns
+	if (i>m+1){
+	  swap(H[i],H[m+1]);
+	  if (compute_P)
+	    swap(P[i],P[m+1]);
+	  for (int j=0;j<n;++j){
+	    vector< c_complex > & Hj=H[j];
+#ifdef VISUALC
+	    complex<double> cc=Hj[i];
+	    Hj[i]=Hj[m+1];
+	    Hj[m+1]=cc;
+#else
+	    swap< c_complex >(Hj[i],Hj[m+1]);
+#endif
+	  }
+	}
+      }
+      // now coeff at line m+1 column m is H[m+1][m]=t!=0
+      for (i=m+2;i<nend;++i){
+	u=H[i][m];
+	if (is_zero(u))
+	  continue;
+	// line operation
+	t=H[m+1][m];
+	norme=std::sqrt(norm(u)+norm(t));
+	u=u/norme; t=t/norme;
+	uc=conj(u); tc=conj(t);
+	// H[m+1]=uc*H[i]+tc*H[m+1] and H[i]=t*H[i]-u*H[m+1];
+	bi_linear_combination(u,H[i],t,H[m+1],m,nH);
+	// column operation:
+	int nstop=already_zero?nend+already_zero-1:nH;
+	if (nstop>nH)
+	  nstop=nH;
+	cmatrice::iterator Hjptr=H.begin(),Hjend=Hjptr+nstop;
+	for (;Hjptr!=Hjend;++Hjptr){
+	  c_complex  *Hj=&Hjptr->front();
+	  c_complex  Hjm=Hj[m+1],Hji=Hj[i];
+	  Hj[i]=-uc*Hjm+tc*Hji;
+	  Hj[m+1]=t*Hjm+u*Hji;
+	}
+	if (compute_P){
+	  bi_linear_combination(u,P[i],t,P[m+1],0,nH);
+	}
+      } // for i=m+2...
+    } // for int m=firstrow ...
+  }
+
+  // a*A+c*C->A
+  // c*A-a*C->C
+  void bi_linear_combination(double a,vector< c_complex > & A,c_complex c,vector< c_complex > & C){
+    c_complex * Aptr=&A.front();
+    c_complex * Cptr=&C.front(),* Cend=Cptr+C.size();
+    c_complex cc=conj(c);
+    for (;Cptr!=Cend;++Aptr,++Cptr){
+      c_complex tmp=a*(*Aptr)+cc*(*Cptr);
+      *Cptr=c*(*Aptr)-a*(*Cptr);
+      *Aptr=tmp;
+    }
+  }
+
+  void francis_iterate1(cmatrice & H,int n1,int n2,cmatrice & P,double eps,bool compute_P,c_complex l1,bool finish){
+    int n_orig=int(H.size());
+    c_complex x,y,yc;
+    if (finish){
+      // [[a,b],[c,d]] -> [b,l1-a] or [l1-d,c] as first eigenvector
+      c_complex a=H[n2-2][n2-2],b=H[n2-2][n2-1],c=H[n2-1][n2-2],d=H[n2-1][n2-1];
+      c_complex l1a=l1-a,l1d=l1-d;
+      if (abs(l1a)>abs(l1d)){
+	x=b; y=l1a;
+      }
+      else {
+	x=l1d; y=c;
+      }
+    }
+    else {
+      x=H[n1][n1]-l1,y=H[n1+1][n1];
+      if (abs(x)<eps && abs(y-1.0)<eps){
+	x.r = double(rand())/RAND_MAX;
+	x.i=0;
+      }
+    }
+    // make x real
+    double xr=real(x),xi=imag(x),yr=real(y),yi=imag(y),X;
+    X = std::sqrt(xr*xr+xi*xi);
+    if (X!=0){
+      // gen xy = gen(xr/x,-xi/x); y=y*xy;
+      y.r=(yr*xr+yi*xi)/X; y.i=(yi*xr-yr*xi)/X; 
+      yr=real(y); yi=imag(y);
+    }
+    double xy=std::sqrt(X*X+yr*yr+yi*yi);
+    // normalize eigenvector
+    X = X/xy; y = y/xy;	yc=conj(y);
+    // compute reflection matrix such that Q*[1,0]=[x,y]
+    // hence column 1 is [x,y] and column2 is [conj(y),-x]
+    // apply Q on H and P: line operations on H and P
+    // c_complex c11=x, c12=conj(y,contextptr),
+    //                 c21=y, c22=-x;
+    // apply Q on H and P: line operations on H and P
+    bi_linear_combination(X,H[n1],y,H[n1+1]);
+    if (compute_P)
+      bi_linear_combination(X,P[n1],y,P[n1+1]);
+    // now columns operations on H (not on P)
+    for (int j=0;j<n_orig;++j){
+      vector< c_complex > & Hj=H[j];
+      c_complex & Hjm1=Hj[n1];
+      c_complex & Hjm2=Hj[n1+1];
+      c_complex tmp1=Hjm1*X+Hjm2*y; // tmp1=Hjm1*c11+Hjm2*c21;
+      Hjm2=Hjm1*yc-Hjm2*X; // tmp2=Hjm1*c12+Hjm2*c22;
+      Hjm1=tmp1;
+    }
+    hessenberg_ortho(H,P,n1,n2,compute_P,2); 
+  }
+
+  bool in_francis_schur(cmatrice & H,int n1,int n2,cmatrice & P,int maxiter,double eps,bool compute_P,cmatrice & Haux,bool only_one);
+
+  void francis_iterate2(cmatrice & H,int n1,int n2,cmatrice & P,double eps,bool compute_P,cmatrice & Haux,bool only_one){
+    // int n_orig(H.size());
+    // now H is proper hessenberg (indices n1 to n2-1)
+    c_complex s=H[n2-1][n2-1]; 
+    double ok=abs(H[n2-1][n2-2])/abs(H[n2-1][n2-1]);
+    if (n2-n1==2 ||(ok>1e-1 && n2-n1>2 && abs(H[n2-2][n2-3])<1e-2*abs(H[n2-2][n2-2]))){
+      c_complex a=H[n2-2][n2-2],b=H[n2-2][n2-1],c=H[n2-1][n2-2],d=H[n2-1][n2-1];
+      c_complex delta=a*a-2*a*d+d*d+4*b*c;
+      delta=sqrt(delta);
+      c_complex l1=(a+d+delta)/2.0;
+      // c_complex l2=(a+d-delta)/2.0;
+      s=l1;
+    }
+    francis_iterate1(H,n1,n2,P,eps,compute_P,s,false);
+  }
+
+  // EIGENVALUES 
+  bool eigenval2(cmatrice & H,int n2,c_complex & l1, c_complex & l2){
+    c_complex a=H[n2-2][n2-2],b=H[n2-2][n2-1],c=H[n2-1][n2-2],d=H[n2-1][n2-1];
+    c_complex delta=a*a-2*a*d+d*d+4*b*c;
+    delta=sqrt(delta);
+    l1=(a+d+delta)/2; 
+    l2=(a+d-delta)/2; 
+    return true;
+  }
+
+  bool in_francis_schur(cmatrice & H,int n1,int n2,cmatrice & P,int maxiter,double eps,bool compute_P,cmatrice & Haux,bool only_one){
+    if (n2-n1<=1)
+      return true; // nothing to do
+    if (n2-n1==2){ // 2x2 submatrix, we know how to diagonalize
+      c_complex l1,l2;
+      if (eigenval2(H,n2,l1,l2)){
+	francis_iterate1(H,n1,n2,P,eps,compute_P,l1,true);
+      }
+      return true;
+    }
+    for (int niter=0;n2-n1>1 && niter<maxiter;niter++){
+      // check if one subdiagonal element is sufficiently small, if so 
+      // we can increase n1 or decrease n2 or split
+      double ratio,coeff=1;
+      if (niter>maxiter-3)
+	coeff=100;
+      for (int i=n2-2;i>=n1;--i){
+	ratio=abs(H[i+1][i])/abs(H[i][i]);
+	if (ratio<coeff*eps){ 
+	  // do a final iteration if i==n2-2 or n2-3? does not improve much precision
+	  // if (i>=n2-3) francis_iterate2(H,n1,n2,P,eps,true,complex_schur,compute_P,v1,v2);
+	  // submatrices n1..i and i+1..n2-1
+	  if (only_one && n2-(i+1)<=2)
+	    return true;
+	  if (!only_one && !in_francis_schur(H,n1,i+1,P,maxiter,eps,compute_P,Haux,only_one)){
+	    in_francis_schur(H,i+1,n2,P,maxiter,eps,compute_P,Haux,only_one);
+	    return false;
+	  }
+	  return in_francis_schur(H,i+1,n2,P,maxiter,eps,compute_P,Haux,only_one);
+	}
+      }
+      francis_iterate2(H,n1,n2,P,eps,compute_P,Haux,only_one);
+    } // end for loop on niter
+    return false;
+  }
+
+  // Francis algorithm on submatrix rows and columns n1..n2-1
+  // Invariant: trn(P)*H*P=orig matrix, complex_schur not used for giac_double coeffs
+  bool francis_schur(cmatrice & H,int n1,int n2,cmatrice & P,int maxiter,double eps,bool is_hessenberg,bool compute_P){
+    int n_orig=int(H.size());//,nitershift0=0;
+    if (!is_hessenberg){
+      hessenberg_ortho(H,P,0,n_orig,compute_P,0); // insure Hessenberg form (on the whole matrix)
+    }
+    cmatrice Haux(n2/2);
+    return in_francis_schur(H,n1,n2,P,maxiter,eps,compute_P,Haux,false);
+  }
+
+#if 1
+bool c_rref(c_complex * x,int n,int m){
+  cmatrice M;
+  c_complextab2cmatrice(x,n,m,M);
+  cvecteur pivots; vector<int> perm,maxrankcols; c_complex idet;
+  crref(M,pivots,perm,maxrankcols,idet,0,n,0,m,1,1e-13,0);
+  cmatrice2c_complextab(M,x);
+  return true;
+}
+
+c_complex c_det(c_complex *x,int n){
+  cmatrice M;
+  c_complextab2cmatrice(x,n,n,M);
+  cvecteur pivots; vector<int> perm,maxrankcols; c_complex idet;
+  crref(M,pivots,perm,maxrankcols,idet,0,n,0,n,0,1e-13,1);
+  return idet;
+}
+
+bool c_inv(c_complex * x,int n){
+  cmatrice M;
+  c_complextab2cmatrice(x,n,n,M);
+  add_identity(M);
+  cvecteur pivots; vector<int> perm,maxrankcols; c_complex idet;
+  crref(M,pivots,perm,maxrankcols,idet,0,n,0,2*n,2,1e-13,0);
+  if (abs(idet)<1e-13)
+    return false;
+  remove_identity(M);
+  cmatrice2c_complextab(M,x);
+  return true;
+}
+
+bool c_eig(c_complex * x,c_complex * d,int n){
+  cmatrice H;
+  c_complextab2cmatrice(x,n,n,H);
+  // load identity
+  cmatrice P(n); c_complex z={0,0};
+  for (int i=0;i<n;++i){
+    P[i]=vector<c_complex>(n,z);
+    P[i][i].r=1;
+  }
+  if (!francis_schur(H,0,n,P,100,1e-11,false,true))
+    return false;
+  cmatrice2c_complextab(H,d);
+  cmatrice2c_complextab(P,x);  
+  return true;
+}
+
+#else
 bool c_rref(c_complex * x,int n,int m){
   giac::matrice M(n);
   c_complexptr2matrice(x,n,m,M);
@@ -20216,94 +20757,214 @@ c_complex c_det(c_complex *x,int n){
   return gen2c_complex(g);
 }
 
+bool c_inv(c_complex * x,int n){
+  giac::matrice M(n);
+  c_complexptr2matrice(x,n,n,M);
+  M=giac::minv(M,giac::context0);
+  return matrice2c_complexptr(M,x);
+}
+
+bool c_eig(c_complex * x,c_complex * d,int n){
+  giac::matrice M(n);
+  c_complexptr2matrice(x,n,n,M);
+  gen g=giac::_jordan(M,giac::context0);
+  if (g.type!=_VECT || g._VECTptr->size()!=2 || !ckmatrix(g[0]) || !ckmatrix(g[1]))
+    return false;
+  return matrice2c_complexptr(*g[0]._VECTptr,x) && matrice2c_complexptr(*g[1]._VECTptr,d);
+}
+
+#endif
+
 void c_sprint_double(char * s,double d){
   giac::sprint_double(s,d);
 }
 
+static void c_update_turtle_state(bool clrstring){
+#if defined NUMWORKS && defined DEVICE
+  if (!ck_turtle_size()){
+    ctrl_c=true; interrupted=true;
+    return;
+  }
+#endif
+  if (clrstring)
+    (*turtleptr).s=-1;
+  (*turtleptr).theta = (*turtleptr).theta - floor((*turtleptr).theta/360)*360;
+  if (!turtle_stack().empty()){
+    logo_turtle & t=turtle_stack().back();
+    if (t.equal_except_nomark(*turtleptr)){
+      t.theta=turtleptr->theta;
+      t.mark=turtleptr->mark;
+      t.visible=turtleptr->visible;
+      t.color=turtleptr->color;
+    }
+    else
+      turtle_stack().push_back((*turtleptr));
+  }
+  else
+    turtle_stack().push_back((*turtleptr));    
+}
+
+void c_turtle_clear(int clrpos){
+  turtle_stack().clear();
+  if (clrpos) (*turtleptr) = logo_turtle();
+  c_update_turtle_state(true);
+}
+
 void c_turtle_forward(double d){
-  context * cascontextptr=(context *)caseval("caseval contextptr");
-  //const context * contextptr=caseval_context();
-  giac::_avance(d,cascontextptr);
+  (*turtleptr).x += d * std::cos((*turtleptr).theta*deg2rad_d);
+  (*turtleptr).y += d * std::sin((*turtleptr).theta*deg2rad_d) ;
+  (*turtleptr).radius = 0;
+  c_update_turtle_state(true);
   py_ck_ctrl_c();
 }
 
 void c_turtle_left(double d){
-  context * cascontextptr=(context *)caseval("caseval contextptr");
-  giac::_tourne_gauche(d,cascontextptr);
+  (*turtleptr).theta += d;
+  (*turtleptr).radius = 0;
+  c_update_turtle_state(true);
   py_ck_ctrl_c();
 }
 
 void c_turtle_up(int i){
-  context * cascontextptr=(context *)caseval("caseval contextptr");
   if (i)
-    giac::_leve_crayon(0,cascontextptr);
+    (*turtleptr).mark = false;
   else
-    giac::_baisse_crayon(0,cascontextptr);
+    (*turtleptr).mark = true;
+  c_update_turtle_state(true);
   py_ck_ctrl_c();
 }
 
 void c_turtle_goto(double x,double y){
-  context * cascontextptr=(context *)caseval("caseval contextptr");
-  giac::_position(makesequence(x,y),cascontextptr);
+  (*turtleptr).x=x;
+  (*turtleptr).y=y;
+  (*turtleptr).radius = 0;
+  c_update_turtle_state(true);
   py_ck_ctrl_c();
 }
 
 void c_turtle_cap(double x){
-  context * cascontextptr=(context *)caseval("caseval contextptr");
-  giac::_cap(x,cascontextptr);
+  (*turtleptr).theta=x;
+  (*turtleptr).radius = 0;
+  c_update_turtle_state(true);
   py_ck_ctrl_c();
 }
 
-void c_turtle_crayon(int i){
-  context * cascontextptr=(context *)caseval("caseval contextptr");
-  giac::_crayon(i,cascontextptr);
-  py_ck_ctrl_c();
+int c_turtle_getcap(){
+  return (*turtleptr).theta;
 }
 
-void c_turtle_rond(int x,int y,int z){
-  context * cascontextptr=(context *)caseval("caseval contextptr");
-  giac::_rond(makesequence(x,y,z),cascontextptr);
-  py_ck_ctrl_c();
-}
-
-void c_turtle_disque(int x,int y,int z,int centre){
-  context * cascontextptr=(context *)caseval("caseval contextptr");
-  if (centre)
-    giac::_disque_centre(makesequence(x,y,z),cascontextptr);
+int c_turtle_crayon(int i){
+  if (i==-128)
+    return (*turtleptr).turtle_width;
+  if (i<0)
+    (*turtleptr).turtle_width=-i;
   else
-    giac::_disque(makesequence(x,y,z),cascontextptr);
+    (*turtleptr).color=i;
+  c_update_turtle_state(true);
+  py_ck_ctrl_c();
+  return 0;
+}
+
+int c_find_radius(int & r,int & t1,int & t2,int &direct){
+  direct=r>=0;
+  if (r<0) r=-r;
+  if (r>512) r=512;
+  return r | (t1 << 9) | (t2 << 18 );
+}
+
+void c_turtle_rond(int r,int t1,int t2){
+  int direct;
+  int radius=c_find_radius(r,t1,t2,direct);
+  (*turtleptr).radius=radius;
+  (*turtleptr).direct=direct;
+  while (t1<0)
+    t1 += 360;
+  while (t2<0)
+    t2 += 360;
+  c_turtle_move(r,t2);
+  c_update_turtle_state(true);
   py_ck_ctrl_c();
 }
+
+void c_turtle_disque(int r,int t1,int t2,int centre){
+  int direct,radius=c_find_radius(r,t1,t2,direct);
+  if (centre){
+    // saute(r); tourne_gauche(direct?90:-90)
+  }
+  (*turtleptr).radius=radius;
+  (*turtleptr).direct=direct;
+  c_turtle_move(r,t2);
+  (*turtleptr).radius += 1 << 27;
+  c_update_turtle_state(true);
+  if (centre){
+    // _tourne_droite(direct?90:-90,contextptr); _saute(-r,contextptr);
+  }
+  py_ck_ctrl_c();
+}
+int turtle_fillbegin=-1,turtle_fillcolor=_BLACK;
 
 void c_turtle_fill(int i){
-  gen arg(vecteur(0));
-  if (i==0) 
-    arg.subtype=_SEQ__VECT;
-  context * cascontextptr=(context *)caseval("caseval contextptr");
-  giac::_polygone_rempli(arg,cascontextptr);
+  if (i==1){
+    turtle_fillbegin=turtle_stack().size();
+    return;
+  }
+  int c=turtleptr->color;
+  c_turtle_crayon(turtle_fillcolor);
+  int n=turtle_stack().size()- turtle_fillbegin;
+  turtle_fillbegin=-1;
+  turtleptr->radius=-absint(n);
+  c_update_turtle_state(true);
+  if (turtle_fillcolor>=0){
+    turtleptr->radius=0;
+    c_turtle_crayon(c);
+  }
   py_ck_ctrl_c();
 }
 
+int rgb(int r,int g,int b){
+  if (r<0) r=0; if(r>255) r=255;
+  if (g<0) g=0; if(g>255) g=255;
+  if (b<0) b=0; if(b>255) b=255;
+  return (((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
+
+}
 void c_turtle_fillcolor(double r,double g,double b,int entier){
-  context * cascontextptr=(context *)caseval("caseval contextptr");
   if (entier)
-    giac::_polygone_rempli(makesequence(int(r),int(g),int(b)),cascontextptr);
+    turtle_fillcolor=rgb(int(r),int(g),int(b));
   else
-    giac::_polygone_rempli(makesequence(r,g,b),cascontextptr);
+    turtle_fillcolor=rgb(int(r*256),int(g*256),int(b*256));
   py_ck_ctrl_c();
 }
 
 void c_turtle_getposition(double * x,double * y){
-  context * cascontextptr=(context *)caseval("caseval contextptr");
-  gen arg(vecteur(0)); arg.subtype=_SEQ__VECT;
-  giac::gen g=giac::_position(arg,cascontextptr);
-  if (g.type==_VECT && g._VECTptr->size()==2){
-    gen a=g._VECTptr->front(),b=g._VECTptr->back();
-    a=evalf_double(a,1,cascontextptr);
-    b=evalf_double(b,1,cascontextptr);
-    *x=a._DOUBLE_val;
-    *y=b._DOUBLE_val;
-  }
+  *x=turtleptr->x;
+  *y=turtleptr->y;
+}
+
+void c_turtle_show(int visible){
+  (*turtleptr).visible=visible;
+  (*turtleptr).radius = 0;
+  c_update_turtle_state(true);
+}
+
+void c_turtle_towards(double x,double y){
+  double x0=turtleptr->x,y0=turtleptr->y;
+  double t=atan2(x-x0,y-y0);
+  c_turtle_cap(t*180/M_PI);
+}
+
+int c_turtle_getcolor(){
+  return turtleptr->color;
+}
+
+void c_turtle_color(int c){
+  turtleptr->color=c;
+  (*turtleptr).radius = 0;
+  c_update_turtle_state(true);  
+}
+
+void c_turtle_fillcolor1(int c){
+  turtle_fillcolor=c;
 }
 
 // auto-shutdown
