@@ -75,6 +75,7 @@ extern "C" {
   struct double_pair {
     double r,i;
     double_pair operator +=(const double_pair &);
+    double_pair operator -=(const double_pair &);
   } ;
   typedef struct double_pair c_complex;
   bool matrice2c_complexptr(const giac::matrice &M,c_complex *x);

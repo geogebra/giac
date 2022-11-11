@@ -2526,7 +2526,7 @@ namespace giac {
       essai=coeff;
     }
     gen s=0;
-    if (calc_mode(contextptr)!=1 || !has_i(p)) // should do it only up to order 0 terms
+    if (calc_mode(contextptr)!=1 || !has_i(p[0].coeff)) // should do it only up to order 0 terms
       s=sign(essai,contextptr); 
     if (s==plus_one)
       return plus_inf;

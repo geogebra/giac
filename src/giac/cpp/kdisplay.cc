@@ -20141,50 +20141,6 @@ bool matrice2c_complexptr(const giac::matrice &M,c_complex *x){
   return true;
 }
 
-bool c_proot(c_complex * x,int n){
-  giac::matrice M(n);
-  c_complexptr2matrice(x,n,0,M);
-  M=giac::proot(M);
-  return matrice2c_complexptr(M,x);
-}
-
-bool c_pcoeff(c_complex * x,int n){
-  giac::matrice M(n);
-  c_complexptr2matrice(x,n,0,M);
-  M=giac::pcoeff(M);
-  return matrice2c_complexptr(M,x);
-}
-
-bool c_fft(c_complex * x,int n,bool inverse){
-#if 1
-  complex<double> * X=(complex<double> *) x;
-  double theta=2*M_PI/n;
-  if (!inverse)
-    theta=-theta;
-  fft2(X,n,theta);
-  if (inverse){
-    for (int i=0;i<n;++i)
-      X[i]=X[i]/double(n);
-  }
-  return true;
-#else
-  giac::matrice M(n);
-  c_complexptr2matrice(x,n,0,M);
-  gen g=inverse?giac::_ifft(M,giac::context0):giac::_fft(M,giac::context0);
-  if (g.type!=_VECT)
-    return false;
-  return matrice2c_complexptr(*g._VECTptr,x);
-#endif
-}
-
-bool c_egv(c_complex * x,int n){
-  giac::matrice M(n);
-  c_complexptr2matrice(x,n,n,M);
-  gen g=giac::_egv(M,giac::context0);
-  if (!ckmatrix(g))
-    return false;
-  return matrice2c_complexptr(*g._VECTptr,x);
-}
 
 c_complex operator +(const c_complex & a,const c_complex & b){
   c_complex c={a.r+b.r,a.i+b.i};
@@ -20197,6 +20153,11 @@ c_complex c_complex::operator +=(const c_complex & b){
   return *this;
 }
 
+c_complex c_complex::operator -=(const c_complex & b){
+  r -= b.r;
+  i -= b.i;
+  return *this;
+}
 
 c_complex operator -(const c_complex & a,const c_complex & b){
   c_complex c={a.r-b.r,a.i-b.i};
@@ -20233,6 +20194,84 @@ c_complex operator *(const c_complex & a,const c_complex & b){
   return c;
 }
 
+  static void fft2( c_complex *A, int n, c_complex *W, c_complex *T ) {  
+    if ( n==1 ) return;
+    // if p is fixed, the code is about 2* faster
+    if (n==4){
+      c_complex w1=W[1];
+      c_complex f0=A[0],f1=A[1],f2=A[2],f3=A[3],f01=(f1-f3)*w1;
+      A[0]=(f0+f1+f2+f3);
+      A[1]=(f0-f2+f01);
+      A[2]=(f0-f1+f2-f3);
+      A[3]=(f0-f2-f01);
+      return;
+    }
+    if (n==2){
+      c_complex f0=A[0],f1=A[1];
+      A[0]=(f0+f1);
+      A[1]=(f0-f1);
+      return;
+    }
+    int i,n2;
+    n2 = n/2;
+    // Step 1 : arithmetic
+    c_complex * Tn2=T+n2,*An2=A+n2;
+    for( i=0; i<n2; ++i ) {
+      c_complex Ai,An2i;
+      Ai=A[i];
+      An2i=An2[i];
+      T[i] = Ai+An2i; // addmod(Ai,An2i,p);
+      Tn2[i] = (Ai-An2i)*W[i]; // submod(Ai,An2i,p); mulmod(t,W[i],p); 
+      i++;
+      Ai=A[i];
+      An2i=An2[i];
+      T[i] = Ai+An2i; // addmod(Ai,An2i,p);
+      Tn2[i] = (Ai-An2i)*W[i]; // submod(Ai,An2i,p); mulmod(t,W[i],p); 
+    }
+    // Step 2 : recursive calls
+    fft2( T,    n2, W+n2, A    );
+    fft2( Tn2, n2, W+n2, A+n2 );
+    // Step 3 : permute
+    for( i=0; i<n2; ++i ) {
+      A[  2*i] = T[i];
+      A[2*i+1] = Tn2[i]; 
+      ++i;
+      A[  2*i] = T[i];
+      A[2*i+1] = Tn2[i]; 
+    }
+    return;
+  }  
+
+  void fft2( c_complex * A, int n, double theta){
+    vector< c_complex > W,T(n);
+    W.reserve(n); 
+    double thetak(theta);
+    for (int N=n/2;N;N/=2,thetak*=2){
+      c_complex ww={1,0};
+      c_complex wk={std::cos(thetak),std::sin(thetak)};
+      for (int i=0;i<N;ww=ww*wk,++i){
+	if (i%64==0){
+	  ww.r=std::cos(i*thetak);
+	  ww.i=std::sin(i*thetak);
+	}
+	W.push_back(ww);
+      }
+    }
+    fft2(A,n,&W.front(),&T.front());
+  }
+
+bool c_fft(c_complex * x,int n,bool inverse){
+  c_complex * X=(c_complex *) x;
+  double theta=2*M_PI/n;
+  if (!inverse)
+    theta=-theta;
+  fft2(X,n,theta);
+  if (inverse){
+    for (int i=0;i<n;++i)
+      X[i]=X[i]/double(n);
+  }
+  return true;
+}
 //inline double absdouble(double x){ return x<0?-x:x;}
 double abs(const c_complex & c){
   double X=absdouble(c.r),Y=absdouble(c.i);
@@ -20270,6 +20309,41 @@ bool operator !=(const c_complex & a,const c_complex &b){
 typedef vector< vector< c_complex> > cmatrice;
 typedef vector< c_complex> cvecteur;
 
+c_complex cdot(const cvecteur & v,const cvecteur & w){
+  int n=v.size(),m=w.size();
+  if (n>m) n=m;
+  c_complex r={0,0};
+  for (int i=0;i<n;++i)
+    r += v[i]*w[i];
+  return r;
+}
+
+bool cmult(const cmatrice & A,const cmatrice & B,cmatrice &C){
+  int An=A.size(),Bn=B.size();
+  if (!An || !Bn) return false;
+  int Ac=A[0].size(),Bc=B[0].size();
+  for (int i=0;i<An;++i){
+    if (B[i].size()!=Bc)
+      return false;
+  }
+  C.resize(An);
+  for (int i=0;i<An;++i){
+    const cvecteur & Ai=A[i];
+    if (Ai.size()!=Ac)
+      return false;
+    cvecteur & Ci=C[i];
+    Ci.resize(Bc);
+    for (int j=0;j<Bc;++j){
+      c_complex r={0,0};
+      for (int k=0;k<Ac;++k){
+	r += Ai[k]*B[k][j];
+      }
+      Ci[j]=r;
+    }
+  }
+  return true;
+}
+
 // v1=v1+c2*v2 
 void linear_combination(cvecteur & v1,const c_complex & c2,const cvecteur & v2,int cstart,int cend){
   if (!is_zero(c2)){
@@ -20280,6 +20354,40 @@ void linear_combination(cvecteur & v1,const c_complex & c2,const cvecteur & v2,i
     for (;it1!=it1end;++it1,++it2)
       *it1 += c2*(*it2);
   }
+}
+
+string print(const c_complex & c){
+  char buf[32];
+  sprint_double(buf,c.r);
+  if (c.i==0)
+    return buf;
+  string s="(";
+  s+=buf;
+  s+=',';
+  sprint_double(buf,c.i);
+  s+=buf;
+  s+=')';
+  return s;
+}
+
+string print(const cvecteur & v){
+  string s="[";
+  for (int i=0;i<v.size();++i){
+    s+=print(v[i]);
+    s+=',';
+  }
+  s+=']';
+  return s;
+}
+
+string print(const cmatrice & v){
+  string s="[";
+  for (int i=0;i<v.size();++i){
+    s+=print(v[i]);
+    s+=',';
+  }
+  s+=']';
+  return s;
 }
 
 void crref(cmatrice & N,cvecteur & pivots,vector<int> & permutation,vector<int> & maxrankcols,c_complex & idet,int l, int lmax, int c,int cmax,int fullreduction,double eps,int rref_or_det_or_lu){
@@ -20409,12 +20517,39 @@ void cmatrice2c_complextab(const cmatrice &M,c_complex * x){
   }
 }
 
+void c_complextab2cvecteur(c_complex * x,int n,cvecteur & v){
+  v.resize(n);
+  for (int j=0;j<n;++j){
+    v[j]=*x; ++x;
+  }
+}
+
+void cvecteur2c_complextab(const cvecteur &v,c_complex * x){
+  int m=v.size();
+  for (int j=0;j<m;++j){
+    *x=v[j];
+    ++x;
+  }
+}
+
 // add identity matrix, modifies arref in place
 void add_identity(cmatrice & arref){
   int s=int(arref.size());
   for (int i=0;i<s;++i){
     cvecteur &v=arref[i];
     v.reserve(2*s);
+    for (int j=0;j<s;++j){
+      c_complex c={i==j?1.0:0.0,0};
+      v.push_back(c);
+    }
+  }
+}
+
+void cidn(cmatrice & m){
+  int s=int(m.size());
+  for (int i=0;i<s;++i){
+    cvecteur &v=m[i];
+    v.clear();
     for (int j=0;j<s;++j){
       c_complex c={i==j?1.0:0.0,0};
       v.push_back(c);
@@ -20438,14 +20573,48 @@ bool remove_identity(cmatrice & res){
   return true;
 }
 
+cmatrice companion(const cvecteur & w){
+  cvecteur v(w);
+  int s=int(v.size())-1;
+  if (s<=0)
+    return cmatrice(0);
+  c_complex v0=inv(v[0]);
+  cmatrice m;
+  m.reserve(s);
+  for (int i=0;i<s;++i){
+    cvecteur w(s);
+    w[s-1]=-v0*v[s-i];
+    if (i>0)
+      w[i-1].r=1;
+    m.push_back(w);
+  }
+  return m;
+}
+
+bool cinv(cmatrice &M){
+  int n=M.size();
+  add_identity(M);
+  cvecteur pivots; vector<int> perm,maxrankcols; c_complex idet;
+  crref(M,pivots,perm,maxrankcols,idet,0,n,0,2*n,2,1e-13,0);
+  if (abs(idet)<1e-13)
+    return false;
+  remove_identity(M);
+  return true;
+}
+
 c_complex sqrt(const c_complex & c){
   double r=c.r,i=c.i;
   if (c.i==0) {
+    if (c.r<0){
+      c_complex res={0,sqrt(-c.r)}; return res;      
+    }
     c_complex res={sqrt(c.r),0}; return res;
   }
   double rho=abs(c);
-  double arho=sqrt(2.0*(r+rho));
-  c_complex res={arho/2,i*arho/2/(r+rho)};
+  double rrho=r<0?i*i/(rho-r):(rho+r); // accuracy if r<0
+  double sqrtr=sqrt(rrho/2);
+  double sqrti=i*sqrtr/rrho;
+  c_complex res={sqrtr,sqrti};
   return res;
 }
 
@@ -20460,6 +20629,24 @@ double real(const c_complex &c){
 
 double imag(const c_complex &c){
   return c.i;
+}
+
+bool ctrn(const cmatrice & M){
+  int n=M.size();
+  if (!n) return false;
+  int c=M[0].size();
+  for (int i=0;i<n;++i)
+    if (M[i].size()!=c)
+      return false;
+  cmatrice T(c);
+  for (int i=0;i<c;++i){
+    cvecteur &Ti=T[i];
+    Ti.resize(n);
+    for (int j=0;j<n;++j){
+      Ti[j]=conj(M[j][i]);
+    }
+  }
+  return true;
 }
 
   // conj(a)*A+conj(c)*C->C
@@ -20512,7 +20699,7 @@ double imag(const c_complex &c){
 	  for (int j=0;j<n;++j){
 	    vector< c_complex > & Hj=H[j];
 #ifdef VISUALC
-	    complex<double> cc=Hj[i];
+	    c_complex cc=Hj[i];
 	    Hj[i]=Hj[m+1];
 	    Hj[m+1]=cc;
 #else
@@ -20656,6 +20843,7 @@ double imag(const c_complex &c){
       return true;
     }
     for (int niter=0;n2-n1>1 && niter<maxiter;niter++){
+      //xcas::dConsolePut(("niter "+print_INT_(niter)+" "+print(H)).c_str()); xcas::Console_NewLine(xcas::LINE_TYPE_OUTPUT,1);
       // check if one subdiagonal element is sufficiently small, if so 
       // we can increase n1 or decrease n2 or split
       double ratio,coeff=1;
@@ -20692,6 +20880,70 @@ double imag(const c_complex &c){
     return in_francis_schur(H,n1,n2,P,maxiter,eps,compute_P,Haux,false);
   }
 
+bool schur_eigenvalues(cmatrice &d,double eps){
+  int dim=d.size();
+    bool ans=true;
+    for (int i=0;i<dim;++i){
+      cvecteur & di= d[i];
+      for (int j=0;j<dim;++j){
+	if (j==i) continue;
+	if (ans && j==i-1 && abs(di[j])/abs(di[j+1])>eps){
+	  // *logptr(contextptr) << gettext("Low accuracy for Schur row ") << j << " " << d[i] << '\n';
+	  ans=false;
+	}
+	di[j].r=di[j].i=0;
+      }
+    }
+    return ans;
+}
+
+  // input trn(p)*d*p=original matrix, d upper triangular
+  // output p*d*inv(p)=original matrix, d diagonal
+  bool schur_eigenvectors(cmatrice &p,cmatrice & d,double eps){
+    int dim=int(p.size());
+    cmatrice m(dim);
+    cidn(m);
+    // columns of m are the vector of the basis of the Schur decomposition
+    // in terms of the eigenvector
+    for (int k=1;k<dim;++k){
+      // compute column k of m
+      for (int j=0;j<k;++j){
+	c_complex tmp={0,0};
+	for (int i=0;i<k;++i){
+	  tmp += d[i][k]*m[j][i];
+	}
+	if (!is_zero(tmp)) 
+	  tmp = tmp*inv(d[j][j]-d[k][k]);
+	m[j][k]=tmp;
+      }
+    }
+    if (!cinv(m))
+      return false;
+    ctrn(p);
+    cmatrice pm;
+    cmult(p,m,pm);
+    swap(p,pm);
+    // set d to its diagonal
+    return schur_eigenvalues(d,eps);
+  }
+
+bool c_pcoeff(c_complex * x,int n){
+  c_complex tab[n+1];
+  tab[0].r=1; tab[0].i=0; // init tab to polynomial 1
+  for (int i=0;i<n;++i){
+    // tab:=tab*(X-x[i]): leading coeff unchanged
+    tab[i+1].r=tab[i+1].i=0;
+    c_complex & xi=x[i];
+    for (int j=i;j>=0;--j){
+      tab[j+1] -= tab[j]*xi;
+    }
+  }
+  // copy result in x
+  for (int i=0;i<=n;++i)
+    x[i]=tab[i];
+  return true;
+}
+
 #if 1
 bool c_rref(c_complex * x,int n,int m){
   cmatrice M;
@@ -20713,12 +20965,8 @@ c_complex c_det(c_complex *x,int n){
 bool c_inv(c_complex * x,int n){
   cmatrice M;
   c_complextab2cmatrice(x,n,n,M);
-  add_identity(M);
-  cvecteur pivots; vector<int> perm,maxrankcols; c_complex idet;
-  crref(M,pivots,perm,maxrankcols,idet,0,n,0,2*n,2,1e-13,0);
-  if (abs(idet)<1e-13)
+  if (!cinv(M))
     return false;
-  remove_identity(M);
   cmatrice2c_complextab(M,x);
   return true;
 }
@@ -20732,10 +20980,48 @@ bool c_eig(c_complex * x,c_complex * d,int n){
     P[i]=vector<c_complex>(n,z);
     P[i][i].r=1;
   }
-  if (!francis_schur(H,0,n,P,100,1e-11,false,true))
+  double eps=1e-11;
+  if (!francis_schur(H,0,n,P,100,eps,false,true))
+    return false;
+  if (!schur_eigenvectors(P,H,eps))
     return false;
   cmatrice2c_complextab(H,d);
   cmatrice2c_complextab(P,x);  
+  return true;
+}
+
+bool c_egv(c_complex * x,int n){
+  cmatrice H;
+  c_complextab2cmatrice(x,n,n,H);
+  cmatrice P(n); 
+  double eps=1e-11;
+  if (!francis_schur(H,0,n,P,100,eps,false,false))
+    return false;
+  if (!schur_eigenvalues(H,eps))
+    return false;
+  cmatrice2c_complextab(H,x);
+  return true;
+}
+
+bool c_proot(c_complex * x,int n){
+  cvecteur v;
+  c_complextab2cvecteur(x,n,v);
+  cmatrice H(companion(v));
+  n--; // size -> degree
+  cmatrice P(n); 
+  double eps=1e-11;
+  bool dbg=false;
+  if (dbg) xcas::dConsolePut(print(v).c_str()); 	xcas::Console_NewLine(xcas::LINE_TYPE_OUTPUT,1);
+  if (!francis_schur(H,0,n,P,100,eps,true,false)) // companion is Hessenberg
+    return false;
+  if (dbg) xcas::dConsolePut(print(H).c_str()); 	xcas::Console_NewLine(xcas::LINE_TYPE_OUTPUT,1);
+  if (!schur_eigenvalues(H,eps))
+    return false;
+  if (dbg) xcas::dConsolePut(print(H).c_str()); 	xcas::Console_NewLine(xcas::LINE_TYPE_OUTPUT,1);
+  // copy diag of H in x
+  for (int i=0;i<n;++i,++x){
+    *x=H[i][i];
+  }
   return true;
 }
 
@@ -20772,6 +21058,31 @@ bool c_eig(c_complex * x,c_complex * d,int n){
     return false;
   return matrice2c_complexptr(*g[0]._VECTptr,x) && matrice2c_complexptr(*g[1]._VECTptr,d);
 }
+
+bool c_egv(c_complex * x,int n){
+  giac::matrice M(n);
+  c_complexptr2matrice(x,n,n,M);
+  gen g=giac::_egv(M,giac::context0);
+  if (!ckmatrix(g))
+    return false;
+  return matrice2c_complexptr(*g._VECTptr,x);
+}
+
+bool c_proot(c_complex * x,int n){
+  giac::matrice M(n);
+  c_complexptr2matrice(x,n,0,M);
+  M=giac::proot(M);
+  return matrice2c_complexptr(M,x);
+}
+
+/*
+bool c_pcoeff(c_complex * x,int n){
+  giac::matrice M(n);
+  c_complexptr2matrice(x,n,0,M);
+  M=giac::pcoeff(M);
+  return matrice2c_complexptr(M,x);
+}
+*/
 
 #endif
 
