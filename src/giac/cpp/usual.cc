@@ -4613,6 +4613,18 @@ namespace giac {
 	arg1=v[0].eval(eval_level(contextptr),contextptr);
       else
 	arg1=v[1].eval(eval_level(contextptr),contextptr);
+      // additionnal check for recursive assumptions like assume(a<b); assume(b<a);
+      vecteur iarg1(lidnt(v[1]));
+      for (int i=0;i<iarg1.size();++i){
+	gen cur=iarg1[i];
+	if (cur.type==_IDNT){
+	  gen cur1=cur._IDNTptr->eval(eval_level(contextptr),arg0,contextptr);
+	  if (equalposcomp(lidnt(cur1),arg0)){
+	    *logptr(contextptr) << "Recursive assumption " << a << " ignored\n";
+	    return 0;
+	  }
+	}
+      }
       gen borne_inf(gnuplot_xmin),borne_sup(gnuplot_xmax),pas;
       if ( s==at_equal || s== at_equal2 || s==at_same || s==at_sto ){     
 	// ex: assume(a=[1.7,1.1,2.3])
