@@ -2343,10 +2343,10 @@ namespace giac {
 #ifdef TIMEOUT
     control_c();
 #endif
-    if (ctrl_c || interrupted) { 
+    if (ctrl_c || interrupted || !stack_check(contextptr)) { 
       interrupted = true; ctrl_c=false;
       *logptr(contextptr) << "Stopped in in_eval" << '\n';
-      gensizeerr(gettext("Stopped by user interruption."),evaled);
+      gensizeerr(gettext("Stopped by user interruption or stack overflow."),evaled);
       return true;
     }    
     if (!level)
@@ -16580,6 +16580,35 @@ void sprint_double(char * s,double d){
   extern logo_turtle * turtleptr;
   gen _efface_logo(const gen & g,GIAC_CONTEXT);
 #endif
+
+  size_t max_stack_size=0,init_stack_ptr=0;
+  void stack_check_init(size_t s){
+    max_stack_size=s;
+    int dummy;
+    init_stack_ptr=(size_t) &dummy;
+  }
+
+  bool stack_check(GIAC_CONTEXT){
+    if (max_stack_size==0) // not initialized, no check
+      return true;
+    int dummy;
+    size_t cur=(size_t) &dummy;
+    size_t limit=(size_t) thread_param_ptr(contextptr)->stack;
+    if (limit==0)
+      limit=init_stack_ptr;
+    if (limit==0) // not initialized, no check
+      return true;
+    if (cur<=limit){
+      size_t d=limit-cur;
+      // CERR << d << '\n';
+      if (d<max_stack_size)
+	return true;
+      *logptr(contextptr) << "Stack overflow\n";
+      return false;
+    }
+    // should not occur, stack addr decreases
+    return cur-limit<max_stack_size;
+  }
       
   const char * caseval(const char *s){
     //printf("%s\n",s);

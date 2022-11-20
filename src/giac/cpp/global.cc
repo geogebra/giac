@@ -3009,11 +3009,12 @@ extern "C" void Sleep(unsigned int miliSecond);
   thread_param::thread_param(): _kill_thread(false), thread_eval_status(-1), v(6)
 #ifdef HAVE_LIBPTHREAD
 #ifdef __MINGW_H
-			      ,eval_thread(),stackaddr(0)
+			      ,eval_thread(),stackaddr(0),
 #else
-			      ,eval_thread(0),stackaddr(0)
+			      ,eval_thread(0),stackaddr(0),
 #endif
 #endif
+    stack(0)
   { 
   }
 
@@ -5604,6 +5605,7 @@ NULL,NULL,SW_SHOWNORMAL);
     thread_param * ptr =thread_param_ptr(contextptr);
     pthread_attr_getstacksize(&ptr->attr,&ptr->stacksize);
     ptr->stackaddr=(void *) ((uintptr_t) &ptr-ptr->stacksize);
+    ptr->stack=&ptr;
 #ifndef __MINGW_H
     struct tms tmp1,tmp2;
     times(&tmp1);
@@ -5630,7 +5632,7 @@ NULL,NULL,SW_SHOWNORMAL);
       last_evaled_argptr(contextptr)=NULL;
     }
 #endif
-    ptr->stackaddr=0;
+    ptr->stackaddr=0; ptr->stack=0;
     thread_eval_status(0,contextptr);
     pthread_exit(0);
     return 0;

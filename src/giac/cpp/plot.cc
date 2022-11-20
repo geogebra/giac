@@ -1473,6 +1473,7 @@ namespace giac {
 	      break;
 	    bool positif=ck_is_greater(a,0,contextptr);
 	    gen tmp=quotesubst(f,piece,piecev[2*i+1],contextptr);
+	    tmp=ratnormal(tmp,contextptr);
 	    if (ck_is_greater(l,function_xmax,contextptr)){
 	      // borne_inf < borne_sup <= l
 	      if (positif) // test is false, continue

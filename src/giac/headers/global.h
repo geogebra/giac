@@ -585,6 +585,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     size_t stacksize;
     void * stackaddr;
 #endif
+    size_t stack;
     thread_param();
   };
 

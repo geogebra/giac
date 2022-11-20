@@ -71,6 +71,9 @@ extern "C" {
   inline void sync_screen(){}
 #endif // NUMWORKS
 
+  inline void Printmini(int x,int y,const char * s,int i){ os_draw_string_small(x,y,i?0xffff:0,i?0:0xffff,s,false);}
+  inline void Printxy(int x,int y,const char * s,int i){ os_draw_string_medium(x,y,i?0xffff:0,i?0:0xffff,s,false);}
+   
   void os_wait_1ms(int ms);
   bool os_set_angle_unit(int mode);
   int os_get_angle_unit();

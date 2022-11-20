@@ -18456,6 +18456,7 @@ namespace xcas {
   }
 
   const char * console_menu(int key,char* cfg_,int active_app){
+    if (key>=KEY_CTRL_F7 && key<=KEY_CTRL_F14) key-=900;
     char * cfg=cfg_;
     int i, matched = 0;
     const char * ret=0;

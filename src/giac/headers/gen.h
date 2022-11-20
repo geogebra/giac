@@ -1722,6 +1722,8 @@ namespace giac {
   void sprintfdouble(char *,const char *,double d);
 
   extern "C" const char * caseval(const char *);
+  extern "C" void stack_check_init(size_t max_stack_size);
+  bool stack_check(GIAC_CONTEXT);
 
 // Alloca proposal by Cyrille to make it work on every compiler.
 #ifndef ALLOCA
