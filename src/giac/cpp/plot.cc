@@ -11376,14 +11376,16 @@ namespace giac {
     if (dim3 && vs>3)
       dim3=(v[3]!=at_plan);
     vecteur res1v,resv;
-    if (tmin<0){
+    gen t0f=evalf_double(t0,1,contextptr);
+    double d0=t0f.type==_DOUBLE_?t0f._DOUBLE_val:0;
+    if (tmin<d0){
       gen res1=odesolve(t0,tmin,f,y0,tstep,curve,ymin,ymax,maxstep,contextptr);
       if (is_undef(res1)) return res1;
       res1v=*res1._VECTptr;
       std::reverse(res1v.begin(),res1v.end());
     }
     res1v.push_back(makevecteur(t0,y0));
-    if (tmax>0){
+    if (tmax>d0){
       gen res2=odesolve(t0,tmax,f,y0,tstep,curve,ymin,ymax,maxstep,contextptr);
       if (is_undef(res2)) return res2;
       resv=mergevecteur(res1v,*res2._VECTptr);
