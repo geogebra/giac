@@ -5605,7 +5605,7 @@ NULL,NULL,SW_SHOWNORMAL);
     thread_param * ptr =thread_param_ptr(contextptr);
     pthread_attr_getstacksize(&ptr->attr,&ptr->stacksize);
     ptr->stackaddr=(void *) ((uintptr_t) &ptr-ptr->stacksize);
-    ptr->stack=&ptr;
+    ptr->stack=(size_t) &ptr;
 #ifndef __MINGW_H
     struct tms tmp1,tmp2;
     times(&tmp1);
