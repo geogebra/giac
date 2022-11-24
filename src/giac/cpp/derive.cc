@@ -613,6 +613,8 @@ namespace giac {
       }
       if (j==n+1)
 	return eprime;
+      if (n+1-j==1)
+        return symbolic(at_derive,gen(makevecteur(ecopie,vars),_SEQ__VECT));
       return symbolic(at_derive,gen(makevecteur(ecopie,vars,n+1-j),_SEQ__VECT));
     }
     // multi-index derivation

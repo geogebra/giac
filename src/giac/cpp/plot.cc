@@ -2448,7 +2448,9 @@ namespace giac {
     if (h.type!=_VECT || h._VECTptr->size()!=2)
       return false;
     gen h1=evalf_double(h._VECTptr->front(),1,contextptr);
+    if (h1==minus_inf) h1=gnuplot_xmin;
     gen h2=evalf_double(h._VECTptr->back(),1,contextptr);
+    if (h2==plus_inf) h2=gnuplot_xmax;
     if (h1.type!=_DOUBLE_  || h2.type!=_DOUBLE_ )
       return false;
     inf=h1._DOUBLE_val;

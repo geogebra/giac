@@ -8027,6 +8027,20 @@ namespace giac {
 	}
 	return factnum/factden*sqrt(cst_pi,contextptr);
       }
+      // additions by L.Marohnić: reduction for x=p/q in (-1,1) to Gamma(min(abs(p),abs(q-p))/q)
+      if (x._FRACptr->num.type==_INT_ && !is_zero(x._FRACptr->num) &&
+          is_strictly_greater(x._FRACptr->den,_abs(x._FRACptr->num,contextptr),contextptr)) {
+        int p=x._FRACptr->num.val,q=x._FRACptr->den.val;
+        if (!is_positive(x._FRACptr->num,contextptr))
+          return ratnormal(_inv(x,contextptr)*Gamma(1+x,contextptr),contextptr);
+        if (is_strictly_greater(2*x._FRACptr->num,x._FRACptr->den,contextptr))
+          return ratnormal(cst_pi/(Gamma(1-x,contextptr)*sin(cst_pi*x,contextptr)),contextptr);
+        return symbolic(at_Gamma,x);
+      }
+      // handle negative fractions
+      if (x._FRACptr->num.type==_INT_ && !is_positive(x,contextptr))
+        return ratnormal(-cst_pi/(Gamma(-x,contextptr)*x*sin(cst_pi*x,contextptr)),contextptr);
+      // end additions by L.Marohnić
       // normalize Gamma(n/d) to fractional part ?
       gen xd=evalf_double(x,1,contextptr),X=x;
       if (xd.type==_DOUBLE_){

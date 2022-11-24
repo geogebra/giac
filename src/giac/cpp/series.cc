@@ -3157,9 +3157,10 @@ namespace giac {
   }
 
   static int convert_to_direction(const gen & l){
-    if (is_one(l) || l==at_plus)
+    // addition by L.Marohnić: enable using left/right symbols for specifying a direction
+    if (is_one(l) || l==at_plus || l==at_right)
       return 1;
-    if (is_minus_one(l) || l==at_binary_minus || l==at_neg)
+    if (is_minus_one(l) || l==at_binary_minus || l==at_neg || l==at_left)
       return -1;
     if (is_zero(l))
       return 0;
@@ -3236,13 +3237,15 @@ namespace giac {
       if (e.type==_IDNT)
 	return quotedlimit(G,*e._IDNTptr,arg3,0,contextptr);
       if (e.type!=_SYMB){
-	if (is_one(arg3)||is_minus_one(arg3))
-	  return quotedlimit(G,*ggb_var(G)._IDNTptr,e,int(evalf_double(arg3,1,contextptr)._DOUBLE_val),contextptr);
+  int dir=convert_to_direction(arg3);
+	if (dir!=-2)
+	  return quotedlimit(G,*ggb_var(G)._IDNTptr,e,dir,contextptr);
 	return gentypeerr(contextptr);
       }
       if (!is_equal(e)){
-	if (is_one(arg3)||is_minus_one(arg3))
-	  return quotedlimit(G,*ggb_var(G)._IDNTptr,e,int(evalf_double(arg3,1,contextptr)._DOUBLE_val),contextptr);
+  int dir=convert_to_direction(arg3);
+	if (dir!=-2)
+	  return quotedlimit(G,*ggb_var(G)._IDNTptr,e,dir,contextptr);
 	return gensizeerr(contextptr);
       }
       gen x=(*(e._SYMBptr->feuille._VECTptr))[0];

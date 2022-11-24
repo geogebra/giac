@@ -647,11 +647,16 @@ namespace giac {
     return vars_.empty()?res:gel(res,1+vars_.size());
   }
   GEN gen2GEN(const gen & e,const vecteur & vars,GIAC_CONTEXT){
+    const char * ptr=__pow.s;
+    __pow.s="^";
     cb_pari_err_recover=gp_err_recover;
     if (setjmp(env)){
+      __pow.s=ptr;
       setsizeerr(gettext("Error in PARI subsystem"));
     }
-    return ingen2GEN(e,vars,contextptr);
+    GEN G=ingen2GEN(e,vars,contextptr);
+    __pow.s=ptr;
+    return G;
   }
 
   gen pari_isprime(const gen & e,int certif){

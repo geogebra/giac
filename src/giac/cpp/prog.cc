@@ -67,6 +67,10 @@ extern "C" {
 #include "csturm.h"
 #include "sparse.h"
 #include "giacintl.h"
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#else
+#include "signalprocessing.h"
+#endif
 // #include "input_parser.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -13430,7 +13434,6 @@ namespace giac {
   static const char _SetFold_s []="SetFold";
   static define_unary_function_eval2_quoted (__SetFold,&_SetFold,_SetFold_s,&printastifunction);
   define_unary_function_ptr5( at_SetFold ,alias_at_SetFold,&__SetFold,_QUOTE_ARGUMENTS,T_RETURN); 
-
   
   static string printaspiecewise(const gen & feuille,const char * sommetstr,GIAC_CONTEXT){
     // if ( feuille.type!=_VECT || feuille._VECTptr->empty() || abs_calc_mode(contextptr)!=38)
@@ -13456,6 +13459,26 @@ namespace giac {
   gen _piecewise(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
     // evaluate couples of condition/expression, like in a case
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#else
+    // change by L. Marohnić: convert g to piecewise
+    gen gg=unquote(g,contextptr);
+    if (gg.type!=_VECT || (gg.subtype==_SEQ__VECT && gg._VECTptr->size()==2 &&
+        !is_logical(gg._VECTptr->front()) && gg._VECTptr->back().type==_IDNT)) {
+      gen e=flatten_piecewise(gg.type==_VECT?gg._VECTptr->front():gg,contextptr);
+      gen x=gg.type==_VECT?gg._VECTptr->back():undef;
+      if (!is_undef(x) && _eval(x,contextptr).type!=_IDNT)
+        return gentypeerr(contextptr);
+      vecteur vars=is_undef(x)?*_revlist(_sort(_lname(e,contextptr),contextptr),contextptr)._VECTptr:vecteur(1,x);
+      for (const_iterateur it=vars.begin();it!=vars.end();++it) {
+        if (it->type!=_IDNT) continue;
+        gen p=to_piecewise(e,*it->_IDNTptr,contextptr);
+        if (p.is_symb_of_sommet(at_piecewise))
+          return p;
+      }
+      return gg.type==_VECT?gg._VECTptr->front():gg;
+    }
+#endif
     if (g.type!=_VECT)
       return g;
     vecteur & v =*g._VECTptr;

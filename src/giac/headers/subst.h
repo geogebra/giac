@@ -175,6 +175,9 @@ namespace giac {
   gen _tcollect(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_tcollect;
 
+  gen _trigsimplify(const gen & g,GIAC_CONTEXT);
+  extern const unary_function_ptr * const  at_trigsimplify;
+
   gen lncollect(const gen & e,GIAC_CONTEXT);
   gen _lncollect(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_lncollect;

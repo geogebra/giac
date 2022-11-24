@@ -2362,7 +2362,7 @@ namespace giac {
   bool is_rewritable_as_f_of(const gen & fu_,const gen & u,gen & fx,const gen & gen_x,GIAC_CONTEXT){
     gen tempu=identificateur(" u");
     gen fu=complex_subst(fu_,u,tempu,contextptr);
-    if (!is_rewritable_as_f_of0(fu,u,fx,gen_x,contextptr))
+    if (is_undef(fu) || !is_rewritable_as_f_of0(fu,u,fx,gen_x,contextptr))
       return false;
     fx=complex_subst(fx,tempu,gen_x,contextptr);
     return true;
@@ -3052,7 +3052,7 @@ namespace giac {
 	  }
 	}
 	fu=recursive_ratnormal(rdiv(e,df,contextptr),contextptr); // changed from ratnormal, made 30/06/2021 for int((4/x^5)*cos((1/x^4)-6) );
-	if (is_rewritable_as_f_of(fu,f,fx,gen_x,contextptr)){
+	if (is_rewritable_as_f_of(fu,f,fx,gen_x,contextptr) && !is_undef(fx)){
 	  if ( (intmode & 2)==0)
 	    gprintf(step_fuuprime,gettext("Integration of %gen: f(u)*u' where f=%gen->%gen and u=%gen"),makevecteur(e,gen_x,fx,f),contextptr);
 	  e=linear_integrate_nostep(fx,gen_x,tmprem,intmode,contextptr);
