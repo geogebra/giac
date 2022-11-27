@@ -52,6 +52,10 @@
 #endif
 #endif
 
+#ifdef HP39
+#include <time.h>
+#endif
+
 // Thanks to Jason Papadopoulos, author of msieve
 #ifdef BESTA_OS
 #include <time.h>

@@ -104,114 +104,56 @@ extern "C" uint32_t mainThreadStack[];
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
-#ifdef FXCG
+#if defined FXCG || defined HP39
 #define ALLOCSMALL
 #endif
 
 #ifdef ALLOCSMALL
 
   // 32 bytes structure: 4096/32=128 slots of memory
-  struct eight_int {
-    int i1,i2,i3,i4,i5,i6,i7,i8;
-  };
-  
-  struct eleven_int {
-    int i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11;
-  };
-  
-  struct six_int {
-    int i1,i2,i3,i4,i5,i6
-#ifdef FXCG
-      ,i7,i8
-#endif
-      ;
-  };
-  
-  struct four_int {
-    int i1,i2,i3,i4;
-  };
-
   // ALLOCA  constants must be multiples of 2*32
-#if 0 // def FXCG
-  const int ALLOC24=10*32;
-  const int ALLOC32=8*32;
-  const int ALLOC16=8*32;
-  static unsigned int freeslot24[ALLOC24/32]={
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 
-  };
-  static unsigned int freeslot16[ALLOC16/32]={
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff,
-    //0xffffffff, 0xffffffff
-  };
-  static unsigned int freeslot32[ALLOC32/32]={
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff,
-    //0xffffffff, 0xffffffff
-  };
-  // does not work after OFF/ON
-  static four_int * tab16=(four_int *) 0xe5200000; 
-  static six_int * tab24=(six_int *) 0xe5007000;
-  static eight_int * tab32=(eight_int *) 0xe5017000;
-#else
-  const int ALLOC24=32*32;
-  const int ALLOC32=28*32;
-  const int ALLOC16=32*32;
-  //#define ALLOC44 16*32
+  const int ALLOC16=8*32; // symbolic
+  const int ALLOC24=16*32; // complex, identificateur, mpz_t
+  // #define ALLOC32 3*32 // not used
+  // unsigned os_python_heap=0x88068000; // free memory area, used by Python heap
+  #define ALLOC48 8*32 // eqw, comment this line if memory crash in eqw
   static unsigned int freeslot24[ALLOC24/32]={
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff,0xffffffff, 0xffffffff, 
   };
   static unsigned int freeslot16[ALLOC16/32]={
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    //0xffffffff, 0xffffffff
   };
+#ifdef ALLOC32
   static unsigned int freeslot32[ALLOC32/32]={
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    //0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff,
+    //0xffffffff,0xffffffff, 0xffffffff,0xffffffff, 0xffffffff,
+    //0xffffffff, 0xffffffff
   };
-#ifdef ALLOC44
-  static unsigned int freeslot44[ALLOC44/32]={
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    //0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    //0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    //0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
-    //0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+  eight_int * tab32;
+#endif
+#ifdef ALLOC48
+  static unsigned int freeslot48[ALLOC48/32]={
+    0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff,0xffffffff, 0xffffffff,
   };
-  static eleven_int tab44[ALLOC44];
+  // static twelve_int tab48[ALLOC48];
+  twelve_int * tab48=0;
 #endif
 
-  static eight_int tab32[ALLOC32];
+#if 0 // alloc in static area
   static six_int tab24[ALLOC24];
   static four_int tab16[ALLOC16];
+#else // alloc in main.cc
+  four_int * tab16=0;
+  six_int * tab24=0;
 #endif
-
+  
   
   unsigned freeslotpos(unsigned n){
     unsigned r=1;
@@ -237,24 +179,24 @@ namespace giac {
   
   static void* allocfast(size_t size){
     int i,pos;
-    if (size==24){ 
+    if (tab24 && size==24){ 
       for (i=0;i<ALLOC24/32;){
-	if (!(freeslot24[i] || freeslot24[i+1])){
-	  i+=2;
-	  continue;
-	}
-	if (freeslot24[i]){
-	  pos=freeslotpos(freeslot24[i]);
-	  freeslot24[i] &= ~(1<<pos);
-	  return (void *) (tab24+i*32+pos);
-	}
-	i++;
-	pos=freeslotpos(freeslot24[i]);
-	freeslot24[i] &= ~(1<<pos);
-	return (void *) (tab24+i*32+pos);
+        if (!(freeslot24[i] || freeslot24[i+1])){
+          i+=2;
+          continue;
+        }
+        if (freeslot24[i]){
+          pos=freeslotpos(freeslot24[i]);
+          freeslot24[i] &= ~(1<<pos);
+          return (void *) (tab24+i*32+pos);
+        }
+        i++;
+        pos=freeslotpos(freeslot24[i]);
+        freeslot24[i] &= ~(1<<pos);
+        return (void *) (tab24+i*32+pos);
       }
     }
-    if (size==16){ 
+    if (tab16 && size==16){ 
       for (i=0;i<ALLOC16/32;){
 	if (!(freeslot16[i] || freeslot16[i+1])){
 	  i+=2;
@@ -271,7 +213,8 @@ namespace giac {
 	return (void *) (tab16+i*32+pos);
       }
     }
-    if (size==32){ 
+#ifdef ALLOC32
+    if (tab32 && size==32){ 
       for (i=0;i<ALLOC32/32;){
 	if (!(freeslot32[i] || freeslot32[i+1])){
 	  i+=2;
@@ -288,22 +231,23 @@ namespace giac {
 	return (void *) (tab32+i*32+pos);
       }
     }
-#ifdef ALLOC44
-    if (size==44){ 
-      for (i=0;i<ALLOC44/32;){
-	if (!(freeslot44[i] || freeslot44[i+1])){
+#endif
+#ifdef ALLOC48
+    if (tab48 && size==48){ 
+      for (i=0;i<ALLOC48/32;){
+	if (!(freeslot48[i] || freeslot48[i+1])){
 	  i+=2;
 	  continue;
 	}
-	if (freeslot44[i]){
-	  pos=freeslotpos(freeslot44[i]);
-	  freeslot44[i] &= ~(1<<pos);
-	  return (void *) (tab44+i*32+pos);
+	if (freeslot48[i]){
+	  pos=freeslotpos(freeslot48[i]);
+	  freeslot48[i] &= ~(1<<pos);
+	  return (void *) (tab48+i*32+pos);
 	}
 	++i;
-	pos=freeslotpos(freeslot44[i]);
-	freeslot44[i] &= ~(1<<pos);
-	return (void *) (tab44+i*32+pos);
+	pos=freeslotpos(freeslot48[i]);
+	freeslot48[i] &= ~(1<<pos);
+	return (void *) (tab48+i*32+pos);
       }
     }
 #endif
@@ -331,22 +275,24 @@ namespace giac {
       freeslot16[pos/32] |= (1 << (pos%32)); 
       return;
     }
-#ifdef ALLOC44
-    if ( ((size_t)obj>=(size_t) &tab44[0] ) &&
-	 ((size_t)obj<(size_t) &tab44[ALLOC44] ) ){
+#ifdef ALLOC48
+    if ( ((size_t)obj>=(size_t) &tab48[0] ) &&
+	 ((size_t)obj<(size_t) &tab48[ALLOC48] ) ){
       * (unsigned *) obj= 0;
-      int pos= ((size_t)obj -((size_t) &tab44[0]))/sizeof(eleven_int);
-      freeslot44[pos/32] |= (1 << (pos%32)); 
+      int pos= ((size_t)obj -((size_t) &tab48[0]))/sizeof(twelve_int);
+      freeslot48[pos/32] |= (1 << (pos%32)); 
       return;
     }
 #endif
+#ifdef ALLOC32
     if ( ((size_t)obj>=(size_t) &tab32[0]) &&
 	 ((size_t)obj<(size_t) &tab32[ALLOC32]) ){
       int pos= ((size_t)obj -((size_t) &tab32[0]))/sizeof(eight_int);
-      freeslot32[pos/32] |= (1 << (pos%32)); 
+      freeslot32[pos/32] |= (1 << (pos%32));
+      return;
     }
-    else
-      free(obj);
+#endif
+    free(obj);
   }
   unsigned hamdist(unsigned val){
     size_t res=0;
@@ -365,12 +311,16 @@ namespace giac {
     for (int i=0;i<ALLOC24/32;++i){
       res += 24*hamdist(freeslot24[i]);
     }
+#ifdef ALLOC32
     for (int i=0;i<ALLOC32/32;++i){
       res += 32*hamdist(freeslot32[i]);
     }
-    for (int i=0;i<ALLOC44/32;++i){
-      res += 44*hamdist(freeslot44[i]);
+#endif
+#ifdef ALLOC48
+    for (int i=0;i<ALLOC48/32;++i){
+      res += 48*hamdist(freeslot48[i]);
     }
+#endif
     return res;
   }
 #else // ALLOCSMALL
@@ -378,6 +328,7 @@ namespace giac {
     return 0;
   }
 #endif // ALLOCSMALL
+
 
 
 #if defined(SMARTPTR64) || !defined(ALLOCSMALL)

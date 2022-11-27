@@ -71,6 +71,22 @@ extern "C" {
   inline void sync_screen(){}
 #endif // NUMWORKS
 
+#ifdef HP39
+  void vGL_putString(int x0, int y0, char *s, int fg, int bg, int fontSize);
+  int os_draw_string(int x,int y,int c,int bg,const char * s,bool fake){
+    if (!fake) vGL_putString(x,y,s,c,bg,16);
+    return strlen(s)*8+x;
+  }
+  int os_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake){
+    if (!fake) vGL_putString(x,y,s,c,bg,14);
+    return strlen(s)*7+x;
+  }
+  int os_draw_string_small(int x,int y,int c,int bg,const char * s,bool fake){
+    if (!fake) vGL_putString(x,y,s,c,bg,12);
+    return strlen(s)*6+x;
+  }
+#endif
+
   inline void Printmini(int x,int y,const char * s,int i){ os_draw_string_small(x,y,i?0xffff:0,i?0:0xffff,s,false);}
   inline void Printxy(int x,int y,const char * s,int i){ os_draw_string_medium(x,y,i?0xffff:0,i?0:0xffff,s,false);}
    

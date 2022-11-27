@@ -1468,6 +1468,7 @@ namespace giac {
     // coeff type
     gen coeff;
     int t=coefftype(v,coeff);
+#ifndef NO_RTTI
     if (t==_MOD){
       v=*unmod(v)._VECTptr;
       vecteur vmin;
@@ -1475,7 +1476,6 @@ namespace giac {
 	return 1;
       return 0;
     }
-#ifndef NO_RTTI
     if (coeff.type==_USER)
       return is_irreducible(v,coeff);
 #endif

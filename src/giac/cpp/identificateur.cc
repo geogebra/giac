@@ -23,6 +23,13 @@ using namespace std;
 #include <fstream>
 #endif
 #include <string>
+#ifdef HP39
+char *strdup(const char *s){
+  char * ptr=(char *)malloc(strlen(s)+1);
+  strcpy(ptr,s);
+  return ptr;
+}
+#endif
 //#include <unistd.h> // For reading arguments from file
 #include "identificateur.h"
 #include "gen.h"

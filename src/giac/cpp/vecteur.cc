@@ -3158,6 +3158,7 @@ namespace giac {
   }
 
   void multmatvecteur(const matrice & a,const vecteur & b,vecteur & res){
+#ifndef HP39
     vector<int> B; gen x;
     int btype=gf_char2_vecteur2vectorint(b,B,x);
     if (btype>0){
@@ -3171,6 +3172,7 @@ namespace giac {
 	  res.push_back(galois_field(plus_two,btype,x,dotgf_char2(*ita,B,btype)));
       }
     }
+#endif
     vecteur::const_iterator ita=a.begin(), itaend=a.end();
     res.clear();
     res.reserve(itaend-ita);

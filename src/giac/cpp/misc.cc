@@ -19,7 +19,7 @@
 
 using namespace std;
 #ifdef HAVE_UNISTD_H
-#ifndef NUMWORKS
+#if !defined NUMWORKS && !defined HP39
 #include <dirent.h>
 #endif
 #include <sys/stat.h>
@@ -10252,7 +10252,7 @@ void sync_screen(){}
   static define_unary_function_eval (__leafsize,&_leafsize,_leafsize_s);
   define_unary_function_ptr5( at_leafsize ,alias_at_leafsize,&__leafsize,0,true);
   
-#if defined HAVE_UNISTD_H && !defined NUMWORKS
+#if defined HAVE_UNISTD_H && !defined NUMWORKS && !defined HP39
   void locate_files(const char * dirname,const char * ext_,vector<string> & v,bool recurse,GIAC_CONTEXT){
     DIR *dp;
     struct dirent *ep;

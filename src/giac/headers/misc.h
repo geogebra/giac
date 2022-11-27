@@ -303,9 +303,16 @@ namespace giac {
   extern const unary_function_ptr * const  at_isinf ;
   extern const unary_function_ptr * const  at_isfinite ;
   extern const unary_function_ptr * const  at_isnan ;
+  extern const unary_function_ptr * const  at_fmod ;
   extern const unary_function_ptr * const  at_draw_string ;
   extern const unary_function_ptr * const  at_draw_filled_circle ;
   extern const unary_function_ptr * const  at_draw_filled_arc ;
+  extern const unary_function_ptr * const  at_draw_circle ;
+  extern const unary_function_ptr * const  at_draw_arc ;
+  extern const unary_function_ptr * const  at_draw_line ;
+  extern const unary_function_ptr * const  at_draw_polygon ;
+  extern const unary_function_ptr * const  at_fill_rect ;
+  extern const unary_function_ptr * const  at_draw_rectangle ;
   extern const unary_function_ptr * const  at_dtype ;
   extern const unary_function_ptr * const  at_rgb ;
   extern const unary_function_ptr * const  at_prediction;
