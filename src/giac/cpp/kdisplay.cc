@@ -17,7 +17,7 @@
  */
 #include "config.h"
 #include "giacPCH.h"
-#if defined HAVE_UNISTD_H && !defined NUMWORKS
+#if defined HAVE_UNISTD_H && !defined NUMWORKS && !defined HP39
 #include <dirent.h>
 #endif
 #ifdef NSPIRE_NEWLIB
@@ -29,6 +29,7 @@
 #include <syscall.h>
 #include "sha256.h"
 #endif
+#include <alloca.h>
 #ifndef is_cx2
 #define is_cx2 false
 #endif
@@ -11759,7 +11760,12 @@ namespace xcas {
 #ifdef TURTLETAB
     xcas::Turtle t={tablogo,0,0,1,1,(short) turtle_speed};
 #else
-    xcas::Turtle t={&turtle_stack(),0,0,1,1,(short) turtle_speed};
+    xcas::Turtle t;
+    t.turtleptr=&turtle_stack();
+    t.turtlex=t.turtley=0;
+    t.turtlezoom=1;
+    t.maillage=1;
+    t.speed=(short) turtle_speed;
 #endif
 #ifdef NSPIRE_NEWLIB
     DefineStatusMessage((char*)"+-: zoom, pad: move, esc: quit", 1, 0, 0);
@@ -13931,6 +13937,23 @@ namespace xcas {
     }
     return (0);
   }
+
+#ifdef HP39
+int strncasecmp(const char *s1, const char *s2, size_t n) {
+    if(n <= 0) return 0;
+    while (*s1 != 0 && *s2 != 0) {
+        n--;
+        if (tolower(*s1) != tolower(*s2) || n == 0)
+            break;
+        s1++;
+        s2++;
+    }
+
+    return tolower(*s1) - tolower(*s2);
+}
+
+#endif
+
   char *strcasestr_duplicate(const char *s, const char *find)
   {
     char c;
@@ -19367,7 +19390,9 @@ namespace xcas {
     if (pythonjs_heap_size>_heap_size-52*1024)
       pythonjs_heap_size=_heap_size-52*1024;
 #endif
+#if defined MICROPY_LIB
     mp_stack_ctrl_init();
+#endif
     //volatile int stackTop;
     //mp_stack_set_top((void *)(&stackTop));
     //mp_stack_set_limit(24*1024);

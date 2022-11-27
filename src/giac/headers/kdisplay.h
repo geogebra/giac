@@ -148,6 +148,7 @@ namespace xcas {
   void Equation_select(giac::gen & eql,bool select);
   int eqw_select_down(giac::gen & g);
   int eqw_select_up(giac::gen & g);
+  giac::gen Equation_copy(const giac::gen & g);
 
   giac::gen Equation_compute_size(const giac::gen & g,const giac::attributs & a,int windowhsize,const giac::context * contextptr);
   giac::eqwdata Equation_total_size(const giac::gen & g);  
@@ -178,7 +179,7 @@ namespace xcas {
   typedef struct
   {
     std::string s;
-    color_t color=giac::_BLACK;
+    color_t color=::giac::_BLACK;
     short int newLine=0; // if 1, new line will be drawn before the text
     short int spaceAtEnd=0;
     short int lineSpacing=0;
@@ -434,7 +435,7 @@ namespace xcas {
 
   void save_session(const giac::context * );
 #if 1
-#define MAX_FILENAME_SIZE 63
+#define MAX_FILENAME_SIZE 270
   void save_console_state_smem(const char * filename,bool xwaspy,const giac::context *);
   bool load_console_state_smem(const char * filename,const giac::context *);
 
@@ -508,8 +509,12 @@ namespace xcas {
   };
 
 #define MAX_FMENU_ITEMS 8
+#ifdef HP39
+#define FMENU_TITLE_LENGHT 8
+#else
 #define FMENU_TITLE_LENGHT 4
-
+#endif
+  
 #define is_wchar(c) ((c == 0x7F) || (c == 0xF7) || (c == 0xF9) || (c == 0xE5) || (c == 0xE6) || (c == 0xE7))
 #define printf(s) Console_Output((const char *)s);
 
@@ -606,12 +611,12 @@ namespace giac {
     int value:4=MENUITEM_VALUE_NONE; // value of the menu item. For example, if type is MENUITEM_CHECKBOX and the checkbox is checked, the value of this var will be MENUITEM_VALUE_CHECKED
     int isselected:4=0; // for file browsers and other multi-select screens, this will show an arrow before the item
     short int isfolder=0; // for file browsers, this will signal the item is a folder
-    signed char color=giac::_BLACK; // color of the menu item (use TEXT_COLOR_* to define)
+    signed char color=::giac::_BLACK; // color of the menu item (use TEXT_COLOR_* to define)
     // The following two settings require the menu type to be set to MENUTYPE_MULTISELECT
 #if 0
     signed char icon=-1; //for file browsers, to show a file icon. -1 shows no icon (default)
 #endif
-    MenuItem():token(0),type(MENUITEM_NORMAL),value(MENUITEM_VALUE_NONE),isselected(0),isfolder(0),color(giac::_BLACK) {}
+    MenuItem():token(0),type(MENUITEM_NORMAL),value(MENUITEM_VALUE_NONE),isselected(0),isfolder(0),color(::giac::_BLACK) {}
   } ;
 
   typedef struct
@@ -629,7 +634,7 @@ namespace giac {
     char* statusText = NULL; // text to be shown on the status bar, may be empty
     char* title = NULL; // title to be shown on the first line if not null
     char* subtitle = NULL;
-    int titleColor=giac::_BLUE; //color of the title
+    int titleColor=::giac::_BLUE; //color of the title
     char* nodatamsg; // message to show when there are no menu items to display
     int startX=1; //X where to start drawing the menu. NOTE this is not absolute pixel coordinates but rather character coordinates
     int startY=0; //Y where to start drawing the menu. NOTE this is not absolute pixel coordinates but rather character coordinates
@@ -697,25 +702,24 @@ namespace giac {
 #endif // ndef NO_NAMESPACE_XCAS
 
 
-#define COLOR_BLACK giac::_BLACK
-#define COLOR_RED giac::_RED
-#define COLOR_GREEN giac::_GREEN
-#define COLOR_CYAN giac::_CYAN
-#define COLOR_BLUE giac::_BLUE
-#define COLOR_YELLOW giac::_YELLOW
-#define COLOR_MAGENTA giac::_MAGENTA
-#define COLOR_WHITE giac::_WHITE
+#define COLOR_BLACK ::giac::_BLACK
+#define COLOR_RED ::giac::_RED
+#define COLOR_GREEN ::giac::_GREEN
+#define COLOR_CYAN ::giac::_CYAN
+#define COLOR_BLUE ::giac::_BLUE
+#define COLOR_YELLOW ::giac::_YELLOW
+#define COLOR_MAGENTA ::giac::_MAGENTA
+#define COLOR_WHITE ::giac::_WHITE
 #define COLOR_YELLOWDARK 64934
 #define COLOR_BROWN 65000
-#define TEXT_COLOR_BLACK giac::_BLACK
-#define TEXT_COLOR_RED giac::_RED
-#define TEXT_COLOR_GREEN giac::_GREEN
-#define TEXT_COLOR_CYAN giac::_CYAN
-#define TEXT_COLOR_BLUE giac::_BLUE
-#define TEXT_COLOR_YELLOW giac::_YELLOW
-#define TEXT_COLOR_WHITE giac::_WHITE
-#define TEXT_COLOR_MAGENTA giac::_MAGENTA
-
+#define TEXT_COLOR_BLACK ::giac::_BLACK
+#define TEXT_COLOR_RED ::giac::_RED
+#define TEXT_COLOR_GREEN ::giac::_GREEN
+#define TEXT_COLOR_CYAN ::giac::_CYAN
+#define TEXT_COLOR_BLUE ::giac::_BLUE
+#define TEXT_COLOR_YELLOW ::giac::_YELLOW
+#define TEXT_COLOR_WHITE ::giac::_WHITE
+#define TEXT_COLOR_MAGENTA ::giac::_MAGENTA
 
 #endif // _KDISPLAY_H
 #endif

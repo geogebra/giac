@@ -1,3 +1,5 @@
+#ifndef K_DEFS_H
+#define K_DEFS_H
 #define NSPIRE_FILEBUFFER 512*1024
   // Character codes
 #define KEY_CHAR_0          0x30
@@ -201,3 +203,5 @@
 #define KEY_PRGM_SHIFT 78
 #define KEY_PRGM_MENU 48
 #define KEY_CTRL_SD         39990
+
+#endif
