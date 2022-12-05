@@ -668,7 +668,7 @@ namespace giac {
 	      // write a*x+b=a/E*(E*x+F)+b-a*F/E
 	      // a/E*(E*x+F)*exp(a/E*(E*x+F))=-D*a/E*exp(a*F/E-b)
 	      gen delta=-D*a/E*exp(a*F/E-b,contextptr);
-	      if (is_greater(m1,delta,contextptr))
+	      if (is_strictly_greater(m1,delta,contextptr))
 		return; // no solution
 	      gen sol=_LambertW(delta,contextptr)/a-F/E;
 	      v.push_back(sol);
@@ -689,7 +689,7 @@ namespace giac {
 	    in_solve(tfact,*t._IDNTptr,vt,isolate_mode,contextptr);
 	    const_iterateur it=vt.begin(),itend=vt.end();
 	    for (;it!=itend;++it){
-	      if (is_greater(m1,*it,contextptr))
+	      if (is_strictly_greater(m1,*it,contextptr))
 		continue;
 	      v.push_back((_LambertW(*it,contextptr)-b)/a);
 	      if (is_strictly_positive(-*it,contextptr))
@@ -706,7 +706,7 @@ namespace giac {
 	    in_solve(tfact,*t._IDNTptr,vt,isolate_mode,contextptr);
 	    const_iterateur it=vt.begin(),itend=vt.end();
 	    for (;it!=itend;++it){
-	      if (is_greater(m1,*it,contextptr))
+	      if (is_strictly_greater(m1,*it,contextptr))
 		continue;
 	      v.push_back((b-_LambertW(*it,contextptr))/a);
 	      if (is_strictly_positive(-*it,contextptr))
