@@ -54,6 +54,7 @@
 
 #ifdef HP39
 #include <time.h>
+#define M_E 2.7182818284590452
 #endif
 
 // Thanks to Jason Papadopoulos, author of msieve

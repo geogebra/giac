@@ -113,13 +113,19 @@ extern "C" {
   int c_turtle_getcolor();
   void c_turtle_color(int);
   void c_turtle_fillcolor1(int c);
+  extern int shell_x,shell_y,shell_fontw,shell_fonth; 
   
 }
 extern int lang;
 extern short int nspirelua;
 extern bool warn_nr;
+
 int select_interpreter(); // 0 Xcas, 1|2 Xcas python_compat(1|2), 3 MicroPython, 4 QuickJS 
 const char * gettext(const char * s) ;
+#ifdef HP39
+int kcas_main(int isAppli, unsigned short OptionNum);
+extern giac::context * contextptr; 
+#endif
 
 #ifndef NO_NAMESPACE_XCAS
 namespace xcas {
@@ -447,7 +453,6 @@ namespace xcas {
     unsigned char mode;
   } ;
 
-
   enum CONSOLE_RETURN_VAL {
 			   CONSOLE_NEW_LINE_SET = 1,
 			   CONSOLE_SUCCEEDED = 0,
@@ -477,16 +482,25 @@ namespace xcas {
 		    UPPER_CASE
   };
 
-  enum CONSOLE_SCREEN_SPEC {
+  enum CONSOLE_SCREEN_SPEC
+    {			    
 #ifdef NSPIRE_NEWLIB
-			    _LINE_MAX = 128,
-			    COL_DISP_MAX = 32,
+     _LINE_MAX = 128,
+     COL_DISP_MAX = 32,
 #else
-			    _LINE_MAX = 48,
-			    COL_DISP_MAX = 30,//32
+     _LINE_MAX = 48,
+#ifdef NUMWORKS
+     COL_DISP_MAX = 30,//32
+#else // HP39
+     COL_DISP_MAX = 35,//21  //!!!!!!! 21     
 #endif
-			    LINE_DISP_MAX = 11,
-			    EDIT_LINE_MAX = 2048
+#endif
+#ifdef HP39
+     LINE_DISP_MAX = 7,      //!!!!!!!  7
+#else     
+     LINE_DISP_MAX = 11,
+#endif
+     EDIT_LINE_MAX = 2048,
   };
   
   struct console_line {
@@ -639,7 +653,11 @@ namespace giac {
     int startX=1; //X where to start drawing the menu. NOTE this is not absolute pixel coordinates but rather character coordinates
     int startY=0; //Y where to start drawing the menu. NOTE this is not absolute pixel coordinates but rather character coordinates
     int width=30; // NOTE this is not absolute pixel coordinates but rather character coordinates
+#ifdef HP39
+    int height=8;
+#else
     int height=12; // NOTE this is not absolute pixel coordinates but rather character coordinates
+#endif
     int scrollbar=1; // 1 to show scrollbar, 0 to not show it.
     int scrollout=0; // whether the scrollbar goes out of the menu area (1) or it overlaps some of the menu area (0)
     int numitems; // number of items in menu
@@ -701,15 +719,22 @@ namespace giac {
 } // namespace giac
 #endif // ndef NO_NAMESPACE_XCAS
 
-
+#ifdef HP39
+#define COLOR_CYAN   90
+#define COLOR_RED    68
+#define COLOR_GREEN  68
+#define COLOR_WHITE  255
+#define COLOR_BLACK  0
+#else
 #define COLOR_BLACK ::giac::_BLACK
 #define COLOR_RED ::giac::_RED
 #define COLOR_GREEN ::giac::_GREEN
 #define COLOR_CYAN ::giac::_CYAN
+#define COLOR_WHITE ::giac::_WHITE
+#endif
 #define COLOR_BLUE ::giac::_BLUE
 #define COLOR_YELLOW ::giac::_YELLOW
 #define COLOR_MAGENTA ::giac::_MAGENTA
-#define COLOR_WHITE ::giac::_WHITE
 #define COLOR_YELLOWDARK 64934
 #define COLOR_BROWN 65000
 #define TEXT_COLOR_BLACK ::giac::_BLACK

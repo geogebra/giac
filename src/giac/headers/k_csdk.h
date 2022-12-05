@@ -72,7 +72,7 @@ extern "C" {
 #endif // NUMWORKS
 
 #ifdef HP39
-  void vGL_putString(int x0, int y0, char *s, int fg, int bg, int fontSize);
+  void vGL_putString(int x0, int y0,const char *s, int fg, int bg, int fontSize);
   int os_draw_string(int x,int y,int c,int bg,const char * s,bool fake){
     if (!fake) vGL_putString(x,y,s,c,bg,16);
     return strlen(s)*8+x;

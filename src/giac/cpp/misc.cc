@@ -9335,6 +9335,14 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 void sync_screen(){}
 #endif
 
+#ifdef HP39
+  bool execution_in_progress;
+  int confirm(const char *msg1, const char *msg2, bool acexit){
+    return giac::confirm(msg1,msg2,acexit,40);
+  }
+
+#endif
+
   gen _set_pixel(const gen & a_,GIAC_CONTEXT){
     freeze=true;
     gen a(a_);

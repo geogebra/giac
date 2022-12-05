@@ -34,6 +34,11 @@
 #define is_cx2 false
 #endif
 int osok=1;
+#ifdef HP39
+extern "C" int shell_x=0,shell_y=0,shell_fontw=7,shell_fonth=14;
+#else
+extern "C" int shell_x=0,shell_y=0,shell_fontw=12,shell_fonth=18;
+#endif 
 // pour le mode examen cx2, il y a 2 endroits ou is_cx2 est utilise dans smallmenu.selection==1
 // soit par extinction des leds (marche avec OS 5.2)
 // soit comme sur la CX si l'ecriture en flash NAND marche un jour
@@ -152,8 +157,13 @@ int micropy_ck_eval(const char *line){
 
 using namespace std;
 using namespace giac;
+#ifdef HP39
+const int LCD_WIDTH_PX=256;
+const int LCD_HEIGHT_PX=127;
+#else
 const int LCD_WIDTH_PX=320;
 const int LCD_HEIGHT_PX=222;
+#endif
 char* fmenu_cfg=0;
 int khicas_addins_menu(GIAC_CONTEXT); // in kadd.cc
 #ifdef MICROPY_LIB
@@ -395,12 +405,12 @@ namespace giac {
   
   int PrintMini(int x,int y,const char * s,int mode,int c=giac::_BLACK,int bg=giac::_WHITE,bool fake=false){
     if (mode==TEXT_MODE_NORMAL)
-      return os_draw_string(x,y,c,bg,s,fake);
+      return os_draw_string_medium(x,y,c,bg,s,fake);
     else {
       if (c==giac::_BLACK && bg==giac::_WHITE)
-	return os_draw_string(x,y,c,color_gris,s,fake);
+	return os_draw_string_medium(x,y,c,color_gris,s,fake);
       else
-	return os_draw_string(x,y,bg,c,s,fake);
+	return os_draw_string_medium(x,y,bg,c,s,fake);
     }
   }
   
@@ -18567,11 +18577,13 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
     return entry;
   }
 
+#ifndef HP39
   void PrintMini(int x,int y,const char * s,int mode){
     x *=3;
     y *=3;
     PrintMini(x,y,(char *)s,mode,COLOR_BLACK, COLOR_WHITE);
   }
+#endif
 
   //Draws and runs the asked for menu.
   const char * Console_Draw_FMenu(int key, struct FMenu* menu,char * cfg,int active_app)
@@ -18766,15 +18778,16 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
   */
 
 #ifndef CURSOR
-  int print_x=0,print_y=0,vfontsize=18,hfontsize=12;
+int print_x=0,print_y=0;
 #endif
 
   void locate(int x,int y){
+    shell_x=x; shell_y=y;
 #ifdef CURSOR
     return locate_OS(x,y);
 #else
-    print_x=(x-1)*hfontsize;
-    print_y=(y-1)*vfontsize;
+    print_x=(x-1)*shell_fontw;
+    print_y=(y-1)*shell_fonth;
 #endif
   }
 
@@ -18868,6 +18881,20 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
     print_x=print_color(print_x,print_y,s,color,invert,minimini,contextptr);
   }
 
+#ifdef HP39
+extern "C" void vGL_putString(int x0, int y0, char *s, int fg, int bg, int fontSize) ;
+
+void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
+  vGL_putString(shell_x*shell_fontw, shell_y*shell_fonth, (char *)s, 255, 0, shell_fonth);
+  // vGL_ConsOut((char *)s, true);
+} 
+  void Print(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
+  vGL_putString(shell_x*shell_fontw, shell_y*shell_fonth, (char *)s, 0,255, shell_fonth);
+  //vGL_ConsOut((char *)s, false);
+}
+
+#else
+
   void PrintRev(const char * s,int color,bool colorsyntax,GIAC_CONTEXT){
 #ifdef CURSOR
     Print_OS((char *)s,TEXT_MODE_INVERT,0);
@@ -18886,9 +18913,15 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
       print_color(s,color,false,false,contextptr);
 #endif
   }
+#endif
 
   // redraw_mode=1 clear area
   int Console_Disp(int redraw_mode,GIAC_CONTEXT){
+#ifdef HP39
+    int istatus=1;
+#else
+    int istatus=0;
+#endif
     bool minimini=false;
     unsigned int* pBitmap;
     int i, alpha_shift_status;
@@ -18908,7 +18941,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
       if (i == Cursor.y){
 	// cursor line
 	//if ((redraw_mode & 1)==0)
-	  drawRectangle(0,i*vfontsize,LCD_WIDTH_PX,vfontsize,_WHITE);
+        drawRectangle(0,(i+istatus)*shell_fonth,LCD_WIDTH_PX,shell_fonth,_WHITE);
 	if (curline.type == LINE_TYPE_INPUT || curline.type == LINE_TYPE_OUTPUT && curline.disp_len >= COL_DISP_MAX){
 	  locate(1, i + 1);
 	  if (curline.readonly){
@@ -18924,6 +18957,8 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 	  locate(1, i + 1);
 	  print(print_x,print_y,(const char *)curline.str,TEXT_COLOR_BLACK,false,true/*fake*/,minimini); // fake print
 	  print_x=LCD_WIDTH_PX-print_x;
+    //CERR << curline.str << " " << print_x << " \n";
+    shell_x=print_x/shell_fontw;
 	  if (curline.readonly){
 #ifdef CURSOR
 	    Cursor_SetFlashOff();
@@ -18938,14 +18973,16 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 #if 1 //def CURSOR
 	    curline.disp_len - curline.start_col > COL_DISP_MAX-1
 #else
-	    print_x>LCD_WIDTH_PX-hfontsize
+	    print_x>LCD_WIDTH_PX-shell_fontw
 #endif
 	    ){
 #ifdef CURSOR
 	  locate(COL_DISP_MAX, i + 1);
 #else
-	  print_y=i*vfontsize;
-	  print_x=LCD_WIDTH_PX+2-hfontsize;
+	  print_y=i*shell_fonth;
+	  print_x=LCD_WIDTH_PX+2-shell_fontw;
+    //CERR << curline.str << " " << print_x << " \n";
+    shell_x=print_x/shell_fontw;
 #endif
 	  if (curline.readonly){
 	    if(curline.disp_len - curline.start_col != COL_DISP_MAX) {
@@ -18975,7 +19012,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 
 	if (!curline.readonly){
 	  int fakestart=curline.start_col+(Cursor.x > COL_DISP_MAX-1?1:0);
-	  int fakex,fakey=Cursor.y*vfontsize;
+	  int fakex,fakey=Cursor.y*shell_fonth;
 	  string fakes;
 	  // parenthese match
 	  const char * str=curline.str;
@@ -19059,17 +19096,21 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 	  //DefineStatusMessage((giac::print_DOUBLE_(Cursor.y,6)+","+giac::print_DOUBLE_(print_y,6)).c_str(),1,0,0);
 	  //DisplayStatusArea();
 	  fakes=string((const char *)curline.str).substr(fakestart,Cursor.x);
+#ifdef HP39
+	  drawRectangle(shell_fontw*(1+fakes.size()),fakey+istatus*shell_fonth,2,shell_fonth,COLOR_BLACK);
+#else
 	  fakex=0;
 	  print(fakex,fakey,fakes.c_str(),TEXT_COLOR_BLACK,false,true/* fake*/,minimini); // fake print
-	  drawRectangle(fakex,fakey,2,vfontsize,COLOR_BLACK);
-	  //drawRectangle(Cursor.x*hfontsize,24+Cursor.y*vfontsize,2,vfontsize,COLOR_BLACK);
+	  drawRectangle(fakex,fakey,2,shell_fonth,COLOR_BLACK);
+#endif
+	  //drawRectangle(Cursor.x*shell_fontw,24+Cursor.y*shell_fonth,2,shell_fonth,COLOR_BLACK);
 #endif
 	}
       } // end cursor line
       else {
 	if ((redraw_mode & 1)==0)
 	  continue;
-	drawRectangle(0,i*vfontsize,LCD_WIDTH_PX,vfontsize,_WHITE);
+	drawRectangle(0,(i+istatus)*shell_fonth,LCD_WIDTH_PX,shell_fonth,_WHITE);
 	bool bigoutput = curline.type==LINE_TYPE_OUTPUT && curline.disp_len>=COL_DISP_MAX-3;
 	locate(bigoutput?3:1,i+1);
 	if (curline.type==LINE_TYPE_INPUT || bigoutput)
@@ -19080,6 +19121,8 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 #else
 	  print(print_x,print_y,(const char *)curline.str,TEXT_COLOR_BLACK,false,true/*fake*/,minimini);
 	  print_x=LCD_WIDTH_PX-print_x;
+    //CERR << curline.str << " " << print_x << " \n";
+    shell_x=print_x/shell_fontw;
 #endif
 	  Print(curline.str,TEXT_COLOR_BLACK,colorsyntax,contextptr);
 	}
@@ -19087,7 +19130,8 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 #ifdef CURSOR
 	  locate(COL_DISP_MAX, i + 1);
 #else
-	  print_x=LCD_WIDTH_PX+2-hfontsize;
+	  print_x=LCD_WIDTH_PX+2-shell_fontw;
+    shell_x=print_x/shell_fontw;
 #endif
 	  Print((char *)">",COLOR_BLUE,colorsyntax,contextptr);
 	}
@@ -19095,17 +19139,22 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 #ifdef CURSOR
 	  locate(1, i + 1);
 #else
-	  print_x=0;
+	  print_x=0; shell_x=0; 
 #endif
 	  Print((char *)"<",COLOR_BLUE,colorsyntax,contextptr);
 	}      
       } // end non cursor line
     } // end loop on all lines
-    drawRectangle(0,i*vfontsize,LCD_WIDTH_PX,205-i*vfontsize,_WHITE);
+#ifdef HP39
+    const int C205=114;
+#else
+    const int C205=205;
+#endif
+    drawRectangle(0,(i+istatus)*shell_fonth,LCD_WIDTH_PX,C205-(i+istatus)*shell_fonth,_WHITE);
 
     if ((redraw_mode & 1)==1){
       for (; (i < LINE_DISP_MAX) ; i++)
-	drawRectangle(0,i*vfontsize,LCD_WIDTH_PX,vfontsize,_WHITE);
+	drawRectangle(0,(i+istatus)*shell_fonth,LCD_WIDTH_PX,shell_fonth,_WHITE);
 #if 0 // def NUMWORKS
       string menu("shift-Ans help|1 ");
 #else
@@ -19119,8 +19168,8 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
       menu += xcas_python_eval==1?"|4 edt|5 2d|6 logo|7 lin|8 matr|9arit|0 plt":"|4 edt|5 2d|6 regr|7 matr|8 cplx|9 arit|0 rand";
       int xcas_color=65055,python_color=52832,js_color=63048;
       int interp_color=xcas_python_eval==-1?js_color:(xcas_python_eval==1?python_color:xcas_color);
-      drawRectangle(0,205,LCD_WIDTH_PX,17,interp_color);
-      PrintMiniMini(0,205,menu.c_str(),0,giac::_BLACK,interp_color);
+      drawRectangle(0,C205,LCD_WIDTH_PX,17,interp_color);
+      PrintMiniMini(0,C205,menu.c_str(),0,giac::_BLACK,interp_color);
     }
   
     // status, clock,
@@ -19383,6 +19432,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
   extern "C" void mp_stack_set_top(void *);
   extern "C" void mp_stack_set_limit(size_t);
 #endif // NUMWORKS
+
 
   int console_main(GIAC_CONTEXT,const char * sessionname){
 #if defined NUMWORKS && defined DEVICE
@@ -21378,5 +21428,84 @@ const char * gettext(const char * s) {
       }
     }
   }    
+
+#ifdef HP39
+giac::context * contextptr=0; 
+extern "C" void SetQuitHandler( void (*callback)(void) ); // syscalls.h
+int kcas_main(int isAppli, unsigned short OptionNum)
+{ 
+  size_t rambase=0x02000000+4096; // 4096 for 1 bpp screen buf
+  tab16=(four_int*) rambase;     // ALLOC16*16=4096 ALLOC16=256
+#if 1
+  tab24=(six_int*) ((size_t) tab16 +4096);    // ALLOC24*24 ALLOC24=16*24
+  tab48=(twelve_int*) ((size_t) tab24+16*32*24); // kgen.cc ALLOC48*48=2*4096, ALLOC48=128
+#else  
+  // tab16=(four_int*) malloc(4096);    // ALLOC16=256, ALLOC16*16=4K
+  tab24=(six_int*) malloc(16*32*24);    // ALLOC24=16*32, ALLOC24*24 =12K
+  tab48=(twelve_int*) malloc(2*4096); // kgen.cc ALLOC48=8*32, ALLOC48*48=12K
+#endif
+  unsigned int key;
+  unsigned char *expr;
+  unsigned char *user_functions;
+
+  int i = 0, j = 0;
+
+  SetQuitHandler(xcas::save_session); // automatically save session when exiting
+
+  turtle();
+#ifdef TURTLETAB
+  turtle_stack_size = 0;
+#else
+  turtle_stack(); // required to init turtle
+#endif
+
+  context ct;
+  contextptr = &ct;
+  xcas::Console_Init(contextptr);
+  giac::_srand(vecteur(0), contextptr);
+  xcas::restore_session("session", contextptr);
+  // load_config();
+  xcas::Console_Disp(1,contextptr);
+  //init_locale();
+  lang = 0;
+  i = 0;
+
+  while (1)
+  {
+    
+    if ((expr = xcas::Console_GetLine(contextptr)) == NULL){
+      confirm("memory error","");
+      break;
+    }
+    if (strcmp((const char *)expr, "restart") == 0)
+    {
+      if (confirm(lang ? "Effacer variables?" : "Clear variables?", lang ? "F1: annul,  F6: confirmer" : "F1: cancel,  F6: confirm") != KEY_CTRL_F6)
+      {
+        xcas::Console_Output((const char *)" cancelled");
+        xcas::Console_NewLine(xcas::LINE_TYPE_OUTPUT, 1);
+        // ck_getkey((int *)&key);
+        xcas::Console_Disp(1,contextptr);
+        continue;
+      }
+    }
+    // should save in another file
+    if (strcmp((const char *)expr, "=>") == 0 || strcmp((const char *)expr, "=>\n") == 0)
+    {
+      xcas::save_session(contextptr);
+      xcas::Console_Output("Session saved");
+    }
+    else
+      xcas::run((char *)expr,7,contextptr);
+    // print_mem_info();
+    xcas::Console_NewLine(xcas::LINE_TYPE_OUTPUT, 1);
+    // ck_getkey((int *)&key);
+    xcas::Console_Disp(1,contextptr);
+  }
+  for (;;)
+    GetKey((int *)&key);
+  return 1;
+}
+
+#endif // hp39
 
 #endif // KHICAS
