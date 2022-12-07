@@ -17,12 +17,18 @@ pipeline {
             bat './gradlew javagiacWin32JarClang --info'
             stash name: "giac-clang", includes: "cbuild*/**"
           }
+          post {
+            always { deleteDir() }
+          }
         }
         stage('Mac') {
           agent {label 'mac'}
           steps {
             sh "export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary"
             stash name: 'giac-mac', includes: 'build/binaries/javagiacSharedLibrary/osx_amd64/libjavagiac.jnilib'
+          }
+          post {
+            always { deleteDir() }
           }
         }
       }
@@ -49,6 +55,9 @@ pipeline {
               ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --info --refresh-dependencies
               ./gradlew :updateGiac --no-daemon -Prevision=$SVN_REVISION --info'''
           }
+          post {
+            always { deleteDir() }
+          }
         }
         stage('Objective C') {
           agent {label 'mac'}
@@ -60,13 +69,16 @@ pipeline {
                 export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
                 ./gradlew clean publishPodspec -Prevision=$SVN_REVISION'''
           }
+          post {
+            always { deleteDir() }
+          }
         }
       }
     }
   }
   post {
     always {
-      cleanAndNotify()
+      cleanAndNotify("#giac")
     }
   }
 }
