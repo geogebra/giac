@@ -2235,6 +2235,12 @@ namespace giac {
       return undef;
     int d=int(f._VECTptr->size());
     gen r=evalf_double(pp,1,contextptr);
+#ifdef HAVE_LIBMPFR
+    if (is_undef(r))
+      r=accurate_evalf(pp,256);
+#endif
+    if (is_undef(r))
+      *logptr(contextptr) << "Unable to eval numerically, root choice may be wrong\n";
     matrice m(d);
     m[0]=vecteur(d-1);
     m[0]._VECTptr->back()=1;
@@ -2275,10 +2281,12 @@ namespace giac {
 	identificateur x(" x");
 	vecteur w;
 	in_solve(symb_horner(mk,x),x,w,1,contextptr);
-	if (r.type!=_DOUBLE_ && r.type!=_CPLX && !w.empty()) return w.front();
+	if (r.type!=_DOUBLE_ && r.type!=_CPLX && r.type!=_REAL && !w.empty()) return w.front();
 	for (unsigned k=0;k<w.size();++k){
 	  if (lop(w[k],at_rootof).empty()){
 	    gen wkd=evalf_double(w[k],1,contextptr);
+      if (r.type==_REAL)
+        wkd=accurate_evalf(w[k],256);
 	    if (wkd!=w[k] && is_greater(1e-6,abs(1-r/wkd,contextptr),contextptr))
 	      return w[k];
 	  }
