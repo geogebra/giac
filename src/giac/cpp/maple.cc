@@ -135,6 +135,10 @@ clock_t times (struct tms *__buffer) {
   TMillisecs PrimeGetNow();
 #endif
 
+#ifdef HP39
+#include "syscalls.h"
+#endif
+
 #ifdef KHICAS
 int time_shift;
 #ifdef NUMWORKS
@@ -444,6 +448,58 @@ namespace giac {
   define_unary_function_ptr5( at_restart_modes ,alias_at_restart_modes,&__restart_modes,0,T_RETURN);
 
 #ifdef KHICAS
+
+#ifdef HP39
+  void get_time(int & heure,int & minute){
+    uint32_t t = RTC_GetTicks();
+    minute = (t / 60) % 60;
+    heure = (t / (60 * 60)) % 24;
+  }
+  
+  void set_time(int heure,int minute){
+    unsigned char time[7];
+    time[0]=0x20;
+    time[1]=0x18;
+    time[2]=0x10;
+    time[3]=0x1;
+    time[4]=heure;//(heure/10)*16+heure % 10;
+    time[5]=minute; //(minute/10)*16+minute % 10;
+    time[6]=0x30;
+    RTC_SetDateTime(time);
+  }  
+
+  gen _time(const gen & a,GIAC_CONTEXT){
+    if ( a.type==_STRNG && a.subtype==-1) return  a;
+    if (a.type==_VECT && a.subtype==_SEQ__VECT){
+      if (a._VECTptr->size()==2 && a._VECTptr->front().type==_INT_ && a._VECTptr->back().type==_INT_){
+        int h=a._VECTptr->front().val;
+        h=h%24;
+        if (h<0)
+          h+=24;
+        int m=a._VECTptr->back().val;
+        m=m%60;
+        if (m<0)
+          m+=60;
+        set_time(h,m); // does not work.
+        return 1;
+      }
+      return RTC_GetTicks();
+    }
+    double delta;
+    int ntimes=1,i=0;
+    int level=eval_level(contextptr);
+    unsigned int t1, t2;
+    extern unsigned int rtc_get_tick_ms();
+    t1 = rtc_get_tick_ms();
+    //unsigned t1 = RTC_GetTicks(); // 1 tick=1 s
+    // CERR << t1 << endl;
+    eval(a,level,contextptr);
+    t2 = rtc_get_tick_ms();
+    return double(t2-t1)/1000;
+  }
+  
+#else
+  
   gen _time(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
     if (a.type==_VECT && a.subtype==_SEQ__VECT){
@@ -484,7 +540,7 @@ namespace giac {
     }
     return 0.0;
   }
-
+#endif
 #else // KHICAS
 
 

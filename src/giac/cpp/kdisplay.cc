@@ -34,10 +34,11 @@
 #define is_cx2 false
 #endif
 int osok=1;
+extern "C" int shell_x,shell_y,shell_fontw,shell_fonth;
 #ifdef HP39
-extern "C" int shell_x=0,shell_y=0,shell_fontw=7,shell_fonth=14;
+int shell_x=0,shell_y=0,shell_fontw=7,shell_fonth=14;
 #else
-extern "C" int shell_x=0,shell_y=0,shell_fontw=12,shell_fonth=18;
+int shell_x=0,shell_y=0,shell_fontw=12,shell_fonth=18;
 #endif 
 // pour le mode examen cx2, il y a 2 endroits ou is_cx2 est utilise dans smallmenu.selection==1
 // soit par extinction des leds (marche avec OS 5.2)
@@ -372,10 +373,17 @@ namespace giac {
   typedef scrollbar TScrollbar;
 #endif
 
+#ifdef HP39
+#define C24 16 // 24 on 90
+#define C18 16 // 18
+#define C10 10 // 18
+#define C6 6 // 6
+#else
 #define C24 18 // 24 on 90
 #define C18 18 // 18
 #define C10 10 // 18
 #define C6 6 // 6
+#endif
 
   int MB_ElementCount(const char * s){
     return strlen(s); // FIXME for UTF8
@@ -385,9 +393,11 @@ namespace giac {
     if (mode==TEXT_MODE_NORMAL)
       os_draw_string(x,y,c,bg,s);
     else {
+#ifndef HP39
       if (c==giac::_BLACK && bg==giac::_WHITE)
 	os_draw_string(x,y,c,color_gris,s);
       else
+#endif
 	os_draw_string(x,y,bg,c,s);
     }
   }
@@ -396,9 +406,11 @@ namespace giac {
     if (mode==TEXT_MODE_NORMAL)
       return os_draw_string_small(x,y,c,bg,s,fake);
     else {
+#ifndef HP39      
       if (c==giac::_BLACK && bg==giac::_WHITE)
 	return os_draw_string_small(x,y,c,color_gris,s,fake);
       else
+#endif
 	return os_draw_string_small(x,y,bg,c,s,fake);	
     }
   }
@@ -407,9 +419,11 @@ namespace giac {
     if (mode==TEXT_MODE_NORMAL)
       return os_draw_string_medium(x,y,c,bg,s,fake);
     else {
+#ifndef HP39
       if (c==giac::_BLACK && bg==giac::_WHITE)
 	return os_draw_string_medium(x,y,c,color_gris,s,fake);
       else
+#endif
 	return os_draw_string_medium(x,y,bg,c,s,fake);
     }
   }
@@ -1716,6 +1730,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     Menu menu;
     menu.items=menuitems;
     menu.numitems=sizeof(menuitems)/sizeof(MenuItem);
+    menu.height=MENUHEIGHT;
     menu.scrollout=1;
     menu.title = (char*)((lang==1)?"Liste de commandes":"Commands list");
     //puts("catalog 1");
@@ -2091,13 +2106,18 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       menu.scrollout=1;
       menu.title = (char *) title;
       menu.type = MENUTYPE_FKEYS;
-      menu.height = 11;
+      menu.height = MENUHEIGHT-1;
       while(1) {
+#ifdef HP39
+	drawRectangle(0,114,LCD_WIDTH_PX,14,giac::_WHITE);
+	PrintMini(0,114,"input | ex1 | ex2 |     |     | help  ",4);
+#else
 	drawRectangle(0,200,LCD_WIDTH_PX,22,giac::_WHITE);
 #ifdef NSPIRE_NEWLIB
 	PrintMini(0,200,(category==CAT_CATEGORY_ALL?"menu: help | ret: ex1 | tab: ex2":"menu: help | ret ex1 | tab ex2"),4,33333,giac::_WHITE);
 #else
 	PrintMini(0,200,(category==CAT_CATEGORY_ALL?"Toolbox help | Ans ex1 | EXE  ex2":"Toolbox help | EXE ex1 | Ans ex2"),4,33333,giac::_WHITE);
+#endif
 #endif
 	int sres = 0;
 	if (curmi==0){
@@ -2117,7 +2137,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	  return sres;
 	}
 	int index=menuitems[menu.selection-1].isfolder;
-	if(sres == KEY_CTRL_CATALOG || sres==KEY_BOOK) {
+	if(sres == KEY_CTRL_CATALOG || sres==KEY_BOOK || sres==KEY_CTRL_F6) {
 	  const char * example=index<allcmds?completeCat[index].example:0;
 	  const char * example2=index<allcmds?completeCat[index].example2:0;
 	  xcas::textArea text;
@@ -2224,13 +2244,13 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	  }
 	  sres=doTextArea(&text,contextptr);
 	}
-	if (sres == KEY_CHAR_ANS || sres=='\t' ||sres==KEY_BOOK || sres==KEY_CTRL_EXE) {
+	if (sres == KEY_CHAR_ANS || sres=='\t' ||sres==KEY_BOOK || sres==KEY_CTRL_EXE || sres==KEY_CTRL_F2 || sres==KEY_CTRL_F3) {
 	  reset_kbd();
 	  const char * example=0;
 	  std::string s;
 	  if (index<allcmds ){
 	    s=insert_string(index);
-	    if (sres==KEY_CHAR_ANS || sres=='\t' || sres==KEY_BOOK)
+	    if (sres==KEY_CHAR_ANS || sres=='\t' || sres==KEY_BOOK || sres==KEY_CTRL_F3)
 	      example=completeCat[index].example2;
 	    else
 	      example=completeCat[index].example;
@@ -2271,7 +2291,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	  }
 	  sres=KEY_CTRL_OK;
 	}
-	if(sres == MENU_RETURN_SELECTION || sres == KEY_CTRL_OK) {
+	if(sres == MENU_RETURN_SELECTION || sres == KEY_CTRL_OK || sres==KEY_CTRL_F1) {
 	  reset_kbd();
 	  strcpy(insertText,index<allcmds?insert_string(index).c_str():menuitems[menu.selection-1].text);
 #ifdef MENUITEM_MALLOC
@@ -2494,7 +2514,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     Menu smallmenu;
     smallmenu.numitems=v.size()+3; 
     smallmenu.items=smallmenuitems;
-    smallmenu.height=12;
+    smallmenu.height=MENUHEIGHT;
     smallmenu.scrollbar=1;
     smallmenu.scrollout=1;
     string vars="Variables";
@@ -3651,6 +3671,9 @@ namespace xcas {
     draw_rectangle(x,y,w,h,c,context0);
   }
   void draw_line(int x0,int y0,int x1,int y1,int c){
+#ifdef HP39
+	draw_line(x0,y0,x1,y1,c,context0);
+#else    
     if (x0==x1){
       if (y0<=y1)
 	draw_rectangle(x0,y0,1,y1-y0+1,c);
@@ -3667,6 +3690,7 @@ namespace xcas {
       else
 	draw_line(x0,y0,x1,y1,c,context0);
     }
+#endif
   }
   void draw_circle(int xc,int yc,int r,int color,bool q1,bool q2,bool q3,bool q4){
     draw_circle(xc,yc,r,color,q1,q2,q3,q4,context0);
@@ -3941,10 +3965,12 @@ namespace xcas {
   void text_print(int fontsize,const char * s,int x,int y,int c=COLOR_BLACK,int bg=COLOR_WHITE,int mode=0){
     // *logptr(contextptr) << x << " " << y << " " << fontsize << " " << s << endl; return;
     c=(unsigned short) c;
+#ifndef HP39
     if (mode==4 && c==COLOR_BLACK && bg==COLOR_WHITE){
       bg=color_gris;
       mode=0;
     }
+#endif
     if (x>LCD_WIDTH_PX) return;
     int ss=strlen(s);
     if (ss==1 && s[0]==0x1e){ // arrow for limit
@@ -4830,7 +4856,11 @@ namespace xcas {
     int background=w.eqw_attributs.background;
     int text_color=w.eqw_attributs.text_color;
     int mode=selected?4:0;
-    int draw_line_color=text_color; // selected?background:text_color;
+#ifdef HP39
+    int draw_line_color=selected?255:0;
+#else
+    int draw_line_color=text_color; 
+#endif
     int x0=w.x;
     int y0=w.y; // lower coordinate of the master vector
     int y1=y0+w.dy; // upper coordinate of the master vector
@@ -11211,7 +11241,7 @@ namespace xcas {
 	smallmenu.numitems=22;
 	MenuItem smallmenuitems[smallmenu.numitems];
 	smallmenu.items=smallmenuitems;
-	smallmenu.height=12;
+	smallmenu.height=MENUHEIGHT;
 	for (;;){
 	  string s;
 	  s="xmin "+print_DOUBLE_(gr.window_xmin,contextptr);
@@ -11926,11 +11956,21 @@ namespace xcas {
       int save_clip_ymin=clip_ymin;
       clip_ymin=STATUS_AREA_PX;
       xcas::display(eq,dx,dy,contextptr);
-#if 1
-      string menu("shift-1 ");
+      string menu;
+#ifndef HP39
+      menu +="shift-1 ";
+#endif
       menu += string(menu_f1);
-      menu += "|2 ";
+      menu += "| ";
+#ifndef HP39
+      menu += "2 ";
+#endif
       menu += string(menu_f2);
+#ifdef HP39
+      menu += "| undo| edit| +- | approx";
+      drawRectangle(0,114,LCD_WIDTH_PX,14,giac::_BLACK);
+      PrintMini(0,114,menu.c_str(),4);
+#else
       menu += "|3 undo|4 edt|5 +-|6 approx";
       drawRectangle(0,205,LCD_WIDTH_PX,17,22222);
       PrintMiniMini(0,205,menu.c_str(),0,giac::_BLACK,22222);
@@ -14026,6 +14066,23 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
     return src;
   } /* toksplit */
 
+  void draw_editor_menu(bool textgr){
+#ifdef HP39
+    drawRectangle(0,114,LCD_WIDTH_PX,14,giac::_BLACK);
+    if (textgr)
+      PrintMini(0,114,"pnts | lines| undo| disp| +-| curves",4);
+    else
+      PrintMiniMini(0,114,"tests|struct| undo| misc| +-| logo",4);
+#else
+    waitforvblank();
+    drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
+    if (textgr)
+      PrintMiniMini(0,205,"shift-1 pnts|2 lines|3 undo|4 disp|5 +-|6 curves|7 triangle|8 polygon|9 solid",4,giac::_CYAN,giac::_BLACK);
+    else
+      PrintMiniMini(0,205,text->python>0?"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 lin|8 list|9arit":"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 matr|8 cplx",4,44444,giac::_BLACK);
+    //draw_menu(1);
+#endif
+  }  
 
   void display(textArea * text,int & isFirstDraw,int & totalTextY,int & scroll,int & textY,GIAC_CONTEXT){
 #ifdef CURSOR  
@@ -14375,13 +14432,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
     }
     //if (editable)
     if (editable){
-      waitforvblank();
-      drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
-      if (text->gr)
-	PrintMiniMini(0,205,"shift-1 pnts|2 lines|3 undo|4 disp|5 +-|6 curves|7 triangle|8 polygon|9 solid",4,giac::_CYAN,giac::_BLACK);
-      else
-	PrintMiniMini(0,205,text->python>0?"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 lin|8 list|9arit":"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 matr|8 cplx",4,44444,giac::_BLACK);
-      //draw_menu(1);
+      draw_editor_menu(text->gr);
     }
 #ifdef SCROLLBAR
     int scrollableHeight = LCD_HEIGHT_PX-24*(showtitle ? 2 : 1)-text->y;
@@ -15234,7 +15285,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 	  smallmenu.numitems=12;
 	  MenuItem smallmenuitems[smallmenu.numitems];
 	  smallmenu.items=smallmenuitems;
-	  smallmenu.height=12;
+	  smallmenu.height=MENUHEIGHT;
 	  smallmenu.scrollbar=0;
 	  //smallmenu.title = "KhiCAS";
 	  smallmenuitems[0].text = (char*)((lang==1)?"Tester syntaxe":"Check syntax");
@@ -15371,8 +15422,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 		xcas_python_eval=(c==3?1:(c==4?-1:0));
 		show_status(text,search,replace);
 		warn_python(text->python,false);
-		drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
-		PrintMiniMini(0,205,"shift-1 test|2 loop|3 undo|4 misc|5 +- |      ",4,44444,giac::_BLACK);
+    draw_editor_menu(text->gr);
 	      }
 	    }
 	  }
@@ -15383,8 +15433,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 	show_status(text,search,replace);
 	python_compat(text->python,contextptr);
 	warn_python(text->python,false);
-	drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
-	PrintMiniMini(0,205,"shift-1 test|2 loop|3 undo|4 misc|5 +- |      ",4,44444,giac::_BLACK);
+  draw_editor_menu(text->gr);
 	continue;
       case KEY_CTRL_F2:
 	if (clipline<0)
@@ -15820,7 +15869,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
     smallmenu.numitems=15;
     MenuItem smallmenuitems[smallmenu.numitems];
     smallmenu.items=smallmenuitems;
-    smallmenu.height=12;
+    smallmenu.height=MENUHEIGHT;
     smallmenu.scrollbar=1;
     smallmenu.scrollout=1;
     smallmenu.title = (char *)"Config";
@@ -17908,30 +17957,44 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
     char *tmp;
     for (;;){
       if (shutdown_state)
-	return KEY_SHUTDOWN;
+        return KEY_SHUTDOWN;
       int keyflag = GetSetupSetting(0x14);
       GetKey(&key);
       if (key==KEY_SHUTDOWN)
-	return key;
+        return key;
       if (keytooltip){
-	keytooltip=false;
-	if (key==KEY_CTRL_EXIT){
-	  Console_Disp(1,contextptr);
-	  continue;
-	}
-	if (Current_Line==Last_Line && Line[Current_Line].start_col+Cursor.x==strlen(Edit_Line) && (key==KEY_CTRL_OK || key==KEY_CHAR_ANS || key==KEY_CTRL_RIGHT)){
-	  if (console_help_insert(key==KEY_CTRL_RIGHT?KEY_CTRL_OK:key,contextptr,false)){
-	    Console_Disp(1,contextptr);
-	    keytooltip=Console_tooltip(contextptr);
-	    continue;
-	  }
-	}
-	if (key==KEY_CTRL_VARS)
-	  key=KEY_BOOK;	
+        keytooltip=false;
+        if (key==KEY_CTRL_EXIT){
+          Console_Disp(1,contextptr);
+          continue;
+        }
+        if (Current_Line==Last_Line && Line[Current_Line].start_col+Cursor.x==strlen(Edit_Line) && (key==KEY_CTRL_OK || key==KEY_CHAR_ANS || key==KEY_CTRL_RIGHT)){
+          if (console_help_insert(key==KEY_CTRL_RIGHT?KEY_CTRL_OK:key,contextptr,false)){
+            Console_Disp(1,contextptr);
+            keytooltip=Console_tooltip(contextptr);
+            continue;
+          }
+        }
+        if (key==KEY_CTRL_VARS)
+          key=KEY_BOOK;	
       }
+#ifdef HP39
+      if (key==KEY_CTRL_F5){
+        handle_f5();
+        continue;
+      }
+      if (key==KEY_CTRL_F6)
+        key=KEY_CTRL_MENU;
+      if (key==KEY_CTRL_F4){
+        char buf[512];
+        if (!showCatalog(buf,0,0))
+          buf[0]=0;
+        return Console_Input((const char*)buf);
+      }
+#endif      
       bool alph=alphawasactive(&key);
       if (key==KEY_PRGM_ACON)
-	Console_Disp(1,contextptr);
+        Console_Disp(1,contextptr);
       translate_fkey(key);
       if (key==KEY_CTRL_PASTE)
 	return Console_Input((const char*) paste_clipboard());
@@ -18023,12 +18086,6 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 	Console_Disp(1,contextptr);
 	continue;
       }
-      if (0 &&key==KEY_CTRL_F6){
-	char buf[512];
-	if (!showCatalog(buf,0,0))
-	  buf[0]=0;
-	return Console_Input((const char*)buf);
-      }
       if (key==KEY_CTRL_S || key==KEY_CTRL_T){
 	giac::gen g=sheet(contextptr);
 	if (g.type==_INT_ && g.val==KEY_SHUTDOWN)
@@ -18060,7 +18117,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 	MenuItem smallmenuitems[smallmenu.numitems];
       
 	smallmenu.items=smallmenuitems;
-	smallmenu.height=12;
+	smallmenu.height=MENUHEIGHT;
 	smallmenu.scrollbar=1;
 	smallmenu.scrollout=1;
 	//smallmenu.title = "KhiCAS";
@@ -18577,13 +18634,115 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
     return entry;
   }
 
-#ifndef HP39
+#ifdef HP39
+#define MINI_OVER 0
+#define MINI_REV 1
+void ck_getkey(int * i){
+  GetKey(i);
+}
+// Draws and runs the asked for menu.
+const char *Console_Draw_FMenu(int key, struct FMenu *menu, char *cfg, int active_app)
+{
+  int i, nb_entries = 0, selector = 0, position_number, position_x, ret, longest = 0;
+  int input_key;
+  char quick[] = "*: ";
+  int quick_len = 2;
+  char **entries;
+  DISPBOX box;
+
+  position_number = key - KEY_CTRL_F1;
+  if (position_number < 0 || position_number > 5)
+    position_number = 4;
+
+  entries = menu->str;
+  nb_entries = menu->count;
+
+  for (i = 0; i < nb_entries; i++)
+    if (strlen(entries[i]) > longest)
+      longest = strlen(entries[i]);
+
+  position_x = 21 * position_number;
+  if (position_x + longest * 8 + quick_len * 8 > 115)
+    position_x = 115 - longest * 8 - quick_len * 8;
+
+  box.left = position_x;
+  box.right = position_x + longest * 8 + quick_len * 8 + 6;
+  box.bottom = 113;  
+  box.top = box.bottom - nb_entries * 14; 
+  //giac::confirm((giac::print_INT_(box.left)+" "+giac::print_INT_(box.top)).c_str(),(giac::print_INT_(box.right)+" "+giac::print_INT_(box.bottom)).c_str(),false);
+  drawRectangle(box.left,box.top,box.right-box.left+1,box.bottom-box.top+1,_WHITE);
+  giac::freeze=true; // temporary workaround
+  giac::draw_line(box.left, box.bottom, box.left, box.top,0,contextptr);
+  giac::draw_line(box.right, box.bottom, box.right, box.top,0,contextptr);
+  giac::freeze=false;
+
+  // If the cursor is flashing on the opening box, disable it. //!!!!!!
+  // if (((Cursor.x * (256 / 21) < box.right && Cursor.x * (256 / 21) > box.left)) && ((Cursor.y * (128 / 8) < box.bottom) && (Cursor.y * (128 / 8) > box.top))) Cursor_SetFlashOff();
+
+  for (;;)
+  {
+    for (i = 0; i < nb_entries; i++)
+    {
+      quick[0] = '0' + (i + 1);
+      PrintMini(3 + position_x, box.bottom - 14 * (i + 1), quick, MINI_OVER); //!!!!!
+      PrintMini(3 + position_x + quick_len * 8, box.bottom - 14 * (i + 1), entries[i], MINI_OVER); //!!!!!
+    }
+    PrintMini(3 + position_x + quick_len * 8, box.bottom - 14 * (selector + 1), entries[selector], MINI_REV); //!!!!!
+    ck_getkey((int *)&input_key);
+    if (input_key == KEY_CTRL_EXIT || input_key == KEY_CTRL_AC)
+      return 0;
+    if (input_key == KEY_CTRL_UP && selector < nb_entries - 1)
+      selector++;
+    if (input_key == KEY_CTRL_DOWN && selector > 0)
+      selector--;
+    const char *howto = "", *syntax = "", *related = "", *examples = "";
+    if (0
+      //input_key == KEY_CTRL_RIGHT && giac::has_static_help(entries[selector], 1, howto, syntax, examples, related)
+        )
+    {
+      unsigned int key;
+      //PopUpWin(6);
+      PrintMini(12, 6, howto, MINI_OVER);
+      PrintMini(12, 14, entries[selector], MINI_OVER);
+      PrintMini(16, 22, syntax, MINI_OVER);
+      PrintMini(12, 30, "Example (EXE)", MINI_OVER);
+      PrintMini(12, 38, examples, MINI_OVER);
+      PrintMini(12, 46, "See also", MINI_OVER);
+      PrintMini(12, 54, related, MINI_OVER);
+      ck_getkey((int *)&key);
+      if (key == KEY_CTRL_EXE)
+        return examples;
+      Console_Disp(1,contextptr);
+      continue;
+    }
+
+    if (input_key == KEY_CTRL_EXE)
+      return entries[selector];
+
+    if (input_key >= KEY_CHAR_1 && input_key < KEY_CHAR_1 + nb_entries)
+      return entries[input_key - KEY_CHAR_1];
+
+    translate_fkey(input_key);
+
+    if (active_app == 0 &&
+        ((input_key >= KEY_CTRL_F1 && input_key <= KEY_CTRL_F6) ||
+         (input_key >= KEY_CTRL_F7 && input_key <= KEY_CTRL_F12)))
+    {
+      Console_Disp(1,contextptr);
+      key = input_key;
+      return console_menu(key, cfg, active_app);
+    }
+  } // end while input_key!=EXE/EXIT
+
+  return 0; // never reached
+}
+
+#else // hp39
   void PrintMini(int x,int y,const char * s,int mode){
     x *=3;
     y *=3;
     PrintMini(x,y,(char *)s,mode,COLOR_BLACK, COLOR_WHITE);
   }
-#endif
 
   //Draws and runs the asked for menu.
   const char * Console_Draw_FMenu(int key, struct FMenu* menu,char * cfg,int active_app)
@@ -18659,6 +18818,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 
     return 0; // never reached
   }
+#endif
 
   void Console_Free(){
     for (int i = 0; i < _LINE_MAX; i++){
@@ -18882,7 +19042,7 @@ int print_x=0,print_y=0;
   }
 
 #ifdef HP39
-extern "C" void vGL_putString(int x0, int y0, char *s, int fg, int bg, int fontSize) ;
+extern "C" void vGL_putString(int x0, int y0, const char *s, int fg, int bg, int fontSize) ;
 
 void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
   vGL_putString(shell_x*shell_fontw, shell_y*shell_fonth, (char *)s, 255, 0, shell_fonth);
@@ -18928,8 +19088,9 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
     DISPBOX ficon;
     int print_y = 0; //pixel y cursor
     int print_y_locate;
-
-    // if (redraw_mode & 1) Bdisp_AllClr_VRAM();
+#ifdef HP39
+    if (redraw_mode & 1) Bdisp_AllClr_VRAM();
+#endif
 
     //GetFKeyIconPointer( 0x01BE, &ficon );
     //DisplayFKeyIcon( i, ficon);
@@ -18939,210 +19100,210 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
       console_line & curline=Line[i+Start_Line];
       bool colorsyntax=curline.type == LINE_TYPE_INPUT;
       if (i == Cursor.y){
-	// cursor line
-	//if ((redraw_mode & 1)==0)
-        drawRectangle(0,(i+istatus)*shell_fonth,LCD_WIDTH_PX,shell_fonth,_WHITE);
-	if (curline.type == LINE_TYPE_INPUT || curline.type == LINE_TYPE_OUTPUT && curline.disp_len >= COL_DISP_MAX){
-	  locate(1, i + 1);
-	  if (curline.readonly){
+        // cursor line
+        //if ((redraw_mode & 1)==0)
+        drawRectangle(0,(i+istatus)*shell_fonth,LCD_WIDTH_PX,shell_fonth+1,_WHITE);
+        if (curline.type == LINE_TYPE_INPUT || curline.type == LINE_TYPE_OUTPUT && curline.disp_len >= COL_DISP_MAX){
+          locate(1, i + 1);
+          if (curline.readonly){
 #ifdef CURSOR
-	    Cursor_SetFlashOff();
+            Cursor_SetFlashOff();
 #endif
-	    PrintRev(curline.str + curline.start_col,TEXT_COLOR_BLACK,colorsyntax,contextptr);
-	  }
-	  else 
-	    Print(curline.str+curline.start_col+(Cursor.x>COL_DISP_MAX-1?1:0),TEXT_COLOR_BLACK,colorsyntax,contextptr);
-	}
-	else {
-	  locate(1, i + 1);
-	  print(print_x,print_y,(const char *)curline.str,TEXT_COLOR_BLACK,false,true/*fake*/,minimini); // fake print
-	  print_x=LCD_WIDTH_PX-print_x;
-    //CERR << curline.str << " " << print_x << " \n";
-    shell_x=print_x/shell_fontw;
-	  if (curline.readonly){
+            PrintRev(curline.str + curline.start_col,TEXT_COLOR_BLACK,colorsyntax,contextptr);
+          }
+          else 
+            Print(curline.str+curline.start_col+(Cursor.x>COL_DISP_MAX-1?1:0),TEXT_COLOR_BLACK,colorsyntax,contextptr);
+        }
+        else {
+          locate(1, i + 1);
+          print(print_x,print_y,(const char *)curline.str,TEXT_COLOR_BLACK,false,true/*fake*/,minimini); // fake print
+          print_x=LCD_WIDTH_PX-print_x;
+          //CERR << curline.str << " " << print_x << " \n";
+          shell_x=print_x/shell_fontw;
+          if (curline.readonly){
 #ifdef CURSOR
-	    Cursor_SetFlashOff();
+            Cursor_SetFlashOff();
 #endif
-	    PrintRev(curline.str,TEXT_COLOR_BLACK,colorsyntax,contextptr);
-	  }
-	  else 
-	    Print(curline.str,TEXT_COLOR_BLACK,colorsyntax,contextptr);
-	}
-
-	if (
+            PrintRev(curline.str,TEXT_COLOR_BLACK,colorsyntax,contextptr);
+          }
+          else 
+            Print(curline.str,TEXT_COLOR_BLACK,colorsyntax,contextptr);
+        }
+        
+        if (
 #if 1 //def CURSOR
-	    curline.disp_len - curline.start_col > COL_DISP_MAX-1
+            curline.disp_len - curline.start_col > COL_DISP_MAX-1
 #else
-	    print_x>LCD_WIDTH_PX-shell_fontw
+            print_x>LCD_WIDTH_PX-shell_fontw
 #endif
-	    ){
+            ){
 #ifdef CURSOR
-	  locate(COL_DISP_MAX, i + 1);
+          locate(COL_DISP_MAX, i + 1);
 #else
-	  print_y=i*shell_fonth;
-	  print_x=LCD_WIDTH_PX+2-shell_fontw;
-    //CERR << curline.str << " " << print_x << " \n";
-    shell_x=print_x/shell_fontw;
+          print_y=i*shell_fonth;
+          print_x=LCD_WIDTH_PX+2-shell_fontw;
+          //CERR << curline.str << " " << print_x << " \n";
+          shell_x=print_x/shell_fontw;
 #endif
-	  if (curline.readonly){
-	    if(curline.disp_len - curline.start_col != COL_DISP_MAX) {
+          if (curline.readonly){
+            if(curline.disp_len - curline.start_col != COL_DISP_MAX) {
 #ifdef CURSOR
-	      Cursor_SetFlashOff();
+              Cursor_SetFlashOff();
 #endif
-	      PrintRev((char *)">",COLOR_MAGENTA,colorsyntax,contextptr);
-	    }
-	  }
-	  else if (Cursor.x < COL_DISP_MAX-1){
-	    Print((char *)">",COLOR_MAGENTA,colorsyntax,contextptr);
-	  }
-	}
-
-	if (curline.start_col > 0){
-	  locate(1, i + 1);	
-	  if (curline.readonly){
+              PrintRev((char *)">",COLOR_MAGENTA,colorsyntax,contextptr);
+            }
+          }
+          else if (Cursor.x < COL_DISP_MAX-1){
+            Print((char *)">",COLOR_MAGENTA,colorsyntax,contextptr);
+          }
+        }
+        
+        if (curline.start_col > 0){
+          locate(1, i + 1);	
+          if (curline.readonly){
 #ifdef CURSOR
-	    Cursor_SetFlashOff();
+            Cursor_SetFlashOff();
 #endif		  
-	    PrintRev((char *)"<",COLOR_MAGENTA,colorsyntax,contextptr);
-	  }
-	  else {
-	    Print((char *)"<",COLOR_MAGENTA,colorsyntax,contextptr);
-	  }
-	}
-
-	if (!curline.readonly){
-	  int fakestart=curline.start_col+(Cursor.x > COL_DISP_MAX-1?1:0);
-	  int fakex,fakey=Cursor.y*shell_fonth;
-	  string fakes;
-	  // parenthese match
-	  const char * str=curline.str;
-	  int pos=Cursor.x+fakestart,pos2;
-	  int l=strlen(str);
-	  char ch=0;
-	  if (pos<l)
-	    ch=str[pos];
-	  int matchdirection=0,paren=0,crochet=0,accolade=0;
-	  if (ch=='(' || ch=='[' || ch=='{')
-	    matchdirection=1;
-	  if (ch=='}' || ch==']' || ch==')')
-	    matchdirection=-1;
-	  if (!matchdirection && pos){
-	    --pos;
-	    ch=str[pos];
-	    if (ch=='(' || ch=='[' || ch=='{')
-	      matchdirection=1;
-	    if (ch=='}' || ch==']' || ch==')')
-	      matchdirection=-1;
-	  }
-	  if (matchdirection){
-	    char buf[2]={0,0};
-	    bool ok=true;
-	    for (pos2=pos;ok && (pos2>=0 && pos2<l);pos2+=matchdirection){
-	      ch=str[pos2];
-	      if (ch=='(') ++paren;
-	      if (ch==')') --paren;
-	      if (ch=='[') ++crochet;
-	      if (ch==']') --crochet;
-	      if (ch=='{') ++accolade;
-	      if (ch=='}') --accolade;
-	      if (matchdirection>0 && (paren<0 || crochet<0 || accolade<0) )
-		ok=false;
-	      if (matchdirection<0 && (paren>0 || crochet>0 || accolade>0) )
-		ok=false;
-	      if (paren==0 && crochet==0 && accolade==0)
-		break;
-	    }
-	    ok = paren==0 && crochet==0 && accolade==0;
-	    if (pos>=fakestart){
-	      fakex=0;
-	      buf[0]=str[pos];
-	      fakes=string((const char *)curline.str).substr(fakestart,pos-fakestart);
-	      print(fakex,fakey,fakes.c_str(),TEXT_COLOR_BLACK,false,true/* fake*/,minimini); // fake print
-	      print(fakex,fakey,buf,ok?TEXT_COLOR_GREEN:TEXT_COLOR_RED,true/* revert*/,false,minimini);
-	    }
-	    if (ok){
-	      fakex=0;
-	      if (pos2>fakestart){
-		fakes=string((const char *)curline.str).substr(fakestart,pos2-fakestart);
-		print(fakex,fakey,fakes.c_str(),TEXT_COLOR_BLACK,false,true/* fake*/,false); // fake print
-		buf[0]=str[pos2];
-		print(fakex,fakey,buf,TEXT_COLOR_GREEN,true/* revert*/,false,minimini);
-	      }
-	    }
-	  }
+            PrintRev((char *)"<",COLOR_MAGENTA,colorsyntax,contextptr);
+          }
+          else {
+            Print((char *)"<",COLOR_MAGENTA,colorsyntax,contextptr);
+          }
+        }
+        
+        if (!curline.readonly){
+          int fakestart=curline.start_col+(Cursor.x > COL_DISP_MAX-1?1:0);
+          int fakex,fakey=Cursor.y*shell_fonth;
+          string fakes;
+          // parenthese match
+          const char * str=curline.str;
+          int pos=Cursor.x+fakestart,pos2;
+          int l=strlen(str);
+          char ch=0;
+          if (pos<l)
+            ch=str[pos];
+          int matchdirection=0,paren=0,crochet=0,accolade=0;
+          if (ch=='(' || ch=='[' || ch=='{')
+            matchdirection=1;
+          if (ch=='}' || ch==']' || ch==')')
+            matchdirection=-1;
+          if (!matchdirection && pos){
+            --pos;
+            ch=str[pos];
+            if (ch=='(' || ch=='[' || ch=='{')
+              matchdirection=1;
+            if (ch=='}' || ch==']' || ch==')')
+              matchdirection=-1;
+          }
+          if (matchdirection){
+            char buf[2]={0,0};
+            bool ok=true;
+            for (pos2=pos;ok && (pos2>=0 && pos2<l);pos2+=matchdirection){
+              ch=str[pos2];
+              if (ch=='(') ++paren;
+              if (ch==')') --paren;
+              if (ch=='[') ++crochet;
+              if (ch==']') --crochet;
+              if (ch=='{') ++accolade;
+              if (ch=='}') --accolade;
+              if (matchdirection>0 && (paren<0 || crochet<0 || accolade<0) )
+                ok=false;
+              if (matchdirection<0 && (paren>0 || crochet>0 || accolade>0) )
+                ok=false;
+              if (paren==0 && crochet==0 && accolade==0)
+                break;
+            }
+            ok = paren==0 && crochet==0 && accolade==0;
+            if (pos>=fakestart){
+              fakex=0;
+              buf[0]=str[pos];
+              fakes=string((const char *)curline.str).substr(fakestart,pos-fakestart);
+              print(fakex,fakey,fakes.c_str(),TEXT_COLOR_BLACK,false,true/* fake*/,minimini); // fake print
+              print(fakex,fakey,buf,ok?TEXT_COLOR_GREEN:TEXT_COLOR_RED,true/* revert*/,false,minimini);
+            }
+            if (ok){
+              fakex=0;
+              if (pos2>fakestart){
+                fakes=string((const char *)curline.str).substr(fakestart,pos2-fakestart);
+                print(fakex,fakey,fakes.c_str(),TEXT_COLOR_BLACK,false,true/* fake*/,false); // fake print
+                buf[0]=str[pos2];
+                print(fakex,fakey,buf,TEXT_COLOR_GREEN,true/* revert*/,false,minimini);
+              }
+            }
+          }
 #ifdef CURSOR
-	  switch(GetSetupSetting( (unsigned int)0x14)) {
-	  case 0: 
-	    alpha_shift_status = 0;
-	    break;
-	  case 1: //Shift enabled
-	    alpha_shift_status = 1;
-	    break;
-	  case 4: case 0x84:	//Alpha enabled
-	    alpha_shift_status = 2;
-	    break;
-	  case 8: case 0x88:
-	    alpha_shift_status = 4;
-	    break;
-	  default: 
-	    alpha_shift_status = 0;
-	    break;
-	  }
-	  Cursor_SetPosition(Cursor.x, Cursor.y);
-	  Cursor_SetFlashOn(alpha_shift_status);
-	  //Cursor_SetFlashStyle(alpha_shift_status); //Potential 2.00 OS incompatibilty (cf Simon's doc)
+          switch(GetSetupSetting( (unsigned int)0x14)) {
+          case 0: 
+            alpha_shift_status = 0;
+            break;
+          case 1: //Shift enabled
+            alpha_shift_status = 1;
+            break;
+          case 4: case 0x84:	//Alpha enabled
+            alpha_shift_status = 2;
+            break;
+          case 8: case 0x88:
+            alpha_shift_status = 4;
+            break;
+          default: 
+            alpha_shift_status = 0;
+            break;
+          }
+          Cursor_SetPosition(Cursor.x, Cursor.y);
+          Cursor_SetFlashOn(alpha_shift_status);
+          //Cursor_SetFlashStyle(alpha_shift_status); //Potential 2.00 OS incompatibilty (cf Simon's doc)
 #else
-	  //locate(Cursor.x+1,Cursor.y+1);
-	  //DefineStatusMessage((giac::print_DOUBLE_(Cursor.y,6)+","+giac::print_DOUBLE_(print_y,6)).c_str(),1,0,0);
-	  //DisplayStatusArea();
-	  fakes=string((const char *)curline.str).substr(fakestart,Cursor.x);
+          //locate(Cursor.x+1,Cursor.y+1);
+          //DefineStatusMessage((giac::print_DOUBLE_(Cursor.y,6)+","+giac::print_DOUBLE_(print_y,6)).c_str(),1,0,0);
+          //DisplayStatusArea();
+          fakes=string((const char *)curline.str).substr(fakestart,Cursor.x);
 #ifdef HP39
-	  drawRectangle(shell_fontw*(1+fakes.size()),fakey+istatus*shell_fonth,2,shell_fonth,COLOR_BLACK);
+          drawRectangle(shell_fontw*(1+fakes.size()),fakey+istatus*shell_fonth,2,shell_fonth,COLOR_BLACK);
 #else
-	  fakex=0;
-	  print(fakex,fakey,fakes.c_str(),TEXT_COLOR_BLACK,false,true/* fake*/,minimini); // fake print
-	  drawRectangle(fakex,fakey,2,shell_fonth,COLOR_BLACK);
+          fakex=0;
+          print(fakex,fakey,fakes.c_str(),TEXT_COLOR_BLACK,false,true/* fake*/,minimini); // fake print
+          drawRectangle(fakex,fakey,2,shell_fonth,COLOR_BLACK);
 #endif
-	  //drawRectangle(Cursor.x*shell_fontw,24+Cursor.y*shell_fonth,2,shell_fonth,COLOR_BLACK);
+          //drawRectangle(Cursor.x*shell_fontw,24+Cursor.y*shell_fonth,2,shell_fonth,COLOR_BLACK);
 #endif
-	}
+        }
       } // end cursor line
       else {
-	if ((redraw_mode & 1)==0)
-	  continue;
-	drawRectangle(0,(i+istatus)*shell_fonth,LCD_WIDTH_PX,shell_fonth,_WHITE);
-	bool bigoutput = curline.type==LINE_TYPE_OUTPUT && curline.disp_len>=COL_DISP_MAX-3;
-	locate(bigoutput?3:1,i+1);
-	if (curline.type==LINE_TYPE_INPUT || bigoutput)
-	  Print(curline.str + curline.start_col,TEXT_COLOR_BLACK,colorsyntax,contextptr);
-	else {
+        if ((redraw_mode & 1)==0)
+          continue;
+        drawRectangle(0,(i+istatus)*shell_fonth,LCD_WIDTH_PX,shell_fonth,_WHITE);
+        bool bigoutput = curline.type==LINE_TYPE_OUTPUT && curline.disp_len>=COL_DISP_MAX-3;
+        locate(bigoutput?3:1,i+1);
+        if (curline.type==LINE_TYPE_INPUT || bigoutput)
+          Print(curline.str + curline.start_col,TEXT_COLOR_BLACK,colorsyntax,contextptr);
+        else {
 #ifdef CURSOR
-	  locate(COL_DISP_MAX - Line[i + Start_Line].disp_len + 1, i + 1);
+          locate(COL_DISP_MAX - Line[i + Start_Line].disp_len + 1, i + 1);
 #else
-	  print(print_x,print_y,(const char *)curline.str,TEXT_COLOR_BLACK,false,true/*fake*/,minimini);
-	  print_x=LCD_WIDTH_PX-print_x;
-    //CERR << curline.str << " " << print_x << " \n";
-    shell_x=print_x/shell_fontw;
+          print(print_x,print_y,(const char *)curline.str,TEXT_COLOR_BLACK,false,true/*fake*/,minimini);
+          print_x=LCD_WIDTH_PX-print_x;
+          //CERR << curline.str << " " << print_x << " \n";
+          shell_x=print_x/shell_fontw;
 #endif
-	  Print(curline.str,TEXT_COLOR_BLACK,colorsyntax,contextptr);
-	}
-	if (curline.disp_len - curline.start_col > COL_DISP_MAX){
+          Print(curline.str,TEXT_COLOR_BLACK,colorsyntax,contextptr);
+        }
+        if (curline.disp_len - curline.start_col > COL_DISP_MAX){
 #ifdef CURSOR
-	  locate(COL_DISP_MAX, i + 1);
+          locate(COL_DISP_MAX, i + 1);
 #else
-	  print_x=LCD_WIDTH_PX+2-shell_fontw;
-    shell_x=print_x/shell_fontw;
+          print_x=LCD_WIDTH_PX+2-shell_fontw;
+          shell_x=print_x/shell_fontw;
 #endif
-	  Print((char *)">",COLOR_BLUE,colorsyntax,contextptr);
-	}
-	if (curline.start_col > 0){
+          Print((char *)">",COLOR_BLUE,colorsyntax,contextptr);
+        }
+        if (curline.start_col > 0){
 #ifdef CURSOR
-	  locate(1, i + 1);
+          locate(1, i + 1);
 #else
-	  print_x=0; shell_x=0; 
+          print_x=0; shell_x=0; 
 #endif
-	  Print((char *)"<",COLOR_BLUE,colorsyntax,contextptr);
-	}      
+          Print((char *)"<",COLOR_BLUE,colorsyntax,contextptr);
+        }      
       } // end non cursor line
     } // end loop on all lines
 #ifdef HP39
@@ -19154,25 +19315,41 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 
     if ((redraw_mode & 1)==1){
       for (; (i < LINE_DISP_MAX) ; i++)
-	drawRectangle(0,(i+istatus)*shell_fonth,LCD_WIDTH_PX,shell_fonth,_WHITE);
-#if 0 // def NUMWORKS
-      string menu("shift-Ans help|1 ");
-#else
-      string menu("shift-1 ");
+        drawRectangle(0,(i+istatus)*shell_fonth,LCD_WIDTH_PX,shell_fonth,_WHITE);
+      string menu;
+#ifndef HP39 
+      menu += "shift-1 ";
 #endif
       menu += string(menu_f1);
+#ifdef HP39
+      menu += " |";
+#else
       menu += "|2 ";
+#endif
       menu += string(menu_f2);
+#ifdef HP39
+      menu += " |";
+#else
       menu += "|3 ";
+#endif
       menu += string(menu_f3);
+#ifdef HP39
+      menu += " |cmds |A<>a |Fich";
+      drawRectangle(0,C205,LCD_WIDTH_PX,17,giac::_BLACK);
+      PrintMini(0,C205,menu.c_str(),4);
+#else
       menu += xcas_python_eval==1?"|4 edt|5 2d|6 logo|7 lin|8 matr|9arit|0 plt":"|4 edt|5 2d|6 regr|7 matr|8 cplx|9 arit|0 rand";
       int xcas_color=65055,python_color=52832,js_color=63048;
       int interp_color=xcas_python_eval==-1?js_color:(xcas_python_eval==1?python_color:xcas_color);
       drawRectangle(0,C205,LCD_WIDTH_PX,17,interp_color);
       PrintMiniMini(0,C205,menu.c_str(),0,giac::_BLACK,interp_color);
+#endif
     }
-  
+    
     // status, clock,
+#ifdef HP39
+    drawRectangle(0,0,LCD_WIDTH_PX,shell_fonth,giac::_WHITE);
+#endif
     console_disp_status(contextptr);
     return CONSOLE_SUCCEEDED;
   }
@@ -20059,7 +20236,7 @@ int select_item(const char ** ptr,const char * title,bool askfor1){
   Menu smallmenu;
   smallmenu.numitems=nitems; 
   smallmenu.items=smallmenuitems;
-  smallmenu.height=nitems<12?nitems+1:12;
+  smallmenu.height=nitems<MENUHEIGHT?nitems+1:MENUHEIGHT;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
   smallmenu.title = (char*) title;
@@ -21445,8 +21622,7 @@ int kcas_main(int isAppli, unsigned short OptionNum)
   tab48=(twelve_int*) malloc(2*4096); // kgen.cc ALLOC48=8*32, ALLOC48*48=12K
 #endif
   unsigned int key;
-  unsigned char *expr;
-  unsigned char *user_functions;
+  char *expr;
 
   int i = 0, j = 0;
 
