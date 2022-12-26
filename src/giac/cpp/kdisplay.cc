@@ -37,8 +37,11 @@ int osok=1;
 extern "C" int shell_x,shell_y,shell_fontw,shell_fonth;
 #ifdef HP39
 int shell_x=0,shell_y=0,shell_fontw=7,shell_fonth=14;
+int fileBrowser(char* filename, char* filter, char* title);
+#define dbgprintf printf
 #else
 int shell_x=0,shell_y=0,shell_fontw=12,shell_fonth=18;
+#define dbgprintf(...) 
 #endif 
 // pour le mode examen cx2, il y a 2 endroits ou is_cx2 est utilise dans smallmenu.selection==1
 // soit par extinction des leds (marche avec OS 5.2)
@@ -339,7 +342,7 @@ namespace giac {
       GetKey(&key);
       if (key==KEY_SHUTDOWN)
 	return key;
-      if (key==KEY_CTRL_EXE || key==KEY_CTRL_OK)
+      if (key==KEY_CTRL_EXE || key==KEY_CTRL_OK || key==KEY_CHAR_CR)
 	key=KEY_CTRL_F1;
       if (key==KEY_CTRL_AC || key==KEY_CTRL_EXIT || key==KEY_CTRL_MENU){
 	if (acexit) return -1;
@@ -704,7 +707,7 @@ namespace giac {
       case KEY_CTRL_RIGHT:
 	if(menu->type != MENUTYPE_MULTISELECT) return KEY_BOOK; // break;
 	// else fallthrough
-      case KEY_CTRL_EXE: case KEY_CTRL_OK:
+      case KEY_CTRL_EXE: case KEY_CTRL_OK: case KEY_CHAR_CR:
 	if(menu->numitems>0) return key==KEY_CTRL_OK?MENU_RETURN_SELECTION:key;
 	break;
       case KEY_CTRL_LEFT:
@@ -2739,7 +2742,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       if (key==KEY_SHUTDOWN)
 	return key;      
       // if (!giac::freeze) set_xcas_status();    
-      if (key==KEY_CTRL_EXE || key==KEY_CTRL_OK)
+      if (key==KEY_CTRL_EXE || key==KEY_CTRL_OK || key==KEY_CHAR_CR)
 	return KEY_CTRL_EXE;
       if (key>=32 && key<128){
 	if (!numeric || key=='-' || (key>='0' && key<='9')){
@@ -14066,7 +14069,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
     return src;
   } /* toksplit */
 
-  void draw_editor_menu(bool textgr){
+void draw_editor_menu(bool textgr,bool textpython){
 #ifdef HP39
     drawRectangle(0,114,LCD_WIDTH_PX,14,giac::_BLACK);
     if (textgr)
@@ -14079,7 +14082,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
     if (textgr)
       PrintMiniMini(0,205,"shift-1 pnts|2 lines|3 undo|4 disp|5 +-|6 curves|7 triangle|8 polygon|9 solid",4,giac::_CYAN,giac::_BLACK);
     else
-      PrintMiniMini(0,205,text->python>0?"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 lin|8 list|9arit":"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 matr|8 cplx",4,44444,giac::_BLACK);
+      PrintMiniMini(0,205,textpython>0?"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 lin|8 list|9arit":"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 matr|8 cplx",4,44444,giac::_BLACK);
     //draw_menu(1);
 #endif
   }  
@@ -14432,7 +14435,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
     }
     //if (editable)
     if (editable){
-      draw_editor_menu(text->gr);
+      draw_editor_menu(text->gr,text->python);
     }
 #ifdef SCROLLBAR
     int scrollableHeight = LCD_HEIGHT_PX-24*(showtitle ? 2 : 1)-text->y;
@@ -15422,7 +15425,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 		xcas_python_eval=(c==3?1:(c==4?-1:0));
 		show_status(text,search,replace);
 		warn_python(text->python,false);
-    draw_editor_menu(text->gr);
+    draw_editor_menu(text->gr,text->python);
 	      }
 	    }
 	  }
@@ -15433,7 +15436,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 	show_status(text,search,replace);
 	python_compat(text->python,contextptr);
 	warn_python(text->python,false);
-  draw_editor_menu(text->gr);
+  draw_editor_menu(text->gr,text->python);
 	continue;
       case KEY_CTRL_F2:
 	if (clipline<0)
@@ -16445,34 +16448,48 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
   }
 
   string khicas_state(GIAC_CONTEXT){
+    dbgprintf("khicas_state %08lx \n",contextptr);
     giac::gen g(giac::_VARS(-1,contextptr)); 
+    dbgprintf("khicas_state 0.0\n");
     int b=python_compat(contextptr);
+    dbgprintf("khicas_state 0.1\n");
     python_compat(0,contextptr);
+    dbgprintf("khicas_state 0.2\n");
 #if 1
 #ifdef NSPIRE_NEWLIB
     char *buf=nspire_filebuf;
     buf[0]=0;
     int bufsize=NSPIRE_FILEBUFFER;
 #else
+#ifdef HP39
+    int bufsize=6144;
+    dbgprintf("khicas_state 0.3\n");
+    char * buf=(char *)malloc(bufsize);
+    dbgprintf("khicas_state 0.5\n");
+    if (!buf) return "";
+    buf[0]=0;
+#else
     char buf[6144]="";
     int bufsize=sizeof(buf);
+#endif
 #endif
     if (g.type==giac::_VECT){
       bool ok=true;
       for (int i=0;i<g._VECTptr->size();++i){
-	string s((*g._VECTptr)[i].print(contextptr));
-	if (strlen(buf)+s.size()+128<bufsize){
-	  strcat(buf,s.c_str());
-	  strcat(buf,":;");
-	}
-	else
-	  ok=false;
+        string s((*g._VECTptr)[i].print(contextptr));
+        if (strlen(buf)+s.size()+128<bufsize){
+          strcat(buf,s.c_str());
+          strcat(buf,":;");
+        }
+        else
+          ok=false;
       }
       if (!ok){
-	confirm((lang==1)?"Contexte trop lourd, non sauvegarde":"Context too havy, not saved.",(lang==1)?"Re-executez scripts au chargement (esc enter)":"Re-run scripts at load time (esc enter)",true,64);
-	buf[0]=0;
+        confirm((lang==1)?"Contexte trop lourd, non sauvegarde":"Context too havy, not saved.",(lang==1)?"Re-executez scripts au chargement (esc enter)":"Re-run scripts at load time (esc enter)",true,64);
+        buf[0]=0;
       }
     }
+    dbgprintf("khicas_state 1\n");    
     python_compat(b,contextptr);
     if (strlen(buf)+184<bufsize){
       strcat(buf,"python_compat(");
@@ -16493,14 +16510,21 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
       strcat(buf,l);
       strcat(buf,");");
     }
+    dbgprintf("khicas_state 2\n");    
     if (sheetptr){
       string s(current_sheet(vecteur(0),contextptr).print(contextptr));
       if (strlen(buf)+s.size()+20<bufsize){
-	strcat(buf,"current_sheet(");
-	strcat(buf,s.c_str());
-	strcat(buf,");");
+        strcat(buf,"current_sheet(");
+        strcat(buf,s.c_str());
+        strcat(buf,");");
       }
     }
+    dbgprintf("khicas_state 3\n");
+#ifdef HP39
+    string res(buf);
+    free(buf);
+    return res;
+#endif
     return buf;
 #else
     string s(g.print(contextptr));
@@ -16533,8 +16557,10 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
   }
   void save_console_state_smem(const char * filename,bool xwaspy,GIAC_CONTEXT){
     console_changed=0;
+    dbgprintf("save_console_state %s\n",filename);
     string state(khicas_state(contextptr));
     int statesize=state.size();
+    dbgprintf("save_console_state %s %i\n",filename,statesize);
     string script;
     if (edptr)
       script=merge_area(edptr->elements);
@@ -16575,8 +16601,8 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
       strcpy((char *)buf,(const char*)cur.str); 
       unsigned char *ptr=buf,*strend=ptr+l;
       for (;ptr<strend;++ptr){
-	if (*ptr==0x9c)
-	  *ptr='\n';
+        if (*ptr==0x9c)
+          *ptr='\n';
       }
       Bfile_WriteFile_OS(hFile, buf, l);
     }
@@ -16588,11 +16614,11 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
     int len=hFile-savebuf;
     if (
 #ifdef XWASPY
-	xwaspy && len<8192
+        xwaspy && len<8192
 #else
-	0
+        0
 #endif
-	){
+        ){
       // save as an ascii file beginning with #xwaspy
 #ifdef NUMWORKS 
       --len;
@@ -16610,27 +16636,27 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
       hFile=newbuf+8;
 #endif
       for (int i=0;i<len;i+=3,hFile+=4){
-	// keep space \n and a..z chars
-	char c;
-	while (i<len && ((c=buf[i])==' ' || c=='\n' || c=='{' || c==')' || c==';' || c==':' || c=='\n' || (c>='a' && c<='z')) ){
-	  if (c==')')
-	    c='}';
-	  if (c==':')
-	    c='~';
-	  if (c==';')
-	    c='|';
-	  *hFile=c;
-	  ++hFile;
-	  ++i;
-	}
-	unsigned char a=buf[i],b=i+1<len?buf[i+1]:0,C=i+2<len?buf[i+2]:0;
-	hFile[0]=xwaspy_shift+(a>>2);
-	hFile[1]=xwaspy_shift+(((a&3)<<4)|(b>>4));
-	hFile[2]=xwaspy_shift+(((b&0xf)<<2)|(C>>6));
-	hFile[3]=xwaspy_shift+(C&0x3f);
+        // keep space \n and a..z chars
+        char c;
+        while (i<len && ((c=buf[i])==' ' || c=='\n' || c=='{' || c==')' || c==';' || c==':' || c=='\n' || (c>='a' && c<='z')) ){
+          if (c==')')
+            c='}';
+          if (c==':')
+            c='~';
+          if (c==';')
+            c='|';
+          *hFile=c;
+          ++hFile;
+          ++i;
+        }
+        unsigned char a=buf[i],b=i+1<len?buf[i+1]:0,C=i+2<len?buf[i+2]:0;
+        hFile[0]=xwaspy_shift+(a>>2);
+        hFile[1]=xwaspy_shift+(((a&3)<<4)|(b>>4));
+        hFile[2]=xwaspy_shift+(((b&0xf)<<2)|(C>>6));
+        hFile[3]=xwaspy_shift+(C&0x3f);
       }
       //*hFile=0; ++hFile; 
-      //*hFile=0; ++hFile; 
+      //*hFile=0; ++hFile;
       write_file(filename,newbuf,hFile-newbuf);
     }
     else {
@@ -16658,6 +16684,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
   }
 
   bool load_console_state_smem(const char * filename,GIAC_CONTEXT){
+    dbgprintf("load_console_state %s\n",filename);
     const char * hf=read_file(filename);
     //if (!hf){ console_output(filename,strlen(filename)); console_output(" not found\n",11); return true; }
     // if (strcmp(filename,"session.xw")){ console_output(hf,8); return true; }
@@ -17407,6 +17434,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 
 
   void save(const char * fname,GIAC_CONTEXT){
+    dbgprintf("save %s %08lx \n",fname,contextptr);
     if (nspire_exam_mode==2)
       return;
     clear_abort();
@@ -17535,8 +17563,9 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
       filename += ".py";
 #endif
     if (!load_console_state_smem(filename.c_str(),contextptr)){
+      dbgprintf("restore_session not found\n");
       if (confirm("OK: Francais, Back: English","set_language(1|0)")==KEY_CTRL_F6)
-	lang=0;
+        lang=0;
       numworks_certify_internal();
       Bdisp_AllClr_VRAM();
       int x=0,y=0;
@@ -17609,7 +17638,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
     return 1;
   }
 
-#else
+#else // NUMWORKS && DEVICE
 
   int restore_session(const char * fname,GIAC_CONTEXT){
     // cout << "0" << fname << endl; Console_Disp(1); GetKey(&key);
@@ -17721,6 +17750,14 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 
   // storage==0 (default) ram on numworks, ==1 flash on numworks, ==2 both on numworks, ignored on other calcs
   int giac_filebrowser(char * filename,const char * extension,const char * title,int storage){
+#ifdef HP39
+    if (strlen(extension)<=3 && extension[0]!='*'){
+      char ext[16]="*.";
+      strcat(ext,extension);
+      return fileBrowser(filename,ext,title);
+    }
+    return fileBrowser(filename,extension,title);
+#endif
     //storage=2; // debug
     // char dbg[]="0\n"; dbg[0] += storage;   console_output(dbg,2);
     const char * filenames[MAX_NUMBER_OF_FILENAMES+1];
@@ -18938,7 +18975,7 @@ const char *Console_Draw_FMenu(int key, struct FMenu *menu, char *cfg, int activ
   */
 
 #ifndef CURSOR
-int print_x=0,print_y=0;
+int print_x=1,print_y=0;
 #endif
 
   void locate(int x,int y){
@@ -18946,7 +18983,7 @@ int print_x=0,print_y=0;
 #ifdef CURSOR
     return locate_OS(x,y);
 #else
-    print_x=(x-1)*shell_fontw;
+    print_x=1+(x-1)*shell_fontw;
     print_y=(y-1)*shell_fonth;
 #endif
   }
@@ -21609,6 +21646,9 @@ const char * gettext(const char * s) {
 #ifdef HP39
 giac::context * contextptr=0; 
 extern "C" void SetQuitHandler( void (*callback)(void) ); // syscalls.h
+void quit_save_session(){
+  xcas::save_session(contextptr);
+}
 int kcas_main(int isAppli, unsigned short OptionNum)
 { 
   size_t rambase=0x02000000+4096; // 4096 for 1 bpp screen buf
@@ -21626,7 +21666,7 @@ int kcas_main(int isAppli, unsigned short OptionNum)
 
   int i = 0, j = 0;
 
-  SetQuitHandler(xcas::save_session); // automatically save session when exiting
+  SetQuitHandler(quit_save_session); // automatically save session when exiting
 
   turtle();
 #ifdef TURTLETAB
