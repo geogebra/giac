@@ -966,8 +966,13 @@ void handle_flash(GIAC_CONTEXT){
 /* **************************
    * SPREADSHEET CODE       *
    ************************** */
+#ifdef HP39
+const int row_height=15;
+const int col_width=45;
+#else
 const int row_height=20;
 const int col_width=60;
+#endif
 string printcell(int i,int j){
   string s="";
   s+=('A'+j);
@@ -1098,13 +1103,22 @@ bool sheet_display(tableur &t,GIAC_CONTEXT){
 	  drawRectangle(x+1,y,col_width+4,row_height,color_gris);	  
 	s=(*vj._VECTptr)[1].print(contextptr);
 	int dx=os_draw_string(0,0,0,0,s.c_str(),true); // find width
-	if (dx<col_width)
+	if (dx<col_width){
+#ifdef HP39
+	  os_draw_string(x+2,y,rev?_WHITE:_BLACK,rev?_BLACK:_WHITE,s.c_str(),false); // draw
+#else
 	  os_draw_string(x+2,y,_BLACK,rev?color_gris:_WHITE,s.c_str(),false); // draw
+#endif
+  }
 	else {
 	  if (iscur && !has_sel && t.cmd_row<0)
 	    statuslinemsg(s.c_str());
 	  s=s.substr(0,8)+"...";
+#ifdef HP39
+	  os_draw_string_small(x+2,y,rev?_WHITE:_BLACK,rev?_BLACK:_WHITE,s.c_str(),false); // draw
+#else    
 	  os_draw_string_small(x+2,y,_BLACK,rev?color_gris:_WHITE,s.c_str(),false); // draw
+#endif
 	}
       }
       x+=col_width+4;
@@ -1123,7 +1137,11 @@ bool sheet_display(tableur &t,GIAC_CONTEXT){
   bool small=t.keytooltip || dx>=LCD_WIDTH_PX-50;
   int sheety=LCD_HEIGHT_PX-2*row_height,xtooltip=0;
   if (t.cmd_row>=0 && t.cmd_pos>=0 && t.cmd_pos<=s.size()){
+#ifdef HP39
+    xend=os_draw_string(xend,sheety,_BLACK,_WHITE,printcell(t.cmd_row,t.cmd_col).c_str())+5;
+#else
     xend=os_draw_string(xend,sheety,_BLUE,_WHITE,printcell(t.cmd_row,t.cmd_col).c_str())+5;
+#endif
     string s1=s.substr(0,t.cmd_pos);
 #if 1
     xtooltip=xend=print_color(xend,sheety,s1.c_str(),_BLACK,false,small,contextptr);
@@ -1138,11 +1156,19 @@ bool sheet_display(tableur &t,GIAC_CONTEXT){
     s=s.substr(t.cmd_pos,s.size()-t.cmd_pos);
     if (has_sel){
       s1=printsel(sel_r,sel_c,sel_R,sel_C);
+#ifdef HP39
+      xend=os_draw_string_small(xend,sheety,_BLACK,_WHITE,s1.c_str(),false);
+#else
       xend=os_draw_string_small(xend,sheety,_BLACK,color_gris,s1.c_str(),false);
+#endif
     }
     else {
       if (t.cmd_row!=t.cur_row || t.cmd_col!=t.cur_col)
-	xend=os_draw_string_small(xend,sheety,_BLACK,color_gris,printcell(t.cur_row,t.cur_col).c_str(),false);
+#ifdef HP39
+        xend=os_draw_string_small(xend,sheety,_BLACK,_WHITE,printcell(t.cur_row,t.cur_col).c_str(),false);
+#else
+        xend=os_draw_string_small(xend,sheety,_BLACK,color_gris,printcell(t.cur_row,t.cur_col).c_str(),false);
+#endif
     }
   } // end cmdline active
   else
@@ -1160,10 +1186,16 @@ bool sheet_display(tableur &t,GIAC_CONTEXT){
     t.keytooltip=tooltip(xtooltip,sheety,t.cmd_pos,t.cmdline.c_str(),contextptr);
   python_compat(p,contextptr); xcas_python_eval=xpe;
   // fast menus
+#ifdef HP39
+  string menu("stat1d |stat2d | seq | edit| view | graph  ");
+  drawRectangle(0,114,LCD_WIDTH_PX,14,bg);
+  os_draw_string_small(0,114,_WHITE,_BLACK,menu.c_str());
+#else
   string menu("shift-1 stat1d|2 2d|3 seq|4 edit|5 view|6 graph|7 R|8 list| ");
   bg=65039;// bg=52832;
   drawRectangle(0,205,LCD_WIDTH_PX,17,bg);
   os_draw_string_small(0,205,_BLACK,bg,menu.c_str());
+#endif
   return true;
 }
 

@@ -36,6 +36,8 @@
 int osok=1;
 extern "C" int shell_x,shell_y,shell_fontw,shell_fonth;
 #ifdef HP39
+#define MINI_OVER 0
+#define MINI_REV 1
 int shell_x=0,shell_y=0,shell_fontw=7,shell_fonth=14;
 int fileBrowser(char* filename, char* filter, char* title);
 #define _green 0
@@ -223,44 +225,60 @@ namespace giac {
   void handle_f5(){
     lock_alpha();
   }
-
+  
   int chartab(){
     static int row=0,col=0;
     for (;;){
+      int cur=32+16*row+col;
       col &= 0xf;
       if (row<0) row=5; else if (row>5) row=0;
       // display table
       drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
-      os_draw_string(0,0,_BLACK,_WHITE,lang==1?"Selectionner caractere":"Select char");
+      os_draw_string_medium(0,0,_BLACK,_WHITE,lang==1?"Selectionner caractere":"Select char");
+#ifdef HP39
+      int dy=12;
       for (int r=0;r<6;++r){
-	for (int c=0;c<16;++c){
-	  char buf[2]={char(32+16*r+c),0}; 
-	  os_draw_string(20*c,20+20*r,_BLACK,(r==row && c==col?color_gris:_WHITE),buf);
-	}
+        for (int c=0;c<16;++c){
+          int currc=32+16*r+c;
+          unsigned char buf[2]={currc==127?(unsigned char)'X':(unsigned char)currc,0};
+          os_draw_string(12*c,dy+16*r,cur==currc?_WHITE:_BLACK,cur==currc?_BLACK:_WHITE,buf);
+        }
       }
+#else
+      for (int r=0;r<6;++r){
+        for (int c=0;c<16;++c){
+          char buf[2]={char(32+16*r+c),0}; 
+          os_draw_string(20*c,20+20*r,_BLACK,(r==row && c==col?color_gris:_WHITE),buf);
+        }
+      }
+#endif
       string s("Current ");
-      int cur=32+16*row+col;
       s += char(cur);
       s += " ";
       s += print_INT_(cur);
       s += " ";
       s += hexa_print_INT_(cur);
+#ifdef HP39
+      os_draw_string_medium(0,112,_BLACK,_WHITE,(const unsigned char *)s.c_str());
+#else      
       os_draw_string(0,160,_BLACK,_WHITE,s.c_str());
       os_draw_string(0,180,_BLACK,_WHITE,lang==1?"EXE: copier caractere":"EXE: copy char");
+#endif
       // interaction
       int key=getkey(1);
+      //dbgprintf("key %i %i\n",key,cur);
       if (key==KEY_CTRL_EXIT)
-	return -1;
+        return -1;
       if (key==KEY_CTRL_OK || key==KEY_CTRL_EXE)
-	return cur;
+        return cur;
       if (key==KEY_CTRL_LEFT)
-	--col;
+        --col;
       if (key==KEY_CTRL_RIGHT)
-	++col;
+        ++col;
       if (key==KEY_CTRL_UP)
-	--row;
+        --row;
       if (key==KEY_CTRL_DOWN)
-	++row;
+        ++row;
     }
   }
 
@@ -276,6 +294,7 @@ namespace giac {
   }
   
   void copy_clipboard(const string & s,bool status){
+    dbgprintf("clip %s\n",s.c_str());
 #if defined NUMWORKS && defined DEVICE
     extapp_clipboardStore(s.c_str());
 #else
@@ -292,6 +311,7 @@ namespace giac {
   }
   
   const char * paste_clipboard(){
+    dbgprintf("clip %s\n",clipboard()->c_str());
     clip_pasted=true;
 #if defined NUMWORKS && defined DEVICE
     return extapp_clipboardText();
@@ -459,133 +479,133 @@ namespace giac {
     while(1) {
       // Cursor_SetFlashOff();
       if (menu->selection <=1)
-	menu->selection=1;
+        menu->selection=1;
       if (menu->selection > menu->scroll+(menu->numitems>itemsHeight ? itemsHeight : menu->numitems))
-	menu->scroll = menu->selection -(menu->numitems>itemsHeight ? itemsHeight : menu->numitems);
+        menu->scroll = menu->selection -(menu->numitems>itemsHeight ? itemsHeight : menu->numitems);
       if (menu->selection-1 < menu->scroll)
-	menu->scroll = menu->selection -1;
+        menu->scroll = menu->selection -1;
       if(menu->statusText != NULL) DefineStatusMessage(menu->statusText, 1, 0, 0);
       // Clear the area of the screen we are going to draw on
       if(0 == menu->pBaRtR) {
-	int x=C10*menu->startX-1,
-	  y=C24*(menu->miniMiniTitle ? itemsStartY:menu->startY)-1,
-	  w=2+C10*menu->width /* + ((menu->scrollbar && menu->scrollout)?C10:0) */,
-	  h=2+C24*menu->height-(menu->miniMiniTitle ? C24:0);
-	// drawRectangle(x, y, w, h, COLOR_WHITE);
-	draw_line(x,y,x+w,y,COLOR_BLACK,context0);
-	draw_line(x,y+h,x+w,y+h,COLOR_BLACK,context0);
-	draw_line(x,y,x,y+h,COLOR_BLACK,context0);
-	draw_line(x+w,y,x+w,y+h,COLOR_BLACK,context0);
+        int x=C10*menu->startX-1,
+          y=C24*(menu->miniMiniTitle ? itemsStartY:menu->startY)-1,
+          w=2+C10*menu->width /* + ((menu->scrollbar && menu->scrollout)?C10:0) */,
+          h=2+C24*menu->height-(menu->miniMiniTitle ? C24:0);
+        // drawRectangle(x, y, w, h, COLOR_WHITE);
+        draw_line(x,y,x+w,y,COLOR_BLACK,context0);
+        draw_line(x,y+h,x+w,y+h,COLOR_BLACK,context0);
+        draw_line(x,y,x,y+h,COLOR_BLACK,context0);
+        draw_line(x+w,y,x+w,y+h,COLOR_BLACK,context0);
       }
       if (menu->numitems>0) {
-	for(int curitem=0; curitem < menu->numitems; curitem++) {
-	  // print the menu item only when appropriate
-	  if(menu->scroll <= curitem && menu->scroll > curitem-itemsHeight) {
-	    if ((curitem-menu->scroll) % 6==0)
-	      waitforvblank();
-	    char menuitem[256] = "";
-	    if(menu->numitems>=100 || menu->type == MENUTYPE_MULTISELECT){
-	      strcpy(menuitem, "  "); //allow for the folder and selection icons on MULTISELECT menus (e.g. file browser)
-	      strcpy(menuitem+2,menu->items[curitem].text);
-	    }
-	    else if (menu->type==MENUTYPE_NO_NUMBER)
-	      strcpy(menuitem,menu->items[curitem].text);
-	    else {
-	      int cur=curitem+1;
-	      if (menu->numitems<10){
-		menuitem[0]='0'+cur;
-		menuitem[1]=' ';
-		menuitem[2]=0;
-	      }
-	      else {
-		menuitem[0]=cur>=10?('0'+(cur/10)):' ';
-		menuitem[1]='0'+(cur%10);
-		menuitem[2]=' ';
-		menuitem[3]=0;
-	      }
-	    }
-	    strncat(menuitem, menu->items[curitem].text, 250);
-	    if(menu->items[curitem].type != MENUITEM_SEPARATOR) {
-	      //make sure we have a string big enough to have background when item is selected:          
-	      // MB_ElementCount is used instead of strlen because multibyte chars count as two with strlen, while graphically they are just one char, making fillerRequired become wrong
-	      int fillerRequired = menu->width - MB_ElementCount(menu->items[curitem].text) - (menu->type == MENUTYPE_MULTISELECT ? 2 : 3);
-	      for(int i = 0; i < fillerRequired; i++)
-		strcat(menuitem, " ");
-	      drawRectangle(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),C10*menu->width,C24,(menu->selection == curitem+1 ? color_gris : _WHITE));
-	      PrintXY(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),menuitem, (menu->selection == curitem+1 ? TEXT_MODE_INVERT : TEXT_MODE_NORMAL));
-	    } else {
-	      /*int textX = (menu->startX-1) * C18;
-		int textY = curitem*C24+itemsStartY*C24-menu->scroll*C24-C24+C10;
-		clearLine(menu->startX, curitem+itemsStartY-menu->scroll, (menu->selection == curitem+1 ? textColorToFullColor(menu->items[curitem].color) : COLOR_WHITE));
-		drawLine(textX, textY+C24-4, LCD_WIDTH_PX-2, textY+C24-4, COLOR_GRAY);
-		PrintMini(&textX, &textY, (unsigned char*)menuitem, 0, 0xFFFFFFFF, 0, 0, (menu->selection == curitem+1 ? COLOR_WHITE : textColorToFullColor(menu->items[curitem].color)), (menu->selection == curitem+1 ? textColorToFullColor(menu->items[curitem].color) : COLOR_WHITE), 1, 0);*/
-	    }
-	    // deal with menu items of type MENUITEM_CHECKBOX
-	    if(menu->items[curitem].type == MENUITEM_CHECKBOX) {
-	      PrintXY(C10*(menu->startX+menu->width-4),C18*(curitem+itemsStartY-menu->scroll),
-		      (menu->items[curitem].value == MENUITEM_VALUE_CHECKED ? " [+]" : " [-]"),
-		      (menu->selection == curitem+1 ? TEXT_MODE_INVERT : (menu->pBaRtR == 1? TEXT_MODE_NORMAL : TEXT_MODE_NORMAL)));
-	    }
-	    // deal with multiselect menus
-	    if(menu->type == MENUTYPE_MULTISELECT) {
-	      if((curitem+itemsStartY-menu->scroll)>=itemsStartY &&
-		 (curitem+itemsStartY-menu->scroll)<=(itemsStartY+itemsHeight) &&
-		 icontable != NULL
-		 ) {
+        for(int curitem=0; curitem < menu->numitems; curitem++) {
+          // print the menu item only when appropriate
+          if(menu->scroll <= curitem && menu->scroll > curitem-itemsHeight) {
+            if ((curitem-menu->scroll) % 6==0)
+              waitforvblank();
+            char menuitem[256] = "";
+            if(menu->numitems>=100 || menu->type == MENUTYPE_MULTISELECT){
+              strcpy(menuitem, "  "); //allow for the folder and selection icons on MULTISELECT menus (e.g. file browser)
+              strcpy(menuitem+2,menu->items[curitem].text);
+            }
+            else if (menu->type==MENUTYPE_NO_NUMBER)
+              strcpy(menuitem,menu->items[curitem].text);
+            else {
+              int cur=curitem+1;
+              if (menu->numitems<10){
+                menuitem[0]='0'+cur;
+                menuitem[1]=' ';
+                menuitem[2]=0;
+              }
+              else {
+                menuitem[0]=cur>=10?('0'+(cur/10)):' ';
+                menuitem[1]='0'+(cur%10);
+                menuitem[2]=' ';
+                menuitem[3]=0;
+              }
+              strncat(menuitem, menu->items[curitem].text, 250);
+            }
+            if(menu->items[curitem].type != MENUITEM_SEPARATOR) {
+              //make sure we have a string big enough to have background when item is selected:          
+              // MB_ElementCount is used instead of strlen because multibyte chars count as two with strlen, while graphically they are just one char, making fillerRequired become wrong
+              int fillerRequired = menu->width - MB_ElementCount(menu->items[curitem].text) - (menu->type == MENUTYPE_MULTISELECT ? 2 : 3);
+              for(int i = 0; i < fillerRequired; i++)
+                strcat(menuitem, " ");
+              drawRectangle(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),C10*menu->width,C24,(menu->selection == curitem+1 ? color_gris : _WHITE));
+              PrintXY(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),menuitem, (menu->selection == curitem+1 ? TEXT_MODE_INVERT : TEXT_MODE_NORMAL));
+            } else {
+              /*int textX = (menu->startX-1) * C18;
+                int textY = curitem*C24+itemsStartY*C24-menu->scroll*C24-C24+C10;
+                clearLine(menu->startX, curitem+itemsStartY-menu->scroll, (menu->selection == curitem+1 ? textColorToFullColor(menu->items[curitem].color) : COLOR_WHITE));
+                drawLine(textX, textY+C24-4, LCD_WIDTH_PX-2, textY+C24-4, COLOR_GRAY);
+                PrintMini(&textX, &textY, (unsigned char*)menuitem, 0, 0xFFFFFFFF, 0, 0, (menu->selection == curitem+1 ? COLOR_WHITE : textColorToFullColor(menu->items[curitem].color)), (menu->selection == curitem+1 ? textColorToFullColor(menu->items[curitem].color) : COLOR_WHITE), 1, 0);*/
+            }
+            // deal with menu items of type MENUITEM_CHECKBOX
+            if(menu->items[curitem].type == MENUITEM_CHECKBOX) {
+              PrintXY(C10*(menu->startX+menu->width-4),C18*(curitem+itemsStartY-menu->scroll),
+                      (menu->items[curitem].value == MENUITEM_VALUE_CHECKED ? " [+]" : " [-]"),
+                      (menu->selection == curitem+1 ? TEXT_MODE_INVERT : (menu->pBaRtR == 1? TEXT_MODE_NORMAL : TEXT_MODE_NORMAL)));
+            }
+            // deal with multiselect menus
+            if(menu->type == MENUTYPE_MULTISELECT) {
+              if((curitem+itemsStartY-menu->scroll)>=itemsStartY &&
+                 (curitem+itemsStartY-menu->scroll)<=(itemsStartY+itemsHeight) &&
+                 icontable != NULL
+                 ) {
 #if 0
-		if (menu->items[curitem].isfolder == 1) {
-		  // assumes first icon in icontable is the folder icon
-		  CopySpriteMasked(icontable[0].data, (menu->startX)*C18, (curitem+itemsStartY-menu->scroll)*C24, 0x12, 0x18, 0xf81f  );
-		} else {
-		  if(menu->items[curitem].icon >= 0) CopySpriteMasked(icontable[menu->items[curitem].icon].data, (menu->startX)*C18, (curitem+itemsStartY-menu->scroll)*C24, 0x12, 0x18, 0xf81f  );
-		}
+                if (menu->items[curitem].isfolder == 1) {
+                  // assumes first icon in icontable is the folder icon
+                  CopySpriteMasked(icontable[0].data, (menu->startX)*C18, (curitem+itemsStartY-menu->scroll)*C24, 0x12, 0x18, 0xf81f  );
+                } else {
+                  if(menu->items[curitem].icon >= 0) CopySpriteMasked(icontable[menu->items[curitem].icon].data, (menu->startX)*C18, (curitem+itemsStartY-menu->scroll)*C24, 0x12, 0x18, 0xf81f  );
+                }
 #endif
-	      }
-	      if (menu->items[curitem].isselected) {
-		if (menu->selection == curitem+1) {
-		  PrintXY(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),"\xe6\x9b", TEXT_MODE_NORMAL);
-		} else {
-		  PrintXY(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),"\xe6\x9b", TEXT_MODE_NORMAL);
-		}
-	      }
-	    }
-	  }
-	} // end for curitem<menu->numitem
-	int dh=menu->height-menu->numitems-(showtitle?1:0);
-	if (dh>0)
-	  drawRectangle(C10*menu->startX,C24*(menu->numitems+(showtitle?1:0)),C10*menu->width,C24*dh,_WHITE);
-	if (menu->scrollbar) {
+              }
+              if (menu->items[curitem].isselected) {
+                if (menu->selection == curitem+1) {
+                  PrintXY(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),"\xe6\x9b", TEXT_MODE_NORMAL);
+                } else {
+                  PrintXY(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),"\xe6\x9b", TEXT_MODE_NORMAL);
+                }
+              }
+            }
+          }
+        } // end for curitem<menu->numitem
+        int dh=menu->height-menu->numitems-(showtitle?1:0);
+        if (dh>0)
+          drawRectangle(C10*menu->startX,C24*(menu->numitems+(showtitle?1:0)),C10*menu->width,C24*dh,_WHITE);
+        if (menu->scrollbar) {
 #ifdef SCROLLBAR
-	  TScrollbar sb;
-	  sb.I1 = 0;
-	  sb.I5 = 0;
-	  sb.indicatormaximum = menu->numitems;
-	  sb.indicatorheight = itemsHeight;
-	  sb.indicatorpos = menu->scroll;
-	  sb.barheight = itemsHeight*C24;
-	  sb.bartop = (itemsStartY-1)*C24;
-	  sb.barleft = menu->startX*C18+menu->width*C18 - C18 - (menu->scrollout ? 0 : 5);
-	  sb.barwidth = C10;
-	  Scrollbar(&sb);
+          TScrollbar sb;
+          sb.I1 = 0;
+          sb.I5 = 0;
+          sb.indicatormaximum = menu->numitems;
+          sb.indicatorheight = itemsHeight;
+          sb.indicatorpos = menu->scroll;
+          sb.barheight = itemsHeight*C24;
+          sb.bartop = (itemsStartY-1)*C24;
+          sb.barleft = menu->startX*C18+menu->width*C18 - C18 - (menu->scrollout ? 0 : 5);
+          sb.barwidth = C10;
+          Scrollbar(&sb);
 #endif
-	}
-	//if(menu->type==MENUTYPE_MULTISELECT && menu->fkeypage == 0) drawFkeyLabels(0x0037); // SELECT (white)
+        }
+        //if(menu->type==MENUTYPE_MULTISELECT && menu->fkeypage == 0) drawFkeyLabels(0x0037); // SELECT (white)
       } else {
-	giac::printCentered(menu->nodatamsg, (itemsStartY*C24)+(itemsHeight*C24)/2-12);
+        giac::printCentered(menu->nodatamsg, (itemsStartY*C24)+(itemsHeight*C24)/2-12);
       }
       if(showtitle) {
-	int textX = C10*menu->startX, textY=menu->startY*C24;
-	drawRectangle(textX,textY,C10*menu->width,C24,_WHITE);
-	if (menu->miniMiniTitle) 
-	  PrintMini( textX, textY, menu->title, 0 );
-	else
-	  PrintXY(textX, textY, menu->title, TEXT_MODE_NORMAL);
-	if(menu->subtitle != NULL) {
-	  int textX=(MB_ElementCount(menu->title)+menu->startX-1)*C18+C10, textY=C10;
-	  PrintMini(textX, textY, menu->subtitle, 0);
-	}
-	PrintXY(textX+C10*(menu->width-5), 1, "____", 0);
-	PrintXY(textX+C10*(menu->width-5), 1, keyword, 0);
+        int textX = C10*menu->startX, textY=menu->startY*C24;
+        drawRectangle(textX,textY,C10*menu->width,C24,_WHITE);
+        if (menu->miniMiniTitle) 
+          PrintMini( textX, textY, menu->title, 0 );
+        else
+          PrintXY(textX, textY, menu->title, TEXT_MODE_NORMAL);
+        if(menu->subtitle != NULL) {
+          int textX=(MB_ElementCount(menu->title)+menu->startX-1)*C18+C10, textY=C10;
+          PrintMini(textX, textY, menu->subtitle, 0);
+        }
+        PrintXY(textX+C10*(menu->width-5), 1, "____", 0);
+        PrintXY(textX+C10*(menu->width-5), 1, keyword, 0);
       }
       /*if(menu->darken) {
 	DrawFrame(COLOR_BLACK);
@@ -1743,19 +1763,19 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     //puts("catalog 1");
     while(1) {
       if (preselect)
-	menu.selection=preselect;
+        menu.selection=preselect;
       else {
-	if (menupos>0)
-	  menu.selection=menupos;
-	int sres = doMenu(&menu);
-	if (sres != MENU_RETURN_SELECTION && sres!=KEY_CTRL_EXE)
-	  return 0;
+        if (menupos>0)
+          menu.selection=menupos;
+        int sres = doMenu(&menu);
+        if (sres != MENU_RETURN_SELECTION && sres!=KEY_CTRL_EXE)
+          return 0;
       }
       // puts("catalog 3");
       if(doCatalogMenu(insertText, menuitems[menu.selection-1].text, menu.selection-1,contextptr)) 
-	return 1;
+        return 1;
       if (preselect)
-	return 0;
+        return 0;
     }
     return 0;
   }
@@ -2043,64 +2063,64 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       *logptr(contextptr) << "malloc " << memsize << ' ' << (size_t) &memsize << '\n';
       MenuItem *menuitems=(MenuItem *) malloc(memsize);
       if (!menuitems)
-	return 0;
+        return 0;
 #else
       MenuItem menuitems[nitems];
 #endif
       int cur = 0,curmi = 0,i=0;
 #ifdef MICROPY_LIB
       if (xcas_python_eval==1)
-	micropy_ck_eval("1");
+        micropy_ck_eval("1");
 #endif
       gen g;
       while(cur<nitems) {
-	menuitems[curmi].type = MENUITEM_NORMAL;
-	menuitems[curmi].color = _BLACK;    
-	if (isall || isopt) {
-	  const char * text=isall?(builtin_lexer_functions_begin()+cur)->first:(lexer_tab_int_values_begin+curmi)->keyword;
+        menuitems[curmi].type = MENUITEM_NORMAL;
+        menuitems[curmi].color = _BLACK;    
+        if (isall || isopt) {
+          const char * text=isall?(builtin_lexer_functions_begin()+cur)->first:(lexer_tab_int_values_begin+curmi)->keyword;
 #ifdef MICROPY_LIB
-	  if (xcas_python_eval==1 && xcas::find_color(text,contextptr)!=3){
-	    ++cur;
-	    continue;
-	  }
+          if (xcas_python_eval==1 && xcas::find_color(text,contextptr)!=3){
+            ++cur;
+            continue;
+          }
 #endif
-	  menuitems[curmi].text = (char*) text;
-	  menuitems[curmi].isfolder = allcmds; // assumes allcmds>allopts
-	  menuitems[curmi].token=isall?((builtin_lexer_functions_begin()+curmi)->second.subtype+256):((lexer_tab_int_values_begin+curmi)->subtype+(lexer_tab_int_values_begin+curmi)->return_value*256);
-	  // menuitems[curmi].token=isall?find_or_make_symbol(text,g,0,false,contextptr):((lexer_tab_int_values_begin+curmi)->subtype+(lexer_tab_int_values_begin+curmi)->return_value*256);
-	  for (;i<CAT_COMPLETE_COUNT;++i){
-	    const char * catname=completeCat[i].name;
-	    int tmp=strcmp(catname,text);
-	    if (tmp>=0){
-	      size_t st=strlen(text),j=tmp?0:st;
-	      for (;j<st;++j){
-		if (catname[j]!=text[j])
-		  break;
-	      }
-	      if (j==st && (!isalphanum(catname[j]))){
-		menuitems[curmi].isfolder = i;
-		++i;
-	      }
-	      break;
-	    }
-	  }
-	  // compare text with completeCat
-	  ++curmi;
-	}
-	else {
-	  int cat=completeCat[cur].category;
-	  if (
-	      (xcas_python_eval==0 || !(cat & XCAS_ONLY) ) &&
-	      ((cat & 0xff) == category ||
-	       (cat & 0xff00) == (category<<8) ||
-	       (cat & 0xff0000) == (category <<16) )
-	      ){
-	    menuitems[curmi].isfolder = cur; // little hack: store index of the command in the full list in the isfolder property (unused by the menu system in this case)
-	    menuitems[curmi].text = (char *) completeCat[cur].name;
-	    curmi++;
-	  }
-	}
-	cur++;
+          menuitems[curmi].text = (char*) text;
+          menuitems[curmi].isfolder = allcmds; // assumes allcmds>allopts
+          menuitems[curmi].token=isall?((builtin_lexer_functions_begin()+curmi)->second.subtype+256):((lexer_tab_int_values_begin+curmi)->subtype+(lexer_tab_int_values_begin+curmi)->return_value*256);
+          // menuitems[curmi].token=isall?find_or_make_symbol(text,g,0,false,contextptr):((lexer_tab_int_values_begin+curmi)->subtype+(lexer_tab_int_values_begin+curmi)->return_value*256);
+          for (;i<CAT_COMPLETE_COUNT;++i){
+            const char * catname=completeCat[i].name;
+            int tmp=strcmp(catname,text);
+            if (tmp>=0){
+              size_t st=strlen(text),j=tmp?0:st;
+              for (;j<st;++j){
+                if (catname[j]!=text[j])
+                  break;
+              }
+              if (j==st && (!isalphanum(catname[j]))){
+                menuitems[curmi].isfolder = i;
+                ++i;
+              }
+              break;
+            }
+          }
+          // compare text with completeCat
+          ++curmi;
+        }
+        else {
+          int cat=completeCat[cur].category;
+          if (
+              (xcas_python_eval==0 || !(cat & XCAS_ONLY) ) &&
+              ((cat & 0xff) == category ||
+               (cat & 0xff00) == (category<<8) ||
+               (cat & 0xff0000) == (category <<16) )
+              ){
+            menuitems[curmi].isfolder = cur; // little hack: store index of the command in the full list in the isfolder property (unused by the menu system in this case)
+            menuitems[curmi].text = (char *) completeCat[cur].name;
+            curmi++;
+          }
+        }
+        cur++;
       }
       
       Menu menu;
@@ -2108,7 +2128,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       menu.numitems=curmi;
       if (isopt){ menu.selection=5; menu.scroll=4; }
       if (curmi>=100)
-	lock_alpha(); //SetSetupSetting( (unsigned int)0x14, 0x88);	
+        lock_alpha(); //SetSetupSetting( (unsigned int)0x14, 0x88);	
       // DisplayStatusArea();
       menu.scrollout=1;
       menu.title = (char *) title;
@@ -13742,8 +13762,6 @@ namespace xcas {
     return 0;
   }
 #ifdef HP39
-#define MINI_OVER 0
-#define MINI_REV 1
 // 0 not alpha symbol, blue (7) Xcas command, red (2) keyword, cyan (3) number,  green (4) comment, yellow (6) string
   void print(int &X, int &Y, const char *buf, int color, bool revert, bool fake, bool minimini){
     //if (!fake) dbgprintf("print %s %i\n",buf,color);
@@ -13768,7 +13786,7 @@ namespace xcas {
         }
       }
     }
-    X += ((minimini || color == 2016 || color == 4) ? 7 : 8) * strlen(buf);
+    X += ((minimini || color == 2016 || color == 4) ? 6 : 7) * strlen(buf);
   }
 
 #else
@@ -18959,14 +18977,19 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	}
 
       if (key == KEY_CTRL_INS) {
-	if (Current_Line<Last_Line){
-	  Console_Insert_Line();
-	  Console_Insert_Line();
-	}
-	else
-	  Console_Input((const char*)":=");
-	Console_Disp(1,contextptr);
-	continue;
+        if (Current_Line<Last_Line){
+          Console_Insert_Line();
+          Console_Insert_Line();
+        }
+        else {
+          int c=giac::chartab();
+          char s[2]={0};
+          if (c>32 && c<127) s[0]=char(c);
+          Console_Input(s);
+        }
+        //Console_Input((const char*)":=");
+        Console_Disp(1,contextptr);
+        continue;
       }
       if (key==KEY_AFFECT){
 	Console_Input((const char*)":=");
@@ -19467,48 +19490,48 @@ int print_x=1,print_y=0;
     while (*src && print_y<LCD_WIDTH_PX){
       const char * oldsrc=src;
       if ( (python && *src=='#') ||
-	   (!python && *src=='/' && *(src+1)=='/')){
-	linecomment=true;
-	couleur=4;
+           (!python && *src=='/' && *(src+1)=='/')){
+        linecomment=true;
+        couleur=4;
       }
       if (linecomment)
-	src = (char*)toksplit((unsigned char*)src, ' ', (unsigned char*)singleword, minimini?50:35); //break into words; next word
+        src = (char*)toksplit((unsigned char*)src, ' ', (unsigned char*)singleword, minimini?50:35); //break into words; next word
       else { // skip string (only with delimiters " ")
-	if (*src=='"'){
-	  for (++src;*src;++src){
-	    if (*src=='"' && *(src-1)!='\\')
-	      break;
-	  }
-	  if (*src=='"')
-	    ++src;
-	  int i=src-oldsrc;
-	  strncpy(singleword,oldsrc,i);
-	  singleword[i]=0;
-	}
-	else {
-	  size_t i=0;
-	  for (;*src==' ';++src){ // skip initial whitespaces
-	    ++i;
-	  }
-	  if (i==0){
-	    if (isalpha(*src)){ // skip keyword
-	      for (;isalphanum(*src) || *src=='_';++src){
-		++i;
-	      }
-	    }
-	    // go to next space or alphabetic char
-	    for (;*src;++i,++src){
-	      if (*src==' ' || (i && *src>=' ' && *src<='/') || (python && *src=='#') || (!python && *src=='/' && *(src+1)=='/')|| *src=='"' || isalpha(*src))
-		break;
-	    }
-	  }
-	  strncpy(singleword,oldsrc,i);
-	  singleword[i]=0;
-	  if (i==0){
-	    puts(src); // free(singleword);
-	    return print_x; // FIXME KEY_CTRL_F2;
-	  }
-	} // end normal case
+        if (*src=='"'){
+          for (++src;*src;++src){
+            if (*src=='"' && *(src-1)!='\\')
+              break;
+          }
+          if (*src=='"')
+            ++src;
+          int i=src-oldsrc;
+          strncpy(singleword,oldsrc,i);
+          singleword[i]=0;
+        }
+        else {
+          size_t i=0;
+          for (;*src==' ';++src){ // skip initial whitespaces
+            ++i;
+          }
+          if (i==0){
+            if (isalpha(*src)){ // skip keyword
+              for (;isalphanum(*src) || *src=='_';++src){
+                ++i;
+              }
+            }
+            // go to next space or alphabetic char
+            for (;*src;++i,++src){
+              if (*src==' ' || (i && *src>=' ' && *src<='/') || (python && *src=='#') || (!python && *src=='/' && *(src+1)=='/')|| *src=='"' || isalpha(*src))
+                break;
+            }
+          }
+          strncpy(singleword,oldsrc,i);
+          singleword[i]=0;
+          if (i==0){
+            puts(src); // free(singleword);
+            return print_x; // FIXME KEY_CTRL_F2;
+          }
+        } // end normal case
       } // end else linecomment case
       couleur=linecomment?5:find_color(singleword,contextptr);
       if (couleur==1) couleur=COLOR_BLUE;
@@ -19517,24 +19540,29 @@ int print_x=1,print_y=0;
       if (couleur==4) couleur=COLOR_MAGENTA;
       if (couleur==5) couleur=_green;
       if (linecomment || singleword[0]=='"')
-	print(print_x,print_y,singleword,couleur,invert,/*fake*/false,minimini);
+        print(print_x,print_y,singleword,couleur,invert,/*fake*/false,minimini);
       else { // print two parts, commandname in color and remain in black
-	char * ptr=singleword;
-	if (isalpha(*ptr)){
-	  while (isalphanum(*ptr) || *ptr=='_')
-	    ++ptr;
-	}
-	char ch=*ptr;
-	*ptr=0;
-	print(print_x,print_y,singleword,couleur,invert,/*fake*/false,minimini);
-	*ptr=ch;
-	print(print_x,print_y,ptr,COLOR_BLACK,invert,/*fake*/false,minimini);
+        char * ptr=singleword;
+        if (isalpha(*ptr)){
+          while (isalphanum(*ptr) || *ptr=='_')
+            ++ptr;
+        }
+        char ch=*ptr;
+        *ptr=0;
+#ifdef HP39
+        print(print_x,print_y,singleword,_BLACK,invert,/*fake*/false,minimini);
+        // FIXME underline for some colors
+#else
+        print(print_x,print_y,singleword,couleur,invert,/*fake*/false,minimini);
+#endif
+        *ptr=ch;
+        print(print_x,print_y,ptr,COLOR_BLACK,invert,/*fake*/false,minimini);
       }
       // ?add a space removed from token
       if( linecomment?*src:*src==' ' ){
-	if (*src==' ')
-	  ++src;
-	print(print_x,print_y," ",COLOR_BLACK,invert,false,minimini);
+        if (*src==' ')
+          ++src;
+        print(print_x,print_y," ",COLOR_BLACK,invert,false,minimini);
       }
     }
     return print_x;
@@ -20476,6 +20504,18 @@ const AtomDef atomsdefs[] = {
   
 };
   
+#ifdef HP39
+  const int C16=13;
+  const int C17=14;
+  const int c18=15;
+  const int c6=1;
+#else
+  const int C16=16;
+  const int C17=17;
+  const int c18=18;
+  const int c6=6;
+#endif  
+
 void drawAtom(uint8_t id) {
   int fill = rgb24to16(0xeeeeee);
 
@@ -20513,15 +20553,14 @@ void drawAtom(uint8_t id) {
     default:
       break;
   }
-
   if (atomsdefs[id].y >= 7) {
-    drawRectangle(6 + atomsdefs[id].x * 17, 15 + atomsdefs[id].y * 17, 18, 18, fill);
-    stroke_rectangle(6 + atomsdefs[id].x * 17, 15 + atomsdefs[id].y * 17, 18, 18, rgb24to16(0x525552));
-    os_draw_string_small(8 + atomsdefs[id].x * 17, 17 + atomsdefs[id].y * 17, _BLACK, fill, atomsdefs[id].symbol);
+    drawRectangle(c6 + atomsdefs[id].x * C17, c6+2 + atomsdefs[id].y * C17, c18, c18, fill);
+    stroke_rectangle(c6 + atomsdefs[id].x * C17, c6+2 + atomsdefs[id].y * C17, c18, c18, rgb24to16(0x525552));
+    os_draw_string_small(c6+2 + atomsdefs[id].x * C17, c6+4 + atomsdefs[id].y * C17, _BLACK, fill, atomsdefs[id].symbol);
   } else {
-    drawRectangle(6 + atomsdefs[id].x * 17, 6 + atomsdefs[id].y * 17, 18, 18, fill);
-    stroke_rectangle(6 + atomsdefs[id].x * 17, 6 + atomsdefs[id].y * 17, 18, 18, rgb24to16(0x525552));
-    os_draw_string_small(8 + atomsdefs[id].x * 17, 8 + atomsdefs[id].y * 17, _BLACK, fill, atomsdefs[id].symbol);
+    drawRectangle(c6 + atomsdefs[id].x * C17, c6 + atomsdefs[id].y * C17, c18, c18, fill);
+    stroke_rectangle(c6 + atomsdefs[id].x * C17, c6 + atomsdefs[id].y * C17, c18, c18, rgb24to16(0x525552));
+    os_draw_string_small(c6+2 + atomsdefs[id].x * C17, c6+2 + atomsdefs[id].y * C17, _BLACK, fill, atomsdefs[id].symbol);
   }
 }
 
@@ -20547,11 +20586,11 @@ void drawAtom(uint8_t id) {
 	  drawAtom(i);
 	}
 	if (atomsdefs[cursor_pos].y >= 7) {
-	  stroke_rectangle(6 + atomsdefs[cursor_pos].x * 17, 15 + atomsdefs[cursor_pos].y * 17, 18, 18, 0x000000);
-	  stroke_rectangle(7 + atomsdefs[cursor_pos].x * 17, 16 + atomsdefs[cursor_pos].y * 17, 16, 16, 0x000000);
+	  stroke_rectangle(c6 + atomsdefs[cursor_pos].x * C17, c6+2 + atomsdefs[cursor_pos].y * C17, c18, c18, 0x000000);
+	  stroke_rectangle(c6+1 + atomsdefs[cursor_pos].x * C17, c6+3 + atomsdefs[cursor_pos].y * C17, C16, C16, 0x000000);
 	} else {
-	  stroke_rectangle(6 + atomsdefs[cursor_pos].x * 17, 6 + atomsdefs[cursor_pos].y * 17, 18, 18, 0x000000);
-	  stroke_rectangle(7 + atomsdefs[cursor_pos].x * 17, 7 + atomsdefs[cursor_pos].y * 17, 16, 16, 0x000000);
+	  stroke_rectangle(c6 + atomsdefs[cursor_pos].x * C17, c6 + atomsdefs[cursor_pos].y * C17, c18, c18, 0x000000);
+	  stroke_rectangle(c6+1 + atomsdefs[cursor_pos].x * C17, c6+1 + atomsdefs[cursor_pos].y * C17, C16, C16, 0x000000);
 	}
   
 	drawRectangle(48,  99, 2, 61,rgb24to16(0x525552));
@@ -20566,15 +20605,24 @@ void drawAtom(uint8_t id) {
 	symbol=atomsdefs[cursor_pos].symbol;
 	os_draw_string_(73,23,symbol);
 	name=atomsdefs[cursor_pos].name;
+#ifdef HP39
+	os_draw_string_small_(100,27,gettext(name));
+#else
 	os_draw_string_small_(110,27,gettext(name));
+#endif
 	os_draw_string_small_(50,18,nucleons);
 	os_draw_string_small_(50,31,protons);
 	strcpy(mass,"M:");
 	strcpy(electroneg,"khi:");
 	sprint_double(mass+2,atomsdefs[cursor_pos].mass);
-	os_draw_string_small_(0,186,mass);
 	sprint_double(electroneg+4,atomsdefs[cursor_pos].electroneg);
+#ifdef HP39
+	os_draw_string_small_(60,2,mass);
+	os_draw_string_small_(135,2,electroneg);
+#else
+	os_draw_string_small_(0,186,mass);
 	os_draw_string_small_(160,186,electroneg);
+#endif
       }
       redraw=false;
       int key;
