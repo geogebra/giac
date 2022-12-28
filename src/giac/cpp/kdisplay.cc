@@ -403,7 +403,7 @@ namespace giac {
 #ifdef HP39
 #define C24 16 // 24 on 90
 #define C18 16 // 18
-#define C10 10 // 18
+#define C10 8 // 18
 #define C6 6 // 6
 #else
 #define C24 18 // 24 on 90
@@ -604,8 +604,9 @@ namespace giac {
           int textX=(MB_ElementCount(menu->title)+menu->startX-1)*C18+C10, textY=C10;
           PrintMini(textX, textY, menu->subtitle, 0);
         }
-        PrintXY(textX+C10*(menu->width-5), 1, "____", 0);
-        PrintXY(textX+C10*(menu->width-5), 1, keyword, 0);
+        int xpos=textX+C10*(menu->width-5);
+        PrintXY(xpos, 1, "____", 0);
+        PrintXY(xpos, 1, keyword, 0);
       }
       /*if(menu->darken) {
 	DrawFrame(COLOR_BLACK);
@@ -2197,26 +2198,26 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	    else {
 	      // *logptr(contextptr) << token << endl;
 	      if (isopt){
-		if (token==_INT_PLOT+T_NUMBER*256){
-		  autoexample="display="+elem[0].s;
-		  elem[1].s ="Option d'affichage: "+ autoexample;
-		}
-		if (token==_INT_COLOR+T_NUMBER*256){
-		  autoexample="display="+elem[0].s;
-		  elem[1].s="Option de couleur: "+ autoexample;
-		}
-		if (token==_INT_SOLVER+T_NUMBER*256){
-		  autoexample=elem[0].s;
-		  elem[1].s="Option de fsolve: " + autoexample;
-		}
-		if (token==_INT_TYPE+T_TYPE_ID*256){
-		  autoexample=elem[0].s;
-		  elem[1].s="Type d'objet: " + autoexample;
-		}
+          if (token==_INT_PLOT+T_NUMBER*256){
+            autoexample="display="+elem[0].s;
+            elem[1].s ="Option d'affichage: "+ autoexample;
+          }
+          if (token==_INT_COLOR+T_NUMBER*256){
+            autoexample="display="+elem[0].s;
+            elem[1].s="Option de couleur: "+ autoexample;
+          }
+          if (token==_INT_SOLVER+T_NUMBER*256){
+            autoexample=elem[0].s;
+            elem[1].s="Option de fsolve: " + autoexample;
+          }
+          if (token==_INT_TYPE+T_TYPE_ID*256){
+            autoexample=elem[0].s;
+            elem[1].s="Type d'objet: " + autoexample;
+          }
 	      }
 	      if (isall){
-		if (token==T_UNARY_OP || token==T_UNARY_OP_38)
-		  elem[1].s=elem[0].s+"(args)";
+          if (token==T_UNARY_OP || token==T_UNARY_OP_38)
+            elem[1].s=elem[0].s+"(args)";
 	      }
 	    }
 	  }
@@ -2233,9 +2234,9 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	      ex += example+1;
 	    else {
 	      if (index<allcmds){
-		ex += insert_string(index);
-		ex += example;
-		ex += ")";
+          ex += insert_string(index);
+          ex += example;
+          ex += ")";
 	      }
 	      else ex+=example;
 	    }
@@ -2247,15 +2248,15 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	      string ex2="Ans: ";
 #endif
 	      if (example2[0]=='#')
-		ex2 += example2+1;
+          ex2 += example2+1;
 	      else {
-		if (index<allcmds){
-		  ex2 += insert_string(index);
-		  ex2 += example2;
-		  ex2 += ")";
-		}
-		else
-		  ex2 += example2;
+          if (index<allcmds){
+            ex2 += insert_string(index);
+            ex2 += example2;
+            ex2 += ")";
+          }
+          else
+            ex2 += example2;
 	      }
 	      elem[3].newLine = 1;
 	      // elem[3].lineSpacing = 0;
@@ -2294,7 +2295,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	    else {
 	      s += example;
 	      if (s[s.size()-1]!=')')
-		s += ")";
+          s += ")";
 	    }
 	    strcpy(insertText, s.c_str());
 #ifdef MENUITEM_MALLOC
@@ -2306,9 +2307,9 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	    if (isopt){
 	      int token=menuitems[menu.selection-1].token;
 	      if (token==_INT_PLOT+T_NUMBER*256 || token==_INT_COLOR+T_NUMBER*256)
-		strcpy(insertText,"display=");
+          strcpy(insertText,"display=");
 	      else
-		*insertText=0;
+          *insertText=0;
 	      strcat(insertText,menuitems[menu.selection-1].text);
 #ifdef MENUITEM_MALLOC
 	      free(menuitems);
@@ -13764,7 +13765,7 @@ namespace xcas {
 #ifdef HP39
 // 0 not alpha symbol, blue (7) Xcas command, red (2) keyword, cyan (3) number,  green (4) comment, yellow (6) string
   void print(int &X, int &Y, const char *buf, int color, bool revert, bool fake, bool minimini){
-    //if (!fake) dbgprintf("print %s %i\n",buf,color);
+    //if (!fake) dbgprintf("print %s X=%i Y=%i color=%i revert=%i\n",buf,X,Y,color,revert);
     if (!buf)
       return;
     // if (!fake) cout << "print:" << buf << " " << strlen(buf) << " " << color << endl;
@@ -13772,9 +13773,9 @@ namespace xcas {
       color = 0;
     if (!fake){
       if (minimini || color == 2016 || color == 4) // comment in small font
-        PrintMini(X, Y, buf, revert ? MINI_REV : 0);
+        PrintMiniMini(X, Y, buf, revert ? 4 : 0,COLOR_BLACK,COLOR_WHITE);
       else {
-        PrintXY(X, Y, buf, revert ? 1 : 0);
+        PrintMini(X, Y, buf, revert ? 4 : 0,COLOR_BLACK,COLOR_WHITE);
         // overline/underline style according to color
         if (!revert){
           if (color == 3){ 
@@ -13956,8 +13957,8 @@ namespace xcas {
     // clear text line. x and y are text cursor coordinates
     // this is meant to achieve the same effect as using PrintXY with a line full of spaces (except it doesn't waste strings).
     int width=LCD_WIDTH_PX;
-    if(x>1) width = 24*(21-x);
-    drawRectangle((x-1)*18, y*24, width, 24, color);
+    if(x>1) width = C24*(21-x);
+    drawRectangle((x-1)*C18, (y-1)*C24, width, C24, color); // was y???
   }
 
   void mPrintXY(int x, int y, char*msg, int mode, int color) {
@@ -13970,8 +13971,13 @@ namespace xcas {
   }
 
   void drawScreenTitle(char* title, char* subtitle=0) {
+#ifdef HP39
+    if(title != NULL) mPrintXY(1, 1, title, TEXT_MODE_NORMAL, TEXT_COLOR_BLACK);
+    if(subtitle != NULL) mPrintXY(1, 2, subtitle, TEXT_MODE_NORMAL, TEXT_COLOR_BLACK);
+#else
     if(title != NULL) mPrintXY(1, 1, title, TEXT_MODE_NORMAL, TEXT_COLOR_BLUE);
     if(subtitle != NULL) mPrintXY(1, 2, subtitle, TEXT_MODE_NORMAL, TEXT_COLOR_BLACK);
+#endif
   }
 
   int find_color(const char * s,GIAC_CONTEXT){
@@ -14220,7 +14226,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     match(text, text->pos - 1, line1, pos1, line2, pos2);
   // char bufpos[512];  sprintf(bufpos,"%i,%i:%i,%i       ",line1,pos1,line2,pos2);  puts(bufpos);
   // if (editable) PrintMini(0, F_KEY_BAR_Y_START, "tests|struct|misc|cmds|A<>a|Fich", MINI_REV);
-  draw_editor_menu(text->gr,text->python);
+  if (editable) draw_editor_menu(text->gr,text->python);
   // giac::drawRectangle(text->x, text->y, text->width, LCD_HEIGHT_PX-text->y-editable?8:0, COLOR_WHITE);
   for (int cur = 0; cur < v.size(); ++cur)
   {
@@ -14266,11 +14272,11 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       if (tlen == 0 && text->editable)
       { // cursor on empty line
 #if 0
-	Cursor_SetPosition(textX,textY+1);
-	Cursor_SetFlashMode(1);
-	Cursor_SetFlashOn(Setup_GetEntry(0x14));
+        Cursor_SetPosition(textX,textY+1);
+        Cursor_SetFlashMode(1);
+        Cursor_SetFlashOn(Setup_GetEntry(0x14));
 #else
-        drawRectangle(textX, textY, 2, 13, COLOR_BLACK);         /////!!!  6  //12
+        drawRectangle(textX, textY, 2, 13, COLOR_BLACK);  
 #endif
       }
     }
@@ -14314,8 +14320,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     {
       const char *oldsrc = src;
       if ((text->python && *src == '#') ||
-          (!text->python && *src == '/' && *(src + 1) == '/'))
-      {
+          (!text->python && *src == '/' && *(src + 1) == '/')){
         linecomment = true;
         couleur = giac::_GREEN;
         // cout << "comment " << *src << endl;
@@ -14424,11 +14429,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
           textY -= 1;
         ++nlines;
       } // else still fits, print new word normally (or just increment textX, if we are not "on stage" yet)
-      if (textY >= text->y && textY <= LCD_HEIGHT_PX - 14)
-      {
+      if (textY >= text->y && textY <= LCD_HEIGHT_PX - 14){
         temptextX = textX;
-        if (editable)
-        {
+        if (editable){
           couleur = linecomment ? giac::_GREEN : find_color(singleword,contextptr);
           // cout << singleword << " " << couleur << endl;
           // 0 symbol, red keyword cyan number, blue command, yellow string
@@ -14437,15 +14440,15 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
           // sprint_int(ch,couleur);
           // puts(singleword); puts(ch);
         }
-        else
+        else {
           couleur = COLOR_BLACK;
+          invert=false;
+        }
         if (linecomment || !text->editable || singleword[0] == '"')
           print(textX, textY, singleword, couleur, invert, /*fake*/ false, minimini);
-        else
-        { // print two parts, commandname in color and remain in black
+        else { // print two parts, commandname in color and remain in black
           char *ptr = singleword;
-          if (isalpha(*ptr))
-          {
+          if (isalpha(*ptr)){
             while (giac::isalphanum(*ptr) || *ptr == '_')
               ++ptr;
           }
@@ -14492,9 +14495,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
             // drawLine(temptextX, textY+14, temptextX, textY-14, COLOR_BLACK);
             // drawLine(temptextX+1, textY+14, temptextX+1, textY-14, COLOR_BLACK);
 #if 0
-	    Cursor_SetPosition(temptextX,textY+1);
-	    Cursor_SetFlashMode(1);
-	    Cursor_SetFlashOn(Setup_GetEntry(0x14));
+            Cursor_SetPosition(temptextX,textY+1);
+            Cursor_SetFlashMode(1);
+            Cursor_SetFlashOn(Setup_GetEntry(0x14));
 #else
             drawRectangle(temptextX, textY, 2, 12, COLOR_BLACK); //!!!!
 #endif
@@ -14522,7 +14525,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
   isFirstDraw = 0;
   if (showtitle)
   {
-    clearLine(1, 1, false);
+    clearLine(1, 1);
     drawScreenTitle((char *)text->title);
   }
   // if (editable) draw_menu(1);
@@ -14865,7 +14868,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       // free(singleword);
       v[cur].nlines=nlines; //if (cur<6) *logptr(contextptr) << cur << ":" << src << nlines << '\n';
       if (isFirstDraw) 
-	totalTextY = textY+(showtitle ? 0 : 24);
+        totalTextY = textY+(showtitle ? 0 : C24);
     } // end main draw loop (for cur<v.size())
     int dh=LCD_HEIGHT_PX-textY-text->lineHeight-(editable?17:0);
     if (dh>0)
@@ -15800,8 +15803,12 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	    if (sres==9 && editable){
 	      bool minimini=!v[0].minimini;
 	      for (int i=0;i<v.size();++i)
-		v[i].minimini=minimini;
+          v[i].minimini=minimini;
+#ifdef HP39
+	      text->lineHeight=minimini?13:15;
+#else
 	      text->lineHeight=minimini?13:17;
+#endif
 	      continue;
 	    }
 	    if (sres==1){
