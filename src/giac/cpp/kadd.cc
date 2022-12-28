@@ -607,8 +607,9 @@ int khicas_addins_menu(GIAC_CONTEXT){
   // and add if (smallmenu.selection==app_number-1){ call your code }
   MenuItem smallmenuitems[smallmenu.numitems];      
   smallmenu.items=smallmenuitems;
-  smallmenu.height=12;
-  smallmenu.scrollbar=1;
+  smallmenu.height=MENUHEIGHT;
+  smallmenu.width=28;
+  //smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
   smallmenuitems[0].text = (char*)((lang==1)?"Geometrie":"Geometry");
   smallmenuitems[1].text = (char*)((lang==1)?"Tableur":"Spreadsheet");
@@ -1698,14 +1699,14 @@ giac::gen sheet(GIAC_CONTEXT){
     if (t.keytooltip){
       t.keytooltip=false;
       if (key==KEY_CTRL_EXIT)
-	continue;
+        continue;
       if (key==KEY_CTRL_RIGHT && t.cmd_pos==t.cmdline.size())
-	key=KEY_CTRL_OK;
+        key=KEY_CTRL_OK;
       if (key==KEY_CTRL_DOWN || key==KEY_CTRL_VARS)
-	key=KEY_BOOK;
-      if (key==KEY_CTRL_OK || key==KEY_CHAR_ANS){
-	sheet_help_insert(t,key,contextptr);
-	continue;
+        key=KEY_BOOK;
+      if (key==KEY_CTRL_EXE || key==KEY_CTRL_OK || key==KEY_CHAR_ANS){
+        sheet_help_insert(t,key,contextptr);
+        continue;
       }
     }
     status_freeze=false;

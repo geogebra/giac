@@ -168,6 +168,10 @@
 #define KEY_AFFECT 31101
 #define KEY_FLAG 31102
 #define KEY_BOOK 31103
+//#define KEY_CTRL_APPS 31104
+#define KEY_CTRL_SYMB 31105
+//#define KEY_CTRL_NUM 31106
+//#define KEY_CTRL_PLOT 31107
 #define KEY_SELECT_LEFT       31200
 #define KEY_SELECT_UP         31201
 #define KEY_SELECT_DOWN       31202

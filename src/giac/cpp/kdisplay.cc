@@ -36,6 +36,7 @@
 int osok=1;
 extern "C" int shell_x,shell_y,shell_fontw,shell_fonth;
 #ifdef HP39
+extern "C" char Setup_GetEntry(unsigned int index);
 #define MINI_OVER 0
 #define MINI_REV 1
 int shell_x=0,shell_y=0,shell_fontw=7,shell_fonth=14;
@@ -531,6 +532,7 @@ namespace giac {
               int fillerRequired = menu->width - MB_ElementCount(menu->items[curitem].text) - (menu->type == MENUTYPE_MULTISELECT ? 2 : 3);
               for(int i = 0; i < fillerRequired; i++)
                 strcat(menuitem, " ");
+              dbgprintf("menu %i %i\n",curitem,C10*menu->width);
               drawRectangle(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),C10*menu->width,C24,(menu->selection == curitem+1 ? color_gris : _WHITE));
               PrintXY(C10*menu->startX,C18*(curitem+itemsStartY-menu->scroll),menuitem, (menu->selection == curitem+1 ? TEXT_MODE_INVERT : TEXT_MODE_NORMAL));
             } else {
@@ -7373,19 +7375,23 @@ namespace xcas {
     int pos=0;
     for (int i=0;i<w.size();++i){
       if (pos>=s.size())
-	break;
+        break;
       if (i==s[pos]){
-	++pos;
-	gen g=w[i];
-	if (g.is_symb_of_sommet(at_pnt)){
-	  g=g._SYMBptr->feuille;
-	  if (g.type==_VECT && g._VECTptr->size()>=2){
-	    vecteur gv(*g._VECTptr);
-	    gv[1]=is3d?_CYAN:_BLUE;
-	    g=gen(gv,g.subtype);
-	    w[i]=symbolic(at_pnt,g);
-	  }
-	}
+        ++pos;
+        gen g=w[i];
+        if (g.is_symb_of_sommet(at_pnt)){
+          g=g._SYMBptr->feuille;
+          if (g.type==_VECT && g._VECTptr->size()>=2){
+            vecteur gv(*g._VECTptr);
+#ifdef HP39
+            gv[1]=4<<22;
+#else
+            gv[1]=is3d?_CYAN:_BLUE;
+#endif
+            g=gen(gv,g.subtype);
+            w[i]=symbolic(at_pnt,g);
+          }
+        }
       }
     }
     return w;
@@ -8539,13 +8545,18 @@ namespace xcas {
     }
     if (hp || tracemode){ // draw cursor at current_i,current_j
       int taille=(mode==255 && !tracemode) ?2:5;
+#ifdef HP39
+      fl_line(current_i-taille,current_j,current_i+taille,current_j,0);
+      fl_line(current_i,current_j-taille,current_i,current_j+taille,0);
+#else
       fl_line(current_i-taille,current_j,current_i+taille,current_j,is3d?_CYAN:_BLUE);
       fl_line(current_i,current_j-taille,current_i,current_j+taille,is3d?_CYAN:_BLUE);
+#endif
       if (cursor_point_type==6){
-	fl_line(current_i-2,current_j+2,current_i+2,current_j+2,_red);
-	fl_line(current_i-2,current_j+2,current_i+2,current_j+2,_red);
-	fl_line(current_i-2,current_j-2,current_i-2,current_j+2,_red);
-	fl_line(current_i+2,current_j-2,current_i+2,current_j+2,_red);
+        fl_line(current_i-2,current_j+2,current_i+2,current_j+2,_red);
+        fl_line(current_i-2,current_j+2,current_i+2,current_j+2,_red);
+        fl_line(current_i-2,current_j-2,current_i-2,current_j+2,_red);
+        fl_line(current_i+2,current_j-2,current_i+2,current_j+2,_red);
       }
     }
   }
@@ -10850,11 +10861,11 @@ namespace xcas {
       int key=-1;
       GetKey(&key);
       bool alph=alphawasactive(&key);
-      if (key==KEY_SHUTDOWN)
-	return key;
+      if (key==KEY_SHUTDOWN || key==KEY_CTRL_SYMB)
+        return key;
       if (key==KEY_CTRL_F1){
-	geohelp(contextptr);
-	continue;
+        geohelp(contextptr);
+        continue;
       }
       if (key==KEY_CTRL_F2){
 	tracemode_set(-1); // object info
@@ -11456,7 +11467,7 @@ namespace xcas {
 	continue;
       }
 
-      if (hp && key==KEY_CTRL_OK){
+      if (hp && (key==KEY_CTRL_OK || key==KEY_CTRL_EXE)){
 	if (mode==255)
 	  return key;
 	if (!moving){
@@ -11491,7 +11502,7 @@ namespace xcas {
 	update_g();
 	continue;
       }
-      if (key==KEY_CTRL_EXIT || key==KEY_CTRL_OK){
+      if (key==KEY_CTRL_EXIT || key==KEY_CTRL_OK || key==KEY_CTRL_EXE){
 	os_hide_graph();
 	return key;
       }
@@ -12016,7 +12027,7 @@ namespace xcas {
       if (key==KEY_SHUTDOWN)
 	return undef;
       bool alph=alphawasactive(&key);
-      if (key==KEY_CTRL_OK || key==KEY_CTRL_MENU){
+      if (key==KEY_CTRL_OK || key==KEY_CTRL_EXE || key==KEY_CTRL_MENU){
 	os_hide_graph();
 	if (edited && xcas::do_select(eq.data,true,value) && value.type==_EQW){
 	  //cout << "ok " << value._EQWptr->g << endl;
@@ -13659,31 +13670,46 @@ namespace xcas {
 #endif
       if (text->editable){
 #ifndef NSPIRE_NEWLIB
-	status += (xthetat?" t":" x");
+        status += (xthetat?" t":" x");
 #endif
-	if (text->python<0){
-	  status += " QuickJS ";
-	}
-	else {
-	  if (text->python & 4)
-	    status += " MicroPython ";
-	  else
-	    status += text->python?(text->python==2?" Py ^xor ":" Py ^=** "):" Xcas ";
-	}
-	status += giac::remove_extension(text->filename.c_str());
-	status += text->changed?" * ":" - ";
-	status += giac::printint(text->line+1);
-	status += '/';
-	status += giac::printint(text->elements.size());
+        if (text->python<0){
+          status += " QuickJS ";
+        }
+        else {
+          if (text->python & 4)
+            status += " MicroPython ";
+          else
+            status += text->python?(text->python==2?" Py ^xor ":" Py ^=** "):" Xcas ";
+        }
+        status += giac::remove_extension(text->filename.c_str());
+        status += text->changed?" * ":" - ";
+        status += giac::printint(text->line+1);
+        status += '/';
+        status += giac::printint(text->elements.size());
+#ifdef HP39
+        int k=Setup_GetEntry(0x14);
+        if (k&0x4){
+          if (k&0x80)
+            status +=" ALOCK";
+          else
+            status += " ALPHA";
+        }
+        else if (k&0x8){
+          if (k&0x80)
+            status +=" alock";
+          else
+            status += " alpha";
+        }
+#endif
       }
       if (search.size()){
 #ifdef NSPIRE_NEWLIB
-	status += " enter: " + search;
+        status += " enter: " + search;
 #else
-	status += " EXE: " + search;
+        status += " EXE: " + search;
 #endif
-	if (replace.size())
-	  status += "->"+replace;
+        if (replace.size())
+          status += "->"+replace;
       }
       DefineStatusMessage((char *)status.c_str(), 1, 0, 0);
     }
@@ -14986,7 +15012,11 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     ta.clipline=-1;
     ta.changed=false;
     ta.filename=filename?filename:"temp.py";
+#ifdef HP39
+    ta.y=12;
+#else
     ta.y=0;
+#endif
     ta.python=python_compat(contextptr);
     ta.allowEXE=false;//true; // set back to true later
     ta.OKparse=OKparse;
@@ -15295,6 +15325,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       int key;
       GetKey(&key);
 #ifdef HP39
+      show_status(text,"","");
       if (key==KEY_CTRL_F5){
         handle_f5();
         continue;
@@ -20036,6 +20067,9 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
     if (!geoptr || !geoptr->hp) return -1;
     const context * contextptr=geoptr->contextptr;
     textArea * text=geoptr->hp;
+#ifdef HP39
+    text->y=12;
+#endif
     // main loop: alternate between plot and symb view
     // start in plot view
     // end plot view with EXIT or OK -> symb view editor
@@ -20045,23 +20079,23 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
       geoptr->eval();
       geoptr->update();
       if (geoptr->is3d)
-	geoptr->update_rotation();
+        geoptr->update_rotation();
       int key=geoptr->ui();
       if (key==KEY_SHUTDOWN){
-	geosave(text,contextptr);
-	return key;
+        geosave(text,contextptr);
+        return key;
       }
       // symb view editor
       for (;;){
-	key=doTextArea(text,contextptr);
-	if (key== TEXTAREA_RETURN_EXIT || key==KEY_SHUTDOWN){
-	  geosave(text,contextptr);
-	  return key;
-	}
-	// key was OK, parse step: synchronize symbolic_instructions from text
-	bool corrige=geoparse(text,contextptr);
-	if (!corrige)
-	  break;
+        key=doTextArea(text,contextptr);
+        if (key== TEXTAREA_RETURN_EXIT || key==KEY_SHUTDOWN){
+          geosave(text,contextptr);
+          return key;
+        }
+        // key was OK, parse step: synchronize symbolic_instructions from text
+        bool corrige=geoparse(text,contextptr);
+        if (!corrige)
+          break;
       } // end edition loop
     } // end plot/symb view infinite loop
   }
