@@ -265,9 +265,15 @@ complex<double> horner_newton(const vector<double> & p,const std::complex<double
   return x-num/den;
 }
 
-int fractale(GIAC_CONTEXT){
+int do_fractale(GIAC_CONTEXT){
   freeze=true;
-  int X=320,Y=222,Nmax=16,Nmaxmin=5,Nmaxmax=50;
+  int X=LCD_WIDTH_PX,
+#ifdef HP39
+    Y=LCD_HEIGHT_PX,
+#else
+    Y=LCD_HEIGHT_PX-18,
+#endif
+    Nmax=16,Nmaxmin=5,Nmaxmax=50;
   bool mandel=do_confirm("EXE: Mandelbrot, Back: bassins racines");
   vecteur P; vector<complex<double>> p,Z;
   double np=0; complex<double> na;
@@ -294,8 +300,8 @@ int fractale(GIAC_CONTEXT){
     np=P.size()-1;
     for (int i=1;i<p.size()-1;++i){
       if (p[i]!=0){
-	np=0;
-	break;
+        np=0;
+        break;
       }
     }
     if (np){
@@ -304,8 +310,8 @@ int fractale(GIAC_CONTEXT){
     }
     for (int i=0;i<p.size();++i){
       if (p[i].imag()!=0){
-	real=false;
-	break;
+        real=false;
+        break;
       }
       pr.push_back(p[i].real());
     }
@@ -328,81 +334,93 @@ int fractale(GIAC_CONTEXT){
     for (int y=0;y<Y;++y){
       int ysym=Ysym-y; // symmetric pixel
       if (mandel){
-	complex<float> c(xmin,h*y+ymax);
-	for (int x=0;x<X;++x){
-	  int j=0;
-	  complex<float> z(0);
-	  for (j=0;j<Nmax;++j){
-	    z*=z; z+=c;
-	    if (norm(z)>4) // this is more efficient than abs(z)>2
-	      break;
-	  }
-	  int color=126*j+2079;
-	  os_set_pixel(x,y,color);
-	  if (sym && ysym>0 && ysym<Y){
-	    os_set_pixel(x,ysym,color);
-	  }
-	  c = c+w;
-	}
+        complex<float> c(xmin,h*y+ymax);
+        for (int x=0;x<X;++x){
+          int j=0;
+          complex<float> z(0);
+          for (j=0;j<Nmax;++j){
+            z*=z; z+=c;
+            if (norm(z)>4) // this is more efficient than abs(z)>2
+              break;
+          }
+#ifdef HP39
+          int color=(255*j)/Nmax;
+#else
+          int color=126*j+2079;
+#endif
+          os_set_pixel(x,y,color);
+          if (sym && ysym>0 && ysym<Y){
+            os_set_pixel(x,ysym,color);
+          }
+          c = c+w;
+        }
       }
       else {
-	complex<double> c(xmin,h*y+ymax);
-	for (int x=0;x<X;++x){
-	  complex<double> z(c),zp;
-	  int nrac=Z.size(),j;
-	  // Newton iterations
-	  for (j=0;j<Nmax;++j){
-	    if (norm(z)>1e20)
-	      break;
-	    zp=z;
-	    if (np){
-	      z *=z ;
-	      for (int i=3;i<P.size()-1;++i)
-		z *= zp;
-	      z=np*zp-na/z;
-	    }
-	    else
-	      z=real?horner_newton(pr,zp):horner_newton(p,zp);
-	    if (norm(z-zp)<1e-8){
-	      // find nearest root
-	      for (int i=0;i<nrac;++i){
-		if (norm(z-Z[i])<1e-8){
-		  nrac=i;
-		  break;
-		}
-	      }
-	      break;
-	    }
-	  }
-	  int color=0;
-	  if (nrac<Z.size()){
-	    int r_,g_,b_; arc_en_ciel(25*nrac+j,r_,g_,b_);
-	    color=(((r_*32)/256)<<11) | (((g_*64)/256)<<5) | (b_*32/256);
-	  }
-	  os_set_pixel(x,y,color);	
-	  if (sym && ysym>0 && ysym<Y){
-	    if (nrac<Z.size()){
-	      z=conj(Z[nrac]);
-	      // find nearest root
-	      for (int i=0;i<Z.size();++i){
-		if (norm(z-Z[i])<1e-8){
-		  nrac=i;
-		  break;
-		}
-	      }
-	      int r_,g_,b_; arc_en_ciel(25*nrac+j,r_,g_,b_);
-	      color=(((r_*32)/256)<<11) | (((g_*64)/256)<<5) | (b_*32/256);
-	    }
-	    os_set_pixel(x,ysym,color);
-	  }
-	  c = c+double(w);	  
-	}
+        complex<double> c(xmin,h*y+ymax);
+        for (int x=0;x<X;++x){
+          complex<double> z(c),zp;
+          int nrac=Z.size(),j;
+          // Newton iterations
+          for (j=0;j<Nmax;++j){
+            if (norm(z)>1e20)
+              break;
+            zp=z;
+            if (np){
+              z *=z ;
+              for (int i=3;i<P.size()-1;++i)
+                z *= zp;
+              z=np*zp-na/z;
+            }
+            else
+              z=real?horner_newton(pr,zp):horner_newton(p,zp);
+            if (norm(z-zp)<1e-8){
+              // find nearest root
+              for (int i=0;i<nrac;++i){
+                if (norm(z-Z[i])<1e-8){
+                  nrac=i;
+                  break;
+                }
+              }
+              break;
+            }
+          }
+          int color=0;
+          if (nrac<Z.size()){
+#ifdef HP39
+            color=int(255*(nrac+j/25.)/Z.size());
+#else
+            int r_,g_,b_; arc_en_ciel(25*nrac+j,r_,g_,b_);
+            color=(((r_*32)/256)<<11) | (((g_*64)/256)<<5) | (b_*32/256);
+#endif
+          }
+          os_set_pixel(x,y,color);	
+          if (sym && ysym>0 && ysym<Y){
+            if (nrac<Z.size()){
+              z=conj(Z[nrac]);
+              // find nearest root
+              for (int i=0;i<Z.size();++i){
+                if (norm(z-Z[i])<1e-8){
+                  nrac=i;
+                  break;
+                }
+              }
+#ifdef HP39
+              color=int(255*(nrac+j/25.)/Z.size());
+#else
+              int r_,g_,b_; arc_en_ciel(25*nrac+j,r_,g_,b_);
+              color=(((r_*32)/256)<<11) | (((g_*64)/256)<<5) | (b_*32/256);
+#endif
+            }
+            os_set_pixel(x,ysym,color);
+          }
+          c = c+double(w);	  
+        }
       }
       if (sym && (ysym==y || ysym==y-1))
-	y=2*y-1;
+        y=2*y-1;
       if (y%16==0) sync_screen();
     }
-    lkey: 
+  lkey: 
     statuslinemsg("Back: quit, +-: zoom, keypad: move, ml: iter");
     int k=getkey(1);
     if (k==KEY_CTRL_EXIT)
@@ -455,6 +473,21 @@ int fractale(GIAC_CONTEXT){
   }
   return 0;
 }
+#ifdef HP39
+extern "C" int khicas_1bpp;
+int fractale(GIAC_CONTEXT){
+  int k=khicas_1bpp;
+  khicas_1bpp=0;
+  os_fill_rect(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,SDK_WHITE);
+  int r=do_fractale(contextptr);
+  khicas_1bpp=k;
+  return r;
+}
+#else
+int fractale(GIAC_CONTEXT){
+  return do_fractale(contextptr);
+}
+#endif
 
 int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
   static double pv=(-mode)*10000;
@@ -729,9 +762,10 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	return Console_Input(gen(v).print(contextptr).c_str());
       }
       if (smallmenu.selection==8) // mastermind, on ne quitte pas
-	mastermind(contextptr);
-      if (smallmenu.selection==9)
-	fractale(contextptr);
+        mastermind(contextptr);
+      if (smallmenu.selection==9){
+        fractale(contextptr);
+      }
     } // end sres==menu_selection
     Console_Disp(1,contextptr);
     break;
