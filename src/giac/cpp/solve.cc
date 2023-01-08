@@ -2786,6 +2786,8 @@ namespace giac {
       w=mergevecteur(w1,w2);
       arg1=w;
     }
+    if (arg1.is_symb_of_sommet(at_plus) && arg1._SYMBptr->feuille._VECTptr->size()==2)
+      arg1=symb_equal(arg1,0);
     if (arg1.type!=_VECT && !is_equal(arg1) && !is_inequation(arg1))
       *logptr(contextptr) << gettext("Warning, argument is not an equation, solving ") << arg1 << "=0" << '\n';
     else {
