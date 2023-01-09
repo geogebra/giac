@@ -87,9 +87,6 @@ extern "C" {
   }
 #endif
 
-  inline void Printmini(int x,int y,const char * s,int i){ os_draw_string_small(x,y,i?0xffff:0,i?0:0xffff,s,false);}
-  inline void Printxy(int x,int y,const char * s,int i){ os_draw_string_medium(x,y,i?0xffff:0,i?0:0xffff,s,false);}
-   
   void os_wait_1ms(int ms);
   bool os_set_angle_unit(int mode);
   int os_get_angle_unit();
@@ -128,18 +125,21 @@ extern "C" {
   
 #ifdef __cplusplus
 #ifdef NUMWORKS
-  inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake=false){ return os_draw_string_small(x,y,c,bg,s,fake);}
+  inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake=false){ return os_draw_string(x,y,c,bg,s,fake);}
 #else
   int os_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake=false);
 #endif
 #else
 #ifdef NUMWORKS
-  inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake){ return os_draw_string_small(x,y,c,bg,s,fake);}
+  inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake){ return os_draw_string(x,y,c,bg,s,fake);}
 #else
   int os_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake);
 #endif
 #endif
   inline int os_draw_string_medium_(int x,int y,const char * s){ return os_draw_string_medium(x,y,SDK_BLACK,SDK_WHITE,s,false);}
+  inline void Printxy(int x,int y,const char * s,int i){ os_draw_string_medium(x,y,i?0xffff:0,i?0:0xffff,s,false);}
+  inline void Printmini(int x,int y,const char * s,int i){ os_draw_string_small(x,y,i?0xffff:0,i?0:0xffff,s,false);}
+   
   void GetKey(int * key);
   int getkey(int allow_suspend); // transformed
   void enable_back_interrupt();

@@ -111,6 +111,7 @@ clock_t times (struct tms *__buffer) {
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_fft_complex.h>
 #include <gsl/gsl_fft_real.h>
+#include <gsl/gsl_spline.h>
 #endif
 #if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
 #else
@@ -284,6 +285,41 @@ namespace giac {
 
   gen _about(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#else
+    /* Displaying audio/image properties, addition by L. Marohnić */
+    audio_clip *clip=audio_clip::from_gen(g);
+    rgba_image *img=rgba_image::from_gen(g);
+    if (clip!=NULL) {
+      string chd;
+      switch (clip->channel_count()) {
+        case 1: chd=gettext("mono"); break;
+        case 2: chd=gettext("stereo"); break;
+        default: break;
+      }
+      if (!chd.empty())
+        chd=" ("+chd+")";
+      *logptr(contextptr) << gettext("Bit depth") << ": " << clip->bit_depth() << "\n"
+                          << gettext("Channels") << ": " << clip->channel_count() << chd << "\n"
+                          << gettext("Sample rate") << ": " << clip->sample_rate() << "\n"
+                          << gettext("Length") << ": " << clip->length() << " " << gettext("samples") << "\n"
+                          << gettext("Duration") << ": " << clip->duration() << " " << gettext("seconds") << "\n"
+                          << gettext("Level") << ": " << clip->peak_dbfs() << " dB\n";
+      if (!clip->file_name().empty())
+        *logptr(contextptr) << gettext("Associated with file") << " '" << clip->file_name() << "'\n";
+    } else if (img!=NULL) {
+      string ctd=img->color_type_string();
+      if (!ctd.empty())
+        ctd=" ("+ctd+")";
+      *logptr(contextptr) << gettext("Width") << ": " << img->width() << " " << gettext("pixels") << "\n"
+                          << gettext("Height") << ": " << img->height() << " " << gettext("pixels") << "\n"
+                          << gettext("Bit depth") << ": 8\n"
+                          << gettext("Channels") << ": " << img->depth() << ctd << "\n";
+      if (img->is_original())
+        *logptr(contextptr) << gettext("Associated with file") << " '" << img->file_name() << "'\n";
+    }
+    /* end display audio/image properties */
+#endif
     if (g.type==_VECT)
       return apply(g,contextptr,_about);
     if (g.type==_IDNT)
@@ -1573,8 +1609,240 @@ namespace giac {
   static define_unary_function_eval (__pade,&_pade,_pade_s);
   define_unary_function_ptr5( at_pade ,alias_at_pade,&__pade,0,true);
 
+  void color2rgb(const gen &c,double &r,double &g,double &b,GIAC_CONTEXT) {
+    vecteur rgbvec=*_rgb(c,contextptr)._VECTptr;
+    r=rgbvec[0].val/255.;
+    g=rgbvec[1].val/255.;
+    b=rgbvec[2].val/255.;
+  }
+
+  /* Image, color and numeric spline interpolation, addition by L.Marohnić */
+  gen fast_spline_interp(const vecteur &x,const vecteur &y,const vecteur &t,const vecteur &opts,GIAC_CONTEXT) {
+  #ifdef HAVE_LIBGSL
+    int drv=0,stype=0; // 0: natural cubic, 1: Akima, 2: Steffen
+    const_iterateur it=opts.begin(),itend=opts.end(),jt;
+    for (;it!=itend;++it) {
+      if (it->type==_STRNG) {
+        const string &s=*it->_STRNGptr;
+        if (s=="cubic") stype=0;
+        else if (s=="akima") stype=2;
+        else if (s=="steffen") stype=4;
+        else return gensizeerr(gettext("Unknown spline type"));
+      } else if (it->is_integer()) {
+        drv=it->val;
+        if (drv<0 || drv>2)
+          return gensizeerr(gettext("Expected an integer (0, 1 or 2)"));
+      } else if (*it==at_periodic)
+        if (stype<4) stype++;
+      else return gensizeerr(gettext("Invalid option"));
+    }
+    if (!is_numericv(x) || !is_numericv(y) || !is_numericv(t))
+      return gensizeerr(gettext("Data must be numeric"));
+    int n=x.size(),i;
+    if (n<3)
+      return gendimerr(gettext("Too few data points"));
+    if (x.size()!=y.size())
+      return gendimerr(contextptr);
+    double *xd=new double[n],*yd=new double[n],cur_x,last_x=-DBL_MAX;
+    for (i=0,it=x.begin(),itend=x.end(),jt=y.begin();it!=itend;++it,++jt,++i) {
+      cur_x=evalf_double(*it,1,contextptr).DOUBLE_val();
+      if (cur_x<=last_x) {
+        delete[] xd; delete[] yd;
+        return gensizeerr("x-axis data must be given in a strictly ascending order");
+      }
+      xd[i]=last_x=cur_x;
+      yd[i]=evalf_double(*jt,1,contextptr).DOUBLE_val();
+    }
+    const gsl_interp_type *T;
+    switch (stype) {
+      case 0: T=gsl_interp_cspline; break;
+      case 1: T=gsl_interp_cspline_periodic; break;
+      case 2: T=gsl_interp_akima; break;
+      case 3: T=gsl_interp_akima_periodic; break;
+    case 4: 
+#if GSL_MAJOR_VERSION>=2 && GSL_MINOR_VERSION>=2
+        T=gsl_interp_steffen;
+        break;
+#else
+        return gensizeerr(gettext("GSL version 2.2 or later is required for Steffen interpolation"));
+#endif
+      default: assert(false);
+    }
+    gsl_interp_accel *acc=gsl_interp_accel_alloc();
+    gsl_spline *sp=gsl_spline_alloc(T,n);
+    gsl_spline_init(sp,xd,yd,n);
+    vecteur ret;
+    ret.reserve(t.size());
+    double xi,yi;
+    for (it=t.begin(),itend=t.end();it!=itend;++it) {
+      xi=evalf_double(*it,1,contextptr).DOUBLE_val();
+      switch (drv) {
+      case 0:
+        yi=gsl_spline_eval(sp,xi,acc);
+        break;
+      case 1:
+        yi=gsl_spline_eval_deriv(sp,xi,acc);
+        break;
+      case 2:
+        yi=gsl_spline_eval_deriv2(sp,xi,acc);
+        break;
+      default:
+        assert(false);
+      }
+      ret.push_back(yi);
+    }
+    gsl_spline_free(sp);
+    gsl_interp_accel_free(acc);
+    return ret;
+  #else
+    return gensizeerr(gettext("GSL is required for numerical spline interpolation"));
+  #endif
+  }
+  /* interpolate at points in T on a bezier curve in XYZ space defined by the
+   * list COLORS which contains either color objects or RGB integer triples.
+   * The return value is a list of the same type objects as in COLORS.
+   * Note that outputting color objects suffers from lossy compression to RGB565!
+   */
+  gen blend_colors(const vecteur &colors,const vecteur &t,GIAC_CONTEXT) {
+    if (colors.empty() || t.empty())
+      return vecteur(0);
+    vecteur xyz,ret;
+    double r,g,b,x,y,z;
+    bool retcol=colors.front().is_integer() && colors.front().subtype==_INT_COLOR;
+    if (!retcol && (!ckmatrix(colors) || mcols(colors)!=3))
+      return gentypeerr(gettext("Expected a list of RGB triples"));
+    const_iterateur it=colors.begin(),itend=colors.end();
+    for (;it!=itend;++it) {
+      if (retcol)
+        color2rgb(*it,r,g,b,contextptr);
+      else {
+        if (!is_integer_vecteur(*(it->_VECTptr)))
+          return gentypeerr(gettext("Exepected a RGB triple"));
+        r=std::max(0.0,std::min(1.0,it->_VECTptr->at(0).val/255.));
+        g=std::max(0.0,std::min(1.0,it->_VECTptr->at(1).val/255.));
+        b=std::max(0.0,std::min(1.0,it->_VECTptr->at(2).val/255.));
+      }
+      rgb2xyz(r,g,b,x,y,z);
+      xyz.push_back(makevecteur(x,y,z));
+    }
+    ret.reserve(t.size());
+    if (xyz.size()==1)
+      return vecteur(t.size(),colors.front());
+    if (xyz.size()==2) { // interpolate linearly between two colors
+      for (it=t.begin(),itend=t.end();it!=itend;++it) {
+        vecteur xyzt=addvecteur(multvecteur(1.-*it,*xyz.front()._VECTptr),multvecteur(*it,*xyz.back()._VECTptr));
+        xyz2rgb(xyzt[0].DOUBLE_val(),xyzt[1].DOUBLE_val(),xyzt[2].DOUBLE_val(),r,g,b);
+        ret.push_back(makevecteur(r,g,b));
+      }
+    } else { // interpolate more than two colors: use bezier curve
+      identificateur tvar(" bezier_t");
+      vecteur bc=*_parameq(makesequence(_bezier(xyz,contextptr),tvar),contextptr)._VECTptr;
+      for (it=t.begin(),itend=t.end();it!=itend;++it) {
+        vecteur bct=subst(bc,tvar,evalf_double(*it,1,contextptr),false,contextptr);
+        xyz2rgb(bct[0].DOUBLE_val(),bct[1].DOUBLE_val(),bct[2].DOUBLE_val(),r,g,b);
+        ret.push_back(makevecteur(r,g,b));
+      }
+    }
+    return _apply(makesequence(retcol?at_rgb:at_round,retcol?ret:multvecteur(255,ret)),contextptr);
+  }
+  bool arg2t01(const gen &g,double &t,GIAC_CONTEXT) {
+    gen gt=evalf_double(g,1,contextptr);
+    if (gt.type!=_DOUBLE_ || !is_positive(gt,contextptr) || !is_greater(1.0,gt,contextptr))
+      return false;
+    t=gt.DOUBLE_val();
+    return true;
+  }
+  bool is_color_vecteur(const gen &g) {
+    if (g.type!=_VECT)
+      return false;
+    const_iterateur it=g._VECTptr->begin(),itend=g._VECTptr->end();
+    for (;it!=itend;++it) {
+      if (!it->is_integer() || it->subtype!=_INT_COLOR)
+        return false;
+    }
+    return true;
+  }
+  // falls back to lagrange
+  gen _interp(const gen &g,GIAC_CONTEXT) {
+    if (g.type==_STRNG && g.subtype==-1) return g;
+    if (ckmatrix(g)) // lagrange interpolation
+      return _lagrange(g,contextptr);
+    if (g.type!=_VECT || g.subtype!=_SEQ__VECT)
+      return gentypeerr(contextptr);
+    const vecteur &args=*g._VECTptr;
+    if (args.size()<2)
+      return gendimerr(contextptr);
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+    return _lagrange(g,contextptr);
+#else
+    const gen &a=args[0],&b=args[1];
+    if (b.type==_IDNT || (args.size()>2 && args[2].type==_IDNT))
+      return _lagrange(g,contextptr);
+    // fast spline interpolation (uses GSL)
+    if (args.size()>1 && ckmatrix(a) && b.type==_VECT && mrows(*a._VECTptr)==2 && is_approx(a)) {
+      matrice A=*evalf_double(a,1,contextptr)._VECTptr;
+      vecteur B=*evalf_double(b,1,contextptr)._VECTptr;
+      return fast_spline_interp(*A[0]._VECTptr,*A[1]._VECTptr,B,vecteur(args.begin()+2,args.end()),contextptr);
+    }
+    if (args.size()>2 && a.type==_VECT && b.type==_VECT && args[2].type==_VECT)
+      return fast_spline_interp(*evalf_double(a,1,contextptr)._VECTptr,*evalf_double(b,1,contextptr)._VECTptr,
+                                *evalf_double(args[2],1,contextptr)._VECTptr,vecteur(args.begin()+3,args.end()),contextptr);
+    // color interpolation
+    if (a.is_integer() && a.subtype==_INT_COLOR) {
+      if (args.size()!=3)
+        return gendimerr(contextptr);
+      if (!b.is_integer() || b.subtype!=_INT_COLOR)
+        return _interp(gen(mergevecteur(makevecteur(b,a),vecteur(args.begin()+2,args.end())),_SEQ__VECT),contextptr);
+      return _interp(gen(mergevecteur(vecteur(1,makevecteur(a,b)),vecteur(args.begin()+2,args.end())),_SEQ__VECT),contextptr);
+    }
+    double t;
+    if (is_color_vecteur(a) || (ckmatrix(a) && mcols(*a._VECTptr)==3)) {
+      if (args.size()!=2)
+        return gendimerr(contextptr);
+      if (ckmatrix(a) && !is_integer_matrice(*a._VECTptr))
+        return gentypeerr(gettext("RGB values must be integers"));
+      int n;
+      if (b.is_integer() && (n=b.val)>=0) {
+        vecteur ls=*_linspace(makesequence(0.0,1.0,n+2),contextptr)._VECTptr;
+        return blend_colors(*a._VECTptr,vecteur(ls.begin()+1,ls.begin()+n+1),contextptr);
+      }
+      if (arg2t01(b,t,contextptr)) {
+        gen res=blend_colors(*a._VECTptr,vecteur(1,t),contextptr);
+        return res.type==_VECT && res._VECTptr->size()==1?res._VECTptr->front():gensizeerr(contextptr);
+      }
+      if (b.type!=_VECT)
+        return gentypeerr(contextptr);
+      vecteur tdbl;
+      tdbl.reserve(b._VECTptr->size());
+      const_iterateur it=b._VECTptr->begin(),itend=b._VECTptr->end();
+      for (;it!=itend;++it) {
+        if (!arg2t01(*it,t,contextptr))
+          return gentypeerr(contextptr);
+        tdbl.push_back(t);
+      }
+      return blend_colors(*a._VECTptr,tdbl,contextptr);
+    }
+    rgba_image *img=rgba_image::from_gen(a),*other=rgba_image::from_gen(b);
+    if (img!=NULL) try {
+      if (args.size()!=3)
+        return gendimerr(contextptr);
+      if (!arg2t01(args[2],t,contextptr))
+        return gensizeerr(contextptr);
+      if (other!=NULL)
+        return img->blend(*other,t); // blend two images
+      else if (b.is_integer() && b.subtype==_INT_COLOR)
+        return img->blend(b.val,t); // blend image with color
+    } catch (const std::runtime_error &err) {
+      *logptr(contextptr) << err.what() << "\n";
+      return gensizeerr(contextptr);
+    }
+    // lagrange interpolation fallback
+    return _lagrange(g,contextptr);
+#endif
+  }
+// end additions by LM
   static const char _interp_s []="interp";
-  static define_unary_function_eval (__interp,&_lagrange,_interp_s);
+  static define_unary_function_eval (__interp,&_interp,_interp_s);
   define_unary_function_ptr5( at_interp ,alias_at_interp,&__interp,0,true);
 
   static gen lhsrhs(const gen & g,int i){
@@ -2529,6 +2797,35 @@ namespace giac {
     if (g.type!=_VECT || g.subtype!=_SEQ__VECT || g._VECTptr->size()!=2 || g._VECTptr->front().type!=_STRNG)
       return gensizeerr(contextptr);
     vecteur v(gen2vecteur(g));
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined EMCC || defined EMCC2
+#else
+    rgba_image *img=rgba_image::from_gen(v[1]);
+    if (img!=NULL) {
+      int res=img->write_png(v[0]._STRNGptr->c_str());
+      switch (res) {
+      case 0: // writing was successful
+        break;
+      case 1:
+        *logptr(contextptr) << gettext("Error") << ": " << gettext("PNG library not found") << "\n";
+        return 0;
+      case 2:
+        *logptr(contextptr) << gettext("Error") << ": " << gettext("Failed to open file for writing") << "\n";
+        return 0;
+      case 3:
+        *logptr(contextptr) << gettext("Error") << ": " << gettext("Failed to create PNG write struct") << "\n";
+        return 0;
+      case 4:
+        *logptr(contextptr) << gettext("Error") << ": " << gettext("Failed to create PNG info struct") << "\n";
+        return 0;
+      case 5:
+        *logptr(contextptr) << gettext("Error") << ": " << gettext("Invalid PNG color type") << "\n";
+        return 0;
+      default:
+        return 0; // should be unreachable
+      }
+      return 1;
+    }
+#endif
     if (v.size()>=2 && ckmatrix(v[1])){
       int l,c;
       mdims(*v[1]._VECTptr,l,c);
@@ -2542,12 +2839,6 @@ namespace giac {
     }
     if (v.size()<2 || v[0].type!=_STRNG || v[1].type!=_VECT)
       return gensizeerr();
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined EMCC || defined EMCC2
-#else
-    rgba_image *img=rgba_image::from_gen(v[1]);
-    if (img!=NULL)
-      return img->write_png(v[0]._STRNGptr->c_str())==0?1:0;
-#endif
     vecteur w=*v[1]._VECTptr;
     // w[0]==[d,w,h], w[1..4]=data
     bool ok= writergb(*v[0]._STRNGptr,w);

@@ -10623,7 +10623,7 @@ namespace giac {
     if (args.type==_VECT)
       return apply(args,_Heaviside,contextptr);
     if (is_zero(args,contextptr))
-      return plus_one;
+      return plus_one_half; // changed by L.Marohnić
     gen tmp=_sign(args,contextptr);
     if (tmp.type<=_DOUBLE_)
       return (tmp+1)/2;

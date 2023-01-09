@@ -781,7 +781,8 @@ namespace giac {
       res.push_back(vector_giac_double_2_vecteur(v[i]));
     return res;
   }  
-  
+
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS // moved to signalprocessing.cc
   gen _hilbert(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     int n,p;
@@ -811,6 +812,7 @@ namespace giac {
   static const char _hilbert_s[]="hilbert";
   static define_unary_function_eval (__hilbert,&_hilbert,_hilbert_s);
   define_unary_function_ptr5( at_hilbert ,alias_at_hilbert,&__hilbert,0,true);
+#endif
 
   gen l2norm2(const gen & g){
     if (g.type!=_VECT)

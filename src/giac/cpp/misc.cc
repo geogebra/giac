@@ -3175,11 +3175,15 @@ namespace giac {
     if ( g_orig.type==_STRNG && g_orig.subtype==-1) return  g_orig;
     vecteur attributs(1,default_color(contextptr));
     gen g(g_orig);
-    bool horizontal=true;
+    bool horizontal=true,myaxes=true;
     double ymin=global_window_ymin;
     double ymax=global_window_ymax;
     if (g.type==_VECT && g.subtype==_SEQ__VECT){
       vecteur v(*g._VECTptr);
+      if (!v.empty() && v.back().is_integer() && v.back().subtype==_INT_PLOT && v.back().val==_AXES) {
+        myaxes=false;
+        v.pop_back();
+      }
       int s=read_attributs(v,attributs,contextptr);
       if (s>1){
 	gen tmp=v[s-1];
@@ -3216,20 +3220,17 @@ namespace giac {
       xmin=tmpx._DOUBLE_val;
     if (tmpxx.type==_DOUBLE_)
       xmax=tmpxx._DOUBLE_val;
-    vecteur attr(attributs);
+    vecteur attr=gen2vecteur(attributs[0]);
     vecteur legendes(1,string2gen("",false));
     if (attributs.size()>=2)
       legendes=gen2vecteur(attributs[1]);
-    else
-      attr.push_back(legendes);
     int ls=int(legendes.size());
     vecteur affichages(gen2vecteur(attributs[0]));
-    int as=int(affichages.size());
+    int as=int(affichages.size()),attrn=attr.size();
     if (horizontal){
+      if (myaxes) res.push_back(symb_equal(change_subtype(_AXES,_INT_PLOT),4));
       double y_scale=(ymax-ymin)/(4*s);
       for (int i=0;i<s;++i){
-	attr[0]=(i<as?affichages[i]:affichages[0]);
-	attr[1]=(i<ls?legendes[i]:legendes[0]);
 	double y_up=ymax-(4*i+1)*y_scale;
 	double y_middle=ymax-(4*i+2)*y_scale;
 	double y_down=ymax-(4*i+3)*y_scale;
@@ -3237,35 +3238,44 @@ namespace giac {
 	if (current.size()!=5)
 	  continue;
 	// trait min -> 1er quartile
-	res.push_back(symb_segment(current[0]+y_middle*cst_i,current[1]+y_middle*cst_i,attr,_GROUP__VECT,contextptr));
-	// rectangle 
-	res.push_back(pnt_attrib(gen(makevecteur(current[3]+y_down*cst_i,current[1]+y_down*cst_i,current[1]+y_up*cst_i,current[3]+y_up*cst_i,current[3]+y_down*cst_i),_GROUP__VECT),attr,contextptr));
+	res.push_back(_segment(makesequence(current[0]+y_middle*cst_i,current[1]+y_middle*cst_i),contextptr));
+	// rectangle
+        gen col=change_subtype(attrn>0?attr[i%attrn]:52,_INT_COLOR);
+        if (col!=default_color(contextptr))
+	  res.push_back(pnt_attrib(gen(makevecteur(current[3]+y_down*cst_i,current[1]+y_down*cst_i,current[1]+y_up*cst_i,current[3]+y_up*cst_i,current[3]+y_down*cst_i),_GROUP__VECT),vecteur(1,col+_FILL_POLYGON),contextptr));
+        res.push_back(pnt_attrib(gen(makevecteur(current[3]+y_down*cst_i,current[1]+y_down*cst_i,current[1]+y_up*cst_i,current[3]+y_up*cst_i,current[3]+y_down*cst_i),_GROUP__VECT),vecteur(1,default_color(contextptr)),contextptr));
 	// mediane
-	res.push_back(symb_segment(current[2]+y_down*cst_i,current[2]+y_up*cst_i,attr,_GROUP__VECT,contextptr));
+	res.push_back(_segment(makesequence(current[2]+y_down*cst_i,current[2]+y_up*cst_i),contextptr));
 	// trait 3eme quartile -> fin
-	res.push_back(symb_segment(current[3]+y_middle*cst_i,current[4]+y_middle*cst_i,attr,_GROUP__VECT,contextptr));
+	res.push_back(_segment(makesequence(current[3]+y_middle*cst_i,current[4]+y_middle*cst_i),contextptr));
+        if (i<ls)
+          res.push_back(_legende(makesequence(current[4]+y_middle*cst_i,legendes[i]),contextptr));
       }
     } else { // vertical picture
+      if (myaxes) res.push_back(symb_equal(change_subtype(_AXES,_INT_PLOT),2));
       swapdouble(xmin,ymin);
       swapdouble(xmax,ymax);
       double x_scale=(xmax-xmin)/(4*s);
       for (int i=0;i<s;++i){
-	attr[0]=(i<as?affichages[i]:affichages[0]);
-	attr[1]=(i<ls?legendes[i]:legendes[0]);
-	double x_up=xmax-(4*i+1)*x_scale;
-	double x_middle=xmax-(4*i+2)*x_scale;
-	double x_down=xmax-(4*i+3)*x_scale;
+	double x_up=xmin+(4*i+1)*x_scale;
+	double x_middle=xmin+(4*i+2)*x_scale;
+	double x_down=xmin+(4*i+3)*x_scale;
 	vecteur current=gen2vecteur(v[i]);
 	if (current.size()!=5)
 	  continue;
 	// trait min -> 1er quartile
-	res.push_back(symb_segment(x_middle+current[0]*cst_i,current[1]*cst_i+x_middle,attr,_GROUP__VECT,contextptr));
+	res.push_back(_segment(makesequence(x_middle+current[0]*cst_i,current[1]*cst_i+x_middle),contextptr));
 	// rectangle
-	res.push_back(pnt_attrib(gen(makevecteur(current[1]*cst_i+x_up,current[1]*cst_i+x_down,current[3]*cst_i+x_down,current[3]*cst_i+x_up,current[1]*cst_i+x_up),_GROUP__VECT),attr,contextptr));
+        gen col=change_subtype(attrn>0?attr[i%attrn]:52,_INT_COLOR);
+        if (col!=default_color(contextptr))
+          res.push_back(pnt_attrib(gen(makevecteur(current[3]*cst_i+x_down,current[1]*cst_i+x_down,current[1]*cst_i+x_up,current[3]*cst_i+x_up,current[3]*cst_i+x_down),_GROUP__VECT),vecteur(1,col+_FILL_POLYGON),contextptr));
+        res.push_back(pnt_attrib(gen(makevecteur(current[3]*cst_i+x_down,current[1]*cst_i+x_down,current[1]*cst_i+x_up,current[3]*cst_i+x_up,current[3]*cst_i+x_down),_GROUP__VECT),vecteur(1,default_color(contextptr)),contextptr));
 	// mediane
-	res.push_back(symb_segment(current[2]*cst_i+x_down,current[2]*cst_i+x_up,attr,_GROUP__VECT,contextptr));
+	res.push_back(_segment(makesequence(current[2]*cst_i+x_down,current[2]*cst_i+x_up),contextptr));
 	// trait 3eme quartile -> fin
-	res.push_back(symb_segment(current[3]*cst_i+x_middle,current[4]*cst_i+x_middle,attr,_GROUP__VECT,contextptr));
+	res.push_back(_segment(makesequence(current[3]*cst_i+x_middle,current[4]*cst_i+x_middle),contextptr));
+        if (i<ls)
+          res.push_back(_legende(makesequence(current[4]*cst_i+x_middle,legendes[i],change_subtype(_QUADRANT2,_INT_COLOR)),contextptr));
       }
     }
     return gen(res,_SEQ__VECT);
@@ -4692,10 +4702,12 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
       it=v.begin();
       //  int nclass=itend-it;
 #if defined GIAC_LMCHANGES // changes by L. Marohnić
-      vecteur res(1,symb_equal(change_subtype(gen(_AXES),_INT_PLOT),3));
+      vecteur res(1,symb_equal(change_subtype(_AXES,_INT_PLOT),3));
 #else
       vecteur res;
 #endif
+      double maxh=0;
+      gen mini,maxi,last_maxi=undef;
       for (;it!=itend;++it){
 	gen current=it->_VECTptr->front();
 	if (current.is_symb_of_sommet(at_interval)){
@@ -4711,20 +4723,33 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
 	}
 	double height=1/(sup-inf);
 	height=height*evalf_double(it->_VECTptr->back(),1,contextptr)._DOUBLE_val/n;
-	gen mini(inf,height),maxi(sup,height);
+  if (height<=0) {
+    last_maxi=undef;
+    continue;
+  }
+  maxh=std::max(maxh,height);
+	mini=gen(inf,height);
+  maxi=gen(sup,height);
 	gen rectan(makevecteur(inf,sup,maxi,mini,inf),_LINE__VECT);
 	res.push_back(pnt_attrib(rectan,attributs,contextptr));
 #ifdef GIAC_LMCHANGES // changes by L. Marohnić
 	res.push_back(_segment(makevecteur(inf,mini),contextptr));
 	res.push_back(_segment(makevecteur(mini,maxi),contextptr));
-	res.push_back(_segment(makevecteur(maxi,sup),contextptr));
-	res.push_back(_segment(makevecteur(inf,sup),contextptr));
+    if (!is_undef(last_maxi) && is_strictly_greater(im(last_maxi,contextptr),im(mini,contextptr),contextptr))
+      res.push_back(_segment(makevecteur(mini,last_maxi),contextptr));
+    last_maxi=maxi;
+	//res.push_back(_segment(makevecteur(inf,sup),contextptr));
 #else
 	// res.push_back(_segment(makevecteur(inf,mini),contextptr));
 	// res.push_back(_segment(makevecteur(mini,maxi),contextptr));
 	// res.push_back(_segment(makevecteur(maxi,sup),contextptr));	    
 #endif
       }
+  if (!is_undef(last_maxi))
+    res.push_back(_segment(makevecteur(sup,maxi),contextptr));
+#ifdef GIAC_LMCHANGES
+  res.insert(res.begin(),symb_equal(change_subtype(_GL_Y,_INT_PLOT),symb_interval(0.0,1.15*maxh)));
+#endif
 #ifndef WIN32
     io_graph(old_iograph,contextptr);
 #endif
@@ -4743,31 +4768,45 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
 #else
     vecteur res;
 #endif
+    double maxh=0,min_class,max_class,effectif;
+    gen ming,maxg,last_maxg=undef;
     for (;kbegin<=kend;++kbegin){
       // count in this class
-      double min_class=kbegin*class_size+class_minimum;
-      double max_class=min_class+class_size;
-      double effectif=0;
+      min_class=kbegin*class_size+class_minimum;
+      max_class=min_class+class_size;
+      effectif=0;
       for (;it!=itend;++it,++effectif){
 	if (*it>=max_class)
 	  break;
       }
       effectif /= s*class_size; // height of the class
-      gen ming=min_class+gen(0.0,effectif);
-      gen maxg=max_class+gen(0.0,effectif);
+      if (effectif<=0) {
+        last_maxg=undef;
+        continue;
+      }
+      maxh=std::max(maxh,effectif);
+      ming=min_class+gen(0.0,effectif);
+      maxg=max_class+gen(0.0,effectif);
       gen rectan(makevecteur(min_class,max_class,maxg,ming,min_class),_LINE__VECT);
       res.push_back(pnt_attrib(rectan,attributs,contextptr));
 #ifdef GIAC_LMCHANGES // changes by L. Marohnić
       res.push_back(_segment(makevecteur(min_class,ming),contextptr));
       res.push_back(_segment(makevecteur(ming,maxg),contextptr));
-      res.push_back(_segment(makevecteur(maxg,max_class),contextptr));
-      res.push_back(_segment(makevecteur(min_class,max_class),contextptr));
+      if (!is_undef(last_maxg) && is_strictly_greater(im(last_maxg,contextptr),im(ming,contextptr),contextptr))
+        res.push_back(_segment(makevecteur(ming,last_maxg),contextptr));
+      last_maxg=maxg;
+      //res.push_back(_segment(makevecteur(min_class,max_class),contextptr));
 #else
       // res.push_back(_segment(makevecteur(min_class,ming),contextptr));
       // res.push_back(_segment(makevecteur(ming,maxg),contextptr));
       // res.push_back(_segment(makevecteur(maxg,max_class),contextptr));
 #endif
     }
+    if (!is_undef(last_maxg))
+      res.push_back(_segment(makevecteur(max_class,maxg),contextptr));
+#ifdef GIAC_LMCHANGES
+    res.insert(res.begin(),symb_equal(change_subtype(_GL_Y,_INT_PLOT),symb_interval(0.0,1.15*maxh)));
+#endif
 #ifndef WIN32
     io_graph(old_iograph,contextptr);
 #endif
@@ -4819,13 +4858,31 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
       if (a.type!=_INT_ || !is_integral(b) || b.type!=_INT_ || b.val<=0)
 	return gensizeerr(contextptr);
       int A=a.val,B=b.val;
+#ifdef GIAC_LMCHANGES
+      vecteur v(1,symb_equal(change_subtype(_AXES,_INT_PLOT),3));
+#else
       vecteur v;
+#endif
+      gen maxh(0);
+      gen y,last_y=undef;
       for (int i=A;i<=B;++i){
-	gen y=subst(res,vx_var,i,false,contextptr);
+	y=subst(res,vx_var,i,false,contextptr);
+  maxh=max(maxh,y,contextptr);
 	vecteur w=makevecteur(i-.5,i+.5,i+.5+cst_i*y,i-.5+cst_i*y);
 	w.push_back(w.front());
 	v.push_back(pnt_attrib(gen(w,_GROUP__VECT),attributs,contextptr));
+  v.push_back(_segment(makevecteur(i-.5,i-.5+cst_i*y),contextptr));
+  v.push_back(_segment(makevecteur(i-.5+cst_i*y,i+.5+cst_i*y),contextptr));
+  if (!is_undef(last_y) && is_strictly_greater(last_y,y,contextptr))
+    v.push_back(_segment(makevecteur(i-.5+cst_i*last_y,i-.5+cst_i*y),contextptr));
+  last_y=y;
       }
+      if (!is_undef(last_y))
+        v.push_back(_segment(makevecteur(B+.5,B+.5+cst_i*last_y),contextptr));
+#ifdef GIAC_LMCHANGES
+      double wid=B-A+1.0;
+      v.insert(v.begin(),symb_equal(change_subtype(_GL_Y,_INT_PLOT),symb_interval(0.0,1.15*maxh)));
+#endif
       return v;
     }
     if (s>=2){
@@ -5315,9 +5372,14 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
     gen g(g_);
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     vecteur vals,names,attributs,res;
-    double largeur=.8;
+    double largeur=.75; // changed by L.Marohnić
+    bool myaxes=true;
     if (g.type==_VECT && g.subtype==_SEQ__VECT){
       vecteur v=*g._VECTptr;
+      if (!v.empty() && v.back().is_integer() && v.back().subtype==_INT_PLOT && v.back().val==_AXES) {
+        myaxes=false;
+        v.pop_back();
+      }
       if (v.size()>1 && v.front().type==_VECT && v.back().type!=_VECT){
 	gen l=evalf_double(v.back(),1,contextptr);
 	if (l.type==_DOUBLE_){
@@ -5351,13 +5413,13 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
     if (is_undef(errcode)) return errcode;
     vecteur attr(gen2vecteur(attributs[0]));
     int ncamemberts=int(vals.size()),s=int(vals.front()._VECTptr->size()),t=int(attr.size());
-    int c=default_color(contextptr) & 0xffff;
+    int c=-1;
     if (t==1){
       t=0;
       c=attr[0].val;
     }
     gen namesf=evalf(names,1,contextptr);
-    if (namesf.type==_VECT && !is_numericv(*namesf._VECTptr))
+    if (myaxes && namesf.type==_VECT && !is_numericv(*namesf._VECTptr))
       res.push_back(symb_equal(change_subtype(gen(_AXES),_INT_PLOT),2));
 #if defined HAVE_LIBFLTK && defined GIAC_LMCHANGES // changes by L. Marohnić
     vecteur allvals(0);
@@ -5383,15 +5445,16 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
 	res.push_back(symb_pnt_name(xy-largeur-dsc*cst_i,_POINT_INVISIBLE,Vals[0],contextptr));
 	++i;
       }
-      for (;i<s;++i){
+      int ci=0;
+      for (;i<s;++i,++ci){
 	gen tmp,xpos;
 	if (names[i].type!=_STRNG && has_evalf(names[i],xpos,1,contextptr)){
 	  tmp=gen(makevecteur(xpos+largeur+cst_i*Vals[i],xpos+largeur,xpos-largeur,xpos-largeur+cst_i*Vals[i],xpos+largeur+cst_i*Vals[i]),_LINE__VECT);
-	  res.push_back(symb_pnt(tmp,i<t?attr[i]:(c | _FILL_POLYGON),contextptr));
+	  res.push_back(symb_pnt(tmp,_bitor(makesequence(t>0?attr[i%t]:(c<0?(i%7):c),_FILL_POLYGON),contextptr),contextptr));
 	}
 	else {
 	  tmp=gen(makevecteur(xy+i-1+largeur+cst_i*Vals[i],xy+i-1+largeur,xy+i-1-largeur,xy+i-1-largeur+cst_i*Vals[i],xy+i-1+largeur+cst_i*Vals[i]),_LINE__VECT);
-	  res.push_back(symb_pnt(tmp,i<t?attr[i]:((i==7?0:i) | _FILL_POLYGON),contextptr));
+	  res.push_back(symb_pnt(tmp,_bitor(makesequence(t>0?attr[ci%t]:(c<0?(ci%7):c),_FILL_POLYGON),contextptr),contextptr));
     res.push_back(symb_pnt_name(xy+i-1+largeur+cst_i*(Vals[i]+padding),_POINT_INVISIBLE | _QUADRANT2,names[i],contextptr));
 	}
       }
@@ -5438,46 +5501,51 @@ static define_unary_function_eval (__batons,&_batons,_batons_s);
     gen errcode=read_camembert_args(g,vals,names,attributs,contextptr);
     if (is_undef(errcode)) return errcode;
     vecteur attr(gen2vecteur(attributs[0]));
+    if (!is_integer_vecteur(attr))
+      attr=vecteur(1,default_color(contextptr));
     int ncamemberts=int(vals.size()),s=int(vals.front()._VECTptr->size()),t=int(attr.size());
-    int rowlen=2;
+    int rowlen=ncamemberts==3?3:2;
     if (ncamemberts>4) rowlen=3;
     if (ncamemberts>6) rowlen=4;
     for (int j=0;j<ncamemberts;j++){
-      gen xy=5*(j%rowlen)-5*(j/rowlen)*cst_i;
+      gen xy=(rowlen==2 && ncamemberts==4?8:5)*(j%rowlen)-4*(j/rowlen)*cst_i;
       gen diametre=makevecteur(-1+xy,1+xy);
       gen a(0),da;
       double da100;
       char ss[256];
       vecteur & Vals = *vals[j]._VECTptr;
       gen somme;
-      int i=0,pos=0;;
+      int i=0,pos=0;
       if (Vals[0].type==_STRNG){
 	// add title
-	res.push_back(symb_pnt_name(xy-1+1.75*cst_i,_POINT_INVISIBLE,Vals[0],contextptr));
+	res.push_back(symb_pnt_name(xy-1+1.5*cst_i,_POINT_INVISIBLE,Vals[0],contextptr));
 	++i;
 	somme=_plus(vecteur(Vals.begin()+1,Vals.end()),contextptr);
       }
       else
 	somme=_plus(Vals,contextptr);
   string name;
-      for (;i<s;++i){
+  int ci=0;
+      for (;i<s;++i,++ci){
 	if (ck_is_strictly_positive(-Vals[i],contextptr))
 	  return gensizeerr(gettext("Negative value encoutered"));
 	da=2*cst_pi*Vals[i]/somme;
 	da100=evalf_double(100*Vals[i]/somme,1,contextptr)._DOUBLE_val;
 	if (da100>0){        
 	  sprintfdouble(ss,"%.4g",da100);
-	  if (is_positive(a-cst_pi/2,contextptr))
-	    pos=_QUADRANT2;
-	  if (is_positive(a-cst_pi,contextptr))
-	    pos=_QUADRANT3;
-	  if (is_positive(a-3*cst_pi/2,contextptr))
-	    pos=_QUADRANT4;
+    if (is_greater(cst_pi,2*a+da,contextptr))
+      pos=_QUADRANT1;
+    else if (is_greater(cst_pi,a+da/2,contextptr))
+      pos=_QUADRANT2;
+    else if (is_greater(3*cst_pi,2*a+da,contextptr))
+      pos=_QUADRANT3;
+    else pos=_QUADRANT4;
 	  gen tmp=symbolic(at_cercle,gen(makevecteur(diametre,a,a+da),_PNT__VECT));
     name=gen2string(names[i]);
-    if (name.length()>1)
+    if (!name.empty())
       name+=": ";
-	  res.push_back(symb_pnt_name(tmp,i<t?attr[i]:(i%7 | _FILL_POLYGON | pos),
+    res.push_back(pnt_attrib(tmp,vecteur(1,(t>1?attr[ci%t].val:(ci%7))|_FILL_POLYGON),contextptr));
+	  res.push_back(symb_pnt_name(xy+exp(cst_i*(a+da/2),contextptr),_POINT_INVISIBLE | pos,
                                 string2gen(name+string(ss)+"%",false),contextptr));
 	  a=a+da;
 	}
@@ -5857,6 +5925,11 @@ static define_unary_function_eval (__simplex_reduce,&_simplex_reduce,_simplex_re
     if (g.type!=_VECT || g._VECTptr->size()<2)
       return gensizeerr(contextptr);
     vecteur w(*g._VECTptr);
+    bool pcw=false; // addition by L.Marohnić for piecewise output
+    if (w.back()==at_piecewise) {
+      pcw=true;
+      w.pop_back();
+    }
     if (w.size()<3)
       w.push_back(vx_var);
     if (w.size()<4)
@@ -5906,11 +5979,48 @@ static define_unary_function_eval (__simplex_reduce,&_simplex_reduce,_simplex_re
     if (is_undef(zf)) return zf;
     pol.pop_back();
     pol=*ratnormal(subst(pol,inconnu,zf,false,contextptr),contextptr)._VECTptr;
-    for (int i=0;i<n;++i){
-      if (pol[i].type==_VECT)
-	pol[i]=symb_horner(*pol[i]._VECTptr,xvar-x[i]);
+    // changes by L.Marohnić: different output options
+    if (xvar.type==_IDNT) { 
+      for (int i=0;i<n;++i){
+        if (pol[i].type==_VECT)
+          pol[i]=symb_horner(*pol[i]._VECTptr,xvar-x[i]);
+      }
+      if (pcw) { // return piecewise expression
+        vecteur pargs;
+        for (int i=1;i<=n;++i) {
+          pargs.push_back(i==1?symb_and(symb_superieur_egal(xvar,x[0]),symb_inferieur_strict(xvar,x[1]))
+                              :(i==n?symb_inferieur_egal(xvar,x[i]):symb_inferieur_strict(xvar,x[i])));
+          pargs.push_back(pol[i-1]);
+        }
+        return _piecewise(pargs,contextptr);
+      }
+      return pol; // return the list of spline pieces (the default)
     }
-    return pol;
+    if (xvar.type==_VECT) { // compute spline values for a list of points
+      vecteur res;
+      res.reserve(xvar._VECTptr->size());
+      const_iterateur it=xvar._VECTptr->begin(),itend=xvar._VECTptr->end();
+      for (;it!=itend;++it) {
+        int i=1;
+        for (;i<=n;++i) {
+          if (is_greater(*it,x[i-1],contextptr) && is_greater(x[i],*it,contextptr)) {
+            res.push_back(pol[i-1].type==_VECT?symb_horner(*pol[i-1]._VECTptr,*it-x[i-1]):pol[i-1]);
+            break;
+          }
+        }
+        if (i>n) res.push_back(undef);
+      }
+      return ratnormal(res,contextptr);
+    }
+    // compute the spline value at a point xvar
+    for (int i=0;i<n;++i){
+      if (!is_greater(xvar,x[i],contextptr) || !is_greater(x[i+1],xvar,contextptr))
+        continue;
+      if (pol[i].type==_VECT)
+        pol[i]=symb_horner(*pol[i]._VECTptr,xvar-x[i]);
+      return ratnormal(pol[i],contextptr);
+    }
+    return undef;
   }
   static const char _spline_s []="spline";
 static define_unary_function_eval (__spline,&_spline,_spline_s);
@@ -6076,17 +6186,32 @@ static define_unary_function_eval (__bitxor,&_bitxor,_bitxor_s);
 
   gen _hamdist(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
-    if (g.type==_VECT && g.subtype==_SEQ__VECT && g._VECTptr->size()==2 && g._VECTptr->front().type==_VECT && g._VECTptr->back().type==_VECT && g._VECTptr->front().subtype!=_LIST__VECT && g._VECTptr->back().subtype!=_LIST__VECT){
-      const vecteur & f=*g._VECTptr->front()._VECTptr;
-      const vecteur & b=*g._VECTptr->back()._VECTptr;
-      size_t fs=f.size();
-      if (f.size()==b.size()){
-	int res=0;
-	for (size_t i=0;i<fs;++i){
-	  if (f[i]!=b[i]) 
-	    res++;
-	}
-	return res;
+    if (g.type==_VECT && g.subtype==_SEQ__VECT && g._VECTptr->size()==2){
+      if (g._VECTptr->front().type==_VECT && g._VECTptr->back().type==_VECT && g._VECTptr->front().subtype!=_LIST__VECT && g._VECTptr->back().subtype!=_LIST__VECT) {
+        const vecteur & f=*g._VECTptr->front()._VECTptr;
+        const vecteur & b=*g._VECTptr->back()._VECTptr;
+        size_t fs=f.size();
+        if (f.size()==b.size()){
+    int res=0;
+    for (size_t i=0;i<fs;++i){
+      if (f[i]!=b[i]) 
+        res++;
+    }
+    return res;
+        }
+      }
+      if (g._VECTptr->front().type==_STRNG && g._VECTptr->back().type==_STRNG) {
+        const string &s1=*g._VECTptr->front()._STRNGptr;
+        const string &s2=*g._VECTptr->back()._STRNGptr;
+        if (s1.size()==s2.size()) {
+          string::const_iterator it1=s1.begin(),itend=s1.end(),it2=s2.begin();
+          int res=0;
+          for (;it1!=itend;++it1,++it2) {
+            if (*it1!=*it2)
+              res++;
+          }
+          return res;
+        }
       }
     }
     return binop(g,giac_hamdist);
@@ -10145,7 +10270,173 @@ void sync_screen(){}
   static define_unary_function_eval (__dtype,&_dtype,_dtype_s);
   define_unary_function_ptr5( at_dtype ,alias_at_dtype,&__dtype,0,true);
 
+  void (*fltk_colormap_rgb_ptr)(int c,unsigned char &r,unsigned char &g,unsigned char &b)=0;
+
+  bool index2rgb(int c,unsigned char &r,unsigned char &g,unsigned char &b) {
+    if (c<256) {
+      if (fltk_colormap_rgb_ptr) {
+        (*fltk_colormap_rgb_ptr)(c,r,g,b);
+        return true;
+      }
+      r=g=b=0;
+      return false;
+    } else if (c>255 && c<255+127) {
+      int col_r,col_g,col_b;
+      arc_en_ciel(c,col_r,col_g,col_b);
+      r=static_cast<unsigned char>(col_r);
+      g=static_cast<unsigned char>(col_g);
+      b=static_cast<unsigned char>(col_b);
+    } else if (c<512) { // colors from 382 to 511 are not assigned
+      r=g=b=0;
+      return false;
+    } else {
+      int col888=rgb565to888(c);
+      r=static_cast<unsigned char>((col888>>16)&255);
+      g=static_cast<unsigned char>((col888>>8)&255);
+      b=static_cast<unsigned char>(col888&255);
+    }
+    return true;
+  }
+
+  gen rgb2hsv(const vecteur &rgb,GIAC_CONTEXT) {
+    gen V=_max(rgb,contextptr);
+    if (is_zero(V,contextptr))
+      return vecteur(3,0);
+    gen X=_min(rgb,contextptr);
+    gen S=(V-X)/V;
+    if (is_zero(S,contextptr))
+      return makevecteur(0,0,V);
+    const gen &R=rgb[0],&G=rgb[1],&B=rgb[2];
+    gen r=(V-R)/(V-X),g=(V-G)/(V-X),b=(V-B)/(V-X),H;
+    if (is_zero(R-V,contextptr))
+      H=is_zero(G-X,contextptr)?5+b:1-g;
+    else if (is_zero(G-V,contextptr))
+      H=is_zero(B-X,contextptr)?1+r:3-b;
+    else H=is_zero(R-X,contextptr)?3+g:5-r;
+    return makevecteur(H/6,S,V);
+  }
+
+  gen hsv2rgb(const vecteur &hsv,GIAC_CONTEXT) {
+    const gen &S=hsv[1],&V=hsv[2];
+    if (is_zero(S,contextptr))
+      return vecteur(3,V);
+    gen H=6*min(1,max(hsv[0],0,contextptr),contextptr);
+    gen I=_floor(H,contextptr),F=H-I;
+    gen M=V*(1-S),N=V*(1-S*F),K=V*(1-(S*(1-F)));
+    switch (I.val) {
+    case 0: case 6: return makevecteur(V,K,M);
+    case 1: return makevecteur(N,V,M);
+    case 2: return makevecteur(M,V,K);
+    case 3: return makevecteur(M,N,V);
+    case 4: return makevecteur(K,M,V);
+    case 5: return makevecteur(V,M,N);
+    }
+    return undef;
+  }
+
+  gen _rgb2hsv(const gen &g,GIAC_CONTEXT) {
+    if (g.type==_STRNG && g.subtype==-1) return g;
+    gen R,G,B;
+    if (g.type==_VECT && g._VECTptr->size()==3) {
+      if (is_integer_vecteur(*g._VECTptr,true)) {
+        R=g._VECTptr->at(0).val/255.;
+        G=g._VECTptr->at(1).val/255.;
+        B=g._VECTptr->at(2).val/255.;
+      } else {
+        R=evalf_double(g._VECTptr->at(0),1,contextptr);
+        G=evalf_double(g._VECTptr->at(1),1,contextptr);
+        B=evalf_double(g._VECTptr->at(2),1,contextptr);
+      }
+      if (!is_greater(_min(makevecteur(R,G,B),contextptr),0,contextptr) ||
+          !is_greater(1,_max(makevecteur(R,G,B),contextptr),contextptr))
+        return gensizeerr(contextptr);
+    } else {
+      gen c=_rgb(g,contextptr);
+      if (!c.is_integer())
+        return undef;
+      unsigned char rr,gg,bb;
+      index2rgb(c.val,rr,gg,bb);
+      R=rr/255.; G=gg/255.; B=bb/255.;
+    }
+    gen hsv=rgb2hsv(makevecteur(R,G,B),contextptr);
+    if (hsv.type==_VECT && hsv._VECTptr->size()==3) {
+      gen h=_round(360*hsv._VECTptr->at(0),contextptr);
+      gen s=_round(100*hsv._VECTptr->at(1),contextptr);
+      gen v=_round(100*hsv._VECTptr->at(2),contextptr);
+      return makevecteur(h,s,v);
+    }
+    return undef;
+  }
+  static const char _rgb2hsv_s []="rgb2hsv";
+  static define_unary_function_eval (__rgb2hsv,&_rgb2hsv,_rgb2hsv_s);
+  define_unary_function_ptr5(at_rgb2hsv,alias_at_rgb2hsv,&__rgb2hsv,0,true);
+
+  gen _hsv2rgb(const gen &g,GIAC_CONTEXT) {
+    if (g.type==_STRNG && g.subtype==-1) return g;
+    if (g.type!=_VECT)
+      return gentypeerr(contextptr);
+    if (g._VECTptr->size()!=3)
+      return gendimerr(contextptr);
+    gen H,S,V;
+    if (is_integer_vecteur(*g._VECTptr,true)) {
+      H=g._VECTptr->at(0)/360.;
+      S=g._VECTptr->at(1)/100.;
+      V=g._VECTptr->at(2)/100.;
+    } else {
+      H=g._VECTptr->at(0);
+      S=g._VECTptr->at(1);
+      V=g._VECTptr->at(2);
+    }
+    vecteur hsv=*evalf_double(makevecteur(H,S,V),1,contextptr)._VECTptr;
+    if (hsv[0].type!=_DOUBLE_ || hsv[1].type!=_DOUBLE_ || hsv[2].type!=_DOUBLE_)
+      return gentypeerr(contextptr);
+    if (!is_greater(_min(hsv,contextptr),0,contextptr) || !is_greater(1,_max(hsv,contextptr),contextptr))
+      return gensizeerr(contextptr);
+    gen rgb=hsv2rgb(hsv,contextptr);
+    if (rgb.type==_VECT && rgb._VECTptr->size()==3) {
+      gen r=_round(255*rgb._VECTptr->at(0),contextptr);
+      gen g=_round(255*rgb._VECTptr->at(1),contextptr);
+      gen b=_round(255*rgb._VECTptr->at(2),contextptr);
+      return makevecteur(r,g,b);
+    }
+    return undef;
+  }
+  static const char _hsv2rgb_s []="hsv2rgb";
+  static define_unary_function_eval (__hsv2rgb,&_hsv2rgb,_hsv2rgb_s);
+  define_unary_function_ptr5(at_hsv2rgb,alias_at_hsv2rgb,&__hsv2rgb,0,true);
+
   gen _rgb(const gen & args,GIAC_CONTEXT){
+    if (args.type==_STRNG && args.subtype==-1) return args;
+    if (args.is_integer() && args.subtype==_INT_COLOR) {
+      unsigned char r,g,b;
+      if (index2rgb(args.val,r,g,b))
+        return makevecteur(r,g,b);
+      else return undef;
+    }
+    if (args.type==_INT_) { // read r,g,b from a single integer
+      int col=args.val%0xffffff;
+      if (col<0) col+=0xffffff;
+      if (col<256+127)
+        return change_subtype(col,_INT_COLOR);
+      if (col>382 && col<512) {
+        *logptr(contextptr) << gettext("No color is assigned to the index") << " " << col << "\n";
+        return undef;
+      }
+      return _rgb(makesequence((col>>16)&255,(col>>8)&255,col&255),contextptr);
+    }
+    if (args.type==_STRNG) { // read r,g,b from a hexadecimal string (optionally with leading #)
+      string hex=*_strip(args,contextptr)._STRNGptr;
+      if (hex.empty())
+        return 56;
+      if (hex.at(0)=='#')
+        hex=hex.substr(1);
+      if (hex.size()!=6)
+        hex.resize(6,'0');
+      int r=(int)strtol(hex.substr(0,2).c_str(),NULL,16);
+      int g=(int)strtol(hex.substr(2,2).c_str(),NULL,16);
+      int b=(int)strtol(hex.substr(4,2).c_str(),NULL,16);
+      return _rgb(makesequence(r,g,b),contextptr);
+    }
     if (args.type!=_VECT || args._VECTptr->size()<3)
       return gensizeerr(contextptr);
     const vecteur & v=*args._VECTptr;
@@ -10165,19 +10456,57 @@ void sync_screen(){}
       else {
 	if (v.size()==4 && v.back()!=565)
 	  return gensizeerr(contextptr);
-	d=(((av*32)/256)<<11) | (((bv*64)/256)<<5) | ((cv*32)/256);
-	if (d>0 && d<512){
+	//d=(((av*32)/256)<<11) | (((bv*64)/256)<<5) | ((cv*32)/256);
+  d=((cv>>3)&0x1f)|(((bv>>2)&0x3f)<<5)|(((av>>3)&0x1f)<<11); // changed by L.Marohnić
+  if (d>0 && d<512){
 	  d += (1<<11);
 	}
       }
-      return d;
+      return change_subtype(d,_INT_COLOR);
     }
     return gensizeerr(contextptr);
   }
   static const char _rgb_s []="rgb";
   static define_unary_function_eval (__rgb,&_rgb,_rgb_s);
-  define_unary_function_ptr5( at_rgb ,alias_at_rgb,&__rgb,0,true);
+  define_unary_function_ptr5(at_rgb,alias_at_rgb,&__rgb,0,true);
 
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#else
+  gen _hsv(const gen & args,GIAC_CONTEXT) {
+    if (args.type==_STRNG && args.subtype==-1) return args;
+    if (args.is_integer() && args.subtype==_INT_COLOR) {
+      unsigned char r,g,b;
+      if (index2rgb(args.val,r,g,b))
+        return _rgb2hsv(makevecteur(r,g,b),contextptr);
+      else return undef;
+    }
+    if (args.type!=_VECT)
+      return gentypeerr(contextptr);
+    const vecteur &hsv=*args._VECTptr;
+    if (hsv.size()!=3)
+      return gendimerr(contextptr);
+    gen rgb;
+    if (is_integer_vecteur(hsv,true)) {
+      int h=hsv[0].val%360,s=hsv[1].val,v=hsv[2].val;
+      s=std::max(0,std::min(100,s));
+      v=std::max(0,std::min(100,v));
+      rgb=hsv2rgb(makevecteur(h/360.,s/100.,v/100.),contextptr);
+    } else {
+      if (!is_real_vector(hsv,contextptr))
+        return gentypeerr(contextptr);
+      if (!is_positive(_min(hsv,contextptr),contextptr) || !is_greater(1.0,_max(hsv,contextptr),contextptr))
+        return gensizeerr(contextptr);
+      rgb=hsv2rgb(*_evalf(hsv,contextptr)._VECTptr,contextptr);
+    }
+    if (rgb.type!=_VECT || rgb._VECTptr->size()!=3)
+      return undef;
+    return _rgb(rgb,contextptr);
+  }
+  static const char _hsv_s []="hsv";
+  static define_unary_function_eval (__hsv,&_hsv,_hsv_s);
+  define_unary_function_ptr5(at_hsv,alias_at_hsv,&__hsv,0,true);
+#endif
+  
   gen prediction(const gen & args,int type,GIAC_CONTEXT){
     if (args.type!=_VECT || args._VECTptr->size()!=2)
       return gensizeerr(contextptr);

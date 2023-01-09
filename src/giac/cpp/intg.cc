@@ -5569,6 +5569,7 @@ namespace giac {
       }
     }
     else {
+      if (v[0].type==_STRNG) res=string2gen("",false); // fix for string joining (L.Marohnić)
       for (--debut;debut<fin;++debut){
 	res=matrix_apply(res,v[debut],somme);
       }

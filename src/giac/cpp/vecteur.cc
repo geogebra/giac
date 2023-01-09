@@ -16225,6 +16225,14 @@ namespace giac {
     return true;
   }
 
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS 
+#else
+  bool log_output_redirect::has_warning() const {
+    return buffer.str().find(gettext("warning"))!=std::string::npos ||
+      buffer.str().find(gettext("Warning"))!=std::string::npos;
+  }
+#endif
+
   gen _ldl(const gen &g,GIAC_CONTEXT) {
     if (g.type==_STRNG && g.subtype==-1) return g;
     if (g.type!=_VECT)

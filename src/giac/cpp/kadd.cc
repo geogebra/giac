@@ -122,6 +122,8 @@ void mastermind_disp(const vector<int> & solution,const vector< vector<int> > & 
       const vector<int> & essai=essais[c];
       for (int i=0;i<4;++i){
         draw_filled_circle(x0+C20*c+C20/2,y0+C20*i+C20/2,C20/2,mmind_col[essai[i]],true,true,contextptr);
+        if (essai[i] % 2)
+          draw_line(x0+C20*c,y0+C20*i+C20/2,x0+C20*c+C20,y0+C20*i+C20/2,essai[i]>2?COLOR_WHITE:COLOR_BLACK);
       }
       // resultats
       vector<int> S(solution),E(essai);
@@ -168,18 +170,24 @@ void mastermind_disp(const vector<int> & solution,const vector< vector<int> > & 
   draw_filled_circle(x+C20/2,y+C20/2,C20/2,mmind_col[0]);
   x=os_draw_string_small_(x+30,y,"1");
   draw_filled_circle(x+C20/2,y+C20/2,C20/2,mmind_col[1]);
+  draw_line(x,y+C20/2,x+C20,y+C20/2,COLOR_BLACK);
   x=os_draw_string_small_(x+30,y,"2");
   draw_filled_circle(x+C20/2,y+C20/2,C20/2,mmind_col[2]);
   x=os_draw_string_small_(x+30,y,"3");
   draw_filled_circle(x+C20/2,y+C20/2,C20/2,mmind_col[3]);
+  draw_line(x,y+C20/2,x+C20,y+C20/2,COLOR_WHITE);
   x=os_draw_string_small_(x+30,y,"4");
   draw_filled_circle(x+C20/2,y+C20/2,C20/2,mmind_col[4]);
   x=os_draw_string_small_(x+30,y,"5");
   draw_filled_circle(x+C20/2,y+C20/2,C20/2,mmind_col[5]);
+  draw_line(x,y+C20/2,x+C20,y+C20/2,COLOR_WHITE);
   y += C20;
   // affichage du coup actuel
-  for (int i=0;i<essai.size();++i)
+  for (int i=0;i<essai.size();++i){
     draw_filled_circle(C20/2,i*C20+y0+C20/2,C20/2,mmind_col[essai[i]],true,true,contextptr);
+    if (essai[i] % 2)
+      draw_line(0,i*C20+y0+C20/2,C20,i*C20+y0+C20/2,essai[i]>2?COLOR_WHITE:COLOR_BLACK);
+  }
   // draw_filled_circle(x0+C20*i+C20/2,y+C20/2,C20/2,mmind_col[essai[i]],true,true,contextptr);
 }    
   
@@ -530,7 +538,7 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
   smallmenu.height=MENUHEIGHT-1;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
-  smallmenu.title = (char *) lang==1?(mode==-1?"Pret bancaire":"Epargne"):(mode==-1?"Mortgage":"Savings");
+  smallmenu.title = (char *) (lang==1?(mode==-1?"Pret bancaire":"Epargne"):(mode==-1?"Mortgage":"Savings"));
   smallmenu.type = MENUTYPE_NO_NUMBER;
   while(1) {
     drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);

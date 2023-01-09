@@ -101,6 +101,10 @@ extern "C" {
 #include "lin.h"
 #include "quater.h"
 #include "giacintl.h"
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS 
+#else
+#include "signalprocessing.h"
+#endif
 #ifdef USE_GMP_REPLACEMENTS
 #undef HAVE_GMPXX_H
 #undef HAVE_LIBMPFR
@@ -9002,7 +9006,10 @@ namespace giac {
 	    for (int i=0;i<w.size();++i){
 	      if (w[i].is_symb_of_sommet(at_pnt)){
 		// FIXME keep filled attribute
-		w[i]=pnt_attrib(remove_at_pnt(w[i]),attributs,contextptr);
+		if (attributs.size()==1 && attributs[0].type==_VECT && attributs[0]._VECTptr->size()>i)
+		  w[i]=pnt_attrib(remove_at_pnt(w[i]),vecteur(1,attributs[0][i]),contextptr);
+		else
+		  w[i]=pnt_attrib(remove_at_pnt(w[i]),attributs,contextptr);
 	      }
 	    }
 	    res=gen(w,res.subtype);
@@ -11217,7 +11224,7 @@ namespace giac {
     } else img=rgba_image::from_gen(a);
     if (img!=NULL) {
       if (!img->assure_on_disk())
-        return gensizeerr(gettext("Failed to write image to disk"));
+        return gensizeerr(gettext("Failed to display the image"));
       vecteur drawing;
       drawing.push_back(symb_equal(change_subtype(_AXES,_INT_PLOT),0));
       drawing.push_back(symb_equal(change_subtype(_GL_ORTHO,_INT_PLOT),1));
@@ -16879,6 +16886,508 @@ gen _vers(const gen & g,GIAC_CONTEXT){
   const size_t transformation_functions_alias[]={(size_t)&__projection,(size_t)&__rotation,(size_t)&__translation,(size_t)&__homothetie,(size_t)&__similitude,(size_t)&__inversion,(size_t)&__symetrie,(size_t)&__polaire_reciproque,0};
   const unary_function_ptr * const transformation_functions = (const unary_function_ptr *) transformation_functions_alias;
 #endif
+
+// colormap support, addition by L.Marohnić
+#define COLORMAP_SIZE 36
+#define COLORMAP_COUNT 24
+#define COLORMAP_OFFSET 32
+static const int builtin_colormaps[] = { // builtin (source: 'pals' package for R)
+  // 0 - magma
+  0x000004,0x030310,0x09071F,0x110C2F,0x19103F,0x231151,0x2E1162,0x3B0F70,0x481078,0x53137D,0x5F187F,0x6A1C81,
+  0x752181,0x812581,0x8C2981,0x982D80,0xA4317E,0xB0357B,0xBC3978,0xC73E73,0xD3436E,0xDE4968,0xE75263,0xEF5C5E,
+  0xF4695C,0xF8765C,0xFB845F,0xFD9166,0xFE9F6D,0xFEAD76,0xFEBA80,0xFEC88C,0xFED597,0xFDE2A4,0xFCEFB1,0xFCFDBF,
+  // 1 - inferno
+  0x000004,0x030211,0x0A0721,0x120A32,0x1C0C43,0x280B54,0x350960,0x420A68,0x4D0D6C,0x5A106E,0x65156E,0x71196E,
+  0x7C1D6D,0x88226A,0x932667,0x9F2A63,0xAA2E5E,0xB63458,0xC03A51,0xCB404A,0xD44842,0xDD513A,0xE45B31,0xEB6529,
+  0xF1711F,0xF57D15,0xF88A0B,0xFB9706,0xFCA50A,0xFCB317,0xFAC127,0xF8CF3A,0xF4DD50,0xF2EB6B,0xF3F689,0xFCFFA4,
+  // 2 - plasma
+  0x0D0887,0x21068F,0x2F0596,0x3C049B,0x48039F,0x5402A3,0x6001A6,0x6A00A8,0x7601A8,0x8104A7,0x8B0AA5,0x9511A1,
+  0x9F199D,0xA82296,0xB12A90,0xB93289,0xC13B82,0xC8437B,0xCE4B75,0xD5536F,0xDB5C68,0xE16462,0xE66D5C,0xEB7655,
+  0xF07F4F,0xF48849,0xF79243,0xFA9C3C,0xFCA636,0xFDB130,0xFEBC2A,0xFDC827,0xFBD324,0xF8E025,0xF4ED27,0xF0F921,
+  // 3 - viridis
+  0x440154,0x460C5F,0x481769,0x482071,0x482979,0x46337E,0x443B84,0x414487,0x3E4C8A,0x3A548C,0x365C8D,0x33638D,
+  0x306A8E,0x2C718E,0x2A788E,0x277F8E,0x24868E,0x228D8D,0x20938C,0x1F9A8A,0x1FA187,0x22A884,0x28AE80,0x32B67A,
+  0x3DBC74,0x4AC16D,0x59C864,0x68CD5B,0x7AD151,0x8CD646,0x9FDA3A,0xB2DD2D,0xC5E021,0xD9E219,0xEBE51B,0xFDE725,
+  // 4 - jet
+  0x00008E,0x0000AA,0x0000C6,0x0000E3,0x0000FF,0x001CFF,0x0039FF,0x0055FF,0x0071FF,0x008EFF,0x00AAFF,0x00C6FF,
+  0x00E3FF,0x00FFFF,0x1CFFE3,0x39FFC6,0x55FFAA,0x71FF8E,0x8EFF71,0xAAFF55,0xC6FF39,0xE3FF1C,0xFFFF00,0xFFE300,
+  0xFFC600,0xFFAA00,0xFF8E00,0xFF7100,0xFF5500,0xFF3900,0xFF1C00,0xFF0000,0xE30000,0xC60000,0xAA0000,0x8E0000,
+  // 5 - parula
+  0x352A87,0x34349D,0x3140B4,0x204ECA,0x115BDA,0x0866DE,0x066FDE,0x0D77DA,0x117ED6,0x1285D3,0x0E8DD2,0x0996D1,
+  0x079DCC,0x06A4C8,0x09A9C0,0x0FAEB8,0x1BB1AE,0x2AB5A4,0x3BB99B,0x4FBB90,0x64BD85,0x78BE7C,0x8CBE73,0x9EBE6C,
+  0xAEBC65,0xBEBB5F,0xCEBA59,0xDCB953,0xEABA4B,0xF7BC40,0xFCC237,0xFBCC2E,0xF8D626,0xF5E01F,0xF6ED16,0xF9FB0E,
+  // 6 - gnuplot
+  0x000033,0x00004D,0x000067,0x000082,0x00009C,0x0000B6,0x0000D0,0x0000EB,0x0500FF,0x1900FF,0x2E00FF,0x4200FF,
+  0x5700FF,0x6B00FF,0x7F00FF,0x9408F7,0xA815EA,0xBD22DD,0xD12FD0,0xE63CC3,0xFA4AB5,0xFF57A8,0xFF649B,0xFF718E,
+  0xFF7E81,0xFF8B74,0xFF9867,0xFFA55A,0xFFB24D,0xFFC03F,0xFFCD32,0xFFDA25,0xFFE718,0xFFF40B,0xFFFF0E,0xFFFF60,
+  // 7 - cividis
+  0x00204C,0x002558,0x002A64,0x002E6E,0x00336E,0x11386C,0x243E6B,0x30446B,0x39496B,0x414D6B,0x49536B,0x50586B,
+  0x575D6C,0x5E626D,0x656770,0x6C6D71,0x727273,0x787876,0x7E7D77,0x858278,0x8D8878,0x958F78,0x9C9476,0xA39A75,
+  0xAAA073,0xB2A571,0xB9AC6E,0xC1B26B,0xC9B869,0xD1BF64,0xD9C560,0xE1CC5A,0xEAD355,0xF2DA4D,0xFAE147,0xFFE945,
+  // 8 - cubehelix
+  0x000000,0x0B040C,0x140A1A,0x191129,0x1B1A37,0x1A2442,0x18304A,0x163D4E,0x154A4E,0x16564B,0x1B6145,0x236A3E,
+  0x307237,0x407731,0x54792F,0x6A7B30,0x807A37,0x967A42,0xAA7951,0xBA7965,0xC77B7B,0xD07E93,0xD484AA,0xD48CBF,
+  0xD297D2,0xCDA3E1,0xC8B0EB,0xC4BDF1,0xC1CAF3,0xC2D6F3,0xC6E1F1,0xCDEAEF,0xD8F1EF,0xE4F7F1,0xF2FBF6,0xFFFFFF,
+  // 9 - kovesi.cyclic-mygbm
+  0x2E22EA,0x471DF0,0x5F22F5,0x762DF8,0x8A35FA,0xA23CFB,0xBB42FA,0xD345F9,0xE54FF4,0xF15EEA,0xF974DA,0xFB8BC6,
+  0xFC9FB2,0xFCB29D,0xFCC486,0xFBD46E,0xF8E253,0xF1ED37,0xDEEA22,0xCAE517,0xB4DE13,0x9DD610,0x86CD0E,0x6DC50D,
+  0x52BC0D,0x3CB21C,0x35A633,0x3B994F,0x428C6A,0x417E83,0x3B6F9C,0x305FB4,0x294CC7,0x2738D9,0x2C24E9,0x2E22EA,
+  // 10 - kovesi.cyclic-mrybm
+  0xF985F8,0xFC79E1,0xF96AC7,0xF359AB,0xEB488F,0xE23772,0xD32956,0xC51C3A,0xBA1921,0xB6230F,0xB73505,0xBE4804,
+  0xC65B04,0xCC6C05,0xD17E04,0xD59005,0xD59F0D,0xD0AA25,0xBDA741,0xA5A05C,0x879775,0x648D8B,0x3F81A2,0x2371B9,
+  0x285CD0,0x3448E4,0x463FF2,0x5B43F8,0x6F52F9,0x8260F9,0x996CFA,0xB274FC,0xCC7CFE,0xE482FD,0xF785F9,0xF985F8,
+  // 11 - kovesi.cyclic-wrwbw
+  0xDFD5D8,0xE3C6C2,0xE5B6AB,0xE4A290,0xE18D76,0xDD785D,0xD76145,0xD04B2E,0xCB391E,0xCB381D,0xCF472B,0xD55C41,
+  0xDC7459,0xE18972,0xE49F8C,0xE5B3A7,0xE2C3BF,0xDDD1D6,0xCDC8DE,0xBCBDE4,0xA8ACE4,0x939CE5,0x7E8BE5,0x627CE5,
+  0x466EE5,0x2866E5,0x2967E5,0x4970E5,0x667EE5,0x818DE5,0x969EE5,0xAAAEE4,0xBEBFE4,0xCECBDF,0xDDD5DA,0xDFD5D8,
+  // 12 - kovesi.cylic-grey
+  0x2D2D2D,0x353535,0x3D3D3D,0x454545,0x4D4D4D,0x555555,0x5E5E5E,0x686868,0x727272,0x7C7C7C,0x868686,0x909090,
+  0x9A9A9A,0xA3A3A3,0xADADAD,0xB6B6B6,0xC0C0C0,0xCACACA,0xC0C0C0,0xB6B6B6,0xADADAD,0xA3A3A3,0x9A9A9A,0x909090,
+  0x868686,0x7C7C7C,0x717171,0x676767,0x5D5D5D,0x545454,0x4C4C4C,0x444444,0x3C3C3C,0x343434,0x2D2D2D,0x2D2D2D,
+  // 13 - ocean.phase
+  0xA8780D,0xB17019,0xBB6825,0xC46032,0xCC583E,0xD24E4E,0xD7435E,0xDB3972,0xDD2F87,0xDC299D,0xD728B4,0xD12CC8,
+  0xC737D8,0xBC43E5,0xAE4FEC,0x9F5CF2,0x8E66F1,0x7E71F0,0x6979E7,0x5582DE,0x4388CF,0x318DC0,0x2591B1,0x1C93A2,
+  0x159593,0x0F9784,0x109873,0x1A9960,0x2B984B,0x459633,0x5F921F,0x758B15,0x89850D,0x987E0D,0xA8780D,0xA8780D,
+  // 14 - kovesi.isoluminant
+  0x70D1FF,0x70D1F9,0x71D2F4,0x72D3EF,0x72D3EA,0x73D4E5,0x74D4DE,0x76D5D8,0x77D5D2,0x78D6CC,0x7BD6C5,0x7ED6BF,
+  0x80D6B8,0x83D6B1,0x88D6AB,0x8DD6A4,0x93D59D,0x98D597,0x9ED491,0xA5D28D,0xADD189,0xB4D084,0xBBCE80,0xC2CC7E,
+  0xC9CA7C,0xD0C879,0xD7C677,0xDDC477,0xE3C277,0xE9BF77,0xEFBD77,0xF4BB77,0xF6B87A,0xF9B67C,0xFCB47E,0xFFB281,
+  // 15 - cubicl
+  0x780085,0x7C0599,0x810BAE,0x811BC1,0x7F31D3,0x7B44E4,0x7453F0,0x6E61FD,0x6770F8,0x607FF3,0x588BEA,0x5196E0,
+  0x49A1D4,0x40ABC6,0x38B5B8,0x3CBDA8,0x41C598,0x46CC87,0x4BD277,0x50D767,0x56DD58,0x5CE349,0x6DE64C,0x7FE94F,
+  0x90EB51,0xA1EB54,0xB1EC56,0xBEEC58,0xCBEC59,0xD3E45A,0xDBDC5B,0xE3D25C,0xECC65D,0xF3B85D,0xF6A75C,0xF9965B,
+  // 16 - coolwarm
+  0x3B4CC0,0x4358CA,0x4B64D3,0x5370DD,0x5D7CE5,0x6788EE,0x7192F2,0x7B9DF7,0x85A7FB,0x8FB0FD,0x99BAFF,0xA3C0FD,
+  0xADC7FB,0xB6CDF8,0xBFD2F3,0xC9D7EF,0xD1D9E7,0xD9DBE0,0xE0DAD7,0xE6D5CC,0xEDD1C1,0xF0C9B5,0xF4C1AA,0xF6B99F,
+  0xF6B093,0xF7A687,0xF49B7D,0xF19072,0xED8467,0xE7765D,0xE26953,0xD95949,0xD14A3E,0xC83635,0xBE1D2D,0xB40426,
+  // 17 - ocean.haline
+  0x2A186C,0x2C197D,0x2D1D8E,0x2B219E,0x222DA0,0x19399F,0x11449A,0x0E4C96,0x0D5492,0x105C8F,0x15628D,0x1B698B,
+  0x206F8A,0x267589,0x2C7B88,0x308188,0x358888,0x398E87,0x3C9686,0x409C85,0x45A383,0x4AAA80,0x50B07D,0x56B779,
+  0x5FBC73,0x69C26E,0x74C868,0x84CD62,0x94D25E,0xA5D75C,0xB6DA60,0xC6DD67,0xD5E171,0xE3E57E,0xF0E98B,0xFDEF9A,
+  // 18 - brewer.blues
+  0xF7FBFF,0xF1F7FD,0xEBF3FB,0xE5F0F9,0xE0ECF7,0xDAE8F5,0xD5E5F4,0xCFE1F2,0xCADDF0,0xC3DAEE,0xBAD6EB,0xB1D2E7,
+  0xA8CEE4,0x9FCAE1,0x93C4DE,0x88BEDC,0x7CB7D9,0x70B1D7,0x66AAD4,0x5CA4D0,0x539ECC,0x4A97C9,0x4191C5,0x3989C1,
+  0x3181BD,0x2A7AB9,0x2272B5,0x1C6BB0,0x1764AB,0x115CA5,0x0B559F,0x084E97,0x08468C,0x083F81,0x083776,0x08306B,
+  // 19 - brewer.greens
+  0xF7FCF5,0xF2FAF0,0xEEF8EB,0xEAF7E6,0xE6F5E1,0xE0F3DB,0xD9F0D4,0xD3EDCC,0xCCEBC5,0xC4E8BD,0xBCE4B5,0xB3E0AC,
+  0xAADDA4,0xA2D99C,0x98D493,0x8DD08B,0x83CB82,0x79C67A,0x6EC173,0x62BB6D,0x56B567,0x4BB062,0x40AA5C,0x39A256,
+  0x329B51,0x2B944B,0x248C46,0x1D8540,0x157F3B,0x0D7835,0x05712F,0x00692A,0x006026,0x005622,0x004D1E,0x00441B,
+  // 20 - brewer.greys
+  0xFFFFFF,0xFBFBFB,0xF8F8F8,0xF4F4F4,0xF1F1F1,0xECECEC,0xE7E7E7,0xE2E2E2,0xDCDCDC,0xD7D7D7,0xD1D1D1,0xCACACA,
+  0xC4C4C4,0xBDBDBD,0xB5B5B5,0xACACAC,0xA3A3A3,0x9A9A9A,0x929292,0x8A8A8A,0x828282,0x7A7A7A,0x727272,0x6A6A6A,
+  0x626262,0x5B5B5B,0x535353,0x4A4A4A,0x404040,0x353535,0x2B2B2B,0x212121,0x191919,0x101010,0x080808,0x000000,
+  // 21 - brewer.oranges
+  0xFFF5EB,0xFEF1E4,0xFEEEDD,0xFEEAD7,0xFEE7D0,0xFDE2C7,0xFDDDBD,0xFDD8B3,0xFDD3A9,0xFDCE9E,0xFDC692,0xFDBE85,
+  0xFDB679,0xFDAE6C,0xFDA761,0xFD9F56,0xFD984C,0xFD9041,0xFB8837,0xF8802D,0xF67824,0xF3701B,0xF06812,0xEA600E,
+  0xE5580A,0xDF5106,0xDA4902,0xD04401,0xC44001,0xB83C02,0xAD3802,0xA23403,0x993103,0x902D03,0x872A03,0x7F2704,
+  // 22 - brewer.reds
+  0xFFF5F0,0xFEF0E9,0xFEEBE2,0xFEE6DB,0xFEE1D4,0xFDDACB,0xFDD2BF,0xFCC9B4,0xFCC1A9,0xFCB89E,0xFCAF93,0xFCA588,
+  0xFC9C7E,0xFC9373,0xFB8A6A,0xFB8060,0xFB7757,0xFB6E4E,0xF96446,0xF6593F,0xF44F38,0xF14432,0xED3A2B,0xE53228,
+  0xDD2A24,0xD52121,0xCD191D,0xC4161B,0xBB1419,0xB31217,0xAA1016,0x9F0D14,0x910A12,0x830610,0x75030E,0x67000D,
+  // 23 - brewer.spectral
+  0x9E0142,0xAD1245,0xBD2349,0xCD354D,0xD9444D,0xE25249,0xEB5F46,0xF46C43,0xF67F4B,0xF99254,0xFBA45C,0xFDB566,
+  0xFDC372,0xFDD17E,0xFEDF8A,0xFEE899,0xFEF1A8,0xFEFAB7,0xFBFDB9,0xF4FAAE,0xEDF7A3,0xE6F598,0xD5EE9B,0xC4E79E,
+  0xB3E0A2,0xA1D9A4,0x8DD1A4,0x79C9A4,0x66C2A5,0x57B1AB,0x48A0B2,0x3990B9,0x387FB9,0x446FB1,0x515FA9,0x5E4FA2,
+  // discrete colormap: polychrome
+  0x5A5156,0xE4E1E3,0xF6222E,0xFE00FA,0x16FF32,0x3283FE,0xFEAF16,0xB00068,0x1CFFCE,0x90AD1C,0x2ED9FF,0xDEA0FD,
+  0xAA0DFE,0xF8A19F,0x325A9B,0xC4451C,0x1C8356,0x85660D,0xB10DA1,0xFBE426,0x1CBE4F,0xFA0087,0xFC1CBF,0xF7E1A0,
+  0xC075A6,0x782AB6,0xAAF400,0xBDCDFF,0x822E1C,0xB5EFB5,0x7ED7D1,0x1C7F93,0xD85FF7,0x683B79,0x66B0FF,0x3B00FB
+};
+static const char *colormap_names[] = {
+  "magma","inferno","plasma","viridis","jet","parula","gnuplot","cividis","cubehelix","cyclic1","cyclic2","cyclic3",
+  "cyclic4","phase","isoluminant","cubic","coolwarm","haline","blues","greens","greys","oranges","reds","spectral"
+};
+static const char *polychrome_names[] = {
+  "dark purplish gray","purplish white","vivid red","vivid purple","vivid yellowish green","strong purplish blue",
+  "vivid orange yellow","vivid purplish red","brilliant green","vivid yellow green","vivid blue","brilliant purple",
+  "vivid violet","strong pink","strong blue","strong reddish orange","vivid green","light olive brown","vivid reddish purple",
+  "vivid greenish yellow","vivid yellowish green","vivid red","vivid purplish red","pale yellow","strong reddish purple",
+  "vivid violet","vivid yellow green","very light blue","strong reddish brown","very light yellowish green",
+  "very light bluish green","deep greenish blue","vivid purple","deep purple","brilliant blue","vivid violet"
+};
+bool is_colormap_cyclic(int pal) {
+  int p=pal>>2;
+  return p==0 || (p>8+COLORMAP_OFFSET && p<14+COLORMAP_OFFSET);
+}
+bool is_colormap_index(int pal) {
+  int p=(pal>>2)-COLORMAP_OFFSET;
+  return p>=0 && p<COLORMAP_COUNT;
+}
+#ifdef NO_STDEXCEPT
+bool rgb2index(unsigned char r,unsigned char g,unsigned char b,int &col,GIAC_CONTEXT) {
+  gen c;
+  c=_rgb(makesequence(r,g,b),contextptr);
+  if (!c.is_integer() || c.val<0)
+    return false;
+  col=c.val;
+  return true;
+}
+#else
+bool rgb2index(unsigned char r,unsigned char g,unsigned char b,int &col,GIAC_CONTEXT) {
+  gen c;
+  try {
+    c=_rgb(makesequence(r,g,b),contextptr);
+    if (!c.is_integer() || c.val<0)
+      return false;
+  } catch (const std::runtime_error &err) {
+    return false;
+  } catch (const gen &err) {
+    return false;
+  }
+  col=c.val;
+  return true;
+}
+#endif
+/* default (cyclic) rainbow colormap */
+int fltk_rainbow(double t,bool cyclic=false) {
+  return 256+int((cyclic?125:105)*t);
+}
+// source: http://www.brucelindbloom.com/index.html?Eqn_RGB_to_XYZ.html
+double sRGBcompand_v(double V) {
+  return V<=0.04045?V/12.92:std::pow((V+0.055)/1.055,2.4);
+}
+double sRGBcompand_V(double v) {
+  return v<=0.0031308?12.92*v:1.055*std::pow(v,1/2.4)-0.055;
+}
+void rgb2xyz(double R,double G,double B,double &x,double &y,double &z) {
+  double r=std::min(1.,sRGBcompand_v(std::max(0.,R)));
+  double g=std::min(1.,sRGBcompand_v(std::max(0.,G)));
+  double b=std::min(1.,sRGBcompand_v(std::max(0.,B)));
+  x=0.4124564*r+0.3575761*g+0.1804375*b;
+  y=0.2126729*r+0.7151522*g+0.0721750*b;
+  z=0.0193339*r+0.1191920*g+0.9503041*b;
+}
+void xyz2rgb(double x,double y,double z,double &R,double &G,double &B) {
+  double r=3.2404542*x-1.5371385*y-0.4985314*z;
+  double g=-0.9692660*x+1.8760108*y+0.0415560*z;
+  double b=0.0556434*x-0.2040259*y+1.0572252*z;
+  R=std::min(1.,sRGBcompand_V(std::max(0.,r)));
+  G=std::min(1.,sRGBcompand_V(std::max(0.,g)));
+  B=std::min(1.,sRGBcompand_V(std::max(0.,b)));
+}
+gen _rgb2xyz(const gen &args,GIAC_CONTEXT) {
+  if (args.type==_STRNG && args.subtype==-1) return args;
+  if (args.type==_VECT) {
+    const vecteur &rgb=*args._VECTptr;
+    if (rgb.size()!=3)
+      return gendimerr(contextptr);
+    double r,g,b;
+    if (is_integer_vecteur(rgb)) {
+      r=rgb[0].val/255.;
+      g=rgb[1].val/255.;
+      b=rgb[2].val/255.;
+    } else {
+      if (!is_numericv(rgb))
+        return gensizeerr(gettext("Expected a list of three real numbers in [0,1]"));
+      r=evalf_double(rgb[0],1,contextptr).DOUBLE_val();
+      g=evalf_double(rgb[1],1,contextptr).DOUBLE_val();
+      b=evalf_double(rgb[2],1,contextptr).DOUBLE_val();
+    }
+    if (std::min(r,std::min(g,b))<0.0 || std::max(r,std::max(g,b))>1.0)
+      return gensizeerr(gettext("Invalid RGB value(s)"));
+    double x,y,z;
+    rgb2xyz(r,g,b,x,y,z);
+    // conversion from reference white D65 to E
+    return makevecteur(std::min(1.0,std::max(0.0,x*1.0502616+y*0.0270757-z*0.0232523)),
+                       std::min(1.0,std::max(0.0,x*0.0390650+y*0.9729502-z*0.0092579)),
+                       std::min(1.0,std::max(0.0,-x*0.0024047+y*0.0026446+z*0.9180873)));
+  }
+  if (args.is_integer() && args.subtype==_INT_COLOR)
+    return _rgb2xyz(_rgb(args,contextptr),contextptr);
+  return gensizeerr(gettext("Invalid argument"));
+}
+static const char _rgb2xyz_s[]="rgb2xyz";
+static define_unary_function_eval (__rgb2xyz,&_rgb2xyz,_rgb2xyz_s);
+define_unary_function_ptr5(at_rgb2xyz,alias_at_rgb2xyz,&__rgb2xyz,0,true);
+
+gen _xyz2rgb(const gen &args,GIAC_CONTEXT) {
+  if (args.type==_STRNG && args.subtype==-1) return args;
+  if (args.type!=_VECT)
+    return gentypeerr(contextptr);
+  const vecteur &xyz=*args._VECTptr;
+  if (xyz.size()!=3)
+    return gendimerr(contextptr);
+  if (!is_numericv(xyz))
+    return gensizeerr(gettext("Expected a list of three real numbers in [0,1]"));
+  double x,y,z;
+  x=evalf_double(xyz[0],1,contextptr).DOUBLE_val();
+  y=evalf_double(xyz[1],1,contextptr).DOUBLE_val();
+  z=evalf_double(xyz[2],1,contextptr).DOUBLE_val();
+  if (std::min(x,std::min(y,z))<0.0 || std::max(x,std::max(y,z))>1.0)
+    return gensizeerr(gettext("Invalid XYZ value(s)"));
+  double r,g,b;
+  xyz2rgb(x*0.9531874-y*0.0265906+z*0.0238731,
+         -x*0.0382467+y*1.0288406+z*0.0094060,
+          x*0.0026068-y*0.0030332+z*1.0892565,
+          r,g,b); // conversion from reference white E to D65
+  return _apply(makesequence(at_round,multvecteur(255,makevecteur(r,g,b))),contextptr);
+}
+static const char _xyz2rgb_s[]="xyz2rgb";
+static define_unary_function_eval (__xyz2rgb,&_xyz2rgb,_xyz2rgb_s);
+define_unary_function_ptr5(at_xyz2rgb,alias_at_xyz2rgb,&__xyz2rgb,0,true);
+
+// Interpolate between two RGB colors in XYZ space using sRGB model.
+void blend(double r1,double g1,double b1,double r2,double g2,double b2,double t,double &r,double &g,double &b) {
+  double x1,y1,z1,x2,y2,z2;
+  rgb2xyz(r1,g1,b1,x1,y1,z1);
+  rgb2xyz(r2,g2,b2,x2,y2,z2);
+  t=std::max(0.,std::min(1.,t));
+  xyz2rgb((1.-t)*x1+t*x2,(1.-t)*y1+t*y2,(1.-t)*z1+t*z2,r,g,b);
+}
+void blend(unsigned char r1,unsigned char g1,unsigned char b1,unsigned char r2,unsigned char g2,unsigned char b2,double t,unsigned char &r,unsigned char &g,unsigned char &b) {
+  double R,G,B;
+  t=std::max(0.,std::min(1.,t));
+  blend(r1/255.,g1/255.,b1/255.,r2/255.,g2/255.,b2/255.,t,R,G,B);
+  r=static_cast<unsigned char>(std::max(0,std::min(255,(int)std::floor(R*255+.5))));
+  g=static_cast<unsigned char>(std::max(0,std::min(255,(int)std::floor(G*255+.5))));
+  b=static_cast<unsigned char>(std::max(0,std::min(255,(int)std::floor(B*255+.5))));
+}
+int hex2chn(int pal,int col,int chn) {
+  return (builtin_colormaps[(pal-COLORMAP_OFFSET)*COLORMAP_SIZE+col]>>(16-chn*8))&255;
+}
+/* Return RGB for the color T in the colormap PAL. */
+void in_colormap_color_rgb(int pal,double t,int &r,int &g,int &b) {
+  int n=COLORMAP_SIZE-1,n1=std::max(0,(int)std::floor(t*n)),n2=std::min(n,(int)std::ceil(t*n));
+  double r1=hex2chn(pal,n1,0)/255.,g1=hex2chn(pal,n1,1)/255.,b1=hex2chn(pal,n1,2)/255.;
+  double r2=hex2chn(pal,n2,0)/255.,g2=hex2chn(pal,n2,1)/255.,b2=hex2chn(pal,n2,2)/255.;
+  double u=t*n-n1,R,G,B;
+  blend(r1,g1,b1,r2,g2,b2,u,R,G,B);
+  r=(int)std::floor(R*255+.5);
+  g=(int)std::floor(G*255+.5);
+  b=(int)std::floor(B*255+.5);
+}
+/* Find the FLTK color and RGB corresponding to 0<=T<=1 and the colormap PAL.
+ * First bit in PAL is 1 if the palette should be reversed, and 0 otherwise.
+ * Second bit in PAL is 1 if the palette should be inverted, and 0 otherwise.
+ * Bits from 3 to 7 hold the palette index.
+ * Return true on success, else fall back to the default cyclic rainbow and return false. */
+bool colormap_color_rgb(int pal,double t,int &c,int &r,int &g,int &b,GIAC_CONTEXT) {
+  int cmap=(pal>>2);
+  t=std::min(1.0,std::max(0.0,t));
+  if (pal&1)
+    t=1.0-t;
+  if (cmap==1) { // FLTK gray ramp
+    c=(int)std::floor(32*t+55*(1-t)+.5);
+    unsigned char R,G,B;
+    if (index2rgb(c,R,G,B)) {
+      r=R; g=G; b=B;
+      return true;
+    }
+    return false;
+  }
+  if (cmap==0 || cmap==7) {
+    c=fltk_rainbow(t,!cmap);
+    arc_en_ciel(int(t*(cmap?105:126)),r,g,b);
+    return true;
+  }
+  in_colormap_color_rgb(cmap,t,r,g,b);
+  if (pal&2) {
+    r=255-r; g=255-g; b=255-b;
+  }
+  if (!rgb2index(r,g,b,c,contextptr) || c<0) {
+    c=fltk_rainbow(t);
+    arc_en_ciel(int(126*t),r,g,b);
+    return false;
+  }
+  return true;
+}
+int colormap_color(int pal,double t,GIAC_CONTEXT) {
+  int r,g,b,c;
+  colormap_color_rgb(pal,t,c,r,g,b,contextptr);
+  return c;
+}
+gen discrete_colormap_color(int i,GIAC_CONTEXT) {
+  i%=COLORMAP_SIZE;
+  if (i<0)
+    i+=COLORMAP_SIZE;
+  int pal=COLORMAP_COUNT+COLORMAP_OFFSET,c;
+  unsigned char r=static_cast<unsigned char>(hex2chn(pal,i,0));
+  unsigned char g=static_cast<unsigned char>(hex2chn(pal,i,1));
+  unsigned char b=static_cast<unsigned char>(hex2chn(pal,i,2));
+  if (!rgb2index(r,g,b,c,contextptr) || c<0)
+    return undef;
+  return change_subtype(c,_INT_COLOR);
+}
+int name2cmap_index(const char *name) {
+  if (!strcmp(name,"default")) return 0; // cyclic
+  if (!strcmp(name,"rainbow")) return 7<<2;
+  int i=0;
+  for (;i<COLORMAP_COUNT && strcmp(name,colormap_names[i]);++i);
+  if (i==COLORMAP_COUNT)
+    return -1;
+  return (i+COLORMAP_OFFSET)<<2;
+}
+string pal2name(int pal) {
+  bool i=pal&2,r=pal&1;
+  int k=pal>>2;
+  string ret;
+  if (k==0)
+    ret="default";
+  else if (k==7)
+    ret="rainbow";
+  else {
+    k-=COLORMAP_OFFSET;
+    assert(k>=0 && k<COLORMAP_COUNT);
+    ret=colormap_names[k];
+  }
+  if (i||r) ret+=" (";
+  if (i) ret+="I";
+  if (r) ret+="R";
+  if (i||r) ret+=")";
+  return ret;
+}
+int int2colormap(const gen &g) {
+  if (!g.is_integer()) return -1;
+  if (g.subtype==_INT_COLOR) switch (g.val) {
+    case _RED: return 22;
+    case _GREEN: return 19;
+    case _BLUE: return 18;
+    case 92: return 21; // oranges
+    case 47: return 20;// greys
+    default: return -1;
+  }
+  return g.val;
+}
+static int colormap_drawing_y_offset=0;
+gen _colormap(const gen &g,GIAC_CONTEXT) {
+#if 1
+  if (g.is_integer()) {
+      int pal=int2colormap(g);
+      if (pal<0 || pal>=COLORMAP_COUNT)
+        return gensizeerr(gettext("Invalid colormap specification"));
+      return (pal+COLORMAP_OFFSET)<<2;
+  }
+  gen t;
+  int i,as=array_start(contextptr);
+  vecteur ret;
+  if (g.type==_STRNG) {
+    if (g.subtype==-1) return g;
+    const char *s=g._STRNGptr->c_str();
+    if (!strcmp(s,"discrete") || !strcmp(s,"polychrome")) {
+      ret.reserve(COLORMAP_SIZE);
+      for (i=0;i<COLORMAP_SIZE;++i)
+        ret.push_back(discrete_colormap_color(i,contextptr));
+      return ret;
+    }
+    i=name2cmap_index(s);
+    if (i>=0)
+      return i;
+    return gensizeerr(gettext("Unknown colormap"));
+  }
+  if (g.type==_VECT && g.subtype==_SEQ__VECT) {
+    if (g._VECTptr->size()<2 || g._VECTptr->size()>4)
+      return gendimerr(contextptr);
+    const gen &cmap=g._VECTptr->front();
+    if (cmap.type==_VECT) {
+      if (g._VECTptr->size()>2)
+        return gentoomanyargs(gettext("Expected 2 arguments"));
+      if (g._VECTptr->back()!=at_display)
+        return gensizeerr(gettext("Multiple colormaps can be displayed only"));
+      const_iterateur it=cmap._VECTptr->begin(),itend=cmap._VECTptr->end();
+      for (;it!=itend;++it) {
+        gen res=_colormap(makesequence(*it,at_display),contextptr);
+        if (res.type!=_VECT)
+          return gensizeerr(contextptr);
+        ret=mergevecteur(ret,*res._VECTptr);
+        colormap_drawing_y_offset-=15;
+      }
+      colormap_drawing_y_offset=0;
+      return ret;
+    }
+    if (!cmap.is_integer() && cmap.type!=_STRNG)
+      return gentypeerr(gettext("First argument should be a colormap index or name"));
+    int pal=-1;
+    if (cmap.is_integer()) {
+      pal=int2colormap(cmap);
+      if (pal<0 || pal>=COLORMAP_COUNT)
+        return gendimerr(gettext("Invalid colormap index"));
+      pal=(pal+COLORMAP_OFFSET)<<2;
+    } else {
+      const char *name=cmap._STRNGptr->c_str();
+      if (!strcmp(name,"discrete") || !strcmp(name,"polychrome")) {
+        const gen &c=g._VECTptr->back();
+        ret.reserve(COLORMAP_SIZE);
+        if (c.type==_STRNG) {
+          if (g._VECTptr->size()!=2)
+            return gendimerr(contextptr);
+          const char *cs=c._STRNGptr->c_str(),*fs,*pn;
+          for (i=0;i<COLORMAP_SIZE && strcmp(cs,polychrome_names[i]);++i);
+          if (i==COLORMAP_SIZE) {
+            ret.reserve(COLORMAP_SIZE);
+            for (i=0;i<COLORMAP_SIZE;++i) {
+              pn=polychrome_names[i];
+              if ((fs=strstr(pn,cs))!=NULL && (fs==pn || *(fs-1)==' ') &&
+                  ((size_t)(fs-pn)+strlen(cs)==strlen(pn) || *(fs+strlen(cs))==' '))
+                ret.push_back(discrete_colormap_color(i,contextptr));
+            }
+            return ret;
+          }
+          return discrete_colormap_color(i,contextptr);
+        }
+        vecteur ind=(g._VECTptr->size()==2 && g._VECTptr->back().type==_VECT)?
+          *g._VECTptr->back()._VECTptr:vecteur(g._VECTptr->begin()+1,g._VECTptr->end());
+        for (const_iterateur it=ind.begin();it!=ind.end();++it) {
+          if (it->is_integer())
+            ret.push_back(discrete_colormap_color(it->val-as,contextptr));
+          else return gensizeerr(gettext("Color indices must be integers"));
+        }
+        return ret;
+      }
+      pal=name2cmap_index(name);
+    }
+    if (pal<0)
+      return gensizeerr(gettext("Unknown colormap"));
+    const gen &t=g._VECTptr->back();
+    int tt=t==at_display?0:1;
+    if (tt && !t.is_integer() && ((evalf_double(t,1,contextptr)).type!=_DOUBLE_ ||
+        !is_greater(t,0,contextptr) || !is_greater(1,t,contextptr)))
+      tt=2;
+    for (i=g._VECTptr->size()-(tt==2?0:1);i-->1;) {
+      if (g._VECTptr->at(i)==at_inv)
+        pal|=2;
+      else if (g._VECTptr->at(i)==at_reverse)
+        pal|=1;
+      else return gensizeerr(gettext("Expected a palette modifier"));
+    }
+    if (tt==2)
+      return pal;
+    if (tt==0) { // show the colormap
+      int N=200,y=colormap_drawing_y_offset;
+      vecteur drawing;
+      if (y==0) {
+        drawing.push_back(symb_equal(change_subtype(_AXES,_INT_PLOT),0));
+        drawing.push_back(symb_equal(change_subtype(_GL_ORTHO,_INT_PLOT),1));
+      }
+      for (i=0;i<N;++i) {
+        int c=colormap_color(pal,double(i)/double(N),contextptr);
+        gen A=i+y*cst_i,B=i+1+y*cst_i,C=i+1+(12+y)*cst_i,D=i+(12+y)*cst_i;
+        drawing.push_back(pnt_attrib(gen(makevecteur(A,B,C,D,A),_GROUP__VECT),vecteur(1,_FILL_POLYGON+c),contextptr));
+      }
+      drawing.push_back(_legende(makesequence((12+y)*cst_i,string2gen(pal2name(pal),false),
+                                              change_subtype(_QUADRANT3,_INT_COLOR)),contextptr));
+      return drawing;
+    }
+    if (t.is_integer()) {
+      int N=t.val;
+      if (N==0)
+        return vecteur(0);
+      if (N<0)
+        return gendimerr(contextptr);
+      ret.reserve(N);
+      for (i=0;i<N;++i)
+        ret.push_back(change_subtype(colormap_color(pal,double(i)/double(N-1),contextptr),_INT_COLOR));
+      return ret;
+    }
+    return change_subtype(colormap_color(pal,evalf_double(t,1,contextptr).DOUBLE_val(),contextptr),_INT_COLOR);
+  }
+  return gensizeerr(contextptr);
+#else
+  return gensizeerr(gettext("Colormaps are not supported on this system"));
+#endif
+}
+static const char _colormap_s[]="colormap";
+static define_unary_function_eval (__colormap,&_colormap,_colormap_s);
+define_unary_function_ptr5(at_colormap,alias_at_colormap,&__colormap,0,true);
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac

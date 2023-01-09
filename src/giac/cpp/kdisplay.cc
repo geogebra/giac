@@ -47,7 +47,7 @@ int fileBrowser(char* filename, char* filter, char* title);
 #else
 int shell_x=0,shell_y=0,shell_fontw=12,shell_fonth=18;
 #define _green _GREEN
-#define _red _red
+#define _red _RED
 #define dbgprintf(...) 
 #endif 
 // pour le mode examen cx2, il y a 2 endroits ou is_cx2 est utilise dans smallmenu.selection==1

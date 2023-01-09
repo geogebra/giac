@@ -491,6 +491,7 @@ namespace giac {
     log_output_redirect(GIAC_CONTEXT) { old=logptr(ctx=contextptr)->rdbuf(buffer.rdbuf()); }
     ~log_output_redirect() { logptr(ctx)->rdbuf(old); }
     std::string get_buffer_string() const { return buffer.str(); }
+    bool has_warning() const;
   private:
     const context *ctx;
     std::stringstream buffer;
