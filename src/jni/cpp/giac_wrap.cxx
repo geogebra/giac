@@ -762,7 +762,7 @@ SWIGEXPORT jlong JNICALL Java_javagiac_giacJNI_new_1gen_1_1SWIG_11(JNIEnv *jenv,
   short arg2 ;
   giac::gen *result = 0 ;
   
-  (void)jenv;err
+  (void)jenv;
   (void)jcls;
   arg1 = *(void **)&jarg1; 
   arg2 = (short)jarg2; 
