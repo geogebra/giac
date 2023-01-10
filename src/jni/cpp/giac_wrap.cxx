@@ -1586,22 +1586,6 @@ SWIGEXPORT jstring JNICALL Java_javagiac_giacJNI_gen_1print_1_1SWIG_10(JNIEnv *j
   return jresult;
 }
 
-/*
-SWIGEXPORT jstring JNICALL Java_javagiac_giacJNI_gen_1printcharptr(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
-  jstring jresult = 0 ;
-  giac::gen *arg1 = (giac::gen *) 0 ;
-  char *result = 0 ;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(giac::gen **)&jarg1; 
-  result = (char *)((giac::gen const *)arg1)->printcharptr();
-  if (result) jresult = jenv->NewStringUTF((const char *)result);
-  return jresult;
-}
-*/
-
 SWIGEXPORT jint JNICALL Java_javagiac_giacJNI_gen_1sprint(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jlong jarg3, jobject jarg3_) {
   jint jresult = 0 ;
   giac::gen *arg1 = (giac::gen *) 0 ;
