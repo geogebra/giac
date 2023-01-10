@@ -3048,7 +3048,7 @@ namespace giac {
   define_unary_function_ptr5( at_realproot ,alias_at_realproot,&__realproot,0,true);
 
   // bisection solver on a0,b0 with a sign reversal inside
-  static vecteur bisection_solver_sr(const gen & equation,const gen & var,const gen & a0,const gen &b0,int & iszero,double faorig,double fborig,GIAC_CONTEXT){
+  static vecteur bisection_solver_sr(const gen & equation,const gen & var,const gen & a0,const gen &b0,int & iszero,double faorig,double fborig,double eps,GIAC_CONTEXT){
     gen a=a0,b=b0;
     gen fa=subst(equation,var,a,false,contextptr);
     fa=eval(fa,1,contextptr);
@@ -3064,7 +3064,13 @@ namespace giac {
     }
     // sign change in [a,b]
     // number of steps
-    gen n=ln(abs(b-a,contextptr),contextptr)-ln(max(abs(b,contextptr),abs(a,contextptr),contextptr),contextptr)+53;
+    gen n;
+    n=ln(abs(b-a,contextptr),contextptr)-ln(max(abs(b,contextptr),abs(a,contextptr),contextptr),contextptr)+53;
+    if (eps>0 && eps<1){ // solve (b-a)/2^n<eps 2^n>(b-a)/eps
+      gen N=ln(abs((b-a)/eps,contextptr),contextptr);
+      if (is_greater(n,N,contextptr))
+	n=N;
+    }    
     n=_floor(n/0.69,contextptr);
     for (int i=0;i<n.val;i++){
       gen c=(a+b)/2,fc;
@@ -3111,12 +3117,7 @@ namespace giac {
     return vecteur(1,(a+b)/2);
   }
 
-  // also sets iszero to -2 if endpoints have same sign, -1 if err or undef
-  // 1 if zero found, 2 if sign reversal (no undef),
-  // set iszero to 0 on entry if only one root
-  // set to -1 or positive if you want many sign reversals 
-  // -1 means no step specified, positive means nstep specified
-  vecteur bisection_solver(const gen & equation,const gen & var,const gen & a0,const gen &b0,int & iszero,GIAC_CONTEXT){
+  vecteur bisection_solver(const gen & equation,const gen & var,const gen & a0,const gen &b0,int & iszero,double eps,GIAC_CONTEXT){
     bool onlyone=iszero==0;
     int nstep=gnuplot_pixels_per_eval;
     if (iszero>0)
@@ -3239,7 +3240,7 @@ namespace giac {
 	  return vecteur(0);
 	}
       }
-      return bisection_solver_sr(equation,var,a,b,iszero,faorig,fborig,contextptr);
+      return bisection_solver_sr(equation,var,a,b,iszero,faorig,fborig,eps,contextptr);
     }
     // we are searching many zeros in this interval, cutting it in small intervals
     // and searching a sign reversal in each
@@ -3265,12 +3266,21 @@ namespace giac {
       }
       if (fa._DOUBLE_val*fb._DOUBLE_val>0)
 	continue;
-      vecteur addres=bisection_solver_sr(equation,var,a,b,iszero,faorig,fborig,contextptr);
+      vecteur addres=bisection_solver_sr(equation,var,a,b,iszero,faorig,fborig,eps,contextptr);
       if (iszero==1)
 	res=mergevecteur(res,addres);
     }
     comprim(res);
     return res;
+  }
+
+  // also sets iszero to -2 if endpoints have same sign, -1 if err or undef
+  // 1 if zero found, 2 if sign reversal (no undef),
+  // set iszero to 0 on entry if only one root
+  // set to -1 or positive if you want many sign reversals 
+  // -1 means no step specified, positive means nstep specified
+  vecteur bisection_solver(const gen & equation,const gen & var,const gen & a0,const gen &b0,int & iszero,GIAC_CONTEXT){
+    return bisection_solver(equation,var,a0,b0,iszero,0.0,contextptr);
   }
 
   static void set_nearest_first(const gen & guess,vecteur & res,GIAC_CONTEXT){
@@ -4009,7 +4019,17 @@ namespace giac {
 	    iszero=v30.val;
 	}
       }
-      return bisection_solver(v0,v[1],a,b,iszero,contextptr);
+      // optional tolerance parameter for bisection
+      double eps=0;
+      if (s>3){
+	for (int i=3;i<s;++i){
+	  if (v[i].type==_DOUBLE_ && v[i]._DOUBLE_val<1 && v[i]._DOUBLE_val>0){
+	    eps=v[i]._DOUBLE_val;
+	    break;
+	  }
+	}
+      }
+      return bisection_solver(v0,v[1],a,b,iszero,eps,contextptr);
     }
     if (gguess.type==_VECT && gguess._VECTptr->size()>1){
       for (unsigned i=0;i<gguess._VECTptr->size();++i){
