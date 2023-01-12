@@ -394,6 +394,8 @@ namespace giac {
     calc_mode(0,contextptr);
     gen res=_solve(g.type==_SYMB?symb_equal(g,0):g,contextptr);
     calc_mode(c,contextptr);
+    if (c==1 && res.type==_VECT && res.subtype==_LIST__VECT)
+      res.subtype=0;
     return res;
 #endif
     return zeros(g,complex_mode(contextptr),contextptr);

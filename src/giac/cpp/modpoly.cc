@@ -49,6 +49,7 @@ using namespace std;
 #if defined GIAC_CACHEW && GIAC_PRECOND
 #undef GIAC_PRECOND // incompatible
 #endif
+//#undef GIAC_PRECOND
 
 // vector class version 1 by Agner Fog https://github.com/vectorclass
 // this might be faster for CPU with AVX512DQ instruction set
@@ -3974,14 +3975,15 @@ namespace giac {
     double invp=find_invp(p);
     longlong q1=-q[0],q0=-q[1];
     ur.clear(); ur.push_back((q1*ub.front())%p);
-    const int * it=&ub[0],*itend=it-1+ub.size(),*itmid=it+ub.size()-ua.size(),*jt=&ua[0];
+    const int * it=&ub[0],*itend=it-1+ub.size(),*itmid=it+ub.size()-ua.size();
     if (ua.empty()){
       for (;it!=itend;++it){
-	ur.push_back(amodp(q0*it[0]+q1*it[1],p,invp));
+        ur.push_back(amodp(q0*it[0]+q1*it[1],p,invp));
       }
       ur.push_back(amodp(q0*it[0],p,invp));
     }
     else {
+      const int *jt=&ua[0];      
 #if 1
       itmid-=4;
       int i0=it[0],i1;
@@ -5777,10 +5779,16 @@ namespace giac {
     }
   }
 
+#ifdef GIAC_PRECOND
   inline int precond_mulmodp(unsigned A,unsigned W,unsigned Winvp,int p){
 #if 1
     longlong t = ulonglong(A)*W-((ulonglong(A)*Winvp)>>32)*p;
-    return t+ ((t>>31)&p);
+    t += ((t>>31)&p);
+    return t;
+    unsigned s=(ulonglong(A)*W)%p;
+    if (t!=s)
+      CERR << '\n';
+    return s;
 #else
     longlong t = ulonglong(A)*W-((ulonglong(A)*Winvp)>>32)*p;
     //return t- (t>>63)*p;
@@ -5791,6 +5799,11 @@ namespace giac {
     return s;
 #endif
   }
+#else
+  inline int precond_mulmodp(unsigned A,unsigned W,unsigned Winvp,int p){
+    return (ulonglong(A)*W)%p;
+  }
+#endif
 
   inline int mulmodp(int a,int b,int p){
     return (longlong(a)*b) % p;    
@@ -5845,7 +5858,7 @@ namespace giac {
 #else
       unsigned u=1+((1ULL<<32)*ww)/unsigned(p); // quotient ceiling
 #endif
-      W[N+i]=u; 
+      W[N+i]=u; // stored as an int but it's an unsigned 
       ww=precond_mulmodp(w,ww,u,p);
       // ww=(ww*longlong(w))%p;
       // if (www!=ww)
@@ -12285,6 +12298,7 @@ namespace giac {
 
   // inplace fft with positive representant
   static inline int addmod(int a, int b, int p) { 
+    // if (a<0 || b<0) CERR << '\n';
     int t=(a-p)+b;
 #if defined(EMCC) || defined(EMCC2)
     if (t<0) return t+p; else return t;
@@ -12294,6 +12308,7 @@ namespace giac {
 #endif
   }
   static inline int submod(int a, int b, int p) { 
+    // if (a<0 || b<0) CERR << '\n';
     int t=a-b;
 #if defined(EMCC) || defined(EMCC2)
     if (t<0) return t+p; else return t;
@@ -12868,7 +12883,7 @@ namespace giac {
 #endif
 
 
-#if !defined NUMWORKS // !defined VISUALC && !defined USE_GMP_REPLACEMENTS && defined GIAC_PRECOND // de-recurse
+#if !defined NUMWORKS && defined GIAC_PRECOND // !defined VISUALC && !defined USE_GMP_REPLACEMENTS // de-recurse
   static void fft2pnopermafter( int *A, int n, int *W,int p,double invp,int step) {  
     if (n==0)
       CERR << "bug\n";
