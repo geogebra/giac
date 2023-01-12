@@ -389,7 +389,7 @@ namespace giac {
       if (is_integral(a) && is_integral(b))
         return _matrix(makesequence(a,b,0.0),contextptr);
     }
-#if 1
+#if 0
     int c=calc_mode(contextptr);
     calc_mode(0,contextptr);
     gen res=_solve(g.type==_SYMB?symb_equal(g,0):g,contextptr);
