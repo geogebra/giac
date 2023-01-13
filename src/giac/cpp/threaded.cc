@@ -2591,6 +2591,8 @@ mpz_class smod(const mpz_class & a,int reduce){
       swap(p_ptr,q_ptr);
       swap(pcont,qcont);
       swap(pcofactor,qcofactor);
+      swap(pcofcontxn,qcofcontxn);
+      swap(pcontxn,qcontxn);
       swap(pxndeg,qxndeg);
       swap(pv,qv);
       swap(dim2pcofactorv,dim2qcofactorv);
@@ -2973,7 +2975,10 @@ mpz_class smod(const mpz_class & a,int reduce){
 	      smallmult(d,dcont,d,modulo,0);
 	    if (compute_pcofactor){
 	      smallmult(dp,pcofactor,pcofactor,modulo,0);
-	      smallmult(smod(longlong(p_orig.front().g)*invmod(pcofactor.front().g,modulo),modulo),pcofactor,pcofactor,modulo);
+        if (pcofactor.empty())
+          CERR << "threaded.cc: pcofactor empty\n";
+        else
+          smallmult(smod(longlong(p_orig.front().g)*invmod(pcofactor.front().g,modulo),modulo),pcofactor,pcofactor,modulo);
 	    }
 	    if (compute_qcofactor){
 	      if (dim2)
@@ -2982,7 +2987,10 @@ mpz_class smod(const mpz_class & a,int reduce){
 		interpolate(alphav,qcofactorv,dq,var2,modulo,tmp1interp,tmp2interp);
 	      pp_mod_last(dq,0,modulo,varxn,var2,tmpcont);
 	      smallmult(dq,qcofactor,qcofactor,modulo,0);
-	      smallmult(smod(longlong(q_orig.front().g)*invmod(qcofactor.front().g,modulo),modulo),qcofactor,qcofactor,modulo);
+        if (qcofactor.empty())
+          CERR << "threaded.cc: qcofactor empty\n";
+        else
+          smallmult(smod(longlong(q_orig.front().g)*invmod(qcofactor.front().g,modulo),modulo),qcofactor,qcofactor,modulo);
 	    }
 	    if (debug_infolevel>20-dim)
 	      CERR << "gcdmod end dim " << dim << " " << CLOCK() << '\n';
@@ -5406,6 +5414,8 @@ mpz_class smod(const mpz_class & a,int reduce){
       swap(pcont,qcont);
       swap(pcofactor,qcofactor);
       swap(pxndeg,qxndeg);
+      swap(pcofcontxn,qcofcontxn);
+      swap(pcontxn,qcontxn);
       // swap(pv,qv);
 #ifdef BESTA_OS
       bool tmpbool=compute_pcofactor;
