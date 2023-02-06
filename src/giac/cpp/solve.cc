@@ -429,9 +429,9 @@ namespace giac {
       if (equalposcomp(excluded,*it))
 	continue;
       gen sol=*it;
-      if (l!=minus_inf && sign(l-sol,contextptr)==1)
+      if (l!=minus_inf && fastsign(l-sol,contextptr)==1)
 	continue;
-      if (m!=plus_inf && sign(sol-m,contextptr)==1)
+      if (m!=plus_inf && fastsign(sol-m,contextptr)==1)
 	continue;
       sol=evalf(sol,eval_level(contextptr),contextptr);
       if (!(isolate_mode &1) && ( (sol.type==_CPLX && !is_zero(im(sol,contextptr),contextptr))
@@ -828,27 +828,30 @@ namespace giac {
       vecteur new_v=solve(new_e,localt,isolate_mode,contextptr);
       const_iterateur it=new_v.begin(),itend=new_v.end();
       for (;it!=itend;++it){
-	if (pos==-2){
-	  set_merge(v,vecteur(1,pow(*it,xvar._SYMBptr->feuille[0],contextptr)));
-	  continue;
-	}
-	if (pos==-1){
-	  // solve piecewise()==*it
-	  set_merge(v,solve_piecewise(xvar._SYMBptr->feuille,*it,x,isolate_mode,contextptr));
-	  if (is_undef(v)) return;
-	  continue;
-	}
-	if ( (isolate_mode & 1)==0 && (pos==3 || pos==4) && is_strictly_greater(*it**it,1,contextptr)){
-	  continue;
-	}
-	gen res=isolate_fcns[pos-1](*it,isolate_mode,contextptr);
-	if (res.type!=_VECT)
-	  set_merge(v,solve(xvar._SYMBptr->feuille-res,x,isolate_mode,contextptr));
-	else {
-	  const_iterateur it=res._VECTptr->begin(),itend=res._VECTptr->end();
-	  for (;it!=itend;++it)
-	    set_merge(v,solve(xvar._SYMBptr->feuille-*it,x,isolate_mode,contextptr));
-	}
+        if (pos==-2){
+          set_merge(v,vecteur(1,pow(*it,xvar._SYMBptr->feuille[0],contextptr)));
+          continue;
+        }
+        if (pos==-1){
+          // solve piecewise()==*it
+          set_merge(v,solve_piecewise(xvar._SYMBptr->feuille,*it,x,isolate_mode,contextptr));
+          if (is_undef(v)) return;
+          continue;
+        }
+        if ( (isolate_mode & 1)==0 && (pos==3 || pos==4) && is_strictly_greater(*it**it,1,contextptr)){
+          continue;
+        }
+        gen res=isolate_fcns[pos-1](*it,isolate_mode,contextptr);
+        if (res.type!=_VECT)
+          set_merge(v,solve(xvar._SYMBptr->feuille-res,x,isolate_mode,contextptr));
+        else {
+          const_iterateur it=res._VECTptr->begin(),itend=res._VECTptr->end();
+          for (;it!=itend;++it)
+            if (xvar._SYMBptr->feuille==x)
+              v.push_back(*it);
+            else
+              set_merge(v,solve(xvar._SYMBptr->feuille-*it,x,isolate_mode,contextptr));
+        }
       }
       solve_ckrange(x,v,isolate_mode,contextptr);
       return;

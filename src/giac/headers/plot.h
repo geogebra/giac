@@ -264,7 +264,7 @@ namespace giac {
   // between xmin/xmax or including xmin/xmax (if bounds is true)
   vecteur ticks(double xmin,double xmax,bool bounds);
   gen plotcontour(const gen & f0,bool contour,GIAC_CONTEXT);
-  gen plot_array(const std::vector< std::vector< double> > & fij,int imax,int jmax,double xmin,double xmax,double dx,double ymin,double ymax,double dy,const vecteur & lz,const vecteur & attributs,bool contour,GIAC_CONTEXT);
+  gen plot_array(const std::vector< std::vector< double> > & fij,int imax,int jmax,double xmin,double xmax,double dx,double ymin,double ymax,double dy,const vecteur & lz,const vecteur & attributs,bool contour,int pal,GIAC_CONTEXT);
   bool latex_replot(FILE * stream,const std::string & s);
   bool png_replot(int i);
   bool png_replot(const std::string & s);

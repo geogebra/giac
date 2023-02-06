@@ -4191,11 +4191,13 @@ namespace giac {
         }
 #endif
       if (a.subtype==3){
-	gen * aptr=a._CPLXptr;
-	double ar=aptr->_DOUBLE_val,ai=(aptr+1)->_DOUBLE_val;
-	double z=std::abs(ar)+std::abs(ai); ar/=z; ai/=z;
-	return z*std::sqrt(ar*ar+ai*ai);
-	// return gen(std::sqrt(ar*ar+ai*ai));
+        gen * aptr=a._CPLXptr;
+        double ar=aptr->_DOUBLE_val,ai=(aptr+1)->_DOUBLE_val;
+        double z=std::abs(ar)+std::abs(ai);
+        if (z==0) return z;
+        ar/=z; ai/=z;
+        return z*std::sqrt(ar*ar+ai*ai);
+        // return gen(std::sqrt(ar*ar+ai*ai));
       }
       return sqrt(sq(*a._CPLXptr)+sq(*(a._CPLXptr+1)),contextptr) ;
     case _DOUBLE_:

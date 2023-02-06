@@ -1129,21 +1129,27 @@ namespace giac {
   }
 
   static const int arc_en_ciel_colors=15;
-  int density(double z,double fmin,double fmax){
+  int density(double z,double fmin,double fmax,int pal){
     // z -> 256+arc_en_ciel_colors*(z-fmin)/(fmax-fmin)
     if (z<fmin)
       return 0;
     if (z>fmax)
       return 0;
     double d=(z-fmin)/(fmax-fmin);
-    int r,g,b;
-    arc_en_ciel(126.0/d,r,g,b);
-    return (((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
+    int c,r,g,b;
+    if (pal>=0 && is_colormap_index(pal) && colormap_color_rgb(pal,d,c,r,g,b))
+      ;
+    else
+      arc_en_ciel(126.0/d,r,g,b);
+    c=(((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
+    if (c>=0 && c<512)
+      c += (1<<11);
+    return c;
   }
 
 #else
   static const int arc_en_ciel_colors=105;
-  inline int density(double z,double fmin,double fmax){
+  int density(double z,double fmin,double fmax,int pal){
     // z -> 256+arc_en_ciel_colors*(z-fmin)/(fmax-fmin)
     if (z<fmin)
       return 256;
@@ -1155,7 +1161,7 @@ namespace giac {
 #endif
 
   // horizontal scale for colors
-  static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,double fmin, double fmax,int n,GIAC_CONTEXT){
+static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,double fmin, double fmax,int n,int pal,GIAC_CONTEXT){
     vecteur res;
     if (n<10)
       n=10;
@@ -1170,27 +1176,39 @@ namespace giac {
       gen C(x,ymax);
       gen D(x,ymin);
       int rgb;
+      int r,g,b,c;
 #ifdef KHICAS
-      int r,g,b;
       arc_en_ciel(i*double(126.0)/n,r,g,b);
       rgb=(((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
       vecteur attrib(1,rgb+_FILL_POLYGON+(i?_QUADRANT4:_QUADRANT3));
-#else
-      rgb=256+int(i*double(arc_en_ciel_colors)/n);
-      vecteur attrib(1,rgb+_FILL_POLYGON+(i?_QUADRANT4:_QUADRANT2));
-#endif
-#ifdef KHICAS
       if (!i)
-	attrib.push_back(string2gen(print_DOUBLE_(fmin,contextptr),false));
+        attrib.push_back(string2gen(print_DOUBLE_(fmin,contextptr),false));
       if (i==n-1)
-	attrib.push_back(string2gen(print_DOUBLE_(fmax,contextptr),false));
-#else
-      if (!i)
-	attrib.push_back(string2gen(print_DOUBLE_(fmin,4),false));
-      if (i==n-1)
-	attrib.push_back(string2gen(print_DOUBLE_(fmax,4),false));
-#endif
+        attrib.push_back(string2gen(print_DOUBLE_(fmax,contextptr),false));
       res.push_back(pnt_attrib(gen((i?makevecteur(D,A,B,C,D):makevecteur(B,C,D,A,B)),_GROUP__VECT),attrib,contextptr));
+#else
+      if (pal>=0 && is_colormap_index(pal) && colormap_color_rgb(pal,i/(n-1.0),c,r,g,b)){
+        rgb=(((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
+        if (rgb>=0 && rgb<512)
+          rgb+=(1<<11);
+      }
+      else
+        rgb=256+int(i*double(arc_en_ciel_colors)/n);
+      vecteur attrib(1,rgb+_FILL_POLYGON);
+      res.push_back(pnt_attrib(gen(makevecteur(D,A,B,C,D),_GROUP__VECT),attrib,contextptr));
+      if (i==0){
+        attrib[0]=_POINT_POINT+_QUADRANT2;
+        attrib.push_back(string2gen(print_DOUBLE_(fmin,4),false));
+        gen M(x-dx,(ymin+ymax)/2);
+        res.push_back(pnt_attrib(M,attrib,contextptr));
+      }
+      if (i==n-1){
+        attrib[0]=_POINT_POINT+_QUADRANT1;
+        attrib.push_back(string2gen(print_DOUBLE_(fmax,4),false));
+        gen M(x,(ymin+ymax)/2);
+        res.push_back(pnt_attrib(M,attrib,contextptr));
+      }
+#endif
     }
     return res;
   }
@@ -1225,7 +1243,7 @@ namespace giac {
   // return a sequence of filled polygons with a color mapped from fmin..fmax
   // to 256..256+125 from a matrix of points
   // if regular is true, m is assumed to be equidistributed in x and y
-  static vecteur density(const matrice & m,double fmin,double fmax,bool regular,GIAC_CONTEXT){
+  static vecteur density(const matrice & m,double fmin,double fmax,bool regular,int pal,GIAC_CONTEXT){
 #ifdef RTOS_THREADX
     return vecteur(1,undef);
 #else
@@ -1289,23 +1307,38 @@ namespace giac {
       lz.resize(arc_en_ciel_colors);
       double df=(fmax-fmin)/arc_en_ciel_colors;
       for (int i=0;i<arc_en_ciel_colors;++i)
-	lz[i]=fmin+i*df;
+        lz[i]=fmin+i*df;
       vecteur attr(arc_en_ciel_colors);
-      for (int i=0;i<arc_en_ciel_colors;++i){
+      if (pal>=0 && is_colormap_index(pal)){
+        int r,g,b,c;
+        for (int i=0;i<arc_en_ciel_colors;++i){
+          if (colormap_color_rgb(pal,i/(arc_en_ciel_colors-1.0),c,r,g,b,contextptr)){
+            int col=(((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
+            if (col>=0 && col<512)
+              col += (1<<11);
+            attr[i]=_FILL_POLYGON + col;
+          }
+          else
+            attr[i]=_FILL_POLYGON+257+i;
+        }
+      }
+      else {
+        for (int i=0;i<arc_en_ciel_colors;++i){
 #ifdef KHICAS
-	int r,g,b;
-	arc_en_ciel(126.0/(arc_en_ciel_colors-1)*i,r,g,b);
-	attr[i]=_FILL_POLYGON + (((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
+          int r,g,b;
+          arc_en_ciel(126.0/(arc_en_ciel_colors-1)*i,r,g,b);
+          attr[i]=_FILL_POLYGON + (((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
 #else
-	attr[i]=_FILL_POLYGON+257+i;
+          attr[i]=_FILL_POLYGON+257+i;
 #endif
+        }
       }
       gen rect=pnt_attrib(gen(makevecteur(gen(xmin,ymin),gen(xmax,ymin),gen(xmax,ymax),gen(xmin,ymax),gen(xmin,ymin)),_GROUP__VECT),vecteur(1,_FILL_POLYGON+256),contextptr);
       vecteur niveaux=ticks(fmin,fmax,false);
       lz=mergevecteur(lz,niveaux);
       attr=mergevecteur(attr,vecteur(niveaux.size(),default_color(contextptr)));
       vecteur legendes=mergevecteur(vecteur(arc_en_ciel_colors,string2gen("",false)),niveaux);
-      gen res=plot_array(fij,r,c,xmin,xmax,dx,ymin,ymax,dy,lz,makevecteur(attr,legendes),true,contextptr);
+      gen res=plot_array(fij,r,c,xmin,xmax,dx,ymin,ymax,dy,lz,makevecteur(attr,legendes),true,pal,contextptr);
       if (res.type==_VECT){
 	vecteur v = *res._VECTptr;
 	v.insert(v.begin(),rect);
@@ -1335,7 +1368,7 @@ namespace giac {
 	    gen B=x1+cst_i*y2;
 	    gen C=x2+cst_i*y2;
 	    gen D=x2+cst_i*y1;
-	    int e=density(m[2]._DOUBLE_val,fmin,fmax);
+	    int e=density(m[2]._DOUBLE_val,fmin,fmax,pal);
 	    res.push_back(pnt_attrib(gen(makevecteur(A,B,C,D,A),_GROUP__VECT),vecteur(1,e+_FILL_POLYGON),contextptr));
 	  }
 	}
@@ -1383,6 +1416,12 @@ namespace giac {
   }
 
   gen plotfunc(const gen & f_,const gen & vars,const vecteur & attributs,int densityplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_zmin, double function_zmax,int nstep,int jstep,bool showeq,const context * contextptr){
+    int pal=-1;
+    if (!attributs.empty() && attributs[0].type==_INT_){
+      int p=attributs[0].val & 0xffff;
+      if (is_colormap_index(p))
+        pal=p;
+    }
     vecteur L=andor2list(f_,contextptr);
     if (densityplot==0 && are_inequations(L)){
       vecteur res;
@@ -1435,7 +1474,7 @@ namespace giac {
 #ifndef GNUWINCE
     if (vars.type==_IDNT){ // function plot
       gen a,b;
-      if (taille(f,100)<=100 && is_linear_wrt(f,vars,a,b,contextptr))	
+      if (taille(f,100)<=100 && lop(f,at_floor).empty() && is_linear_wrt(f,vars,a,b,contextptr))	
 	return put_attributs(_segment(makesequence(function_xmin+cst_i*(a*gen(function_xmin)+b),function_xmax+cst_i*(a*gen(function_xmax)+b)),contextptr),attributs,contextptr); // replace segment by droite so that legend=... works?
       vecteur lpiece(lop(f,at_piecewise));
       if (!lpiece.empty()) lpiece=lvarx(lpiece,vars);
@@ -1808,7 +1847,7 @@ namespace giac {
 	}
 	dy=(function_ymax-function_ymin)/10;
 	dx=(function_xmax-function_xmin)/10;
-	r=mergevecteur(density(values,function_zmin,function_zmax,true,contextptr),densityscale(function_xmin+dx,function_xmax-dx,function_ymin-dy,function_ymin-2*dy,function_zmin,function_zmax,20,contextptr));
+	r=mergevecteur(density(values,function_zmin,function_zmax,true,pal,contextptr),densityscale(function_xmin+dx,function_xmax-dx,function_ymin-dy,function_ymin-2*dy,function_zmin,function_zmax,20,pal,contextptr));
       }
       else
 	r=pnt_attrib(hypersurface(gen(makevecteur(makevecteur(var1,var2,f),makevecteur(var1,var2),makevecteur(function_xmin,function_ymin),makevecteur(function_xmax,function_ymax),gen(values,_GROUP__VECT)),_PNT__VECT),z__IDNT_e-f,makevecteur(var1,var2,z__IDNT_e)),attributs.empty()?color:attributs,contextptr);
@@ -2293,7 +2332,8 @@ namespace giac {
     if (ckmatrix(vargs[0])){
       matrice m=*vargs[0]._VECTptr;
       reverse(m.begin(),m.end());
-      return density(mtran(m),0,0,true,contextptr);
+      int pal=-1;
+      return density(mtran(m),0,0,true,pal,contextptr);
     }
     for (int i=0;i<s;++i){
       if (vargs[i]==at_equation){
@@ -11250,7 +11290,7 @@ namespace giac {
       // 565 color
       int d=(((b.val*32)/256)<<11) | ((((*a._VECTptr)[1].val*64)/256)<<5) | ((c.val*32)/256);
       if (d>0 && d<512){
-	d += (1<<11);
+        d += (1<<11);
       }
       return d;
     }
@@ -13391,7 +13431,7 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
     }
   }
 
-  gen plot_array(const vector< vector< double> > & fij,int imax,int jmax,double xmin,double xmax,double dx,double ymin,double ymax,double dy,const vecteur & lz,const vecteur & attributs,bool contour,GIAC_CONTEXT){
+  gen plot_array(const vector< vector< double> > & fij,int imax,int jmax,double xmin,double xmax,double dx,double ymin,double ymax,double dy,const vecteur & lz,const vecteur & attributs,bool contour,int pal,GIAC_CONTEXT){
     // do linear interpolation between points for levels
     // with a marching rectangle
     // if all 4 vertices values are > or < nothing added
@@ -13743,7 +13783,8 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
       }
       fij.push_back(fi);
     }
-    return plot_array(fij,imax,jmax,xmin,xmax,dx,ymin,ymax,dy,lz,attributs,contour,contextptr);
+    int pal=-1;
+    return plot_array(fij,imax,jmax,xmin,xmax,dx,ymin,ymax,dy,lz,attributs,contour,pal,contextptr);
   }
 #endif
   gen _plotcontour(const gen & f0,GIAC_CONTEXT){
