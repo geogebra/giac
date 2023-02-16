@@ -222,7 +222,7 @@ int do_mastermind(GIAC_CONTEXT){
     if (key==KEY_CTRL_EXE || key==KEY_CTRL_OK){
       if (essai.size()==4){
         if (essai==solution){
-          char buf[16]; sprint_int(buf,essais.size());
+          char buf[16]; giac::sprint_int(buf,essais.size());
           confirm(lang==1?"Solution found! Tries:":"Vous avez trouve. Essais:",buf);
           return i;
         }

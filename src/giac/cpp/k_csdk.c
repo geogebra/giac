@@ -11,6 +11,594 @@ int exam_bg(){
   return exam_mode?(exam_duration>0?exam_bg1:exam_bg2):0x50719;
 }
 
+void SetQuitHandler( void (*f)(void)){}
+#ifdef TICE
+int clip_ymin=0;
+// TI83
+const int STATUS_AREA_PX=18;
+// debug: dbg_printf() Add #include <debug.h> to a source file, and use make debug instead of make to build a debug program. You may need to run make clean beforehand in order to ensure all source files are rebuilt.
+// ASM syscalls: https://wikiti.brandonw.net/index.php?title=Category:84PCE:Syscalls:By_Name
+// doc: https://ce-programming.github.io/toolchain/index.html
+// Makefile options https://ce-programming.github.io/toolchain/static/makefile-options.html
+// memory layout: https://ce-programming.github.io/toolchain/static/faq.html
+// parameters are in CEdev/meta (and app_tools if present)
+// makefile.mk:
+// BSSHEAP_LOW ?= D052C6
+// BSSHEAP_HIGH ?= D13FD8
+// STACK_HIGH ?= D1A87E
+// INIT_LOC ?= D1A87F
+// Can we set STACK_HIGH to another value? I think the global area stack+data could be "reversed", I mean stack top at 0xD2A87F and data(+code+ro_data for RAM programs) at a new position: INIT_LOC=D1987E (maybe +1 or +2)
+
+// TI stack 4K D1A87Eh: Top of the SPL stack.
+// change stack pointer (if STACK_HIGH change does not work)
+// requires assembly code (https://0x04.net/~mwk/doc/z80/eZ80.pdf),
+// save stack pointer
+// LD (Mmn), SP
+// set HL to the new stack address (top of the area-3)
+// LD SP,HL
+// call main
+// restore stack pointer
+// LD SP,(Mmn)
+// 1023 bytes: uint8_t[1023] os_RamCode (do not use if flash write occurs)
+// 0xD052C6: 60989 bytes used for bss+heap (temp buffers in TI OS)
+// 0xD1A881: Start of UserMem. 64K for code, data, ro data
+// size_t os_MemChk(void **free) size and position of free ram area
+// Or we could create a VarApp in RAM with no real data inside and use this area for temporary storage.
+// 0xD40000: Start of VRAM. 320x240x2 bytes = 153600 bytes.
+// half may be used in 8 bits palette mode (graphx)
+#include "k_csdk.h"
+#include <ti/getkey.h>
+#include <keypadc.h>
+#include <ti/getcsc.h>
+#include <ti/screen.h>
+#include <ti/flags.h>
+#include <sys/rtc.h> // boot_GetTime(uint8_t *seconds, uint8_t *minutes, uint8_t *hours), boot_SetTime(uint8_t seconds, uint8_t minutes, uint8_t hours)
+#include <sys/timers.h>
+#include <graphx.h>
+#include <fileioc.h>
+#include <string.h>
+#include <debug.h>
+#define FILENAME_MAXRECORDS 32
+#define FILENAME_MAXSIZE 9
+#define FILE_MAXSIZE 16384
+char os_filenames[FILENAME_MAXRECORDS][FILENAME_MAXSIZE];
+
+void sdk_init(){
+  dbg_printf("SDK Init\n");
+  gfx_Begin();
+  unsigned short * addr=gfx_palette;
+  for (int r=0;r<4;r++){
+    for (int g=0;g<8;g++){
+      for (int b=0;b<4;b++){
+        int R=r*255/3,G=g*255/7,B=b*255/3;
+        addr[(r<<5)|(g<<2)|b]=gfx_RGBTo1555(R,G,B);
+        // dbg_printf("palette %i %i %i %i\n",(r<<5)|(g<<2)|b,R,G,B);
+      }
+    }
+  }
+  // 128-254 arc-en-ciel? 255 should remain white
+}
+
+void sdk_end(){
+  dbg_printf("SDK End\n");
+  gfx_End();
+}
+
+void clear_screen(void){
+  gfx_FillScreen(255); // gfx_ZeroScreen(void);
+}
+
+int alpha=0,alphalock=0,prevalpha=0,shift=0;
+int handle_f5(){
+  if (alphalock)
+    alphalock=3-alphalock;
+  else
+    alphalock=2;
+}
+void dbgprint(int i){
+  char buf[16]={0};
+  buf[0]='0'+i/100;
+  buf[1]='0'+(i % 100)/10;
+  buf[2]='0'+(i % 10);
+  os_draw_string(20,60,SDK_WHITE,SDK_BLACK,buf,false);
+}
+int getkey(int allow_suspend){
+  sync_screen();
+  statusline(0);
+  for (;;){
+    int i=0;
+    while (!i){
+      i=os_GetCSC();
+    }
+    // dbgprint(i);
+    int decal=(alpha>>1)<<5; // 0 or 32 for upper or lowercase
+    int Alpha=alpha,Shift=shift;
+    shift=0; prevalpha=alpha;
+    if (!alphalock)
+      alpha=0;
+    switch (i){
+    case sk_Fx:
+      return Alpha?KEY_CTRL_F11:Shift?KEY_CTRL_F6:KEY_CTRL_F1;
+    case sk_Fenetre:
+      return Alpha?KEY_CTRL_F12:Shift?KEY_CTRL_F7:KEY_CTRL_F2;
+    case sk_Zoom:
+      return Alpha?KEY_CTRL_F13:Shift?KEY_CTRL_F8:KEY_CTRL_F3;      
+    case sk_Trace:
+      return Alpha?KEY_CTRL_F14:Shift?KEY_CTRL_F9:KEY_CTRL_F4;      
+    case sk_Graph:
+      return Alpha?KEY_CTRL_F15:Shift?KEY_CTRL_F10:KEY_CTRL_F5;      
+    case sk_Mode:
+      return KEY_CTRL_SETUP;
+    case sk_Del:
+      return KEY_CTRL_DEL;
+    case sk_GraphVar:
+      return KEY_CTRL_XTT;
+      // sk_Stats
+    case sk_Right:
+      return Shift?KEY_SHIFT_RIGHT:KEY_CTRL_RIGHT;
+    case sk_Left:
+      return Shift?KEY_SHIFT_LEFT:KEY_CTRL_LEFT;
+    case sk_Up:
+      return Shift?KEY_CTRL_PAGEUP:KEY_CTRL_UP;
+    case sk_Down:
+      return Shift?KEY_CTRL_PAGEDOWN:KEY_CTRL_DOWN;
+    case sk_Enter:
+      return Alpha?KEY_SHIFT_ANS:KEY_CTRL_EXE;    
+    case sk_Alpha:
+      if (alphalock){
+        alpha=alphalock=0;
+      }
+      else {
+        if (Shift)
+          alphalock=alpha=2;
+        else {
+          alpha=2;
+          if (prevalpha)
+            alphalock=alpha=prevalpha;            
+        }
+      }
+      statusline(0);
+      continue;
+    case sk_2nd:
+      if (alphalock)
+        alpha=3-alpha; // maj <> min
+      else
+        shift=!Shift;
+      statusline(0);
+      continue;
+    case sk_Math:
+      return Alpha?KEY_CHAR_A+decal:KEY_CTRL_F6;
+    case sk_Matrice:
+      return Alpha?KEY_CHAR_B+decal:KEY_CHAR_MAT;
+    case sk_Prgm:
+      return Alpha?KEY_CHAR_C+decal:KEY_CTRL_PRGM;
+    case sk_Vars:
+      return KEY_CTRL_VARS;
+    case sk_Annul:
+      return Shift?KEY_CTRL_AC:KEY_CTRL_EXIT;
+    case sk_TglExact:
+      return KEY_CHAR_D+decal;
+    case sk_Trig:
+      return Alpha?KEY_CHAR_E+decal:(Shift?KEY_CHAR_PI:KEY_CHAR_SIN);
+    case sk_Cos:
+      return Alpha?KEY_CHAR_F+decal:KEY_CHAR_COS;
+    case sk_Tan:
+      return Alpha?KEY_CHAR_G+decal:KEY_CHAR_TAN;
+    case sk_Power:
+      return Alpha?KEY_CHAR_H+decal:KEY_CHAR_POW;
+    case sk_Square:
+      return Alpha?KEY_CHAR_I+decal:Shift?KEY_CHAR_ROOT:KEY_CHAR_SQUARE;
+    case sk_Comma:
+      return Alpha?KEY_CHAR_J+decal:Shift?KEY_CHAR_E:KEY_CHAR_COMMA;      
+    case sk_LParen:
+      return Alpha?KEY_CHAR_K+decal:Shift?KEY_CHAR_LBRACE:KEY_CHAR_LPAR;      
+    case sk_RParen:
+      return Alpha?KEY_CHAR_L+decal:Shift?KEY_CHAR_RBRACE:KEY_CHAR_RPAR;      
+    case sk_Div:
+      return Alpha?KEY_CHAR_M+decal:Shift?KEY_CHAR_E+32:KEY_CHAR_DIV;
+    case sk_Log:
+      return Alpha?KEY_CHAR_N+decal:Shift?KEY_CHAR_EXPN10:KEY_CHAR_LOG;
+    case sk_7:
+      return Alpha?KEY_CHAR_O+decal:KEY_CHAR_7;
+    case sk_8:
+      return Alpha?KEY_CHAR_P+decal:KEY_CHAR_8;
+    case sk_9:
+      return Alpha?KEY_CHAR_Q+decal:KEY_CHAR_9;
+    case sk_Mul:
+      return Alpha?KEY_CHAR_R+decal:Shift?KEY_CHAR_LBRCKT:KEY_CHAR_MULT;
+    case sk_Ln:
+      return Alpha?KEY_CHAR_S+decal:Shift?KEY_CHAR_EXP:KEY_CHAR_LN;
+    case sk_4:
+      return Alpha?KEY_CHAR_T+decal:KEY_CHAR_4;
+    case sk_5:
+      return Alpha?KEY_CHAR_U+decal:KEY_CHAR_5;
+    case sk_6:
+      return Alpha?KEY_CHAR_V+decal:KEY_CHAR_6;
+    case sk_Sub:
+      return Alpha?KEY_CHAR_W+decal:Shift?KEY_CHAR_RBRCKT:KEY_CHAR_MINUS;
+    case sk_Store:
+      return Alpha?KEY_CHAR_X+decal:KEY_CHAR_STORE;
+    case sk_1:
+      return Alpha?KEY_CHAR_Y+decal:KEY_CHAR_1;
+    case sk_2:
+      return Alpha?KEY_CHAR_Z+decal:KEY_CHAR_2;
+    case sk_3:
+      return Alpha?KEY_CHAR_THETA:KEY_CHAR_3;
+    case sk_Add:
+      return KEY_CHAR_PLUS;
+    case sk_0:
+      return Alpha?KEY_CHAR_SPACE:Shift?KEY_CTRL_CATALOG:KEY_CHAR_0;
+    case sk_DecPnt:
+      return Alpha?':':Shift?KEY_CHAR_I+32:KEY_CHAR_DP;
+    case sk_Chs:
+      return Alpha?'?':Shift?KEY_CHAR_ANS:KEY_CHAR_PMINUS;
+    default:
+      return i;
+    }
+  }
+}
+void GetKey(int * key){
+  *key=getkey(0);
+}
+int iskeydown(int key){
+  kb_Scan();
+  return kb_IsDown(key);
+}
+
+// if (kb_On) ...
+void enable_back_interrupt(){
+  kb_EnableOnLatch();
+}
+void disable_back_interrupt(){
+  kb_DisableOnLatch();
+}
+int isalphaactive(){
+  return alpha;
+}
+int alphawasactive(int * key){
+  return prevalpha;
+}
+void lock_alpha(){
+  alpha=alphalock=1;
+}
+void reset_kbd(){
+  shift=alpha=alphalock=0;
+}
+int GetSetupSetting(int k){
+  if (k!=0x14) return -1;
+  if (!alpha) return 0;
+  if (!alphalock) return alpha==2?8:4;
+  return alpha==2?0x88:0x84;
+}
+
+void os_wait_1ms(int ms){
+  msleep(ms); // delay(ms)?
+}
+double millis(){
+  return rtc_Days*86400.0+rtc_Hours*3600.+rtc_Minutes*60.+rtc_Seconds;
+}
+int os_set_angle_unit(int mode){
+  if (mode) os_ResetFlag(TRIG,DEGREES); else os_SetFlag(TRIG,DEGREES);
+  return true;
+}
+
+int os_get_angle_unit(){
+  int i=os_TestFlag(TRIG,DEGREES);
+  return i?0:1;
+}
+int file_exists(const char * filename){
+  int h=ti_Open(filename, "r");
+  if (!h)
+    return false;
+  ti_Close(h);
+  return true;
+}
+int erase_file(const char * filename){
+  if (!file_exists(filename))
+    return false;
+  ti_Delete(filename);
+  return true;
+}
+const char * read_file(const char * filename){
+  const char * ext=0;
+  int l=strlen(filename);
+  char var[9]={0};
+  strncpy(var,filename,8);
+  for (--l;l>0;--l){
+    if (filename[l]=='.'){
+      ext=filename+l+1;
+      if (l<9)
+        var[l]=0;
+      break;
+    }
+  }
+  int h=ti_Open(var, "r");
+  if (!h)
+    return 0;
+  int s=ti_GetSize(h);
+  if (s>7){
+    //unsigned short u;
+    //ti_Read(&u,1,2,h);
+    char subtype[8]={0};
+    ti_Read(subtype,1,4,h);
+    if (strncmp(subtype,"PYCD",4)==0 || strncmp(subtype,"XCAS",4)==0){
+      unsigned char dx;
+      ti_Read(&dx,1,1,h);
+      if (dx!=0){
+        // skip desktop filename
+        char buf[256]={0};
+        ti_Read(buf,1,1,dx);
+        s -= 4+dx;
+        dbg_printf("subtype=%s filename=%s %i %i\n",subtype,buf,dx,s);
+      }
+      else
+        s -= 4;
+    }
+    else
+      ti_Seek(0,SEEK_SET,h);
+  }
+  char * ptr=0;
+#if 0
+  // Direct access to the data, ptr should not be used if any change to the TI variables occurs, unfortunately there is no 0 at end of string
+  ptr= ti_GetDataPtr(h);
+  ti_Close(h);
+  dbg_printf("data=%x %x %x %x %x %x %x %x\n",ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
+  return ptr;
+#endif
+  // Code requiring a copy
+  // if it starts with 
+  // char * ptr=(char *) gfx_vram+LCD_WIDTH_PX*LCD_HEIGHT_PX; // pointer in vram buffer
+  int S=os_MemChk((void **)&ptr);
+  if (s>=S)
+    return 0;
+  S=ti_Read(ptr,1,s,h);
+  ptr[S]=0;
+  ti_Close(h);
+  dbg_printf("data=%s\n",ptr);
+  return ptr;
+}
+int write_file(const char * filename,const char * s,int len){
+  // find extension
+  const char * ext=0;
+  int l=strlen(filename);
+  char var[9]={0};
+  strncpy(var,filename,8);
+  for (--l;l>0;--l){
+    if (filename[l]=='.'){
+      ext=filename+l+1;
+      if (l<9)
+        var[l]=0;
+      break;
+    }
+  }
+  int h=ti_Open(var,"w");
+  if (!h) return false;
+  if (ext){
+    bool ispy=strncmp(ext,"py",2)==0;
+    bool isxw=strncmp(ext,"xw",2)==0;
+    if (ispy || isxw){
+      const char * subtype=isxw?"XCAS":"PYCD";
+      ti_Write(subtype,strlen(subtype),1,h);
+      unsigned char dx=strlen(filename)+1;
+      ti_Write(&dx,1,1,h);
+      ti_Write(filename,dx-1,1,h);
+    }
+  }
+  int Len=ti_Write(s,1,len,h);
+  ti_Close(h);
+  return Len==len;
+}
+
+int os_file_browser(const char ** filenames,int maxrecords,const char * extension,int storage){
+  if (maxrecords>FILENAME_MAXRECORDS)
+    maxrecords=FILENAME_MAXRECORDS;
+  void * ptr=os_GetSymTablePtr();
+  int cur=0;
+  for (int count=0;cur<maxrecords && ptr;count++){
+    uint24_t type, l,j;
+    char s[16]={0};
+    char * dataptr=0;
+    char * ext=0;
+    ptr=os_NextSymEntry(ptr, &type, &l, s,&dataptr);
+    if (l>=FILENAME_MAXSIZE || !dataptr)
+      continue;
+    s[l]=0;
+    dbg_printf("filebrowser %s %i %x %x %x %x %x %x %x %x %x %x %x %x %x\n",s,type,dataptr[0]&0xff,dataptr[1]&0xff,dataptr[2]&0xff,dataptr[3]&0xff,dataptr[4]&0xff,dataptr[5]&0xff,dataptr[6]&0xff,dataptr[7]&0xff,dataptr[8]&0xff,dataptr[9]&0xff,dataptr[10]&0xff,dataptr[11]&0xff,dataptr[12]&0xff);
+    // if type==21 dataptr[1]*256+dataptr[0]==size, then data
+    // xcas session begins with 4 bytes size, on the 83 should be 00 00 xx xx
+    if (type==21 && dataptr[2]==0 && dataptr[3]==0)
+      ext="xw";
+    // python app, starts with 2 bytes size, "PYCD" or "PYSC"
+    // the script ifself begins at data.begin() + 6 + scriptOffset
+    // where scriptOffset = dataptr[6] + 1
+    if (!ext){
+      if (strncmp(&dataptr[2],"PYCD",4)==0 || strncmp(&dataptr[2],"PYSC",4)==0)
+        ext="py";
+      else if (strncmp(&dataptr[2],"XCAS",4)==0)
+        ext="xw";
+      else { // extension from filename _xw or _py or _...
+        //dbg_printf("os_file_browser %i %i %x\n",type,l,dataptr);
+        //dbg_printf("filename %i %s\n",count,s);
+        for (j=l-1;j>0;--j){
+          if (s[j]=='_'){
+            ext=s+j+1;
+            break;
+          }
+        }
+      }
+    }
+    if (ext && strcmp(ext,extension)==0){
+      if (exam_mode &&
+          (strcmp(s,"session")!=0
+           )
+          )
+        continue;
+      strncpy(os_filenames[cur],s,FILENAME_MAXSIZE);
+      filenames[cur]=os_filenames[cur];
+      dbg_printf("extension match %i %s %s\n",cur,s,filenames[cur]);
+      ++cur;
+    }
+  }
+  dbg_printf("filebrowser %i\n",cur);
+  return cur;
+}
+// gfx_Begin, gfx_SetDrawBuffer(); gfx_End
+// GFX_LCD_WIDTH, HEIGHT, gfx_vbuffer=LCD RAM buffer 76800 bytes
+// gfx_vram Total of 153600 bytes in size = 320x240x2
+// gfx_SetDrawBuffer()gfx_SetDrawScreen()
+// uint8_t gfx_SetColor(uint8_t index)
+// gfx_SetPixel(uint24_t x, uint8_t y)
+// uint8_t gfx_GetPixel(uint24_t x, uint8_t y)
+// gfx_FillRectangle(int x, int y, int width, int height)
+// gfx_FillRectangle_NoClip(uint24_t x, uint8_t y, uint24_t width, uint8_t height)
+// gfx_Wait(void)
+// gfx_PrintStringXY(const char *string, int x, int y)
+//gfx_SetTextFGColor(uint8_t color)
+// gfx_SetTextScale(uint8_t width_scale, uint8_t height_scale)
+// gfx_SetTextConfig
+void sync_screen(){
+  //gfx_Wait();
+  // gfx_BlitBuffer(); // shoud be done if gfx_SetDrawBuffer() is active;
+}
+int c_rgb565to888(int c){
+  c &= 0xffff;
+  int r=(c>>11)&0x1f,g=(c>>5)&0x3f,b=c&0x1f;
+  return (r<<19)|(g<<10)|(b<<3);
+}
+
+int convertcolor(int c){
+  // convert 16 bits to default palette
+  c &= 0xffff;
+  int r=(c>>11)&0x1f,g=(c>>5)&0x3f,b=c&0x1f;
+  int R = ((r>>3)<<5) | ((g>>3)<<2) | (b>>3);
+  //dbg_printf("convert %i r=%i g=%i b=%i to %i\n",c,r,g,b,R);
+  return R;
+}
+void setcolor(int c){
+  gfx_SetColor(convertcolor(c));
+  //gfx_SetTextTransparentColor(0);
+}
+void os_set_pixel(int x,int y,int c){
+  setcolor(c);
+  gfx_SetPixel(x,y);
+}
+void os_fill_rect(int x,int y,int w,int h,int c){
+  setcolor(c);
+  gfx_FillRectangle(x,y,w,h);
+}
+int os_get_pixel(int x,int y){
+  return gfx_GetPixel(x,y);
+}
+
+// FIXME? use gfx_SetTransparentColor with a value != FG and BG instead of fill rectangle
+int os_draw_string_small(int x,int y,int c,int bg,const char * s,int fake){
+  y+=STATUS_AREA_PX;
+  gfx_SetTextScale(1,1);
+  int dx=gfx_GetStringWidth(s);
+  if (!fake){
+    gfx_SetColor(bg);
+    gfx_FillRectangle(x,y,dx,8);
+    int c_=gfx_SetTextFGColor(c);
+    int bg_=gfx_SetTextBGColor(bg);
+    gfx_PrintStringXY(s,x,y);
+    gfx_SetTextFGColor(c_);
+    gfx_SetTextBGColor(bg_);
+  }
+  return x+dx; 
+}
+int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake){
+  y+=STATUS_AREA_PX;
+  gfx_SetTextScale(1,2);
+  //gfx_SetFontHeight(12);
+  int dx=gfx_GetStringWidth(s);
+  if (!fake){
+    gfx_SetColor(bg);
+    gfx_FillRectangle(x,y,dx,16);
+    int c_=gfx_SetTextFGColor(c);
+    int bg_=gfx_SetTextBGColor(bg);
+    gfx_PrintStringXY(s,x,y);
+    gfx_SetTextFGColor(c_);
+    gfx_SetTextBGColor(bg_);
+  }
+  return x+dx; 
+}
+int os_draw_string(int x,int y,int c,int bg,const char * s,int fake){
+  y+=STATUS_AREA_PX;
+  gfx_SetTextScale(2,2);
+  int dx=gfx_GetStringWidth(s);
+  if (!fake){
+    gfx_SetColor(bg);
+    gfx_FillRectangle(x,y,dx,16);
+    int c_=gfx_SetTextFGColor(c);
+    int bg_=gfx_SetTextBGColor(bg);
+    gfx_PrintStringXY(s,x,y);
+    gfx_SetTextFGColor(c_);
+    gfx_SetTextBGColor(bg_);
+  }
+  return x+dx; 
+}
+
+const int statuscolor=12345;
+void statuslinemsg(const char * msg){
+  os_draw_string(0,-STATUS_AREA_PX,statuscolor,SDK_BLACK,msg,false);
+}
+
+void set_time(int h,int m){
+  rtc_Set(rtc_Seconds,m,h,rtc_Days);
+}
+
+void get_time(int *h,int *m){
+  *h=rtc_Hours;
+  *m=rtc_Minutes;
+}
+
+void display_time(){
+  int h=rtc_Hours,m=rtc_Minutes;
+  char msg[10];
+  msg[0]=' ';
+  msg[1]='0'+(h/10);
+  msg[2]='0'+(h%10);
+  msg[3]= 'h';
+  msg[4]= ('0'+(m/10));
+  msg[5]= ('0'+(m%10));
+  msg[6]=0;
+  //msg[6]= 'm';
+  //msg[7] = ('0'+(s/10));
+  //msg[8] = ('0'+(s%10));
+  //msg[9]=0;
+  os_fill_rect(270,0,LCD_WIDTH_PX-270,15,SDK_BLACK);
+  os_draw_string_medium(270,-STATUS_AREA_PX,statuscolor,SDK_BLACK,msg,false);
+}
+
+void statusflags(){
+  char *msg=0;
+  if (alpha==2){
+      msg=alphalock?"alock":"alpha";
+  }
+  else if (alpha==1){
+      msg=alphalock?"ALOCK":"ALPHA";
+  }
+  else {
+    if (shift)
+      msg="2nd";
+    else
+      msg="";
+  }
+  os_fill_rect(0,0,LCD_WIDTH_PX,16,SDK_BLACK);
+  os_draw_string_medium(225,-STATUS_AREA_PX,statuscolor,SDK_BLACK,msg,false);
+  os_draw_string_medium(160,-STATUS_AREA_PX,statuscolor,SDK_BLACK,os_get_angle_unit()?" rad ":" deg ",false);  
+  display_time();
+}
+void statusline(int mode){
+  statusflags();
+  if (mode==0)
+    os_draw_string_medium(190,-STATUS_AREA_PX,statuscolor,SDK_BLACK," CAS ",false);
+  if (mode==0)
+    return;
+  sync_screen();
+}
+#endif
+
 #ifdef NSPIRE_NEWLIB
 // NB changes for the nspire cx ii
 // on_key_pressed() should be modified (returns always true)
@@ -36,12 +624,12 @@ int c_rgb565to888(int c){
 }
 
 const int nspire_statusarea=18;
-bool nspireemu=false;
+int nspireemu=false;
 
-bool waitforvblank(){
+int waitforvblank(){
 }
 
-bool back_key_pressed(){
+int back_key_pressed(){
   return isKeyPressed(KEY_NSPIRE_DEL);
 }
 // next 3 functions may be void if not inside a window class hierarchy
@@ -49,10 +637,9 @@ void os_show_graph(){} // show graph inside Python shell (Numworks), not used
 void os_hide_graph(){} // hide graph, not used anymore
 void os_redraw(){} // force redraw of window class hierarchy
 
-bool os_set_angle_unit(int mode){
+int os_set_angle_unit(int mode){
   return false;
 }
-
 int os_get_angle_unit(){
   return 0;
 }
@@ -62,6 +649,7 @@ double millis(){
   unsigned t1= * (volatile unsigned *) NSPIRE_RTC_ADDR;
   return 1000.0*t1;
 }
+
 
 void get_hms(int *h,int *m,int *s){
   unsigned NSPIRE_RTC_ADDR=0x90090000;
@@ -87,6 +675,15 @@ void get_hms(int *h,int *m,int *s){
   *s%=60;
 }
 
+void get_time(int *h,int *m){
+  int s;
+  get_hms(h,m,s);
+}
+
+void set_time(int h,int m){
+  // FIXME
+}
+
 #ifndef is_cx2
 #define is_cx2 false
 #endif
@@ -108,13 +705,13 @@ void os_wait_1ms(int ms){
   ck_msleep(ms);
 }
 
-bool file_exists(const char * filename){
+int file_exists(const char * filename){
   if (access(filename,R_OK))
     return false;
   return true;
 }
 
-bool erase_file(const char * filename){
+int erase_file(const char * filename){
   return remove(filename)==0;
 }
 
@@ -148,7 +745,7 @@ const char * read_file(const char * filename){
   return nspire_filebuf;
 }
 
-bool write_file(const char * filename,const char * s,size_t len){
+int write_file(const char * filename,const char * s,int len){
   if (exam_mode &&
       (strcmp(filename,"session.xw")!=0 &&
        strcmp(filename,"session.xw.tns")!=0 &&
@@ -167,12 +764,12 @@ bool write_file(const char * filename,const char * s,size_t len){
 }
 
 #define FILENAME_MAXRECORDS 64
-  int c_trialpha(const void *p1,const void * p2){
-    int i=strcmp(* (char * const *) p1, * (char * const *) p2);
-    return i;
-  }
-
-char os_filenames[32][FILENAME_MAXRECORDS];
+#define FILENAME_MAXSIZE 16
+char os_filenames[FILENAME_MAXRECORDS][FILENAME_MAXSIZE];
+int c_trialpha(const void *p1,const void * p2){
+  int i=strcmp(* (char * const *) p1, * (char * const *) p2);
+  return i;
+}
 int os_file_browser(const char ** filenames,int maxrecords,const char * extension,int storage){ // storage is ignored on nspire
   DIR *dp;
   struct dirent *ep;
@@ -213,7 +810,7 @@ int os_file_browser(const char ** filenames,int maxrecords,const char * extensio
 	   )
 	  )
 	continue;
-      strcpy(os_filenames[cur],s_);
+      strncpy(os_filenames[cur],s_,FILENAME_MAXSIZE);
       filenames[cur]=os_filenames[cur];
       ++cur;
     }
@@ -225,7 +822,7 @@ int os_file_browser(const char ** filenames,int maxrecords,const char * extensio
 #else
   // qsort would be faster for large n, but here n<FILENAME_MAXRECORDS
   for (;;){
-    bool finished=true;
+    int finished=true;
     for (int i=1;i<cur;++i){
       if (strcmp(filenames[i-1],filenames[i])>0){
 	finished=false;
@@ -287,7 +884,7 @@ int os_get_pixel(int x,int y){
 #endif
 }
 
-int nspire_draw_string(int x,int y,int c,int bg,int f,const char * s,bool fake){
+int nspire_draw_string(int x,int y,int c,int bg,int f,const char * s,int fake){
   // void ascii2utf16(void *buf, const char *str, int max_size): converts the UTF-8 string str to the UTF-16 string buf of size max_size.
   int l=strlen(s);
   char utf16[2*l+2];
@@ -312,14 +909,14 @@ int nspire_draw_string(int x,int y,int c,int bg,int f,const char * s,bool fake){
   return x+dx;
 }
 
-int os_draw_string(int x,int y,int c,int bg,const char * s,bool fake){
+int os_draw_string(int x,int y,int c,int bg,const char * s,int fake){
   get_gc();
   gui_gc_clipRect(nspire_gc,0,nspire_statusarea,SCREEN_WIDTH,SCREEN_HEIGHT-nspire_statusarea,0);
   int i=nspire_draw_string(x,y+nspire_statusarea,c,bg,Regular12,s,fake);
   gui_gc_clipRect(nspire_gc,0,0,SCREEN_WIDTH,SCREEN_HEIGHT,GC_CRO_RESET);
   return i;
 }
-int os_draw_string_small(int x,int y,int c,int bg,const char * s,bool fake){
+int os_draw_string_small(int x,int y,int c,int bg,const char * s,int fake){
   get_gc();
   gui_gc_clipRect(nspire_gc,0,nspire_statusarea,SCREEN_WIDTH,SCREEN_HEIGHT-nspire_statusarea,GC_CRO_SET);
   int i=nspire_draw_string(x,y+nspire_statusarea,c,bg,Regular9,s,fake);
@@ -327,7 +924,7 @@ int os_draw_string_small(int x,int y,int c,int bg,const char * s,bool fake){
   return i;
 }
 
-int os_draw_string_medium(int x,int y,int c,int bg,const char * s,bool fake){
+int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake){
   get_gc();
   gui_gc_clipRect(nspire_gc,0,nspire_statusarea,SCREEN_WIDTH,SCREEN_HEIGHT-nspire_statusarea,GC_CRO_SET);
   int i=nspire_draw_string(x,y+nspire_statusarea,c,bg,Regular11,s,fake);
@@ -383,9 +980,9 @@ void sync_screen(){
 // hardware ports
 // https://hackspire.org/index.php?title=Memory-mapped_I/O_ports_on_CX
 
-bool nspire_shift=false;
-bool nspire_ctrl=false;
-bool nspire_select=false;
+int nspire_shift=false;
+int nspire_ctrl=false;
+int nspire_select=false;
 void statusline(int mode){
   char *msg=0;
   if (nspire_ctrl){
@@ -541,7 +1138,8 @@ int ascii_get(int* adaptive_cursor_state){
   return 0;
 }
 
-bool iskeydown(int key){
+int handle_f5(){}
+int iskeydown(int key){
   t_key t=KEY_NSPIRE_SPACE;
   switch (key){
   case 0:
@@ -703,7 +1301,7 @@ int getkey(int allow_suspend){
       display_time();
       sync_screen();
     }
-    bool autosuspend=(t1-lastt>=100);
+    int autosuspend=(t1-lastt>=100);
     if (nspire_exam_mode!=2 &&
 	is_cx2 && nspire_ctrl && on_key_pressed()){
       os_fill_rect(50,90,200,40,0x1234);
@@ -869,7 +1467,7 @@ int getkey(int allow_suspend){
     }
     return i;
   }
-  // void send_key_event(struct s_ns_event* eventbuf, unsigned short keycode_asciicode, BOOL is_key_up, BOOL unknown): since r721. Simulate a key event
+  // void send_key_event(struct s_ns_event* eventbuf, unsigned short keycode_asciicode, INT is_key_up, INT unknown): since r721. Simulate a key event
 }
 
 // void idle(void)
@@ -880,7 +1478,7 @@ void GetKey(int * key){
   *key=getkey(true);
 }
 
-bool alphawasactive(int * key){
+int alphawasactive(int * key){
   if (*key==KEY_DOWN_CTRL){
     *key=KEY_CTRL_DOWN;
     return true;
@@ -900,7 +1498,7 @@ bool alphawasactive(int * key){
   return false;
 }
 
-bool isalphaactive(){
+int isalphaactive(){
   return false;//nspire_ctrl;
 }
 
@@ -908,11 +1506,17 @@ void lock_alpha(){
   //nspire_ctrl=true;
 }
 
+int GetSetupSetting(int k){
+  if (k!=0x14) return -1;
+  if (!isalphaactive()) return 0;
+  return 4;
+}
+
 void reset_kbd(){
   nspire_ctrl=nspire_shift=false;
 }
 
-bool on_key_enabled=true;
+int on_key_enabled=true;
 
 void enable_back_interrupt(){
   on_key_enabled=true;
@@ -927,3 +1531,4 @@ void set_exam_mode(int i){
   exam_mode=i;
 }
 #endif // NSPIRE_NEWLIB
+

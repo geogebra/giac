@@ -189,6 +189,7 @@ extern "C" const char * extapp_clipboardText();
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
+#if 0
   void Bdisp_PutDisp_DD(){
     sync_screen();
   }
@@ -196,6 +197,7 @@ namespace giac {
     waitforvblank();
     drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,_WHITE);
   }
+#endif
   void drawLine(int x1,int y1,int x2,int y2,int c){
     draw_line(x1,y1,x2,y2,c,context0);
   }
@@ -216,6 +218,7 @@ namespace giac {
   void set_xcas_status(){
     statusline(1+2*xcas_python_eval);
   }
+#if 0
   int GetSetupSetting(int mode){
     return 0;
   }
@@ -226,7 +229,7 @@ namespace giac {
   void handle_f5(){
     lock_alpha();
   }
-  
+#endif
   int chartab(){
     static int row=0,col=0;
     for (;;){
@@ -8967,7 +8970,7 @@ namespace xcas {
       affs=aff.size();
       for (int i=0;i<affs;++i){
 	double d=evalf_double(aff[i],1,contextptr)._DOUBLE_val;
-	if (fabs(d)<1e-6) strcpy(ch,"0"); else sprint_double(ch,d);
+	if (fabs(d)<1e-6) strcpy(ch,"0"); else giac::sprint_double(ch,d);
 	int delta=int(horizontal_pixels*(d-window_xmin)/(window_xmax-window_xmin));
 	int taille=strlen(ch)*9;
 	fl_line(delta,deltay+j_0,delta,deltay+j_0-4,_green);
@@ -8984,7 +8987,7 @@ namespace xcas {
       int taille=5;
       for (int j=0;j<affs;++j){
 	double d=evalf_double(aff[j],1,contextptr)._DOUBLE_val;
-	if (fabs(d)<1e-6) strcpy(ch,"0"); else sprint_double(ch,d);
+	if (fabs(d)<1e-6) strcpy(ch,"0"); else giac::sprint_double(ch,d);
 	int delta=int(vertical_pixels*(window_ymax-d)/(window_ymax-window_ymin));
 	if (delta>=taille && delta<=vertical_pixels-taille){
 	  fl_line(deltax+i_0,STATUS_AREA_PX+delta,deltax+i_0+4,STATUS_AREA_PX+delta,_red);
@@ -9018,7 +9021,7 @@ namespace xcas {
       affs=aff.size();
       for (int i=0;i<affs;++i){
 	double d=evalf_double(aff[i],1,contextptr)._DOUBLE_val;
-	sprint_double(ch,d);
+	giac::sprint_double(ch,d);
 	delta=int(horizontal_pixels*(d-window_xmin)/(window_xmax-window_xmin));
 	taille=strlen(ch)*9;
 	fl_line(delta,vertical_pixels+STATUS_AREA_PX-6,delta,vertical_pixels+STATUS_AREA_PX-1,_green);
@@ -9032,7 +9035,7 @@ namespace xcas {
       taille=5;
       for (int j=0;j<affs;++j){
 	double d=evalf_double(aff[j],1,contextptr)._DOUBLE_val;
-	sprint_double(ch,d);
+	giac::sprint_double(ch,d);
 	delta=int(vertical_pixels*(window_ymax-d)/(window_ymax-window_ymin));
 	if (delta>=taille && delta<=vertical_pixels-taille){
 	  fl_line(horizontal_pixels-5,STATUS_AREA_PX+delta,horizontal_pixels-1,STATUS_AREA_PX+delta,_red);
@@ -14283,7 +14286,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     {
       char line_s[16];
       //!!!!!
-      // sprint_int(line_s,cur+1);
+      // giac::sprint_int(line_s,cur+1);
       sprintf(line_s, "%d", cur + 1);
       if (textY >= text->y && textY <= LCD_HEIGHT_PX - 24) //!!!! 13
         PrintMini(textX, textY, line_s, 0);
@@ -14463,7 +14466,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
           // 0 symbol, red keyword cyan number, blue command, yellow string
           // cout << singleword << " " << couleur << endl;
           // char ch[32];
-          // sprint_int(ch,couleur);
+          // giac::sprint_int(ch,couleur);
           // puts(singleword); puts(ch);
         }
         else {
@@ -14675,7 +14678,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       }
       if (editable && textY>=(showtitle?24:0)){
 	char line_s[16];
-	sprint_int(line_s,cur+1);
+	giac::sprint_int(line_s,cur+1);
 	os_draw_string_small(textX,textY,COLOR_MAGENTA,_WHITE,line_s);
       }
       textX=text->x+deltax;
@@ -14833,7 +14836,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	    if (couleur==4) couleur=COLOR_MAGENTA;
 	    if (couleur==5) couleur=_green;
 	    //char ch[32];
-	    //sprint_int(ch,couleur);
+	    //giac::sprint_int(ch,couleur);
 	    //puts(singleword); puts(ch);
 	  }
 	  if (linecomment || !text->editable || singleword[0]=='"')
@@ -15368,7 +15371,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	key=KEY_CTRL_F15;
       if (key==KEY_CHAR_FACTOR)
 	key=KEY_CTRL_F16;
-      //char keylog[32];sprint_int(keylog,key); puts(keylog);
+      //char keylog[32];giac::sprint_int(keylog,key); puts(keylog);
       show_status(text,search,replace);
       int & clipline=text->clipline;
       int & clippos=text->clippos;
@@ -20639,9 +20642,9 @@ void drawAtom(uint8_t id) {
 	drawRectangle(48, 158, 9,  2, rgb24to16(0x525552));
 
 	int prot=atomsdefs[cursor_pos].num;
-	sprint_int(protons,prot);
+	giac::sprint_int(protons,prot);
 	int nuc=atomsdefs[cursor_pos].neutrons+atomsdefs[cursor_pos].num;
-	sprint_int(nucleons,nuc);
+	giac::sprint_int(nucleons,nuc);
 	
 	symbol=atomsdefs[cursor_pos].symbol;
 	os_draw_string_(73,23,symbol);
@@ -20655,8 +20658,8 @@ void drawAtom(uint8_t id) {
 	os_draw_string_small_(50,31,protons);
 	strcpy(mass,"M:");
 	strcpy(electroneg,"khi:");
-	sprint_double(mass+2,atomsdefs[cursor_pos].mass);
-	sprint_double(electroneg+4,atomsdefs[cursor_pos].electroneg);
+  giac::sprint_double(mass+2,atomsdefs[cursor_pos].mass);
+  giac::sprint_double(electroneg+4,atomsdefs[cursor_pos].electroneg);
 #ifdef HP39
 	os_draw_string_small_(60,2,mass);
 	os_draw_string_small_(135,2,electroneg);
@@ -21213,13 +21216,13 @@ void linear_combination(cvecteur & v1,const c_complex & c2,const cvecteur & v2,i
 
 string print(const c_complex & c){
   char buf[32];
-  sprint_double(buf,c.r);
+  giac::sprint_double(buf,c.r);
   if (c.i==0)
     return buf;
   string s="(";
   s+=buf;
   s+=',';
-  sprint_double(buf,c.i);
+  giac::sprint_double(buf,c.i);
   s+=buf;
   s+=')';
   return s;

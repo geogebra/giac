@@ -7507,12 +7507,20 @@ namespace giac {
     return symbolic(at_evalf,a);  
   }
 
+  typedef void (*function)(void);
+#if defined TICE
+  const char platform_type='8'; // 8 bits
+#elseif defined SMARTPTR64
+  const char platform_type='6'; // 64 bits
+#else
+  const char platform_type='3'; // 32 bits
+#endif
   gen _eval(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
     if (python_compat(contextptr)){
       gen b=eval(a,1,contextptr);
       if (b.type==_STRNG)
-	return _expr(b,contextptr);
+        return _expr(b,contextptr);
     }
     if (is_equal(a) &&a._SYMBptr->feuille.type==_VECT && a._SYMBptr->feuille._VECTptr->size()==2){
       vecteur & v(*a._SYMBptr->feuille._VECTptr);
@@ -7521,8 +7529,18 @@ namespace giac {
     if (a.type==_VECT && a.subtype==_SEQ__VECT && a._VECTptr->size()==2){
       gen a1=a._VECTptr->front(),a2=a._VECTptr->back();
       if (a2.type==_INT_)
-	return a1.eval(a2.val,contextptr);
-      return _subst(gen(makevecteur(eval(a1,eval_level(contextptr),contextptr),a2),_SEQ__VECT),contextptr);
+        return a1.eval(a2.val,contextptr);
+      a1=eval(a1,eval_level(contextptr),contextptr);
+      if (a2.type==_STRNG && a2._STRNGptr->size()==4){
+        const char * ptr=a2._STRNGptr->c_str();
+        if (ptr[0]=='a' && ptr[1]=='s' && ptr[2]=='m' && ptr[3]==platform_type && a1.type==_STRNG){
+          const char * ptr=a1._STRNGptr->c_str();
+          function F= function (ptr);
+          F();
+          return 1;
+        }
+      }
+      return _subst(gen(makevecteur(a1,a2),_SEQ__VECT),contextptr);
     }
     return a.eval(1,contextptr).eval(eval_level(contextptr),contextptr);
   }
