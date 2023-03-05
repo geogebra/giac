@@ -1,3 +1,4 @@
+
 /* C header for Khicas interface with calculator OS */
 #ifndef K_CSDK_H
 #define K_CSDK_H
@@ -25,15 +26,18 @@
 extern "C" {
 #endif
 #include "stdio.h"
-#ifdef TICE
+#ifdef NSPIRE_NEWLIB
+  inline int min(int a,int b){ return a<b?a:b;}
+  inline int max(int a,int b){ return a<b?b:a;}
+#endif
+#if !defined FX && !defined FXCG
 #define C58 214
-#include "dbg.h"
-#define max_heap_size 60
 #define COLOR_WHITE SDK_WHITE
 #define TEXT_COLOR_WHITE SDK_WHITE
 #define COLOR_BLACK SDK_BLACK
 #define COLOR_ORANGE ((31<<11)|(7<<5)|31)
 #define COLOR_CYAN ((63<<5)|31)
+#define COLOR_YELLOW ((63<<5)|31)
 #define COLOR_GREEN (63<<5)
 #define TEXT_COLOR_GREEN (63<<5)
 #define COLOR_MAGENTA ((31<<11)|31)
@@ -49,11 +53,16 @@ extern "C" {
 #define MINI_REV 4
 #define false 0
 #define true 1
+#endif // not FX and not FXCG
+  
+#ifdef TICE
+#include "dbg.h"
+#define max_heap_size 60
   void sdk_init(void);
   void sdk_end(void);
   void clear_screen(void);
 #else
-  inline void sdk_init(void){}
+  inline void sdk_init(void){  }
   inline void sdk_end(void){}
 #endif
 

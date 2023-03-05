@@ -7,6 +7,18 @@
 #include "misc.h"
 
 #include <exception>
+
+#if defined TICE && !defined std
+#define std ustl
+#endif
+#if defined FX || defined FXCG
+typedef unsigned char Char;
+#else
+typedef char Char;
+#endif
+
+extern bool xthetat;
+
 #ifdef NUMWORKS
 extern char * freeptr;
 extern const char * flash_buf;
@@ -20,8 +32,11 @@ class autoshutdown : public std::exception{
   }
 };
 
+#ifndef LCD_WIDTH_PX
 extern  const int LCD_WIDTH_PX;
 extern   const int LCD_HEIGHT_PX;
+#endif
+
 extern char* fmenu_cfg;
 #ifdef HP39
 #define color_gris 0
@@ -133,12 +148,21 @@ int kcas_main(int isAppli, unsigned short OptionNum);
 extern giac::context * contextptr; 
 #endif
 
+#ifdef BW
+int get_free_memory();
+int PrintMini(int x,int y,const char * s,int mode);
+#endif
+
 #ifndef NO_NAMESPACE_XCAS
 namespace xcas {
 #endif // ndef NO_NAMESPACE_XCAS
   void set_exam_mode(int i,const giac::context *);
   int giac_filebrowser(char * filename,const char * extension,const char * title,int storage=0);
+#ifdef BW
+  inline void draw_rectangle(int x,int y,int w,int h,int c){os_fill_rect(x,y,w,h,c);}
+#else
   void draw_rectangle(int x,int y,int w,int h,int c);
+#endif
   void draw_line(int x0,int y0,int x1,int y1,int c);
   void draw_circle(int xc,int yc,int r,int color,bool q1=true,bool q2=true,bool q3=true,bool q4=true);
   void draw_filled_circle(int xc,int yc,int r,int color,bool left=true,bool right=true);
@@ -221,8 +245,6 @@ namespace xcas {
     bool OKparse=true;
     bool editable=false;
     bool changed=false;
-    bool minimini=false; // global font setting
-    bool longlinescut=true;
     int python=0;
     int type=TEXTAREATYPE_NORMAL;
     int cursorx,cursory; // where the last cursor was displayed
@@ -566,7 +588,9 @@ namespace xcas {
   char* Console_GetEditLine();
   void dConsolePut(const char *);
   void dConsolePutChar(const char );
+#ifndef BW
   void dConsoleRedraw(void);
+#endif
   extern int dconsole_mode;
   extern int console_changed; // 1 if something new in history
   extern char session_filename[MAX_FILENAME_SIZE+1];
@@ -605,6 +629,10 @@ namespace xcas {
 #ifndef NO_NAMESPACE_XCAS
 } // namespace xcas
 #endif // ndef NO_NAMESPACE_XCAS
+
+#ifdef BW
+void dConsoleRedraw(void);
+#endif
 
 giac::gen sheet(const giac::context *); // in kadd.cc
 /* ************************************************************
@@ -662,12 +690,11 @@ namespace giac {
     char* nodatamsg; // message to show when there are no menu items to display
     int startX=1; //X where to start drawing the menu. NOTE this is not absolute pixel coordinates but rather character coordinates
     int startY=0; //Y where to start drawing the menu. NOTE this is not absolute pixel coordinates but rather character coordinates
+    int width=30; // NOTE this is not absolute pixel coordinates but rather character coordinates
 #ifdef HP39
     int height=8;
-    int width=28; // character number
 #else
-    int height=12; // character number
-    int width=30; 
+    int height=12; // NOTE this is not absolute pixel coordinates but rather character coordinates
 #endif
     int scrollbar=1; // 1 to show scrollbar, 0 to not show it.
     int scrollout=0; // whether the scrollbar goes out of the menu area (1) or it overlaps some of the menu area (0)
@@ -704,7 +731,7 @@ namespace giac {
   const char * keytostring(int key,int keyflag,bool py,const giac::context * contextptr);
   void insert(std::string & s,int pos,const char * add);
   
-  int showCatalog(char* insertText,int preselect,int menupos,const giac::context * contextptr);
+  int showCatalog(char* insertText,int preselect,int menupos=0,const giac::context * contextptr=0);
   int doMenu(Menu* menu, MenuItemIcon* icontable=NULL);
   void reset_alpha();
   // category=0 for CATALOG, 1 for OPTN
@@ -718,18 +745,21 @@ namespace giac {
 
   gen _efface_logo(const gen & g,GIAC_CONTEXT);
   gen turtle_state(const giac::context * contextptr);
-  int inputline(const char * msg1,const char * msg2,std::string & s,bool numeric,int ypos=65,const giac::context *contextptr=0);
+  int inputline(const char * msg1,const char * msg2,std::string & s,bool numeric,int ypos,const giac::context *contextptr);
   extern logo_turtle * turtleptr;
   bool inputdouble(const char * msg1,double & d,const giac::context *contextptr);
+#ifndef BW
   bool do_confirm(const char * s);
   int confirm(const char * msg1,const char * msg2,bool acexit=false,int y=40);
   bool confirm_overwrite();
   void invalid_varname();
+#endif
 
 #ifndef NO_NAMESPACE_XCAS
 } // namespace giac
 #endif // ndef NO_NAMESPACE_XCAS
 
+#ifndef BW
 #ifdef HP39
 #define COLOR_CYAN   90
 #define COLOR_RED    68
@@ -756,6 +786,7 @@ namespace giac {
 #define TEXT_COLOR_YELLOW ::giac::_YELLOW
 #define TEXT_COLOR_WHITE ::giac::_WHITE
 #define TEXT_COLOR_MAGENTA ::giac::_MAGENTA
+#endif
 
 #endif // _KDISPLAY_H
 #endif

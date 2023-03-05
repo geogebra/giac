@@ -983,7 +983,7 @@ void sync_screen(){
 int nspire_shift=false;
 int nspire_ctrl=false;
 int nspire_select=false;
-void statusline(int mode){
+void statusflags(){
   char *msg=0;
   if (nspire_ctrl){
     if (nspire_shift)
@@ -1005,6 +1005,9 @@ void statusline(int mode){
     nspire_draw_string(190,0,exam_mode?0xffff:0,bg,Regular9," emu ",false);
   else
     nspire_draw_string(190,0,0xf800,bg,Regular9," CAS ",false);    
+}
+void statusline(int mode){
+  statusflags();
   display_time();
   if (mode==0)
     return;
