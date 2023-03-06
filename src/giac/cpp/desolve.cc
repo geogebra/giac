@@ -1555,7 +1555,7 @@ namespace giac {
   static gen point2vecteur(const gen & g_,GIAC_CONTEXT){
     if (!g_.is_symb_of_sommet(at_point))
       return g_;
-    gen g=g_._SYMBptr->feuille;
+    gen g=eval(g_._SYMBptr->feuille,1,contextptr);
     gen x,y;
     if (g.type==_VECT){
       if (g._VECTptr->size()!=2)
