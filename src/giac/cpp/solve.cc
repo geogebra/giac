@@ -6215,7 +6215,11 @@ namespace giac {
       gbasis_param.eliminate_flag=false;
       if (!giac_gbasis(resrev,_REVLEX_ORDER,env,modularcheck,rur,contextptr,gbasis_param))
 	return false;
-      if (resrev.size()==1 || (is_zero_dim(resrev) && fglm_lex(resrev,reslex,1024,env,context0))){
+      if (resrev.size()==1){
+	reslex.swap(resrev);
+	return true;
+      }
+      if (is_zero_dim(resrev) && fglm_lex(resrev,reslex,1024,env,context0)){
 	reslex.swap(res);
 	return true;
       }
