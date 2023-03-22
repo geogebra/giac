@@ -7,9 +7,12 @@
 #define SDK_BLACK 0
 #define SDK_WHITE 65535
 // C58 is the pixel y coordinate where soft keys menus legends are written
-#define C24 24
+#define C24 18
 #define C18 18 
 #define C10 18 
+//#define C24 24
+//#define C18 18 
+//#define C10 18 
 #define C6 6 
 #define COLOR_SELECTED ((15<<11)|(15<<5)|15)
 #if defined FX
@@ -48,6 +51,11 @@ extern "C" {
 #define TEXT_COLOR_PURPLE ((15<<11)| 24)
 #define TEXT_COLOR_BLUE 3
 #define COLOR_BROWN ((15<<11)|(15<<5))
+#ifdef BW
+#define COLOR_KEYWORD ((1<<15)|(1<<14))
+#else
+#define COLOR_KEYWORD 51712
+#endif
 #define TEXT_MODE_NORMAL 0
 #define TEXT_MODE_INVERT 1
 #define MINI_REV 4

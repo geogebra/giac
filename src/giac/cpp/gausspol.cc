@@ -6517,8 +6517,30 @@ namespace giac {
     return true;
   }
 
+  bool has_gf_coeff(const polynome & p,gen & modulo){
+#ifdef RTTI
+    vector< monomial<gen> >::const_iterator it=p.coord.begin(),itend=p.coord.end();
+    for (;it!=itend;++it){
+      if (it->type==_USER){
+        if (galois_field * ptr=dynamic_cast<galois_field *>(it->_USERptr)){
+          modulo=ptr->p;
+          return true;
+        }
+      }
+    }
+#endif
+    return false;
+  }
+
   factorization sqff(const polynome &p ){
-    factorization f=Tsqff_char0<gen>(p);
+    factorization f; gen m;
+    if (has_mod_coeff(p,m) || has_gf_coeff(p,m)){
+      if (m.type!=_INT_)
+        gensizeerr("Characteristic too large");
+      f=squarefree_fp(p,m.val,1);
+    }
+    else
+      f=Tsqff_char0<gen>(p);
     // take care of cst coefficients
     if (!p.coord.empty()){
       gen p0=p.coord.front().value,p1(1);

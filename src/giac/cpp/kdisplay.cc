@@ -195,7 +195,7 @@ extern "C" const char * extapp_clipboardText();
     if (mode==TEXT_MODE_NORMAL)
       return os_draw_string_medium(x,y,SDK_BLACK,SDK_WHITE,s,false);
     else
-      return os_draw_string_medium(x,y,SDK_WHITE,SDK_BLACK,s,false);      
+      return os_draw_string_medium(x,y,SDK_BLACK,color_gris,s,false);      
   }
 
 int get_free_memory(){
@@ -487,10 +487,10 @@ namespace giac {
     else {
 #ifndef HP39
       if (c==giac::_BLACK && bg==giac::_WHITE)
-	return os_draw_string_medium(x,y,c,color_gris,s,fake);
+        return os_draw_string_medium(x,y,c,color_gris,s,fake);
       else
 #endif
-	return os_draw_string_medium(x,y,bg,c,s,fake);
+        return os_draw_string_medium(x,y,bg,c,s,fake);
     }
   }
 
@@ -532,6 +532,9 @@ namespace giac {
           y=C24*(menu->miniMiniTitle ? itemsStartY:menu->startY)-1,
           w=2+C10*menu->width /* + ((menu->scrollbar && menu->scrollout)?C10:0) */,
           h=2+C24*menu->height-(menu->miniMiniTitle ? C24:0);
+        if (y<0) y=0;
+        if (y>C58) y=C58;
+        if (y+h>C58) h=C58-y;
         // drawRectangle(x, y, w, h, COLOR_WHITE);
         draw_line(x,y,x+w,y,COLOR_BLACK,context0);
         draw_line(x,y+h,x+w,y+h,COLOR_BLACK,context0);
@@ -1880,7 +1883,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     }
     for (;l>0;--l){
       if (!isalphanum(buf[l-1]) && buf[l-1]!='_')
-	break;
+        break;
     }
     // cmdname in buf+l
     const char * cmdname=buf+l,*cmdnameorig=cmdname;
@@ -1888,7 +1891,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     // search in catalog: dichotomy would be more efficient
     // but leading spaces cmdnames would be missed
     int nfunc=(lang==1)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN;//sizeof(completeCat)/sizeof(catalogFunc);
-#if defined NSPIRE_NEWLIB || defined NUMWORKS // should match static_help[] in help.cc
+#if !defined BW && (defined NSPIRE_NEWLIB || defined NUMWORKS) // should match static_help[] in help.cc
     int iii=nfunc; // no search in completeCat, directly in static_help.h
     //if (xcas_python_eval) iii=0;
 #else
@@ -1897,17 +1900,17 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     const catalogFunc * completeCat=(lang==1)?completeCatfr:completeCaten;
     for (;iii<nfunc;++iii){
       if (xcas_python_eval>0 && (completeCat[iii].category & XCAS_ONLY) )
-	continue;
+        continue;
       const char * name=completeCat[iii].name;
       while (*name==' ')
-	++name;
+        ++name;
       int j=0;
       for (;j<l;++j){
-	if (name[j]!=cmdname[j])
-	  break;
+        if (name[j]!=cmdname[j])
+          break;
       }
       if (j==l)
-	break;
+        break;
     }
     const catalogFunc * catf=iii==nfunc?0:completeCat+iii;
     const char * fhowto=0,* fsyntax=0,* frelated=0,* fexamples=0;
@@ -1921,43 +1924,43 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
           !has_static_help(cmdname,exec?(lang==0?-2:-lang):lang,fhowto,fsyntax,fexamples,frelated)
 #endif
           ){
-	if (warn) confirm("Pas d'aide disponible pour",cmdname,true);
-	return "";
+        if (warn) confirm("Pas d'aide disponible pour",cmdname,true);
+        return "";
       }
       cf=frelated;
       if (!fexamples || fexamples[0]==0){
-	fexamples=frelated;
-	frelated=0;
+        fexamples=frelated;
+        frelated=0;
       }
       // cut example at ; if there is one
       for (int i=0;i<sizeof(fbuf);++i){
-	if (fexamples[i]==0)
-	  break;
-	if (i>0 && fexamples[i]==';' && fexamples[i-1]!=' '){
-	  strcpy(fbuf,fexamples);
-	  fbuf[i]=0;
-	  fexamples=fbuf;
-	  frelated=fbuf+i+1;
-	  while (*frelated==' ')
-	    ++frelated;
-	  for (++i;i<sizeof(fbuf);++i){
-	    if (fbuf[i]==0)
-	      break;
-	    if (fbuf[i]==';'){
-	      fbuf[i]=0;
-	      break;
-	    }
-	  }
-	  break;
-	}
+        if (fexamples[i]==0)
+          break;
+        if (i>0 && fexamples[i]==';' && fexamples[i-1]!=' '){
+          strcpy(fbuf,fexamples);
+          fbuf[i]=0;
+          fexamples=fbuf;
+          frelated=fbuf+i+1;
+          while (*frelated==' ')
+            ++frelated;
+          for (++i;i<sizeof(fbuf);++i){
+            if (fbuf[i]==0)
+              break;
+            if (fbuf[i]==';'){
+              fbuf[i]=0;
+              break;
+            }
+          }
+          break;
+        }
       }
     }
     const char * example=catf?catf->example:fexamples;
     const char * example2=catf?catf->example2:frelated;
     if (exec){
       if (!fsyntax){
-	cmdname=example;
-	example=example2;
+        cmdname=example;
+        example=example2;
       }
     }
     else {
@@ -1973,31 +1976,31 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       elem[0].newLine = 0;
       elem[1].lineSpacing = 0;
       if (fsyntax){
-	elem[1].newLine = 1;
-	elem[1].s=(lang==1?"Syntaxe: ":"Syntax: ")+elem[0].s+"("+(strlen(fsyntax)?fsyntax:"arg")+")";
+        elem[1].newLine = 1;
+        elem[1].s=(lang==1?"Syntaxe: ":"Syntax: ")+elem[0].s+"("+(strlen(fsyntax)?fsyntax:"arg")+")";
       }
       else {
-	elem[1].newLine = 0;
-	elem[1].s=elem[0].s;
+        elem[1].newLine = 0;
+        elem[1].s=elem[0].s;
       }
       if (cf.size())
-	elem[0].s += " (cf. "+cf+")";
+        elem[0].s += " (cf. "+cf+")";
       if (elem[0].s.size()<16)
-	elem[0].s=string(16-elem[0].s.size()/2,' ')+elem[0].s;
+        elem[0].s=string(16-elem[0].s.size()/2,' ')+elem[0].s;
       //elem[0].color = COLOR_BLUE;
       elem[2].newLine = 1;
       elem[2].lineSpacing = 1;
       elem[2].minimini=1;
       std::string autoexample;
       if (catf && catf->desc==0){
-	// if (token==T_UNARY_OP || token==T_UNARY_OP_38)
-	elem[2].s=elem[0].s+"(args)";
+        // if (token==T_UNARY_OP || token==T_UNARY_OP_38)
+        elem[2].s=elem[0].s+"(args)";
       }
       else {
 #ifdef NUMWORKS
-	elem[2].s = remove_accents(catf?catf->desc:fhowto);
+        elem[2].s = remove_accents(catf?catf->desc:fhowto);
 #else
-	elem[2].s = catf?catf->desc:fhowto;
+        elem[2].s = catf?catf->desc:fhowto;
 #endif
       }
 #ifdef NSPIRE_NEWLIB
@@ -2009,46 +2012,46 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       elem[3].lineSpacing = 0;
       //elem[2].minimini=1;
       if (example){
-	if (example[0]=='#')
-	  ex += example+1;
-	else {
-	  if (iii==nfunc)
-	    ex += fexamples;
-	  else {
-	    ex += insert_string(iii);
-	    ex += example;
-	    ex += ")";
-	  }
-	}
-	elem[3].s = ex;
-	if (example2){
+        if (example[0]=='#')
+          ex += example+1;
+        else {
+          if (iii==nfunc)
+            ex += fexamples;
+          else {
+            ex += insert_string(iii);
+            ex += example;
+            ex += ")";
+          }
+        }
+        elem[3].s = ex;
+        if (example2){
 #ifdef NSPIRE_NEWLIB
-	  string ex2="ret: ";
+          string ex2="ret: ";
 #else
-	  string ex2="EXE: ";
+          string ex2="EXE: ";
 #endif
-	  if (example2[0]=='#')
-	    ex2 += example2+1;
-	  else {
-	    if (iii==nfunc)
-	      ex2 += example2;
-	    else {
-	      ex2 += insert_string(iii);
-	      ex2 += example2;
-	      ex2 += ")";
-	    }
-	  }
-	  elem[4].newLine = 1;
-	  // elem[3].lineSpacing = 0;
-	  //elem[3].minimini=1;
-	  elem[4].s=ex2;
-	}
+          if (example2[0]=='#')
+            ex2 += example2+1;
+          else {
+            if (iii==nfunc)
+              ex2 += example2;
+            else {
+              ex2 += insert_string(iii);
+              ex2 += example2;
+              ex2 += ")";
+            }
+          }
+          elem[4].newLine = 1;
+          // elem[3].lineSpacing = 0;
+          //elem[3].minimini=1;
+          elem[4].s=ex2;
+        }
       }
       else {
-	if (autoexample.size())
-	  elem[3].s=ex+autoexample;
-	else
-	  elem.pop_back();
+        if (autoexample.size())
+          elem[3].s=ex+autoexample;
+        else
+          elem.pop_back();
       }
       exec=doTextArea(&text,contextptr);
     }
@@ -2056,7 +2059,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       return "";
     if (exec==MENU_RETURN_SELECTION){
       while (*cmdname && *cmdname==*cmdnameorig){
-	++cmdname; ++cmdnameorig;
+        ++cmdname; ++cmdnameorig;
       }
       return cmdname;
     }
@@ -2065,30 +2068,30 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       std::string s;
       const char * example=0;
       if (exec==KEY_CHAR_ANS || exec==KEY_BOOK || exec=='\t')
-	example=catf?catf->example:fexamples;
+        example=catf?catf->example:fexamples;
       else
-	example=catf?catf->example2:frelated;
+        example=catf?catf->example2:frelated;
       if (example){
-	while (*example && *example==*cmdnameorig){
-	  ++example; ++cmdnameorig;
-	}
-	while (*cmdnameorig){
-	  ++back;
-	  ++cmdnameorig;
-	}
-	if (example[0]=='#')
-	  s=example+1;
-	else {
-	  s += example;
-	  //if (catf && s[s.size()-1]!=')') s += ")";
-	}
+        while (*example && *example==*cmdnameorig){
+          ++example; ++cmdnameorig;
+        }
+        while (*cmdnameorig){
+          ++back;
+          ++cmdnameorig;
+        }
+        if (example[0]=='#')
+          s=example+1;
+        else {
+          s += example;
+          //if (catf && s[s.size()-1]!=')') s += ")";
+        }
       }
       if (python_compat(contextptr)<0 || (python_compat(contextptr) & 4)){
-	// replace := by =
-	for (int i=1;i<s.size();++i){
-	  if (s[i]=='=' && s[i-1]==':')
-	    s.erase(s.begin()+i-1);
-	}
+        // replace := by =
+        for (int i=1;i<s.size();++i){
+          if (s[i]=='=' && s[i-1]==':')
+            s.erase(s.begin()+i-1);
+        }
       }
       return s;
     }
@@ -13933,7 +13936,7 @@ namespace xcas {
     }
     return 0;
   }
-#ifdef HP39
+#if defined HP39 
 // 0 not alpha symbol, blue (7) Xcas command, red (2) keyword, cyan (3) number,  green (4) comment, yellow (6) string
   void print(int &X, int &Y, const char *buf, int color, bool revert, bool fake, bool minimini){
     //if (!fake) dbgprintf("print %s X=%i Y=%i color=%i revert=%i\n",buf,X,Y,color,revert);
@@ -13969,14 +13972,26 @@ namespace xcas {
     for (int i=0;i<s;++i){
       char & ch=buf[i];
       if (ch=='\n')
-	ch='\\';
+        ch='\\';
     }
+    int x=X;
     if(minimini) 
       X=PrintMiniMini(X, Y, buf, revert?4:0, color, COLOR_WHITE,fake);
     else
       X=PrintMini(X, Y, buf, revert?4:0, color, COLOR_WHITE, fake);
-  }
+#ifdef BW
+    if (!revert){
+      int dy=15;
+      if (color == COLOR_KEYWORD){ 
+        giac::draw_line(x, Y + dy, X, Y + dy, COLOR_BLACK,0xcccc); 
+      }
+      if (color == COLOR_BLUE){ 
+        giac::draw_line(x, Y + dy, X, Y + dy, COLOR_BLACK,0xffff); 
+      }
+    }
 #endif
+  }
+#endif // hp39
 
   void match_print(char * singleword,int delta,int X,int Y,bool match,bool minimini){
     // char buflog[128];sprintf(buflog,"%i %i %s               ",delta,(int)match,singleword);puts(buflog);
@@ -15145,7 +15160,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	    couleur=linecomment?5:find_color(singleword,contextptr);
 	    if (couleur==1) couleur=COLOR_BLUE;
 	    if (couleur==2) couleur=49432; //was COLOR_YELLOWDARK;
-	    if (couleur==3) couleur=51712;//33024;
+	    if (couleur==3) couleur=COLOR_KEYWORD;//33024;
 	    if (couleur==4) couleur=COLOR_MAGENTA;
 	    if (couleur==5) couleur=_green;
 	    //char ch[32];
@@ -19268,7 +19283,6 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	return CONSOLE_SUCCEEDED;
 #endif
       }
-#ifndef BW
       if (key==KEY_SHIFT_ANS || key==KEY_CTRL_SD){ // 3rd party app
         int res=khicas_addins_menu(contextptr);
         if (res==KEY_CTRL_MENU)
@@ -19276,7 +19290,6 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
         Console_Disp(1,contextptr);
         return CONSOLE_SUCCEEDED;
       }
-#endif
       if ( (key >= KEY_CTRL_F1 && key <= KEY_CTRL_F6) ||
 	   (key >= KEY_CTRL_F7 && key <= KEY_CTRL_F14) 
 	   ){
@@ -19657,7 +19670,7 @@ const char *Console_Draw_FMenu(int key, struct FMenu *menu, char *cfg, int activ
     x *=3;
     y *=3;
 #ifdef BW
-    os_draw_string_medium(x,y,COLOR_BLACK,COLOR_WHITE,s);
+    os_draw_string_medium(x,y,COLOR_BLACK,mode?color_gris:COLOR_WHITE,s);
 #else
     PrintMini(x,y,(char *)s,mode,COLOR_BLACK, COLOR_WHITE);
 #endif
@@ -19697,20 +19710,21 @@ const char *Console_Draw_FMenu(int key, struct FMenu *menu, char *cfg, int activ
     box3.right=3*box.right;
     box3.bottom=3*box.bottom+22;
     box3.top=3*box.top+20;
-  
+    giac::freeze=true; // avoid clearscreen
     drawRectangle(box3.left,box3.top,box3.right-box3.left,box3.bottom-box3.top,COLOR_WHITE);
     drawLine(box3.left, box3.top, box3.right, box3.top,COLOR_BLACK);
     drawLine(box3.left, box3.bottom, box3.left, box3.top,COLOR_BLACK);
     drawLine(box3.right, box3.bottom, box3.right, box3.top,COLOR_BLACK);
     drawLine(box3.left, box3.bottom, box3.right, box3.bottom,COLOR_BLACK);
+    giac::freeze=false; // temporary workaround
     
     // Cursor_SetFlashOff();
     
     for (;;){
       for(i=0; i<nb_entries; i++) {
-	quick[0] = '0'+(i+1);
-	PrintMini(3+position_x, box.bottom-7*i, quick, 0);
-	PrintMini(3+position_x+quick_len*4, box.bottom-7*i, entries[i], 0);
+        quick[0] = '0'+(i+1);
+        PrintMini(3+position_x, box.bottom-7*i, quick, 0);
+        PrintMini(3+position_x+quick_len*4, box.bottom-7*i, entries[i], 0);
       }
       PrintMini(3+position_x+quick_len*4,box.bottom-7*selector, entries[selector], 4);
       GetKey(&input_key);
@@ -19929,7 +19943,7 @@ int print_x=1,print_y=0;
       couleur=linecomment?5:find_color(singleword,contextptr);
       if (couleur==1) couleur=COLOR_BLUE;
       if (couleur==2) couleur=49432; //was COLOR_YELLOWDARK;
-      if (couleur==3) couleur=51712;//33024;
+      if (couleur==3) couleur=COLOR_KEYWORD;//33024;
       if (couleur==4) couleur=COLOR_MAGENTA;
       if (couleur==5) couleur=_green;
       if (linecomment || singleword[0]=='"')

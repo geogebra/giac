@@ -1042,6 +1042,9 @@ int ascii_get(int* adaptive_cursor_state){
   if (isKeyPressed(KEY_NSPIRE_ESC)) return KEY_CTRL_EXIT ;
   if (isKeyPressed(KEY_NSPIRE_HOME)) return KEY_CTRL_MENU ;
   if (isKeyPressed(KEY_NSPIRE_MENU)) return KEY_CTRL_CATALOG ;
+  if (isKeyPressed(KEY_NSPIRE_SIN))		return SHIFT(KEY_CHAR_SIN,KEY_CHAR_ASIN);
+  if (isKeyPressed(KEY_NSPIRE_COS))		return SHIFT(KEY_CHAR_COS,KEY_CHAR_ACOS);
+  if (isKeyPressed(KEY_NSPIRE_TAN))		return SHIFT(KEY_CHAR_TAN,KEY_CHAR_ATAN);
   
   // Characters
   if (isKeyPressed(KEY_NSPIRE_A)) return SHIFTCTRL('a','A',KEY_CTRL_A);

@@ -173,6 +173,10 @@ namespace giac {
     int d=int(p.size())-1;
     new_coord.reserve(d);
     modpoly::const_iterator it=p.begin(); // itend=p.end(),
+    for (;d;++it,--d){  
+      if (!is_zero((*it)*gen(d)))                                               
+        break;                                                                  
+    }                                                                           
     for (;d;++it,--d)
       new_coord.push_back((*it)*gen(d));
     return new_coord;

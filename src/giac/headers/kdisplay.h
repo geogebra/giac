@@ -42,7 +42,7 @@ extern char* fmenu_cfg;
 #define color_gris 0
 #define MENUHEIGHT 8
 #else
-#define color_gris 57083
+#define color_gris 46491
 #define MENUHEIGHT 12
 #endif
 #define STATUS_AREA_PX 0 // 24
