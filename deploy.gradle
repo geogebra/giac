@@ -63,10 +63,13 @@ task javagiacMacJar (type: Jar) {
     description 'Creates the Linux 32 bit .jar package for the Java Giac library.'
     baseName = 'javagiac-mac'
     destinationDir = javagiacDir
-    from "${buildDir}/binaries/javagiacSharedLibrary/osx_amd64" // FIXME: unify
-    include '*.jnilib'
-    from "${buildDir}/binaries/javagiacSharedLibrary/osx_arm64"
-    include '*.jnilib'
+    from("${buildDir}/binaries/javagiacSharedLibrary/osx_x86-64") { // FIXME: unify
+        include '*.jnilib'
+    }
+    from("${buildDir}/binaries/javagiacSharedLibrary/osx_arm-v8") {
+        include '*.jnilib'
+        rename 'libjavagiac.jnilib', 'libjavagiac-arm64.so'
+    }
     classifier 'natives-macosx-universal'
 }
 

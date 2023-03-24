@@ -26,8 +26,8 @@ pipeline {
           steps {
             sh "export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary javagiacOsx_arm64SharedLibrary --info"
             sh "find ."
-            stash name: 'giac-mac', includes: 'build/binaries/javagiacSharedLibrary/osx_amd64/libjavagiac.jnilib'
-            stash name: 'giac-mac-arm64', includes: 'build/binaries/javagiacSharedLibrary/osx_arm64/libjavagiac.jnilib'
+            stash name: 'giac-mac', includes: 'build/binaries/javagiacSharedLibrary/osx_x86-64/libjavagiac.jnilib'
+            stash name: 'giac-mac-arm64', includes: 'build/binaries/javagiacSharedLibrary/osx_arm-v8/libjavagiac.jnilib'
           }
           post {
             always { deleteDir() }
@@ -53,7 +53,7 @@ pipeline {
             sh '''
                export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
               ./gradlew downloadEmsdk installEmsdk activateEmsdk
-              ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --info --refresh-dependencies
+              ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --refresh-dependencies
               ./gradlew :updateGiac --no-daemon -Prevision=$SVN_REVISION --info'''
           }
           post {
