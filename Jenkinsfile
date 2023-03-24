@@ -49,7 +49,7 @@ pipeline {
           steps {
             unstash name: 'giac-clang'
             unstash name: 'giac-mac'
-            unstash name: 'giac-mac-arm'
+            unstash name: 'giac-mac-arm64'
             sh '''
                export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
               ./gradlew downloadEmsdk installEmsdk activateEmsdk
