@@ -619,7 +619,7 @@ model {
 
                 if (targetPlatform.operatingSystem.name == 'osx') {
                     cppCompiler.define 'gettext', ''
-                    def path = 'build/binaries/javagiacSharedLibrary/osx_amd64/'
+                    def path = "build/binaries/javagiacSharedLibrary/osx_${targetPlatform.architecture.name}/"
                     mkdir(path)
                     linker.args '-o', "$path/libjavagiac.jnilib" // TODO: find a more elegant way
                 }

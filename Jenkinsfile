@@ -22,10 +22,11 @@ pipeline {
           }
         }
         stage('Mac') {
-          agent {label 'mac'}
+          agent {label 'ios-test'}
           steps {
-            sh "export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary"
+            sh "export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary javagiacOsx_arm64SharedLibrary"
             stash name: 'giac-mac', includes: 'build/binaries/javagiacSharedLibrary/osx_amd64/libjavagiac.jnilib'
+            stash name: 'giac-mac-arm64', includes: 'build/binaries/javagiacSharedLibrary/osx_arm64/libjavagiac.jnilib'
           }
           post {
             always { deleteDir() }
@@ -39,8 +40,6 @@ pipeline {
           agent {label 'deploy2'}
           environment {
             MAVEN = credentials('maven-repo')
-            MAC = credentials('mac-giac')
-            NPM = credentials('npm-registry')
             ANDROID_SDK_ROOT='/var/lib/jenkins/.android-sdk'
             BINARYEN="${env.WORKSPACE}/emsdk/upstream"
             EMSDK_PYTHON='/usr/bin/python3.8'
@@ -49,6 +48,7 @@ pipeline {
           steps {
             unstash name: 'giac-clang'
             unstash name: 'giac-mac'
+            unstash name: 'giac-mac-arm'
             sh '''
                export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
               ./gradlew downloadEmsdk installEmsdk activateEmsdk

@@ -65,6 +65,8 @@ task javagiacMacJar (type: Jar) {
     destinationDir = javagiacDir
     from "${buildDir}/binaries/javagiacSharedLibrary/osx_amd64" // FIXME: unify
     include '*.jnilib'
+    from "${buildDir}/binaries/javagiacSharedLibrary/osx_arm64"
+    include '*.jnilib'
     classifier 'natives-macosx-universal'
 }
 
