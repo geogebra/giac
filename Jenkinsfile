@@ -24,7 +24,8 @@ pipeline {
         stage('Mac') {
           agent {label 'ios-test'}
           steps {
-            sh "export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary javagiacOsx_arm64SharedLibrary"
+            sh "export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary javagiacOsx_arm64SharedLibrary --info"
+            sh "find ."
             stash name: 'giac-mac', includes: 'build/binaries/javagiacSharedLibrary/osx_amd64/libjavagiac.jnilib'
             stash name: 'giac-mac-arm64', includes: 'build/binaries/javagiacSharedLibrary/osx_arm64/libjavagiac.jnilib'
           }
