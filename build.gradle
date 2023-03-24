@@ -595,6 +595,7 @@ model {
             targetPlatform 'linux64'
             if (isMac) {
                 targetPlatform 'osx_amd64'
+                targetPlatform 'osx_arm64'
             }
             targetPlatform 'androideabi'
             targetPlatform 'androidx86'
