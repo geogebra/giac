@@ -270,11 +270,7 @@ def giacSpecificSettings(cppCompiler, linker, targetPlatform) {
         cppCompiler.args '-stdlib=libc++'
 
         linker.args '-Wl,-search_paths_first'
-        if (targetPlatform.architecture.name == 'x86-64') {
-            linker.args '-L', file('src/jni/prebuilt/osx/x86-64').toString()
-        } else {
-            linker.args '-L', file('src/jni/prebuilt/osx/arm64').toString()
-        }
+        linker.args '-L', file("src/jni/prebuilt/osx/${targetPlatform.architecture.name}").toString()
 
         linker.args '-stdlib=libc++', '-lc++'
         linker.args '-lgmp', '-lmpfr', '-lpthread', '-dynamiclib'
@@ -687,13 +683,7 @@ model {
                     cppCompiler.args '-stdlib=libc++'
                     linker.args '-stdlib=libc++', '-lc++'
                     linker.args '-lgmp', '-lmpfr', '-lpthread'
-                    if (targetPlatform.architecture.name == 'x86-64') {
-                        linker.args '-L', file('src/jni/prebuilt/osx/x86-64').toString(), '-dynamiclib'
-                    } else if (targetPlatform.architecture.name == 'arm-v8') {
-                        linker.args '-L', file('src/jni/prebuilt/osx/arm64').toString(), '-dynamiclib'
-                    } else {
-                        throw new GradleException("Unknown architecture ${targetPlatform.architecture.name}")
-                    }
+                    linker.args '-L', file("src/jni/prebuilt/osx/${targetPlatform.architecture.name}").toString(), '-dynamiclib'
                 }
             }
         }
