@@ -1277,7 +1277,7 @@ namespace giac {
     gen gm=subst(g0,x,b,false,contextptr)+subst(g0,x,a,false,contextptr);
     if (!has_evalf(gm,gabd,1,contextptr) || is_zero(gabd))
       gm=simplify(gm,contextptr);
-    if (is_constant_wrt(g,x,contextptr)){
+    if (is_constant_wrt(g,x,contextptr) && lop(g,at_sign).empty() ){
       if (contains(g,x))
 	g=ratnormal(g,contextptr);
       res=g*(b-a);

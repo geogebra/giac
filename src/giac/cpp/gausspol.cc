@@ -6534,9 +6534,8 @@ namespace giac {
 
   factorization sqff(const polynome &p ){
     factorization f; gen m;
-    if (has_mod_coeff(p,m) || has_gf_coeff(p,m)){
-      if (m.type!=_INT_)
-        gensizeerr("Characteristic too large");
+    if ( (has_mod_coeff(p,m) || has_gf_coeff(p,m)) && m.type==_INT_){
+      // otherwise it's like if char is 0
       f=squarefree_fp(p,m.val,1);
     }
     else
