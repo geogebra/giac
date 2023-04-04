@@ -5201,6 +5201,9 @@ namespace giac {
       env.moduloon=true;
       env.modulo=m;
     }
+    gen coeff; int tt=coefftype(B,coeff);
+    if (tt==_USER)
+      env.coeff=coeff;
     // if (!B.empty() && !is_zero(m)) mulmodpoly(B,invmod(B.front(),m),&env,B);
     modpoly res=powmod(A,n,B,&env);
     polynome R;
@@ -5852,7 +5855,7 @@ namespace giac {
       }
       return m;
     }
-    vecteur::const_iterator it=args._VECTptr->begin(),itend=args._VECTptr->end();
+    vecteur::const_iterator it=args._VECTptr->begin(),it0=it,itend=args._VECTptr->end();
     if (it==itend)
       return gendimerr(contextptr);
     if (ckmatrix(args)){
@@ -5864,10 +5867,24 @@ namespace giac {
     }
     if (itend-it==2 && it->type==_VECT && (it+1)->type==_VECT )
       return matrix_apply(*it,*(it+1),contextptr,min);
-    gen res=*it;
+    bool idx=args._VECTptr->back()==at_index;
+    if (idx){
+      if (itend-it==2 && it->type==_VECT){
+	itend=it->_VECTptr->end();
+	it0=it=it->_VECTptr->begin();
+      }
+      else
+	--itend;
+    }
+    gen res=*it; int pos=0;
     ++it;
-    for (;it!=itend;++it)
+    for (;it!=itend;++it){
       res = min(res,*it,contextptr);
+      if (idx && *it==res)
+	pos=it-it0;
+    }
+    if (idx)
+      return makevecteur(res,pos);
     return res;
   }
   static const char _min_s []="min";
@@ -5892,7 +5909,7 @@ namespace giac {
     }
     if (args.type!=_VECT)
       return args;
-    vecteur::const_iterator it=args._VECTptr->begin(),itend=args._VECTptr->end();
+    vecteur::const_iterator it=args._VECTptr->begin(),it0=it,itend=args._VECTptr->end();
     if (itend==it)
       return undef;//gendimerr(contextptr);
     if (itend-it==1)
@@ -5906,10 +5923,24 @@ namespace giac {
     }
     if (itend-it==2 && it->type==_VECT && (it+1)->type==_VECT )
       return matrix_apply(*it,*(it+1),contextptr,max);
-    gen res=*it;
+    bool idx=args._VECTptr->back()==at_index;
+    if (idx){
+      if (itend-it==2 && it->type==_VECT){
+	itend=it->_VECTptr->end();
+	it0=it=it->_VECTptr->begin();
+      }
+      else
+	--itend;
+    }
+    gen res=*it; int pos=0;
     ++it;
-    for (;it!=itend;++it)
+    for (;it!=itend;++it){
       res = max(res,*it,contextptr);
+      if (idx && *it==res)
+	pos=it-it0;
+    }
+    if (idx)
+      return makevecteur(res,pos);
     return res;
   }
   static const char _max_s []="max";

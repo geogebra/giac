@@ -1928,7 +1928,9 @@ namespace giac {
 	gen tmp=smod(g,p);
 	if (is_exactly_zero(tmp))
 	  continue;
-	g=galois_field(p,P,x,vecteur(1,g));
+        if (is_greater(0,tmp,context0))
+          tmp += p;
+	g=galois_field(p,P,x,vecteur(1,tmp));
       }
       res.coord.push_back(monomial<gen>(g,it->index));
     }
