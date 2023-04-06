@@ -421,10 +421,11 @@ namespace giac {
     w=*wfront._VECTptr;
     if (w.size()!=2)
       return;
-    gen l(w[0]),m(w[1]);
+    gen l,m;
     vecteur newv;
     iterateur it=v.begin(),itend=v.end();
     for (;it!=itend;++it){
+      l=w[0];m=w[1];
       *it=simplifier(*it,contextptr);
       if (equalposcomp(excluded,*it))
 	continue;
