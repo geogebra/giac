@@ -68,7 +68,7 @@ task javagiacMacJar (type: Jar) {
     }
     from("${buildDir}/binaries/javagiacSharedLibrary/osx_arm-v8") {
         include '*.jnilib'
-        rename 'libjavagiac.jnilib', 'libjavagiac-arm64.so'
+        rename 'libjavagiac.jnilib', 'libjavagiac-arm64.jnilib'
     }
     classifier 'natives-macosx-universal'
 }
