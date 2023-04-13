@@ -5034,6 +5034,11 @@ namespace giac {
 	}
       }
       p_gcd=p_gcd*d_content;
+      gen pz=ppz(p,true),qz=ppz(q,true);
+      gen g=simplify(pz,qz);
+      mulpoly(p_gcd,g,p_gcd);
+      mulpoly(p,pz,p);
+      mulpoly(q,qz,q);
       return ;
     }
     p_gcd=gcdpsr(p_orig,q_orig);
@@ -6066,7 +6071,7 @@ namespace giac {
       }
       gen bn2=1;
       lcmdeno(*newp._POLYptr,bn2);
-      newp=bn2*newp;
+      mulpoly(*newp._POLYptr,bn2,*newp._POLYptr); // newp=bn2*newp;
       if (the_ext.type!=_EXT)
 	return false;
       bool res=ext_factor(*newp._POLYptr,the_ext,an,p_content,f,false,extra_div);
@@ -7057,6 +7062,24 @@ namespace giac {
     }
     else
       p_primit=p;
+#if 1
+    // adjust for i
+    if (!isprimitive && p_primit.coord.front().value.type==_CPLX){
+      const gen & g=p_primit.coord.front().value;
+      if (is_exactly_zero(*g._CPLXptr)){
+        if (is_strictly_positive(*(g._CPLXptr+1),context0)){
+          p_primit=-cst_i*p_primit;
+          p_content=cst_i*p_content;
+          //extra_div=cst_i*extra_div;
+        }
+        else {
+          p_primit=cst_i*p_primit;
+          p_content=-cst_i*p_content;
+          //extra_div=-cst_i*extra_div;
+        }
+      }
+    }
+#endif
     p_content /= divide_an_by;
     if (is_one(p_primit))
       return true;

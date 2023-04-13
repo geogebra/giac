@@ -3556,8 +3556,15 @@ namespace giac {
       lp=l;
     factorization v;
     polynome p_content(pp.dim);
-    if (!factor(pp,p_content,v,false,with_sqrt,complex_mode(contextptr),divide_an_by,extra_div))
-      return gentypeerr(gettext("Not implemented, e.g. for multivariate mod/approx polynomials"));
+    if (!factor(pp,p_content,v,false,with_sqrt,complex_mode(contextptr),divide_an_by,extra_div)){
+      *logptr(contextptr) << gettext("Not implemented, e.g. for multivariate mod/approx polynomials") << "\n";
+      gen tmp;
+      if (l.front().type==_VECT)
+	tmp=r2sym(p,l.begin(),l.end(),contextptr);
+      else
+	tmp=r2sym(p,l,contextptr);
+      return ratfactor(tmp,with_sqrt,contextptr);
+    }
     // factor p_content
     pp=p_content.trunc1();
     vecteur ll;
@@ -3593,8 +3600,15 @@ namespace giac {
       return factor_multivar(p,l,fixed_order,with_sqrt,divide_an_by,extra_div,contextptr);
     factorization v;
     polynome p_content(p.dim);
-    if (!factor(p,p_content,v,false,with_sqrt,complex_mode(contextptr),divide_an_by,extra_div))
-      return gentypeerr(gettext("Not implemented, e.g. for multivariate mod/approx polynomials"));
+    if (!factor(p,p_content,v,false,with_sqrt,complex_mode(contextptr),divide_an_by,extra_div)){
+      *logptr(contextptr) << gettext("Not implemented, e.g. for multivariate mod/approx polynomials") << "\n";
+      gen tmp;
+      if (l.front().type==_VECT)
+	tmp=r2sym(p,l.begin(),l.end(),contextptr);
+      else
+	tmp=r2sym(p,l,contextptr);
+      return ratfactor(tmp,with_sqrt,contextptr);
+    }
     // factor p_content
     if (is_one(p_content))
       return r2sym(v,l,contextptr)/r2sym(extra_div,l,contextptr);

@@ -851,8 +851,20 @@ namespace giac {
 	return gensizeerr(gettext("alg_ext.cc/common_EXT"));
       b__VECT=*(b._EXTptr+1);
     }
+    int innerdim=0;
+    const_iterateur b_it=b__VECT._VECTptr->begin(),b_itend=b__VECT._VECTptr->end();
+    for (;b_it!=b_itend;++b_it){
+      if (b_it->type==_POLY)
+	innerdim=b_it->_POLYptr->dim;
+    }
+    int innerdima=0;
+    const_iterateur a_it=a__VECT._VECTptr->begin(),a_itend=a__VECT._VECTptr->end();
+    for (;a_it!=a_itend;++a_it){
+      if (a_it->type==_POLY)
+	innerdima=a_it->_POLYptr->dim;
+    }
     int as=int(a__VECT._VECTptr->size()),bs=int(b__VECT._VECTptr->size());
-    if (bs>as)
+    if (innerdima>innerdim || (innerdima==innerdim && bs>as))
       return common_EXT(b,a,l,contextptr);
     if (as==3 && bs==3 && is_one(a[0]) && is_one(b[0]) && is_zero(a[1]) && is_zero(b[1]) && a[2]==-b[2]){ // sqrt(X) and sqrt(-X)
       b=algebraic_EXTension(makevecteur(cst_i,0),a);
@@ -922,12 +934,6 @@ namespace giac {
       trouve=true;
     vecteur racines;
     vector<double> real_racines;
-    int innerdim=0;
-    const_iterateur b_it=b__VECT._VECTptr->begin(),b_itend=b__VECT._VECTptr->end();
-    for (;b_it!=b_itend;++b_it){
-      if (b_it->type==_POLY)
-	innerdim=b_it->_POLYptr->dim;
-    }
     vecteur vb(innerdim);
     gen racine_max=undef;
     bool deep_emb=false; // marker for deep embedding
