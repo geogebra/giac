@@ -863,8 +863,9 @@ namespace giac {
       if (a_it->type==_POLY)
 	innerdima=a_it->_POLYptr->dim;
     }
+    if (innerdima>innerdim) innerdim=innerdima;
     int as=int(a__VECT._VECTptr->size()),bs=int(b__VECT._VECTptr->size());
-    if (innerdima>innerdim || (innerdima==innerdim && bs>as))
+    if (bs>as) // (innerdima>innerdim || (innerdima==innerdim && bs>as))
       return common_EXT(b,a,l,contextptr);
     if (as==3 && bs==3 && is_one(a[0]) && is_one(b[0]) && is_zero(a[1]) && is_zero(b[1]) && a[2]==-b[2]){ // sqrt(X) and sqrt(-X)
       b=algebraic_EXTension(makevecteur(cst_i,0),a);
