@@ -4403,6 +4403,18 @@ namespace giac {
   }
 
   gen sq(const gen & a){
+#if defined HAVE_LIBMPFI && !defined NO_RTTI
+    if (a.type==_REAL){
+      if (real_interval * ptr=dynamic_cast<real_interval *>(a._REALptr)){
+	mpfi_t interv;
+	mpfi_init(interv);
+        mpfi_sqr(interv,ptr->infsup);
+        gen res=gen(real_interval(interv));
+	mpfi_clear(interv);
+        return res;
+      }
+    }
+#endif
     return a*a;
   }
 
