@@ -5647,8 +5647,11 @@ namespace giac {
     if (is_zero(step))
       return gensizeerr(contextptr);
     if (!is_integral(v[3]) || !is_integral(v[2])){
-      if (v.size()==4 && g.subtype==_SEQ__VECT)
+      if (v.size()==4 && g.subtype==_SEQ__VECT){
+        if (type==1)
+          return symbolic(at_product,g);
 	return gentypeerr(contextptr);
+      }
       if (type==1 && (g.subtype!=_SEQ__VECT || v.size()!=5))
 	return prodsum(v,true);
       if (type==2 && (g.subtype!=_SEQ__VECT || v.size()!=5))

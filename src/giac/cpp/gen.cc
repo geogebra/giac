@@ -2462,7 +2462,7 @@ namespace giac {
     if (g.type==_VECT)
       return gen(accurate_evalf(*g._VECTptr,nbits),g.subtype);
     gen r,i;reim(g,r,i,context0); // only called for numeric values
-    if (is_zero(i,context0))
+    if (is_exactly_zero(i))
       return set_precision(r,nbits);
     else
       return gen(set_precision(r,nbits),set_precision(i,nbits));
