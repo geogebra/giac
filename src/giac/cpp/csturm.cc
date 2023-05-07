@@ -4279,7 +4279,9 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
   }
 
   bool read_poly(const string & s,vdbl & P,GIAC_CONTEXT){
+#ifndef NO_STDEXCEPT
     try {
+#endif
       gen g(s,contextptr);
       g=eval(g,1,contextptr);
       if (g.type!=_IDNT){
@@ -4290,9 +4292,11 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
           return true;
         }
       }
+#ifndef NO_STDEXCEPT
     }
     catch (std::runtime_error & e){
     }
+#endif
     P.clear();
     FILE * f=fopen(s.c_str(),"r");
     if (!f)
