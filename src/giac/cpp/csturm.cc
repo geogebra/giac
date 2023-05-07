@@ -4309,12 +4309,12 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
       S += ch;
     }
     fclose(f);
-    gen g(S,contextptr);
-    g=eval(g,1,contextptr);
-    if (g.type==_SYMB)
-      g=_symb2poly(g,contextptr);
-    if (g.type==_VECT){
-      P=*g._VECTptr;
+    gen g2(S,contextptr);
+    g2=eval(g2,1,contextptr);
+    if (g2.type==_SYMB)
+      g2=_symb2poly(g2,contextptr);
+    if (g2.type==_VECT){
+      P=*g2._VECTptr;
     }
     return true;
   }
