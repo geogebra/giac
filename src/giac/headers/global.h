@@ -369,6 +369,8 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   extern int FACTORIAL_SIZE_LIMIT;
   extern int GAMMA_LIMIT;
   extern int LIST_SIZE_LIMIT;
+  extern int ABERTH_NMAX; // max number of iterations
+  extern int ABERTH_NBITSMAX; // max precision
   extern int NEWTON_DEFAULT_ITERATION;
   extern int NEWTON_MAX_RANDOM_RESTART;
   extern int DEFAULT_EVAL_LEVEL;

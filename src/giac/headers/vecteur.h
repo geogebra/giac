@@ -124,9 +124,9 @@ namespace giac {
 
   matrice companion(const vecteur & w);
   gen a_root(const vecteur & v,const std::complex<double> & c0,double eps);
-  vecteur proot(const vecteur & v);
-  vecteur proot(const vecteur & v,double eps);
-  vecteur proot(const vecteur & v,double & eps,int & rprec);
+  vecteur proot(const vecteur & v,GIAC_CONTEXT);
+  vecteur proot(const vecteur & v,double eps,GIAC_CONTEXT);
+  vecteur proot(const vecteur & v,double & eps,int & rprec,GIAC_CONTEXT);
   vecteur real_proot(const vecteur & v,double eps,GIAC_CONTEXT);
   gen symb_proot(const gen & e) ;
   gen _proot(const gen & e,GIAC_CONTEXT);

@@ -577,7 +577,9 @@ namespace giac {
 
   string & add_print(string & s,const gen & g,GIAC_CONTEXT){
     if (g.type==_IDNT){
-      if (calc_mode(contextptr)==1 && is_undef(g))
+      if (calc_mode(contextptr)==1 &&
+          (//is_inf(g) ||
+           is_undef(g)))
 	s += "?";
       else
 	(s += g._IDNTptr->print(contextptr));

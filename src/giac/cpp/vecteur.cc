@@ -57,6 +57,9 @@ using namespace std;
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_poly.h>
 #endif
+#ifdef HAVE_LIBMPS
+#include <mps/mps.h>
+#endif
 
 // vector class version 1 by Agner Fog https://github.com/vectorclass
 // this might be faster for CPU with AVX512DQ instruction set
@@ -1973,6 +1976,7 @@ namespace giac {
 #endif // HAVE_LIBGSL
   }
 
+  
   static bool in_proot(const vecteur & w,double & eps,int & rprec,vecteur & res,bool isolaterealroot,GIAC_CONTEXT){
 #ifdef EMCC
     if (eps<1e-300)
@@ -2215,24 +2219,24 @@ namespace giac {
     return false;
   }
 
-  static vecteur proot(const vecteur & v,double & eps,int & rprec,bool ck_exact){
+  static vecteur proot(const vecteur & v,double & eps,int & rprec,bool ck_exact,GIAC_CONTEXT){
     int vsize=int(v.size());
     int deg=vsize-1;
     if (vsize<2)
       return vecteur(0);
     if (vsize==2)
-      return vecteur(1,rprec<=50?evalf(-v[1]/v[0],1,context0):accurate_evalf(-v[1]/v[0],rprec)); // ok
+      return vecteur(1,rprec<=50?evalf(-v[1]/v[0],1,contextptr):accurate_evalf(-v[1]/v[0],rprec)); // ok
     if (vsize==3 && !is_exactly_zero(v.back())){
       gen b2=accurate_evalf(-v[1]/2,rprec);
       gen delta=accurate_evalf(b2*b2-v[0]*v[2],rprec); // ok
       gen r1,r2;
-      if (is_positive(b2,context0)){
-	r1=b2+sqrt(delta,context0);
+      if (is_positive(b2,contextptr)){
+	r1=b2+sqrt(delta,contextptr);
 	r2=r1/v[0];
 	r1=v[2]/r1;
       }
       else {
-	r2=b2-sqrt(delta,context0);
+	r2=b2-sqrt(delta,contextptr);
 	r1=r2/v[0];
 	r2=v[2]/r2;
       }
@@ -2240,7 +2244,7 @@ namespace giac {
     }
     // check for 0
     if (v.back()==0){
-      vecteur res=proot(vecteur(v.begin(),v.end()-1),eps,rprec,ck_exact);
+      vecteur res=proot(vecteur(v.begin(),v.end()-1),eps,rprec,ck_exact,contextptr);
       res.push_back(0);
       return res;
     }
@@ -2258,17 +2262,17 @@ namespace giac {
 	for (int i=0;i<vsize;i+=gcddeg){
 	  vd.push_back(v[i]);
 	}
-	vecteur resd=proot(vd,eps,rprec,ck_exact),res;
+	vecteur resd=proot(vd,eps,rprec,ck_exact,contextptr),res;
 	vecteur expj;
 	for (int j=0;j<gcddeg;++j){
-	  gen tmp=exp(j*cst_two_pi*cst_i/gcddeg,context0);
+	  gen tmp=exp(j*cst_two_pi*cst_i/gcddeg,contextptr);
 	  if (rprec<=50)
-	    expj.push_back(evalf_double(tmp,1,context0));
+	    expj.push_back(evalf_double(tmp,1,contextptr));
 	  else
 	    expj.push_back(accurate_evalf(tmp,rprec));
 	}
 	for (int i=0;i<int(resd.size());++i){
-	  gen r=pow(resd[i],inv(gcddeg,context0),context0);
+	  gen r=pow(resd[i],inv(gcddeg,contextptr),contextptr);
 	  for (int j=0;j<gcddeg;++j){
 	    gen tmp=r*expj[j];
 	    res.push_back(tmp);
@@ -2281,15 +2285,18 @@ namespace giac {
     if (ck_exact && is_exact(v)){
 #if 1
       vecteur res;
-      if (int(v.size())<PROOT_FACTOR_MAXDEG){
+      if (eps>0 && int(v.size())<PROOT_FACTOR_MAXDEG){
 	gen g=symb_horner(v,vx_var);
-	vecteur vv=factors(g,vx_var,context0);
+        int c=xcas_mode(contextptr);
+        xcas_mode(0,contextptr);
+	vecteur vv=factors(g,vx_var,contextptr);
+        xcas_mode(c,contextptr);
 	for (unsigned i=0;i<vv.size()-1;i+=2){
 	  gen vi=vv[i];
-	  vi=_e2r(makevecteur(vi,vx_var),context0);
+	  vi=_e2r(makevecteur(vi,vx_var),contextptr);
 	  if (vi.type==_VECT && vv[i+1].type==_INT_){
-#if 1 // ndef HAVE_LIBPARI
-	    gen norme=linfnorm(vi,context0);
+#if 0 // not useful with new proot implementation
+	    gen norme=linfnorm(vi,contextptr);
 	    if (norme.type==_ZINT){
 	      rprec=giacmax(rprec,mpz_sizeinbase(*norme._ZINTptr,2));
 	      eps=std::pow(2.0,-rprec);
@@ -2297,7 +2304,7 @@ namespace giac {
 	    }
 #endif
 	    int mult=vv[i+1].val;
-	    vecteur current=proot(*vi._VECTptr,eps,rprec,false);
+	    vecteur current=proot(*vi._VECTptr,eps,rprec,false,contextptr);
 	    for (unsigned j=0;j<current.size();++j){
 	      for (int k=0;k<mult;++k){
 		res.push_back(current[j]);
@@ -2311,7 +2318,7 @@ namespace giac {
       poly12polynome(v,1,V);
       factorization f=sqff(V);
       if (f.size()==1 && f.front().mult==1)
-	return proot(accurate_evalf(v,rprec),eps,rprec,false);
+	return proot(v,eps,rprec,false,contextptr);
       factorization::const_iterator it=f.begin(),itend=f.end();
       for (;it!=itend;++it){
 	polynome pcur=it->fact;
@@ -2319,7 +2326,7 @@ namespace giac {
 	vecteur vcur;
 	polynome2poly1(pcur,1,vcur);
 	vecteur vf=accurate_evalf(vcur,rprec);
-	vecteur current=proot(vf,eps,rprec,false);
+	vecteur current=proot(vf,eps,rprec,false,contextptr);
 	for (unsigned j=0;j<current.size();++j){
 	  for (int k=0;k<n;++k){
 	    res.push_back(current[j]);
@@ -2331,16 +2338,17 @@ namespace giac {
       modpoly p=derivative(v),res;
       res=gcd(v,p,0);
       res=operator_div(v,res,0);
-      gen tmp=evalf(res,1,context0);
+      gen tmp=evalf(res,1,contextptr);
       if (tmp.type!=_VECT || is_undef(tmp))
 	return res;
-      return proot(*tmp._VECTptr,eps,rprec);
+      return proot(*tmp._VECTptr,eps,rprec,contextptr);
 #endif
     }
     else {
       if (!is_numericv(v,1))
 	return vecteur(0);
     }
+#if 0
     context ct;
 #ifdef HAVE_LIBPTHREAD
     pthread_mutex_lock(&context_list_mutex);
@@ -2350,6 +2358,7 @@ namespace giac {
     pthread_mutex_unlock(&context_list_mutex);
 #endif
     context * contextptr=&ct;
+#endif
     epsilon(contextptr)=eps;
     bool add_conjugate=is_zero(im(v,contextptr),contextptr); // ok
     vecteur res,crystalball;
@@ -2358,6 +2367,16 @@ namespace giac {
     if (cache)
       return crystalball;
     cache=true;
+    vecteur rayon;
+    // mpsolve must be called explicitly with proot(polynomial,eps) with eps<=0
+    // until it is fixed!
+    if (eps<=0 && mps_solve(v,res,rayon,-eps,0/* isolate*/,true/* secular algo*/,contextptr)==0)
+      return res;
+    if (eps<0)
+      eps=-eps;
+    int isolate=proba_epsilon(contextptr)>0?0:3;
+    if (aberth(v,res,rayon,ABERTH_NMAX,eps,isolate,false/* exact*/,contextptr))
+      return res;
     // call pari if degree is large
     if (
 	0 && v.size()>=64 && 
@@ -2538,7 +2557,7 @@ namespace giac {
 		}
 		else {
 		  double eps1=std::pow(2.0,-nbits);
-		  roots=proot(current,eps1,nbits);
+		  roots=proot(current,eps1,nbits,contextptr);
 		  for (unsigned i=0;i<positions.size();++i){
 		    // -> Set precision
 		    roots[i]=accurate_evalf(roots[i],nbits);
@@ -2755,13 +2774,13 @@ namespace giac {
     } // end i loop
   }
 
-  vecteur proot(const vecteur & v,double & eps,int & rprec){
-    return proot(v,eps,rprec,true);
+  vecteur proot(const vecteur & v,double & eps,int & rprec,GIAC_CONTEXT){
+    return proot(v,eps,rprec,true,contextptr);
   }
 
-  vecteur proot(const vecteur & v,double eps){
+  vecteur proot(const vecteur & v,double eps,GIAC_CONTEXT){
     int rprec=45;
-    return proot(v,eps,rprec);
+    return proot(v,eps,rprec,contextptr);
   }
 
   vecteur real_proot(const vecteur & v,double eps,GIAC_CONTEXT){
@@ -2788,7 +2807,7 @@ namespace giac {
     }
     return res;
 #else
-    vecteur w(proot(v,eps));
+    vecteur w(proot(v,eps,contextptr));
     if (is_undef(w)) return w;
     vecteur res;
     const_iterateur it=w.begin(),itend=w.end();
@@ -2801,10 +2820,10 @@ namespace giac {
   }
 
   // eps is defined using the norm of v
-  vecteur proot(const vecteur & v){
+  vecteur proot(const vecteur & v,GIAC_CONTEXT){
     double eps=1e-12; 
     // this should take care of precision inside v!
-    return proot(v,eps);
+    return proot(v,eps,contextptr);
   }
 
   gen _proot(const gen & v,GIAC_CONTEXT){
@@ -2816,10 +2835,18 @@ namespace giac {
     vecteur w=*v._VECTptr;
     int digits=decimal_digits(contextptr);
     double eps=epsilon(contextptr);
-    if (v.subtype==_SEQ__VECT && w.back().type==_INT_){
-      digits=giacmax(w.back().val,14);
-      eps=std::pow(0.1,double(digits));
-      w.pop_back();
+    if (v.subtype==_SEQ__VECT && w.size()>=2){
+      if (w.back().type==_INT_){
+        digits=giacmax(w.back().val,14);
+        eps=std::pow(0.1,double(digits));
+        w.pop_back();
+      }
+      if (w.back().type==_DOUBLE_){
+        eps=w.back()._DOUBLE_val;
+        if (eps!=0)
+          digits=-std::log10(fabs(eps));
+        w.pop_back();
+      }
     }
     if (w.size()==1)
       w.push_back(ggb_var(w[0]));
@@ -2838,7 +2865,7 @@ namespace giac {
 	return gensizeerr(contextptr);
     }
     int rprec(int(digits*3.3));
-    return _sorta(proot(w,eps,rprec),contextptr);
+    return _sorta(proot(w,eps,rprec,contextptr),contextptr);
   }
   gen symb_proot(const gen & e) {
     return symbolic(at_proot,e);
@@ -2847,27 +2874,19 @@ namespace giac {
   static define_unary_function_eval (__proot,&_proot,_proot_s);
   define_unary_function_ptr5( at_proot ,alias_at_proot,&__proot,0,true);
 
-  vecteur pcoeff(const vecteur & v){
-    vecteur w(1,plus_one),new_w,somme;
-    gen a,b;
-    const_iterateur it=v.begin(),itend=v.end();
-    for (;it!=itend;++it){
-      if (it->type==_CPLX && it+1!=itend && is_zero(*it-conj(*(it+1),context0))){
-	a=re(*it,context0);
-	b=im(*it,context0);
-	b=a*a+b*b;
-	a=-2*a;
-	w=w*makevecteur(1,a,b);
-	++it;
-	continue;
+  vecteur pcoeff(const vecteur & R){
+    vecteur P;
+    P.reserve(R.size()+1);
+    P.push_back(gen(1));
+    for (size_t i=0;i<R.size();++i){
+      gen z=R[i];
+      // P*(x-z)
+      P.push_back(-z*P.back());
+      for (size_t j=P.size()-2;j>=1;--j){
+        P[j] -= z*P[j-1];
       }
-      new_w=w;
-      new_w.push_back(zero); // new_w=w*x
-      mulmodpoly(w,-(*it),w); // w = -w*root
-      addmodpoly(new_w,w,somme);
-      w=somme;
     }
-    return w;
+    return P;
   }
   gen _pcoeff(const gen & v,GIAC_CONTEXT){
     if ( v.type==_STRNG && v.subtype==-1) return  v;

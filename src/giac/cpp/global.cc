@@ -3631,6 +3631,8 @@ extern "C" void Sleep(unsigned int miliSecond);
   unsigned short int GIAC_PADIC=50;
   const char cas_suffixe[]=".cas";
   int MAX_PROD_EXPAND_SIZE=4096;
+  int ABERTH_NMAX=25;
+  int ABERTH_NBITSMAX=8192;
 #if defined RTOS_THREADX || defined BESTA_OS || defined(KHICAS)
 #ifdef BESTA_OS
   int LIST_SIZE_LIMIT = 100000 ;
@@ -4622,9 +4624,17 @@ extern "C" void Sleep(unsigned int miliSecond);
       return "/Applications/usr/share/giac/";
     return "/Applications/usr/share/giac/";
 #endif
-#if defined WIN32 && !defined MINGW
-    return "/cygdrive/c/xcas/";
+#if defined WIN32 // check for default install path
+#ifdef MINGW
+    string ns("c:\\xcaswin\\");
+#else
+    string ns("/cygdrive/c/xcas/");
 #endif
+    if (!access((ns+"aide_cas").c_str(),R_OK)){
+      CERR << "// Giac share root-directory:" << ns << '\n';
+      return ns;
+    }
+#endif // WIN32
     string s(giac_aide_location); // ".../aide_cas"
     // test if aide_cas is there, if not test at xcasroot() return ""
     if (!access(s.c_str(),R_OK)){

@@ -293,7 +293,7 @@ namespace giac {
     if (n>307) n=307;
     double eps=std::pow(0.1,n);
     int rprec=int(n*3.3);
-    vecteur a=proot(v,eps,rprec);
+    vecteur a=proot(v,eps,rprec,contextptr);
     gen r=in_select_root(a,is_real(v,contextptr),contextptr);
     return r;
   }
@@ -537,7 +537,7 @@ namespace giac {
 	// 
 	vecteur rac=real_proot(v1,1e-12,contextptr);
 	if (rac.empty()){
-	  vecteur rac1=proot(v1,1e-12);
+	  vecteur rac1=proot(v1,1e-12,contextptr);
 	  gen theta1=in_select_root(rac1,is_real(v1,contextptr),contextptr);
 	  // replace _EXT in vb by r1 and evaluate numerically
 	  vecteur v2=replace_ext(vb,va,theta1,contextptr);
@@ -545,7 +545,7 @@ namespace giac {
 	    return v2.front();
 	  // find theta2
 	  if (is_fully_numeric(v2)){
-	    vecteur rac2=proot(v2,1e-12);
+	    vecteur rac2=proot(v2,1e-12,contextptr);
 	    if (!rac2.empty() && !is_undef(rac2)){
 	      gen theta2=in_select_root(rac2,is_real(v2,contextptr),contextptr);
 	      int racs=int(rac1.size());
@@ -1027,10 +1027,10 @@ namespace giac {
 	  }
 	}
 	if (!deep_emb) 
-	  racines=proot(gen2vecteur(evalf(polynome2poly1(pb),1,contextptr)));
+	  racines=proot(gen2vecteur(evalf(polynome2poly1(pb),1,contextptr)),contextptr);
       }
       else
-	racines=proot(*evalf(b__VECT,1,contextptr)._VECTptr); // evalf to avoid recursion if computing exact roots of b__VECT
+	racines=proot(*evalf(b__VECT,1,contextptr)._VECTptr,contextptr); // evalf to avoid recursion if computing exact roots of b__VECT
       if (is_undef(racines)) return gensizeerr(contextptr);
       // racines= list of approx roots if b__VECT is numeric
       // empty if not numeric

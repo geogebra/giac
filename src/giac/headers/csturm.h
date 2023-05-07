@@ -82,6 +82,9 @@ namespace giac {
   // returns a list of intervals or of rationals
   bool vas(const modpoly & P,const gen & a,const gen &b,double eps,vecteur & vasres,bool with_mult,GIAC_CONTEXT);
 
+  bool aberth(const vecteur & P0,vecteur & R,vecteur & rayon,int N,double eps,int isolate,bool do_exact,GIAC_CONTEXT);
+  int mps_solve(const vecteur & P,vecteur & R,vecteur & rayon,double eps,int isolate,bool secular,GIAC_CONTEXT);
+
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac
 #endif // ndef NO_NAMESPACE_GIAC
