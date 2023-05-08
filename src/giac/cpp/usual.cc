@@ -7449,6 +7449,8 @@ namespace giac {
     gen res=a.evalf(1,contextptr); 
     if (res.type==_REAL || res.type==_CPLX)
       res=accurate_evalf(res,digits2bits(ndigits));
+    if (res.type==_VECT)
+      res=accurate_evalf(res,digits2bits(ndigits));
 #if 0
     if (ndigits<=14 && calc_mode(contextptr)==1 && (res.type==_DOUBLE_ || res.type==_CPLX)){
       int decal=0;
@@ -7601,8 +7603,14 @@ namespace giac {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_VECT)
       return gentypeerr(contextptr);
-    vecteur & v = *args._VECTptr;
+    vecteur v = *args._VECTptr;
     int s=int(v.size());
+    bool qs=false;
+    if (s && v.back()==at_quote){
+      qs=true;
+      v.pop_back();
+      --s;
+    }
     if (s==2){
       gen e=v.back();
       if (e.type==_VECT){
@@ -7621,14 +7629,14 @@ namespace giac {
 	  vin.push_back(it->_SYMBptr->feuille._VECTptr->front());
 	  vout.push_back(it->_SYMBptr->feuille._VECTptr->back());
 	}
-	gen res=subst(v.front(),vin,vout,false,contextptr);
+	gen res=subst(v.front(),vin,vout,qs,contextptr);
 	return res;
       }
       if (e.type!=_SYMB)
 	return gentypeerr(contextptr);
       if (e._SYMBptr->sommet!=at_equal && e._SYMBptr->sommet!=at_equal2 && e._SYMBptr->sommet!=at_same)
 	return gensizeerr(contextptr);
-      return subst(v.front(),e._SYMBptr->feuille._VECTptr->front(),e._SYMBptr->feuille._VECTptr->back(),false,contextptr);
+      return subst(v.front(),e._SYMBptr->feuille._VECTptr->front(),e._SYMBptr->feuille._VECTptr->back(),qs,contextptr);
     }
     if (s<3)
       return gentoofewargs(_subst_s);
@@ -7636,7 +7644,7 @@ namespace giac {
       return gentoomanyargs(_subst_s);
     if (is_equal(v[1]))
       return _subst(makevecteur(v.front(),vecteur(v.begin()+1,v.end())),contextptr);
-    return subst(v.front(),v[1],v.back(),false,contextptr);
+    return subst(v.front(),v[1],v.back(),qs,contextptr);
   }
   static define_unary_function_eval (__subst,&_subst,_subst_s);
   define_unary_function_ptr5( at_subst ,alias_at_subst,&__subst,0,true);
@@ -7696,7 +7704,7 @@ namespace giac {
   gen _version(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
     if (abs_calc_mode(contextptr)==38)
-      return string2gen(gettext("Powered by Giac 1.1.3, B. Parisse and R. De Graeve, Institut Fourier, Universite Grenoble I, France"),false);
+      return string2gen(gettext("Powered by Giac 1.9, B. Parisse and R. De Graeve, Institut Fourier, Universite Grenoble Alpes, France"),false);
     return string2gen(version(),false);
   }
   static const char _version_s []="version";

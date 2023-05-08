@@ -3740,6 +3740,8 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
             ){
           for (size_t j=0;j<R.size();++j){
             R[j] += dr;
+            if (!isolate)
+              R[j]=evalf_double(R[j],1,contextptr);
           }
           return 2;
         }
