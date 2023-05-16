@@ -7564,7 +7564,7 @@ namespace giac {
       if (a2.type==_INT_)
         return a1.eval(a2.val,contextptr);
       a1=eval(a1,eval_level(contextptr),contextptr);
-      if (a2.type==_STRNG && a2._STRNGptr->size()==4){
+      if (a1.type==_STRNG && a2.type==_STRNG && a2._STRNGptr->size()==4){
         const char * ptr=a2._STRNGptr->c_str();
         if (ptr[0]=='a' && ptr[1]=='s' && ptr[2]=='m' && ptr[3]==platform_type && a1.type==_STRNG){
           const char * ptr=a1._STRNGptr->c_str();

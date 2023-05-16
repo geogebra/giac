@@ -3108,7 +3108,7 @@ void add(mpfr_t & rr,mpfr_t & ri,const gen & Pi,int nbits,long & loss,long & siz
 
 // find r=P(x) and r1=diff(P)(x)
 // returns largest number of bits of mantissa in intermediate computations
-long horner2_mpfr(const vdbl & P,dbl x,dbl & r,dbl & r1,int nbits,long & size,bool pdiff){
+long horner2_mpfr(const vdbl & P,const dbl & x,dbl & r,dbl & r1,int nbits,long & size,bool pdiff){
   if (P.empty())
     return 0;
   long loss=0;
@@ -3740,7 +3740,7 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
             ){
           for (size_t j=0;j<R.size();++j){
             R[j] += dr;
-            if (!isolate)
+            if (!isolate && eps>1e-14)
               R[j]=evalf_double(R[j],1,contextptr);
           }
           return 2;

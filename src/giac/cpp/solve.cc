@@ -4323,7 +4323,7 @@ namespace giac {
     vecteur B,R(x);
     gen rep;
     if (A.size()==2 && x.size()==2){
-      gen a00=A[0][0];
+      gen a00=A[0][0]; a00=simplify(a00,contextptr);
       if (is_zero(a00,contextptr))
 	B=makevecteur(A[1],A[0]);
       else 
