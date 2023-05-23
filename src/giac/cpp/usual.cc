@@ -1336,6 +1336,11 @@ namespace giac {
 	  if (is_positive(d,contextptr)){
 	    d=sqrt(d,contextptr);
 	    if (is_integer(d) || d.type==_FRAC){
+              if (is_strictly_positive(-a,contextptr)){
+                a=-a;
+                b=-b;
+                return cst_i*(sqrt((a+d)/2,contextptr)+sign(b,contextptr)*sqrt((a-d)/2,contextptr));
+              }
 	      return sqrt((a+d)/2,contextptr)+sign(b,contextptr)*sqrt((a-d)/2,contextptr);
 	    }
 	  }
