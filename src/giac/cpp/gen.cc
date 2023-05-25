@@ -14378,7 +14378,7 @@ void sprint_double(char * s,double d){
 	return (_CPLXptr->print(contextptr) + string("-") + (-(*(_CPLXptr+1))).print(contextptr) + "*")+printi(contextptr);
       return (_CPLXptr->print(contextptr) + string("+") + (_CPLXptr+1)->print(contextptr) + "*")+printi(contextptr);
     case _IDNT:
-      if (calc_mode(contextptr)==1 && (//is_inf(*this) ||
+      if (calc_mode(contextptr)==1 && (is_inf(*this) ||
                                        is_undef(*this)))
 	return "?";
       return _IDNTptr->print(contextptr);
