@@ -8328,6 +8328,8 @@ namespace giac {
 	return fastsign(a._SYMBptr->feuille,contextptr);
       if (a._SYMBptr->sommet==at_abs || (a._SYMBptr->sommet==at_exp && is_real(a._SYMBptr->feuille,contextptr)))
 	return 1;
+      if (a._SYMBptr->sommet==at_unit)
+        return fastsign(a._SYMBptr->feuille[0],contextptr);
     }
     if (a.type==_SYMB){
       bool aplus=a.is_symb_of_sommet(at_plus);
@@ -8448,6 +8450,8 @@ namespace giac {
 	return is_positive(a._SYMBptr->feuille-1,contextptr);
       if (a._SYMBptr->sommet==at_program)
 	return true;
+      if (a._SYMBptr->sommet==at_unit)
+        return is_positive(a._SYMBptr->feuille[0],contextptr);
       return is_greater(a,0,contextptr); 
     case _FUNC:
       return true;
@@ -8998,6 +9002,11 @@ namespace giac {
       return false;
     if (a.type==_CPLX || b.type==_CPLX)
       return symb_superieur_strict(a,b);
+    if (a.is_symb_of_sommet(at_unit) && b.is_symb_of_sommet(at_unit)){
+      gen c=a-b;
+      if (c.is_symb_of_sommet(at_unit))
+        return is_positive(c._SYMBptr->feuille[0],contextptr);
+    }
     gen approx;
     if (has_evalf(a,approx,1,contextptr) && approx.type==_CPLX && !is_zero(im(approx,contextptr)/re(approx,contextptr),contextptr))
       return symb_superieur_strict(a,b);
