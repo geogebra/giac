@@ -69,9 +69,14 @@ extern "C" {
   void sdk_init(void);
   void sdk_end(void);
   void clear_screen(void);
+#else //TICE
+#ifdef NSPIRE_NEWLIB
+  void sdk_init(void);
+  void sdk_end(void);
 #else
-  inline void sdk_init(void){  }
+  inline void sdk_init(void){}
   inline void sdk_end(void){}
+#endif
 #endif
 
   extern short exam_mode,nspire_exam_mode;
@@ -230,6 +235,13 @@ extern "C" {
 #endif
   
 #if defined NSPIRE || defined NSPIRE_NEWLIB
+  extern int nspire_shift,nspire_ctrl;
+  double loopsleep(int ms);
+#include <libndls.h>
+  Gc * get_gc();
+  int c_rgb565to888(int c);
+  int nspire_scan(int * adaptive_cursor_state);
+
 #define max_heap_size 60
   extern int nspireemu;
   extern char nspire_filebuf[NSPIRE_FILEBUFFER];

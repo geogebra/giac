@@ -7564,18 +7564,23 @@ namespace giac {
       vecteur & v(*a._SYMBptr->feuille._VECTptr);
       return symbolic(at_equal,gen(makevecteur(eval(v.front(),eval_level(contextptr),contextptr),eval(v.back(),eval_level(contextptr),contextptr)),_SEQ__VECT));
     }
-    if (a.type==_VECT && a.subtype==_SEQ__VECT && a._VECTptr->size()==2){
+    if (a.type==_VECT && a.subtype==_SEQ__VECT && a._VECTptr->size()>=2){
       gen a1=a._VECTptr->front(),a2=a._VECTptr->back();
       if (a2.type==_INT_)
         return a1.eval(a2.val,contextptr);
       a1=eval(a1,eval_level(contextptr),contextptr);
-      if (a1.type==_STRNG && a2.type==_STRNG && a2._STRNGptr->size()==4){
-        const char * ptr=a2._STRNGptr->c_str();
-        if (ptr[0]=='a' && ptr[1]=='s' && ptr[2]=='m' && ptr[3]==platform_type && a1.type==_STRNG){
-          const char * ptr=a1._STRNGptr->c_str();
-          function F= function (ptr);
-          F();
-          return 1;
+      if (a1.type==_STRNG){
+        for (size_t i=1;i<a._VECTptr->size();++i){
+          a2=(*a._VECTptr)[i];
+          if (a2.type==_STRNG && a2._STRNGptr->size()==4){
+            const char * ptr=a2._STRNGptr->c_str();
+            if (ptr[0]=='a' && ptr[1]=='s' && ptr[2]=='m' && ptr[3]==platform_type && a1.type==_STRNG){
+              const char * ptr=a1._STRNGptr->c_str();
+              function F= function (ptr);
+              F();
+              return 1;
+            }
+          }
         }
       }
       return _subst(gen(makevecteur(a1,a2),_SEQ__VECT),contextptr);

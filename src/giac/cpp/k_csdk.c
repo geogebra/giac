@@ -94,6 +94,7 @@ int handle_f5(){
     alphalock=3-alphalock;
   else
     alphalock=2;
+  return alphalock;
 }
 void dbgprint(int i){
   char buf[16]={0};
@@ -616,6 +617,14 @@ void statusline(int mode){
 #include <ngc.h>
 #include "k_defs.h"
 
+void sdk_init(void){
+  lcd_init(lcd_type()); // clrscr();
+}
+
+void sdk_end(void){
+  lcd_init(SCR_TYPE_INVALID);
+  refresh_osscr();
+}
 
 int c_rgb565to888(int c){
   c &= 0xffff;
@@ -627,6 +636,7 @@ const int nspire_statusarea=18;
 int nspireemu=false;
 
 int waitforvblank(){
+  return 0;
 }
 
 int back_key_pressed(){
@@ -677,7 +687,7 @@ void get_hms(int *h,int *m,int *s){
 
 void get_time(int *h,int *m){
   int s;
-  get_hms(h,m,s);
+  get_hms(h,m,&s);
 }
 
 void set_time(int h,int m){
@@ -980,8 +990,8 @@ void sync_screen(){
 // hardware ports
 // https://hackspire.org/index.php?title=Memory-mapped_I/O_ports_on_CX
 
-int nspire_shift=false;
-int nspire_ctrl=false;
+int nspire_shift=0;
+int nspire_ctrl=0;
 int nspire_select=false;
 void statusflags(){
   char *msg=0;
@@ -1144,7 +1154,7 @@ int ascii_get(int* adaptive_cursor_state){
   return 0;
 }
 
-int handle_f5(){}
+int handle_f5(){ return 0; }
 int iskeydown(int key){
   t_key t=KEY_NSPIRE_SPACE;
   switch (key){

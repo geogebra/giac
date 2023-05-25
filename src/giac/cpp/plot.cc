@@ -1098,7 +1098,7 @@ namespace giac {
     return s;
   }
 
-#ifdef KHICAS
+#if defined KHICAS || defined GIAC_HAS_STO_38
   void arc_en_ciel(int k,int & r,int & g,int & b){
     k += 21;
     k %= 126;

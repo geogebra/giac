@@ -1169,6 +1169,10 @@ namespace giac {
       au=a+r;
     }
   }
+#else
+  void round1downup(const gen & a,const gen & r,gen & ad,gen & au){
+    ad=au=a;
+  }
 #endif
 
   // find roots of polynomial P at precision eps using proot or 
@@ -2173,383 +2177,1450 @@ numerical root localization
   //int debug_infolevel=0; // export GIAC_DEBUG=1 or 2
   double MINREAL=-1e307;
 
-
-  // single precision
+// single precision
+#if defined __x86_64__ || defined __i386__
 #define LDBL80 // 80 bit long double
-#ifdef LDBL80
-  typedef complex<long double> fdbl;
-#else
-  typedef complex<double> fdbl;
-  //typedef complex<float> fdbl;
 #endif
-  inline double absdbl(const fdbl & x){
-    return abs(x);
-  }
-  inline fdbl re(const fdbl & x){
-    return fdbl(x.real(),0);
-  }
-  inline double redbl(const fdbl & x){
-    return x.real();
-  }
-  inline double imdbl(const fdbl & x){
-    return x.imag();
-  }
-  inline bool is_exactly_zero(const fdbl & x){
-    return x.real()==0 && x.imag()==0;
-  }
-  fdbl inv(const fdbl z){
-    return fdbl(1.0)/z;
-  }
 
-  bool fdbl_less(const fdbl & x,const fdbl & y){
-    if (x.real()!=y.real())
-      return x.real()<y.real();
-    return x.imag()<y.imag();
-  }
+#ifdef LDBL80
+typedef complex<long double> fdbl;
+#else
+typedef complex<double> fdbl;
+//typedef complex<float> fdbl;
+#endif
+inline double absdbl(const fdbl & x){
+  return abs(x);
+}
+inline fdbl re(const fdbl & x){
+  return fdbl(x.real(),0);
+}
+inline fdbl conj(const fdbl & x){
+  return fdbl(x.real(),x.imag());
+}
+inline double redbl(const fdbl & x){
+  return x.real();
+}
+inline double imdbl(const fdbl & x){
+  return x.imag();
+}
+inline bool is_exactly_zero(const fdbl & x){
+  return x.real()==0 && x.imag()==0;
+}
+fdbl inv(const fdbl z){
+  return fdbl(1.0)/z;
+}
 
-
-
-  typedef vector<fdbl> vfdbl;
-  ostream & operator << (ostream & os,const vfdbl & P){
-    os << "[";
-    for (int i=0;i<P.size();++i){
-      os << P[i].real() << "+" << P[i].imag() << "*i";
-      if (i!=P.size()-1)
-        os << ",";
-    }
-    os << "]";
-    return os;
-  }
-
-  void print(const vfdbl & P){
-    cout << P << "\n";
-  }
-
-  fdbl horner_rem(const vfdbl & P,fdbl x,vfdbl * Q){
-    if (Q)
-      Q->clear(); 
-    if (P.empty())
-      return 0.0;
-    size_t s=P.size();
-    if (Q)
-      Q->reserve(s-1);
-    fdbl r=0;
-    if (Q){
-      for (size_t i=0;;){
-        r=r*x+P[i];
-        ++i;
-        if (i==s)
-          break;
-        Q->push_back(r);
-      }
-    }
-    else {
-      for (size_t i=0;i<s;++i){
-        r=r*x+P[i];
-      }
-    }
-    return r;
-  }
-
-  double l1(const vfdbl & P,const fdbl & z){
-    double r=absdbl(z),rn=1,res=0;
-    for (size_t i=1;i<=P.size();++i){
-      double anrn=absdbl(P[P.size()-i])*rn;
-      rn *= r;
-      if (anrn<=res)
-        continue;
-      res=anrn;
-    }
-    return res;
-  }
-
-  double l1(const vfdbl & P){
-    double res=0;
-    for (size_t i=1;i<=P.size();++i){
-      double an=absdbl(P[P.size()-i]);
-      if (an<=res)
-        continue;
-      res=an;
-    }
-    return res;
-  }
-
-  // shift roots such that sum of roots=0
-  fdbl find_shift(const vfdbl & R){
-    int n=R.size()-1;
-    if (n==0)
-      return 0;
-    fdbl d=R[1]/fdbl(n)/R[0];
-    return fdbl(floor(d.real()),floor(d.imag()));
-  }
-
-  vfdbl shift(const vfdbl & P0,fdbl & d,bool l1chk=true){
-    vfdbl P(P0),Q,R;
-    double D=l1(P0);
-    if (isinf(D)){
-      d=0;
-      return P0;
-    }
-    int n=P.size();
-    for (int i=0;i<n;++i){
-      fdbl Pz=horner_rem(P,d,&Q);
-      if (l1chk && absdbl(Pz)>D){
-        d=0;
-        return P0; // no shift, it would increase the l1 norm
-      }
-      R.push_back(Pz);
-      P.swap(Q);
-    }
-    reverse(R.begin(),R.end());
-    return R;
-  }
-
-  fdbl sum(const vfdbl & P){
-    fdbl r(0.0);
-    for (size_t i=0;i<P.size();++i)
-      r += P[i];
-    return r;
-  }
-
-  double sumabs(const vfdbl & P){
-    double r(0.0);
-    for (size_t i=0;i<P.size();++i)
-      r += absdbl(P[i]);
-    return r;
-  }
-
-  bool linreg(const vector<double> & x,const vector<double> & y,double & a,double &b,double & r){
-    size_t n=x.size();
-    if (n!=y.size())
-      return false;
-    double X=0,Y=0,XY=0,X2=0,Y2=0;
-    for (size_t i=0;i<n;++i){
-      X += x[i];
-      Y += y[i];
-    }
-    X /= n; Y /= n;
-    for (size_t i=0;i<n;++i){
-      double xx=x[i]-X,yy=y[i]-Y;
-      XY += xx*yy;
-      X2 += xx*xx;
-      Y2 += yy*yy;
-    }
-    if (X2==0)
-      return false;
-    XY /= n; X2 /= n; Y2 /= n;
-    a=XY/X2;
-    b=Y-a*X;
-    r=Y2==0?1:XY/std::sqrt(X2)/std::sqrt(Y2);
-    return true;
-  }
-
-  double find_scale(const vfdbl & P){
-    int n=P.size()-1;
-    vector<double> x,y;
-    for (int i=0;i<=n;++i){
-      double a=absdbl(P[i]);
-      if (a==0)
-        continue;
-      if (isinf(a))
-        return 1;
-      x.push_back(n-i);
-      y.push_back(std::log(a));
-    }
-    if (x.empty())
-      return 1;
-    double a,b,r;
-    linreg(x,y,a,b,r);
-    return std::exp(-a);
-  }
-
-  void rescale(vfdbl & P, fdbl l){
-    if (l==fdbl(1)) return;
-    fdbl ll=l;
-    for (int i=P.size()-2;i>=0;--i){
-      P[i] = ll*P[i];
-      ll = ll*l;
-    }
-    fdbl c=P[0];
-    for (size_t i=0;i<P.size();++i)
-      P[i] = P[i]/c;
-  }
+bool fdbl_less(const fdbl & x,const fdbl & y){
+  if (x.real()!=y.real())
+    return x.real()<y.real();
+  return x.imag()<y.imag();
+}
 
 
-  struct int_2double {
-    int i;
-    double theta,norm;
-  };
 
-  struct int_double {
-    int i;
-    double d;
-  };
-
-  bool norm_sort(const int_double & a,const int_double & b){
-    if (a.d!=b.d)
-      return a.d<b.d;
-    return a.i<b.i;
+typedef vector<fdbl> vfdbl;
+#ifdef LDBL80
+ostream & operator << (ostream & os,const vfdbl & P){
+  os << "[";
+  for (int i=0;i<P.size();++i){
+    os << P[i].real() << "+" << P[i].imag() << "*i";
+    if (i!=P.size()-1)
+      os << ",";
   }
+  os << "]";
+  return os;
+}
+#endif
 
-  double norm(double dx,double dy){
-    if (dx==0 && dy==0)
-      return 0;
-    if (dx<0) dx=-dx;
-    if (dy<0) dy=-dy;
-    if (dx>dy){
-      double z=dy/dx;
-      return dx*std::sqrt(1+z*z);
-    }
-    else {
-      double z=dx/dy;
-      return dy*std::sqrt(1+z*z);
+void print(const vfdbl & P){
+  cout << P << "\n";
+}
+
+fdbl horner_rem(const vfdbl & P,fdbl x,vfdbl * Q){
+  if (Q)
+    Q->clear(); 
+  if (P.empty())
+    return 0.0;
+  size_t s=P.size();
+  if (Q)
+    Q->reserve(s-1);
+  fdbl r=0;
+  if (Q){
+    for (size_t i=0;;){
+      r=r*x+P[i];
+      ++i;
+      if (i==s)
+	break;
+      Q->push_back(r);
     }
   }
-
-  bool graham_sort_function(const int_2double & a,const int_2double & b){
-    if (a.theta==b.theta)
-      return b.norm>a.norm;
-    return b.theta>a.theta;
-  }
-
-  double cross_prod(const vfdbl & v,int a,int b,int c){
-    fdbl ab=v[b]-v[a],ac=v[c]-v[a];
-    double A=redbl(ab),B=imdbl(ab),C=redbl(ac),D=imdbl(ac);
-    return A*D-B*C;
-  }
-
-  vector<int> convexhull(const vfdbl & v){
-    int s=v.size(),imin=0;
-    if (s==1)
-      return vector<int>(1,0);
-    // find origin
-    double ymin=imdbl(v[0]),ycur,xmin=redbl(v[0]),xcur;
-    for (int i=1;i<s;++i){
-      ycur=imdbl(v[i]);xcur=redbl(v[i]);
-      if (ymin>ycur || (ymin==ycur && xmin>xcur) ){
-        imin=i; ymin=ycur; xmin=xcur;
-      }
-    }
-    vector<int_2double> ls;
-    for (int j=0;j<s;++j){
-      if (j!=imin){
-        double dx=redbl(v[j])-xmin,dy=imdbl(v[j])-ymin;
-        int_2double s={j,atan2(dy,dx),norm(dx,dy)};
-        ls.push_back(s);
-      }
-    }
-    sort(ls.begin(),ls.end(),graham_sort_function);
-    vector<int> res; res.push_back(imin); res.push_back(ls[0].i);
-    int ress=2;
-    for (int j=1;j<s-1;++j){
-      int icur=ls[j].i;
-      double o=cross_prod(v,res[ress-2],res[ress-1],icur);
-      if (o==0)
-        res[ress-1]=icur;
-      else {
-        if (o>0){
-          res.push_back(icur);
-          ++ress;
-        }
-        else {
-          while (ress>2 && o<0){
-            res.pop_back();
-            ress--;
-            o=cross_prod(v,res[ress-2],res[ress-1],icur);
-          }
-          res.push_back(icur);
-          ++ress;
-        }
-      }
-    }
-    return res;
-  }
-
-  double init_R(const vfdbl & P,vfdbl & R){
-    R.clear();
-    int n=P.size()-1;
-    vfdbl l;
-    vector<int> lpos;
-    double M=0;
-    for (int i=0;i<=n;++i){
-      long double ai=abs(P[n-i]);
-      if (ai==0)
-        continue;
-      l.push_back(fdbl(double(i),std::log(ai)));
-      lpos.push_back(i);
-    }
-    vector<int> pos=convexhull(l);
-    // find real positions (since coeffs==0 were removed)
-    for (int i=0;i<pos.size();++i){
-      pos[i]=lpos[pos[i]];
-    }
-    sort(pos.begin(),pos.end());
-    if (pos[0]!=0)
-      pos.insert(pos.begin(),0);
-    if (pos.back()!=n)
-      pos.push_back(n);
-    int count=0;
-    for (int i=1;i<pos.size();++i){
-      int dk=pos[i]-pos[i-1];
-      double uk=std::pow(abs(P[n-pos[i]]/P[n-pos[i-1]]),-1.0/dk);
-      if (uk==0) return 0;
-      if (uk>M)
-        M=uk;
-      double sigma=0.7;
-      for (int j=0;j<dk;++j){
-        double theta=sigma+2*M_PI*i/n+2*M_PI*j/dk;
-        fdbl z(uk*std::cos(theta),uk*std::sin(theta));
-        R.push_back(z);
-      }
-    }
-    return M;
-  }
-
-  // find r=P(x) and r1=diff(P)(x)
-  // if |x|>1 this may overflow
-  void horner2(const vfdbl & P,fdbl x,fdbl & r,fdbl & r1){
-    r=r1=0;
-    if (P.empty())
-      return ;
-    size_t s=P.size()-1;
+  else {
     for (size_t i=0;i<s;++i){
       r=r*x+P[i];
-      r1=r1*x+r;
     }
-    r=r*x+P[s];
   }
+  return r;
+}
 
-  double l1norm(const vfdbl & v){
-    double r=0;
-    for (int i=0;i<v.size();++i)
-      r += absdbl(v[i]);
-    return r;
+double l1(const vfdbl & P,const fdbl & z){
+  double r=absdbl(z),rn=1,res=0;
+  for (size_t i=1;i<=P.size();++i){
+    double anrn=absdbl(P[P.size()-i])*rn;
+    rn *= r;
+    if (anrn<=res)
+      continue;
+    res=anrn;
   }
+  return res;
+}
 
-  void div(vfdbl & v,double r){
-    for (int i=0;i<v.size();++i)
-      v[i] /= r;
+double l1(const vfdbl & P){
+  double res=0;
+  for (size_t i=1;i<=P.size();++i){
+    double an=absdbl(P[P.size()-i]);
+    if (an<=res)
+      continue;
+    res=an;
   }
+  return res;
+}
+
+// shift roots such that sum of roots=0
+fdbl find_shift(const vfdbl & R){
+  int n=R.size()-1;
+  if (n==0)
+    return 0;
+  fdbl d=R[1]/fdbl(n)/R[0];
+  return fdbl(floor(d.real()),floor(d.imag()));
+}
+
+vfdbl shift(const vfdbl & P0,fdbl & d,bool l1chk=true){
+  vfdbl P(P0),Q,R;
+  double D=l1(P0);
+  if (isinf(D)){
+    d=0;
+    return P0;
+  }
+  int n=P.size();
+  for (int i=0;i<n;++i){
+    fdbl Pz=horner_rem(P,d,&Q);
+    if (l1chk && absdbl(Pz)>D){
+      d=0;
+      return P0; // no shift, it would increase the l1 norm
+    }
+    R.push_back(Pz);
+    P.swap(Q);
+  }
+  reverse(R.begin(),R.end());
+  return R;
+}
+
+fdbl sum(const vfdbl & P){
+  fdbl r(0.0);
+  for (size_t i=0;i<P.size();++i)
+    r += P[i];
+  return r;
+}
+
+double sumabs(const vfdbl & P){
+  double r(0.0);
+  for (size_t i=0;i<P.size();++i)
+    r += absdbl(P[i]);
+  return r;
+}
+
+bool linreg(const vector<double> & x,const vector<double> & y,double & a,double &b,double & r){
+  size_t n=x.size();
+  if (n!=y.size())
+    return false;
+  double X=0,Y=0,XY=0,X2=0,Y2=0;
+  for (size_t i=0;i<n;++i){
+    X += x[i];
+    Y += y[i];
+  }
+  X /= n; Y /= n;
+  for (size_t i=0;i<n;++i){
+    double xx=x[i]-X,yy=y[i]-Y;
+    XY += xx*yy;
+    X2 += xx*xx;
+    Y2 += yy*yy;
+  }
+  if (X2==0)
+    return false;
+  XY /= n; X2 /= n; Y2 /= n;
+  a=XY/X2;
+  b=Y-a*X;
+  r=Y2==0?1:XY/std::sqrt(X2)/std::sqrt(Y2);
+  return true;
+}
+
+double find_scale(const vfdbl & P){
+  int n=P.size()-1;
+  vector<double> x,y;
+  for (int i=0;i<=n;++i){
+    double a=absdbl(P[i]);
+    if (a==0)
+      continue;
+    if (isinf(a))
+      return 1;
+    x.push_back(n-i);
+    y.push_back(std::log(a));
+  }
+  if (x.empty())
+    return 1;
+  double a,b,r;
+  linreg(x,y,a,b,r);
+  return std::exp(-a);
+}
+
+void rescale(vfdbl & P, fdbl l){
+  if (l==fdbl(1)) return;
+  fdbl ll=l;
+  for (int i=P.size()-2;i>=0;--i){
+    P[i] = ll*P[i];
+    ll = ll*l;
+  }
+  fdbl c=P[0];
+  for (size_t i=0;i<P.size();++i)
+    P[i] = P[i]/c;
+}
+
+
+
+struct int_2double {
+  int i;
+  double theta,norm;
+};
+
+struct int_double {
+  int i;
+  double d;
+};
+
+bool norm_sort(const int_double & a,const int_double & b){
+  if (a.d!=b.d)
+    return a.d<b.d;
+  return a.i<b.i;
+}
+
+double norm(double dx,double dy){
+  if (dx==0 && dy==0)
+    return 0;
+  if (dx<0) dx=-dx;
+  if (dy<0) dy=-dy;
+  if (dx>dy){
+    double z=dy/dx;
+    return dx*std::sqrt(1+z*z);
+  }
+  else {
+    double z=dx/dy;
+    return dy*std::sqrt(1+z*z);
+  }
+}
+
+bool graham_sort_function(const int_2double & a,const int_2double & b){
+  if (a.theta==b.theta)
+    return b.norm>a.norm;
+  return b.theta>a.theta;
+}
+
+double cross_prod(const vfdbl & v,int a,int b,int c){
+  fdbl ab=v[b]-v[a],ac=v[c]-v[a];
+  double A=redbl(ab),B=imdbl(ab),C=redbl(ac),D=imdbl(ac);
+  return A*D-B*C;
+}
+
+vector<int> convexhull(const vfdbl & v){
+  int s=v.size(),imin=0;
+  if (s==1)
+    return vector<int>(1,0);
+  // find origin
+  double ymin=imdbl(v[0]),ycur,xmin=redbl(v[0]),xcur;
+  for (int i=1;i<s;++i){
+    ycur=imdbl(v[i]);xcur=redbl(v[i]);
+    if (ymin>ycur || (ymin==ycur && xmin>xcur) ){
+      imin=i; ymin=ycur; xmin=xcur;
+    }
+  }
+  vector<int_2double> ls;
+  for (int j=0;j<s;++j){
+    if (j!=imin){
+      double dx=redbl(v[j])-xmin,dy=imdbl(v[j])-ymin;
+      int_2double s={j,atan2(dy,dx),norm(dx,dy)};
+      ls.push_back(s);
+    }
+  }
+  sort(ls.begin(),ls.end(),graham_sort_function);
+  vector<int> res; res.push_back(imin); res.push_back(ls[0].i);
+  int ress=2;
+  for (int j=1;j<s-1;++j){
+    int icur=ls[j].i;
+    double o=cross_prod(v,res[ress-2],res[ress-1],icur);
+    if (o==0)
+      res[ress-1]=icur;
+    else {
+      if (o>0){
+        res.push_back(icur);
+        ++ress;
+      }
+      else {
+        while (ress>2 && o<0){
+          res.pop_back();
+          ress--;
+          o=cross_prod(v,res[ress-2],res[ress-1],icur);
+        }
+        res.push_back(icur);
+        ++ress;
+      }
+    }
+  }
+  return res;
+}
+
+double init_R(const vfdbl & P,vfdbl & R){
+  R.clear();
+  int n=P.size()-1;
+  if (n && is_exactly_zero(P[n])){
+    vfdbl P1(P);
+    P1.pop_back();
+    double res=init_R(P1,R);
+    R.insert(R.begin(),0);
+    return res;
+  }
+  vfdbl l;
+  vector<int> lpos;
+  double M=0;
+  for (int i=0;i<=n;++i){
+    long double ai=abs(P[n-i]);
+    if (ai==0)
+      continue;
+    l.push_back(fdbl(double(i),std::log(ai)));
+    lpos.push_back(i);
+  }
+  vector<int> pos=convexhull(l);
+  // find real positions (since coeffs==0 were removed)
+  for (int i=0;i<pos.size();++i){
+    pos[i]=lpos[pos[i]];
+  }
+  // remove lower part of convexhull, pos[0] has the minimal y, 
+  for (int i=0;i<pos.size();++i){
+    if (i+1==pos.size() || pos[i]>pos[i+1]){
+      pos.erase(pos.begin(),pos.begin()+i); 
+      break;
+    }
+  }
+  // now pos starts with highest value in x
+  for (int i=0;i+1<pos.size();++i){
+    if (pos[i]<pos[i+1]){
+      // pos[i] is the lowest value in x
+      pos.erase(pos.begin()+i+1,pos.end());
+      break;
+    }
+  }
+  sort(pos.begin(),pos.end());
+  if (pos[0]!=0)
+    pos.insert(pos.begin(),0);
+  if (pos.back()!=n)
+    pos.push_back(n);
+  int count=0;
+  for (int i=1;i<pos.size();++i){
+    int dk=pos[i]-pos[i-1];
+    double uk=std::pow(std::abs(P[n-pos[i]]/P[n-pos[i-1]]),-1.0/dk);
+    if (uk==0) return 0;
+    if (uk>M)
+      M=uk;
+    double sigma=0.7;
+    for (int j=0;j<dk;++j){
+      double theta=sigma+2*M_PI*i/n+2*M_PI*j/dk;
+      fdbl z(uk*std::cos(theta),uk*std::sin(theta));
+      R.push_back(z);
+    }
+  }
+  return M;
+}
+
+// find r=P(x) and r1=diff(P)(x)
+// if |x|>1 this may overflow
+void horner2(const vfdbl & P,fdbl x,fdbl & r,fdbl & r1){
+  r=r1=0;
+  if (P.empty())
+    return ;
+  size_t s=P.size()-1;
+  for (size_t i=0;i<s;++i){
+    r=r*x+P[i];
+    r1=r1*x+r;
+  }
+  r=r*x+P[s];
+}
+
+double l1norm(const vfdbl & v){
+  double r=0;
+  for (int i=0;i<v.size();++i)
+    r += absdbl(v[i]);
+  return r;
+}
+
+void div(vfdbl & v,double r){
+  for (int i=0;i<v.size();++i)
+    v[i] /= r;
+}
+
+// approx largest root in norm, using a few iterations of power method
+double largest(const vfdbl & fP,int maxiter=100,double eps=1e-6){
+  int deg=fP.size()-1;
+  //if (debug_infolevel) *logptr(contextptr) << "power method " << fP << "\n";
+  vfdbl v(deg);
+  for (int i=0;i<deg;++i)
+    v[i]=fdbl(rand()/(1.0+RAND_MAX),rand()/(1.0+RAND_MAX));
+  div(v,l1norm(v));
+  vfdbl w(deg);
+  double oldR(0.0);
+  for (int j=0;j<maxiter;++j){
+    for (int i=0;i<deg-1;++i){
+      w[i+1]=v[i];
+    }
+    fdbl r(0,0);
+    for (int i=0;i<deg;++i){
+      r += fP[i+1]*v[i];
+    }
+    w[0]= -r/fP[0];
+    double R=l1norm(w);
+    if (debug_infolevel)
+      *logptr(context0) << "power method " << j << " " << R << "\n";
+    div(w,R);
+    if (j>5 && abs(1-R/oldR)<eps)
+      return R;
+    v.swap(w);
+    oldR=R;
+  }
+  return oldR;
+}
 
 #define REV 1
 
-  void translate_shift(vfdbl & R,const fdbl & l,const fdbl & dr){
-    if (l==fdbl(1) && dr==fdbl(0))
-      return;
-    // rescale and translate
-    for (size_t j=0;j<R.size();++j){
-      R[j] = l*R[j] + dr;
+void translate_shift(vfdbl & R,const fdbl & l,const fdbl & dr){
+  if (l==fdbl(1) && dr==fdbl(0))
+    return;
+  // rescale and translate
+  for (size_t j=0;j<R.size();++j){
+    R[j] = l*R[j] + dr;
+  }
+}
+
+bool read_poly(const string & filename,vfdbl & P){
+  P.clear();
+  ifstream i(filename.c_str());
+  while (1){
+    fdbl z;
+    i >> z;
+    if (i.eof())
+      break;
+    P.push_back(z);
+  }
+  return true;
+}
+
+vfdbl p_coeff(const vfdbl & R){
+  vfdbl P;
+  P.reserve(R.size()+1);
+  P.push_back(fdbl(1));
+  for (size_t i=0;i<R.size();++i){
+    fdbl z=R[i];
+    // P*(x-z)
+    P.push_back(-z*P.back());
+    for (size_t j=P.size()-2;j>=1;--j){
+      P[j] -= z*P[j-1];
     }
   }
+  return P;
+}
 
-  void clear_zi_done(vector<short int> & zi_done){
-    for (int i=0;i<zi_done.size();++i){
-      if (zi_done[i]!=5)
-        zi_done[i]=0;
+// max distance between 2 elements of R
+double ecart(const vfdbl & R){
+  int n=R.size();
+  double d=1e307;
+  for (int i=0;i<n;++i){
+    const fdbl & Ri=R[i];
+    for (int j=0;j<n;++j){
+      if (j==i) continue;
+      double dd=absdbl(Ri-R[j]);
+      if (dd<d)
+        d=dd;
     }
   }
+  return d;
+}
 
-bool aberth_singleprec(const vfdbl & P0,int N,double eps,vfdbl & R,int cluster_start,int cluster_afterend,vector<short int> & zi_done,int afteriter,GIAC_CONTEXT){
+// multi-precision
+typedef gen dbl;
+struct int_dbl {
+  int i;
+  dbl d;
+};
+
+bool norm_sort_dbl(const int_dbl & a,const int_dbl & b){
+  if (a.d!=b.d)
+    return is_strictly_greater(b.d,a.d,context0);
+  return is_strictly_greater(b.i,a.i,context0);
+}
+
+inline double absdbl(const dbl & x){
+  dbl g=abs(evalf_double(x,1,context0),context0);
+  return g.type==_DOUBLE_?g._DOUBLE_val:0;
+}
+inline double logabsdbl(const dbl & x){
+  if (is_exactly_zero(x))
+    return MINREAL; // -707;
+  dbl g=x;
+  if (g.type!=_REAL)
+    g=accurate_evalf(g,128);
+  g=ln(abs(g,context0),context0);
+  g=evalf_double(g,1,context0);
+  return g.type==_DOUBLE_?g._DOUBLE_val:0;
+}
+inline double redbl(const dbl & x){
+  return evalf_double(re(x,context0),1,context0)._DOUBLE_val;
+}
+inline double imdbl(const dbl & x){
+  return evalf_double(im(x,context0),1,context0)._DOUBLE_val;
+}
+inline dbl conj(const dbl & x){
+  return conj(x,context0);
+}
+inline dbl re(const dbl & x){
+  return re(x,context0);
+}
+inline dbl im(const dbl & x){
+  return im(x,context0);
+}
+inline dbl exp(const dbl & x){
+  return exp(x,context0);
+}
+inline dbl inv(const dbl & x){
+  return inv(x,context0);
+}
+bool dbl_less(const dbl & x,const dbl & y){
+  gen xr,xi,yr,yi;
+  reim(x,xr,xi,context0);
+  reim(y,yr,yi,context0);
+  if (xi==0 && yi!=0)
+    return true;
+  if (xi!=0 && yi==0)
+    return false;
+  if (xr!=yr)
+    return is_strictly_greater(yr,xr,context0);
+  return is_strictly_greater(yi,xi,context0);
+  //return !islesscomplexthanf(x,y);
+}
+
+bool dblrayon_less(const dbl & x,const dbl & y){
+  return dbl_less(x[0],y[0]);
+}
+
+typedef vecteur vdbl;
+#if 0
+ostream & operator << (ostream & os,const vdbl & P){
+  for (int i=0;i<P.size();++i)
+    os << P[i] << " ";
+  return os;
+}
+#endif
+
+void accurate_evalf(vdbl & P,int nbits){
+  for (int i=0;i<P.size();++i)
+    P[i]=accurate_evalf(P[i],nbits);
+}
+
+dbl horner_rem(const vdbl & P,dbl x,vdbl * Q){
+  if (Q)
+    Q->clear(); 
+  if (P.empty())
+    return 0.0;
+  size_t s=P.size();
+  if (Q)
+    Q->reserve(s-1);
+  dbl r=0;
+  if (Q){
+    for (size_t i=0;;){
+      r=r*x+P[i];
+      ++i;
+      if (i==s)
+	break;
+      Q->push_back(r);
+    }
+  }
+  else {
+    for (size_t i=0;i<s;++i){
+      r=r*x+P[i];
+    }
+  }
+  return r;
+}
+
+double loglinf(const vdbl & P,const dbl & z){
+  double r=logabsdbl(z),rn=1,res=MINREAL;
+  for (size_t i=1;i<=P.size();++i){
+    double anrn=logabsdbl(P[P.size()-i])*rn;
+    rn *= r;
+    if (anrn<=res)
+      continue;
+    res=anrn;
+  }
+  return res;
+}
+
+double loglinf(const vdbl & P){
+  double res=MINREAL;
+  for (size_t i=1;i<=P.size();++i){
+    double an=logabsdbl(P[P.size()-i]);
+    if (an<=res)
+      continue;
+    res=an;
+  }
+  return res;
+}
+
+// shift roots such that sum of roots=0
+dbl find_shift(const vdbl & R,GIAC_CONTEXT){
+  int n=R.size()-1;
+  if (n==0)
+    return 0;
+  return _floor(R[1]/dbl(n)/R[0],contextptr);
+}
+
+vdbl shift(const vdbl & P0,dbl & d,bool l1chk=true){
+  double D=loglinf(P0);
+#if 0
+  dbl chk=horner_rem(P0,d,0);
+  if (l1chk && logabsdbl(chk)>D){
+    d=0;
+    return P0;
+  }
+  vdbl res=taylor(P0,d);
+  for (int i=0;i<res.size();++i){
+    if (l1chk && logabsdbl(res[i])>D){
+      d=0;
+      return P0; // no shift, it would increase the linf norm of the polynomial
+    }
+  }
+  return res;
+#endif
+  vdbl P(P0),Q,R;
+  int n=P.size();
+  for (int i=0;i<n;++i){
+    dbl Pz=horner_rem(P,d,&Q);
+    if (l1chk && logabsdbl(Pz)>D){
+      d=0;
+      return P0; // no shift, it would increase the linf norm of the polynomial
+    }
+    R.push_back(Pz);
+    P.swap(Q);
+  }
+  reverse(R.begin(),R.end());
+  return R;
+}
+
+dbl sum(const vdbl & P){
+  dbl r(0.0);
+  for (size_t i=0;i<P.size();++i)
+    r += P[i];
+  return r;
+}
+
+double sumabs(const vdbl & P){
+  double r(0.0);
+  for (size_t i=0;i<P.size();++i)
+    r += absdbl(P[i]);
+  return r;
+}
+
+double find_scale(const vdbl & P){
+  int n=P.size()-1;
+  vector<double> x,y;
+  for (int i=0;i<=n;++i){
+    double a=logabsdbl(P[i]);
+    if (a==MINREAL)
+      continue;
+    x.push_back(n-i);
+    y.push_back(a);
+  }
+  if (x.empty())
+    return 1;
+  double a,b,r;
+  linreg(x,y,a,b,r);
+  return std::exp(-a);
+}
+
+void rescale(vdbl & P, dbl l){
+  if (l==dbl(1)) return;
+  dbl ll=l;
+  for (int i=P.size()-2;i>=0;--i){
+    P[i] = ll*P[i];
+    ll = ll*l;
+  }
+  dbl c=P[0];
+  for (size_t i=0;i<P.size();++i)
+    P[i] = P[i]/c;
+}
+
+// find r=P(x) and r1=diff(P)(x)
+// if |x|>1 this may overflow
+void horner2(const vdbl & P,dbl x,dbl & r,dbl & r1){
+  r=r1=0;
+  if (P.empty())
+    return ;
+  size_t s=P.size()-1;
+  for (size_t i=0;i<s;++i){
+    r=r*x+P[i];
+    r1=r1*x+r;
+  }
+  r=r*x+P[s];
+}
+
+#ifdef HAVE_LIBMPFR
+// computes an estimate of the number of bits of precision lost
+void add(mpfr_t & rr,mpfr_t & ri,const gen & Pi,int nbits,long & loss,long & size){
+  long rr0,rr1,delta=0;
+  mpfr_get_d_2exp(&rr0,rr,MPFR_RNDN);
+  if (rr0>size)
+    size=rr0;
+  if (Pi.type==_REAL){
+    mpfr_t & inf=Pi._REALptr->inf;
+    if (mpfr_zero_p(inf))
+      return ;
+    mpfr_get_d_2exp(&rr1,inf,MPFR_RNDN);
+    if (rr1>rr0){
+      if (rr1>size)
+        size=rr1;
+      delta=rr1-rr0;
+      rr0=rr1;
+    }
+    mpfr_add(rr,rr,Pi._REALptr->inf,MPFR_RNDN);
+  }
+  else if (Pi.type==_CPLX){
+    mpfr_t & rinf=Pi._CPLXptr->_REALptr->inf;
+    mpfr_get_d_2exp(&rr1,rinf,MPFR_RNDN);
+    if (rr1>rr0){
+      if (rr1>size)
+        size=rr1;
+      delta=rr1-rr0;
+      rr0=rr1;
+    }
+    mpfr_add(rr,rr,rinf,MPFR_RNDN);
+    mpfr_add(ri,ri,(Pi._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
+  }
+  else if (Pi.type==_INT_){
+    mpfr_add_si(rr,rr,Pi.val,MPFR_RNDN);
+    return ;
+  }
+  else exit(1);
+  mpfr_get_d_2exp(&rr1,rr,MPFR_RNDN);
+  if (delta>nbits)
+    delta=nbits;
+  if (loss>delta)
+    loss -= delta;
+  else
+    loss = 0;
+  if (rr1<rr0){
+    loss += rr0-rr1;
+  }
+}
+
+void mult(mpfr_t & rr,mpfr_t & ri,const gen & x,mpfr_t & tmp,mpfr_t & tmp1, mpfr_t & tmp2){
+  if (x.type==_REAL){
+    mpfr_mul(rr,rr,x._REALptr->inf,MPFR_RNDN);
+    //if (!mpfr_zero_p(ri))
+      mpfr_mul(ri,ri,x._REALptr->inf,MPFR_RNDN);
+    return;
+  }
+  if (x.type==_CPLX){
+#if 0
+    mpfr_fmms(tmp1,rr,x._CPLXptr->_REALptr->inf,ri,(x._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
+    mpfr_fmma(ri,rr,(x._CPLXptr+1)->_REALptr->inf,ri,x._CPLXptr->_REALptr->inf,MPFR_RNDN);
+    mpfr_swap(tmp1,rr);
+    return;
+#endif
+#if 0
+    // (rr+i*ri)*(xr+i*xi)=rr*xr-ri*xi+i*(rr*xi+ri*xr)
+    mpfr_mul(tmp1,rr,x._CPLXptr->_REALptr->inf,MPFR_RNDN);
+    mpfr_mul(tmp2,ri,(x._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
+    // imag part = (rr+ri)*(xr+xi)-(rr*xr+ri*xi)
+    mpfr_add(rr,rr,ri,MPFR_RNDN);
+    mpfr_add(ri,x._CPLXptr->_REALptr->inf,(x._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
+    mpfr_mul(tmp,rr,ri,MPFR_RNDN);
+    mpfr_sub(tmp,tmp,tmp1,MPFR_RNDN);
+    mpfr_sub(ri,tmp,tmp2,MPFR_RNDN);
+    mpfr_sub(rr,tmp1,tmp2,MPFR_RNDN);
+    return;
+#endif
+    mpfr_mul(tmp1,rr,x._CPLXptr->_REALptr->inf,MPFR_RNDN);
+    mpfr_mul(tmp2,ri,(x._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
+    mpfr_sub(tmp,tmp1,tmp2,MPFR_RNDN);
+    mpfr_mul(tmp1,rr,(x._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
+    mpfr_mul(tmp2,ri,x._CPLXptr->_REALptr->inf,MPFR_RNDN);
+    mpfr_swap(tmp,rr);
+    mpfr_add(ri,tmp1,tmp2,MPFR_RNDN);
+    return;
+  }
+  if (x.type==_INT_){
+    mpfr_mul_si(rr,rr,x.val,MPFR_RNDN);
+    //if (!mpfr_zero_p(ri))
+      mpfr_mul_si(ri,ri,x.val,MPFR_RNDN);
+    return;
+  }
+  exit(1);
+}
+
+void mult(mpfr_t & rr,mpfr_t & ri,const mpfr_t & xr,const mpfr_t & xi,mpfr_t & tmp,mpfr_t & tmp1, mpfr_t & tmp2){
+  if (mpfr_zero_p(xi)){
+    mpfr_mul(rr,rr,xr,MPFR_RNDN);
+    mpfr_mul(ri,ri,xr,MPFR_RNDN);
+    return;
+  }
+  mpfr_mul(tmp1,rr,xr,MPFR_RNDN);
+  mpfr_mul(tmp2,ri,xi,MPFR_RNDN);
+  mpfr_sub(tmp,tmp1,tmp2,MPFR_RNDN);
+  mpfr_mul(tmp1,rr,xi,MPFR_RNDN);
+  mpfr_mul(tmp2,ri,xr,MPFR_RNDN);
+  mpfr_swap(tmp,rr);
+  mpfr_add(ri,tmp1,tmp2,MPFR_RNDN);
+}
+
+// find r=P(x) and r1=diff(P)(x)
+// returns largest number of bits of mantissa in intermediate computations
+long horner2_mpfr(const vdbl & P,const dbl & x,dbl & r,dbl & r1,int nbits,long & size,bool pdiff){
+  if (P.empty())
+    return 0;
+  long loss=0;
+  size=-RAND_MAX;
+  size_t s=P.size()-1;
+  mpfr_t rr,ri,r1r,r1i,tmp,tmp1,tmp2;
+  mpfr_init2(rr,nbits); mpfr_set_si(rr,0,MPFR_RNDN);
+  mpfr_init2(ri,nbits); mpfr_set_si(ri,0,MPFR_RNDN);
+  mpfr_init2(r1r,nbits); mpfr_set_si(r1r,0,MPFR_RNDN);
+  mpfr_init2(r1i,nbits); mpfr_set_si(r1i,0,MPFR_RNDN);
+  mpfr_init2(tmp,nbits);
+  mpfr_init2(tmp1,nbits);
+  mpfr_init2(tmp2,nbits);
+  for (size_t i=0;i<s;++i){
+    // r=r*x+P[i];
+    mult(rr,ri,x,tmp,tmp1,tmp2);
+    add(rr,ri,P[i],nbits,loss,size);
+    if (pdiff){
+      // r1=r1*x+r;
+      mult(r1r,r1i,x,tmp,tmp1,tmp2);
+      mpfr_add(r1r,r1r,rr,MPFR_RNDN);
+      mpfr_add(r1i,r1i,ri,MPFR_RNDN);
+    }
+  }
+  // r=r*x+P[s];
+  mult(rr,ri,x,tmp,tmp1,tmp2);
+  add(rr,ri,P[s],nbits,loss,size);
+  // end
+  r=gen(real_object(rr),real_object(ri));
+  if (pdiff)
+    r1=gen(real_object(r1r),real_object(r1i));
+  mpfr_clear(rr);
+  mpfr_clear(ri);
+  mpfr_clear(r1r);
+  mpfr_clear(r1i);
+  mpfr_clear(tmp);
+  mpfr_clear(tmp1);
+  mpfr_clear(tmp2);
+  return loss;
+}
+
+#endif
+
+#ifdef LDBL80
+bool convert(const gen & g,long double & z){
+  if (g.type==_INT_){
+    z=g.val;
+    return true;
+  }
+  if (g.type==_DOUBLE_){
+    z=g._DOUBLE_val;
+    return true;
+  }
+#ifndef USE_GMP_REPLACEMENTS
+  if (g.type==_REAL){
+#ifdef HAVE_LIBMPFR
+    z=mpfr_get_ld(g._REALptr->inf,MPFR_RNDN);
+#else
+    z=mpf_get_d(g._REALptr->inf);
+#endif
+    return true;
+  }
+#endif
+  if (g.type==_FRAC){
+    long double n,d;
+    if (convert(g._FRACptr->num,n) && convert(g._FRACptr->den,d)){
+      z=n/d;
+      return true;
+    }
+    return false;
+  }
+  if (g.type!=_ZINT)
+    return false;
+  int s=mpz_cmp_si(*g._ZINTptr,0);
+  int l=mpz_sizeinbase(*g._ZINTptr,2);
+  if (l>=(1<<15))
+    return false;
+  mpz_t zz; mpz_init(zz);
+  if (l>64){
+    // we have 64 bits of mantissa
+#ifdef USE_GMP_REPLACEMENTS
+      mpz_tdiv_q_2exp(zz,*g._ZINTptr,l-64);
+#else
+      mpz_div_2exp(zz,*g._ZINTptr,l-64);
+#endif
+  }
+  else
+    mpz_set(zz,*g._ZINTptr);
+  ulonglong u;
+  u=mpz_get_ui(zz);
+  mpz_clear(zz);
+  z=u;
+  if (l>64)
+    z=z*std::pow((long double) 2,l-64);
+  if (s<0)
+    z=-z;
+  return true;
+}
+#endif
+      
+bool convert(const vdbl & P,vfdbl & fP,GIAC_CONTEXT){
+  int s=P.size();
+  fP.clear(); fP.reserve(s);
+  for (int i=0;i<s;++i){
+    dbl real,imag;
+    reim(P[i],real,imag,contextptr);
+#ifdef LDBL80
+    long double zr,zi;
+    if (!convert(real,zr) || !convert(imag,zi))
+      return false;
+    fP.push_back(fdbl(zr,zi));
+#else
+    if (real.type==_ZINT && mpz_sizeinbase(*real._ZINTptr,2)>1000)
+      return false;
+    if (imag.type==_ZINT && mpz_sizeinbase(*imag._ZINTptr,2)>1000)
+      return false;
+    fP.push_back(fdbl(evalf_double(real,1,contextptr)._DOUBLE_val,evalf_double(imag,1,contextptr)._DOUBLE_val));
+#endif
+  }
+  return true;
+}
+
+void Convert(const vfdbl & fP,vdbl & P){
+  int s=fP.size();
+  P.clear(); P.reserve(s);
+  for (int i=0;i<s;++i){
+#if defined HAVE_LIBMPFR && defined LDBL80
+    dbl re,im;
+    re=accurate_evalf(re,64); im=accurate_evalf(im,64);
+    mpfr_set_ld(re._REALptr->inf,fP[i].real(),MPFR_RNDN);
+    mpfr_set_ld(im._REALptr->inf,fP[i].imag(),MPFR_RNDN);
+    P.push_back(dbl(re,im));
+#else
+    P.push_back(dbl(double(fP[i].real()),double(fP[i].imag())));
+#endif
+  }
+}
+
+double l1norm(const vdbl & v){
+  double r=0;
+  for (int i=0;i<v.size();++i)
+    r += absdbl(v[i]);
+  return r;
+}
+
+void div(vdbl & v,double r){
+  r=1/r;
+  for (int i=0;i<v.size();++i)
+    v[i] = r*v[i];
+}
+
+#if 0
+// approx largest root in norm, using a few iterations of power method
+double largest(const vdbl & fP,int maxiter=100,double eps=1e-6){
+  int deg=fP.size()-1;
+  vdbl v(deg);
+  for (int i=0;i<deg;++i)
+    v[i]=dbl(rand()/(1.0+RAND_MAX),rand()/(1.0+RAND_MAX));
+  div(v,l1norm(v));
+  vdbl w(deg);
+  double oldR(0.0);
+  for (int j=0;j<maxiter;++j){
+    for (int i=0;i<deg-1;++i){
+      w[i+1]=v[i];
+    }
+    dbl r(0);
+    for (int i=0;i<deg;++i){
+      r += fP[i+1]*v[i];
+    }
+    w[0]= -r/fP[0];
+    double R=l1norm(w);
+    if (debug_infolevel)
+      *logptr(contextptr) << "power method " << j << " " << R << "\n";
+    div(w,R);
+    if (j>5 && abs(1-R/oldR)<eps)
+      return R;
+    v.swap(w);
+    oldR=R;
+  }
+  return oldR;
+}
+
+#else
+double largest(const vdbl & P,int maxiter=100,double eps=1e-6){
+  vfdbl fP; convert(P,fP,context0);
+  return largest(fP,maxiter,eps);
+}
+#endif
+
+double cross_prod(const vdbl & v,int a,int b,int c){
+  dbl ab=v[b]-v[a],ac=v[c]-v[a];
+  double A=redbl(ab),B=imdbl(ab),C=redbl(ac),D=imdbl(ac);
+  return A*D-B*C;
+}
+
+vector<int> convexhull(const vdbl & v){
+  int s=v.size(),imin=0;
+  if (s==1)
+    return vector<int>(1,0);
+  // find origin
+  double ymin=imdbl(v[0]),ycur,xmin=redbl(v[0]),xcur;
+  for (int i=1;i<s;++i){
+    ycur=imdbl(v[i]);xcur=redbl(v[i]);
+    if (ymin>ycur || (ymin==ycur && xmin>xcur) ){
+      imin=i; ymin=ycur; xmin=xcur;
+    }
+  }
+  vector<int_2double> ls;
+  for (int j=0;j<s;++j){
+    if (j!=imin){
+      double dx=redbl(v[j])-xmin,dy=imdbl(v[j])-ymin;
+      int_2double s={j,atan2(dy,dx),norm(dx,dy)};
+      ls.push_back(s);
+    }
+  }
+  sort(ls.begin(),ls.end(),graham_sort_function);
+  vector<int> res; res.push_back(imin); res.push_back(ls[0].i);
+  int ress=2;
+  for (int j=1;j<s-1;++j){
+    int icur=ls[j].i;
+    double o=cross_prod(v,res[ress-2],res[ress-1],icur);
+    if (o==0)
+      res[ress-1]=icur;
+    else {
+      if (o>0){
+        res.push_back(icur);
+        ++ress;
+      }
+      else {
+        while (ress>2 && o<0){
+          res.pop_back();
+          ress--;
+          o=cross_prod(v,res[ress-2],res[ress-1],icur);
+        }
+        res.push_back(icur);
+        ++ress;
+      }
+    }
+  }
+  return res;
+}
+
+void init_R(const vdbl & P,vdbl & R){
+  R.clear();
+  int n=P.size()-1;
+  if (n && is_exactly_zero(P[n])){
+    vdbl P1(P);
+    P1.pop_back();
+    init_R(P1,R);
+    R.insert(R.begin(),0);
+    return;
+  }
+  vdbl l;
+  vector<int> lpos;
+  for (int i=0;i<=n;++i){
+    double ai=logabsdbl(P[n-i]);
+    if (ai==MINREAL)
+      continue;
+    l.push_back(dbl(double(i),ai));
+    lpos.push_back(i);
+  }
+  vector<int> pos=convexhull(l);
+  // find real positions (since coeffs==0 were removed)
+  for (int i=0;i<pos.size();++i){
+    pos[i]=lpos[pos[i]];
+  }
+  // remove lower part of convexhull, pos[0] has the minimal y, 
+  for (int i=0;i<pos.size();++i){
+    if (i+1==pos.size() || pos[i]>pos[i+1]){
+      pos.erase(pos.begin(),pos.begin()+i); 
+      break;
+    }
+  }
+  // now pos starts with highest value in x
+  for (int i=0;i+1<pos.size();++i){
+    if (pos[i]<pos[i+1]){
+      // pos[i] is the lowest value in x
+      pos.erase(pos.begin()+i+1,pos.end());
+      break;
+    }
+  }
+  sort(pos.begin(),pos.end());
+  if (pos[0]!=0)
+    pos.insert(pos.begin(),0);
+  if (pos.back()!=n)
+    pos.push_back(n);
+  int count=0;
+  vector<int_dbl> dkuk;
+  for (int i=1;i<pos.size();++i){
+    int dk=pos[i]-pos[i-1];
+    const dbl & tmp =P[n-pos[i-1]];
+    dbl uk=0;
+    if (!is_exactly_zero(tmp)){
+      dbl argexp=accurate_evalf(gen(-logabsdbl(P[n-pos[i]]/tmp)),64);
+      uk=exp(argexp/dk,context0);//pow(absdbl(P[n-pos[i]]/P[n-pos[i-1]]),-1.0/dk);
+    }
+    int_dbl id={dk,uk};
+    dkuk.push_back(id);
+  }
+  sort(dkuk.begin(),dkuk.end(),norm_sort_dbl);
+  for (int i=0;i<dkuk.size();++i){
+    int dk=dkuk[i].i;
+    dbl uk=dkuk[i].d;
+    double sigma=0.7;
+    for (int j=0;j<dk;++j){
+      double theta=sigma+2*M_PI*i/n+2*M_PI*j/dk;
+      dbl z(uk*accurate_evalf(gen(std::cos(theta)),64),uk*accurate_evalf(gen(std::sin(theta)),64));
+      R.push_back(z);
+    }
+  }
+}
+
+bool sum_inv_diff(const gen & zi,const vdbl & R,int i,gen & p){
+  p=0;
+  for (int j=0;j<R.size();++j){
+    if (j==i) continue;
+    dbl dz=(zi-R[j]);
+    if (is_exactly_zero(dz))
+      return false;
+    p += inv(dz);
+  }
+  return true;
+}
+
+#ifdef HAVE_LIBMPFR
+void sub(mpfr_t & rr,mpfr_t & ri,const gen & Pi){
+  if (Pi.type==_CPLX){
+    // const gen * Pir=Pi._CPLXptr; const gen * Pii=(Pi._CPLXptr+1);
+    mpfr_sub(rr,rr,Pi._CPLXptr->_REALptr->inf,MPFR_RNDN);
+    mpfr_sub(ri,ri,(Pi._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
+  }
+  else if (Pi.type==_REAL)
+    mpfr_sub(rr,rr,Pi._REALptr->inf,MPFR_RNDN);
+  else if (Pi.type==_INT_)
+    mpfr_sub_si(rr,rr,Pi.val,MPFR_RNDN);
+  else exit(1);
+}
+
+// product of R[i]-R[j] for j!=i
+bool product(mpfr_t & rr,mpfr_t & ri,const vdbl & R,int i,mpfr_t & tmp,mpfr_t & tmp1,mpfr_t & tmp2,mpfr_t & tmp3,mpfr_t & tmp4){
+  mpfr_set_si(rr,1,MPFR_RNDN);
+  mpfr_set_si(ri,0,MPFR_RNDN);
+  for (int j=0;j<R.size();++j){
+    if (j==i) continue;
+    if (R[i].type==_REAL){
+      mpfr_set(tmp3,R[i]._REALptr->inf,MPFR_RNDN);
+      mpfr_set_si(tmp4,0,MPFR_RNDN);
+    }
+    else if (R[i].type==_CPLX){
+      mpfr_set(tmp3,R[i]._CPLXptr->_REALptr->inf,MPFR_RNDN);
+      mpfr_set(tmp4,(R[i]._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
+    }
+    else return false;
+    sub(tmp3,tmp4,R[j]);
+    mult(rr,ri,tmp3,tmp4,tmp,tmp1,tmp2);
+  }
+  return true;
+}
+
+bool product(gen & p,const vdbl & R,int i,int nbits){
+  mpfr_t rr,ri,tmp,tmp1,tmp2,tmp3,tmp4;
+  mpfr_init2(rr,nbits); 
+  mpfr_init2(ri,nbits); 
+  mpfr_init2(tmp,nbits);
+  mpfr_init2(tmp1,nbits);
+  mpfr_init2(tmp2,nbits);
+  mpfr_init2(tmp3,nbits);
+  mpfr_init2(tmp4,nbits);
+  bool b=product(rr,ri,R,i,tmp,tmp1,tmp2,tmp3,tmp4);
+  p=gen(real_object(rr),real_object(ri));
+  mpfr_clear(rr);
+  mpfr_clear(ri);
+  mpfr_clear(tmp);
+  mpfr_clear(tmp1);
+  mpfr_clear(tmp2);
+  mpfr_clear(tmp3);
+  mpfr_clear(tmp4);
+  return b;  
+}
+
+void inv(mpfr_t & r,mpfr_t & i,mpfr_t & tmp,mpfr_t & tmp1, mpfr_t & tmp2){
+  if (mpfr_zero_p(i)){
+    mpfr_set_si(tmp,1,MPFR_RNDN);
+    mpfr_div(r,tmp,r,MPFR_RNDN);
+  }
+  else {   // gen dbg; dbg=gen(real_object(r),real_object(i));
+    mpfr_sqr(tmp1,r,MPFR_RNDN);
+    mpfr_sqr(tmp2,i,MPFR_RNDN); //dbg=gen(real_object(tmp1),real_object(tmp2));
+    mpfr_add(tmp,tmp1,tmp2,MPFR_RNDN);
+    //dbg=gen(real_object(tmp),0);
+#if 0
+    mpfr_ui_div(tmp1,1,tmp,MPFR_RNDN);
+    mpfr_mul(r,r,tmp1,MPFR_RNDN);
+    mpfr_neg(tmp1,tmp1,MPFR_RNDN);
+    mpfr_mul(i,i,tmp1,MPFR_RNDN);
+#else
+    mpfr_div(r,r,tmp,MPFR_RNDN);
+    // dbg=gen(real_object(r),0);
+    mpfr_neg(tmp,tmp,MPFR_RNDN);
+    mpfr_div(i,i,tmp,MPFR_RNDN);
+#endif
+  }
+}
+
+bool mpfr_sum_inv_diff(const gen & z,const vdbl & R,int i,gen & p,int nbits,GIAC_CONTEXT){
+  mpfr_t tmp,tmp1,tmp2,zr,zi,pr,pi;
+  mpfr_init2(pr,nbits); mpfr_set_si(pr,0,MPFR_RNDN);
+  mpfr_init2(pi,nbits); mpfr_set_si(pi,0,MPFR_RNDN);
+  mpfr_init2(zr,nbits); 
+  mpfr_init2(zi,nbits); 
+  mpfr_init2(tmp,nbits);
+  mpfr_init2(tmp1,nbits);
+  mpfr_init2(tmp2,nbits);
+  for (int j=0;j<R.size();++j){
+    if (j==i) continue;
+    // dbl dz=(z-R[j]);
+    if (z.type==_REAL){
+      mpfr_set(zr,z._REALptr->inf,MPFR_RNDN);
+      mpfr_set_si(zi,0,MPFR_RNDN);
+    }
+    else if (z.type==_CPLX){
+      mpfr_set(zr,z._CPLXptr->_REALptr->inf,MPFR_RNDN);
+      mpfr_set(zi,(z._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
+    }
+    else if (z.type==_INT_){
+      mpfr_set_si(zr,z.val,MPFR_RNDN);
+      mpfr_set_si(zi,0,MPFR_RNDN);
+    }
+    else exit(1);
+    sub(zr,zi,R[j]); 
+    if (mpfr_zero_p(zr) && mpfr_zero_p(zi)){
+      mpfr_clear(pr);
+      mpfr_clear(pi);
+      mpfr_clear(zr);
+      mpfr_clear(zi);
+      mpfr_clear(tmp);
+      mpfr_clear(tmp1);
+      mpfr_clear(tmp2);
+      if (debug_infolevel>1)
+        *logptr(contextptr) << "sum_inv_diff equal R index i=" << i << ", j=" << j << ", z=" << z << "\n";
+      return false;
+    }
+    inv(zr,zi,tmp,tmp1,tmp2);
+    // p += inv(dz);
+    mpfr_add(pr,pr,zr,MPFR_RNDN);
+    mpfr_add(pi,pi,zi,MPFR_RNDN);
+    //p=gen(real_object(pr),real_object(pi)); // debug
+  }
+  p=gen(real_object(pr),real_object(pi));
+  mpfr_clear(pr);
+  mpfr_clear(pi);
+  mpfr_clear(zr);
+  mpfr_clear(zi);
+  mpfr_clear(tmp);
+  mpfr_clear(tmp1);
+  mpfr_clear(tmp2);  
+  return true;
+}
+
+// sum(1/(z-bi)), -1+sum(a_i/(z-b_i)), -sum(a_i/(z-b_i)^2)
+bool mpfr_node_sum(const vdbl & A,const vdbl & B,const gen & z,gen & A0,gen & A1,gen & A2,int nbits,GIAC_CONTEXT){
+  mpfr_t tmp,tmp1,tmp2,tmp3,tmp4,zr,zi,a0r,a0i,a1r,a1i,a2r,a2i,a1rcorr,a1icorr;
+  mpfr_init2(zr,nbits); 
+  mpfr_init2(zi,nbits); 
+  mpfr_init2(a0r,nbits); mpfr_set_si(a0r,0,MPFR_RNDN);
+  mpfr_init2(a0i,nbits); mpfr_set_si(a0i,0,MPFR_RNDN);
+  mpfr_init2(a1r,nbits); mpfr_set_si(a1r,-1,MPFR_RNDN);
+  mpfr_init2(a1i,nbits); mpfr_set_si(a1i,0,MPFR_RNDN);
+  mpfr_init2(a1rcorr,nbits); mpfr_set_si(a1rcorr,0,MPFR_RNDN);
+  mpfr_init2(a1icorr,nbits); mpfr_set_si(a1icorr,0,MPFR_RNDN);
+  mpfr_init2(a2r,nbits); mpfr_set_si(a2r,0,MPFR_RNDN);
+  mpfr_init2(a2i,nbits); mpfr_set_si(a2i,0,MPFR_RNDN);
+  mpfr_init2(tmp,nbits);
+  mpfr_init2(tmp1,nbits);
+  mpfr_init2(tmp2,nbits);
+  mpfr_init2(tmp3,nbits);
+  mpfr_init2(tmp4,nbits);
+  for (int j=0;j<B.size();++j){
+    // dbl dz=(z-R[j]);
+    if (z.type==_REAL){
+      mpfr_set(zr,z._REALptr->inf,MPFR_RNDN);
+      mpfr_set_si(zi,0,MPFR_RNDN);
+    }
+    else if (z.type==_CPLX){
+      mpfr_set(zr,z._CPLXptr->_REALptr->inf,MPFR_RNDN);
+      mpfr_set(zi,(z._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
+    }
+    else if (z.type==_INT_){
+      mpfr_set_si(zr,z.val,MPFR_RNDN);
+      mpfr_set_si(zi,0,MPFR_RNDN);
+    }
+    else exit(1);
+    sub(zr,zi,B[j]); 
+    if (mpfr_zero_p(zr) && mpfr_zero_p(zi)){
+      mpfr_clear(a0r);
+      mpfr_clear(a0i);
+      mpfr_clear(a1r);
+      mpfr_clear(a1i);
+      mpfr_clear(a1rcorr);
+      mpfr_clear(a1icorr);
+      mpfr_clear(a2r);
+      mpfr_clear(a2i);
+      mpfr_clear(zr);
+      mpfr_clear(zi);
+      mpfr_clear(tmp);
+      mpfr_clear(tmp1);
+      mpfr_clear(tmp2);
+      mpfr_clear(tmp3);
+      mpfr_clear(tmp4);
+      if (debug_infolevel>1)
+        *logptr(contextptr) << "mpfr_node_sum equal B index j=" << j << ", z=" << z << "\n";
+      return false;
+    }
+    inv(zr,zi,tmp,tmp1,tmp2);
+    mpfr_set(tmp3,zr,MPFR_RNDN);
+    mpfr_set(tmp4,zi,MPFR_RNDN);
+    // A0=sum(1/(z-zi)
+    // FIXME increase sum accuracy using
+    // s :=0; c :=0;
+    // loop: x=1/(z-zi), c += (x-((s+x)-s);  s +=x;
+    // s += c
+    mpfr_add(a0r,a0r,zr,MPFR_RNDN);
+    mpfr_add(a0i,a0i,zi,MPFR_RNDN);
+    //A0=gen(real_object(a0r),real_object(a0i));
+    mult(zr,zi,A[j],tmp,tmp1,tmp2);
+    // A1 precision correction, requires 8 more + or - in O(n) bits
+    // vs multiplications that are slower
+    // A1corr += (b-((A1+b)-A1));
+    // prepare by keeping a copy of A1
+    mpfr_set(tmp1,a1r,MPFR_RNDN);
+    mpfr_set(tmp2,a1i,MPFR_RNDN);
+    // A1 += b where b=a/(z-zi) is in zr,zi
+    mpfr_add(a1r,a1r,zr,MPFR_RNDN);
+    mpfr_add(a1i,a1i,zi,MPFR_RNDN);
+    // A1=gen(real_object(a1r),real_object(a1i));
+#if 1
+    // precision correction: compute (A1+b)-A1 in tmp1/tmp2,
+    // A1+b was just computed in a1r/a1i
+    // tmp1/tmp2 contains a copy of A1 
+    mpfr_sub(tmp1,a1r,tmp1,MPFR_RNDN);
+    mpfr_sub(tmp2,a1i,tmp2,MPFR_RNDN);
+    // precision correction: compute b-((A1+b)-A1) in tmp1/tmp2
+    mpfr_sub(tmp1,zr,tmp1,MPFR_RNDN);
+    mpfr_sub(tmp2,zi,tmp2,MPFR_RNDN);
+    // precision correction: add correction tmp1/tmp2 to A1corr
+    mpfr_add(a1rcorr,a1rcorr,tmp1,MPFR_RNDN);
+    mpfr_add(a1icorr,a1icorr,tmp2,MPFR_RNDN);
+#endif
+    // A2=-sum(a/(z-zi)^2)
+    mult(zr,zi,tmp3,tmp4,tmp,tmp1,tmp2);
+    mpfr_sub(a2r,a2r,zr,MPFR_RNDN);
+    mpfr_sub(a2i,a2i,zi,MPFR_RNDN);
+    // A2=gen(real_object(a2r),real_object(a2i));    
+  }
+  A0=gen(real_object(a0r),real_object(a0i));
+  mpfr_add(a1r,a1r,a1rcorr,MPFR_RNDN);
+  mpfr_add(a1i,a1i,a1icorr,MPFR_RNDN);
+  A1=gen(real_object(a1r),real_object(a1i));
+  A2=gen(real_object(a2r),real_object(a2i));
+  mpfr_clear(a0r);
+  mpfr_clear(a0i);
+  mpfr_clear(a1r);
+  mpfr_clear(a1i);
+  mpfr_clear(a1rcorr);
+  mpfr_clear(a1icorr);
+  mpfr_clear(a2r);
+  mpfr_clear(a2i);
+  mpfr_clear(zr);
+  mpfr_clear(zi);
+  mpfr_clear(tmp);
+  mpfr_clear(tmp1);
+  mpfr_clear(tmp2);  
+  mpfr_clear(tmp3);
+  mpfr_clear(tmp4);
+  return true;
+}
+bool secular_mpfr(const vdbl & A,const vdbl & B,const dbl & x,dbl & d,int nbits,GIAC_CONTEXT){
+  if (A.empty())
+    return 0;
+  gen A0,A1,A2;
+  if (!mpfr_node_sum(A,B,x,A0,A1,A2,nbits,contextptr))
+    return false;
+  d=A1/(A1*A0+A2);
+  return true;
+}
+#endif // MPFR
+
+// sum(1/(z-bi)), -1+sum(a_i/(z-b_i)), -sum(a_i/(z-b_i)^2)
+bool singleprec_node_sum(const vfdbl & A,const vfdbl & B,const fdbl & z,fdbl & A0,fdbl & A1,fdbl & A2,GIAC_CONTEXT){
+  A2=A0=fdbl(0.0);
+  A1=fdbl(-1.0);
+  fdbl A0corr=0,A1corr=0,A2corr=0;
+  // FIXME increase sum accuracy using
+  // s :=0; c :=0;
+  // loop: x=1/(z-zi), c += (x-((s+x)-s);  s +=x;
+  // s += c
+  for (size_t i=0;i<A.size();++i){
+    fdbl zb(z-B[i]);
+#ifdef LDBL80
+    long double n=norm(zb);
+#else
+    double n=norm(zb);
+#endif
+    if (n==0)
+      return false;
+    zb=conj(zb)/(n);
+    //A0corr += (zb-((A0+zb)-A0));
+    A0 += zb;
+    fdbl b(A[i]*zb);
+    A1corr += (b-((A1+b)-A1));
+    A1 += b;
+    b *= -zb;
+    //A2corr += (b-((A2+b)-A2));
+    A2 += b;
+  }
+  A0 += A0corr;
+  A1 += A1corr;
+  A2 += A2corr;
+  return true;
+}
+
+bool secular_singleprec(const vfdbl & A,const vfdbl & B,const fdbl & x,fdbl & d,GIAC_CONTEXT){
+  if (A.empty())
+    return 0;
+  fdbl A0,A1,A2;
+  if (!singleprec_node_sum(A,B,x,A0,A1,A2,contextptr))
+    return false;
+  d=A1/(A1*A0+A2);
+  return true;
+}
+
+bool aberth_singleprec(const vfdbl & P0,int N,double eps,vfdbl & R,int cluster_start,int cluster_afterend,vector<short int> & zi_done,int afteriter,bool secular,GIAC_CONTEXT){
   int deg=P0.size()-1;
   bool doing_cluster=cluster_start>0 || cluster_afterend<deg;
   vfdbl P(P0);
@@ -2567,11 +3638,38 @@ bool aberth_singleprec(const vfdbl & P0,int N,double eps,vfdbl & R,int cluster_s
       return false;
     }
   }
-  vfdbl Prev(P);
+  vfdbl Prev(P),A,B(R);
+  bool firstiterhorner=!secular;
+#ifdef HAVE_LIBMPFR
+  if (secular){
+    firstiterhorner=true;
+    int nbitsP2=3*64; 
+    vdbl P2,R2; Convert(P,P2); Convert(R,R2);
+    accurate_evalf(P2,nbitsP2);
+    accurate_evalf(R2,nbitsP2);
+    // init secular nodes from R and P2
+    A.resize(deg); gen d,d1,tmp; long size;
+    for (int i=0;i<deg;++i){
+      long loss=horner2_mpfr(P2,R2[i],d,d1,nbitsP2,size,false);
+      product(d1,R2,i,nbitsP2);
+      tmp=-d/(d1*P2[0]);
+      reim(tmp,d,d1,contextptr);
+      long double zr,zi;
+      if (!convert(d,zr) || !convert(d1,zi))
+        return false;
+      A[i]=fdbl(zr,zi); // A[i]=accurate_evalf(-d/(d1*P2[0]),nbitsP2-loss);
+    }
+  }
+#else
+  secular=false;
+  firstiterhorner=true;
+#endif
   reverse(Prev.begin(),Prev.end());
   vfdbl newR(deg);
   int ok=0; double delta;
   for (int k=0;k<N;++k){
+    if (k)
+      firstiterhorner=false;
     delta=0;
     if (doing_cluster){
       int K=cluster_start;
@@ -2589,7 +3687,9 @@ bool aberth_singleprec(const vfdbl & P0,int N,double eps,vfdbl & R,int cluster_s
       }
       fdbl & zi=R[i];
       fdbl d,d1;
-      if (absdbl(zi)>1){
+      if (secular && !firstiterhorner && secular_singleprec(A,B,zi,d,contextptr))
+        d1=1;
+      else if (absdbl(zi)>1){
         fdbl gamma(inv(zi));
         horner2(Prev,gamma,d,d1);
         if (!is_exactly_zero(d)){
@@ -2674,7 +3774,7 @@ bool aberth_singleprec(const vfdbl & P0,int N,double eps,vfdbl & R,int cluster_s
             }
           }
           // shift P and reverse (roots become inverse of roots)
-          vfdbl Pcluster(shift(P,z)),Rcluster(deg),initR(deg);
+          vfdbl Pcluster(shift(P,z,false)),Rcluster(deg),initR(deg);
           reverse(Pcluster.begin(),Pcluster.end());
           if (is_exactly_zero(Pcluster[0])){
             Pcluster[0]=z/pow(fdbl(2),64);
@@ -2695,7 +3795,7 @@ bool aberth_singleprec(const vfdbl & P0,int N,double eps,vfdbl & R,int cluster_s
           if (debug_infolevel)
             *logptr(contextptr) << "aberth single cluster=" << i << "," << cend << "\n";
           // recursive call of aberth
-          bool b=aberth_singleprec(Pcluster,N,eps,Rcluster,i,cend,zi_done, 2/* afteriter*/,contextptr);
+          bool b=aberth_singleprec(Pcluster,N,eps,Rcluster,i,cend,zi_done, 2/* afteriter*/,false,contextptr);
           for (int k=i;k<cend;++k){
             R[k]=newR[k]=inv(Rcluster[k])+z;
           }
@@ -2755,834 +3855,6 @@ bool aberth_singleprec(const vfdbl & P0,int N,double eps,vfdbl & R,int cluster_s
   return false;  
 }
 
-  bool read_poly(const string & filename,vfdbl & P){
-    P.clear();
-    ifstream i(filename.c_str());
-    while (1){
-      fdbl z;
-      i >> z;
-      if (i.eof())
-        break;
-      P.push_back(z);
-    }
-    return true;
-  }
-
-  vfdbl p_coeff(const vfdbl & R){
-    vfdbl P;
-    P.reserve(R.size()+1);
-    P.push_back(fdbl(1));
-    for (size_t i=0;i<R.size();++i){
-      fdbl z=R[i];
-      // P*(x-z)
-      P.push_back(-z*P.back());
-      for (size_t j=P.size()-2;j>=1;--j){
-        P[j] -= z*P[j-1];
-      }
-    }
-    return P;
-  }
-
-  // max distance between 2 elements of R
-  double ecart(const vfdbl & R){
-    int n=R.size();
-    double d=1e307;
-    for (int i=0;i<n;++i){
-      const fdbl & Ri=R[i];
-      for (int j=0;j<n;++j){
-        if (j==i) continue;
-        double dd=absdbl(Ri-R[j]);
-        if (dd<d)
-          d=dd;
-      }
-    }
-    return d;
-  }
-
-  // multi-precision
-  typedef gen dbl;
-  inline double absdbl(const dbl & x){
-    dbl g=abs(evalf_double(x,1,context0));
-    return g.type==_DOUBLE_?g._DOUBLE_val:0;
-  }
-  inline double logabsdbl(const dbl & x){
-    if (is_exactly_zero(x))
-      return MINREAL; // -707;
-    dbl g=x;
-    if (g.type!=_REAL)
-      g=accurate_evalf(g,128);
-    g=ln(abs(g,context0),context0);
-    g=evalf_double(g,1,context0);
-    return g.type==_DOUBLE_?g._DOUBLE_val:0;
-  }
-  inline double redbl(const dbl & x){
-    return evalf_double(re(x,context0),1,context0)._DOUBLE_val;
-  }
-  inline double imdbl(const dbl & x){
-    return evalf_double(im(x,context0),1,context0)._DOUBLE_val;
-  }
-  inline dbl conj(const dbl & x){
-    return conj(x,context0);
-  }
-  inline dbl re(const dbl & x){
-    return re(x,context0);
-  }
-  inline dbl im(const dbl & x){
-    return im(x,context0);
-  }
-  inline dbl exp(const dbl & x){
-    return exp(x,context0);
-  }
-  inline dbl inv(const dbl & x){
-    return inv(x,context0);
-  }
-  bool dbl_less(const dbl & x,const dbl & y){
-    gen xr,xi,yr,yi;
-    reim(x,xr,xi,context0);
-    reim(y,yr,yi,context0);
-    if (xi==0 && yi!=0)
-      return true;
-    if (xi!=0 && yi==0)
-      return false;
-    if (xr!=yr)
-      return is_strictly_greater(yr,xr,context0);
-    return is_strictly_greater(yi,xi,context0);
-    //return !islesscomplexthanf(x,y);
-  }
-
-  bool dblrayon_less(const dbl & x,const dbl & y){
-    return dbl_less(x[0],y[0]);
-  }
-
-  typedef vecteur vdbl;
-#if 0
-  ostream & operator << (ostream & os,const vdbl & P){
-    for (int i=0;i<P.size();++i)
-      os << P[i] << " ";
-    return os;
-  }
-#endif
-
-  void accurate_evalf(vdbl & P,int nbits){
-    for (int i=0;i<P.size();++i)
-      P[i]=accurate_evalf(P[i],nbits);
-  }
-
-  dbl horner_rem(const vdbl & P,dbl x,vdbl * Q){
-    if (Q)
-      Q->clear(); 
-    if (P.empty())
-      return 0.0;
-    size_t s=P.size();
-    if (Q)
-      Q->reserve(s-1);
-    dbl r=0;
-    if (Q){
-      for (size_t i=0;;){
-        r=r*x+P[i];
-        ++i;
-        if (i==s)
-          break;
-        Q->push_back(r);
-      }
-    }
-    else {
-      for (size_t i=0;i<s;++i){
-        r=r*x+P[i];
-      }
-    }
-    return r;
-  }
-
-  double loglinf(const vdbl & P,const dbl & z){
-    double r=logabsdbl(z),rn=1,res=MINREAL;
-    for (size_t i=1;i<=P.size();++i){
-      double anrn=logabsdbl(P[P.size()-i])*rn;
-      rn *= r;
-      if (anrn<=res)
-        continue;
-      res=anrn;
-    }
-    return res;
-  }
-
-  double loglinf(const vdbl & P){
-    double res=MINREAL;
-    for (size_t i=1;i<=P.size();++i){
-      double an=logabsdbl(P[P.size()-i]);
-      if (an<=res)
-        continue;
-      res=an;
-    }
-    return res;
-  }
-
-  // shift roots such that sum of roots=0
-  dbl find_shift(const vdbl & R,GIAC_CONTEXT){
-    int n=R.size()-1;
-    if (n==0)
-      return 0;
-    return _floor(R[1]/dbl(n)/R[0],context0);
-  }
-
-  vdbl shift(const vdbl & P0,dbl & d,bool l1chk=true){
-    double D=loglinf(P0);
-#if 0
-    dbl chk=horner_rem(P0,d,0);
-    if (l1chk && logabsdbl(chk)>D){
-      d=0;
-      return P0;
-    }
-    vdbl res=taylor(P0,d);
-    for (int i=0;i<res.size();++i){
-      if (l1chk && logabsdbl(res[i])>D){
-        d=0;
-        return P0; // no shift, it would increase the linf norm of the polynomial
-      }
-    }
-    return res;
-#endif
-    vdbl P(P0),Q,R;
-    int n=P.size();
-    for (int i=0;i<n;++i){
-      dbl Pz=horner_rem(P,d,&Q);
-      if (l1chk && logabsdbl(Pz)>D){
-        d=0;
-        return P0; // no shift, it would increase the linf norm of the polynomial
-      }
-      R.push_back(Pz);
-      P.swap(Q);
-    }
-    reverse(R.begin(),R.end());
-    return R;
-  }
-
-  dbl sum(const vdbl & P){
-    dbl r(0.0);
-    for (size_t i=0;i<P.size();++i)
-      r += P[i];
-    return r;
-  }
-
-  double sumabs(const vdbl & P){
-    double r(0.0);
-    for (size_t i=0;i<P.size();++i)
-      r += absdbl(P[i]);
-    return r;
-  }
-
-  double find_scale(const vdbl & P){
-    int n=P.size()-1;
-    vector<double> x,y;
-    for (int i=0;i<=n;++i){
-      double a=logabsdbl(P[i]);
-      if (a==MINREAL)
-        continue;
-      x.push_back(n-i);
-      y.push_back(a);
-    }
-    if (x.empty())
-      return 1;
-    double a,b,r;
-    linreg(x,y,a,b,r);
-    return std::exp(-a);
-  }
-
-  void rescale(vdbl & P, dbl l){
-    if (l==dbl(1)) return;
-    dbl ll=l;
-    for (int i=P.size()-2;i>=0;--i){
-      P[i] = ll*P[i];
-      ll = ll*l;
-    }
-    dbl c=P[0];
-    for (size_t i=0;i<P.size();++i)
-      P[i] = P[i]/c;
-  }
-
-  // find r=P(x) and r1=diff(P)(x)
-  // if |x|>1 this may overflow
-  void horner2(const vdbl & P,dbl x,dbl & r,dbl & r1){
-    r=r1=0;
-    if (P.empty())
-      return ;
-    size_t s=P.size()-1;
-    for (size_t i=0;i<s;++i){
-      r=r*x+P[i];
-      r1=r1*x+r;
-    }
-    r=r*x+P[s];
-  }
-
-#ifdef HAVE_LIBMPFR
-// computes an estimate of the number of bits of precision lost
-void add(mpfr_t & rr,mpfr_t & ri,const gen & Pi,int nbits,long & loss,long & size){
-  long rr0,rr1,delta=0;
-  mpfr_get_d_2exp(&rr0,rr,MPFR_RNDN);
-  if (Pi.type==_REAL){
-    mpfr_t & inf=Pi._REALptr->inf;
-    if (mpfr_zero_p(inf))
-      return ;
-    mpfr_get_d_2exp(&rr1,inf,MPFR_RNDN);
-    if (rr1>rr0){
-      if (rr1>size)
-        size=rr1;
-      delta=rr1-rr0;
-      rr0=rr1;
-    }
-    mpfr_add(rr,rr,Pi._REALptr->inf,MPFR_RNDN);
-  }
-  else if (Pi.type==_CPLX){
-    mpfr_t & rinf=Pi._CPLXptr->_REALptr->inf;
-    mpfr_get_d_2exp(&rr1,rinf,MPFR_RNDN);
-    if (rr1>rr0){
-      if (rr1>size)
-        size=rr1;
-      delta=rr1-rr0;
-      rr0=rr1;
-    }
-    mpfr_add(rr,rr,rinf,MPFR_RNDN);
-    mpfr_add(ri,ri,(Pi._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
-  }
-  else if (Pi.type==_INT_){
-    mpfr_add_si(rr,rr,Pi.val,MPFR_RNDN);
-    return ;
-  }
-  else exit(1);
-  mpfr_get_d_2exp(&rr1,rr,MPFR_RNDN);
-  if (delta>nbits)
-    delta=nbits;
-  if (loss>delta)
-    loss -= delta;
-  else
-    loss = 0;
-  if (rr1<rr0){
-    loss += rr0-rr1;
-  }
-}
-
-  void mult(mpfr_t & rr,mpfr_t & ri,const gen & x,mpfr_t & tmp,mpfr_t & tmp1, mpfr_t & tmp2){
-    if (x.type==_REAL){
-      mpfr_mul(rr,rr,x._REALptr->inf,MPFR_RNDN);
-      //if (!mpfr_zero_p(ri))
-      mpfr_mul(ri,ri,x._REALptr->inf,MPFR_RNDN);
-      return;
-    }
-    if (x.type==_CPLX){
-#if 0
-      mpfr_fmms(tmp1,rr,x._CPLXptr->_REALptr->inf,ri,(x._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
-      mpfr_fmma(ri,rr,(x._CPLXptr+1)->_REALptr->inf,ri,x._CPLXptr->_REALptr->inf,MPFR_RNDN);
-      mpfr_swap(tmp1,rr);
-      return;
-#endif
-#if 0
-      // (rr+i*ri)*(xr+i*xi)=rr*xr-ri*xi+i*(rr*xi+ri*xr)
-      mpfr_mul(tmp1,rr,x._CPLXptr->_REALptr->inf,MPFR_RNDN);
-      mpfr_mul(tmp2,ri,(x._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
-      // imag part = (rr+ri)*(xr+xi)-(rr*xr+ri*xi)
-      mpfr_add(rr,rr,ri,MPFR_RNDN);
-      mpfr_add(ri,x._CPLXptr->_REALptr->inf,(x._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
-      mpfr_mul(tmp,rr,ri,MPFR_RNDN);
-      mpfr_sub(tmp,tmp,tmp1,MPFR_RNDN);
-      mpfr_sub(ri,tmp,tmp2,MPFR_RNDN);
-      mpfr_sub(rr,tmp1,tmp2,MPFR_RNDN);
-      return;
-#endif
-      mpfr_mul(tmp1,rr,x._CPLXptr->_REALptr->inf,MPFR_RNDN);
-      mpfr_mul(tmp2,ri,(x._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
-      mpfr_sub(tmp,tmp1,tmp2,MPFR_RNDN);
-      mpfr_mul(tmp1,rr,(x._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
-      mpfr_mul(tmp2,ri,x._CPLXptr->_REALptr->inf,MPFR_RNDN);
-      mpfr_swap(tmp,rr);
-      mpfr_add(ri,tmp1,tmp2,MPFR_RNDN);
-      return;
-    }
-    if (x.type==_INT_){
-      mpfr_mul_si(rr,rr,x.val,MPFR_RNDN);
-      //if (!mpfr_zero_p(ri))
-      mpfr_mul_si(ri,ri,x.val,MPFR_RNDN);
-      return;
-    }
-    gensizeerr("mult mpfr");
-  }
-
-// find r=P(x) and r1=diff(P)(x)
-// returns largest number of bits of mantissa in intermediate computations
-long horner2_mpfr(const vdbl & P,const dbl & x,dbl & r,dbl & r1,int nbits,long & size,bool pdiff){
-  if (P.empty())
-    return 0;
-  long loss=0;
-  size=-RAND_MAX;
-  size_t s=P.size()-1;
-  mpfr_t rr,ri,r1r,r1i,tmp,tmp1,tmp2;
-  mpfr_init2(rr,nbits); mpfr_set_si(rr,0,MPFR_RNDN);
-  mpfr_init2(ri,nbits); mpfr_set_si(ri,0,MPFR_RNDN);
-  mpfr_init2(r1r,nbits); mpfr_set_si(r1r,0,MPFR_RNDN);
-  mpfr_init2(r1i,nbits); mpfr_set_si(r1i,0,MPFR_RNDN);
-  mpfr_init2(tmp,nbits);
-  mpfr_init2(tmp1,nbits);
-  mpfr_init2(tmp2,nbits);
-  for (size_t i=0;i<s;++i){
-    // r=r*x+P[i];
-    mult(rr,ri,x,tmp,tmp1,tmp2);
-    add(rr,ri,P[i],nbits,loss,size);
-    if (pdiff){
-      // r1=r1*x+r;
-      mult(r1r,r1i,x,tmp,tmp1,tmp2);
-      mpfr_add(r1r,r1r,rr,MPFR_RNDN);
-      mpfr_add(r1i,r1i,ri,MPFR_RNDN);
-    }
-  }
-  // r=r*x+P[s];
-  mult(rr,ri,x,tmp,tmp1,tmp2);
-  add(rr,ri,P[s],nbits,loss,size);
-  // end
-  r=gen(real_object(rr),real_object(ri));
-  if (pdiff)
-    r1=gen(real_object(r1r),real_object(r1i));
-  mpfr_clear(rr);
-  mpfr_clear(ri);
-  mpfr_clear(r1r);
-  mpfr_clear(r1i);
-  mpfr_clear(tmp);
-  mpfr_clear(tmp1);
-  mpfr_clear(tmp2);
-  return loss;
-}
-#endif
-
-#if defined HAVE_LIBMPFI && !defined NO_RTTI
-  bool maybe_zero(const dbl & g){
-    dbl a=abs(g,context0);
-    if (a.type==_REAL){
-      if (real_interval * ptr=dynamic_cast<real_interval *>(a._REALptr))
-        return ptr->maybe_zero();
-    }
-    return is_exactly_zero(a);
-  }
-  void add(mpfi_t & rr,mpfi_t & ri,const gen & Pi){
-    if (Pi.type==_CPLX){
-      mpfi_add(rr,rr,dynamic_cast<real_interval *>(Pi._CPLXptr->_REALptr)->infsup);
-      mpfi_add(ri,ri,dynamic_cast<real_interval *>((Pi._CPLXptr+1)->_REALptr)->infsup);
-    }
-    else if (Pi.type==_REAL)
-      mpfi_add(rr,rr,dynamic_cast<real_interval *>(Pi._REALptr)->infsup);
-    else if (Pi.type==_INT_)
-      mpfi_add_si(rr,rr,Pi.val);
-    else
-      gensizeerr("add mpfi");
-  }
-
-  void mult(mpfi_t & rr,mpfi_t & ri,const gen & x,mpfi_t & tmp,mpfi_t & tmp1, mpfi_t & tmp2){
-    if (x.type==_CPLX){
-      mpfi_mul(tmp1,rr,dynamic_cast<real_interval *>(x._CPLXptr->_REALptr)->infsup);
-      mpfi_mul(tmp2,ri,dynamic_cast<real_interval *>((x._CPLXptr+1)->_REALptr)->infsup);
-      mpfi_sub(tmp,tmp1,tmp2);
-      mpfi_mul(tmp1,rr,dynamic_cast<real_interval *>((x._CPLXptr+1)->_REALptr)->infsup);
-      mpfi_mul(tmp2,ri,dynamic_cast<real_interval *>(x._CPLXptr->_REALptr)->infsup);
-      mpfi_swap(tmp,rr);
-      mpfi_add(ri,tmp1,tmp2);
-    }
-    else if (x.type==_REAL){
-      mpfi_mul(rr,rr,dynamic_cast<real_interval *>(x._REALptr)->infsup);
-      mpfi_mul(ri,ri,dynamic_cast<real_interval *>(x._REALptr)->infsup);
-    }
-    else if (x.type==_INT_){
-      mpfi_mul_si(rr,rr,x.val);
-      mpfi_mul_si(ri,ri,x.val);
-    }
-    else
-      gensizeerr("mult mpfi");
-  }
-
-  // find r=P(x) and r1=diff(P)(x)
-  // if |x|>1 this may overflow
-  bool horner2_mpfi(const vdbl & P,dbl x,dbl & r,dbl & r1,int nbits,bool pdiff=true){
-    if (P.empty())
-      return false;
-    size_t s=P.size()-1;
-    mpfi_t rr,ri,r1r,r1i,tmp,tmp1,tmp2;
-    mpfi_init2(rr,nbits); mpfi_set_si(rr,0);
-    mpfi_init2(ri,nbits); mpfi_set_si(ri,0);
-    mpfi_init2(r1r,nbits); mpfi_set_si(r1r,0);
-    mpfi_init2(r1i,nbits); mpfi_set_si(r1i,0);
-    mpfi_init2(tmp,nbits);
-    mpfi_init2(tmp1,nbits);
-    mpfi_init2(tmp2,nbits);
-    for (size_t i=0;i<s;++i){
-      // r=r*x+P[i];
-      mult(rr,ri,x,tmp,tmp1,tmp2);
-      add(rr,ri,P[i]);
-      if (pdiff){
-        // r1=r1*x+r;
-        mult(r1r,r1i,x,tmp,tmp1,tmp2);
-        mpfi_add(r1r,r1r,rr);
-        mpfi_add(r1i,r1i,ri);
-      }
-    }
-    // r=r*x+P[s];
-    mult(rr,ri,x,tmp,tmp1,tmp2);
-    add(rr,ri,P[s]);
-    // end
-    r=gen(real_interval(rr),real_interval(ri));
-    r1=gen(real_interval(r1r),real_interval(r1i));
-    mpfi_clear(rr);
-    mpfi_clear(ri);
-    mpfi_clear(r1r);
-    mpfi_clear(r1i);
-    mpfi_clear(tmp);
-    mpfi_clear(tmp1);
-    mpfi_clear(tmp2);
-    return true;
-  }
-// find r=P(x) and r1=diff(P)(x)
-bool horner2_mpfi(const vdbl & P,const vdbl & Pdiff,dbl x,dbl & r,dbl & r1,int nbits){
-  if (P.empty())
-    return false;
-  size_t s=P.size()-1;
-  mpfi_t rr,ri,r1r,r1i,tmp,tmp1,tmp2;
-  mpfi_init2(rr,nbits); mpfi_set_si(rr,0);
-  mpfi_init2(ri,nbits); mpfi_set_si(ri,0);
-  mpfi_init2(r1r,nbits); mpfi_set_si(r1r,0);
-  mpfi_init2(r1i,nbits); mpfi_set_si(r1i,0);
-  mpfi_init2(tmp,nbits);
-  mpfi_init2(tmp1,nbits);
-  mpfi_init2(tmp2,nbits);
-  for (size_t i=0;i<s;++i){
-    // r=r*x+P[i];
-    mult(rr,ri,x,tmp,tmp1,tmp2);
-    add(rr,ri,P[i]);
-    // r1=r1*x+Pdiff[i];
-    mult(r1r,r1i,x,tmp,tmp1,tmp2);
-    add(r1r,r1i,Pdiff[i]);
-  }
-  // r=r*x+P[s];
-  mult(rr,ri,x,tmp,tmp1,tmp2);
-  add(rr,ri,P[s]);
-  // end
-  r=gen(real_interval(rr),real_interval(ri));
-  r1=gen(real_interval(r1r),real_interval(r1i));
-  mpfi_clear(rr);
-  mpfi_clear(ri);
-  mpfi_clear(r1r);
-  mpfi_clear(r1i);
-  mpfi_clear(tmp);
-  mpfi_clear(tmp1);
-  mpfi_clear(tmp2);
-  return true;
-}
-#else
-  bool maybe_zero(const dbl & g){
-    return is_exactly_zero(g);
-  }
-
-#endif
-
-#ifdef LDBL80
-  bool convert(const gen & g,long double & z){
-    if (g.type==_INT_){
-      z=g.val;
-      return true;
-    }
-    if (g.type==_DOUBLE_){
-      z=g._DOUBLE_val;
-      return true;
-    }
-    if (g.type==_REAL){
-#ifdef HAVE_LIBMPFR
-      z=mpfr_get_ld(g._REALptr->inf,MPFR_RNDN);
-#else
-      z=mpf_get_d(g._REALptr->inf,MPFR_RNDN);
-#endif
-      return true;
-    }
-    if (g.type==_FRAC){
-    long double n,d;
-      if (convert(g._FRACptr->num,n) && convert(g._FRACptr->den,d)){
-        z=n/d;
-        return true;
-      }
-      return false;
-    }
-    if (g.type!=_ZINT)
-      return false;
-    int s=mpz_cmp_si(*g._ZINTptr,0);
-    int l=mpz_sizeinbase(*g._ZINTptr,2);
-    if (l>=(1<<15))
-      return false;
-    mpz_t zz; mpz_init(zz);
-    if (l>64)
-      // we have 64 bits of mantissa
-      mpz_div_2exp(zz,*g._ZINTptr,l-64);
-    else
-      mpz_set(zz,*g._ZINTptr);
-    ulonglong u;
-    u=mpz_get_ui(zz);
-    mpz_clear(zz);
-    z=u;
-    if (l>64)
-      z=z*std::pow((long double) 2,l-64);
-    if (s<0)
-      z=-z;
-    return true;
-  }
-#endif
-      
-  bool convert(const vdbl & P,vfdbl & fP,GIAC_CONTEXT){
-    int s=P.size();
-    fP.clear(); fP.reserve(s);
-    for (int i=0;i<s;++i){
-      dbl real,imag;
-      reim(P[i],real,imag,contextptr);
-#if 0 // def LDBL80
-      if (is_integer(real) && is_integer(imag)){
-        long double zr,zi;
-        if (!convert(real,zr) || !convert(imag,zi))
-          return false;
-        fP.push_back(fdbl(zr,zi));
-      }
-      else
-        fP.push_back(fdbl(evalf_double(real,1,contextptr)._DOUBLE_val,evalf_double(imag,1,contextptr)._DOUBLE_val));
-#else
-      if (real.type==_ZINT && mpz_sizeinbase(*real._ZINTptr,2)>1000)
-        return false;
-      if (imag.type==_ZINT && mpz_sizeinbase(*imag._ZINTptr,2)>1000)
-        return false;
-      fP.push_back(fdbl(evalf_double(real,1,contextptr)._DOUBLE_val,evalf_double(imag,1,contextptr)._DOUBLE_val));
-#endif
-    }
-    return true;
-  }
-
-  void convert(const vfdbl & fP,vdbl & P){
-    int s=fP.size();
-    P.clear(); P.reserve(s);
-    for (int i=0;i<s;++i){
-#if defined HAVE_LIBMPFR && defined LDBL80
-      dbl re,im;
-      re=accurate_evalf(re,64); im=accurate_evalf(im,64);
-      mpfr_set_ld(re._REALptr->inf,fP[i].real(),MPFR_RNDN);
-      mpfr_set_ld(im._REALptr->inf,fP[i].imag(),MPFR_RNDN);
-#else
-      dbl re(double(fP[i].real())),im(double(fP[i].imag()));    
-#endif
-      P.push_back(dbl(re,im));
-    }
-  }
-
-  double l1norm(const vdbl & v){
-    double r=0;
-    for (int i=0;i<v.size();++i)
-      r += absdbl(v[i]);
-    return r;
-  }
-
-  void div(vdbl & v,double r){
-    r=1/r;
-    for (int i=0;i<v.size();++i)
-      v[i] = r*v[i];
-  }
-
-  double cross_prod(const vdbl & v,int a,int b,int c){
-    dbl ab=v[b]-v[a],ac=v[c]-v[a];
-    double A=redbl(ab),B=imdbl(ab),C=redbl(ac),D=imdbl(ac);
-    return A*D-B*C;
-  }
-
-  vector<int> convexhull(const vdbl & v){
-    int s=v.size(),imin=0;
-    if (s==1)
-      return vector<int>(1,0);
-    // find origin
-    double ymin=imdbl(v[0]),ycur,xmin=redbl(v[0]),xcur;
-    for (int i=1;i<s;++i){
-      ycur=imdbl(v[i]);xcur=redbl(v[i]);
-      if (ymin>ycur || (ymin==ycur && xmin>xcur) ){
-        imin=i; ymin=ycur; xmin=xcur;
-      }
-    }
-    vector<int_2double> ls;
-    for (int j=0;j<s;++j){
-      if (j!=imin){
-        double dx=redbl(v[j])-xmin,dy=imdbl(v[j])-ymin;
-        int_2double s={j,atan2(dy,dx),norm(dx,dy)};
-        ls.push_back(s);
-      }
-    }
-    sort(ls.begin(),ls.end(),graham_sort_function);
-    vector<int> res; res.push_back(imin); res.push_back(ls[0].i);
-    int ress=2;
-    for (int j=1;j<s-1;++j){
-      int icur=ls[j].i;
-      double o=cross_prod(v,res[ress-2],res[ress-1],icur);
-      if (o==0)
-        res[ress-1]=icur;
-      else {
-        if (o>0){
-          res.push_back(icur);
-          ++ress;
-        }
-        else {
-          while (ress>2 && o<0){
-            res.pop_back();
-            ress--;
-            o=cross_prod(v,res[ress-2],res[ress-1],icur);
-          }
-          res.push_back(icur);
-          ++ress;
-        }
-      }
-    }
-    return res;
-  }
-
-  void init_R(const vdbl & P,vdbl & R){
-    R.clear();
-    int n=P.size()-1;
-    vdbl l;
-    vector<int> lpos;
-    for (int i=0;i<=n;++i){
-      double ai=logabsdbl(P[n-i]);
-      if (ai==MINREAL)
-        continue;
-      l.push_back(dbl(double(i),ai));
-      lpos.push_back(i);
-    }
-    vector<int> pos=convexhull(l);
-    // find real positions (since coeffs==0 were removed)
-    for (int i=0;i<pos.size();++i){
-      pos[i]=lpos[pos[i]];
-    }
-    sort(pos.begin(),pos.end());
-    if (pos[0]!=0)
-      pos.insert(pos.begin(),0);
-    if (pos.back()!=n)
-      pos.push_back(n);
-    int count=0;
-    vector<int_double> dkuk;
-    for (int i=1;i<pos.size();++i){
-      int dk=pos[i]-pos[i-1];
-      const dbl & tmp =P[n-pos[i-1]];
-      double uk=is_exactly_zero(tmp)?0:std::exp(-logabsdbl(P[n-pos[i]]/tmp)/dk);//pow(absdbl(P[n-pos[i]]/P[n-pos[i-1]]),-1.0/dk);
-      int_double id={dk,uk};
-      dkuk.push_back(id);
-    }
-    sort(dkuk.begin(),dkuk.end(),norm_sort);
-    for (int i=0;i<dkuk.size();++i){
-      int dk=dkuk[i].i;
-      double uk=dkuk[i].d;
-      double sigma=0.7;
-      for (int j=0;j<dk;++j){
-        double theta=sigma+2*M_PI*i/n+2*M_PI*j/dk;
-        dbl z(uk*std::cos(theta),uk*std::sin(theta));
-        R.push_back(z);
-      }
-    }
-  }
-
-  bool sum_inv_diff(const gen & zi,const vdbl & R,int i,gen & p){
-    p=0;
-    for (int j=0;j<R.size();++j){
-      if (j==i) continue;
-      dbl dz=(zi-R[j]);
-      if (is_exactly_zero(dz))
-        return false;
-      p += inv(dz);
-    }
-    return true;
-  }
-
-#ifdef HAVE_LIBMPFR  
-  void sub(mpfr_t & rr,mpfr_t & ri,const gen & Pi){
-    if (Pi.type==_CPLX){
-      mpfr_sub(rr,rr,Pi._CPLXptr->_REALptr->inf,MPFR_RNDN);
-      mpfr_sub(ri,ri,(Pi._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
-    }
-    else if (Pi.type==_REAL)
-      mpfr_sub(rr,rr,Pi._REALptr->inf,MPFR_RNDN);
-    else if (Pi.type==_INT_)
-      mpfr_sub_si(rr,rr,Pi.val,MPFR_RNDN);
-    else
-      gensizeerr("sub mpfi");
-  }
-
-  void inv(mpfr_t & r,mpfr_t & i,mpfr_t & tmp,mpfr_t & tmp1, mpfr_t & tmp2){
-    if (mpfr_zero_p(i)){
-      mpfr_set_si(tmp,1,MPFR_RNDN);
-      mpfr_div(r,tmp,r,MPFR_RNDN);
-    }
-    else {
-      mpfr_sqr(tmp1,r,MPFR_RNDN);
-      mpfr_sqr(tmp2,i,MPFR_RNDN);
-      mpfr_add(tmp,tmp1,tmp2,MPFR_RNDN);
-#if 0
-      mpfr_ui_div(tmp1,1,tmp,MPFR_RNDN);
-      mpfr_mul(r,r,tmp1,MPFR_RNDN);
-      mpfr_neg(tmp1,tmp1,MPFR_RNDN);
-      mpfr_mul(i,i,tmp1,MPFR_RNDN);
-#else
-      mpfr_div(r,r,tmp,MPFR_RNDN);
-      mpfr_neg(tmp,tmp,MPFR_RNDN);
-      mpfr_div(i,i,tmp,MPFR_RNDN);
-#endif
-    }
-  }
-
-  bool mpfr_sum_inv_diff(const gen & z,const vdbl & R,int i,gen & p,int nbits,GIAC_CONTEXT){
-    mpfr_t tmp,tmp1,tmp2,zr,zi,pr,pi;
-    mpfr_init2(pr,nbits); mpfr_set_si(pr,0,MPFR_RNDN);
-    mpfr_init2(pi,nbits); mpfr_set_si(pi,0,MPFR_RNDN);
-    mpfr_init2(zr,nbits); 
-    mpfr_init2(zi,nbits); 
-    mpfr_init2(tmp,nbits);
-    mpfr_init2(tmp1,nbits);
-    mpfr_init2(tmp2,nbits);
-    for (int j=0;j<R.size();++j){
-      if (j==i) continue;
-      // dbl dz=(z-R[j]);
-      if (z.type==_REAL){
-        mpfr_set(zr,z._REALptr->inf,MPFR_RNDN);
-        mpfr_set_si(zi,0,MPFR_RNDN);
-      }
-      else if (z.type==_CPLX){
-        mpfr_set(zr,z._CPLXptr->_REALptr->inf,MPFR_RNDN);
-        mpfr_set(zi,(z._CPLXptr+1)->_REALptr->inf,MPFR_RNDN);
-      }
-      else if (z.type==_INT_){
-        mpfr_set_si(zr,z.val,MPFR_RNDN);
-        mpfr_set_si(zi,0,MPFR_RNDN);
-      }
-      else
-        gensizeerr("inv diff mpfr");;
-      sub(zr,zi,R[j]); 
-      if (mpfr_zero_p(zr) && mpfr_zero_p(zi)){
-        mpfr_clear(pr);
-        mpfr_clear(pi);
-        mpfr_clear(zr);
-        mpfr_clear(zi);
-        mpfr_clear(tmp);
-        mpfr_clear(tmp1);
-        mpfr_clear(tmp2);
-        if (debug_infolevel>1)
-          *logptr(contextptr) << "sum_inv_diff equal R index i=" << i << ", j=" << j << ", z=" << z << "\n";
-        return false;
-      }
-      inv(zr,zi,tmp,tmp1,tmp2);
-      // p += inv(dz);
-      mpfr_add(pr,pr,zr,MPFR_RNDN);
-      mpfr_add(pi,pi,zi,MPFR_RNDN);
-    }
-    p=gen(real_object(pr),real_object(pi));
-    mpfr_clear(pr);
-    mpfr_clear(pi);
-    mpfr_clear(zr);
-    mpfr_clear(zi);
-    mpfr_clear(tmp);
-    mpfr_clear(tmp1);
-    mpfr_clear(tmp2);  
-    return true;
-  }
-#endif
 
 // check that roots are isolated or have precision eps, set zi_done[i] to 2 or 0
 bool chk_isol(vdbl & z,bool realpoly,int isolate,const vdbl & rz,double eps,vector<short int> & zi_done,GIAC_CONTEXT){
@@ -3666,9 +3938,154 @@ bool chk_isol(vdbl & z,bool realpoly,int isolate,const vdbl & rz,double eps,vect
   return true;
 }
 
+void clear_zi_done(vector<short int> & zi_done,bool clearall){
+  if (clearall){
+    for (int i=0;i<zi_done.size();++i){
+      if (zi_done[i]!=5)
+        zi_done[i]=0;
+    }
+  }
+  else {
+    for (int i=0;i<zi_done.size();++i){
+      if (zi_done[i]<2)
+        zi_done[i]=0;
+    }
+  }
+}
+
+#if defined HAVE_LIBMPFI && !defined NO_RTTI
+bool maybe_zero(const dbl & g){
+  dbl a=abs(g,context0);
+  if (a.type==_REAL){
+    if (real_interval * ptr=dynamic_cast<real_interval *>(a._REALptr))
+      return ptr->maybe_zero();
+  }
+  return is_exactly_zero(a);
+}
+void add(mpfi_t & rr,mpfi_t & ri,const gen & Pi){
+  if (Pi.type==_CPLX){
+    mpfi_add(rr,rr,dynamic_cast<real_interval *>(Pi._CPLXptr->_REALptr)->infsup);
+    mpfi_add(ri,ri,dynamic_cast<real_interval *>((Pi._CPLXptr+1)->_REALptr)->infsup);
+  }
+  else if (Pi.type==_REAL)
+    mpfi_add(rr,rr,dynamic_cast<real_interval *>(Pi._REALptr)->infsup);
+  else if (Pi.type==_INT_)
+    mpfi_add_si(rr,rr,Pi.val);
+  else exit(1);
+}
+
+void mult(mpfi_t & rr,mpfi_t & ri,const gen & x,mpfi_t & tmp,mpfi_t & tmp1, mpfi_t & tmp2){
+  if (x.type==_CPLX){
+    mpfi_mul(tmp1,rr,dynamic_cast<real_interval *>(x._CPLXptr->_REALptr)->infsup);
+    mpfi_mul(tmp2,ri,dynamic_cast<real_interval *>((x._CPLXptr+1)->_REALptr)->infsup);
+    mpfi_sub(tmp,tmp1,tmp2);
+    mpfi_mul(tmp1,rr,dynamic_cast<real_interval *>((x._CPLXptr+1)->_REALptr)->infsup);
+    mpfi_mul(tmp2,ri,dynamic_cast<real_interval *>(x._CPLXptr->_REALptr)->infsup);
+    mpfi_swap(tmp,rr);
+    mpfi_add(ri,tmp1,tmp2);
+  }
+  else if (x.type==_REAL){
+    mpfi_mul(rr,rr,dynamic_cast<real_interval *>(x._REALptr)->infsup);
+    mpfi_mul(ri,ri,dynamic_cast<real_interval *>(x._REALptr)->infsup);
+  }
+  else if (x.type==_INT_){
+    mpfi_mul_si(rr,rr,x.val);
+    mpfi_mul_si(ri,ri,x.val);
+  }
+  else exit(1);
+}
+
+// find r=P(x) and r1=diff(P)(x)
+bool horner2_mpfi(const vdbl & P,dbl x,dbl & r,dbl & r1,int nbits,bool pdiff=true){
+  if (P.empty())
+    return false;
+  size_t s=P.size()-1;
+  mpfi_t rr,ri,r1r,r1i,tmp,tmp1,tmp2;
+  mpfi_init2(rr,nbits); mpfi_set_si(rr,0);
+  mpfi_init2(ri,nbits); mpfi_set_si(ri,0);
+  mpfi_init2(r1r,nbits); mpfi_set_si(r1r,0);
+  mpfi_init2(r1i,nbits); mpfi_set_si(r1i,0);
+  mpfi_init2(tmp,nbits);
+  mpfi_init2(tmp1,nbits);
+  mpfi_init2(tmp2,nbits);
+  for (size_t i=0;i<s;++i){
+    // r=r*x+P[i];
+    mult(rr,ri,x,tmp,tmp1,tmp2);
+    add(rr,ri,P[i]);
+    if (pdiff){
+      // r1=r1*x+r;
+      mult(r1r,r1i,x,tmp,tmp1,tmp2);
+      mpfi_add(r1r,r1r,rr);
+      mpfi_add(r1i,r1i,ri);
+    }
+  }
+  // r=r*x+P[s];
+  mult(rr,ri,x,tmp,tmp1,tmp2);
+  add(rr,ri,P[s]);
+  // end
+  r=gen(real_interval(rr),real_interval(ri));
+  r1=gen(real_interval(r1r),real_interval(r1i));
+  mpfi_clear(rr);
+  mpfi_clear(ri);
+  mpfi_clear(r1r);
+  mpfi_clear(r1i);
+  mpfi_clear(tmp);
+  mpfi_clear(tmp1);
+  mpfi_clear(tmp2);
+  return true;
+}
+
+
+// find r=P(x) and r1=diff(P)(x)
+bool horner2_mpfi(const vdbl & P,const vdbl & Pdiff,dbl x,dbl & r,dbl & r1,int nbits){
+  if (P.empty())
+    return false;
+  size_t s=P.size()-1;
+  mpfi_t rr,ri,r1r,r1i,tmp,tmp1,tmp2;
+  mpfi_init2(rr,nbits); mpfi_set_si(rr,0);
+  mpfi_init2(ri,nbits); mpfi_set_si(ri,0);
+  mpfi_init2(r1r,nbits); mpfi_set_si(r1r,0);
+  mpfi_init2(r1i,nbits); mpfi_set_si(r1i,0);
+  mpfi_init2(tmp,nbits);
+  mpfi_init2(tmp1,nbits);
+  mpfi_init2(tmp2,nbits);
+  for (size_t i=0;i<s;++i){
+    // r=r*x+P[i];
+    mult(rr,ri,x,tmp,tmp1,tmp2);
+    add(rr,ri,P[i]);
+    // r1=r1*x+Pdiff[i];
+    mult(r1r,r1i,x,tmp,tmp1,tmp2);
+    add(r1r,r1i,Pdiff[i]);
+  }
+  // r=r*x+P[s];
+  mult(rr,ri,x,tmp,tmp1,tmp2);
+  add(rr,ri,P[s]);
+  // end
+  r=gen(real_interval(rr),real_interval(ri));
+  r1=gen(real_interval(r1r),real_interval(r1i));
+  mpfi_clear(rr);
+  mpfi_clear(ri);
+  mpfi_clear(r1r);
+  mpfi_clear(r1i);
+  mpfi_clear(tmp);
+  mpfi_clear(tmp1);
+  mpfi_clear(tmp2);
+  return true;
+}
+
+#else
+bool maybe_zero(const dbl & g){
+  return is_exactly_zero(g);
+}
+
+#endif
+
 #ifdef HAVE_LIBMPFR
 // returns 0 on failure (e.g. division by maybe 0), -1 too many iterations, 1 ok, 2 isolated
-int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl & R,vdbl & rayon,int cluster_start,int cluster_afterend,vector<short int> & zi_done,bool certify_lastiter,int isolate,GIAC_CONTEXT){
+int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl & A,vdbl & B,vdbl & R,vdbl & rayon,int cluster_start,int cluster_afterend,vector<short int> & zi_done,bool certify_lastiter,int isolate,bool secular,GIAC_CONTEXT){
+  int neps=std::ceil(-std::log2(eps));
+  if (neps>nbits)
+    nbits=64*((neps+63)/64);
   int afteriter=2;
   int deg=P0.size()-1,prevcount=0;
   bool doing_cluster=cluster_start>0 || cluster_afterend<deg;
@@ -3684,9 +4101,16 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
     vfdbl fP,fR;
     if (convert(P,fP,contextptr)){
       double eps2=1e-4;
-      bool ok=aberth_singleprec(fP,2*N,eps2,fR,0,deg,zi_done,4,contextptr);
-      convert(fR,R);
+      bool ok;
+      if (secular){
+	aberth_singleprec(fP,N,eps2,fR,0,deg,zi_done,1,false,contextptr);
+	ok=aberth_singleprec(fP,N,eps2/16,fR,0,deg,zi_done,4,true /* secular*/ ,contextptr);	
+      }
+      else
+	ok=aberth_singleprec(fP,2*N,eps2,fR,0,deg,zi_done,4,false,contextptr);
+      Convert(fR,R);
       if (ok &&
+          //0 &&
 	  !doing_cluster){
         vdbl P_cert(P);
         int nbits=64;
@@ -3751,8 +4175,8 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
       init_R(P,R);
   }
   accurate_evalf(P,nbits);
-  clear_zi_done(zi_done);
-  vdbl P_cert; int nbitscert=nbits;
+  clear_zi_done(zi_done,true);
+  vdbl P_cert; int nbitscert=nbits+64;
   if (certify_lastiter){
 #if defined MPFI_CERT && defined HAVE_LIBMPFI && !defined NO_RTTI
     P_cert=*convert_interval(P,nbitscert,contextptr)._VECTptr;
@@ -3763,6 +4187,27 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
   accurate_evalf(R,nbits);
   vdbl P2(P0); int nbitsP2=2*nbits+64; 
   accurate_evalf(P2,nbitsP2);
+  bool firstiterhorner=!secular;
+  if (secular){
+    bool refresh_nodes=A.empty();
+    if (!refresh_nodes){
+      if (A[0].type==_CPLX && A[0]._CPLXptr->type==_REAL)
+        refresh_nodes=mpfr_get_prec(A[0]._CPLXptr->_REALptr->inf)<nbits;
+      else if (A[0].type==_REAL)
+        refresh_nodes=mpfr_get_prec(A[0]._REALptr->inf)<nbits;
+    }
+    if (refresh_nodes){
+      firstiterhorner=true;
+      // init secular nodes from R and P2
+      A.resize(deg); B.resize(deg); gen d,d1; long size;
+      for (int i=0;i<deg;++i){
+        B[i]=R[i]; // accurate_evalf(R[i],nbitsP2);
+        long loss=horner2_mpfr(P2,accurate_evalf(R[i],nbitsP2),d,d1,nbitsP2,size,false);
+        product(d1,R,i,nbitsP2);
+        A[i]=accurate_evalf(-d/(d1*P2[0]),nbits); // A[i]=accurate_evalf(-d/(d1*P2[0]),nbitsP2-loss);
+      }
+    }
+  }
 #if 0
   vdbl P_cert_diff(derivative(P0)); 
   if (certify_lastiter){
@@ -3774,8 +4219,10 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
   }
 #endif
   vdbl newR(R); // init with R is required in clusters
-  int ok=0; long size; double delta; bool isol; 
+  int ok=0; long size; double delta; bool isol;
   for (int k=0;k<N;++k){
+    if (k)
+      firstiterhorner=false;
     if (debug_infolevel>0)
       *logptr(contextptr) << clock()*1e-6 << " Aberth bits=" << nbits << " iter="<<  k << " ";
     delta=0; isol=true;
@@ -3810,11 +4257,16 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
       if (ok && certify_lastiter){
 #if defined MPFI_CERT && defined HAVE_LIBMPFI && !defined NO_RTTI
         int loss2=RAND_MAX;
-        if (isolate==0)
-          loss2=horner2_mpfr(P2,accurate_evalf(zi,nbitsP2),d,d1,2*nbits,size,true);
-        if (loss2>=nbitsP2-16){
-          gen zicert=convert_interval(zi,nbits,contextptr),dd,dd1;        
-          horner2_mpfi(P_cert,zicert,d,d1,nbits);
+        if (!isolate || secular)
+          loss2=horner2_mpfr(P2,accurate_evalf(zi,nbitsP2),d,d1,nbitsP2,size,true);
+        if (secular){
+          B[i]=R[i];
+          gen p; product(p,R,i,nbitsP2);
+          A[i]=-d/(p*P[0]); // update secular nodes for next iteration
+        }
+        if (!isolate && loss2>=nbitsP2-16){
+          gen zicert=convert_interval(zi,nbitscert,contextptr),dd,dd1;        
+          horner2_mpfi(P_cert,zicert,d,d1,nbitscert);
           if (maybe_zero(d1)){
             if (debug_infolevel)
               *logptr(contextptr) << "MPFI unable to certify radius, root " << i << zi << "\n";
@@ -3831,16 +4283,25 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
         }
         if (is_exactly_zero(d1))
           return -1;
+        if (secular){
+          B[i]=R[i];
+          gen p; product(p,R,i);
+          A[i]=-d/(p*P[0]); // update secular nodes for next iteration
+        }
 #endif
       }          
       else {
-        loss=horner2_mpfr(P,zi,d,d1,nbits,size,true);
+        if (secular && !firstiterhorner && secular_mpfr(A,B,zi,d,nbits,contextptr))
+          d1=1;
+        else
+          loss=horner2_mpfr(P,zi,d,d1,nbits,size,true);
         if (is_exactly_zero(d1))
           return -1;
       }
       d=d/d1;
-      rayon[i]=deg*abs(d,contextptr);
-      if (ok && certify_lastiter && rayon[i].type==_REAL){
+      if (ok)
+        rayon[i]=deg*abs(d,contextptr);
+      if (ok && certify_lastiter && rayon[i].type==_REAL){        
 #if defined MPFI_CERT && defined HAVE_LIBMPFI && !defined NO_RTTI        
         rayon[i]=_right(rayon[i],contextptr);
         d=gen(_milieu(re(d,contextptr),contextptr),_milieu(im(d,contextptr),contextptr));
@@ -3904,7 +4365,7 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
           if (!is_exactly_zero(z2))
             z=z-z1/z2; 
           // shift P and reverse (roots become inverse of roots)
-          vdbl Pcluster(P),Rcluster(deg),initR(deg);
+          vdbl Pcluster(P),Rcluster(deg),initR(deg),Acluster(deg),Bcluster(deg);
           accurate_evalf(Pcluster,nbits2);
           z=accurate_evalf(z,nbits2);
           Pcluster=shift(Pcluster,z,false);
@@ -3929,7 +4390,7 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
           // recursive call of aberth
           if (debug_infolevel)
             *logptr(contextptr) << "aberth mpfr cluster=" << i << "," << cend << "\n";
-          int b=aberth_mpfr(Pcluster,false,nbits2,N,eps,Rcluster,rayon,i,cend,zi_done,false,false,contextptr);
+          int b=aberth_mpfr(Pcluster,false,nbits2,N,eps,Acluster,Bcluster,Rcluster,rayon,i,cend,zi_done,false,false,false,contextptr);
           for (int k=i;k<cend;++k){
             R[k]=newR[k]=accurate_evalf(inv(Rcluster[k])+z,nbits);
           }
@@ -3964,11 +4425,11 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
         zi_done[i]=1;
       }
       else {
-        if (loss<nbits){
+        if (loss<nbits && dd*pp<=0.5){
           if (debug_infolevel)
             *logptr(contextptr) << i << " ";
         }
-        else if (!doing_cluster)
+        else if (!doing_cluster && !secular)
           zi_done[i]=-1;
         if (maxloss<loss)
           maxloss=loss;
@@ -4024,196 +4485,208 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
 }
 #endif
 
-  dbl round(const dbl & z,const gen & pow2,int nbits){
-    dbl res(z);
-    round2(res,nbits);
-    return res;
-    gen n,d;
-    fxnd(z,n,d);
-    return iquo(n*pow2,d)/pow2;
-  }
+dbl round(const dbl & z,const gen & pow2,int nbits){
+  dbl res(z);
+  round2(res,nbits);
+  return res;
+  gen n,d;
+  fxnd(z,n,d);
+  return iquo(n*pow2,d)/pow2;
+}
 
-  bool aberth_z(const vdbl & P0,int nbits,int N,double eps,vdbl & R,int cluster_start,int cluster_afterend,vector<short int> & zi_done,GIAC_CONTEXT){
-    int deg=P0.size()-1;
-    bool doing_cluster=cluster_start>0 || cluster_afterend<deg;
-    gen pow2=pow(2,nbits,contextptr);
-    vdbl P(P0);
-    dbl dr(0);
-    dbl l(1);
-    if (R.size()!=deg){
-      dr=-find_shift(P,contextptr);
-      P=shift(P,dr);
-      //l=find_scale(P);
-      //rescale(P,l);
-      // init R if not already done, using single precision Aberth
-      vfdbl fP,fR;
-      if (convert(P,fP,contextptr)){
-        vector<short int> zi_done(deg,false);
-        aberth_singleprec(fP,N,1e-6,fR,0,deg,zi_done,3,contextptr);
-        convert(fR,R);
+int aberth_z(const vdbl & P0,int nbits,int N,double eps,vdbl & R,int cluster_start,int cluster_afterend,vector<short int> & zi_done,GIAC_CONTEXT){
+  int deg=P0.size()-1;
+  bool doing_cluster=cluster_start>0 || cluster_afterend<deg;
+  gen pow2=pow(2,nbits,contextptr);
+  vdbl P(P0);
+  dbl dr(0);
+  dbl l(1);
+  if (R.size()!=deg){
+    dr=-find_shift(P,contextptr);
+    P=shift(P,dr);
+    //l=find_scale(P);
+    //rescale(P,l);
+    // init R if not already done, using single precision Aberth
+    vfdbl fP,fR;
+    if (convert(P,fP,contextptr)){
+      vector<short int> zi_done(deg,false);
+      double eps2=1e-4;
+      bool ok;
+      if (1){ // secular algorithm
+	aberth_singleprec(fP,N,eps2,fR,0,deg,zi_done,1,false,contextptr);
+	ok=aberth_singleprec(fP,N,eps2/16,fR,0,deg,zi_done,4,true /* secular*/ ,contextptr);	
       }
       else
-        init_R(P,R);
+	ok=aberth_singleprec(fP,2*N,eps2,fR,0,deg,zi_done,4,false,contextptr);
+      Convert(fR,R);
+#if 1 // exact computations are way too slow
+      for (size_t j=0;j<R.size();++j)
+        R[j] += dr;
+      return 2;
+#endif
     }
-    P=*exact(P,contextptr)._VECTptr;
-    R=*exact(R,contextptr)._VECTptr;
-    vdbl Prev(P);
-    reverse(Prev.begin(),Prev.end());
-    vdbl newR(R);
-    int ok=0; double delta;
-    for (int k=0;k<N;++k){
-      delta=0;
-      if (doing_cluster){
-        int K=cluster_start;
-        for (;K<cluster_afterend;++K){
-          if (!zi_done[K])
-            break;
-        }
-        if (K==cluster_afterend)
-          ok=1;
+    else
+      init_R(P,R);
+  }
+  P=*exact(P,contextptr)._VECTptr;
+  R=*exact(R,contextptr)._VECTptr;
+  vdbl Prev(P);
+  reverse(Prev.begin(),Prev.end());
+  vdbl newR(R);
+  int ok=0; double delta;
+  for (int k=0;k<N;++k){
+    delta=0;
+    if (doing_cluster){
+      int K=cluster_start;
+      for (;K<cluster_afterend;++K){
+        if (!zi_done[K])
+          break;
       }
-      for (int i=cluster_start;i<cluster_afterend;++i){
-        if (zi_done[i]>=2 || (!ok && zi_done[i])){
-          // do the last iteration if root is not already isolated
-          newR[i]=R[i];
-          continue;
-        }
-        dbl & zi=R[i];
-        dbl d,d1;
-        if (logabsdbl(zi)>0){
-          dbl gamma(round(inv(zi),pow2,nbits));
-          horner2(Prev,gamma,d,d1);
-          if (!is_exactly_zero(d)){
-            d=gamma*(dbl(deg)-gamma*d1/d);
-            if (is_exactly_zero(d))
-              return false;
-            d=inv(d);
-          }
-        }
-        else {
-          horner2(P,zi,d,d1);
-          if (is_exactly_zero(d1))
-            return false;
-          d=d/d1;
-        }
-        d=round(d,pow2,nbits);
-        if (is_exactly_zero(d)){
-          newR[i]=zi;
-          zi_done[i]=1;
-          continue;
-        }
-        dbl p(0); bool binv=true;
-        for (int j=0;j<deg;++j){
-          if (j==i) continue;
-          dbl dz=zi-R[j];
-          if (is_exactly_zero(dz)){
-            if (doing_cluster)
-              return false;
-            binv=false;
-            break;
-          }
-          p += round(inv(dz),pow2,nbits);
-        }
-        double dd=absdbl(d),pp=absdbl(p);
-        double abszi=absdbl(zi);
-        if (debug_infolevel>2)
-          *logptr(contextptr) << "cluster? i=" << i << ", delta=" << dd << ", cluster_step=" << cluster_step << ", p=" << pp << ", d*p=" << dd*pp << " " << cluster_dp << "\n";      
-        if (!binv ||
-            (!ok && k>N/2 && !doing_cluster && dd<=cluster_step*abszi && dd*pp>=cluster_dp)){
-          // cluster of roots, find all roots in this cluster
-          int cend=i+1;
-          dbl sumR=zi;
-          for (int k=cend;k<deg;++k){
-            if (absdbl(zi-R[k])<2*deg/pp){
-              swap(R[cend],R[k]);
-              swap(zi_done[cend],zi_done[k]);
-              sumR+=R[cend];
-              ++cend;
-            }
-          }
-          if (cend-i>1){
-            // cluster is from i to cend-1 included
-            dbl z=sumR/dbl(cend-i); // center of gravity of cluster
-            // shift P and reverse (roots become inverse of roots)
-            vdbl Pcluster(shift(P,z,false)),Rcluster(deg),initR(deg);;
-            reverse(Pcluster.begin(),Pcluster.end());
-            // dbl D(dbl(cend-i)/d);
-            int count=deg-1;
-            for (int k=0;k<deg;++k){
-              if (k>=i && k<cend){
-                Rcluster[k]=initR[count];
-                --count;
-                //dbl a(0.0,0.7+(k-i)*2*M_PI/(cend-i));
-                //Rcluster[k]=D*exp(a);
-              }
-              else
-                Rcluster[k]=inv(R[k]-z);
-            }
-            vector<short int> old(zi_done);
-            // recursive call of aberth
-            if (debug_infolevel)
-              *logptr(contextptr) << "aberth exact cluster=" << i << "," << cend << "\n";
-            bool b=aberth_z(Pcluster,nbits,N,eps,Rcluster,i,cend,zi_done,contextptr);
-            for (int k=i;k<cend;++k){
-              R[k]=newR[k]=inv(Rcluster[k])+z;
-            }
-            if (b)
-              continue;
-            return false;
-          }
-        }
-        double absdz=abszi==0?absdbl(d):absdbl(d)/abszi;
-        if (binv)
-          d=d/(dbl(1)-round(d*p,pow2,nbits));
-        else {
-          if (ok)
-            return false;
-          d=d/(1-exact(rand()/2.0/RAND_MAX,contextptr));
-        } 
-        delta += absdz;
-        newR[i]=round(zi-d,pow2,nbits);
-        if (absdz<eps/deg){
-          if (debug_infolevel>1 && !zi_done[i])
-            *logptr(contextptr) << "New root found " << newR[i] << "\n";
-          zi_done[i]=1;
-        }
-      }
-      newR.swap(R);
-      int count=0;
-      for (int k=0;k<deg;++k){
-        if (zi_done[k])
-          ++count;
-      }
-      if (debug_infolevel>0){
-        *logptr(contextptr) << "Aberth exact bits="<< nbits << " iter="<<  k  << " found=" << count << " delta=" << delta << " cluster_search=" << cluster_start <<  ".." <<cluster_afterend << " time " << clock()*1e-6 << "\n";
-        if (debug_infolevel>2){
-          vdbl RR(R);
-          accurate_evalf(RR,45);
-          *logptr(contextptr) << "Current approx roots " << RR << "\n";
-        }
-      }
-      if (doing_cluster){
-        if (ok)
-          return true;
+      if (K==cluster_afterend)
+        ok=1;
+    }
+    for (int i=0;i<deg;++i){
+      if (zi_done[i]>=2 || (!ok && zi_done[i])){
+        // do the last iteration if root is not already isolated
+        newR[i]=R[i];
         continue;
       }
-      if (delta<=eps*(ok?deg:deg-count) || count==deg)
-        ++ok;
-      // else ok=0;
-      if (ok==2){
-        // rescale and translate
-        for (size_t j=0;j<R.size();++j){
-          R[j] = l*R[j] + dr;
+      dbl & zi=R[i];
+      dbl d,d1;
+      if (logabsdbl(zi)>0){
+        dbl gamma(round(inv(zi),pow2,nbits));
+        horner2(Prev,gamma,d,d1);
+        if (!is_exactly_zero(d)){
+          d=gamma*(dbl(deg)-gamma*d1/d);
+          if (is_exactly_zero(d))
+            return 0;
+          d=inv(d);
         }
-        return true;
+      }
+      else {
+        horner2(P,zi,d,d1);
+        if (is_exactly_zero(d1))
+          return 0;
+        d=d/d1;
+      }
+      d=round(d,pow2,nbits);
+      if (is_exactly_zero(d)){
+        newR[i]=zi;
+        zi_done[i]=1;
+        continue;
+      }
+      dbl p(0); bool binv=true;
+      for (int j=0;j<deg;++j){
+	if (j==i) continue;
+        dbl dz=zi-R[j];
+        if (is_exactly_zero(dz)){
+          if (doing_cluster)
+            return 0;
+          binv=false;
+          break;
+        }
+	p += round(inv(dz),pow2,nbits);
+      }
+      double dd=absdbl(d),pp=absdbl(p);
+      double abszi=absdbl(zi);
+      if (debug_infolevel>2)
+        *logptr(contextptr) << "cluster? i=" << i << ", delta=" << dd << ", cluster_step=" << cluster_step << ", p=" << pp << ", d*p=" << dd*pp << " " << cluster_dp << "\n";      
+      if (!binv ||
+          (!ok && k>N/2 && !doing_cluster && dd<=cluster_step*abszi && dd*pp>=cluster_dp)){
+        // cluster of roots, find all roots in this cluster
+        int cend=i+1;
+        dbl sumR=zi;
+        for (int k=cend;k<deg;++k){
+          if (absdbl(zi-R[k])<2*deg/pp){
+            swap(R[cend],R[k]);
+            swap(zi_done[cend],zi_done[k]);
+            sumR+=R[cend];
+            ++cend;
+          }
+        }
+        if (cend-i>1){
+          // cluster is from i to cend-1 included
+          dbl z=sumR/dbl(cend-i); // center of gravity of cluster
+          // shift P and reverse (roots become inverse of roots)
+          vdbl Pcluster(shift(P,z,false)),Rcluster(deg),initR(deg);;
+          reverse(Pcluster.begin(),Pcluster.end());
+          // dbl D(dbl(cend-i)/d);
+          int count=deg-1;
+          for (int k=0;k<deg;++k){
+            if (k>=i && k<cend){
+              Rcluster[k]=initR[count];
+              --count;
+              //dbl a(0.0,0.7+(k-i)*2*M_PI/(cend-i));
+              //Rcluster[k]=D*exp(a);
+            }
+            else
+              Rcluster[k]=inv(R[k]-z);
+          }
+          vector<short int> old(zi_done);
+          // recursive call of aberth
+          if (debug_infolevel)
+            *logptr(contextptr) << "aberth exact cluster=" << i << "," << cend << "\n";
+          bool b=aberth_z(Pcluster,nbits,N,eps,Rcluster,i,cend,zi_done,contextptr);
+          for (int k=0;k<deg;++k){
+            if (!old[k])
+              R[k]=l*(inv(Rcluster[k])+z)+dr;
+          }
+          if (b)
+            continue;
+          return 0;
+        }
+      }
+      double absdz=abszi==0?absdbl(d):absdbl(d)/abszi;
+      if (binv)
+        d=d/(dbl(1)-round(d*p,pow2,nbits));
+      else {
+        if (ok)
+          return 0;
+        d=d/(1-exact(rand()/2.0/RAND_MAX,contextptr));
+      } 
+      delta += absdz;
+      newR[i]=round(zi-d,pow2,nbits);
+      if (absdz<eps/deg){
+        if (debug_infolevel>1 && !zi_done[i])
+          *logptr(contextptr) << "New root found " << newR[i] << "\n";
+        zi_done[i]=1;
       }
     }
-    *logptr(contextptr) << "Aberth exact: too many iterations " << N << " delta " << delta << "\n";
-    return false;  
+    newR.swap(R);
+    int count=0;
+    for (int k=0;k<deg;++k){
+      if (zi_done[k])
+        ++count;
+    }
+    if (debug_infolevel>0){
+      *logptr(contextptr) << "Aberth exact bits="<< nbits << " iter="<<  k  << " found=" << count << " delta=" << delta << " cluster_search=" << cluster_start <<  ".." <<cluster_afterend << " time " << clock()*1e-6 << "\n";
+      if (debug_infolevel>2){
+        vdbl RR(R);
+        accurate_evalf(RR,45);
+        *logptr(contextptr) << "Current approx roots " << RR << "\n";
+      }
+    }
+    if (doing_cluster){
+      if (ok)
+        return 1;
+      continue;
+    }
+    if (delta<=eps*(ok?deg:deg-count) || count==deg)
+      ++ok;
+    // else ok=0;
+    if (ok==2){
+      // rescale and translate
+      for (size_t j=0;j<R.size();++j){
+        R[j] = l*R[j] + dr;
+      }
+      return 1;
+    }
   }
+  *logptr(contextptr) << "Aberth exact: too many iterations " << N << " delta " << delta << "\n";
+  return 0;  
+}
 
-// returns 0 on failure (e.g. division by maybe 0), -1 too many iterations, 1 ok, 2 isolated
-  bool aberth(const vdbl & P0,vdbl & R,vdbl & rayon,int N,double eps,int isolate,bool do_exact,GIAC_CONTEXT){
+bool aberth(const vdbl & P0,vdbl & R,vdbl & rayon,int N,double eps,int isolate,bool do_exact,GIAC_CONTEXT){
   if (P0.size()==2){
     R.clear();
     R.push_back(-P0[1]/P0[0]);
@@ -4223,6 +4696,13 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
   }
   vdbl P(P0);
   int deg=P.size()-1;
+  if (deg && is_exactly_zero(P[deg])){
+    P.pop_back();
+    bool b=aberth(P,R,rayon,N,eps,isolate,do_exact,contextptr);
+    R.insert(R.begin(),0);
+    rayon.insert(rayon.begin(),0);    
+    return b;
+  }
   dbl dr=-find_shift(P,contextptr);
   P=shift(P,dr);
   bool realpoly=true;
@@ -4237,14 +4717,17 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
   vector<short int> zi_done(P.size()-1,0);
   int bit2=0,N2=0,eps2=0;
   double eps0=eps;
-  while (bits<=ABERTH_NBITSMAX){
+  vdbl A,B;
+  while (bits<=giac::ABERTH_NBITSMAX){
     //zi_done=vector<short int>(deg,0);
 #ifdef HAVE_LIBMPFR    
-    int b=do_exact?aberth_z(P,bits,Nmax,eps,R,0,deg,zi_done,contextptr):aberth_mpfr(P,realpoly,bits,Nmax,eps,R,rayon,0,P.size()-1,zi_done,true,isolate,contextptr);
+    int b=do_exact?aberth_z(P,bits,Nmax,eps,R,0,deg,zi_done,contextptr):aberth_mpfr(P,realpoly,bits,Nmax,eps,A,B,R,rayon,0,P.size()-1,zi_done,true,isolate,true/* secular*/,contextptr);
 #else
     int b=aberth_z(P,bits,Nmax,eps,R,0,deg,zi_done,contextptr);
 #endif
-    bool bisol=b==2 || chk_isol(R,realpoly,isolate,rayon,eps0,zi_done,contextptr);
+    bool bisol=b==2;
+    if (!bisol && b!=-1)
+      bisol=chk_isol(R,realpoly,isolate,rayon,eps0,zi_done,contextptr);
     if (b>0){
       // if isolate is true, chk_isol will set zi_done[i] to 2 (root i is isolated) or 0
       if (b==2 || bisol){
@@ -4267,18 +4750,18 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
         if (eps2>bit2){
           ++bit2;
           bits *=2;
-          clear_zi_done(zi_done);
+          clear_zi_done(zi_done,true);
         }
         continue;
       }
     }
     ++bit2;
     bits *= 2;
-    clear_zi_done(zi_done);
+    clear_zi_done(zi_done,false);
     ++N2; Nmax*=1.2;
   }
   return false;
-  }
+}
 
   bool read_poly(const string & s,vdbl & P,GIAC_CONTEXT){
 #ifndef NO_STDEXCEPT
@@ -4321,36 +4804,37 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
     return true;
   }
 
-  vdbl p_coeff(const vdbl & R){
-    vdbl P;
-    P.reserve(R.size()+1);
-    P.push_back(dbl(1));
-    for (size_t i=0;i<R.size();++i){
-      dbl z=R[i];
-      // P*(x-z)
-      P.push_back(-z*P.back());
-      for (size_t j=P.size()-2;j>=1;--j){
-        P[j] -= z*P[j-1];
-      }
+vdbl p_coeff(const vdbl & R){
+  vdbl P;
+  P.reserve(R.size()+1);
+  P.push_back(dbl(1));
+  for (size_t i=0;i<R.size();++i){
+    dbl z=R[i];
+    // P*(x-z)
+    P.push_back(-z*P.back());
+    for (size_t j=P.size()-2;j>=1;--j){
+      P[j] -= z*P[j-1];
     }
-    return P;
   }
+  return P;
+}
 
-  // max distance between 2 elements of R
-  double ecart(const vdbl & R){
-    int n=R.size();
-    double d=1e307;
-    for (int i=0;i<n;++i){
-      const dbl & Ri=R[i];
-      for (int j=0;j<n;++j){
-        if (j==i) continue;
-        double dd=absdbl(Ri-R[j]);
-        if (dd<d)
-          d=dd;
-      }
+// max distance between 2 elements of R
+double ecart(const vdbl & R){
+  int n=R.size();
+  double d=1e307;
+  for (int i=0;i<n;++i){
+    const dbl & Ri=R[i];
+    for (int j=0;j<n;++j){
+      if (j==i) continue;
+      double dd=absdbl(Ri-R[j]);
+      if (dd<d)
+        d=dd;
     }
-    return d;
   }
+  return d;
+}
+
 
 #if defined HAVE_LIBMPS && defined HAVE_LIBMPFR
 // time mpsolve -au -o30 -Ga mand255.pol (Aberth)
