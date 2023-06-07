@@ -2178,16 +2178,16 @@ numerical root localization
   double MINREAL=-1e307;
 
 // single precision
-#if defined __x86_64__ || defined __i386__
+#if defined __x86_64__ || defined __i386__ // || defined EMCC
 #define LDBL80 // 80 bit long double
+  typedef long double longdouble;
+#else
+  typedef double longdouble;
 #endif
 
-#ifdef LDBL80
-typedef complex<long double> fdbl;
-#else
-typedef complex<double> fdbl;
+typedef complex<longdouble> fdbl;
 //typedef complex<float> fdbl;
-#endif
+
 inline double absdbl(const fdbl & x){
   return abs(x);
 }
@@ -2491,7 +2491,7 @@ double init_R(const vfdbl & P,vfdbl & R){
   vector<int> lpos;
   double M=0;
   for (int i=0;i<=n;++i){
-    long double ai=abs(P[n-i]);
+    longdouble ai=abs(P[n-i]);
     if (ai==0)
       continue;
     l.push_back(fdbl(double(i),std::log(ai)));
@@ -3032,8 +3032,7 @@ long horner2_mpfr(const vdbl & P,const dbl & x,dbl & r,dbl & r1,int nbits,long &
 
 #endif
 
-#ifdef LDBL80
-bool convert(const gen & g,long double & z){
+bool convert(const gen & g,longdouble & z){
   if (g.type==_INT_){
     z=g.val;
     return true;
@@ -3053,7 +3052,7 @@ bool convert(const gen & g,long double & z){
   }
 #endif
   if (g.type==_FRAC){
-    long double n,d;
+    longdouble n,d;
     if (convert(g._FRACptr->num,n) && convert(g._FRACptr->den,d)){
       z=n/d;
       return true;
@@ -3082,12 +3081,11 @@ bool convert(const gen & g,long double & z){
   mpz_clear(zz);
   z=u;
   if (l>64)
-    z=z*std::pow((long double) 2,l-64);
+    z=z*std::pow((longdouble) 2,l-64);
   if (s<0)
     z=-z;
   return true;
 }
-#endif
       
 bool convert(const vdbl & P,vfdbl & fP,GIAC_CONTEXT){
   int s=P.size();
@@ -3096,7 +3094,7 @@ bool convert(const vdbl & P,vfdbl & fP,GIAC_CONTEXT){
     dbl real,imag;
     reim(P[i],real,imag,contextptr);
 #ifdef LDBL80
-    long double zr,zi;
+    longdouble zr,zi;
     if (!convert(real,zr) || !convert(imag,zi))
       return false;
     fP.push_back(fdbl(zr,zi));
@@ -3587,11 +3585,7 @@ bool singleprec_node_sum(const vfdbl & A,const vfdbl & B,const fdbl & z,fdbl & A
   // s += c
   for (size_t i=0;i<A.size();++i){
     fdbl zb(z-B[i]);
-#ifdef LDBL80
-    long double n=norm(zb);
-#else
-    double n=norm(zb);
-#endif
+    longdouble n=norm(zb);
     if (n==0)
       return false;
     zb=conj(zb)/(n);
@@ -3654,7 +3648,7 @@ bool aberth_singleprec(const vfdbl & P0,int N,double eps,vfdbl & R,int cluster_s
       product(d1,R2,i,nbitsP2);
       tmp=-d/(d1*P2[0]);
       reim(tmp,d,d1,contextptr);
-      long double zr,zi;
+      longdouble zr,zi;
       if (!convert(d,zr) || !convert(d1,zi))
         return false;
       A[i]=fdbl(zr,zi); // A[i]=accurate_evalf(-d/(d1*P2[0]),nbitsP2-loss);
@@ -3750,15 +3744,9 @@ bool aberth_singleprec(const vfdbl & P0,int N,double eps,vfdbl & R,int cluster_s
           --Nc;
           for (int l=0;l<=deg-Nc;++l){
             fdbl h=P[l];
-#ifdef LDBL80
             for (int k=deg-l;k>deg-l-Nc;--k){
-              h=((long double) k)*h;
+              h=((longdouble) k)*h;
             }
-#else
-            for (int k=deg-l;k>deg-l-Nc;--k){
-              h=((double) k)*h;
-            }
-#endif
             Pdiff.push_back(h);
           }
           fdbl z1,z2;
@@ -4083,7 +4071,7 @@ bool maybe_zero(const dbl & g){
 #ifdef HAVE_LIBMPFR
 // returns 0 on failure (e.g. division by maybe 0), -1 too many iterations, 1 ok, 2 isolated
 int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl & A,vdbl & B,vdbl & R,vdbl & rayon,int cluster_start,int cluster_afterend,vector<short int> & zi_done,bool certify_lastiter,int isolate,bool secular,GIAC_CONTEXT){
-  int neps=std::ceil(-std::log2(eps));
+  int neps=std::ceil(-log2(eps));
   if (neps>nbits)
     nbits=64*((neps+63)/64);
   int afteriter=2;
@@ -4285,7 +4273,7 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
           return -1;
         if (secular){
           B[i]=R[i];
-          gen p; product(p,R,i);
+          gen p; product(p,R,i,nbitscert);
           A[i]=-d/(p*P[0]); // update secular nodes for next iteration
         }
 #endif

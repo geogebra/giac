@@ -6618,8 +6618,10 @@ namespace giac {
 	return sol;
 	//return vecteur(1,gensizeerr(contextptr));
       } // end fractional power code
-      // check if one equation depends only on one unknown
-      if ((evalf_after & 4)==0){
+      if (0 && (evalf_after & 4)==0){
+        // check if one equation depends only on one unknown
+        // disabled, otherwise can't solve
+        // S:=[b^2+c^2+5*b*c-85,10*a*b^3+22*a^2*b^2+10*a^3*b-10a^3-10b^3-25*a*b^2-25a^2*b+5a^2*c+5b^2*c+25a*b*c-32a^2-32b^2+c^2-125a*b-35a-35b-7,a^4+c^4-d^4+10a*c^3+27a^2*c^2+10a^3*c-15d^3+5a^2+5c^2-53d^2+25a*c-15d,a^4-b^4-d^4-10b*d^3-27b^2*d^2-10b^3*d+70a^3+1328a^2-35b^2-35d^2-175b*d+3605a+2598,48d^4-10d^3-417d^2-2135d-7650];
 	for (unsigned i=0;i<eq.size();++i){
 	  vecteur curv=lidnt(eq[i]);
 	  gen curvvar=_intersect(makesequence(curv,var),contextptr);
