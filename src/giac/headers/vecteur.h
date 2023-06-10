@@ -500,7 +500,7 @@ namespace giac {
 #endif
   // LDL decomposition, inertia computation and solve_indef for fast system solving using the factorization
   bool ldl(matrice & a,std::vector<int> & perm,int mat_type,bool &sing,double time_limit,GIAC_CONTEXT);
-#ifdef HAVE_LIBLAPACK
+#if defined(HAVE_LIBLAPACK) && !defined(POCKETCAS)
   bool solve_indef(double *A,double **WORK,int *IPIV,double *b,int N,int NRHS,int *p,int *n,int *z);
 #endif
   bool solve_indef(matrice &A,const vecteur *b,vecteur &x,int *p,int *n,int *z,GIAC_CONTEXT);

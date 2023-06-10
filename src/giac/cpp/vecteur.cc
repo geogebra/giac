@@ -15830,7 +15830,7 @@ namespace giac {
 
   /* Solve indefinite system A*x=b, x in R^N (b!=NULL), or determine
    * the inertia (p,n,z) of real and symmetric matrix A (b==NULL) */
-#ifdef HAVE_LIBLAPACK
+#if defined(HAVE_LIBLAPACK) && !defined(POCKETCAS)
   bool solve_indef(double *A,double **WORK,int *IPIV,double *b,int N,int NRHS,int *p,int *n,int *z) {
     char UPLO='L';
     int INFO,LWORK=-1,LDA=N,LDB=N,i;
@@ -15967,7 +15967,7 @@ namespace giac {
     for (vector<int>::iterator it=perm.begin();it!=perm.end();++it)
       *it=int(it-perm.begin());
     sing=false;
-  #ifdef HAVE_LIBLAPACK
+#if defined(HAVE_LIBLAPACK) && !defined(POCKETCAS)
     /*
     * DSYTRF/ZSYTRF computes the factorization of a real/complex
     * symmetric/Hermitian matrix A using Bunch-Kaufman diagonal

@@ -1137,9 +1137,11 @@ namespace giac {
       return 0;
     double d=(z-fmin)/(fmax-fmin);
     int c,r,g,b;
+#ifndef POCKETCAS
     if (pal>=0 && is_colormap_index(pal) && colormap_color_rgb(pal,d,c,r,g,b))
       ;
     else
+#endif
       arc_en_ciel(126.0/d,r,g,b);
     c=(((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
     if (c>=0 && c<512)
@@ -1177,7 +1179,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       gen D(x,ymin);
       int rgb;
       int r,g,b,c;
-#ifdef KHICAS
+#if defined KHICAS || defined POCKETCAS
       arc_en_ciel(i*double(126.0)/n,r,g,b);
       rgb=(((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
       vecteur attrib(1,rgb+_FILL_POLYGON+(i?_QUADRANT4:_QUADRANT3));
@@ -1309,6 +1311,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       for (int i=0;i<arc_en_ciel_colors;++i)
         lz[i]=fmin+i*df;
       vecteur attr(arc_en_ciel_colors);
+#ifndef POCKETCAS
       if (pal>=0 && is_colormap_index(pal)){
         int r,g,b,c;
         for (int i=0;i<arc_en_ciel_colors;++i){
@@ -1322,7 +1325,9 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
             attr[i]=_FILL_POLYGON+257+i;
         }
       }
-      else {
+      else
+#endif
+        {
         for (int i=0;i<arc_en_ciel_colors;++i){
 #ifdef KHICAS
           int r,g,b;

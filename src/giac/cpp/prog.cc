@@ -1245,9 +1245,11 @@ namespace giac {
     if (warn){
       *logptr(contextptr) << gettext("// Parsing ") << d << '\n';
       lastprog_name(d.print(contextptr),contextptr);
-      if (c.is_symb_of_sommet(at_derive))
-	*logptr(contextptr) << gettext("Warning, defining a derivative function should be done with function_diff or unapply: ") << c << '\n';
-       if (c.type==_SYMB && c._SYMBptr->sommet!=at_local && c._SYMBptr->sommet!=at_bloc && c._SYMBptr->sommet!=at_when && c._SYMBptr->sommet!=at_for && c._SYMBptr->sommet!=at_ifte){
+      if (!lop(c,at_derive).empty() || !lop(c,at_integrate).empty()){
+	*logptr(contextptr) << gettext("Warning, defining a function with a derivative/antiderivative should probably be done with ") <<  d << ":=unapply(" << c << "," << a << "). Evaluating for you.\n";
+        c=eval(c,1,contextptr);
+      }
+      if (c.type==_SYMB && c._SYMBptr->sommet!=at_local && c._SYMBptr->sommet!=at_bloc && c._SYMBptr->sommet!=at_when && c._SYMBptr->sommet!=at_for && c._SYMBptr->sommet!=at_ifte){
 	 vecteur lofc=lop(c,at_of);
 	 vecteur lofc_no_d;
 	 vecteur av=gen2vecteur(a);
