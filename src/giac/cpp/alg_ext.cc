@@ -1818,8 +1818,9 @@ namespace giac {
 	  if (v.front()==_ZINT) return 3;
 	  return 1;
 	}
-	if (v.size()==1 && v.front()==_ZINT)
+	if (v.size()==1 && v.front()==_ZINT){
 	  return 2;
+        }
       }
     }
     if (g.type==_SYMB){
@@ -1920,6 +1921,8 @@ namespace giac {
     // should be replaced by a call that gives info if a boundaries are strict
     if (!find_range(v0,a,contextptr))
       return -2;
+    if (a.empty())
+      a=vecteur(1,gen(makevecteur(minus_inf,plus_inf),_LINE__VECT));
     int previous_sign=2,current_sign=0;
 #ifndef NO_STDEXCEPT
     try {
