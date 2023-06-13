@@ -361,7 +361,7 @@ namespace giac {
     }
 #endif
     bool argpar = ( (arg.type>_CPLX && arg.type!=_FLOAT_) || !is_positive(arg,contextptr)) && arg.type!=_IDNT ;
-#if defined EMCC || defined EMCC2 || defined GIAC_GGB 
+#if defined GIAC_GGB 
     bool need=need_parenthesis(arg) || arg.type==_SYMB;
     if (pui==plus_one_half){
 #ifdef KHICAS // inactive code
@@ -409,13 +409,36 @@ namespace giac {
 #endif
     }
     if (pui.type>_REAL && pui==plus_one_half){
-      s += "sqrt(";
+      if (calc_mode(contextptr)==110){
+        // called from Upsilon (110 refers to Numworks N0110)
+#ifdef EMCC
+        s += "(";
+        add_print(s,arg,contextptr);
+        s += ")^(1/2)";
+        return s;
+#else
+        s += "√(";
+#endif
+      }
+      else
+        s += "sqrt(";
       add_print(s,arg,contextptr);
       s += ')'; 
       return s;
     }
-    if ( pui.type>_REAL && (pui==minus_one_half  || pui==fraction(minus_one,plus_two) )){
-      s += "1/sqrt(";
+    if ( pui.type>_REAL && (pui==minus_one_half  || pui==fraction(minus_one,plus_two) ) ){
+      if (calc_mode(contextptr)==110){
+#ifdef EMCC
+        s += "1/(";
+        add_print(s,arg,contextptr);
+        s += ")^(1/2)";
+        return s;
+#else
+        s += "1/√(";
+#endif
+      }
+      else
+        s += "1/sqrt(";
       add_print(s,arg,contextptr);
       s += ')';
       return s;

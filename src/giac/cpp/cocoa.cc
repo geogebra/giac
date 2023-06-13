@@ -1662,10 +1662,10 @@ namespace giac {
 
   inline int tdeg_t_greater(const tdeg_t64 & x,const tdeg_t64 & y,order_t order){
     short X=x.tab[0];
-    if (X!=y.tab[0]) return X>y.tab[0]?1:0; // since tdeg is tab[0] for plex
+    if (order.o!=_PLEX_ORDER && X!=y.tab[0]) return X>y.tab[0]?1:0; // since tdeg is tab[0] for plex
 #ifdef GIAC_64VARS
     if (X%2){
-      if (x.tdeg2!=y.tdeg2) return x.tdeg2>y.tdeg2?1:0;
+      if (order.o!=_PLEX_ORDER && x.tdeg2!=y.tdeg2) return x.tdeg2>y.tdeg2?1:0;
 #ifdef GIAC_ELIM
       if ( x.elim!=y.elim) return x.elim<y.elim?1:0;
 #endif

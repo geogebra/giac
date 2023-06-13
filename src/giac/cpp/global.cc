@@ -7542,7 +7542,26 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
       return ok;
     }
 
-    int find_or_make_symbol(const string & s,gen & res,void * scanner,bool check38,GIAC_CONTEXT){
+#ifdef EMCC
+  bool cas_builtin(const char * s,GIAC_CONTEXT){
+    std::pair<charptr_gen *,charptr_gen *> p=std::equal_range(builtin_lexer_functions_begin(),builtin_lexer_functions_end(),std::pair<const char *,gen>(s,0),tri);
+    bool res=p.first!=p.second && p.first!=builtin_lexer_functions_end();
+    if (res)
+      return res;
+    gen g;
+    int token=find_or_make_symbol(s,g,0,false,contextptr);
+    if (g.type!=_IDNT)
+      return false;
+    gen evaled;
+    if (!g._IDNTptr->in_eval(1,g,evaled,contextptr,false))
+      return false;
+    //confirm("builtin?",evaled.print(contextptr).c_str());
+    return evaled.is_symb_of_sommet(at_program);
+    return res;
+  }
+#endif
+
+  int find_or_make_symbol(const string & s,gen & res,void * scanner,bool check38,GIAC_CONTEXT){
       int tmpo=opened_quote(contextptr);
       if (tmpo & 2)
 	check38=false;
