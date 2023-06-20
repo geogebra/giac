@@ -1742,6 +1742,7 @@ namespace giac {
   void sprintfdouble(char *,const char *,double d);
 
   extern "C" const char * caseval(const char *);
+  extern "C" const char * nws_caseval(const char * s);
   extern "C" void stack_check_init(size_t max_stack_size);
   bool stack_check(GIAC_CONTEXT);
 

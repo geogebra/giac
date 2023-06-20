@@ -188,17 +188,30 @@ size_t pythonjs_stack_size=30*1024,
 void * bf_ctx_ptr=0;
 size_t bf_global_prec=128; // global precision for BF
 
-int my_sprintf(char * s, const char * format, ...){
-    int z;
-    va_list ap;
-    va_start(ap,format);
+int sprintf256(char * s, const char * format, ...){
+  int z;
+  va_list ap;
+  va_start(ap,format);
 #if defined(FIR) && !defined(FIR_LINUX)
-    z = firvsprintf(s, format, ap);
+  z = firvsprintf(s, format, ap);
 #else
-    z = vsprintf(s, format, ap);
+  z = vsnprintf(s, 256, format, ap);
 #endif
-    va_end(ap);
-    return z;
+  va_end(ap);
+  return z;
+}
+
+int my_sprintf(char * s, const char * format, ...){
+  int z;
+  va_list ap;
+  va_start(ap,format);
+#if defined(FIR) && !defined(FIR_LINUX)
+  z = firvsprintf(s, format, ap);
+#else
+  z = vsprintf(s, format, ap);
+#endif
+  va_end(ap);
+  return z;
 }
 
 int ctrl_c_interrupted(int exception){

@@ -6729,6 +6729,8 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       }
     }
 #endif
+    if (calc_mode(contextptr)==110)
+      return string2gen(nws_caseval(args._STRNGptr->c_str()),false);
     return string2gen(caseval(args._STRNGptr->c_str()),false);
   }
   static const char _caseval_s []="caseval";

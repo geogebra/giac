@@ -6248,13 +6248,13 @@ namespace giac {
       if (s==2){
 	switch (v[1].type){
 	case _INT_:
-	  sprintf(buf,fmt,v[1].val);
+	  sprintf256(buf,fmt,v[1].val);
 	  break;
 	case _DOUBLE_:
-	  sprintf(buf,fmt,v[1]._DOUBLE_val);
+	  sprintf256(buf,fmt,v[1]._DOUBLE_val);
 	  break;
 	case _STRNG:
-	  sprintf(buf,fmt,v[1]._STRNGptr->c_str());
+	  sprintf256(buf,fmt,v[1]._STRNGptr->c_str());
 	  break;
 	default:
 	  return gentypeerr(contextptr);
@@ -6265,31 +6265,31 @@ namespace giac {
 	unsigned t=(v[1].type<< _DECALAGE) | v[2].type;
 	switch (t){
 	case _INT___INT_:
-	  sprintf(buf,fmt,v[1].val,v[2].val);
+	  sprintf256(buf,fmt,v[1].val,v[2].val);
 	  break;
 	case _INT___DOUBLE_:
-	  sprintf(buf,fmt,v[1].val,v[2]._DOUBLE_val);
+	  sprintf256(buf,fmt,v[1].val,v[2]._DOUBLE_val);
 	  break;
 	case _INT___STRNG:
-	  sprintf(buf,fmt,v[1].val,v[2]._STRNGptr->c_str());
+	  sprintf256(buf,fmt,v[1].val,v[2]._STRNGptr->c_str());
 	  break;
 	case _DOUBLE___INT_:
-	  sprintf(buf,fmt,v[1]._DOUBLE_val,v[2].val);
+	  sprintf256(buf,fmt,v[1]._DOUBLE_val,v[2].val);
 	  break;
 	case _DOUBLE___DOUBLE_:
-	  sprintf(buf,fmt,v[1]._DOUBLE_val,v[2]._DOUBLE_val);
+	  sprintf256(buf,fmt,v[1]._DOUBLE_val,v[2]._DOUBLE_val);
 	  break;
 	case _DOUBLE___STRNG:
-	  sprintf(buf,fmt,v[1]._DOUBLE_val,v[2]._STRNGptr->c_str());
+	  sprintf256(buf,fmt,v[1]._DOUBLE_val,v[2]._STRNGptr->c_str());
 	  break;
 	case _STRNG__INT_:
-	  sprintf(buf,fmt,v[1]._STRNGptr->c_str(),v[2].val);
+	  sprintf256(buf,fmt,v[1]._STRNGptr->c_str(),v[2].val);
 	  break;
 	case _STRNG__DOUBLE_:
-	  sprintf(buf,fmt,v[1]._STRNGptr->c_str(),v[2]._DOUBLE_val);
+	  sprintf256(buf,fmt,v[1]._STRNGptr->c_str(),v[2]._DOUBLE_val);
 	  break;
 	case _STRNG__STRNG:
-	  sprintf(buf,fmt,v[1]._STRNGptr->c_str(),v[2]._STRNGptr->c_str());
+	  sprintf256(buf,fmt,v[1]._STRNGptr->c_str(),v[2]._STRNGptr->c_str());
 	  break;
 	default:
 	  return gentypeerr(contextptr);
@@ -6306,28 +6306,28 @@ namespace giac {
 	if (v1.type==_DOUBLE_){
 	  if (v2.type==_DOUBLE_){
 	    if (v3.type==_DOUBLE_)
-	      sprintf(buf,fmt,v1._DOUBLE_val,v2._DOUBLE_val,v3._DOUBLE_val);
+	      sprintf256(buf,fmt,v1._DOUBLE_val,v2._DOUBLE_val,v3._DOUBLE_val);
 	    else
-	      sprintf(buf,fmt,v1._DOUBLE_val,v2._DOUBLE_val,v3._STRNGptr->c_str());
+	      sprintf256(buf,fmt,v1._DOUBLE_val,v2._DOUBLE_val,v3._STRNGptr->c_str());
 	  }
 	  else {
 	    if (v3.type==_DOUBLE_)
-	      sprintf(buf,fmt,v1._DOUBLE_val,v2._STRNGptr->c_str(),v3._DOUBLE_val);
+	      sprintf256(buf,fmt,v1._DOUBLE_val,v2._STRNGptr->c_str(),v3._DOUBLE_val);
 	    else
-	      sprintf(buf,fmt,v1._DOUBLE_val,v2._STRNGptr->c_str(),v3._STRNGptr->c_str());	    
+	      sprintf256(buf,fmt,v1._DOUBLE_val,v2._STRNGptr->c_str(),v3._STRNGptr->c_str());	    
 	  }
 	} else {
 	  if (v2.type==_DOUBLE_){
 	    if (v3.type==_DOUBLE_)
-	      sprintf(buf,fmt,v1._STRNGptr->c_str(),v2._DOUBLE_val,v3._DOUBLE_val);
+	      sprintf256(buf,fmt,v1._STRNGptr->c_str(),v2._DOUBLE_val,v3._DOUBLE_val);
 	    else
-	      sprintf(buf,fmt,v1._STRNGptr->c_str(),v2._DOUBLE_val,v3._STRNGptr->c_str());
+	      sprintf256(buf,fmt,v1._STRNGptr->c_str(),v2._DOUBLE_val,v3._STRNGptr->c_str());
 	  }
 	  else {
 	    if (v3.type==_DOUBLE_)
-	      sprintf(buf,fmt,v1._STRNGptr->c_str(),v2._STRNGptr->c_str(),v3._DOUBLE_val);
+	      sprintf256(buf,fmt,v1._STRNGptr->c_str(),v2._STRNGptr->c_str(),v3._DOUBLE_val);
 	    else
-	      sprintf(buf,fmt,v1._STRNGptr->c_str(),v2._STRNGptr->c_str(),v3._STRNGptr->c_str());	    
+	      sprintf256(buf,fmt,v1._STRNGptr->c_str(),v2._STRNGptr->c_str(),v3._STRNGptr->c_str());	    
 	  }
 	}
 	return string2gen(buf,false);	
@@ -7548,7 +7548,7 @@ namespace giac {
   typedef void (*function)(void);
 #if defined TICE
   const char platform_type='8'; // 8 bits
-#elseif defined SMARTPTR64
+#elif defined SMARTPTR64
   const char platform_type='6'; // 64 bits
 #else
   const char platform_type='3'; // 32 bits
@@ -7709,12 +7709,12 @@ namespace giac {
       string("giac ")
 #endif
 #endif
-      +GIAC_VERSION+string(", (c) B. Parisse and R. De Graeve, Institut Fourier, Universite de Grenoble I");
+      +GIAC_VERSION+string(", (c) B. Parisse and R. De Graeve, Institut Fourier, Universite Grenoble Alpes. Optimization, signalprocessing, graph theory (c) Luka Marohnić");
   }
   gen _version(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
     if (abs_calc_mode(contextptr)==38)
-      return string2gen(gettext("Powered by Giac 1.9, B. Parisse and R. De Graeve, Institut Fourier, Universite Grenoble Alpes, France"),false);
+      return string2gen(gettext("Powered by Giac 1.9, (c) B. Parisse and R. De Graeve, Institut Fourier, Universite Grenoble Alpes, France. Optimization, signalprocessing, graph theory (c) Luka Marohnić."),false);
     return string2gen(version(),false);
   }
   static const char _version_s []="version";

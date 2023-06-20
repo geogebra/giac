@@ -203,6 +203,19 @@ int get_free_memory(){
 }
 #endif
 
+#if defined NSPIRE_NEWLIB && !defined BW
+  int GetSetupSetting(int mode){
+    return 0;
+  }
+
+  void SetSetupSetting(int mode,int){
+  }
+
+  int handle_f5(){
+    lock_alpha();
+    return 0;
+  }
+#endif
 // Numworks Logo commands
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
@@ -246,18 +259,6 @@ namespace giac {
   void set_xcas_status(){
     statusline(1+2*xcas_python_eval);
   }
-#if 0
-  int GetSetupSetting(int mode){
-    return 0;
-  }
-
-  void SetSetupSetting(int mode,int){
-  }
-
-  void handle_f5(){
-    lock_alpha();
-  }
-#endif
 
 #ifndef BW
   int chartab(){
@@ -13036,7 +13037,7 @@ namespace xcas {
       int t=s.size();
       if (t<4 || s.substr(t-4,4)!=".tns")
 	continue;
-      if ( (s=="khicas.tns" || s=="luagiac.luax.tns" || s=="khicaslua.tns" || s=="ptt.tns" || s.substr(0,17)=="ndless_installer_" || s=="ndless_resources.tns" || s=="ndless.cfg.tns")){ // shakeys.tns is not copied, it is retrieved from non-exam mode
+      if ( (s=="khicas.tns" || s=="luagiac.luax.tns" || s=="khicaslua.tns" || s=="ptt.tns" || s.substr(0,17)=="ndless_installer_" || s=="ndless_resources.tns" || s=="ndless.cfg.tns" || s=="upsilon.tns" || s=="xcasnws.tns")){ // shakeys.tns is not copied, it is retrieved from non-exam mode
 	string ss=dirname+("/"+s);
 	*logptr(contextptr) << "processing " << s << "\n" ; //" " << ss << " " << (targetdirname+("/"+s)) << '\n';
 	if (1 || sha_check(ss.c_str(),nkeys,hash)){ // check done when setting exam mode
@@ -13073,7 +13074,7 @@ namespace xcas {
 	if (toplevel || ndless){
 	  if (ndless && s=="shakeys.tns")
 	    continue;
-	  if ( (s=="khicas.tns" || s=="luagiac.luax.tns" || s=="khicaslua.tns" || s=="ptt.tns")){
+	  if ( (s=="khicas.tns" || s=="luagiac.luax.tns" || s=="khicaslua.tns" || s=="ptt.tns" || s=="upsilon.tns" || s=="xcasnws.tns")){
 	    string ss=dirname+("/"+s);
 	    if (sha_check(ss.c_str(),nkeys,hash))
 	      continue;

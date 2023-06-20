@@ -411,7 +411,7 @@ namespace giac {
     if (pui.type>_REAL && pui==plus_one_half){
       if (calc_mode(contextptr)==110){
         // called from Upsilon (110 refers to Numworks N0110)
-#ifdef EMCC
+#if defined FXCG || defined NSPIRE_NEWLIB
         s += "(";
         add_print(s,arg,contextptr);
         s += ")^(1/2)";
@@ -428,7 +428,7 @@ namespace giac {
     }
     if ( pui.type>_REAL && (pui==minus_one_half  || pui==fraction(minus_one,plus_two) ) ){
       if (calc_mode(contextptr)==110){
-#ifdef EMCC
+#if defined FXCG || defined NSPIRE_NEWLIB
         s += "1/(";
         add_print(s,arg,contextptr);
         s += ")^(1/2)";
