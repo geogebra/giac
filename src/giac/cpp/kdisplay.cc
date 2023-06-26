@@ -17434,7 +17434,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     int start_row=Last_Line-max_lines_saved; 
     if (start_row<0) start_row=0;
     for (int i=start_row;i<=Last_Line;++i){
-      size += 2*sizeof(short)+2*sizeof(char)+strlen((const char *)Line[i].str);
+      size += 2*sizeof(short)+2*sizeof(char)+strlen((const char *)Line[i].str)+1;
     }
     char savebuf[size+4];
 #ifdef NUMWORKS

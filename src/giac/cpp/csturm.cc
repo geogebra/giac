@@ -1362,7 +1362,7 @@ namespace giac {
       vecteur w;
       for (unsigned i=0;i<v.size();++i){
 	if (is_zero(im(v[i],contextptr)))
-	  w.push_back(makevecteur(v[i],1));
+	  w.push_back(makevecteur(re(v[i],contextptr),1));
       }
       return w;
     }

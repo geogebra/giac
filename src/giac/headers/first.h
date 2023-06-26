@@ -566,7 +566,7 @@ inline float ffloor(float f1){
 #endif
 }
 inline float finv(float f1){ return 1/f1; }
-#if defined __APPLE__ || defined EMCC || defined EMCC2 || defined NO_BSD 
+#if defined HAVE_TGAMMAF || defined __APPLE__ || defined EMCC || defined EMCC2 || defined NO_BSD 
 inline float fgamma(float f1){ return tgammaf(f1); }
 #else
 #if defined(__MINGW_H) || defined(VISUALC) || defined(FXCG)// FIXME gamma, not used
