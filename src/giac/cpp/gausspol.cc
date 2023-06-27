@@ -6383,7 +6383,7 @@ namespace giac {
 	else {
 	  copie = res;
 	  if (!is_zero(*it))
-	    copie.coord.push_back(monomial<gen>(-*it,index_t(1,0)));
+	    copie.coord.push_back(monomial<gen>(-(complexmode?*it:re(*it,context0)),index_t(1,0)));
 	}
 	v.push_back(copie);
       }

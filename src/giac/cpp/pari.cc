@@ -84,7 +84,7 @@ namespace giac {
 
   static map<string,entree *> pari_function_table;
 
-  static long pari_mem_size=1024000;
+  static long pari_mem_size=2048000;
   // was 512000, change in order to pass chk_fhan4 with pari-2.13 but this does not fix the bug (probably in pari)
   static long pari_maxprime=100000;
   static struct pari_constants_initialization {
