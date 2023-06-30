@@ -6009,7 +6009,7 @@ namespace giac {
     return false;
   }
 
-  bool ext_factor(const polynome &p,const gen & e,gen & an,polynome & p_content,factorization & f,bool complexmode,gen & extra_div){
+  bool ext_factor_nodegck(const polynome &p,const gen & e,gen & an,polynome & p_content,factorization & f,bool complexmode,gen & extra_div){
     if (e._EXTptr->type!=_VECT){
 #ifndef NO_STDEXCEPT
       settypeerr(gettext("Modular factorization not yet accessible"));
@@ -6258,6 +6258,17 @@ namespace giac {
     return true;   
   }
 
+  bool ext_factor(const polynome &p,const gen & e,gen & an,polynome & p_content,factorization & f,bool complexmode,gen & extra_div){
+    if (!ext_factor_nodegck(p,e,an,p_content,f,complexmode,extra_div))
+      return false;
+    // additional check that degrees match
+    int pdeg=p.lexsorted_degree(),sumdeg=0;
+    for (size_t i=0;i<f.size();++i)
+      sumdeg += f[i].mult*f[i].fact.lexsorted_degree();
+    if (pdeg!=sumdeg)
+      CERR << "Degree mismatch inside factorisation over extension\n";
+    return pdeg==sumdeg;
+  }
 
   static void addtov(const polynome & tmp,vectpoly & v,bool with_sqrt,bool complexmode){
     if (!with_sqrt || tmp.lexsorted_degree()!=2 || tmp.dim>1)
@@ -6420,6 +6431,7 @@ namespace giac {
 	  return true;
 	}
       }
+#ifndef EMCC
       if (d%4==0 && with_sqrt){
 	gen e=algebraic_EXTension(makevecteur(1,0),makevecteur(1,0,-2));
 	gen an=1,extra_div=1;
@@ -6432,6 +6444,7 @@ namespace giac {
 	  return true;
 	}
       }
+#endif
       if (p.coord.back().value==1){
 	// product of cyclotomic(n) where n divides 2d and does not divide d
 	gen dd=_minus(makesequence(idivis(2*d,context0),idivis(d,context0)),context0);

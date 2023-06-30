@@ -24,7 +24,9 @@ using namespace std;
 #include "modpoly.h"
 #include "giacintl.h"
 #include "input_parser.h"
+#ifndef GIAC_HAS_STO_38
 #include "kdisplay.h"
+#endif
 #ifdef FXCG
 extern "C" {
 #include <system.h>
