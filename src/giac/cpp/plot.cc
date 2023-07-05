@@ -7701,9 +7701,19 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       gen g=(*b._SYMBptr->feuille._VECTptr)[1];
       if (f.type==_VECT && !f._VECTptr->empty()){
 	vecteur fv=*f._VECTptr;
-	if (fv.size()==7){
-	  fv[6]=func(elem,fv[6],contextptr);
-	  fv[5]=rationalparam2equation(fv[6],t__IDNT_e,x__IDNT_e,y__IDNT_e,contextptr);
+	if (fv.size()>=7){
+	  fv[6]=func(elem,fv[6],contextptr); // compute inverse transform
+          gen image=func(elem,gen(x__IDNT_e,y__IDNT_e),contextptr);
+          gen R,I;reim(image,R,I,contextptr);
+          vecteur sol=gsolve(makevecteur(R-u__IDNT_e,I-v__IDNT_e),makevecteur(x__IDNT_e,y__IDNT_e),false,false,contextptr);
+          if (sol.empty())
+            fv[5]=undef;
+          else {
+            sol=gen2vecteur(sol[0]); // first solution x,y=function(u,v)
+            vecteur xy(makevecteur(x__IDNT_e,y__IDNT_e));
+            sol=subst(sol,makevecteur(u__IDNT_e,v__IDNT_e),xy,false,contextptr);
+            fv[5]=subst(fv[5],xy,sol,false,contextptr);
+          }
 	}
 	if (fv.size()==6)
 	  fv.pop_back();

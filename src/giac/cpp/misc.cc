@@ -9516,7 +9516,9 @@ void sync_screen(){}
 #ifdef KHICAS
 	os_set_pixel(x.val,y.val,vs==2?0:remove_at_display(v[2],contextptr).val);
 #else
-	aspen_set_pixel(x.val,y.val,vs==2?0:remove_at_display(v[2],contextptr).val);
+        int c=vs==2?0:remove_at_display(v[2],contextptr).val;
+        c=rgb565to888(c);        
+	aspen_set_pixel(x.val,y.val,c);
 #endif // KHICAS
 	return 1;
       }
