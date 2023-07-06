@@ -322,6 +322,10 @@ namespace giac {
       lv=mergevecteur(lv,lvarxwithinv(e,x,contextptr));
       cplxmode ^= 8;
     }
+    int cplxmodeorig=cplxmode;
+    bool add=(cplxmode & 0x10);
+    if (add)
+      cplxmode ^= 0x10;
     vecteur res;
     vecteur l(lvar(e));
     gen p=e2r(e,l,contextptr),n,d;
@@ -341,13 +345,17 @@ namespace giac {
 	continue;
       const unary_function_ptr & u=it->_SYMBptr->sommet;
       gen & f=it->_SYMBptr->feuille;
-      res=mergevecteur(res,find_singularities(f,x,cplxmode,contextptr));
+      res=mergeset(res,find_singularities(f,x,cplxmodeorig,contextptr));
       if (u==at_ln || u==at_sign)
-	res=mergevecteur(res,solve(f,x,cplxmode,contextptr));
+	res=mergeset(res,solve(f,x,cplxmode,contextptr));
+      if (add && (u==at_asin || u==at_acos)){
+        res=mergeset(res,solve(f-1,x,cplxmode,contextptr));
+        res=mergeset(res,solve(f+1,x,cplxmode,contextptr));
+      }
       if (u==at_pow && f.type==_VECT && f._VECTptr->size()==2)
-	res=mergevecteur(res,solve(f._VECTptr->front(),x,cplxmode,contextptr));	
+	res=mergeset(res,solve(f._VECTptr->front(),x,cplxmode,contextptr));	
       if (u==at_tan)
-	res=mergevecteur(res,solve(cos(f,contextptr),x,cplxmode,contextptr));
+	res=mergeset(res,solve(cos(f,contextptr),x,cplxmode,contextptr));
       if (u==at_piecewise && f.type==_VECT){
 	vecteur & v = *f._VECTptr;
 	int s=int(v.size());
@@ -426,7 +434,7 @@ namespace giac {
     iterateur it=v.begin(),itend=v.end();
     for (;it!=itend;++it){
       l=w[0];m=w[1];
-      *it=simplifier(*it,contextptr);
+      *it=simplifier(*it,contextptr); *it=simplifier(*it,contextptr); // 2nd simplifier required for solve(asin(x)=acos(x))
       if (equalposcomp(excluded,*it))
 	continue;
       gen sol=*it;
@@ -1437,7 +1445,7 @@ namespace giac {
     vecteur veq_not_singu,veq,singu;
     int cm=calc_mode(contextptr); 
     calc_mode(0,contextptr); // for solve(1/(log(abs(x))-x) > 0)
-    singu=find_singularities(e,x,2,contextptr);
+    singu=find_singularities(e,x,0x12,contextptr);
     veq_not_singu=solve(e,x,2,contextptr);
     calc_mode(cm,contextptr);
     for (unsigned i=0;i<singu.size();++i){	
@@ -2459,6 +2467,8 @@ namespace giac {
 
   vecteur solve(const gen & e,const identificateur & x,int isolate_mode,GIAC_CONTEXT){
     ck_isolate_mode(isolate_mode,x,contextptr);
+    if (has_i(e))
+      isolate_mode |= 1;
     if (is_undef(e)) return vecteur(0);
     gen expr(exp2pow(e,contextptr));
     // keep e if x is isolable inside
