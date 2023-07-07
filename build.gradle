@@ -864,7 +864,7 @@ task cocoapodsZip(dependsOn: createIosXcframework, type: Zip) {
 }
 
 task publishPodspec(dependsOn: ['installGems', 'createPodspec', 'publishMavenZipPublicationToMavenRepository'], type: Exec) {
-    commandLine 'bundle', 'exec', 'pod', 'repo', 'push', 'geogebra-specs', "${buildDir}/cocoapods/Giac.podspec", '--allow-warnings'
+    commandLine 'bundle', 'exec', 'pod', 'repo', 'push', 'geogebra', "${buildDir}/cocoapods/Giac.podspec", '--allow-warnings'
 }
 
 task installMinigiacExecutable (dependsOn: 'installMinigiacLinux64Executable')
