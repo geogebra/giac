@@ -268,7 +268,7 @@ namespace giac {
     }
     vecteur uv(makevecteur(u__IDNT_e,v__IDNT_e));
     gen res= plotparam3d(M,uv,xmin,xmax,ymin,ymax,zmin,zmax,cone_complet?-uscale:0,uscale,0,2*M_PI,false,false,attributs,uscale/jstep,2*M_PI/kstep,eq,xyz,contextptr);
-    if (!cercles)
+    // if (!cercles)
       return res;
     theta=evalf_double(theta,1,contextptr);
     if (theta.type!=_DOUBLE_)

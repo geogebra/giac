@@ -8077,6 +8077,13 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
   std::string python2xcas(const std::string & s_orig,GIAC_CONTEXT){
     if (xcas_mode(contextptr)>0 && abs_calc_mode(contextptr)!=38)
       return s_orig;
+    if (abs_calc_mode(contextptr)==38){
+      if (s_orig.substr(0,4)=="#cas"){
+        int pos=s_orig.find("#end");
+        if (pos>0 && pos<s_orig.size())
+          return s_orig.substr(4,pos-4);
+      }
+    }
     // quick check for python-like syntax: search line ending with :
     int first=0,sss=s_orig.size();
     first=s_orig.find("maple_mode");

@@ -768,7 +768,7 @@ namespace giac {
       gen & tmp=e._SYMBptr->feuille;
       if (tmp.type==_VECT && tmp._VECTptr->size()==2){
 	gen base=tmp._VECTptr->front(),expo=tmp._VECTptr->back();
-	if (!complex_mode(contextptr) && expo.type==_INT_ && expo.val%2==0)
+	if (!complex_mode(contextptr) && do_lnabs(contextptr) && expo.type==_INT_ && expo.val%2==0)
 	  base=abs(base,contextptr);
 	return expo*ln_expand0(base,contextptr);
       }
