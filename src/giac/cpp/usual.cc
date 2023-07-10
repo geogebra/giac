@@ -6732,7 +6732,7 @@ namespace giac {
 	lnew[i]=evalf(l[i],1,contextptr);
 #ifdef HAVE_LIBMPFR
 	if (lnew[i].type==_DOUBLE_)
-	  lnew[i]=accurate_evalf(l[i],100);
+	  lnew[i]=accurate_evalf(eval(l[i],1,contextptr),100);
 #endif
       }
     }
