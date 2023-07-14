@@ -78,6 +78,11 @@
 #undef HAVE_LONG_DOUBLE
 #endif
 
+#if defined __VISUALC__ 
+#undef BIGENDIAN
+#endif
+
+
 #ifdef RTOS_THREADX
 #define NO_STDEXCEPT 1
 #endif

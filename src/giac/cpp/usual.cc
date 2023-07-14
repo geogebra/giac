@@ -77,6 +77,9 @@ using namespace std;
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef GIAC_HAS_STO_38
+#define sprintf256 sprintf
+#endif
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {

@@ -8,10 +8,232 @@
 
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
-#define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 35
+#define YY_FLEX_MINOR_VERSION 6
+#define YY_FLEX_SUBMINOR_VERSION 4
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
+#endif
+
+#ifdef yy_create_buffer
+#define giac_yy_create_buffer_ALREADY_DEFINED
+#else
+#define yy_create_buffer giac_yy_create_buffer
+#endif
+
+#ifdef yy_delete_buffer
+#define giac_yy_delete_buffer_ALREADY_DEFINED
+#else
+#define yy_delete_buffer giac_yy_delete_buffer
+#endif
+
+#ifdef yy_scan_buffer
+#define giac_yy_scan_buffer_ALREADY_DEFINED
+#else
+#define yy_scan_buffer giac_yy_scan_buffer
+#endif
+
+#ifdef yy_scan_string
+#define giac_yy_scan_string_ALREADY_DEFINED
+#else
+#define yy_scan_string giac_yy_scan_string
+#endif
+
+#ifdef yy_scan_bytes
+#define giac_yy_scan_bytes_ALREADY_DEFINED
+#else
+#define yy_scan_bytes giac_yy_scan_bytes
+#endif
+
+#ifdef yy_init_buffer
+#define giac_yy_init_buffer_ALREADY_DEFINED
+#else
+#define yy_init_buffer giac_yy_init_buffer
+#endif
+
+#ifdef yy_flush_buffer
+#define giac_yy_flush_buffer_ALREADY_DEFINED
+#else
+#define yy_flush_buffer giac_yy_flush_buffer
+#endif
+
+#ifdef yy_load_buffer_state
+#define giac_yy_load_buffer_state_ALREADY_DEFINED
+#else
+#define yy_load_buffer_state giac_yy_load_buffer_state
+#endif
+
+#ifdef yy_switch_to_buffer
+#define giac_yy_switch_to_buffer_ALREADY_DEFINED
+#else
+#define yy_switch_to_buffer giac_yy_switch_to_buffer
+#endif
+
+#ifdef yypush_buffer_state
+#define giac_yypush_buffer_state_ALREADY_DEFINED
+#else
+#define yypush_buffer_state giac_yypush_buffer_state
+#endif
+
+#ifdef yypop_buffer_state
+#define giac_yypop_buffer_state_ALREADY_DEFINED
+#else
+#define yypop_buffer_state giac_yypop_buffer_state
+#endif
+
+#ifdef yyensure_buffer_stack
+#define giac_yyensure_buffer_stack_ALREADY_DEFINED
+#else
+#define yyensure_buffer_stack giac_yyensure_buffer_stack
+#endif
+
+#ifdef yylex
+#define giac_yylex_ALREADY_DEFINED
+#else
+#define yylex giac_yylex
+#endif
+
+#ifdef yyrestart
+#define giac_yyrestart_ALREADY_DEFINED
+#else
+#define yyrestart giac_yyrestart
+#endif
+
+#ifdef yylex_init
+#define giac_yylex_init_ALREADY_DEFINED
+#else
+#define yylex_init giac_yylex_init
+#endif
+
+#ifdef yylex_init_extra
+#define giac_yylex_init_extra_ALREADY_DEFINED
+#else
+#define yylex_init_extra giac_yylex_init_extra
+#endif
+
+#ifdef yylex_destroy
+#define giac_yylex_destroy_ALREADY_DEFINED
+#else
+#define yylex_destroy giac_yylex_destroy
+#endif
+
+#ifdef yyget_debug
+#define giac_yyget_debug_ALREADY_DEFINED
+#else
+#define yyget_debug giac_yyget_debug
+#endif
+
+#ifdef yyset_debug
+#define giac_yyset_debug_ALREADY_DEFINED
+#else
+#define yyset_debug giac_yyset_debug
+#endif
+
+#ifdef yyget_extra
+#define giac_yyget_extra_ALREADY_DEFINED
+#else
+#define yyget_extra giac_yyget_extra
+#endif
+
+#ifdef yyset_extra
+#define giac_yyset_extra_ALREADY_DEFINED
+#else
+#define yyset_extra giac_yyset_extra
+#endif
+
+#ifdef yyget_in
+#define giac_yyget_in_ALREADY_DEFINED
+#else
+#define yyget_in giac_yyget_in
+#endif
+
+#ifdef yyset_in
+#define giac_yyset_in_ALREADY_DEFINED
+#else
+#define yyset_in giac_yyset_in
+#endif
+
+#ifdef yyget_out
+#define giac_yyget_out_ALREADY_DEFINED
+#else
+#define yyget_out giac_yyget_out
+#endif
+
+#ifdef yyset_out
+#define giac_yyset_out_ALREADY_DEFINED
+#else
+#define yyset_out giac_yyset_out
+#endif
+
+#ifdef yyget_leng
+#define giac_yyget_leng_ALREADY_DEFINED
+#else
+#define yyget_leng giac_yyget_leng
+#endif
+
+#ifdef yyget_text
+#define giac_yyget_text_ALREADY_DEFINED
+#else
+#define yyget_text giac_yyget_text
+#endif
+
+#ifdef yyget_lineno
+#define giac_yyget_lineno_ALREADY_DEFINED
+#else
+#define yyget_lineno giac_yyget_lineno
+#endif
+
+#ifdef yyset_lineno
+#define giac_yyset_lineno_ALREADY_DEFINED
+#else
+#define yyset_lineno giac_yyset_lineno
+#endif
+
+#ifdef yyget_column
+#define giac_yyget_column_ALREADY_DEFINED
+#else
+#define yyget_column giac_yyget_column
+#endif
+
+#ifdef yyset_column
+#define giac_yyset_column_ALREADY_DEFINED
+#else
+#define yyset_column giac_yyset_column
+#endif
+
+#ifdef yywrap
+#define giac_yywrap_ALREADY_DEFINED
+#else
+#define yywrap giac_yywrap
+#endif
+
+#ifdef yyget_lval
+#define giac_yyget_lval_ALREADY_DEFINED
+#else
+#define yyget_lval giac_yyget_lval
+#endif
+
+#ifdef yyset_lval
+#define giac_yyset_lval_ALREADY_DEFINED
+#else
+#define yyset_lval giac_yyset_lval
+#endif
+
+#ifdef yyalloc
+#define giac_yyalloc_ALREADY_DEFINED
+#else
+#define yyalloc giac_yyalloc
+#endif
+
+#ifdef yyrealloc
+#define giac_yyrealloc_ALREADY_DEFINED
+#else
+#define yyrealloc giac_yyrealloc
+#endif
+
+#ifdef yyfree
+#define giac_yyfree_ALREADY_DEFINED
+#else
+#define yyfree giac_yyfree
 #endif
 
 /* First, we deal with  platform-specific or compiler-specific issues. */
@@ -84,40 +306,32 @@ typedef unsigned int flex_uint32_t;
 #define UINT32_MAX             (4294967295U)
 #endif
 
+#ifndef SIZE_MAX
+#define SIZE_MAX               (~(size_t)0)
+#endif
+
 #endif /* ! C99 */
 
 #endif /* ! FLEXINT_H */
 
-#ifdef __cplusplus
+/* begin standard C++ headers. */
 
-/* The "const" storage-class-modifier is valid. */
-#define YY_USE_CONST
-
-#else	/* ! __cplusplus */
-
-/* C99 requires __STDC__ to be defined as 1. */
-#if defined (__STDC__)
-
-#define YY_USE_CONST
-
-#endif	/* defined (__STDC__) */
-#endif	/* ! __cplusplus */
-
-#ifdef YY_USE_CONST
+/* TODO: this is always defined, so inline it */
 #define yyconst const
+
+#if defined(__GNUC__) && __GNUC__ >= 3
+#define yynoreturn __attribute__((__noreturn__))
 #else
-#define yyconst
+#define yynoreturn
 #endif
 
 /* Returned upon end-of-file. */
 #define YY_NULL 0
 
-/* Promotes a possibly negative, possibly signed char to an unsigned
- * integer for use as an array index.  If the signed char is negative,
- * we want to instead treat it as an 8-bit unsigned char, hence the
- * double cast.
+/* Promotes a possibly negative, possibly signed char to an
+ *   integer in range [0..255] for use as an array index.
  */
-#define YY_SC_TO_UI(c) ((unsigned int) (unsigned char) c)
+#define YY_SC_TO_UI(c) ((YY_CHAR) (c))
 
 /* An opaque pointer. */
 #ifndef YY_TYPEDEF_YY_SCANNER_T
@@ -141,20 +355,16 @@ typedef void* yyscan_t;
  * definition of BEGIN.
  */
 #define BEGIN yyg->yy_start = 1 + 2 *
-
 /* Translate the current start state into a value that can be later handed
  * to BEGIN to return to the state.  The YYSTATE alias is for lex
  * compatibility.
  */
 #define YY_START ((yyg->yy_start - 1) / 2)
 #define YYSTATE YY_START
-
 /* Action number for EOF rule of a given start state. */
 #define YY_STATE_EOF(state) (YY_END_OF_BUFFER + state + 1)
-
 /* Special action meaning "start processing a new file". */
-#define YY_NEW_FILE giac_yyrestart(yyin ,yyscanner )
-
+#define YY_NEW_FILE yyrestart( yyin , yyscanner )
 #define YY_END_OF_BUFFER_CHAR 0
 
 /* Size of default input buffer. */
@@ -179,11 +389,17 @@ typedef void* yyscan_t;
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 #endif
 
+#ifndef YY_TYPEDEF_YY_SIZE_T
+#define YY_TYPEDEF_YY_SIZE_T
+typedef size_t yy_size_t;
+#endif
+
 #define EOB_ACT_CONTINUE_SCAN 0
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
-
+    
     #define YY_LESS_LINENO(n)
+    #define YY_LINENO_REWIND_TO(ptr)
     
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
@@ -198,13 +414,7 @@ typedef struct yy_buffer_state *YY_BUFFER_STATE;
 		YY_DO_BEFORE_ACTION; /* set up yytext again */ \
 		} \
 	while ( 0 )
-
 #define unput(c) yyunput( c, yyg->yytext_ptr , yyscanner )
-
-#ifndef YY_TYPEDEF_YY_SIZE_T
-#define YY_TYPEDEF_YY_SIZE_T
-typedef size_t yy_size_t;
-#endif
 
 #ifndef YY_STRUCT_YY_BUFFER_STATE
 #define YY_STRUCT_YY_BUFFER_STATE
@@ -218,7 +428,7 @@ struct yy_buffer_state
 	/* Size of input buffer in bytes, not including room for EOB
 	 * characters.
 	 */
-	yy_size_t yy_buf_size;
+	int yy_buf_size;
 
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
@@ -246,7 +456,7 @@ struct yy_buffer_state
 
     int yy_bs_lineno; /**< The line count. */
     int yy_bs_column; /**< The column count. */
-    
+
 	/* Whether to try to fill the input buffer when we reach the
 	 * end of it.
 	 */
@@ -263,7 +473,7 @@ struct yy_buffer_state
 	 * possible backing-up.
 	 *
 	 * When we actually see the EOF, we change the status to "new"
-	 * (via giac_yyrestart()), so that the user can continue scanning by
+	 * (via yyrestart()), so that the user can continue scanning by
 	 * just pointing yyin at a new input file.
 	 */
 #define YY_BUFFER_EOF_PENDING 2
@@ -280,84 +490,77 @@ struct yy_buffer_state
 #define YY_CURRENT_BUFFER ( yyg->yy_buffer_stack \
                           ? yyg->yy_buffer_stack[yyg->yy_buffer_stack_top] \
                           : NULL)
-
 /* Same as previous macro, but useful when we know that the buffer stack is not
  * NULL or when we need an lvalue. For internal use only.
  */
 #define YY_CURRENT_BUFFER_LVALUE yyg->yy_buffer_stack[yyg->yy_buffer_stack_top]
 
-void giac_yyrestart (FILE *input_file ,yyscan_t yyscanner );
-void giac_yy_switch_to_buffer (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
-YY_BUFFER_STATE giac_yy_create_buffer (FILE *file,int size ,yyscan_t yyscanner );
-void giac_yy_delete_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
-void giac_yy_flush_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
-void giac_yypush_buffer_state (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
-void giac_yypop_buffer_state (yyscan_t yyscanner );
+void yyrestart ( FILE *input_file , yyscan_t yyscanner );
+void yy_switch_to_buffer ( YY_BUFFER_STATE new_buffer , yyscan_t yyscanner );
+YY_BUFFER_STATE yy_create_buffer ( FILE *file, int size , yyscan_t yyscanner );
+void yy_delete_buffer ( YY_BUFFER_STATE b , yyscan_t yyscanner );
+void yy_flush_buffer ( YY_BUFFER_STATE b , yyscan_t yyscanner );
+void yypush_buffer_state ( YY_BUFFER_STATE new_buffer , yyscan_t yyscanner );
+void yypop_buffer_state ( yyscan_t yyscanner );
 
-static void giac_yyensure_buffer_stack (yyscan_t yyscanner );
-static void giac_yy_load_buffer_state (yyscan_t yyscanner );
-static void giac_yy_init_buffer (YY_BUFFER_STATE b,FILE *file ,yyscan_t yyscanner );
+static void yyensure_buffer_stack ( yyscan_t yyscanner );
+static void yy_load_buffer_state ( yyscan_t yyscanner );
+static void yy_init_buffer ( YY_BUFFER_STATE b, FILE *file , yyscan_t yyscanner );
+#define YY_FLUSH_BUFFER yy_flush_buffer( YY_CURRENT_BUFFER , yyscanner)
 
-#define YY_FLUSH_BUFFER giac_yy_flush_buffer(YY_CURRENT_BUFFER ,yyscanner)
+YY_BUFFER_STATE yy_scan_buffer ( char *base, yy_size_t size , yyscan_t yyscanner );
+YY_BUFFER_STATE yy_scan_string ( const char *yy_str , yyscan_t yyscanner );
+YY_BUFFER_STATE yy_scan_bytes ( const char *bytes, int len , yyscan_t yyscanner );
 
-YY_BUFFER_STATE giac_yy_scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
-YY_BUFFER_STATE giac_yy_scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
-YY_BUFFER_STATE giac_yy_scan_bytes (yyconst char *bytes,int len ,yyscan_t yyscanner );
+void *yyalloc ( yy_size_t , yyscan_t yyscanner );
+void *yyrealloc ( void *, yy_size_t , yyscan_t yyscanner );
+void yyfree ( void * , yyscan_t yyscanner );
 
-void *giac_yyalloc (yy_size_t ,yyscan_t yyscanner );
-void *giac_yyrealloc (void *,yy_size_t ,yyscan_t yyscanner );
-void giac_yyfree (void * ,yyscan_t yyscanner );
-
-#define yy_new_buffer giac_yy_create_buffer
-
+#define yy_new_buffer yy_create_buffer
 #define yy_set_interactive(is_interactive) \
 	{ \
 	if ( ! YY_CURRENT_BUFFER ){ \
-        giac_yyensure_buffer_stack (yyscanner); \
+        yyensure_buffer_stack (yyscanner); \
 		YY_CURRENT_BUFFER_LVALUE =    \
-            giac_yy_create_buffer(yyin,YY_BUF_SIZE ,yyscanner); \
+            yy_create_buffer( yyin, YY_BUF_SIZE , yyscanner); \
 	} \
 	YY_CURRENT_BUFFER_LVALUE->yy_is_interactive = is_interactive; \
 	}
-
 #define yy_set_bol(at_bol) \
 	{ \
 	if ( ! YY_CURRENT_BUFFER ){\
-        giac_yyensure_buffer_stack (yyscanner); \
+        yyensure_buffer_stack (yyscanner); \
 		YY_CURRENT_BUFFER_LVALUE =    \
-            giac_yy_create_buffer(yyin,YY_BUF_SIZE ,yyscanner); \
+            yy_create_buffer( yyin, YY_BUF_SIZE , yyscanner); \
 	} \
 	YY_CURRENT_BUFFER_LVALUE->yy_at_bol = at_bol; \
 	}
-
 #define YY_AT_BOL() (YY_CURRENT_BUFFER_LVALUE->yy_at_bol)
 
 /* Begin user sect3 */
 
-#define giac_yywrap(n) 1
+#define giac_yywrap(yyscanner) (/*CONSTCOND*/1)
 #define YY_SKIP_YYWRAP
-
-typedef unsigned char YY_CHAR;
+typedef flex_uint8_t YY_CHAR;
 
 typedef int yy_state_type;
 
 #define yytext_ptr yytext_r
 
-static yy_state_type yy_get_previous_state (yyscan_t yyscanner );
-static yy_state_type yy_try_NUL_trans (yy_state_type current_state  ,yyscan_t yyscanner);
-static int yy_get_next_buffer (yyscan_t yyscanner );
-static void yy_fatal_error (yyconst char msg[] ,yyscan_t yyscanner );
+static yy_state_type yy_get_previous_state ( yyscan_t yyscanner );
+static yy_state_type yy_try_NUL_trans ( yy_state_type current_state  , yyscan_t yyscanner);
+static int yy_get_next_buffer ( yyscan_t yyscanner );
+static void yynoreturn yy_fatal_error ( const char* msg , yyscan_t yyscanner );
 
 /* Done after the current pattern has been matched and before the
  * corresponding action - sets up yytext.
  */
 #define YY_DO_BEFORE_ACTION \
 	yyg->yytext_ptr = yy_bp; \
-	yyleng = (size_t) (yy_cp - yy_bp); \
+	yyleng = (int) (yy_cp - yy_bp); \
 	yyg->yy_hold_char = *yy_cp; \
 	*yy_cp = '\0'; \
 	yyg->yy_c_buf_p = yy_cp;
-
 #define YY_NUM_RULES 441
 #define YY_END_OF_BUFFER 442
 /* This struct is not used in this scanner,
@@ -367,7 +570,7 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static yyconst flex_int16_t yy_accept[1389] =
+static const flex_int16_t yy_accept[1389] =
     {   0,
         0,    0,   23,   23,    0,    0,    0,    0,    0,    0,
       442,  440,    1,    2,  197,    3,  438,  152,  255,  209,
@@ -523,7 +726,7 @@ static yyconst flex_int16_t yy_accept[1389] =
       287,  436,  233,  278,  281,  436,  204,    0
     } ;
 
-static yyconst flex_int32_t yy_ec[256] =
+static const YY_CHAR yy_ec[256] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
         1,    1,    2,    1,    1,    1,    1,    1,    1,    1,
@@ -555,7 +758,7 @@ static yyconst flex_int32_t yy_ec[256] =
        41,   41,   41,   41,    1
     } ;
 
-static yyconst flex_int32_t yy_meta[136] =
+static const YY_CHAR yy_meta[136] =
     {   0,
         1,    1,    2,    1,    1,    3,    1,    4,    4,    1,
         1,    1,    1,    5,    1,    1,    1,    1,    4,    6,
@@ -574,7 +777,7 @@ static yyconst flex_int32_t yy_meta[136] =
         7,    7,    1,    7,    7
     } ;
 
-static yyconst flex_int16_t yy_base[1406] =
+static const flex_int16_t yy_base[1406] =
     {   0,
         0,    0,  133,  134,  135,  136,  137,  138,  139,  142,
      2048, 2049,  149, 2049, 2019, 2049,  191, 2049,  176,  149,
@@ -733,7 +936,7 @@ static yyconst flex_int16_t yy_base[1406] =
      1544, 1551, 1559, 1567, 1575
     } ;
 
-static yyconst flex_int16_t yy_def[1406] =
+static const flex_int16_t yy_def[1406] =
     {   0,
      1388,    1, 1389, 1389, 1390, 1390, 1391, 1391, 1392, 1392,
      1388, 1388, 1388, 1388, 1388, 1388, 1388, 1388, 1393, 1388,
@@ -892,7 +1095,7 @@ static yyconst flex_int16_t yy_def[1406] =
      1388, 1388, 1388, 1388, 1388
     } ;
 
-static yyconst flex_int16_t yy_nxt[2185] =
+static const flex_int16_t yy_nxt[2185] =
     {   0,
        12,   13,   14,   13,   15,   16,   17,   18,   19,   20,
        21,   22,   23,   24,   25,   26,   27,   28,   29,   30,
@@ -1136,7 +1339,7 @@ static yyconst flex_int16_t yy_nxt[2185] =
      1388, 1388, 1388, 1388
     } ;
 
-static yyconst flex_int16_t yy_chk[2185] =
+static const flex_int16_t yy_chk[2185] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -1388,7 +1591,8 @@ static yyconst flex_int16_t yy_chk[2185] =
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 #line 1 "input_lexer.ll"
-/* -*- mode: C++; compile-command: "flex input_lexer.ll && make input_lexer.o " -*- */
+#line 2 "input_lexer.ll"
+ /* -*- mode: C++; compile-command: "flex input_lexer.ll && make input_lexer.o " -*- */
 /* Note: for the nspire port, after flex, move from #ifdef HAVE_CONFIG_H 
    to #include "first.h" before #include<stdio.h> 
    and map "log" to log10 instead of ln
@@ -1428,7 +1632,6 @@ static yyconst flex_int16_t yy_chk[2185] =
 /*
  *  Definitions
  */
-#line 48 "input_lexer.ll"
 #ifdef NUMWORKS
 #define at_log at_logb
 #else
@@ -1642,8 +1845,10 @@ static yyconst flex_int16_t yy_chk[2185] =
   } // namespace giac
 #endif // ndef NO_NAMESPACE_GIAC
 
-/* Abbreviations */
-/* If changed, modify isalphan in help.cc FIXME is . allowed inside alphanumeric ? answer NO */
+#line 1849 "input_lexer.cc"
+#line 270 "input_lexer.ll"
+	/* Abbreviations */
+        /* If changed, modify isalphan in help.cc FIXME is . allowed inside alphanumeric ? answer NO */
 
 
 
@@ -1651,7 +1856,7 @@ static yyconst flex_int16_t yy_chk[2185] =
 /*
  *  Lexical rules
  */
-#line 1655 "input_lexer.cc"
+#line 1860 "input_lexer.cc"
 
 #define INITIAL 0
 #define comment 1
@@ -1707,52 +1912,52 @@ struct yyguts_t
 
     }; /* end struct yyguts_t */
 
-static int yy_init_globals (yyscan_t yyscanner );
+static int yy_init_globals ( yyscan_t yyscanner );
 
     /* This must go here because YYSTYPE and YYLTYPE are included
      * from bison output in section 1.*/
     #    define yylval yyg->yylval_r
     
-int giac_yylex_init (yyscan_t* scanner);
+int yylex_init (yyscan_t* scanner);
 
-int giac_yylex_init_extra (YY_EXTRA_TYPE user_defined,yyscan_t* scanner);
+int yylex_init_extra ( YY_EXTRA_TYPE user_defined, yyscan_t* scanner);
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
 
-int giac_yylex_destroy (yyscan_t yyscanner );
+int yylex_destroy ( yyscan_t yyscanner );
 
-int giac_yyget_debug (yyscan_t yyscanner );
+int yyget_debug ( yyscan_t yyscanner );
 
-void giac_yyset_debug (int debug_flag ,yyscan_t yyscanner );
+void yyset_debug ( int debug_flag , yyscan_t yyscanner );
 
-YY_EXTRA_TYPE giac_yyget_extra (yyscan_t yyscanner );
+YY_EXTRA_TYPE yyget_extra ( yyscan_t yyscanner );
 
-void giac_yyset_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
+void yyset_extra ( YY_EXTRA_TYPE user_defined , yyscan_t yyscanner );
 
-FILE *giac_yyget_in (yyscan_t yyscanner );
+FILE *yyget_in ( yyscan_t yyscanner );
 
-void giac_yyset_in  (FILE * in_str ,yyscan_t yyscanner );
+void yyset_in  ( FILE * _in_str , yyscan_t yyscanner );
 
-FILE *giac_yyget_out (yyscan_t yyscanner );
+FILE *yyget_out ( yyscan_t yyscanner );
 
-void giac_yyset_out  (FILE * out_str ,yyscan_t yyscanner );
+void yyset_out  ( FILE * _out_str , yyscan_t yyscanner );
 
-int giac_yyget_leng (yyscan_t yyscanner );
+			int yyget_leng ( yyscan_t yyscanner );
 
-char *giac_yyget_text (yyscan_t yyscanner );
+char *yyget_text ( yyscan_t yyscanner );
 
-int giac_yyget_lineno (yyscan_t yyscanner );
+int yyget_lineno ( yyscan_t yyscanner );
 
-void giac_yyset_lineno (int line_number ,yyscan_t yyscanner );
+void yyset_lineno ( int _line_number , yyscan_t yyscanner );
 
-int giac_yyget_column  (yyscan_t yyscanner );
+int yyget_column  ( yyscan_t yyscanner );
 
-void giac_yyset_column (int column_no ,yyscan_t yyscanner );
+void yyset_column ( int _column_no , yyscan_t yyscanner );
 
-YYSTYPE * giac_yyget_lval (yyscan_t yyscanner );
+YYSTYPE * yyget_lval ( yyscan_t yyscanner );
 
-void giac_yyset_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
+void yyset_lval ( YYSTYPE * yylval_param , yyscan_t yyscanner );
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -1760,28 +1965,31 @@ void giac_yyset_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
 
 #ifndef YY_SKIP_YYWRAP
 #ifdef __cplusplus
-extern "C" int giac_yywrap (yyscan_t yyscanner );
+extern "C" int yywrap ( yyscan_t yyscanner );
 #else
-extern int giac_yywrap (yyscan_t yyscanner );
+extern int yywrap ( yyscan_t yyscanner );
 #endif
 #endif
 
-    static void yyunput (int c,char *buf_ptr  ,yyscan_t yyscanner);
+#ifndef YY_NO_UNPUT
     
+    static void yyunput ( int c, char *buf_ptr  , yyscan_t yyscanner);
+    
+#endif
+
 #ifndef yytext_ptr
-static void yy_flex_strncpy (char *,yyconst char *,int ,yyscan_t yyscanner);
+static void yy_flex_strncpy ( char *, const char *, int , yyscan_t yyscanner);
 #endif
 
 #ifdef YY_NEED_STRLEN
-static int yy_flex_strlen (yyconst char * ,yyscan_t yyscanner);
+static int yy_flex_strlen ( const char * , yyscan_t yyscanner);
 #endif
 
 #ifndef YY_NO_INPUT
-
 #ifdef __cplusplus
-static int yyinput (yyscan_t yyscanner );
+static int yyinput ( yyscan_t yyscanner );
 #else
-static int input (yyscan_t yyscanner );
+static int input ( yyscan_t yyscanner );
 #endif
 
 #endif
@@ -1801,7 +2009,7 @@ static int input (yyscan_t yyscanner );
 /* This used to be an fputs(), but since the string might contain NUL's,
  * we now use fwrite().
  */
-#define ECHO do { if (fwrite( yytext, yyleng, 1, yyout )) {} } while (0)
+#define ECHO do { if (fwrite( yytext, (size_t) yyleng, 1, yyout )) {} } while (0)
 #endif
 
 /* Gets input and stuffs it into "buf".  number of characters read, or YY_NULL,
@@ -1812,7 +2020,7 @@ static int input (yyscan_t yyscanner );
 	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
 		{ \
 		int c = '*'; \
-		size_t n; \
+		int n; \
 		for ( n = 0; n < max_size && \
 			     (c = getc( yyin )) != EOF && c != '\n'; ++n ) \
 			buf[n] = (char) c; \
@@ -1825,7 +2033,7 @@ static int input (yyscan_t yyscanner );
 	else \
 		{ \
 		errno=0; \
-		while ( (result = fread(buf, 1, max_size, yyin))==0 && ferror(yyin)) \
+		while ( (result = (int) fread(buf, 1, (yy_size_t) max_size, yyin)) == 0 && ferror(yyin)) \
 			{ \
 			if( errno != EINTR) \
 				{ \
@@ -1866,10 +2074,10 @@ static int input (yyscan_t yyscanner );
 #ifndef YY_DECL
 #define YY_DECL_IS_OURS 1
 
-extern int giac_yylex \
-               (YYSTYPE * yylval_param ,yyscan_t yyscanner);
+extern int yylex \
+               (YYSTYPE * yylval_param , yyscan_t yyscanner);
 
-#define YY_DECL int giac_yylex \
+#define YY_DECL int yylex \
                (YYSTYPE * yylval_param , yyscan_t yyscanner)
 #endif /* !YY_DECL */
 
@@ -1882,7 +2090,7 @@ extern int giac_yylex \
 
 /* Code executed at the end of each rule. */
 #ifndef YY_BREAK
-#define YY_BREAK break;
+#define YY_BREAK /*LINTED*/break;
 #endif
 
 #define YY_RULE_SETUP \
@@ -1892,15 +2100,10 @@ extern int giac_yylex \
  */
 YY_DECL
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp, *yy_bp;
-	register int yy_act;
+	yy_state_type yy_current_state;
+	char *yy_cp, *yy_bp;
+	int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-
-#line 283 "input_lexer.ll"
-
-
-#line 1904 "input_lexer.cc"
 
     yylval = yylval_param;
 
@@ -1922,15 +2125,21 @@ YY_DECL
 			yyout = stdout;
 
 		if ( ! YY_CURRENT_BUFFER ) {
-			giac_yyensure_buffer_stack (yyscanner);
+			yyensure_buffer_stack (yyscanner);
 			YY_CURRENT_BUFFER_LVALUE =
-				giac_yy_create_buffer(yyin,YY_BUF_SIZE ,yyscanner);
+				yy_create_buffer( yyin, YY_BUF_SIZE , yyscanner);
 		}
 
-		giac_yy_load_buffer_state(yyscanner );
+		yy_load_buffer_state( yyscanner );
 		}
 
-	while ( 1 )		/* loops until end-of-file is reached */
+	{
+#line 284 "input_lexer.ll"
+
+
+#line 2141 "input_lexer.cc"
+
+	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
 		yy_cp = yyg->yy_c_buf_p;
 
@@ -1946,7 +2155,7 @@ YY_DECL
 yy_match:
 		do
 			{
-			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
+			YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)] ;
 			if ( yy_accept[yy_current_state] )
 				{
 				yyg->yy_last_accepting_state = yy_current_state;
@@ -1956,9 +2165,9 @@ yy_match:
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
 				if ( yy_current_state >= 1389 )
-					yy_c = yy_meta[(unsigned int) yy_c];
+					yy_c = yy_meta[yy_c];
 				}
-			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+			yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 			++yy_cp;
 			}
 		while ( yy_base[yy_current_state] != 2049 );
@@ -1987,30 +2196,30 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 285 "input_lexer.ll"
+#line 286 "input_lexer.ll"
 /* skip whitespace */
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 286 "input_lexer.ll"
+#line 287 "input_lexer.ll"
 increment_lexer_line_number_setcol(yyscanner,yyextra); //CERR << "Scanning line " << lexer_line_number(yyextra) << '\n';
 	YY_BREAK
 /* Strings */
 /* \"[^\"]*\"        yylval = string2gen( giac_yytext); return T_STRING; */
 case 3:
 YY_RULE_SETUP
-#line 289 "input_lexer.ll"
+#line 290 "input_lexer.ll"
 BEGIN(str); comment_s("",yyextra);
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 290 "input_lexer.ll"
+#line 291 "input_lexer.ll"
 increment_comment_s('"',yyextra);
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 291 "input_lexer.ll"
+#line 292 "input_lexer.ll"
 {  index_status(yyextra)=1; BEGIN(INITIAL); 
                   (*yylval)=string2gen(comment_s(yyextra),false); 
                   return T_STRING; }
@@ -2018,12 +2227,12 @@ YY_RULE_SETUP
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 294 "input_lexer.ll"
+#line 295 "input_lexer.ll"
 increment_comment_s('\n',yyextra); increment_lexer_line_number_setcol(yyscanner,yyextra);
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 295 "input_lexer.ll"
+#line 296 "input_lexer.ll"
 {
                    /* octal escape sequence */
                    int result=0;
@@ -2033,7 +2242,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 301 "input_lexer.ll"
+#line 302 "input_lexer.ll"
 {
                    /* generate error - bad escape sequence; something
                     * like '\48' or '\0777777'
@@ -2042,2036 +2251,2036 @@ YY_RULE_SETUP
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 306 "input_lexer.ll"
+#line 307 "input_lexer.ll"
 increment_comment_s('\n',yyextra);
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 307 "input_lexer.ll"
+#line 308 "input_lexer.ll"
 increment_comment_s('\t',yyextra);
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 308 "input_lexer.ll"
+#line 309 "input_lexer.ll"
 increment_comment_s('\r',yyextra);
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 309 "input_lexer.ll"
+#line 310 "input_lexer.ll"
 increment_comment_s('\b',yyextra);
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 310 "input_lexer.ll"
+#line 311 "input_lexer.ll"
 increment_comment_s('\f',yyextra);
 	YY_BREAK
 case 14:
 /* rule 14 can match eol */
 YY_RULE_SETUP
-#line 311 "input_lexer.ll"
+#line 312 "input_lexer.ll"
 increment_comment_s(yytext[1],yyextra);
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 312 "input_lexer.ll"
+#line 313 "input_lexer.ll"
 increment_comment_s(yytext,yyextra);
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 313 "input_lexer.ll"
+#line 314 "input_lexer.ll"
 if (rpn_mode(yyextra)){ index_status(yyextra)=0; return T_ACCENTGRAVE; } else { BEGIN(backquote); comment_s("",yyextra); }
 	YY_BREAK
 case 17:
 /* rule 17 can match eol */
 YY_RULE_SETUP
-#line 314 "input_lexer.ll"
+#line 315 "input_lexer.ll"
 increment_comment_s('\n',yyextra); increment_lexer_line_number_setcol(yyscanner,yyextra);
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 315 "input_lexer.ll"
+#line 316 "input_lexer.ll"
 increment_comment_s(yytext,yyextra);
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 316 "input_lexer.ll"
+#line 317 "input_lexer.ll"
 {  index_status(yyextra)=1; BEGIN(INITIAL); 
   return find_or_make_symbol(comment_s(yyextra),(*yylval),yyscanner,true,yyextra); }
 	YY_BREAK
 case 20:
 /* rule 20 can match eol */
 YY_RULE_SETUP
-#line 319 "input_lexer.ll"
+#line 320 "input_lexer.ll"
 index_status(yyextra)=0; increment_lexer_line_number_setcol(yyscanner,yyextra);
 	YY_BREAK
 case 21:
 /* rule 21 can match eol */
 YY_RULE_SETUP
-#line 320 "input_lexer.ll"
+#line 321 "input_lexer.ll"
 index_status(yyextra)=0; increment_lexer_line_number_setcol(yyscanner,yyextra);/* (*yylval) = string2gen('"'+string(giac_yytext).substr(2,string(giac_yytext).size()-3)+'"');   return T_COMMENT; */
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 321 "input_lexer.ll"
+#line 322 "input_lexer.ll"
 BEGIN(comment); comment_s(yyextra)="";
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 323 "input_lexer.ll"
+#line 324 "input_lexer.ll"
 comment_s(yyextra)+=yytext; /* eat anything that's not a '*' */
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 324 "input_lexer.ll"
+#line 325 "input_lexer.ll"
 comment_s(yyextra)+=yytext; /* eat up '*'s not followed by '/'s */
 	YY_BREAK
 case 25:
 /* rule 25 can match eol */
 YY_RULE_SETUP
-#line 325 "input_lexer.ll"
+#line 326 "input_lexer.ll"
 comment_s(yyextra) += '\n'; increment_lexer_line_number_setcol(yyscanner,yyextra); CERR << "(Comment) scanning line " << lexer_line_number(yyextra) << '\n';
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 326 "input_lexer.ll"
+#line 327 "input_lexer.ll"
 BEGIN(INITIAL); index_status(yyextra)=0; /* (*yylval) = string2gen(comment_s(yyextra),false); return T_COMMENT; */
 	YY_BREAK
 case 27:
 /* rule 27 can match eol */
 YY_RULE_SETUP
-#line 327 "input_lexer.ll"
+#line 328 "input_lexer.ll"
 index_status(yyextra)=0; /* (*yylval) = string2gen('"'+string(yytext).substr(3,string(yytext).size()-6)+'"'); return T_COMMENT; */
 	YY_BREAK
 case 28:
 /* rule 28 can match eol */
 YY_RULE_SETUP
-#line 328 "input_lexer.ll"
+#line 329 "input_lexer.ll"
 index_status(yyextra)=0; /* (*yylval) = string2gen('"'+string(yytext).substr(3,string(yytext).size()-6)+'"'); return T_COMMENT; */
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 330 "input_lexer.ll"
+#line 331 "input_lexer.ll"
 if (index_status(yyextra)) return T_INTERROGATION; if (calc_mode(yyextra)==1){ *yylval=undef; return T_SYMBOL;}  return T_HELP;
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 331 "input_lexer.ll"
+#line 332 "input_lexer.ll"
 opened_quote(yyextra) |= 2; return T_UNIT;
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 332 "input_lexer.ll"
+#line 333 "input_lexer.ll"
 if (opened_quote(yyextra) & 1) { opened_quote(yyextra) &= 0x7ffffffe; return T_QUOTE; } if (index_status(yyextra) && !in_rpn(yyextra) && xcas_mode(yyextra)!= 1) return T_PRIME; opened_quote(yyextra) |= 1; return T_QUOTE;
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 333 "input_lexer.ll"
+#line 334 "input_lexer.ll"
 index_status(yyextra)=0; if (xcas_mode(yyextra)==3) return TI_SEMI; (*yylval)=0; return T_SEMI;
 	YY_BREAK
 /* commented otherwise for(;;) will not work ";;"			index_status(yyextra)=0; if (xcas_mode(yyextra)==3) return TI_SEMI; (*yylval)=0; return T_SEMI; */
 case 33:
 YY_RULE_SETUP
-#line 335 "input_lexer.ll"
+#line 336 "input_lexer.ll"
 index_status(yyextra)=0; if (xcas_mode(yyextra)==3) return T_SEMI; return TI_SEMI;
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 336 "input_lexer.ll"
+#line 337 "input_lexer.ll"
 if (spread_formula(yyextra)) return T_DEUXPOINTS; if ( xcas_mode(yyextra)==3 ) { index_status(yyextra)=0; return TI_DEUXPOINTS; }  index_status(yyextra)=0; if (xcas_mode(yyextra)>0) { (*yylval)=1; return T_SEMI; } else return T_DEUXPOINTS;
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 337 "input_lexer.ll"
+#line 338 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=1; return T_SEMI;
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 338 "input_lexer.ll"
+#line 339 "input_lexer.ll"
 index_status(yyextra)=0;return T_DOUBLE_DEUX_POINTS;
 	YY_BREAK
 /* special values */
 case 37:
 YY_RULE_SETUP
-#line 342 "input_lexer.ll"
+#line 343 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval)=theta__IDNT_e; return T_SYMBOL;
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 343 "input_lexer.ll"
+#line 344 "input_lexer.ll"
 index_status(yyextra)=1; if (xcas_mode(yyextra) > 0 || !i_sqrt_minus1(yyextra)) { (*yylval)=i__IDNT_e; return T_SYMBOL; } else { (*yylval) = cst_i; return T_LITERAL;};
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 344 "input_lexer.ll"
+#line 345 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = cst_i; return T_LITERAL;
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 345 "input_lexer.ll"
+#line 346 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = cst_i; return T_LITERAL;
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 346 "input_lexer.ll"
+#line 347 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = cst_i; return T_LITERAL;
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 347 "input_lexer.ll"
+#line 348 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = cst_i; return T_LITERAL;
 	YY_BREAK
 /* \xef\xbd\x89            index_status(yyextra)=1; (*yylval) = cst_i; return T_LITERAL; */
 case 43:
 YY_RULE_SETUP
-#line 349 "input_lexer.ll"
+#line 350 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = cst_i; return T_LITERAL;
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 350 "input_lexer.ll"
+#line 351 "input_lexer.ll"
 index_status(yyextra)=1; if (python_compat(yyextra)>=0 && (xcas_mode(yyextra)==0 || xcas_mode(yyextra)==3 || rpn_mode(yyextra)) ) { return find_or_make_symbol(yytext,(*yylval),yyscanner,true,yyextra); } else { (*yylval) = cst_i; return T_LITERAL; };
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 351 "input_lexer.ll"
+#line 352 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = cst_i; return T_LITERAL;
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 352 "input_lexer.ll"
+#line 353 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = symbolic(at_exp,1); return T_LITERAL;
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 353 "input_lexer.ll"
+#line 354 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = cst_pi; return T_LITERAL;
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 354 "input_lexer.ll"
+#line 355 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = cst_pi; return T_LITERAL;
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 355 "input_lexer.ll"
+#line 356 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = cst_pi; return T_LITERAL;
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 356 "input_lexer.ll"
+#line 357 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = cst_pi; return T_LITERAL;
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 357 "input_lexer.ll"
+#line 358 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = cst_pi; return T_LITERAL;
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 358 "input_lexer.ll"
+#line 359 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = cst_euler_gamma; return T_LITERAL;
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 359 "input_lexer.ll"
+#line 360 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = unsigned_inf; return T_LITERAL;
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 360 "input_lexer.ll"
+#line 361 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = plus_inf; return T_LITERAL;
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 361 "input_lexer.ll"
+#line 362 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = unsigned_inf; return T_LITERAL;
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 362 "input_lexer.ll"
+#line 363 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = plus_inf; return T_LITERAL;
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 363 "input_lexer.ll"
+#line 364 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = plus_inf; return T_LITERAL;
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 364 "input_lexer.ll"
+#line 365 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = unsigned_inf; return T_LITERAL;
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 365 "input_lexer.ll"
+#line 366 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = plus_inf; return T_LITERAL;
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 366 "input_lexer.ll"
+#line 367 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = minus_inf; return T_LITERAL;
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 367 "input_lexer.ll"
+#line 368 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval) = undef; return T_LITERAL;
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 368 "input_lexer.ll"
+#line 369 "input_lexer.ll"
 return T_END_INPUT;
 	YY_BREAK
 /* integer values */
 case 63:
 YY_RULE_SETUP
-#line 371 "input_lexer.ll"
+#line 372 "input_lexer.ll"
 if (xcas_mode(yyextra)==2){ (*yylval) = gen(at_user_operator,6); index_status(yyextra)=0; return T_UNARY_OP; }  index_status(yyextra)=0; (*yylval) = _FUNC; (*yylval).subtype=_INT_TYPE; return T_TYPE_ID;
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 372 "input_lexer.ll"
+#line 373 "input_lexer.ll"
 if (python_compat(yyextra)){ *yylval=at_python_list; return T_UNARY_OP; } if (xcas_mode(yyextra)==3) { index_status(yyextra)=1; return find_or_make_symbol(yytext,(*yylval),yyscanner,true,yyextra); } index_status(yyextra)=0; (*yylval) = _MAPLE_LIST ; (*yylval).subtype=_INT_MAPLECONVERSION ;return T_TYPE_ID;
 	YY_BREAK
 /* vector/polynom/matrice delimiters */
 case 65:
 YY_RULE_SETUP
-#line 376 "input_lexer.ll"
+#line 377 "input_lexer.ll"
 (*yylval) = _SEQ__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 377 "input_lexer.ll"
+#line 378 "input_lexer.ll"
 (*yylval) = _SET__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 378 "input_lexer.ll"
+#line 379 "input_lexer.ll"
 (*yylval) = _INTERVAL__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 379 "input_lexer.ll"
+#line 380 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval) = _LIST__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 /* "list(" index_status(yyextra)=0; (*yylval) = _LIST__VECT; return T_BEGIN_PAR; */
 case 69:
 YY_RULE_SETUP
-#line 381 "input_lexer.ll"
+#line 382 "input_lexer.ll"
 (*yylval) = _RPN_FUNC__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 382 "input_lexer.ll"
+#line 383 "input_lexer.ll"
 (*yylval) = _GROUP__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 383 "input_lexer.ll"
+#line 384 "input_lexer.ll"
 (*yylval) = _LINE__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 72:
 YY_RULE_SETUP
-#line 384 "input_lexer.ll"
+#line 385 "input_lexer.ll"
 (*yylval) = _VECTOR__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 73:
 YY_RULE_SETUP
-#line 385 "input_lexer.ll"
+#line 386 "input_lexer.ll"
 (*yylval) = _MATRIX__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 386 "input_lexer.ll"
+#line 387 "input_lexer.ll"
 (*yylval) = _PNT__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 75:
 YY_RULE_SETUP
-#line 387 "input_lexer.ll"
+#line 388 "input_lexer.ll"
 (*yylval) = _GGB__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 388 "input_lexer.ll"
+#line 389 "input_lexer.ll"
 (*yylval) = _GGBVECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 77:
 YY_RULE_SETUP
-#line 389 "input_lexer.ll"
+#line 390 "input_lexer.ll"
 (*yylval) = _POINT__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 390 "input_lexer.ll"
+#line 391 "input_lexer.ll"
 (*yylval) = _TUPLE__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 391 "input_lexer.ll"
+#line 392 "input_lexer.ll"
 (*yylval) = _CURVE__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 392 "input_lexer.ll"
+#line 393 "input_lexer.ll"
 (*yylval) = _HALFLINE__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 81:
 YY_RULE_SETUP
-#line 393 "input_lexer.ll"
+#line 394 "input_lexer.ll"
 (*yylval) = _POLY1__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 394 "input_lexer.ll"
+#line 395 "input_lexer.ll"
 (*yylval) = _ASSUME__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 83:
 YY_RULE_SETUP
-#line 395 "input_lexer.ll"
+#line 396 "input_lexer.ll"
 (*yylval) = _LOGO__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 84:
 YY_RULE_SETUP
-#line 396 "input_lexer.ll"
+#line 397 "input_lexer.ll"
 (*yylval) = _SPREAD__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 85:
 YY_RULE_SETUP
-#line 397 "input_lexer.ll"
+#line 398 "input_lexer.ll"
 (*yylval) = _FOLDER__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 398 "input_lexer.ll"
+#line 399 "input_lexer.ll"
 (*yylval) = _POLYEDRE__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 399 "input_lexer.ll"
+#line 400 "input_lexer.ll"
 (*yylval) = _RGBA__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 88:
 YY_RULE_SETUP
-#line 400 "input_lexer.ll"
+#line 401 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval) = _LIST__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 89:
 YY_RULE_SETUP
-#line 401 "input_lexer.ll"
+#line 402 "input_lexer.ll"
 index_status(yyextra)=1; return T_VECT_END;
 	YY_BREAK
 case 90:
 YY_RULE_SETUP
-#line 402 "input_lexer.ll"
+#line 403 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_inferieur_strict,2);  return T_TEST_EQUAL;
 	YY_BREAK
 case 91:
 YY_RULE_SETUP
-#line 403 "input_lexer.ll"
+#line 404 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_superieur_strict,2); return T_TEST_EQUAL;
 	YY_BREAK
 case 92:
 YY_RULE_SETUP
-#line 404 "input_lexer.ll"
+#line 405 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_inferieur_strict,2);  return T_TEST_EQUAL;
 	YY_BREAK
 case 93:
 YY_RULE_SETUP
-#line 405 "input_lexer.ll"
+#line 406 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_inferieur_egal,2);  return T_TEST_EQUAL;
 	YY_BREAK
 case 94:
 YY_RULE_SETUP
-#line 406 "input_lexer.ll"
+#line 407 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_superieur_strict,2); return T_TEST_EQUAL;
 	YY_BREAK
 case 95:
 YY_RULE_SETUP
-#line 407 "input_lexer.ll"
+#line 408 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_superieur_egal,2); return T_TEST_EQUAL;
 	YY_BREAK
 case 96:
 YY_RULE_SETUP
-#line 408 "input_lexer.ll"
+#line 409 "input_lexer.ll"
 index_status(yyextra)=0; return T_VIRGULE;
 	YY_BREAK
 case 97:
 YY_RULE_SETUP
-#line 409 "input_lexer.ll"
+#line 410 "input_lexer.ll"
 index_status(yyextra)=0; return T_VIRGULE;
 	YY_BREAK
 case 98:
 YY_RULE_SETUP
-#line 410 "input_lexer.ll"
+#line 411 "input_lexer.ll"
 index_status(yyextra)=0; *yylval = 0; return T_BEGIN_PAR;
 	YY_BREAK
 case 99:
 YY_RULE_SETUP
-#line 411 "input_lexer.ll"
+#line 412 "input_lexer.ll"
 index_status(yyextra)=1; return T_END_PAR;
 	YY_BREAK
 case 100:
 YY_RULE_SETUP
-#line 412 "input_lexer.ll"
+#line 413 "input_lexer.ll"
 if (index_status(yyextra)) { index_status(yyextra)=0; return T_INDEX_BEGIN; } else { (*yylval) = 0; return T_VECT_DISPATCH; } ;
 	YY_BREAK
 case 101:
 YY_RULE_SETUP
-#line 413 "input_lexer.ll"
+#line 414 "input_lexer.ll"
 index_status(yyextra)=1; return T_VECT_END;
 	YY_BREAK
 case 102:
 YY_RULE_SETUP
-#line 414 "input_lexer.ll"
+#line 415 "input_lexer.ll"
 index_status(yyextra)=1; return T_VECT_END;
 	YY_BREAK
 case 103:
 YY_RULE_SETUP
-#line 415 "input_lexer.ll"
+#line 416 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval) = _POLY1__VECT; return T_VECT_DISPATCH; 
 	YY_BREAK
 case 104:
 YY_RULE_SETUP
-#line 416 "input_lexer.ll"
+#line 417 "input_lexer.ll"
 index_status(yyextra)=1; return T_VECT_END;
 	YY_BREAK
 case 105:
 YY_RULE_SETUP
-#line 417 "input_lexer.ll"
+#line 418 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval) = _MATRIX__VECT; return T_VECT_DISPATCH; 
 	YY_BREAK
 case 106:
 YY_RULE_SETUP
-#line 418 "input_lexer.ll"
+#line 419 "input_lexer.ll"
 index_status(yyextra)=1; return T_VECT_END;
 	YY_BREAK
 case 107:
 YY_RULE_SETUP
-#line 419 "input_lexer.ll"
+#line 420 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval) = _ASSUME__VECT; return T_VECT_DISPATCH; 
 	YY_BREAK
 case 108:
 YY_RULE_SETUP
-#line 420 "input_lexer.ll"
+#line 421 "input_lexer.ll"
 index_status(yyextra)=1; return T_VECT_END;
 	YY_BREAK
 /* geometric delimiters */
 case 109:
 YY_RULE_SETUP
-#line 422 "input_lexer.ll"
+#line 423 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval) = _GROUP__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 110:
 YY_RULE_SETUP
-#line 423 "input_lexer.ll"
+#line 424 "input_lexer.ll"
 index_status(yyextra)=1; return T_VECT_END;
 	YY_BREAK
 case 111:
 YY_RULE_SETUP
-#line 424 "input_lexer.ll"
+#line 425 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval) = _LINE__VECT; return T_VECT_DISPATCH; 
 	YY_BREAK
 case 112:
 YY_RULE_SETUP
-#line 425 "input_lexer.ll"
+#line 426 "input_lexer.ll"
 index_status(yyextra)=1; return T_VECT_END;
 	YY_BREAK
 case 113:
 YY_RULE_SETUP
-#line 426 "input_lexer.ll"
+#line 427 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval) = _VECTOR__VECT; return T_VECT_DISPATCH; 
 	YY_BREAK
 case 114:
 YY_RULE_SETUP
-#line 427 "input_lexer.ll"
+#line 428 "input_lexer.ll"
 index_status(yyextra)=1; return T_VECT_END;
 	YY_BREAK
 case 115:
 YY_RULE_SETUP
-#line 428 "input_lexer.ll"
+#line 429 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval) = _CURVE__VECT; return T_VECT_DISPATCH; 
 	YY_BREAK
 case 116:
 YY_RULE_SETUP
-#line 429 "input_lexer.ll"
+#line 430 "input_lexer.ll"
 index_status(yyextra)=1; return T_VECT_END;
 	YY_BREAK
 /* gen delimiters */
 case 117:
 YY_RULE_SETUP
-#line 431 "input_lexer.ll"
+#line 432 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=_TABLE__VECT;return T_VECT_DISPATCH; 
 	YY_BREAK
 case 118:
 YY_RULE_SETUP
-#line 432 "input_lexer.ll"
+#line 433 "input_lexer.ll"
 index_status(yyextra)=1;  return T_VECT_END;
 	YY_BREAK
 case 119:
 YY_RULE_SETUP
-#line 433 "input_lexer.ll"
+#line 434 "input_lexer.ll"
 index_status(yyextra)=0;  if (rpn_mode(yyextra)||calc_mode(yyextra)==1) { (*yylval)=0; return T_VECT_DISPATCH; } if (xcas_mode(yyextra)==3 || abs_calc_mode(yyextra)==38){ (*yylval) = _LIST__VECT;  return T_VECT_DISPATCH; } if (xcas_mode(yyextra) > 0 ){ (*yylval)=_SET__VECT; return T_VECT_DISPATCH; } else return T_BLOC_BEGIN;
 	YY_BREAK
 case 120:
 YY_RULE_SETUP
-#line 434 "input_lexer.ll"
+#line 435 "input_lexer.ll"
 index_status(yyextra)=1; if (rpn_mode(yyextra) || calc_mode(yyextra)==1 || python_compat(yyextra)) return T_VECT_END; if (xcas_mode(yyextra)==3 || abs_calc_mode(yyextra)==38) return T_VECT_END; if (xcas_mode(yyextra) > 0) return T_VECT_END; else return T_BLOC_END;
 	YY_BREAK
 case 121:
 YY_RULE_SETUP
-#line 435 "input_lexer.ll"
+#line 436 "input_lexer.ll"
 index_status(yyextra)=0;  (*yylval)=_SET__VECT; return T_VECT_DISPATCH;
 	YY_BREAK
 case 122:
 YY_RULE_SETUP
-#line 436 "input_lexer.ll"
+#line 437 "input_lexer.ll"
 index_status(yyextra)=1; return T_VECT_END;
 	YY_BREAK
 case 123:
 YY_RULE_SETUP
-#line 437 "input_lexer.ll"
+#line 438 "input_lexer.ll"
 index_status(yyextra)=0; return T_ROOTOF_BEGIN;
 	YY_BREAK
 case 124:
 YY_RULE_SETUP
-#line 438 "input_lexer.ll"
+#line 439 "input_lexer.ll"
 index_status(yyextra)=1; return T_ROOTOF_END;
 	YY_BREAK
 case 125:
 YY_RULE_SETUP
-#line 439 "input_lexer.ll"
+#line 440 "input_lexer.ll"
 index_status(yyextra)=0; return T_SPOLY1_BEGIN;
 	YY_BREAK
 case 126:
 YY_RULE_SETUP
-#line 440 "input_lexer.ll"
+#line 441 "input_lexer.ll"
 index_status(yyextra)=1; return T_SPOLY1_END;
 	YY_BREAK
 case 127:
 YY_RULE_SETUP
-#line 441 "input_lexer.ll"
+#line 442 "input_lexer.ll"
 index_status(yyextra)=0; if (abs_calc_mode(yyextra)!=38){ (*yylval)=gen(at_rotate,2); return T_UNION; } ++in_rpn(yyextra); return T_RPN_BEGIN;
 	YY_BREAK
 case 128:
 YY_RULE_SETUP
-#line 442 "input_lexer.ll"
+#line 443 "input_lexer.ll"
 index_status(yyextra)=0; if (abs_calc_mode(yyextra)!=38){ (*yylval)=gen(at_shift,2); return T_UNION; } --in_rpn(yyextra); return T_RPN_END;
 	YY_BREAK
 /* binary operators */
 case 129:
 YY_RULE_SETUP
-#line 445 "input_lexer.ll"
+#line 446 "input_lexer.ll"
 index_status(yyextra)=0; return T_MAPSTO;
 	YY_BREAK
 case 130:
 YY_RULE_SETUP
-#line 446 "input_lexer.ll"
+#line 447 "input_lexer.ll"
 (*yylval) = gen(at_couleur,2); index_status(yyextra)=0; return T_INTERVAL;
 	YY_BREAK
 case 131:
 YY_RULE_SETUP
-#line 447 "input_lexer.ll"
+#line 448 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_same,2); return T_TEST_EQUAL;
 	YY_BREAK
 case 132:
 YY_RULE_SETUP
-#line 448 "input_lexer.ll"
+#line 449 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_equal,2); return T_EQUAL;
 	YY_BREAK
 case 133:
 YY_RULE_SETUP
-#line 449 "input_lexer.ll"
+#line 450 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_deuxpoints,2); return T_DEUXPOINTS;
 	YY_BREAK
 case 134:
 YY_RULE_SETUP
-#line 450 "input_lexer.ll"
+#line 451 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_same,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 135:
 YY_RULE_SETUP
-#line 451 "input_lexer.ll"
+#line 452 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_same,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 136:
 YY_RULE_SETUP
-#line 452 "input_lexer.ll"
+#line 453 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_different,2); return T_TEST_EQUAL;
 	YY_BREAK
 case 137:
 YY_RULE_SETUP
-#line 453 "input_lexer.ll"
+#line 454 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_different,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 138:
 YY_RULE_SETUP
-#line 454 "input_lexer.ll"
+#line 455 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_different,2); return T_TEST_EQUAL;
 	YY_BREAK
 case 139:
 YY_RULE_SETUP
-#line 455 "input_lexer.ll"
+#line 456 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_different,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 140:
 YY_RULE_SETUP
-#line 456 "input_lexer.ll"
+#line 457 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_different,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 141:
 YY_RULE_SETUP
-#line 457 "input_lexer.ll"
+#line 458 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_inferieur_egal,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 142:
 YY_RULE_SETUP
-#line 458 "input_lexer.ll"
+#line 459 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_inferieur_egal,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 143:
 YY_RULE_SETUP
-#line 459 "input_lexer.ll"
+#line 460 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_inferieur_egal,2); return T_TEST_EQUAL;
 	YY_BREAK
 case 144:
 YY_RULE_SETUP
-#line 460 "input_lexer.ll"
+#line 461 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_inferieur_strict,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 145:
 YY_RULE_SETUP
-#line 461 "input_lexer.ll"
+#line 462 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_inferieur_strict,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 146:
 YY_RULE_SETUP
-#line 462 "input_lexer.ll"
+#line 463 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_superieur_strict,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 147:
 YY_RULE_SETUP
-#line 463 "input_lexer.ll"
+#line 464 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_superieur_egal,2); return T_TEST_EQUAL;
 	YY_BREAK
 case 148:
 YY_RULE_SETUP
-#line 464 "input_lexer.ll"
+#line 465 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_superieur_egal,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 149:
 YY_RULE_SETUP
-#line 465 "input_lexer.ll"
+#line 466 "input_lexer.ll"
 spread_formula(yyextra)=!index_status(yyextra); index_status(yyextra)=0; (*yylval)=gen(at_equal,2); return T_EQUAL;
 	YY_BREAK
 case 150:
 YY_RULE_SETUP
-#line 466 "input_lexer.ll"
+#line 467 "input_lexer.ll"
 spread_formula(yyextra)=!index_status(yyextra); index_status(yyextra)=0; (*yylval)=gen(at_equal2,2); return T_EQUAL;
 	YY_BREAK
 case 151:
 YY_RULE_SETUP
-#line 467 "input_lexer.ll"
+#line 468 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_equal,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 152:
 YY_RULE_SETUP
-#line 468 "input_lexer.ll"
+#line 469 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_dollar,2); if (xcas_mode(yyextra)>0) return T_DOLLAR_MAPLE; else return T_DOLLAR;
 	YY_BREAK
 case 153:
 YY_RULE_SETUP
-#line 469 "input_lexer.ll"
+#line 470 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_dollar,2); return T_DOLLAR_MAPLE;
 	YY_BREAK
 case 154:
 YY_RULE_SETUP
-#line 470 "input_lexer.ll"
+#line 471 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_dollar,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 155:
 YY_RULE_SETUP
-#line 471 "input_lexer.ll"
+#line 472 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_dollar,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 156:
 YY_RULE_SETUP
-#line 472 "input_lexer.ll"
+#line 473 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_sto,2); return T_AFFECT;
 	YY_BREAK
 case 157:
 YY_RULE_SETUP
-#line 473 "input_lexer.ll"
+#line 474 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_sto,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 158:
 YY_RULE_SETUP
-#line 474 "input_lexer.ll"
+#line 475 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_sto,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 159:
 YY_RULE_SETUP
-#line 475 "input_lexer.ll"
+#line 476 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_sto,2); return TI_STO;
 	YY_BREAK
 case 160:
 YY_RULE_SETUP
-#line 476 "input_lexer.ll"
+#line 477 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_sto,2); return TI_STO;
 	YY_BREAK
 case 161:
 YY_RULE_SETUP
-#line 477 "input_lexer.ll"
+#line 478 "input_lexer.ll"
 index_status(yyextra)=0; if (xcas_mode(yyextra)==3){ (*yylval)=gen(at_sto,2); return TI_STO; } else return T_MAPSTO;
 	YY_BREAK
 case 162:
 YY_RULE_SETUP
-#line 478 "input_lexer.ll"
+#line 479 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_sto,2); if (python_compat(yyextra)<0) return T_MAPSTO; return TI_STO;
 	YY_BREAK
 case 163:
 YY_RULE_SETUP
-#line 479 "input_lexer.ll"
+#line 480 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_sto,2); return TI_STO;
 	YY_BREAK
 case 164:
 YY_RULE_SETUP
-#line 480 "input_lexer.ll"
+#line 481 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_array_sto,2); return T_AFFECT;
 	YY_BREAK
 case 165:
 YY_RULE_SETUP
-#line 481 "input_lexer.ll"
+#line 482 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_array_sto,2); return T_AFFECT;
 	YY_BREAK
 case 166:
 YY_RULE_SETUP
-#line 482 "input_lexer.ll"
+#line 483 "input_lexer.ll"
 index_status(yyextra)=1; yytext[0]='0'; (*yylval) = symb_double_deux_points(makevecteur(_IDNT_id_at,chartab2gen(yytext,yyextra))); return T_SYMBOL;
 	YY_BREAK
 case 167:
 YY_RULE_SETUP
-#line 483 "input_lexer.ll"
+#line 484 "input_lexer.ll"
 if (xcas_mode(yyextra)!=3) {index_status(yyextra)=0; (*yylval)=gen(at_compose,2); return T_COMPOSE; } BEGIN(comment_hash);
 	YY_BREAK
 case 168:
 YY_RULE_SETUP
-#line 484 "input_lexer.ll"
+#line 485 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_composepow,2); return T_POW;
 	YY_BREAK
 case 169:
 YY_RULE_SETUP
-#line 485 "input_lexer.ll"
+#line 486 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_composepow,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 170:
 YY_RULE_SETUP
-#line 486 "input_lexer.ll"
+#line 487 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_composepow,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 171:
 YY_RULE_SETUP
-#line 487 "input_lexer.ll"
+#line 488 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_compose,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 172:
 YY_RULE_SETUP
-#line 488 "input_lexer.ll"
+#line 489 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_compose,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 173:
 YY_RULE_SETUP
-#line 489 "input_lexer.ll"
+#line 490 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_AND_OP;
 	YY_BREAK
 case 174:
 YY_RULE_SETUP
-#line 490 "input_lexer.ll"
+#line 491 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_AND_OP;
 	YY_BREAK
 case 175:
 YY_RULE_SETUP
-#line 491 "input_lexer.ll"
+#line 492 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_AND_OP;
 	YY_BREAK
 case 176:
 YY_RULE_SETUP
-#line 492 "input_lexer.ll"
+#line 493 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 177:
 YY_RULE_SETUP
-#line 493 "input_lexer.ll"
+#line 494 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 178:
 YY_RULE_SETUP
-#line 494 "input_lexer.ll"
+#line 495 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 179:
 YY_RULE_SETUP
-#line 495 "input_lexer.ll"
+#line 496 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_tilocal,2); return T_PIPE;
 	YY_BREAK
 case 180:
 YY_RULE_SETUP
-#line 496 "input_lexer.ll"
+#line 497 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_AND_OP;
 	YY_BREAK
 case 181:
 YY_RULE_SETUP
-#line 497 "input_lexer.ll"
+#line 498 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 182:
 YY_RULE_SETUP
-#line 498 "input_lexer.ll"
+#line 499 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 183:
 YY_RULE_SETUP
-#line 499 "input_lexer.ll"
+#line 500 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 184:
 YY_RULE_SETUP
-#line 500 "input_lexer.ll"
+#line 501 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_AND_OP;
 	YY_BREAK
 case 185:
 YY_RULE_SETUP
-#line 501 "input_lexer.ll"
+#line 502 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_bitxor,2); return T_AND_OP;
 	YY_BREAK
 case 186:
 YY_RULE_SETUP
-#line 502 "input_lexer.ll"
+#line 503 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_AND_OP;
 	YY_BREAK
 case 187:
 YY_RULE_SETUP
-#line 503 "input_lexer.ll"
+#line 504 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 188:
 YY_RULE_SETUP
-#line 504 "input_lexer.ll"
+#line 505 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 189:
 YY_RULE_SETUP
-#line 505 "input_lexer.ll"
+#line 506 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_AND_OP;
 	YY_BREAK
 case 190:
 YY_RULE_SETUP
-#line 506 "input_lexer.ll"
+#line 507 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_interval,2); return T_INTERVAL;
 	YY_BREAK
 case 191:
 YY_RULE_SETUP
-#line 507 "input_lexer.ll"
+#line 508 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_interval,2); return T_UNARY_OP;
 	YY_BREAK
 case 192:
 YY_RULE_SETUP
-#line 508 "input_lexer.ll"
+#line 509 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_limit,1); return T_UNARY_OP;
 	YY_BREAK
 case 193:
 YY_RULE_SETUP
-#line 509 "input_lexer.ll"
+#line 510 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_sort,1); return T_UNARY_OP;
 	YY_BREAK
 case 194:
 YY_RULE_SETUP
-#line 510 "input_lexer.ll"
+#line 511 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_interval,2); return T_INTERVAL;
 	YY_BREAK
 case 195:
 YY_RULE_SETUP
-#line 511 "input_lexer.ll"
+#line 512 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_interval,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 196:
 YY_RULE_SETUP
-#line 512 "input_lexer.ll"
+#line 513 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_interval,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 197:
 YY_RULE_SETUP
-#line 513 "input_lexer.ll"
+#line 514 "input_lexer.ll"
 if (xcas_mode(yyextra) || index_status(yyextra)) { (*yylval)=gen(at_factorial); return T_FACTORIAL; } else { index_status(yyextra)=0; (*yylval)=gen(at_not,1); return T_NOT; }
 	YY_BREAK
 /* standard functions */
 case 198:
 YY_RULE_SETUP
-#line 516 "input_lexer.ll"
+#line 517 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval)=symbolic(at_Ans,0); return T_LITERAL;
 	YY_BREAK
 case 199:
 YY_RULE_SETUP
-#line 517 "input_lexer.ll"
+#line 518 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_plus,2); return T_PLUS;
 	YY_BREAK
 case 200:
 YY_RULE_SETUP
-#line 518 "input_lexer.ll"
+#line 519 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_increment,1); return T_FACTORIAL;
 	YY_BREAK
 case 201:
 YY_RULE_SETUP
-#line 519 "input_lexer.ll"
+#line 520 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_increment,1); return T_UNION;
 	YY_BREAK
 case 202:
 YY_RULE_SETUP
-#line 520 "input_lexer.ll"
+#line 521 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_increment,1); return T_UNION;
 	YY_BREAK
 case 203:
 YY_RULE_SETUP
-#line 521 "input_lexer.ll"
+#line 522 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_powsto,1); return T_UNION;
 	YY_BREAK
 case 204:
 YY_RULE_SETUP
-#line 522 "input_lexer.ll"
+#line 523 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_powsto,1); return T_UNION;
 	YY_BREAK
 case 205:
 YY_RULE_SETUP
-#line 523 "input_lexer.ll"
+#line 524 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_decrement,1); return T_FACTORIAL;
 	YY_BREAK
 case 206:
 YY_RULE_SETUP
-#line 524 "input_lexer.ll"
+#line 525 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_decrement,1); return T_UNION;
 	YY_BREAK
 case 207:
 YY_RULE_SETUP
-#line 525 "input_lexer.ll"
+#line 526 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_decrement,1); return T_UNION;
 	YY_BREAK
 case 208:
 YY_RULE_SETUP
-#line 526 "input_lexer.ll"
+#line 527 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_pointplus,2); return T_PLUS;
 	YY_BREAK
 case 209:
 YY_RULE_SETUP
-#line 527 "input_lexer.ll"
+#line 528 "input_lexer.ll"
 index_status(yyextra)=0; if (python_compat(yyextra)) { (*yylval)=gen(at_bitand,2); return T_AND_OP; } else { *yylval=gen(at_plus,2); return T_PLUS; }
 	YY_BREAK
 case 210:
 YY_RULE_SETUP
-#line 528 "input_lexer.ll"
+#line 529 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_bitnot,1); return T_NOT;
 	YY_BREAK
 case 211:
 YY_RULE_SETUP
-#line 529 "input_lexer.ll"
+#line 530 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_sqrt,2); return T_NOT;
 	YY_BREAK
 case 212:
 YY_RULE_SETUP
-#line 530 "input_lexer.ll"
+#line 531 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_polar_complex,2); return T_MOD;
 	YY_BREAK
 case 213:
 YY_RULE_SETUP
-#line 531 "input_lexer.ll"
+#line 532 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval)=2; return T_SQ;
 	YY_BREAK
 case 214:
 YY_RULE_SETUP
-#line 532 "input_lexer.ll"
+#line 533 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval)=3; return T_SQ;
 	YY_BREAK
 case 215:
 YY_RULE_SETUP
-#line 533 "input_lexer.ll"
+#line 534 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval)=4; return T_SQ;
 	YY_BREAK
 case 216:
 YY_RULE_SETUP
-#line 534 "input_lexer.ll"
+#line 535 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval)=5; return T_SQ;
 	YY_BREAK
 case 217:
 YY_RULE_SETUP
-#line 535 "input_lexer.ll"
+#line 536 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval)=6; return T_SQ;
 	YY_BREAK
 case 218:
 YY_RULE_SETUP
-#line 536 "input_lexer.ll"
+#line 537 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval)=7; return T_SQ;
 	YY_BREAK
 case 219:
 YY_RULE_SETUP
-#line 537 "input_lexer.ll"
+#line 538 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval)=8; return T_SQ;
 	YY_BREAK
 case 220:
 YY_RULE_SETUP
-#line 538 "input_lexer.ll"
+#line 539 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval)=9; return T_SQ;
 	YY_BREAK
 case 221:
 YY_RULE_SETUP
-#line 539 "input_lexer.ll"
+#line 540 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval)=-1; return T_SQ;
 	YY_BREAK
 case 222:
 YY_RULE_SETUP
-#line 540 "input_lexer.ll"
+#line 541 "input_lexer.ll"
 index_status(yyextra)=1; (*yylval)=-1; return T_SQ;
 	YY_BREAK
 /* "','"                   index_status(yyextra)=0; (*yylval)=gen(at_makevector,2); return T_QUOTED_BINARY; commented because of f('a','b') */
 case 223:
 YY_RULE_SETUP
-#line 542 "input_lexer.ll"
+#line 543 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_plus,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 224:
 YY_RULE_SETUP
-#line 543 "input_lexer.ll"
+#line 544 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_plus,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 225:
 YY_RULE_SETUP
-#line 544 "input_lexer.ll"
+#line 545 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_binary_minus,2); return T_MOINS; // return (calc_mode(yyextra)==38)?T_MOINS38:T_MOINS;
 	YY_BREAK
 case 226:
 YY_RULE_SETUP
-#line 545 "input_lexer.ll"
+#line 546 "input_lexer.ll"
 index_status(yyextra)=0; if (calc_mode(yyextra)==38){ (*yylval)=gen(at_neg,2); return T_NEG38; } else { CERR << 1 << '\n'; (*yylval)=gen(at_binary_minus,2); return T_MOINS;}
 	YY_BREAK
 case 227:
 YY_RULE_SETUP
-#line 546 "input_lexer.ll"
+#line 547 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_pointminus,2); return T_PLUS;
 	YY_BREAK
 case 228:
 YY_RULE_SETUP
-#line 547 "input_lexer.ll"
+#line 548 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_binary_minus,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 229:
 YY_RULE_SETUP
-#line 548 "input_lexer.ll"
+#line 549 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_binary_minus,2); return T_QUOTED_BINARY;
 	YY_BREAK
 /* "×"                     index_status(yyextra)=0; (*yylval)=gen(at_prod,2); return T_FOIS;   */
 /* "·"                     index_status(yyextra)=0; (*yylval)=gen(at_prod,2); return T_FOIS;   */
 case 230:
 YY_RULE_SETUP
-#line 551 "input_lexer.ll"
+#line 552 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_prod,2); return T_FOIS;
 	YY_BREAK
 case 231:
 YY_RULE_SETUP
-#line 552 "input_lexer.ll"
+#line 553 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_cross,2); return T_FOIS;
 	YY_BREAK
 case 232:
 YY_RULE_SETUP
-#line 553 "input_lexer.ll"
+#line 554 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_multcrement,1); return T_UNION;
 	YY_BREAK
 case 233:
 YY_RULE_SETUP
-#line 554 "input_lexer.ll"
+#line 555 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_multcrement,1); return T_UNION;
 	YY_BREAK
 case 234:
 YY_RULE_SETUP
-#line 555 "input_lexer.ll"
+#line 556 "input_lexer.ll"
 index_status(yyextra)=0; if (abs_calc_mode(yyextra)==38){return T_DOUBLE_DEUX_POINTS; } else {(*yylval)=gen(at_struct_dot,2); return T_COMPOSE;}
 	YY_BREAK
 case 235:
 YY_RULE_SETUP
-#line 556 "input_lexer.ll"
+#line 557 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_ampersand_times,2); return T_FOIS;
 	YY_BREAK
 case 236:
 YY_RULE_SETUP
-#line 557 "input_lexer.ll"
+#line 558 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_quote_pow,2); return T_POW;
 	YY_BREAK
 case 237:
 YY_RULE_SETUP
-#line 558 "input_lexer.ll"
+#line 559 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_pointprod,2); return T_FOIS;
 	YY_BREAK
 case 238:
 YY_RULE_SETUP
-#line 559 "input_lexer.ll"
+#line 560 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_prod,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 239:
 YY_RULE_SETUP
-#line 560 "input_lexer.ll"
+#line 561 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_prod,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 240:
 YY_RULE_SETUP
-#line 561 "input_lexer.ll"
+#line 562 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_division,2); return T_DIV;
 	YY_BREAK
 /* "÷" index_status(yyextra)=0; (*yylval)=gen(at_division,2); return T_DIV; */
 case 241:
 YY_RULE_SETUP
-#line 563 "input_lexer.ll"
+#line 564 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_iquo,2); return T_DIV;
 	YY_BREAK
 case 242:
 YY_RULE_SETUP
-#line 564 "input_lexer.ll"
+#line 565 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_irem,2); return T_DIV;
 	YY_BREAK
 case 243:
 YY_RULE_SETUP
-#line 565 "input_lexer.ll"
+#line 566 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_iquosto,2); return T_UNION;
 	YY_BREAK
 case 244:
 YY_RULE_SETUP
-#line 566 "input_lexer.ll"
+#line 567 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_iremsto,2); return T_UNION;
 	YY_BREAK
 case 245:
 YY_RULE_SETUP
-#line 567 "input_lexer.ll"
+#line 568 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_andsto,2); return T_UNION;
 	YY_BREAK
 case 246:
 YY_RULE_SETUP
-#line 568 "input_lexer.ll"
+#line 569 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_orsto,2); return T_UNION;
 	YY_BREAK
 case 247:
 YY_RULE_SETUP
-#line 569 "input_lexer.ll"
+#line 570 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_xorsto,2); return T_UNION;
 	YY_BREAK
 case 248:
 YY_RULE_SETUP
-#line 570 "input_lexer.ll"
+#line 571 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_shiftsto,2); return T_UNION;
 	YY_BREAK
 case 249:
 YY_RULE_SETUP
-#line 571 "input_lexer.ll"
+#line 572 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_rotatesto,2); return T_UNION;
 	YY_BREAK
 case 250:
 YY_RULE_SETUP
-#line 572 "input_lexer.ll"
+#line 573 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_divcrement,1); return T_DIV;
 	YY_BREAK
 case 251:
 YY_RULE_SETUP
-#line 573 "input_lexer.ll"
+#line 574 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_divcrement,1); return T_UNION;
 	YY_BREAK
 case 252:
 YY_RULE_SETUP
-#line 574 "input_lexer.ll"
+#line 575 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_pointdivision,2); return T_DIV;
 	YY_BREAK
 case 253:
 YY_RULE_SETUP
-#line 575 "input_lexer.ll"
+#line 576 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_division,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 254:
 YY_RULE_SETUP
-#line 576 "input_lexer.ll"
+#line 577 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_division,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 255:
 YY_RULE_SETUP
-#line 577 "input_lexer.ll"
+#line 578 "input_lexer.ll"
 index_status(yyextra)=0; if (abs_calc_mode(yyextra)==38){ (*yylval)=gen(at_PERCENT); return T_UNARY_OP_38; } if (xcas_mode(yyextra)==3 || calc_mode(yyextra)==1) { (*yylval)=gen(at_pourcent); return T_FACTORIAL; } if (xcas_mode(yyextra)==1) { (*yylval)=symbolic(at_ans,vecteur(0)); return T_NUMBER; }  if (xcas_mode(yyextra) || python_compat(yyextra)) (*yylval)=gen(at_irem,2); else (*yylval)=0; return T_MOD;
 	YY_BREAK
 case 256:
 YY_RULE_SETUP
-#line 578 "input_lexer.ll"
+#line 579 "input_lexer.ll"
 index_status(yyextra)=0; if (xcas_mode(yyextra)==0){ (*yylval)=gen(at_iquorem,2); return T_MOD;} (*yylval)=symbolic(at_ans,-2); return T_NUMBER; 
 	YY_BREAK
 /* \xe2\x88\xa1             index_status(yyextra)=0; (*yylval)=gen(at_polar_complex,2); return T_MOD; */
 case 257:
 YY_RULE_SETUP
-#line 580 "input_lexer.ll"
+#line 581 "input_lexer.ll"
 if (xcas_mode(yyextra)==0){ (*yylval)=gen(at_quorem,2); return T_MOD;} index_status(yyextra)=0; (*yylval)=symbolic(at_ans,-3); return T_NUMBER; 
 	YY_BREAK
 case 258:
 YY_RULE_SETUP
-#line 581 "input_lexer.ll"
+#line 582 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_irem,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 259:
 YY_RULE_SETUP
-#line 582 "input_lexer.ll"
+#line 583 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_equal2,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 260:
 YY_RULE_SETUP
-#line 583 "input_lexer.ll"
+#line 584 "input_lexer.ll"
 index_status(yyextra)=0; if (xcas_mode(yyextra)==3) { (*yylval)=gen(at_irem,2); return T_UNARY_OP; } else { if (xcas_mode(yyextra)) (*yylval)=gen(at_irem,2); else (*yylval)=0; return T_MOD; }
 	YY_BREAK
 case 261:
 YY_RULE_SETUP
-#line 584 "input_lexer.ll"
+#line 585 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_irem,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 262:
 YY_RULE_SETUP
-#line 585 "input_lexer.ll"
+#line 586 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_irem,2); return T_QUOTED_BINARY;
 	YY_BREAK
 /* "MOD"                   index_status(yyextra)=0; return T_MOD; */
 case 263:
 YY_RULE_SETUP
-#line 587 "input_lexer.ll"
+#line 588 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(python_compat(yyextra)==2?at_bitxor:at_pow,2); return T_POW;
 	YY_BREAK
 case 264:
 YY_RULE_SETUP
-#line 588 "input_lexer.ll"
+#line 589 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_trn,1); return T_FACTORIAL;
 	YY_BREAK
 case 265:
 YY_RULE_SETUP
-#line 589 "input_lexer.ll"
+#line 590 "input_lexer.ll"
 (*yylval) = gen(at_pow,2); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 266:
 YY_RULE_SETUP
-#line 590 "input_lexer.ll"
+#line 591 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_pow,2); return T_POW;
 	YY_BREAK
 case 267:
 YY_RULE_SETUP
-#line 591 "input_lexer.ll"
+#line 592 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_pointpow,2); return T_POW;
 	YY_BREAK
 case 268:
 YY_RULE_SETUP
-#line 592 "input_lexer.ll"
+#line 593 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_pow,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 269:
 YY_RULE_SETUP
-#line 593 "input_lexer.ll"
+#line 594 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_pow,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 270:
 YY_RULE_SETUP
-#line 594 "input_lexer.ll"
+#line 595 "input_lexer.ll"
 (*yylval) = gen(at_Digits,0); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 271:
 YY_RULE_SETUP
-#line 595 "input_lexer.ll"
+#line 596 "input_lexer.ll"
 (*yylval) = gen(at_HDigits,0); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 272:
 YY_RULE_SETUP
-#line 596 "input_lexer.ll"
+#line 597 "input_lexer.ll"
 (*yylval) = gen(at_HAngle,0); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 273:
 YY_RULE_SETUP
-#line 597 "input_lexer.ll"
+#line 598 "input_lexer.ll"
 (*yylval) = gen(at_HFormat,0); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 274:
 YY_RULE_SETUP
-#line 598 "input_lexer.ll"
+#line 599 "input_lexer.ll"
 (*yylval) = gen(at_HComplex,0); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 275:
 YY_RULE_SETUP
-#line 599 "input_lexer.ll"
+#line 600 "input_lexer.ll"
 (*yylval) = gen(at_HLanguage,0); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 276:
 YY_RULE_SETUP
-#line 600 "input_lexer.ll"
+#line 601 "input_lexer.ll"
 (*yylval) = gen(at_Digits,0); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 277:
 YY_RULE_SETUP
-#line 601 "input_lexer.ll"
+#line 602 "input_lexer.ll"
 (*yylval) = gen(at_threads,0) ; index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 278:
 YY_RULE_SETUP
-#line 602 "input_lexer.ll"
+#line 603 "input_lexer.ll"
 (*yylval) = gen(at_scientific_format,0); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 279:
 YY_RULE_SETUP
-#line 603 "input_lexer.ll"
+#line 604 "input_lexer.ll"
 (*yylval) = gen(at_angle_radian,0); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 280:
 YY_RULE_SETUP
-#line 604 "input_lexer.ll"
+#line 605 "input_lexer.ll"
 (*yylval) = gen(at_approx_mode,0); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 281:
 YY_RULE_SETUP
-#line 605 "input_lexer.ll"
+#line 606 "input_lexer.ll"
 (*yylval) = gen(at_all_trig_solutions,1); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 282:
 YY_RULE_SETUP
-#line 606 "input_lexer.ll"
+#line 607 "input_lexer.ll"
 (*yylval) = gen(at_increasing_power,1); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 283:
 YY_RULE_SETUP
-#line 607 "input_lexer.ll"
+#line 608 "input_lexer.ll"
 (*yylval) = gen(at_ntl_on,1); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 284:
 YY_RULE_SETUP
-#line 608 "input_lexer.ll"
+#line 609 "input_lexer.ll"
 (*yylval) = gen(at_complex_mode,1); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 285:
 YY_RULE_SETUP
-#line 609 "input_lexer.ll"
+#line 610 "input_lexer.ll"
 (*yylval) = gen(at_step_infolevel,1); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 286:
 YY_RULE_SETUP
-#line 610 "input_lexer.ll"
+#line 611 "input_lexer.ll"
 (*yylval) = gen(at_keep_algext,1); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 287:
 YY_RULE_SETUP
-#line 611 "input_lexer.ll"
+#line 612 "input_lexer.ll"
 (*yylval) = gen(at_complex_variables,0); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 288:
 YY_RULE_SETUP
-#line 612 "input_lexer.ll"
+#line 613 "input_lexer.ll"
 (*yylval) = gen(at_epsilon,0); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 289:
 YY_RULE_SETUP
-#line 613 "input_lexer.ll"
+#line 614 "input_lexer.ll"
 (*yylval) = gen(at_proba_epsilon,0); index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 290:
 YY_RULE_SETUP
-#line 615 "input_lexer.ll"
+#line 616 "input_lexer.ll"
 (*yylval) = gen(at_acos,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 291:
 YY_RULE_SETUP
-#line 616 "input_lexer.ll"
+#line 617 "input_lexer.ll"
 (*yylval) = gen(at_randNorm,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 292:
 YY_RULE_SETUP
-#line 617 "input_lexer.ll"
+#line 618 "input_lexer.ll"
 (*yylval) = gen(at_acosh,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 293:
 YY_RULE_SETUP
-#line 618 "input_lexer.ll"
+#line 619 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_args,0); return T_QUOTED_BINARY;
 	YY_BREAK
 case 294:
 YY_RULE_SETUP
-#line 619 "input_lexer.ll"
+#line 620 "input_lexer.ll"
 (*yylval) = gen(at_asin,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 295:
 YY_RULE_SETUP
-#line 620 "input_lexer.ll"
+#line 621 "input_lexer.ll"
 (*yylval) = gen(at_asinh,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 296:
 YY_RULE_SETUP
-#line 621 "input_lexer.ll"
+#line 622 "input_lexer.ll"
 (*yylval) = gen(at_at,2); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 297:
 YY_RULE_SETUP
-#line 622 "input_lexer.ll"
+#line 623 "input_lexer.ll"
 (*yylval) = gen(at_atan,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 298:
 YY_RULE_SETUP
-#line 623 "input_lexer.ll"
+#line 624 "input_lexer.ll"
 (*yylval) = gen(at_atanh,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 299:
 YY_RULE_SETUP
-#line 624 "input_lexer.ll"
+#line 625 "input_lexer.ll"
 (*yylval) = gen(at_backquote,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 300:
 YY_RULE_SETUP
-#line 625 "input_lexer.ll"
+#line 626 "input_lexer.ll"
 (*yylval) = gen(at_bloc,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 301:
 YY_RULE_SETUP
-#line 626 "input_lexer.ll"
+#line 627 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_break,0); return T_BREAK;
 	YY_BREAK
 case 302:
 YY_RULE_SETUP
-#line 627 "input_lexer.ll"
+#line 628 "input_lexer.ll"
 index_status(yyextra)=0; if (abs_calc_mode(yyextra)==38) return T_CASE38; else return T_CASE;
 	YY_BREAK
 case 303:
 YY_RULE_SETUP
-#line 628 "input_lexer.ll"
+#line 629 "input_lexer.ll"
 (*yylval) = gen(at_cont,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 304:
 YY_RULE_SETUP
-#line 629 "input_lexer.ll"
+#line 630 "input_lexer.ll"
 (*yylval) = gen(at_debug,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 305:
 YY_RULE_SETUP
-#line 630 "input_lexer.ll"
+#line 631 "input_lexer.ll"
 (*yylval) = gen(at_derive,2); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 306:
 YY_RULE_SETUP
-#line 631 "input_lexer.ll"
+#line 632 "input_lexer.ll"
 if (xcas_mode(yyextra)==1 || xcas_mode(yyextra)==2) { (*yylval) = gen(at_function_diff,1); index_status(yyextra)=1; return T_UNARY_OP;} else { index_status(yyextra)=1; return find_or_make_symbol(yytext,(*yylval),yyscanner,true,yyextra); }
 	YY_BREAK
 case 307:
 YY_RULE_SETUP
-#line 632 "input_lexer.ll"
+#line 633 "input_lexer.ll"
 if (xcas_mode(yyextra)==1 || xcas_mode(yyextra)==2 || parse_e(yyextra)) { (*yylval)=e__IDNT_e; }else (*yylval)=symbolic(at_exp,1); index_status(yyextra)=1; return T_NUMBER;
 	YY_BREAK
 case 308:
 YY_RULE_SETUP
-#line 633 "input_lexer.ll"
+#line 634 "input_lexer.ll"
 (*yylval)=symbolic(at_exp,1); index_status(yyextra)=1; return T_NUMBER;
 	YY_BREAK
 case 309:
 YY_RULE_SETUP
-#line 634 "input_lexer.ll"
+#line 635 "input_lexer.ll"
 (*yylval)=symbolic(at_exp,1); index_status(yyextra)=1; return T_NUMBER;
 	YY_BREAK
 case 310:
 YY_RULE_SETUP
-#line 635 "input_lexer.ll"
+#line 636 "input_lexer.ll"
 (*yylval) = gen(at_equal,2); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 311:
 YY_RULE_SETUP
-#line 636 "input_lexer.ll"
+#line 637 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_throw,1); return T_RETURN;
 	YY_BREAK
 case 312:
 YY_RULE_SETUP
-#line 637 "input_lexer.ll"
+#line 638 "input_lexer.ll"
 (*yylval) = gen(at_erase,0); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 313:
 YY_RULE_SETUP
-#line 638 "input_lexer.ll"
+#line 639 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_throw,1); return T_RETURN;
 	YY_BREAK
 case 314:
 YY_RULE_SETUP
-#line 639 "input_lexer.ll"
+#line 640 "input_lexer.ll"
 if (xcas_mode(yyextra)==3) (*yylval)=gen(at_partfrac); else (*yylval) = gen(at_expand,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 315:
 YY_RULE_SETUP
-#line 640 "input_lexer.ll"
+#line 641 "input_lexer.ll"
 (*yylval) = gen(at_insmod,1); index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 316:
 YY_RULE_SETUP
-#line 641 "input_lexer.ll"
+#line 642 "input_lexer.ll"
 (*yylval) = gen(at_expand,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 317:
 YY_RULE_SETUP
-#line 642 "input_lexer.ll"
+#line 643 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_for,4); return T_FOR;
 	YY_BREAK
 case 318:
 YY_RULE_SETUP
-#line 643 "input_lexer.ll"
+#line 644 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_for,4); return T_FOR;
 	YY_BREAK
 case 319:
 YY_RULE_SETUP
-#line 644 "input_lexer.ll"
+#line 645 "input_lexer.ll"
 (*yylval) = gen(at_halt,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 320:
 YY_RULE_SETUP
-#line 645 "input_lexer.ll"
+#line 646 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=4; return T_BLOC_END;
 	YY_BREAK
 case 321:
 YY_RULE_SETUP
-#line 646 "input_lexer.ll"
+#line 647 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=9; return T_BLOC_END;
 	YY_BREAK
 case 322:
 YY_RULE_SETUP
-#line 647 "input_lexer.ll"
+#line 648 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=3; return T_BLOC_END;
 	YY_BREAK
 case 323:
 YY_RULE_SETUP
-#line 648 "input_lexer.ll"
+#line 649 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_ifte,3); return T_IF;
 	YY_BREAK
 case 324:
 YY_RULE_SETUP
-#line 649 "input_lexer.ll"
+#line 650 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_ifte,3); if (rpn_mode(yyextra)) return T_RPN_IF; return T_IF; 
 	YY_BREAK
 case 325:
 YY_RULE_SETUP
-#line 650 "input_lexer.ll"
+#line 651 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_ifte,3); return T_IFTE;
 	YY_BREAK
 case 326:
 YY_RULE_SETUP
-#line 651 "input_lexer.ll"
+#line 652 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_when,3); return T_IFTE;
 	YY_BREAK
 case 327:
 YY_RULE_SETUP
-#line 652 "input_lexer.ll"
+#line 653 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_ifte,3); return T_QUOTED_BINARY;
 	YY_BREAK
 case 328:
 YY_RULE_SETUP
-#line 653 "input_lexer.ll"
+#line 654 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_ifte,3); return T_QUOTED_BINARY;
 	YY_BREAK
 case 329:
 YY_RULE_SETUP
-#line 654 "input_lexer.ll"
+#line 655 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_ifte,3); return T_QUOTED_BINARY;
 	YY_BREAK
 case 330:
 YY_RULE_SETUP
-#line 655 "input_lexer.ll"
+#line 656 "input_lexer.ll"
 if (xcas_mode(yyextra)==1) (*yylval) = gen(at_maple_ifactors); else (*yylval) = gen(at_ifactors,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 331:
 YY_RULE_SETUP
-#line 656 "input_lexer.ll"
+#line 657 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_intersect,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 332:
 YY_RULE_SETUP
-#line 657 "input_lexer.ll"
+#line 658 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_intersect,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 333:
 YY_RULE_SETUP
-#line 658 "input_lexer.ll"
+#line 659 "input_lexer.ll"
 (*yylval) = gen(at_kill,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 334:
 YY_RULE_SETUP
-#line 659 "input_lexer.ll"
+#line 660 "input_lexer.ll"
 (*yylval) = gen(at_log,1); index_status(yyextra)=1; return T_UNARY_OP; /* index_status(yyextra)=1 to accept log[] for a basis log */
 	YY_BREAK
 case 335:
 YY_RULE_SETUP
-#line 660 "input_lexer.ll"
+#line 661 "input_lexer.ll"
 (*yylval) = gen(at_asin,1); index_status(yyextra)=1; return T_UNARY_OP;
 	YY_BREAK
 case 336:
 YY_RULE_SETUP
-#line 661 "input_lexer.ll"
+#line 662 "input_lexer.ll"
 (*yylval) = gen(at_acos,1); index_status(yyextra)=1; return T_UNARY_OP;
 	YY_BREAK
 case 337:
 YY_RULE_SETUP
-#line 662 "input_lexer.ll"
+#line 663 "input_lexer.ll"
 (*yylval) = gen(at_atan,1); index_status(yyextra)=1; return T_UNARY_OP;
 	YY_BREAK
 case 338:
 YY_RULE_SETUP
-#line 663 "input_lexer.ll"
+#line 664 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_minus,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 339:
 YY_RULE_SETUP
-#line 664 "input_lexer.ll"
+#line 665 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_minus,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 340:
 YY_RULE_SETUP
-#line 665 "input_lexer.ll"
+#line 666 "input_lexer.ll"
 (*yylval) = gen(at_not,1); if (xcas_mode(yyextra) || python_compat(yyextra)) return T_NOT;  index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 341:
 YY_RULE_SETUP
-#line 666 "input_lexer.ll"
+#line 667 "input_lexer.ll"
 (*yylval) = gen(at_not,1); return T_NOT;  
 	YY_BREAK
 case 342:
 YY_RULE_SETUP
-#line 667 "input_lexer.ll"
+#line 668 "input_lexer.ll"
 (*yylval) = gen(at_not,1); return T_IN;  
 	YY_BREAK
 case 343:
 YY_RULE_SETUP
-#line 668 "input_lexer.ll"
+#line 669 "input_lexer.ll"
 (*yylval) = gen(at_neg,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 344:
 YY_RULE_SETUP
-#line 669 "input_lexer.ll"
+#line 670 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_not,1); return T_QUOTED_BINARY;
 	YY_BREAK
 case 345:
 YY_RULE_SETUP
-#line 670 "input_lexer.ll"
+#line 671 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_not,1); return T_QUOTED_BINARY;
 	YY_BREAK
 case 346:
 YY_RULE_SETUP
-#line 671 "input_lexer.ll"
+#line 672 "input_lexer.ll"
 (*yylval) = gen(at_greduce,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 347:
 YY_RULE_SETUP
-#line 672 "input_lexer.ll"
+#line 673 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_of,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 348:
 YY_RULE_SETUP
-#line 673 "input_lexer.ll"
+#line 674 "input_lexer.ll"
 if (xcas_mode(yyextra)==1) (*yylval) = gen(at_maple_op,1); else (*yylval) = gen(at_feuille,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 349:
 YY_RULE_SETUP
-#line 674 "input_lexer.ll"
+#line 675 "input_lexer.ll"
 (*yylval) = gen(at_feuille,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 350:
 YY_RULE_SETUP
-#line 675 "input_lexer.ll"
+#line 676 "input_lexer.ll"
 (*yylval)=2; index_status(yyextra)=0; return T_LOCAL;
 	YY_BREAK
 case 351:
 YY_RULE_SETUP
-#line 676 "input_lexer.ll"
+#line 677 "input_lexer.ll"
 (*yylval) = gen(at_pcoeff,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 352:
 YY_RULE_SETUP
-#line 677 "input_lexer.ll"
+#line 678 "input_lexer.ll"
 (*yylval) = gen(at_funcplot,2); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 353:
 YY_RULE_SETUP
-#line 678 "input_lexer.ll"
+#line 679 "input_lexer.ll"
 (*yylval) = gen(at_user_operator,6); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 354:
 YY_RULE_SETUP
-#line 679 "input_lexer.ll"
+#line 680 "input_lexer.ll"
 if (rpn_mode(yyextra)) {(*yylval)=gen(at_purge,0); index_status(yyextra)=0; return T_RPN_OP;} else {(*yylval) = gen(at_purge,1); index_status(yyextra)=0; return T_UNARY_OP;};
 	YY_BREAK
 case 355:
 YY_RULE_SETUP
-#line 680 "input_lexer.ll"
+#line 681 "input_lexer.ll"
 if (rpn_mode(yyextra)) {(*yylval)=gen(at_purge,0); index_status(yyextra)=0; return T_RPN_OP;} else {(*yylval) = gen(at_purge,1); index_status(yyextra)=0; return T_UNARY_OP;};
 	YY_BREAK
 case 356:
 YY_RULE_SETUP
-#line 681 "input_lexer.ll"
+#line 682 "input_lexer.ll"
 if (rpn_mode(yyextra)) {(*yylval)=gen(at_purge,0); index_status(yyextra)=0; return T_RPN_OP;} else {(*yylval) = gen(at_purge,1); index_status(yyextra)=0; return T_UNARY_OP;};
 	YY_BREAK
 case 357:
 YY_RULE_SETUP
-#line 682 "input_lexer.ll"
+#line 683 "input_lexer.ll"
 (*yylval) = gen(at_srand,1); index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 358:
 YY_RULE_SETUP
-#line 683 "input_lexer.ll"
+#line 684 "input_lexer.ll"
 (*yylval) = gen(at_for,1) ; index_status(yyextra)=0; return T_REPEAT;
 	YY_BREAK
 case 359:
 YY_RULE_SETUP
-#line 684 "input_lexer.ll"
+#line 685 "input_lexer.ll"
 (*yylval) = gen(at_for,1) ; index_status(yyextra)=0; return T_REPEAT;
 	YY_BREAK
 case 360:
 YY_RULE_SETUP
-#line 685 "input_lexer.ll"
+#line 686 "input_lexer.ll"
 (*yylval) = gen(at_for,1) ;index_status(yyextra)=0; return T_REPEAT;
 	YY_BREAK
 case 361:
 YY_RULE_SETUP
-#line 686 "input_lexer.ll"
+#line 687 "input_lexer.ll"
 (*yylval) = gen(at_return,1) ; index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 362:
 YY_RULE_SETUP
-#line 687 "input_lexer.ll"
+#line 688 "input_lexer.ll"
 (*yylval) = gen(at_return,1) ; index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 363:
 YY_RULE_SETUP
-#line 688 "input_lexer.ll"
+#line 689 "input_lexer.ll"
 (*yylval) = gen(at_return,1) ; index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 364:
 YY_RULE_SETUP
-#line 689 "input_lexer.ll"
+#line 690 "input_lexer.ll"
 (*yylval) = gen(at_return,1) ; index_status(yyextra)=0; return T_QUOTED_BINARY;
 	YY_BREAK
 case 365:
 YY_RULE_SETUP
-#line 690 "input_lexer.ll"
+#line 691 "input_lexer.ll"
 (*yylval) = gen(at_maple_root,1); index_status(yyextra)=1; return T_UNARY_OP;
 	YY_BREAK
 case 366:
 YY_RULE_SETUP
-#line 691 "input_lexer.ll"
+#line 692 "input_lexer.ll"
 (*yylval) = gen(at_same,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 367:
 YY_RULE_SETUP
-#line 692 "input_lexer.ll"
+#line 693 "input_lexer.ll"
 (*yylval) = gen(at_sst,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 368:
 YY_RULE_SETUP
-#line 693 "input_lexer.ll"
+#line 694 "input_lexer.ll"
 (*yylval) = gen(at_sst_in,1); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 369:
 YY_RULE_SETUP
-#line 694 "input_lexer.ll"
+#line 695 "input_lexer.ll"
 if (xcas_mode(yyextra)==1) (*yylval) = gen(at_maple_subs,2); else (*yylval) = gen(at_subs,2); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 370:
 YY_RULE_SETUP
-#line 695 "input_lexer.ll"
+#line 696 "input_lexer.ll"
 if (xcas_mode(yyextra)==1) (*yylval) = gen(at_maple_subsop,2); else (*yylval) = gen(at_subsop,2); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 371:
 YY_RULE_SETUP
-#line 696 "input_lexer.ll"
+#line 697 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_union,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 372:
 YY_RULE_SETUP
-#line 697 "input_lexer.ll"
+#line 698 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_union,2); return T_QUOTED_BINARY;
 	YY_BREAK
 case 373:
 YY_RULE_SETUP
-#line 698 "input_lexer.ll"
+#line 699 "input_lexer.ll"
 (*yylval) = gen(at_virgule,2); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 374:
 YY_RULE_SETUP
-#line 699 "input_lexer.ll"
+#line 700 "input_lexer.ll"
 (*yylval) = gen(at_VARS,0); index_status(yyextra)=0; return T_UNARY_OP;
 	YY_BREAK
 case 375:
 YY_RULE_SETUP
-#line 700 "input_lexer.ll"
+#line 701 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_for,4); if (xcas_mode(yyextra)==3) return TI_WHILE; if (xcas_mode(yyextra)!=0) return T_MUPMAP_WHILE; return T_WHILE;
 	YY_BREAK
 case 376:
 YY_RULE_SETUP
-#line 701 "input_lexer.ll"
+#line 702 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_for,4); return T_MUPMAP_WHILE; /* return T_RPN_WHILE; */
 	YY_BREAK
 case 377:
 YY_RULE_SETUP
-#line 702 "input_lexer.ll"
+#line 703 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_for,4); return T_DO; /* must be here for DO ... END loop */
 	YY_BREAK
 case 378:
 YY_RULE_SETUP
-#line 703 "input_lexer.ll"
+#line 704 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_for,4); return T_DO; /* must be here for DO ... END loop */
 	YY_BREAK
 case 379:
 YY_RULE_SETUP
-#line 704 "input_lexer.ll"
+#line 705 "input_lexer.ll"
 (*yylval) = gen(at_Text,1); index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 380:
 YY_RULE_SETUP
-#line 705 "input_lexer.ll"
+#line 706 "input_lexer.ll"
 (*yylval) = gen(at_DropDown,1); index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 381:
 YY_RULE_SETUP
-#line 706 "input_lexer.ll"
+#line 707 "input_lexer.ll"
 (*yylval) = gen(at_Popup,1); index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 382:
 YY_RULE_SETUP
-#line 707 "input_lexer.ll"
+#line 708 "input_lexer.ll"
 (*yylval) = gen(at_Request,1); index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 383:
 YY_RULE_SETUP
-#line 708 "input_lexer.ll"
+#line 709 "input_lexer.ll"
 (*yylval) = gen(at_Title,1); index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 384:
 YY_RULE_SETUP
-#line 709 "input_lexer.ll"
+#line 710 "input_lexer.ll"
 (*yylval)=0; index_status(yyextra)=0; return TI_PRGM;
 	YY_BREAK
 case 385:
 YY_RULE_SETUP
-#line 710 "input_lexer.ll"
+#line 711 "input_lexer.ll"
 (*yylval)=0; index_status(yyextra)=0; return TI_PRGM;
 	YY_BREAK
 case 386:
 YY_RULE_SETUP
-#line 711 "input_lexer.ll"
+#line 712 "input_lexer.ll"
 (*yylval)=0; index_status(yyextra)=0; return TI_PRGM;
 	YY_BREAK
 case 387:
 YY_RULE_SETUP
-#line 712 "input_lexer.ll"
+#line 713 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_ifte,3); return T_IF;
 	YY_BREAK
 case 388:
 YY_RULE_SETUP
-#line 713 "input_lexer.ll"
+#line 714 "input_lexer.ll"
 (*yylval) = gen(at_return,1) ; index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 389:
 YY_RULE_SETUP
-#line 714 "input_lexer.ll"
+#line 715 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_breakpoint,0); return T_BREAK;
 	YY_BREAK
 case 390:
 YY_RULE_SETUP
-#line 715 "input_lexer.ll"
+#line 716 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_for,0); return TI_LOOP;
 	YY_BREAK
 case 391:
 YY_RULE_SETUP
-#line 716 "input_lexer.ll"
+#line 717 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_for,0); return TI_FOR;
 	YY_BREAK
 case 392:
 YY_RULE_SETUP
-#line 717 "input_lexer.ll"
+#line 718 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_for,0); return TI_WHILE;
 	YY_BREAK
 case 393:
 YY_RULE_SETUP
-#line 718 "input_lexer.ll"
+#line 719 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_for,0); return T_CONTINUE;
 	YY_BREAK
 case 394:
 YY_RULE_SETUP
-#line 719 "input_lexer.ll"
+#line 720 "input_lexer.ll"
 (*yylval) = gen(at_print,1) ; index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 395:
 YY_RULE_SETUP
-#line 720 "input_lexer.ll"
+#line 721 "input_lexer.ll"
 (*yylval) = gen(at_Pause,1) ; index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 396:
 YY_RULE_SETUP
-#line 721 "input_lexer.ll"
+#line 722 "input_lexer.ll"
 (*yylval) = gen(at_label,1) ; index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 397:
 YY_RULE_SETUP
-#line 722 "input_lexer.ll"
+#line 723 "input_lexer.ll"
 (*yylval) = gen(at_goto,1) ; index_status(yyextra)=0; return T_RETURN;
 	YY_BREAK
 case 398:
 YY_RULE_SETUP
-#line 723 "input_lexer.ll"
+#line 724 "input_lexer.ll"
 (*yylval) = gen(at_Dialog,1) ; index_status(yyextra)=0; return TI_DIALOG; 
 	YY_BREAK
 case 399:
 YY_RULE_SETUP
-#line 724 "input_lexer.ll"
+#line 725 "input_lexer.ll"
 (*yylval) = gen(at_Row,0) ; index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 400:
 YY_RULE_SETUP
-#line 725 "input_lexer.ll"
+#line 726 "input_lexer.ll"
 (*yylval) = gen(at_Col,0) ; index_status(yyextra)=0; return T_DIGITS;
 	YY_BREAK
 case 401:
 YY_RULE_SETUP
-#line 727 "input_lexer.ll"
+#line 728 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_DELTALIST); return T_UNARY_OP_38; 
 	YY_BREAK
 case 402:
 YY_RULE_SETUP
-#line 728 "input_lexer.ll"
+#line 729 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_PILIST); return T_UNARY_OP_38; 
 	YY_BREAK
 case 403:
 YY_RULE_SETUP
-#line 729 "input_lexer.ll"
+#line 730 "input_lexer.ll"
 index_status(yyextra)=0;(*yylval)=gen(at_HPSUM); return T_UNARY_OP_38; 
 	YY_BREAK
 case 404:
 YY_RULE_SETUP
-#line 730 "input_lexer.ll"
+#line 731 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_SIGMALIST); return T_UNARY_OP_38;
 	YY_BREAK
 case 405:
 YY_RULE_SETUP
-#line 731 "input_lexer.ll"
+#line 732 "input_lexer.ll"
 index_status(yyextra)=0;(*yylval)=gen(at_HPDIFF); return T_UNARY_OP_38; 
 	YY_BREAK
 case 406:
 YY_RULE_SETUP
-#line 732 "input_lexer.ll"
+#line 733 "input_lexer.ll"
 index_status(yyextra)=0;(*yylval)=gen(at_HPINT); return T_UNARY_OP_38; 
 	YY_BREAK
 case 407:
 YY_RULE_SETUP
-#line 733 "input_lexer.ll"
+#line 734 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_inferieur_egal,2); return T_TEST_EQUAL;
 	YY_BREAK
 case 408:
 YY_RULE_SETUP
-#line 734 "input_lexer.ll"
+#line 735 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_different,2); return T_TEST_EQUAL;
 	YY_BREAK
 case 409:
 YY_RULE_SETUP
-#line 735 "input_lexer.ll"
+#line 736 "input_lexer.ll"
 index_status(yyextra)=0; (*yylval)=gen(at_superieur_egal,2); return T_TEST_EQUAL;
 	YY_BREAK
 case 410:
 YY_RULE_SETUP
-#line 736 "input_lexer.ll"
+#line 737 "input_lexer.ll"
 index_status(yyextra)=0;(*yylval)=gen(at_product); return T_UNARY_OP; 
 	YY_BREAK
 /* old format for physical constants
@@ -4121,56 +4330,56 @@ index_status(yyextra)=0;(*yylval)=gen(at_product); return T_UNARY_OP;
                         */
 /* numbers, also accept DMS e.g 1°15′27″13 */
 case 411:
-#line 784 "input_lexer.ll"
-case 412:
 #line 785 "input_lexer.ll"
-case 413:
+case 412:
 #line 786 "input_lexer.ll"
-case 414:
+case 413:
 #line 787 "input_lexer.ll"
-case 415:
+case 414:
 #line 788 "input_lexer.ll"
-case 416:
+case 415:
 #line 789 "input_lexer.ll"
-case 417:
+case 416:
 #line 790 "input_lexer.ll"
-case 418:
+case 417:
 #line 791 "input_lexer.ll"
-case 419:
+case 418:
 #line 792 "input_lexer.ll"
-case 420:
+case 419:
 #line 793 "input_lexer.ll"
-case 421:
+case 420:
 #line 794 "input_lexer.ll"
-case 422:
+case 421:
 #line 795 "input_lexer.ll"
-case 423:
+case 422:
 #line 796 "input_lexer.ll"
-case 424:
+case 423:
 #line 797 "input_lexer.ll"
-case 425:
+case 424:
 #line 798 "input_lexer.ll"
-case 426:
+case 425:
 #line 799 "input_lexer.ll"
-case 427:
+case 426:
 #line 800 "input_lexer.ll"
-case 428:
+case 427:
 #line 801 "input_lexer.ll"
-case 429:
+case 428:
 #line 802 "input_lexer.ll"
-case 430:
+case 429:
 #line 803 "input_lexer.ll"
-case 431:
+case 430:
 #line 804 "input_lexer.ll"
-case 432:
+case 431:
 #line 805 "input_lexer.ll"
-case 433:
+case 432:
 #line 806 "input_lexer.ll"
-case 434:
+case 433:
 #line 807 "input_lexer.ll"
+case 434:
+#line 808 "input_lexer.ll"
 case 435:
 YY_RULE_SETUP
-#line 807 "input_lexer.ll"
+#line 808 "input_lexer.ll"
 { 
   index_status(yyextra)=1;
   int l=strlen(yytext);
@@ -4264,10 +4473,10 @@ YY_RULE_SETUP
 			*/
 /* symbols */
 case 436:
-#line 900 "input_lexer.ll"
+#line 901 "input_lexer.ll"
 case 437:
 YY_RULE_SETUP
-#line 900 "input_lexer.ll"
+#line 901 "input_lexer.ll"
 {
  index_status(yyextra)=1;
  int res=find_or_make_symbol(yytext,(*yylval),yyscanner,true,yyextra);
@@ -4278,7 +4487,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 438:
 YY_RULE_SETUP
-#line 907 "input_lexer.ll"
+#line 908 "input_lexer.ll"
 if (!xcas_mode(yyextra) || xcas_mode(yyextra)==3) { 
   // CERR << "hash" << '\n';
   (*yylval)=gen(at_hash,1); return TI_HASH; 
@@ -4287,21 +4496,21 @@ if (!xcas_mode(yyextra) || xcas_mode(yyextra)==3) {
 case 439:
 /* rule 439 can match eol */
 YY_RULE_SETUP
-#line 911 "input_lexer.ll"
+#line 912 "input_lexer.ll"
 BEGIN(INITIAL); index_status(yyextra)=0; increment_lexer_line_number_setcol(yyscanner,yyextra);  /* comment_s(yyextra)=string(yytext); (*yylval)=string2gen(comment_s(yyextra).substr(0,comment_s(yyextra).size()-1),false); return T_COMMENT; */
 	YY_BREAK
 /* everything else */
 case 440:
 YY_RULE_SETUP
-#line 913 "input_lexer.ll"
+#line 914 "input_lexer.ll"
 (*yylval)=string2gen(string(yytext),false); return T_STRING;
 	YY_BREAK
 case 441:
 YY_RULE_SETUP
-#line 915 "input_lexer.ll"
+#line 916 "input_lexer.ll"
 ECHO;
 	YY_BREAK
-#line 4305 "input_lexer.cc"
+#line 4514 "input_lexer.cc"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(comment):
 case YY_STATE_EOF(comment_hash):
@@ -4323,7 +4532,7 @@ case YY_STATE_EOF(backquote):
 			/* We're scanning a new file or input source.  It's
 			 * possible that this happened because the user
 			 * just pointed yyin at a new source and called
-			 * giac_yylex().  If so, then we have to assure
+			 * yylex().  If so, then we have to assure
 			 * consistency between YY_CURRENT_BUFFER and our
 			 * globals.  Here is the right place to do so, because
 			 * this is the first action (other than possibly a
@@ -4383,7 +4592,7 @@ case YY_STATE_EOF(backquote):
 				{
 				yyg->yy_did_buffer_switch_on_eof = 0;
 
-				if ( giac_yywrap(yyscanner ) )
+				if ( yywrap( yyscanner ) )
 					{
 					/* Note: because we've taken care in
 					 * yy_get_next_buffer() to have set up
@@ -4436,7 +4645,8 @@ case YY_STATE_EOF(backquote):
 			"fatal flex scanner internal error--no action found" );
 	} /* end of action switch */
 		} /* end of scanning one token */
-} /* end of giac_yylex */
+	} /* end of user's declarations */
+} /* end of yylex */
 
 /* yy_get_next_buffer - try to read in a new buffer
  *
@@ -4448,9 +4658,9 @@ case YY_STATE_EOF(backquote):
 static int yy_get_next_buffer (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-	register char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
-	register char *source = yyg->yytext_ptr;
-	register int number_to_move, i;
+	char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
+	char *source = yyg->yytext_ptr;
+	int number_to_move, i;
 	int ret_val;
 
 	if ( yyg->yy_c_buf_p > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[yyg->yy_n_chars + 1] )
@@ -4479,7 +4689,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	/* Try to read more data. */
 
 	/* First move last chars to start of buffer. */
-	number_to_move = (int) (yyg->yy_c_buf_p - yyg->yytext_ptr) - 1;
+	number_to_move = (int) (yyg->yy_c_buf_p - yyg->yytext_ptr - 1);
 
 	for ( i = 0; i < number_to_move; ++i )
 		*(dest++) = *(source++);
@@ -4499,7 +4709,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 			{ /* Not enough room in the buffer - grow it. */
 
 			/* just a shorter name for the current buffer */
-			YY_BUFFER_STATE b = YY_CURRENT_BUFFER;
+			YY_BUFFER_STATE b = YY_CURRENT_BUFFER_LVALUE;
 
 			int yy_c_buf_p_offset =
 				(int) (yyg->yy_c_buf_p - b->yy_ch_buf);
@@ -4515,11 +4725,12 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 				b->yy_ch_buf = (char *)
 					/* Include room in for 2 EOB chars. */
-					giac_yyrealloc((void *) b->yy_ch_buf,b->yy_buf_size + 2 ,yyscanner );
+					yyrealloc( (void *) b->yy_ch_buf,
+							 (yy_size_t) (b->yy_buf_size + 2) , yyscanner );
 				}
 			else
 				/* Can't grow it, we don't own it. */
-				b->yy_ch_buf = 0;
+				b->yy_ch_buf = NULL;
 
 			if ( ! b->yy_ch_buf )
 				YY_FATAL_ERROR(
@@ -4537,7 +4748,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 		/* Read in more data. */
 		YY_INPUT( (&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move]),
-			yyg->yy_n_chars, (size_t) num_to_read );
+			yyg->yy_n_chars, num_to_read );
 
 		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = yyg->yy_n_chars;
 		}
@@ -4547,7 +4758,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 		if ( number_to_move == YY_MORE_ADJ )
 			{
 			ret_val = EOB_ACT_END_OF_FILE;
-			giac_yyrestart(yyin  ,yyscanner);
+			yyrestart( yyin  , yyscanner);
 			}
 
 		else
@@ -4561,12 +4772,15 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	else
 		ret_val = EOB_ACT_CONTINUE_SCAN;
 
-	if ((yy_size_t) (yyg->yy_n_chars + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
+	if ((yyg->yy_n_chars + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
 		/* Extend the array by 50%, plus the number we really need. */
-		yy_size_t new_size = yyg->yy_n_chars + number_to_move + (yyg->yy_n_chars >> 1);
-		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) giac_yyrealloc((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,new_size ,yyscanner );
+		int new_size = yyg->yy_n_chars + number_to_move + (yyg->yy_n_chars >> 1);
+		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) yyrealloc(
+			(void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf, (yy_size_t) new_size , yyscanner );
 		if ( ! YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
 			YY_FATAL_ERROR( "out of dynamic memory in yy_get_next_buffer()" );
+		/* "- 2" to take care of EOB's */
+		YY_CURRENT_BUFFER_LVALUE->yy_buf_size = (int) (new_size - 2);
 	}
 
 	yyg->yy_n_chars += number_to_move;
@@ -4582,15 +4796,15 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
     static yy_state_type yy_get_previous_state (yyscan_t yyscanner)
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp;
+	yy_state_type yy_current_state;
+	char *yy_cp;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
 	yy_current_state = yyg->yy_start;
 
 	for ( yy_cp = yyg->yytext_ptr + YY_MORE_ADJ; yy_cp < yyg->yy_c_buf_p; ++yy_cp )
 		{
-		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
 		if ( yy_accept[yy_current_state] )
 			{
 			yyg->yy_last_accepting_state = yy_current_state;
@@ -4600,9 +4814,9 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
 			if ( yy_current_state >= 1389 )
-				yy_c = yy_meta[(unsigned int) yy_c];
+				yy_c = yy_meta[yy_c];
 			}
-		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+		yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 		}
 
 	return yy_current_state;
@@ -4615,11 +4829,11 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
  */
     static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state , yyscan_t yyscanner)
 {
-	register int yy_is_jam;
+	int yy_is_jam;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner; /* This var may be unused depending upon options. */
-	register char *yy_cp = yyg->yy_c_buf_p;
+	char *yy_cp = yyg->yy_c_buf_p;
 
-	register YY_CHAR yy_c = 1;
+	YY_CHAR yy_c = 1;
 	if ( yy_accept[yy_current_state] )
 		{
 		yyg->yy_last_accepting_state = yy_current_state;
@@ -4629,17 +4843,20 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
 		if ( yy_current_state >= 1389 )
-			yy_c = yy_meta[(unsigned int) yy_c];
+			yy_c = yy_meta[yy_c];
 		}
-	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+	yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 	yy_is_jam = (yy_current_state == 1388);
 
+	(void)yyg;
 	return yy_is_jam ? 0 : yy_current_state;
 }
 
-    static void yyunput (int c, register char * yy_bp , yyscan_t yyscanner)
+#ifndef YY_NO_UNPUT
+
+    static void yyunput (int c, char * yy_bp , yyscan_t yyscanner)
 {
-	register char *yy_cp;
+	char *yy_cp;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
     yy_cp = yyg->yy_c_buf_p;
@@ -4650,10 +4867,10 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
 		{ /* need to shift things up to make room */
 		/* +2 for EOB chars. */
-		register int number_to_move = yyg->yy_n_chars + 2;
-		register char *dest = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[
+		int number_to_move = yyg->yy_n_chars + 2;
+		char *dest = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[
 					YY_CURRENT_BUFFER_LVALUE->yy_buf_size + 2];
-		register char *source =
+		char *source =
 				&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
 
 		while ( source > YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
@@ -4662,7 +4879,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 		yy_cp += (int) (dest - source);
 		yy_bp += (int) (dest - source);
 		YY_CURRENT_BUFFER_LVALUE->yy_n_chars =
-			yyg->yy_n_chars = YY_CURRENT_BUFFER_LVALUE->yy_buf_size;
+			yyg->yy_n_chars = (int) YY_CURRENT_BUFFER_LVALUE->yy_buf_size;
 
 		if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
 			YY_FATAL_ERROR( "flex scanner push-back overflow" );
@@ -4674,6 +4891,8 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	yyg->yy_hold_char = *yy_cp;
 	yyg->yy_c_buf_p = yy_cp;
 }
+
+#endif
 
 #ifndef YY_NO_INPUT
 #ifdef __cplusplus
@@ -4700,7 +4919,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 		else
 			{ /* need more input */
-			int offset = yyg->yy_c_buf_p - yyg->yytext_ptr;
+			int offset = (int) (yyg->yy_c_buf_p - yyg->yytext_ptr);
 			++yyg->yy_c_buf_p;
 
 			switch ( yy_get_next_buffer( yyscanner ) )
@@ -4717,14 +4936,14 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 					 */
 
 					/* Reset buffer status. */
-					giac_yyrestart(yyin ,yyscanner);
+					yyrestart( yyin , yyscanner);
 
 					/*FALLTHROUGH*/
 
 				case EOB_ACT_END_OF_FILE:
 					{
-					if ( giac_yywrap(yyscanner ) )
-						return EOF;
+					if ( yywrap( yyscanner ) )
+						return 0;
 
 					if ( ! yyg->yy_did_buffer_switch_on_eof )
 						YY_NEW_FILE;
@@ -4755,34 +4974,34 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
  * @param yyscanner The scanner object.
  * @note This function does not reset the start condition to @c INITIAL .
  */
-    void giac_yyrestart  (FILE * input_file , yyscan_t yyscanner)
+    void yyrestart  (FILE * input_file , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
 	if ( ! YY_CURRENT_BUFFER ){
-        giac_yyensure_buffer_stack (yyscanner);
+        yyensure_buffer_stack (yyscanner);
 		YY_CURRENT_BUFFER_LVALUE =
-            giac_yy_create_buffer(yyin,YY_BUF_SIZE ,yyscanner);
+            yy_create_buffer( yyin, YY_BUF_SIZE , yyscanner);
 	}
 
-	giac_yy_init_buffer(YY_CURRENT_BUFFER,input_file ,yyscanner);
-	giac_yy_load_buffer_state(yyscanner );
+	yy_init_buffer( YY_CURRENT_BUFFER, input_file , yyscanner);
+	yy_load_buffer_state( yyscanner );
 }
 
 /** Switch to a different input buffer.
  * @param new_buffer The new input buffer.
  * @param yyscanner The scanner object.
  */
-    void giac_yy_switch_to_buffer  (YY_BUFFER_STATE  new_buffer , yyscan_t yyscanner)
+    void yy_switch_to_buffer  (YY_BUFFER_STATE  new_buffer , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
 	/* TODO. We should be able to replace this entire function body
 	 * with
-	 *		giac_yypop_buffer_state();
-	 *		giac_yypush_buffer_state(new_buffer);
+	 *		yypop_buffer_state();
+	 *		yypush_buffer_state(new_buffer);
      */
-	giac_yyensure_buffer_stack (yyscanner);
+	yyensure_buffer_stack (yyscanner);
 	if ( YY_CURRENT_BUFFER == new_buffer )
 		return;
 
@@ -4795,17 +5014,17 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 		}
 
 	YY_CURRENT_BUFFER_LVALUE = new_buffer;
-	giac_yy_load_buffer_state(yyscanner );
+	yy_load_buffer_state( yyscanner );
 
 	/* We don't actually know whether we did this switch during
-	 * EOF (giac_yywrap()) processing, but the only time this flag
-	 * is looked at is after giac_yywrap() is called, so it's safe
+	 * EOF (yywrap()) processing, but the only time this flag
+	 * is looked at is after yywrap() is called, so it's safe
 	 * to go ahead and always set it.
 	 */
 	yyg->yy_did_buffer_switch_on_eof = 1;
 }
 
-static void giac_yy_load_buffer_state  (yyscan_t yyscanner)
+static void yy_load_buffer_state  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	yyg->yy_n_chars = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
@@ -4820,35 +5039,35 @@ static void giac_yy_load_buffer_state  (yyscan_t yyscanner)
  * @param yyscanner The scanner object.
  * @return the allocated buffer state.
  */
-    YY_BUFFER_STATE giac_yy_create_buffer  (FILE * file, int  size , yyscan_t yyscanner)
+    YY_BUFFER_STATE yy_create_buffer  (FILE * file, int  size , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
     
-	b = (YY_BUFFER_STATE) giac_yyalloc(sizeof( struct yy_buffer_state ) ,yyscanner );
+	b = (YY_BUFFER_STATE) yyalloc( sizeof( struct yy_buffer_state ) , yyscanner );
 	if ( ! b )
-		YY_FATAL_ERROR( "out of dynamic memory in giac_yy_create_buffer()" );
+		YY_FATAL_ERROR( "out of dynamic memory in yy_create_buffer()" );
 
 	b->yy_buf_size = size;
 
 	/* yy_ch_buf has to be 2 characters longer than the size given because
 	 * we need to put in 2 end-of-buffer characters.
 	 */
-	b->yy_ch_buf = (char *) giac_yyalloc(b->yy_buf_size + 2 ,yyscanner );
+	b->yy_ch_buf = (char *) yyalloc( (yy_size_t) (b->yy_buf_size + 2) , yyscanner );
 	if ( ! b->yy_ch_buf )
-		YY_FATAL_ERROR( "out of dynamic memory in giac_yy_create_buffer()" );
+		YY_FATAL_ERROR( "out of dynamic memory in yy_create_buffer()" );
 
 	b->yy_is_our_buffer = 1;
 
-	giac_yy_init_buffer(b,file ,yyscanner);
+	yy_init_buffer( b, file , yyscanner);
 
 	return b;
 }
 
 /** Destroy the buffer.
- * @param b a buffer created with giac_yy_create_buffer()
+ * @param b a buffer created with yy_create_buffer()
  * @param yyscanner The scanner object.
  */
-    void giac_yy_delete_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
+    void yy_delete_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
@@ -4859,32 +5078,28 @@ static void giac_yy_load_buffer_state  (yyscan_t yyscanner)
 		YY_CURRENT_BUFFER_LVALUE = (YY_BUFFER_STATE) 0;
 
 	if ( b->yy_is_our_buffer )
-		giac_yyfree((void *) b->yy_ch_buf ,yyscanner );
+		yyfree( (void *) b->yy_ch_buf , yyscanner );
 
-	giac_yyfree((void *) b ,yyscanner );
+	yyfree( (void *) b , yyscanner );
 }
 
-#ifndef __cplusplus
-extern int isatty (int );
-#endif /* __cplusplus */
-    
 /* Initializes or reinitializes a buffer.
  * This function is sometimes called more than once on the same buffer,
- * such as during a giac_yyrestart() or at EOF.
+ * such as during a yyrestart() or at EOF.
  */
-    static void giac_yy_init_buffer  (YY_BUFFER_STATE  b, FILE * file , yyscan_t yyscanner)
+    static void yy_init_buffer  (YY_BUFFER_STATE  b, FILE * file , yyscan_t yyscanner)
 
 {
 	int oerrno = errno;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-	giac_yy_flush_buffer(b ,yyscanner);
+	yy_flush_buffer( b , yyscanner);
 
 	b->yy_input_file = file;
 	b->yy_fill_buffer = 1;
 
-    /* If b is the current buffer, then giac_yy_init_buffer was _probably_
-     * called from giac_yyrestart() or through yy_get_next_buffer.
+    /* If b is the current buffer, then yy_init_buffer was _probably_
+     * called from yyrestart() or through yy_get_next_buffer.
      * In that case, we don't want to reset the lineno or column.
      */
     if (b != YY_CURRENT_BUFFER){
@@ -4901,7 +5116,7 @@ extern int isatty (int );
  * @param b the buffer state to be flushed, usually @c YY_CURRENT_BUFFER.
  * @param yyscanner The scanner object.
  */
-    void giac_yy_flush_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
+    void yy_flush_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	if ( ! b )
@@ -4922,7 +5137,7 @@ extern int isatty (int );
 	b->yy_buffer_status = YY_BUFFER_NEW;
 
 	if ( b == YY_CURRENT_BUFFER )
-		giac_yy_load_buffer_state(yyscanner );
+		yy_load_buffer_state( yyscanner );
 }
 
 /** Pushes the new state onto the stack. The new state becomes
@@ -4931,15 +5146,15 @@ extern int isatty (int );
  *  @param new_buffer The new state.
  *  @param yyscanner The scanner object.
  */
-void giac_yypush_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yyscanner)
+void yypush_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	if (new_buffer == NULL)
 		return;
 
-	giac_yyensure_buffer_stack(yyscanner);
+	yyensure_buffer_stack(yyscanner);
 
-	/* This block is copied from giac_yy_switch_to_buffer. */
+	/* This block is copied from yy_switch_to_buffer. */
 	if ( YY_CURRENT_BUFFER )
 		{
 		/* Flush out information for old buffer. */
@@ -4953,8 +5168,8 @@ void giac_yypush_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yyscanner)
 		yyg->yy_buffer_stack_top++;
 	YY_CURRENT_BUFFER_LVALUE = new_buffer;
 
-	/* copied from giac_yy_switch_to_buffer. */
-	giac_yy_load_buffer_state(yyscanner );
+	/* copied from yy_switch_to_buffer. */
+	yy_load_buffer_state( yyscanner );
 	yyg->yy_did_buffer_switch_on_eof = 1;
 }
 
@@ -4962,19 +5177,19 @@ void giac_yypush_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yyscanner)
  *  The next element becomes the new top.
  *  @param yyscanner The scanner object.
  */
-void giac_yypop_buffer_state (yyscan_t yyscanner)
+void yypop_buffer_state (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	if (!YY_CURRENT_BUFFER)
 		return;
 
-	giac_yy_delete_buffer(YY_CURRENT_BUFFER ,yyscanner);
+	yy_delete_buffer(YY_CURRENT_BUFFER , yyscanner);
 	YY_CURRENT_BUFFER_LVALUE = NULL;
 	if (yyg->yy_buffer_stack_top > 0)
 		--yyg->yy_buffer_stack_top;
 
 	if (YY_CURRENT_BUFFER) {
-		giac_yy_load_buffer_state(yyscanner );
+		yy_load_buffer_state( yyscanner );
 		yyg->yy_did_buffer_switch_on_eof = 1;
 	}
 }
@@ -4982,9 +5197,9 @@ void giac_yypop_buffer_state (yyscan_t yyscanner)
 /* Allocates the stack if it does not exist.
  *  Guarantees space for at least one push.
  */
-static void giac_yyensure_buffer_stack (yyscan_t yyscanner)
+static void yyensure_buffer_stack (yyscan_t yyscanner)
 {
-	int num_to_alloc;
+	yy_size_t num_to_alloc;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
 	if (!yyg->yy_buffer_stack) {
@@ -4993,15 +5208,15 @@ static void giac_yyensure_buffer_stack (yyscan_t yyscanner)
 		 * scanner will even need a stack. We use 2 instead of 1 to avoid an
 		 * immediate realloc on the next call.
          */
-		num_to_alloc = 1;
-		yyg->yy_buffer_stack = (struct yy_buffer_state**)giac_yyalloc
+      num_to_alloc = 1; /* After all that talk, this was set to 1 anyways... */
+		yyg->yy_buffer_stack = (struct yy_buffer_state**)yyalloc
 								(num_to_alloc * sizeof(struct yy_buffer_state*)
 								, yyscanner);
 		if ( ! yyg->yy_buffer_stack )
-			YY_FATAL_ERROR( "out of dynamic memory in giac_yyensure_buffer_stack()" );
-								  
+			YY_FATAL_ERROR( "out of dynamic memory in yyensure_buffer_stack()" );
+
 		memset(yyg->yy_buffer_stack, 0, num_to_alloc * sizeof(struct yy_buffer_state*));
-				
+
 		yyg->yy_buffer_stack_max = num_to_alloc;
 		yyg->yy_buffer_stack_top = 0;
 		return;
@@ -5010,15 +5225,15 @@ static void giac_yyensure_buffer_stack (yyscan_t yyscanner)
 	if (yyg->yy_buffer_stack_top >= (yyg->yy_buffer_stack_max) - 1){
 
 		/* Increase the buffer to prepare for a possible push. */
-		int grow_size = 8 /* arbitrary grow size */;
+		yy_size_t grow_size = 8 /* arbitrary grow size */;
 
 		num_to_alloc = yyg->yy_buffer_stack_max + grow_size;
-		yyg->yy_buffer_stack = (struct yy_buffer_state**)giac_yyrealloc
+		yyg->yy_buffer_stack = (struct yy_buffer_state**)yyrealloc
 								(yyg->yy_buffer_stack,
 								num_to_alloc * sizeof(struct yy_buffer_state*)
 								, yyscanner);
 		if ( ! yyg->yy_buffer_stack )
-			YY_FATAL_ERROR( "out of dynamic memory in giac_yyensure_buffer_stack()" );
+			YY_FATAL_ERROR( "out of dynamic memory in yyensure_buffer_stack()" );
 
 		/* zero only the new slots.*/
 		memset(yyg->yy_buffer_stack + yyg->yy_buffer_stack_max, 0, grow_size * sizeof(struct yy_buffer_state*));
@@ -5030,9 +5245,9 @@ static void giac_yyensure_buffer_stack (yyscan_t yyscanner)
  * @param base the character buffer
  * @param size the size in bytes of the character buffer
  * @param yyscanner The scanner object.
- * @return the newly allocated buffer state object. 
+ * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE giac_yy_scan_buffer  (char * base, yy_size_t  size , yyscan_t yyscanner)
+YY_BUFFER_STATE yy_scan_buffer  (char * base, yy_size_t  size , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
     
@@ -5040,49 +5255,49 @@ YY_BUFFER_STATE giac_yy_scan_buffer  (char * base, yy_size_t  size , yyscan_t yy
 	     base[size-2] != YY_END_OF_BUFFER_CHAR ||
 	     base[size-1] != YY_END_OF_BUFFER_CHAR )
 		/* They forgot to leave room for the EOB's. */
-		return 0;
+		return NULL;
 
-	b = (YY_BUFFER_STATE) giac_yyalloc(sizeof( struct yy_buffer_state ) ,yyscanner );
+	b = (YY_BUFFER_STATE) yyalloc( sizeof( struct yy_buffer_state ) , yyscanner );
 	if ( ! b )
-		YY_FATAL_ERROR( "out of dynamic memory in giac_yy_scan_buffer()" );
+		YY_FATAL_ERROR( "out of dynamic memory in yy_scan_buffer()" );
 
-	b->yy_buf_size = size - 2;	/* "- 2" to take care of EOB's */
+	b->yy_buf_size = (int) (size - 2);	/* "- 2" to take care of EOB's */
 	b->yy_buf_pos = b->yy_ch_buf = base;
 	b->yy_is_our_buffer = 0;
-	b->yy_input_file = 0;
+	b->yy_input_file = NULL;
 	b->yy_n_chars = b->yy_buf_size;
 	b->yy_is_interactive = 0;
 	b->yy_at_bol = 1;
 	b->yy_fill_buffer = 0;
 	b->yy_buffer_status = YY_BUFFER_NEW;
 
-	giac_yy_switch_to_buffer(b ,yyscanner );
+	yy_switch_to_buffer( b , yyscanner );
 
 	return b;
 }
 
-/** Setup the input buffer state to scan a string. The next call to giac_yylex() will
+/** Setup the input buffer state to scan a string. The next call to yylex() will
  * scan from a @e copy of @a str.
  * @param yystr a NUL-terminated string to scan
  * @param yyscanner The scanner object.
  * @return the newly allocated buffer state object.
  * @note If you want to scan bytes that may contain NUL values, then use
- *       giac_yy_scan_bytes() instead.
+ *       yy_scan_bytes() instead.
  */
-YY_BUFFER_STATE giac_yy_scan_string (yyconst char * yystr , yyscan_t yyscanner)
+YY_BUFFER_STATE yy_scan_string (const char * yystr , yyscan_t yyscanner)
 {
     
-	return giac_yy_scan_bytes(yystr,strlen(yystr) ,yyscanner);
+	return yy_scan_bytes( yystr, (int) strlen(yystr) , yyscanner);
 }
 
-/** Setup the input buffer state to scan the given bytes. The next call to giac_yylex() will
+/** Setup the input buffer state to scan the given bytes. The next call to yylex() will
  * scan from a @e copy of @a bytes.
  * @param yybytes the byte buffer to scan
  * @param _yybytes_len the number of bytes in the buffer pointed to by @a bytes.
  * @param yyscanner The scanner object.
  * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE giac_yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_len , yyscan_t yyscanner)
+YY_BUFFER_STATE yy_scan_bytes  (const char * yybytes, int  _yybytes_len , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
 	char *buf;
@@ -5090,19 +5305,19 @@ YY_BUFFER_STATE giac_yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_len ,
 	int i;
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
-	n = _yybytes_len + 2;
-	buf = (char *) giac_yyalloc(n ,yyscanner );
+	n = (yy_size_t) (_yybytes_len + 2);
+	buf = (char *) yyalloc( n , yyscanner );
 	if ( ! buf )
-		YY_FATAL_ERROR( "out of dynamic memory in giac_yy_scan_bytes()" );
+		YY_FATAL_ERROR( "out of dynamic memory in yy_scan_bytes()" );
 
 	for ( i = 0; i < _yybytes_len; ++i )
 		buf[i] = yybytes[i];
 
 	buf[_yybytes_len] = buf[_yybytes_len+1] = YY_END_OF_BUFFER_CHAR;
 
-	b = giac_yy_scan_buffer(buf,n ,yyscanner);
+	b = yy_scan_buffer( buf, n , yyscanner);
 	if ( ! b )
-		YY_FATAL_ERROR( "bad buffer in giac_yy_scan_bytes()" );
+		YY_FATAL_ERROR( "bad buffer in yy_scan_bytes()" );
 
 	/* It's okay to grow etc. this buffer, and we should throw it
 	 * away when we're done.
@@ -5116,9 +5331,11 @@ YY_BUFFER_STATE giac_yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_len ,
 #define YY_EXIT_FAILURE 2
 #endif
 
-static void yy_fatal_error (yyconst char* msg , yyscan_t yyscanner)
+static void yynoreturn yy_fatal_error (const char* msg , yyscan_t yyscanner)
 {
-    	(void) fprintf( stderr, "%s\n", msg );
+	struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	(void)yyg;
+	fprintf( stderr, "%s\n", msg );
 	exit( YY_EXIT_FAILURE );
 }
 
@@ -5144,7 +5361,7 @@ static void yy_fatal_error (yyconst char* msg , yyscan_t yyscanner)
 /** Get the user-defined data for this scanner.
  * @param yyscanner The scanner object.
  */
-YY_EXTRA_TYPE giac_yyget_extra  (yyscan_t yyscanner)
+YY_EXTRA_TYPE yyget_extra  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyextra;
@@ -5153,10 +5370,10 @@ YY_EXTRA_TYPE giac_yyget_extra  (yyscan_t yyscanner)
 /** Get the current line number.
  * @param yyscanner The scanner object.
  */
-int giac_yyget_lineno  (yyscan_t yyscanner)
+int yyget_lineno  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    
+
         if (! YY_CURRENT_BUFFER)
             return 0;
     
@@ -5166,10 +5383,10 @@ int giac_yyget_lineno  (yyscan_t yyscanner)
 /** Get the current column number.
  * @param yyscanner The scanner object.
  */
-int giac_yyget_column  (yyscan_t yyscanner)
+int yyget_column  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    
+
         if (! YY_CURRENT_BUFFER)
             return 0;
     
@@ -5179,7 +5396,7 @@ int giac_yyget_column  (yyscan_t yyscanner)
 /** Get the input stream.
  * @param yyscanner The scanner object.
  */
-FILE *giac_yyget_in  (yyscan_t yyscanner)
+FILE *yyget_in  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyin;
@@ -5188,7 +5405,7 @@ FILE *giac_yyget_in  (yyscan_t yyscanner)
 /** Get the output stream.
  * @param yyscanner The scanner object.
  */
-FILE *giac_yyget_out  (yyscan_t yyscanner)
+FILE *yyget_out  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyout;
@@ -5197,7 +5414,7 @@ FILE *giac_yyget_out  (yyscan_t yyscanner)
 /** Get the length of the current token.
  * @param yyscanner The scanner object.
  */
-int giac_yyget_leng  (yyscan_t yyscanner)
+int yyget_leng  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyleng;
@@ -5207,7 +5424,7 @@ int giac_yyget_leng  (yyscan_t yyscanner)
  * @param yyscanner The scanner object.
  */
 
-char *giac_yyget_text  (yyscan_t yyscanner)
+char *yyget_text  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yytext;
@@ -5217,81 +5434,81 @@ char *giac_yyget_text  (yyscan_t yyscanner)
  * @param user_defined The data to be associated with this scanner.
  * @param yyscanner The scanner object.
  */
-void giac_yyset_extra (YY_EXTRA_TYPE  user_defined , yyscan_t yyscanner)
+void yyset_extra (YY_EXTRA_TYPE  user_defined , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yyextra = user_defined ;
 }
 
 /** Set the current line number.
- * @param line_number
+ * @param _line_number line number
  * @param yyscanner The scanner object.
  */
-void giac_yyset_lineno (int  line_number , yyscan_t yyscanner)
+void yyset_lineno (int  _line_number , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
         /* lineno is only valid if an input buffer exists. */
         if (! YY_CURRENT_BUFFER )
-           yy_fatal_error( "giac_yyset_lineno called with no buffer" , yyscanner); 
+           YY_FATAL_ERROR( "yyset_lineno called with no buffer" );
     
-    yylineno = line_number;
+    yylineno = _line_number;
 }
 
 /** Set the current column.
- * @param line_number
+ * @param _column_no column number
  * @param yyscanner The scanner object.
  */
-void giac_yyset_column (int  column_no , yyscan_t yyscanner)
+void yyset_column (int  _column_no , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
         /* column is only valid if an input buffer exists. */
         if (! YY_CURRENT_BUFFER )
-           yy_fatal_error( "giac_yyset_column called with no buffer" , yyscanner); 
+           YY_FATAL_ERROR( "yyset_column called with no buffer" );
     
-    yycolumn = column_no;
+    yycolumn = _column_no;
 }
 
 /** Set the input stream. This does not discard the current
  * input buffer.
- * @param in_str A readable stream.
+ * @param _in_str A readable stream.
  * @param yyscanner The scanner object.
- * @see giac_yy_switch_to_buffer
+ * @see yy_switch_to_buffer
  */
-void giac_yyset_in (FILE *  in_str , yyscan_t yyscanner)
+void yyset_in (FILE *  _in_str , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    yyin = in_str ;
+    yyin = _in_str ;
 }
 
-void giac_yyset_out (FILE *  out_str , yyscan_t yyscanner)
+void yyset_out (FILE *  _out_str , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    yyout = out_str ;
+    yyout = _out_str ;
 }
 
-int giac_yyget_debug  (yyscan_t yyscanner)
+int yyget_debug  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yy_flex_debug;
 }
 
-void giac_yyset_debug (int  bdebug , yyscan_t yyscanner)
+void yyset_debug (int  _bdebug , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    yy_flex_debug = bdebug ;
+    yy_flex_debug = _bdebug ;
 }
 
 /* Accessor methods for yylval and yylloc */
 
-YYSTYPE * giac_yyget_lval  (yyscan_t yyscanner)
+YYSTYPE * yyget_lval  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yylval;
 }
 
-void giac_yyset_lval (YYSTYPE *  yylval_param , yyscan_t yyscanner)
+void yyset_lval (YYSTYPE *  yylval_param , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yylval = yylval_param;
@@ -5299,20 +5516,18 @@ void giac_yyset_lval (YYSTYPE *  yylval_param , yyscan_t yyscanner)
 
 /* User-visible API */
 
-/* giac_yylex_init is special because it creates the scanner itself, so it is
+/* yylex_init is special because it creates the scanner itself, so it is
  * the ONLY reentrant function that doesn't take the scanner as the last argument.
  * That's why we explicitly handle the declaration, instead of using our macros.
  */
-
-int giac_yylex_init(yyscan_t* ptr_yy_globals)
-
+int yylex_init(yyscan_t* ptr_yy_globals)
 {
     if (ptr_yy_globals == NULL){
         errno = EINVAL;
         return 1;
     }
 
-    *ptr_yy_globals = (yyscan_t) giac_yyalloc ( sizeof( struct yyguts_t ), NULL );
+    *ptr_yy_globals = (yyscan_t) yyalloc ( sizeof( struct yyguts_t ), NULL );
 
     if (*ptr_yy_globals == NULL){
         errno = ENOMEM;
@@ -5325,39 +5540,37 @@ int giac_yylex_init(yyscan_t* ptr_yy_globals)
     return yy_init_globals ( *ptr_yy_globals );
 }
 
-/* giac_yylex_init_extra has the same functionality as giac_yylex_init, but follows the
+/* yylex_init_extra has the same functionality as yylex_init, but follows the
  * convention of taking the scanner as the last argument. Note however, that
  * this is a *pointer* to a scanner, as it will be allocated by this call (and
  * is the reason, too, why this function also must handle its own declaration).
- * The user defined value in the first argument will be available to giac_yyalloc in
+ * The user defined value in the first argument will be available to yyalloc in
  * the yyextra field.
  */
-
-int giac_yylex_init_extra(YY_EXTRA_TYPE yy_user_defined,yyscan_t* ptr_yy_globals )
-
+int yylex_init_extra( YY_EXTRA_TYPE yy_user_defined, yyscan_t* ptr_yy_globals )
 {
     struct yyguts_t dummy_yyguts;
 
-    giac_yyset_extra (yy_user_defined, &dummy_yyguts);
+    yyset_extra (yy_user_defined, &dummy_yyguts);
 
     if (ptr_yy_globals == NULL){
         errno = EINVAL;
         return 1;
     }
-	
-    *ptr_yy_globals = (yyscan_t) giac_yyalloc ( sizeof( struct yyguts_t ), &dummy_yyguts );
-	
+
+    *ptr_yy_globals = (yyscan_t) yyalloc ( sizeof( struct yyguts_t ), &dummy_yyguts );
+
     if (*ptr_yy_globals == NULL){
         errno = ENOMEM;
         return 1;
     }
-    
+
     /* By setting to 0xAA, we expose bugs in
     yy_init_globals. Leave at 0x00 for releases. */
     memset(*ptr_yy_globals,0x00,sizeof(struct yyguts_t));
-    
-    giac_yyset_extra (yy_user_defined, *ptr_yy_globals);
-    
+
+    yyset_extra (yy_user_defined, *ptr_yy_globals);
+
     return yy_init_globals ( *ptr_yy_globals );
 }
 
@@ -5365,13 +5578,13 @@ static int yy_init_globals (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     /* Initialization is the same as for the non-reentrant scanner.
-     * This function is called from giac_yylex_destroy(), so don't allocate here.
+     * This function is called from yylex_destroy(), so don't allocate here.
      */
 
-    yyg->yy_buffer_stack = 0;
+    yyg->yy_buffer_stack = NULL;
     yyg->yy_buffer_stack_top = 0;
     yyg->yy_buffer_stack_max = 0;
-    yyg->yy_c_buf_p = (char *) 0;
+    yyg->yy_c_buf_p = NULL;
     yyg->yy_init = 0;
     yyg->yy_start = 0;
 
@@ -5384,42 +5597,42 @@ static int yy_init_globals (yyscan_t yyscanner)
     yyin = stdin;
     yyout = stdout;
 #else
-    yyin = (FILE *) 0;
-    yyout = (FILE *) 0;
+    yyin = NULL;
+    yyout = NULL;
 #endif
 
     /* For future reference: Set errno on error, since we are called by
-     * giac_yylex_init()
+     * yylex_init()
      */
     return 0;
 }
 
-/* giac_yylex_destroy is for both reentrant and non-reentrant scanners. */
-int giac_yylex_destroy  (yyscan_t yyscanner)
+/* yylex_destroy is for both reentrant and non-reentrant scanners. */
+int yylex_destroy  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
     /* Pop the buffer stack, destroying each element. */
 	while(YY_CURRENT_BUFFER){
-		giac_yy_delete_buffer(YY_CURRENT_BUFFER ,yyscanner );
+		yy_delete_buffer( YY_CURRENT_BUFFER , yyscanner );
 		YY_CURRENT_BUFFER_LVALUE = NULL;
-		giac_yypop_buffer_state(yyscanner);
+		yypop_buffer_state(yyscanner);
 	}
 
 	/* Destroy the stack itself. */
-	giac_yyfree(yyg->yy_buffer_stack ,yyscanner);
+	yyfree(yyg->yy_buffer_stack , yyscanner);
 	yyg->yy_buffer_stack = NULL;
 
     /* Destroy the start condition stack. */
-        giac_yyfree(yyg->yy_start_stack ,yyscanner );
+        yyfree( yyg->yy_start_stack , yyscanner );
         yyg->yy_start_stack = NULL;
 
     /* Reset the globals. This is important in a non-reentrant scanner so the next time
-     * giac_yylex() is called, initialization will occur. */
+     * yylex() is called, initialization will occur. */
     yy_init_globals( yyscanner);
 
     /* Destroy the main struct (reentrant only). */
-    giac_yyfree ( yyscanner , yyscanner );
+    yyfree ( yyscanner , yyscanner );
     yyscanner = NULL;
     return 0;
 }
@@ -5429,18 +5642,21 @@ int giac_yylex_destroy  (yyscan_t yyscanner)
  */
 
 #ifndef yytext_ptr
-static void yy_flex_strncpy (char* s1, yyconst char * s2, int n , yyscan_t yyscanner)
+static void yy_flex_strncpy (char* s1, const char * s2, int n , yyscan_t yyscanner)
 {
-	register int i;
+	struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	(void)yyg;
+
+	int i;
 	for ( i = 0; i < n; ++i )
 		s1[i] = s2[i];
 }
 #endif
 
 #ifdef YY_NEED_STRLEN
-static int yy_flex_strlen (yyconst char * s , yyscan_t yyscanner)
+static int yy_flex_strlen (const char * s , yyscan_t yyscanner)
 {
-	register int n;
+	int n;
 	for ( n = 0; s[n]; ++n )
 		;
 
@@ -5448,13 +5664,18 @@ static int yy_flex_strlen (yyconst char * s , yyscan_t yyscanner)
 }
 #endif
 
-void *giac_yyalloc (yy_size_t  size , yyscan_t yyscanner)
+void *yyalloc (yy_size_t  size , yyscan_t yyscanner)
 {
-	return (void *) malloc( size );
+	struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	(void)yyg;
+	return malloc(size);
 }
 
-void *giac_yyrealloc  (void * ptr, yy_size_t  size , yyscan_t yyscanner)
+void *yyrealloc  (void * ptr, yy_size_t  size , yyscan_t yyscanner)
 {
+	struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	(void)yyg;
+
 	/* The cast to (char *) in the following accommodates both
 	 * implementations that use char* generic pointers, and those
 	 * that use void* generic pointers.  It works with the latter
@@ -5462,18 +5683,19 @@ void *giac_yyrealloc  (void * ptr, yy_size_t  size , yyscan_t yyscanner)
 	 * any pointer type to void*, and deal with argument conversions
 	 * as though doing an assignment.
 	 */
-	return (void *) realloc( (char *) ptr, size );
+	return realloc(ptr, size);
 }
 
-void giac_yyfree (void * ptr , yyscan_t yyscanner)
+void yyfree (void * ptr , yyscan_t yyscanner)
 {
-	free( (char *) ptr );	/* see giac_yyrealloc() for (char *) cast */
+	struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	(void)yyg;
+	free( (char *) ptr );	/* see yyrealloc() for (char *) cast */
 }
 
 #define YYTABLES_NAME "yytables"
 
-#line 915 "input_lexer.ll"
-
+#line 916 "input_lexer.ll"
 
 
 /*
@@ -5855,21 +6077,21 @@ void giac_yyfree (void * ptr , yyscan_t yyscanner)
 	lexer_string += " \n ÿ";
 #endif
       }
-      giac_yylex_init(&scanner);
-      giac_yyset_extra(contextptr,scanner);
+      yylex_init(&scanner);
+      yyset_extra(contextptr, scanner);
 #ifdef NUMWORKS
       currently_scanned(contextptr)=lexer_string;
-      YY_BUFFER_STATE state=giac_yy_scan_string(lexer_string,scanner);
+      YY_BUFFER_STATE state=yy_scan_string(lexer_string,scanner);
 #else
       currently_scanned(contextptr)=lexer_string.c_str();
-      YY_BUFFER_STATE state=giac_yy_scan_string(lexer_string.c_str(),scanner);
+      YY_BUFFER_STATE state=yy_scan_string(lexer_string.c_str(),scanner);
 #endif
       return state;
     }
 
     int delete_lexer_string(YY_BUFFER_STATE & state,yyscan_t & scanner){
-      giac_yy_delete_buffer(state,scanner);
-      giac_yylex_destroy(scanner);
+      yy_delete_buffer(state,scanner);
+      yylex_destroy(scanner);
       return 1;
     }
 #ifdef STATIC_BUILTIN_LEXER_FUNCTIONS

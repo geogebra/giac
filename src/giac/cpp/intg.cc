@@ -3865,10 +3865,36 @@ namespace giac {
     return r;
   }
 
+  bool has_undef(const gen & g){
+    if (is_undef(g))
+      return true;
+    if (g.type==_VECT){
+      unsigned s=unsigned(g._VECTptr->size());
+      for (unsigned i=0;i<s;++i){
+	if (has_undef((*g._VECTptr)[i]))
+	  return true;
+      }
+      return false;
+    }
+    if (g.type==_POLY){
+      unsigned s=unsigned(g._POLYptr->coord.size());
+      for (unsigned i=0;i<s;++i){
+	if (has_undef(g._POLYptr->coord[i].value))
+	  return true;
+      }
+      return false;
+    }
+    if (g.type==_SYMB)
+      return has_undef(g._SYMBptr->feuille);
+    return false;
+  }
+
   gen _integrate_(const gen &args,GIAC_CONTEXT){
 #ifdef LOGINT
     *logptr(contextptr) << gettext("integrate begin") << '\n';
 #endif
+    if (has_undef(args))
+      return undef;
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     vecteur v(gen2vecteur(args));
     if (v.size()==1){

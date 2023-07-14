@@ -1610,6 +1610,7 @@ namespace giac {
 	e=es;
 	return;
       }
+      e=factor(e,x,false,contextptr);
     }
     if (e._SYMBptr->sommet==at_inv || (e._SYMBptr->sommet==at_pow && is_positive(-e._SYMBptr->feuille._VECTptr->back(),contextptr))){
       gen ef=e._SYMBptr->feuille;

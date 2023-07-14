@@ -9125,6 +9125,8 @@ namespace giac {
       return my_isinf(e._DOUBLE_val);
     case _FLOAT_:
       return fis_inf(e._FLOAT_val);
+    case _CPLX:
+      return is_inf(*e._CPLXptr) || is_inf(*(e._CPLXptr+1));
     default:
       return false;
     }
