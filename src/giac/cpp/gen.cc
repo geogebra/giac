@@ -14511,7 +14511,7 @@ void sprint_double(char * s,double d){
 #ifdef ConnectivityKit
   const char * gen::dbgprint() const { return "Done";}
 #else
-#if defined(VISUALC) && !defined(MS_SMART)
+#if defined(VISUALC) && defined GIAC_HAS_STO_38 && !defined(MS_SMART)
 #include <atlbase.h>
   const char * gen::dbgprint() const { ATLTRACE2("%s\r\n", this->print(0).c_str()); return "Done";}
 #else

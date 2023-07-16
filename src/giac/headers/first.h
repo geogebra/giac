@@ -52,6 +52,13 @@
 #endif
 #endif
 
+#ifdef __VISUALC__
+#define M_SQRT2 1.4142135623730950
+#define M_PI_2 1.5707963267948966
+#define M_LN2 0.69314718055994531
+#define M_1_PI 0.31830988618379067
+#endif
+
 #ifdef HP39
 #include <time.h>
 #define M_E 2.7182818284590452

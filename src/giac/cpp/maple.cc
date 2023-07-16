@@ -34,10 +34,12 @@ using namespace std;
 #include <sys/time.h>
 #include <time.h>
 #else 
-#if 0 // defined VISUALC || defined __MINGW_H
+#if defined VISUALC //|| defined __MINGW_H
 
 #include <sys/timeb.h>
 #include <sys/types.h>
+#endif
+#if 0 
 #include <winsock2.h>
 
 int gettimeofday(struct timeval* t,void* timezone);
