@@ -1980,11 +1980,11 @@ namespace giac {
     // return _access(path, mode );
     return 0;
   }
-#ifdef RTOS_THREADX
+#if defined RTOS_THREADX || defined VISUALC
 extern "C" void Sleep(unsigned int miliSecond);
 #endif
 
-#ifdef VISUALC
+#if 0
   extern "C" void Sleep(unsigned int ms){
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
   }
