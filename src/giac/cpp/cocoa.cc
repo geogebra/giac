@@ -13381,7 +13381,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	reducesmallmod(resmod[j],resmod,G,j,env,TMP1,true);
       }
     }
-    else {
+    else{
       if (debug_infolevel>1)
 	CERR << CLOCK()*1e-6 << " zfinal interreduction begin " << G.size() << '\n';
       resmod.resize(res.size());
@@ -13389,10 +13389,11 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	resmod[l].coord.clear();
       }
       int val=-1;
-      if (1//generators<100
+      if (!coeffsmodptr
+          //generators<100
 	  //parallel>1 && threads_allowed && G.size()>=200
 	  ){ // FIXME interreduce with coeffsmodptr
-	val=zinterreduce_convert(res,G,env,learning,learned_position,pairs_reducing_to_zero,f4buchberger_info,f4buchberger_info_position,recomputeR,-1/* age*/,multimodular,parallel,resmod,interred && !coeffsmodptr);
+	val=zinterreduce_convert(res,G,env,learning,learned_position,pairs_reducing_to_zero,f4buchberger_info,f4buchberger_info_position,recomputeR,-1/* age*/,multimodular,parallel,resmod,interred);
 	if (debug_infolevel && val<0)
 	  CERR << "zinterreduce failure" << '\n';
 	// zfinal_interreduce(resmod,G,env,parallel); // res->resmod must be done. discarded because too slow mem locks
@@ -13415,9 +13416,9 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  if (!start_index_v.empty() && G[j]<start_index_v.back())
 	    start_index_v.pop_back();
 	  if (0 && order.o==_REVLEX_ORDER) // this optimization did not work for cyclic10mod (at least when max_pairs=4096) 
-	    reducesmallmod(resmod[G[j]],resmod,G,j,env,TMP1,true,start_index_v.empty()?0:start_index_v.back());
+	    reducesmallmod(resmod[G[j]],resmod,G,j,env,TMP1,true,start_index_v.empty()?0:start_index_v.back(),false,coeffsmodptr?&(*coeffsmodptr)[G[j]]:0,coeffsmodptr);
 	  else // full interreduction since Buchberger steps do not interreduce
-	    reducesmallmod(resmod[G[j]],resmod,G,j,env,TMP1,true,0);
+	    reducesmallmod(resmod[G[j]],resmod,G,j,env,TMP1,true,0,false,coeffsmodptr?&(*coeffsmodptr)[G[j]]:0,coeffsmodptr);
 	}
       }
       if (debug_infolevel>1)
