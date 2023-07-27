@@ -12549,7 +12549,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
   // otherwise we might miss some new pairs to be added
   // f:=(1387482169552326*s*t1*t2^2-25694114250969*s*t1*t2+240071563017*s*t1+579168836143704*t1*t2^2-10725348817476*t1*t2+100212766488*t1):;fb:=(-7035747399*s*t1^2*t2^2+118865637*s*t1^2*t2-793881*s*t1^2+118865637*s*t1*t2^2-1167858*s*t1*t2+1944*s*t1-1089126*s*t2^2+1944*s*t2+18*s-2936742966*t1^2*t2^2+49601160*t1^2*t2-328050*t1^2+49601160*t1*t2^2-485514*t1*t2+972*t1-446148*t2^2+972*t2+36):;rmp:=s^2+10*s+4:;gbasis([f,fb,rmp],[s,t1,t2],revlex);
   template<class tdeg_t>
-  void zgbasis_updatemod(vector<unsigned> & G,vector< paire > & B,const vectzpolymod<tdeg_t> & res,unsigned pos,vector<unsigned> & oldG,bool multimodular){
+  void zgbasis_updatemod(vector<unsigned> & G,vector< paire > & B,const vectzpolymod<tdeg_t> & res,unsigned pos,const vector<unsigned> & oldG,bool multimodular){
     if (debug_infolevel>2)
       CERR << CLOCK()*1e-6 << " zmod begin gbasis update " << G.size() << '\n';
     if (debug_infolevel>3)
@@ -12903,16 +12903,19 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 
   template<class tdeg_t>
   bool in_zgbasis(vectpolymod<tdeg_t> &resmod,unsigned ressize,vector<unsigned> & G,modint env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool eliminate_flag,bool multimodular,int parallel,bool interred,vector< vectpolymod<tdeg_t> > * coeffsmodptr){
+    vectpolymod<tdeg_t> resmodorig; // resmodorig=resmod; // used for debug only
     unsigned generators=ressize;
     bool seldeg=true; int sel1=0;
     ulonglong cleared=0;
     unsigned learned_position=0,f4buchberger_info_position=0;
     bool learning=f4buchberger_info.empty();
     if (0 && learning && coeffsmodptr){ 
-      // FIXME enable
-      // do a learning run with F4
+      // do a learning run with F4? 
+      // requires pairs_reducing_to_zero to be the same (permutation...)
+      // and comment multimodular after zf4mod call below
       vectpolymod<tdeg_t> resmodcopy(resmod); vector<unsigned> Gcopy(G);
-      in_zgbasis(resmodcopy,ressize,Gcopy,env,totdeg,pairs_reducing_to_zero,f4buchberger_info,recomputeR,eliminate_flag,multimodular,parallel,interred,coeffsmodptr);
+      in_zgbasis(resmodcopy,ressize,Gcopy,env,totdeg,pairs_reducing_to_zero,f4buchberger_info,recomputeR,eliminate_flag,multimodular,parallel,interred, (vector< vectpolymod<tdeg_t> > *) 0);
+      learning=false;
     }
     unsigned capa = unsigned(f4buchberger_info.capacity());
     order_t order=resmod.front().order;
@@ -12935,6 +12938,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       TMP2.coord.push_back(T_unsigned<modint,tdeg_t>(1,0));
       for (unsigned l=0;l<ressize;++l){
 	(*coeffsmodptr)[l].resize(ressize);
+        for (unsigned m=0;m<ressize;++m){
+          (*coeffsmodptr)[l][m].order=order;
+          (*coeffsmodptr)[l][m].dim=dim;
+        }
 	(*coeffsmodptr)[l][l]=TMP2;
       }
       TMP2.coord.clear();
@@ -13141,15 +13148,30 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  index_lcm(pi,qi,lcm,p.order);
 	  tdeg_t pshift=lcm-pi;
 	  tdeg_t qshift=lcm-qi;
-	  polymod<tdeg_t> TMP1(order,dim),TMP2(order,dim),TMP3(order,dim);
+	  polymod<tdeg_t> _TMP1(order,dim),_TMP2(order,dim),_TMP3(order,dim);
 	  for (size_t k=0;k<s;k++){
-	    vectpolymod<tdeg_t> & cur=v[k];
-	    TMP1=cur[i1];
-	    smallshift(TMP1.coord,pshift,TMP1.coord);
-	    smallmultsubmodshift(TMP1,0,c,TMP2,qshift,TMP3,env);
-	    smallmultmod(d,TMP3,env);
-	    newcoeffs.push_back(TMP3);
+	    vectpolymod<tdeg_t> & curfirst=v[i1];
+	    _TMP1=curfirst[k];
+	    vectpolymod<tdeg_t> & cursecond=v[i2];
+	    _TMP2=cursecond[k];
+	    smallshift(_TMP1.coord,pshift,_TMP1.coord);
+	    smallmultsubmodshift(_TMP1,0,c,_TMP2,qshift,_TMP3,env);
+	    smallmultmod(d,_TMP3,env);
+	    newcoeffs[k]=_TMP3;
 	  }
+          // debug
+          if (0){ // check resmodorig=resmod at function begin
+            _TMP1=TMP1; 
+            for (size_t k=0;k<s;k++){ // - sum(newcoeffs[k]*resmod[k])
+              for (size_t l=0;l<newcoeffs[k].coord.size();++l){
+                smallmultsubmodshift(_TMP1,0,newcoeffs[k].coord[l].g,resmodorig[k],newcoeffs[k].coord[l].u,_TMP2,env);
+                _TMP1.coord.swap(_TMP2.coord);
+              }
+            }
+            // should be 0
+            if (_TMP1.coord.size())
+              CERR << "zgbasis spoly coeff error " << _TMP1 << "\n";
+          }
 	}
 	if (debug_infolevel>1){
 	  CERR << CLOCK()*1e-6 << " mod reduce begin, pair " << bk << " spoly size " << TMP1.coord.size() << " totdeg deg " << TMP1.coord.front().u.total_degree(order) << " degree " << TMP1.coord.front().u << ", pair degree " << resmod[bk.first].coord.front().u << resmod[bk.second].coord.front().u << '\n';
@@ -13256,7 +13278,8 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       }
       // update gbasis and learning
       // requires that Gauss pivoting does the same permutation for other primes
-      if (multimodular && learning && pairs_reducing_to_zero){
+      if (multimodular && 
+	  learning && pairs_reducing_to_zero){
 	for (unsigned i=0;i<f4buchbergerv.size();++i){
 	  if (f4buchbergerv[i].coord.empty()){
 	    if (debug_infolevel>2)
@@ -13368,8 +13391,8 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       int val=-1;
       if (1//generators<100
 	  //parallel>1 && threads_allowed && G.size()>=200
-	  ){
-	val=zinterreduce_convert(res,G,env,learning,learned_position,pairs_reducing_to_zero,f4buchberger_info,f4buchberger_info_position,recomputeR,-1/* age*/,multimodular,parallel,resmod,interred);
+	  ){ // FIXME interreduce with coeffsmodptr
+	val=zinterreduce_convert(res,G,env,learning,learned_position,pairs_reducing_to_zero,f4buchberger_info,f4buchberger_info_position,recomputeR,-1/* age*/,multimodular,parallel,resmod,interred && !coeffsmodptr);
 	if (debug_infolevel && val<0)
 	  CERR << "zinterreduce failure" << '\n';
 	// zfinal_interreduce(resmod,G,env,parallel); // res->resmod must be done. discarded because too slow mem locks
@@ -17903,7 +17926,8 @@ void G_idn(vector<unsigned> & G,size_t s){
       coeffsptr->resize(G.size());
       for (unsigned i=0;i<G.size();++i){
         const vectpolymod<tdeg_t> & src = (*coeffsmodptr)[G[i]];
-        vectpoly & target = (*coeffsptr)[G[i]];
+        vectpoly & target = (*coeffsptr)[i];
+	target.resize(src.size());
         for (unsigned j=0;j<src.size();++j)
           src[j].get_polynome(target[j]);
       }
@@ -17954,8 +17978,9 @@ bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * 
 	  if (!res.empty() && (res.front().order.o==_REVLEX_ORDER || res.front().order.o==_3VAR_ORDER || res.front().order.o==_7VAR_ORDER || res.front().order.o==_11VAR_ORDER)){
 	    vector<zinfo_t<tdeg_t14> > f4buchberger_info;
 	    vector< vectpolymod<tdeg_t14> > gbasiscoeff;
+	    vector< paire > pairs_reducing_to_zero;
 	    f4buchberger_info.reserve(GBASISF4_MAXITER);
-	    if (zgbasis(res,resmod,G,env->modulo.val,true/*totaldeg*/,0,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false /* 1 mod only */,parallel,true,coeffsptr?&gbasiscoeff:0)){
+	    if (zgbasis(res,resmod,G,env->modulo.val,true/*totaldeg*/,&pairs_reducing_to_zero,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false /* 1 mod only */,parallel,true,coeffsptr?&gbasiscoeff:0)){
 	      *logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 <<  " Memory " << memory_usage()*1e-6 << "M" <<'\n';
 	      get_newres_ckrur<tdeg_t14>(resmod,newres,v,G,env->modulo.val,rur,&gbasiscoeff,coeffsptr);
 	      debug_infolevel=save_debuginfo; return true;
@@ -18013,8 +18038,9 @@ bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * 
 	if (!res.empty() && (res.front().order.o==_REVLEX_ORDER || res.front().order.o==_3VAR_ORDER || res.front().order.o==_7VAR_ORDER || res.front().order.o==_11VAR_ORDER)){
 	  vector<zinfo_t<tdeg_t11> > f4buchberger_info;
 	  vector< vectpolymod<tdeg_t11> > gbasiscoeff;
+	  vector< paire > pairs_reducing_to_zero;
 	  f4buchberger_info.reserve(GBASISF4_MAXITER);
-	  if (zgbasis(res,resmod,G,env->modulo.val,true/*totaldeg*/,0,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false /* 1 mod only */,parallel,true,coeffsptr?&gbasiscoeff:0)){
+	  if (zgbasis(res,resmod,G,env->modulo.val,true/*totaldeg*/,&pairs_reducing_to_zero,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false /* 1 mod only */,parallel,true,coeffsptr?&gbasiscoeff:0)){
 	    *logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 <<  " Memory " << memory_usage()*1e-6 << "M" << '\n';
 	    get_newres_ckrur<tdeg_t11>(resmod,newres,v,G,env->modulo.val,rur,&gbasiscoeff,coeffsptr);
 	    debug_infolevel=save_debuginfo; return true;
@@ -18073,8 +18099,9 @@ bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * 
 	if (!res.empty() && (res.front().order.o==_REVLEX_ORDER || res.front().order.o==_3VAR_ORDER || res.front().order.o==_7VAR_ORDER || res.front().order.o==_11VAR_ORDER)){
 	  vector<zinfo_t<tdeg_t15> > f4buchberger_info;
 	  vector< vectpolymod<tdeg_t15> > gbasiscoeff;
+	  vector< paire > pairs_reducing_to_zero;
 	  f4buchberger_info.reserve(GBASISF4_MAXITER);
-	  if (!zgbasis(res,resmod,G,env->modulo.val,true/*totaldeg*/,0,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false/* 1 mod only*/,parallel,true,coeffsptr?&gbasiscoeff:0))
+	  if (!zgbasis(res,resmod,G,env->modulo.val,true/*totaldeg*/,&pairs_reducing_to_zero,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false/* 1 mod only*/,parallel,true,coeffsptr?&gbasiscoeff:0))
 	    return false;
 	  *logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 <<  " Memory " << memory_usage()*1e-6 << "M" << '\n';
 #if 1
@@ -18135,8 +18162,9 @@ bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * 
       if (!res.empty() && (res.front().order.o==_REVLEX_ORDER || res.front().order.o==_3VAR_ORDER || res.front().order.o==_7VAR_ORDER || res.front().order.o==_11VAR_ORDER)){
 	vector<zinfo_t<tdeg_t64> > f4buchberger_info;
 	vector< vectpolymod<tdeg_t64> > gbasiscoeff;
+	vector< paire > pairs_reducing_to_zero;
 	f4buchberger_info.reserve(GBASISF4_MAXITER);
-	zgbasis(res,resmod,G,env->modulo.val,true/*totaldeg*/,0,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false/* 1 mod only*/,parallel,true,coeffsptr?&gbasiscoeff:0);	
+	zgbasis(res,resmod,G,env->modulo.val,true/*totaldeg*/,&pairs_reducing_to_zero,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false/* 1 mod only*/,parallel,true,coeffsptr?&gbasiscoeff:0);	
 	*logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 <<  " Memory " << memory_usage()*1e-6 << "M" << '\n';
 #if 1
 	get_newres_ckrur<tdeg_t64>(resmod,newres,v,G,env->modulo.val,rur,&gbasiscoeff,coeffsptr);

@@ -6209,7 +6209,7 @@ namespace giac {
     return count==dim;
   }
 
-  static bool giac_gbasis(vectpoly & res,const gen & order_,environment * env,int modularcheck,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param){
+  static bool giac_gbasis(vectpoly & res,const gen & order_,environment * env,int modularcheck,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param,vector<vectpoly> * coeffsptr=0){
     if (res.empty()) return true;
     int order,lexvars=0;
     if (order_.type==_VECT && order_._VECTptr->size()==2){
@@ -6264,8 +6264,12 @@ namespace giac {
 	 res.front().dim<=GROEBNER_VARS+1-(order!=_PLEX_ORDER)){
       vectpoly tmp;
       order_t order_={static_cast<short>(order),(unsigned char)(lexvars/256),(unsigned char)(lexvars)};
-      if (!gbasis8(res,order_,tmp,env,modularcheck!=0,modularcheck>=2,rur,contextptr,gbasis_param))
+      if (!gbasis8(res,order_,tmp,env,modularcheck!=0,modularcheck>=2,rur,contextptr,gbasis_param,coeffsptr))
 	return false;
+      if (coeffsptr){ // FIXME? ordering and null elements
+        res.swap(tmp);
+        return true;
+      }
       int i;
       for (i=0;i<tmp.size();++i){
 	if (tmp[i].coord.empty())
@@ -6378,7 +6382,7 @@ namespace giac {
     return true;
   }
 
-  vectpoly gbasis(const vectpoly & v,const gen & order,bool with_cocoa,int modular,environment * env,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param){
+  vectpoly gbasis(const vectpoly & v,const gen & order,bool with_cocoa,int modular,environment * env,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param,vector< vectpoly> * coeffsptr){
     if (v.size()<=1){
       return v;
     }
@@ -6402,7 +6406,7 @@ namespace giac {
 	CERR << "Unable to compute gbasis with CoCoA" << '\n';
     }
 #endif
-    if (!giac_gbasis(res,order,env,modular,rur,contextptr,gbasis_param))
+    if (!giac_gbasis(res,order,env,modular,rur,contextptr,gbasis_param,coeffsptr))
       gensizeerr(gettext("Unable to compute gbasis with giac, perhaps dimension is too large"));
     return res;
   }
@@ -7107,7 +7111,7 @@ namespace giac {
     }
     int rur=0;
     gbasis_param_t gbasis_param={false,-1,-1,-1};
-    vectpoly eqpr(gbasis(eqp,_PLEX_ORDER,/* cocoa */false,/* f5 */ false,/*environment * */0,rur,contextptr,gbasis_param));
+    vectpoly eqpr(gbasis(eqp,_PLEX_ORDER,/* cocoa */false,/* f5 */ false,/*environment * */0,rur,contextptr,gbasis_param,0));
     // should reorder eqpr with lex order here
     // solve from right to left
     sort_vectpoly(eqpr.begin(),eqpr.end());
@@ -7292,11 +7296,15 @@ namespace giac {
   static define_unary_function_eval (__rur_gbasis,&_rur_gbasis,_rur_gbasis_s);
   define_unary_function_ptr5( at_rur_gbasis ,alias_at_rur_gbasis ,&__rur_gbasis,0,true);
 
-  static void read_gbargs(vecteur & v,int start,int s,gen & order,bool & with_cocoa,bool & with_f5,int & modular,gbasis_param_t & gbasis_param){
+  // return true if v contains coeffs or matrix, false otherwise
+  static bool read_gbargs(vecteur & v,int start,int s,gen & order,bool & with_cocoa,bool & with_f5,int & modular,gbasis_param_t & gbasis_param){
+    bool ret=false;
     for (int i=start;i<s;++i){
       if (v[i]==at_eliminate){
 	gbasis_param.eliminate_flag=true;
       }
+      if (v[i]==at_coeffs || v[i]==at_matrix)
+	ret=true;
       if (v[i]==at_irem || v[i]==at_chinrem){
 	modular=1;
 	with_f5=false;
@@ -7348,6 +7356,7 @@ namespace giac {
 #ifndef HAVE_LIBCOCOA
     with_cocoa=false;
 #endif
+    return ret;
   }
 
 
@@ -7468,7 +7477,9 @@ namespace giac {
     bool with_f5=false,with_cocoa=false;
     gbasis_param_t gbasis_param={false,-1,-1,-1};
     int modular=1;
-    read_gbargs(v,2,s,order,with_cocoa,with_f5,modular,gbasis_param);
+    vector<vectpoly> gbasiscoeff; vector<vectpoly> * coeffsptr=0;
+    if (read_gbargs(v,2,s,order,with_cocoa,with_f5,modular,gbasis_param))
+      coeffsptr=&gbasiscoeff;
     vecteur l1=*v[1]._VECTptr;
     vecteur l0;
     if (s>2 && v[2].type==_VECT)
@@ -7535,15 +7546,22 @@ namespace giac {
     if (!with_cocoa)
       change_monomial_order(eqp,abs(order,contextptr));
     int rur=0;
-    vectpoly eqpr(gbasis(eqp,order,with_cocoa,with_cocoa?with_f5:modular,&env,rur,contextptr,gbasis_param));
-    vecteur res;
+    vectpoly eqpr(gbasis(eqp,order,with_cocoa,with_cocoa?with_f5:modular,&env,rur,contextptr,gbasis_param,coeffsptr));
+    vecteur res,coeffs;
     vectpoly::const_iterator it=eqpr.begin(),itend=eqpr.end();
     res.reserve(itend-it);
-    for (;it!=itend;++it){
+    for (int i=0;it!=itend;++i,++it){
       gen tmp=r2e(*it,l,contextptr);
       if (is_zero(tmp) && !is_zero(*it))
 	continue;
       res.push_back(tmp);
+      if (coeffsptr && coeffsptr->size()>i){
+        vecteur ligne;
+        const vectpoly & cur=(*coeffsptr)[i];
+        for (unsigned j=0;j<cur.size();++j)
+          ligne.push_back(r2e(cur[j],l,contextptr));
+        coeffs.push_back(ligne);
+      }
     }
     if (order.val<0 && rur){
       // subst l[0] by another variable name to avoid confusion in res[2..]?
@@ -7551,7 +7569,7 @@ namespace giac {
 	res=subst(res,l.front()[0],res[0],false,contextptr);
       res.insert(res.begin(),change_subtype(order,_INT_GROEBNER));
     }
-    return res;
+    return coeffsptr?makevecteur(res,coeffs):res;
   }
   static const char _gbasis_s []="gbasis";
   static define_unary_function_eval (__gbasis,&_gbasis,_gbasis_s);
