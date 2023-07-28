@@ -5130,6 +5130,19 @@ namespace giac {
     }
   };
 
+  struct sort_vect_vectpoly_t {
+    sort_vect_vectpoly_t() {}
+    bool operator () (const vector< tensor<gen> > & vp,const vector< tensor<gen> > & vq){
+      const tensor<gen> & p=vp.back();
+      const tensor<gen> & q=vq.back();
+      if (p.coord.empty())
+	return false;
+      if (q.coord.empty())
+	return true;
+      return p.is_strictly_greater(p.coord.front().index,q.coord.front().index);
+    }
+  };
+
   void sort_vectpoly(vectpoly::iterator it,vectpoly::iterator itend){
 #if 1
     sort(it,itend,sort_vectpoly_t());
@@ -6209,6 +6222,47 @@ namespace giac {
     return count==dim;
   }
 
+  bool gbasis_coeffs_merge(const vectpoly & gb,const vector<vectpoly> & coeffs,vectpoly & res){
+    if (gb.size()!=coeffs.size() || coeffs.empty())
+      return false;
+    size_t gs=gb.size(),s=coeffs.front().size();
+    res.reserve(gs*(s+1));
+    for (size_t i=0;i<gs;++i){
+      res.push_back(gb[i]);
+      const vectpoly & src=coeffs[i];
+      for (size_t j=0;j<s;j++)
+        res.push_back(src[j]);
+    }
+    return true;
+  }
+  
+  static bool gbasis_coeffs_sort(vectpoly & gb,vector<vectpoly> & coeffs,GIAC_CONTEXT){
+    if (gb.size()!=coeffs.size() || coeffs.empty())
+      return false;
+    size_t gs=gb.size(),s=coeffs.front().size();
+    for (size_t i=0;i<gs;++i){
+      vectpoly & src=coeffs[i];
+      if (gb[i].coord.empty()){
+        src.erase(src.begin()+i);
+        --i; --gs;
+      }
+      else
+        src.push_back(gb[i]);
+    }
+    // sort
+    sort(coeffs.begin(),coeffs.end(),sort_vect_vectpoly_t());
+    if (increasing_power(contextptr))
+      reverse(coeffs.begin(),coeffs.end());
+    // recreate gb
+    gb.resize(gs);
+    for (size_t i=0;i<gs;++i){
+      vectpoly & src=coeffs[i];
+      gb[i]=src.back();
+      src.pop_back();
+    }
+    return true;
+  }
+  
   static bool giac_gbasis(vectpoly & res,const gen & order_,environment * env,int modularcheck,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param,vector<vectpoly> * coeffsptr=0){
     if (res.empty()) return true;
     int order,lexvars=0;
@@ -6266,7 +6320,8 @@ namespace giac {
       order_t order_={static_cast<short>(order),(unsigned char)(lexvars/256),(unsigned char)(lexvars)};
       if (!gbasis8(res,order_,tmp,env,modularcheck!=0,modularcheck>=2,rur,contextptr,gbasis_param,coeffsptr))
 	return false;
-      if (coeffsptr){ // FIXME? ordering and null elements
+      if (coeffsptr){ // ordering and null elements
+        gbasis_coeffs_sort(tmp,*coeffsptr,contextptr);
         res.swap(tmp);
         return true;
       }
