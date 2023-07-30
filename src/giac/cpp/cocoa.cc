@@ -62,6 +62,7 @@
 using namespace std;
 
 #include <iostream>
+//#include <fstream>
 #if !defined FXCG && !defined KHICAS
 #include <iomanip>
 #endif
@@ -12908,7 +12909,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     bool seldeg=true; int sel1=0;
     ulonglong cleared=0;
     unsigned learned_position=0,f4buchberger_info_position=0;
-    bool learning=f4buchberger_info.empty();
+    bool learning=(coeffsmodptr && pairs_reducing_to_zero)?pairs_reducing_to_zero->empty():f4buchberger_info.empty();
     if (0 && learning && coeffsmodptr){ 
       // do a learning run with F4? 
       // requires pairs_reducing_to_zero to be the same (permutation...)
@@ -15479,6 +15480,16 @@ void G_idn(vector<unsigned> & G,size_t s){
                 ++pos;
               }
             }
+#if 0
+            if (0){
+              ofstream l((string("log")+p.print()).c_str());
+              for (int i=0;i<gbmod.size();++i){
+                l << i/(1+initgensize) << "," << i%(1+initgensize) << ":" << gbmod[i] << "\n";
+              }
+              l.close();
+              if (th) exit(0);
+            }
+#endif
           }
           else {
             if (rur || gbmod.size()<G.size())
@@ -15505,16 +15516,24 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  }
           if (coeffsmodptr){
             initgensize=gbasiscoeffv[th].front().size();
-            gbmod.resize(G.size()*(1+initgensize));
+            gbmod.resize(ptr->G.size()*(1+initgensize));
             int pos=0;
-            for (i=0;i<G.size();++i){
-              gbmod[pos]=resmod[G[i]];
+            for (i=0;i<ptr->G.size();++i){
+              gbmod[pos]=ptr->resmod[ptr->G[i]];
               ++pos;
               for (int j=0;j<initgensize;++j){
-                gbmod[pos]=gbasiscoeffv[t][G[i]][j];
+                gbmod[pos]=gbasiscoeffv[t][ptr->G[i]][j];
                 ++pos;
               }
             }
+#if 0
+            if (0){
+              ofstream l((string("log_")+print_INT_(gbasis_param[t].p)).c_str());
+              for (int i=0;i<gbmod.size();++i)
+                l << i/(1+initgensize) << "," << i%(1+initgensize) << ":" << gbmod[i] << "\n";
+              l.close();
+            }
+#endif
           }
           else {
             if (rur || gbmod.size()<ptr->G.size())
