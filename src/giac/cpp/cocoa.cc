@@ -15244,6 +15244,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     // IMPROVE 1: compute resmod for all threads simult in main thread
     // IMPROVE 2: check whether the rur stabilizes before the gbasis!
     int pend=p.val,p0;
+    int initgensize=0; // number of initial generators (if computing coeffs)
     ulonglong nmonoms; // number of monoms in gbasis
     int recon_n2=-1,recon_n1=-1,recon_n0=-1,recon_added=0,recon_count=0,gbasis_size=-1,jpos_start=-1; // reconstr. gbasis element number history
     double augmentgbasis=gbasis_reinject_ratio,prevreconpart=1.0,time1strun=-1.0,time2ndrun=-1.0; current_orig=res; current_gbasis=res;
@@ -15466,10 +15467,25 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    rurv.swap(mainthrurv);
 	  }
 	  // extract from current
-	  if (rur || gbmod.size()<G.size())
-	    gbmod.resize(G.size());
-	  for (i=0;i<G.size();++i){
-	    gbmod[i]=resmod[G[i]];
+          if (coeffsmodptr){
+            initgensize=gbasiscoeffv[th].front().size();
+            gbmod.resize(G.size()*(1+initgensize));
+            int pos=0;
+            for (i=0;i<G.size();++i){
+              gbmod[pos]=resmod[G[i]];
+              ++pos;
+              for (int j=0;j<initgensize;++j){
+                gbmod[pos]=gbasiscoeffv[th][G[i]][j];
+                ++pos;
+              }
+            }
+          }
+          else {
+            if (rur || gbmod.size()<G.size())
+              gbmod.resize(G.size());
+            for (i=0;i<G.size();++i){
+              gbmod[i]=resmod[G[i]];
+            }
 	  }
 	  p=pend;
 	  // CERR << "read " << t << " " << p << '\n';
@@ -15487,11 +15503,26 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    zlmmodradical=ptr->rurlmmodradical;
 	    rurv.swap(ptr->rurv);
 	  }
-	  if (rur || gbmod.size()<ptr->G.size())
-	    gbmod.resize(ptr->G.size());
-	  for (i=0;i<ptr->G.size();++i)
-	    gbmod[i]=ptr->resmod[ptr->G[i]];
-	  p=ptr->p;
+          if (coeffsmodptr){
+            initgensize=gbasiscoeffv[th].front().size();
+            gbmod.resize(G.size()*(1+initgensize));
+            int pos=0;
+            for (i=0;i<G.size();++i){
+              gbmod[pos]=resmod[G[i]];
+              ++pos;
+              for (int j=0;j<initgensize;++j){
+                gbmod[pos]=gbasiscoeffv[t][G[i]][j];
+                ++pos;
+              }
+            }
+          }
+          else {
+            if (rur || gbmod.size()<ptr->G.size())
+              gbmod.resize(ptr->G.size());
+            for (i=0;i<ptr->G.size();++i)
+              gbmod[i]=ptr->resmod[ptr->G[i]];
+          }
+          p=ptr->p;
 	  // CERR << "read " << t << " " << p << '\n';
 	  ++count;
 	  ++recon_count;
@@ -15499,11 +15530,13 @@ void G_idn(vector<unsigned> & G,size_t s){
 #endif
 	if (!ok)
 	  continue;
-	// remove 0 from gbmod
-	remove_zero(gbmod);
-	// if augmentgbasis>0 (at least) gbmod must be sorted
-	//if (augmentgbasis>0)
-	sort(gbmod.begin(),gbmod.end(),tripolymod_tri<polymod<tdeg_t> >(gbasis_logz_age));
+        if (!coeffsmodptr){
+          // remove 0 from gbmod
+          remove_zero(gbmod);
+          // if augmentgbasis>0 (at least) gbmod must be sorted
+          //if (augmentgbasis>0)
+          sort(gbmod.begin(),gbmod.end(),tripolymod_tri<polymod<tdeg_t> >(gbasis_logz_age));
+        }
 	rur_gblm(gbmod,cur_gblm);
 	if (prev_gblm.coord.empty())
 	  prev_gblm=cur_gblm;
@@ -15973,10 +16006,10 @@ void G_idn(vector<unsigned> & G,size_t s){
 	}
 	else if (Wrur.size()<dim+2) { // final check
 	  W[i]=Wlast[i];
-	  if (!rur){
+	  if (!rur && !coeffsmodptr){
 	    if (debug_infolevel)
 	      CERR << CLOCK()*1e-6 << " stable, clearing denominators " << '\n';
-	    cleardeno(W[i]); // clear denominators
+            cleardeno(W[i]); // clear denominators
 	  }
 	  ++rechecked;
 	  if (debug_infolevel)
@@ -15986,6 +16019,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    swap(res,W[i]);
 	    if (rur_gbasis)
 	      res.erase(res.begin(),res.begin()+gbasis_size);
+          cleanup:
 	    mpz_clear(zd);
 	    mpz_clear(zu);
 	    mpz_clear(zu1);
@@ -15999,6 +16033,22 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    *logptr(contextptr) << "#Primes " << count <<'\n';	    
 	    return 1;
 	  }
+          if (coeffsmodptr){
+	    vectpoly8<tdeg_t> & cur=W[i];
+            res.clear();
+            int pos=0;
+            coeffsmodptr->resize(G.size());
+            for (int i=0;i<G.size();++i){
+              res.push_back(cur[pos]);
+              ++pos;
+              (*coeffsmodptr)[i].resize(initgensize);
+              for (int j=0;j<initgensize;++j){
+                (*coeffsmodptr)[i][j]=cur[pos];
+                ++pos;
+              }
+            }
+            goto cleanup;
+          }
 	  // first verify that the initial generators reduce to 0
 	  if (!eliminate_flag && !check_initial_generators(res,W[i],G,eps))
 	    continue;
@@ -16241,10 +16291,10 @@ void G_idn(vector<unsigned> & G,size_t s){
   }
   
   template<class tdeg_t>
-  bool mod_gbasis(vectpoly8<tdeg_t> & res,bool modularcheck,bool zdata,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param){
+  bool mod_gbasis(vectpoly8<tdeg_t> & res,bool modularcheck,bool zdata,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param,vector< vectpoly8<tdeg_t> > * coeffsmodptr=0){
     int gbasis_logz_age=gbasis_logz_age_sort;
     for (;;){
-      int tmp=in_mod_gbasis(res,modularcheck,zdata,rur,contextptr,gbasis_param,gbasis_logz_age);
+      int tmp=in_mod_gbasis(res,modularcheck,zdata,rur,contextptr,gbasis_param,gbasis_logz_age,coeffsmodptr);
       if (tmp!=-1) // -1 means part of the gbasis has been reconstructed
 	return tmp;
       if (gbasis_logz_age)
@@ -17880,6 +17930,24 @@ void G_idn(vector<unsigned> & G,size_t s){
   }
 
   template<class tdeg_t>
+  static void get_newres(const vectpoly8<tdeg_t> & resmod,vectpoly & newres,const vectpoly & v,vector< vectpoly8<tdeg_t> > * coeffsmodptr,vector<vectpoly>  * coeffsptr){
+    newres=vectpoly(resmod.size(),polynome(v.front().dim,v.front()));
+    for (unsigned i=0;i<resmod.size();++i)
+      resmod[i].get_polynome(newres[i]);
+    if (coeffsmodptr && coeffsptr){
+      coeffsptr->clear();
+      coeffsptr->resize(resmod.size());
+      for (unsigned i=0;i<resmod.size();++i){
+        const vectpoly8<tdeg_t> & src = (*coeffsmodptr)[i];
+        vectpoly & target = (*coeffsptr)[i];
+	target.resize(src.size());
+        for (unsigned j=0;j<src.size();++j)
+          src[j].get_polynome(target[j]);
+      }
+    }
+  }
+
+  template<class tdeg_t>
   static void get_newres_ckrur(const vectpolymod<tdeg_t> & resmod,vectpoly & newres,const vectpoly & v,const vector<unsigned> & G,modint env,int & rur,vector< vectpolymod<tdeg_t> > * coeffsmodptr,vector<vectpoly>  * coeffsptr){
     if (rur && !resmod.empty()){
       vectpolymod<tdeg_t> gbmod; gbmod.reserve(G.size());
@@ -17935,13 +18003,6 @@ void G_idn(vector<unsigned> & G,size_t s){
     }
   }
 
-  template<class T>
-  static void get_newres(const T & resmod,vectpoly & newres,const vectpoly & v){
-    newres=vectpoly(resmod.size(),polynome(v.front().dim,v.front()));
-    for (unsigned i=0;i<resmod.size();++i)
-      resmod[i].get_polynome(newres[i]);
-  }
-
 bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * env,bool modularalgo,bool modularcheck,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param,vector<vectpoly> * coeffsptr){
     bool & eliminate_flag=gbasis_param.eliminate_flag;
     int parallel=1;
@@ -17966,12 +18027,13 @@ bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * 
 	}
 	CLOCK_T c=CLOCK();
 	if (modularalgo && (!env || env->modulo==0 || env->moduloon==false)){
+          std::vector<giac::vectpoly8<tdeg_t14> > gbasis_coeffs;
 	  if (mod_gbasis(res,modularcheck,
 			 //order.o==_REVLEX_ORDER /* zdata*/,
 			 1 || !rur /* zdata*/,
-			 rur,contextptr,gbasis_param)){
+			 rur,contextptr,gbasis_param,coeffsptr?&gbasis_coeffs:0)){
 	    *logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 << " Memory " << memory_usage()*1e-6 << 'M'<<'\n';
-	    get_newres(res,newres,v);
+	    get_newres(res,newres,v,&gbasis_coeffs,coeffsptr);
 	    debug_infolevel=save_debuginfo; return true;
 	  }
 	}
@@ -18026,12 +18088,13 @@ bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * 
       }
       CLOCK_T c=CLOCK();
       if (modularalgo && (!env || env->modulo==0 || env->moduloon==false)){
+        std::vector<giac::vectpoly8<tdeg_t11> > gbasis_coeffs;
 	if (mod_gbasis(res,modularcheck,
 		       //order.o==_REVLEX_ORDER /* zdata*/,
 		       1 || !rur /* zdata*/,
-		       rur,contextptr,gbasis_param)){
+		       rur,contextptr,gbasis_param,coeffsptr?&gbasis_coeffs:0)){
 	  *logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 <<  " Memory " << memory_usage()*1e-6 << "M" << '\n';
-	  get_newres(res,newres,v);
+	  get_newres(res,newres,v,&gbasis_coeffs,coeffsptr);
 	  debug_infolevel=save_debuginfo; return true;
 	}
       }
@@ -18084,10 +18147,11 @@ bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * 
       }
       CLOCK_T c=CLOCK();
       if (modularalgo && (!env || env->modulo==0 || env->moduloon==false)){
+        std::vector<giac::vectpoly8<tdeg_t15> > gbasis_coeffs;
 	if (mod_gbasis(res,modularcheck,
 		       //order.o==_REVLEX_ORDER /* zdata*/,
 		       1 || !rur /* zdata*/,
-		       rur,contextptr,gbasis_param)){
+		       rur,contextptr,gbasis_param,coeffsptr?&gbasis_coeffs:0)){
 	  *logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 <<  " Memory " << memory_usage()*1e-6 << "M" << '\n';
 	  newres=vectpoly(res.size(),polynome(v.front().dim,v.front()));
 	  for (unsigned i=0;i<res.size();++i)
@@ -18147,10 +18211,11 @@ bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * 
     }
     CLOCK_T c=CLOCK();
     if (modularalgo && (!env || env->modulo==0 || env->moduloon==false)){
+      std::vector<giac::vectpoly8<tdeg_t64> > gbasis_coeffs;
       if (mod_gbasis(res,modularcheck,
 		     //order.o==_REVLEX_ORDER /* zdata*/,
 		     !rur /* zdata*/,
-		     rur,contextptr,gbasis_param)){
+		     rur,contextptr,gbasis_param,coeffsptr?&gbasis_coeffs:0)){
 	*logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 <<  " Memory " << memory_usage()*1e-6 << "M" << '\n';
 	newres=vectpoly(res.size(),polynome(v.front().dim,v.front()));
 	for (unsigned i=0;i<res.size();++i)
