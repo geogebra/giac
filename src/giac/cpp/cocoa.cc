@@ -3560,7 +3560,7 @@ namespace giac {
     bool operator ()(const T_unsigned<gen,tdeg_t> & a,const T_unsigned<gen,tdeg_t> & b) const {return !tdeg_t_greater(b.u,a.u,order);}
   };
   template<class tdeg_t>
-  void convert(const poly8<tdeg_t> & p,polymod<tdeg_t> &q,modint env){
+  void convert(const poly8<tdeg_t> & p,polymod<tdeg_t> &q,modint env,bool unitarize=true){
 #if 0
     q.coord.reserve(p.coord.size());
     q.dim=p.dim;
@@ -3594,7 +3594,7 @@ namespace giac {
       q.coord[i].u=p.coord[i].u;
     }
 #endif
-    if (env && !q.coord.empty()){
+    if (env && unitarize && !q.coord.empty()){
       q.sugar=q.coord.front().u.total_degree(p.order);
       if (q.coord.front().g!=1)
 	smallmultmod(invmod(q.coord.front().g,env),q,env);
@@ -3793,13 +3793,13 @@ namespace giac {
   }
 
   template<class tdeg_t>
-  void convert(const vectpoly8<tdeg_t> & v,vectpolymod<tdeg_t> & w,modint env,int n=0){
+  void convert(const vectpoly8<tdeg_t> & v,vectpolymod<tdeg_t> & w,modint env,int n=0,bool unitarize=true){
     if (n==0)
       n=v.size();
     if (w.size()<n)
       w.resize(n);
     for (unsigned i=0;i<n;++i){
-      convert(v[i],w[i],env);
+      convert(v[i],w[i],env,unitarize);
     }
   }
 
@@ -12904,7 +12904,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 
   template<class tdeg_t>
   bool in_zgbasis(vectpolymod<tdeg_t> &resmod,unsigned ressize,vector<unsigned> & G,modint env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool eliminate_flag,bool multimodular,int parallel,bool interred,vector< vectpolymod<tdeg_t> > * coeffsmodptr){
-    vectpolymod<tdeg_t> resmodorig; // resmodorig=resmod; // used for debug only
+    vectpolymod<tdeg_t> resmodorig=resmod; // used for debug only
     unsigned generators=ressize;
     bool seldeg=true; int sel1=0;
     ulonglong cleared=0;
@@ -13467,7 +13467,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       // already computed with previous primes, we do not have to compute
       // the basis again, we just need to reduce the Q gbasis that is inside
       // res8[0..rurinzgbasis-1] 
-      convert(res8,resmod,env,rurinzgbasis<0?-rurinzgbasis:0);
+      convert(res8,resmod,env,rurinzgbasis<0?-rurinzgbasis:0,!coeffsmodptr/* unitarize*/);
     }
     unsigned ressize = unsigned(res8.size());
     bool b=rurinzgbasis<0?true:in_zgbasis(resmod,ressize,G,env,totdeg,pairs_reducing_to_zero,f4buchberger_info,recomputeR,eliminate_flag,multimodular,parallel,interred,coeffsmodptr);

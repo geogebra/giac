@@ -6299,7 +6299,7 @@ namespace giac {
       order=-order;
       rur=1;
     }
-    if (gbasis_param.reinject_begin==-1 && gbasis_param.reinject_end==-1){
+    if (gbasis_param.reinject_begin==-1 && gbasis_param.reinject_end==-1 && !coeffsptr){
 #ifdef GIAC_REDUCEMODULO
       //if (res.size()<=2*res.front().dim) reduce(res,env);
 #else
