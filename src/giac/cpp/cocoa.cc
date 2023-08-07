@@ -15908,8 +15908,12 @@ void G_idn(vector<unsigned> & G,size_t s){
 	      Wlast[i].back().coord.swap(poly8tmp.coord);
 	    }
 	  }
-	  if (debug_infolevel>0)
-	    CERR << CLOCK()*1e-6 << " unstable mod " << p << " from " << gbasis_size << " reconstructed " << Wlast[i].size() << " (#" << i << ")" << '\n';
+	  if (debug_infolevel>0){
+	    CERR << CLOCK()*1e-6 << " unstable mod " << p << " from " << gbasis_size ;
+            if (coeffsmodptr)
+              CERR << "*(1+" << initgensize << ")";
+            CERR << " reconstructed " << Wlast[i].size() << " (#" << i << ")" << '\n';
+          }
 	  // possible improvement: if t==th and i==0 and Wlast.size()/V[i].size() 
 	  // has increased significantly
 	  // it might be a good idea to add it's component 

@@ -7796,6 +7796,22 @@ namespace giac {
     if (s>3 && v[3].type==_VECT)
       alg_lvar(v[3],l); // ordering for remaining variables
     alg_lvar(makevecteur(v[0],v[1]),l);
+    if (v[1].type==_VECT && v[1]._VECTptr->size()==1 && v[1]._VECTptr->front()==1){
+      if (v[0].type==_VECT){
+        vecteur & v0=*v[0]._VECTptr;
+        vecteur res0(v0.size()),res1;
+        if (quoptr){
+          for (int i=0;i<v0.size();++i){
+            res1.push_back(makevecteur(v0[i]));
+          }
+          return makevecteur(res0,res1);
+        }
+        return res0;
+      }
+      if (quoptr)
+        return makevecteur(0,makevecteur(v[0]));
+      return 0;
+    }   
     vecteur eq_in(*e2r(v[1],l,contextptr)._VECTptr);
     vectpoly eqp;
     if (!vecteur2vector_polynome(eq_in,l,eqp))
