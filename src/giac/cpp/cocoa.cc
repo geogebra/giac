@@ -1940,7 +1940,8 @@ namespace giac {
       z=tdeg_t64();
       z.tdeg=1;
       z.order_=x.order_;
-      z.ui=(longlong *)malloc((1+(x.order_.dim+degratiom1)/degratio)*sizeof(longlong));
+      int nbytes=(1+(x.order_.dim+degratiom1)/degratio)*sizeof(longlong);
+      z.ui=(longlong *)malloc(nbytes);
       z.ui[0]=1;
       const degtype * xptr=(degtype *)(x.ui+1),*xend=xptr+degratio*((x.order_.dim+degratiom1)/degratio),*yptr=(degtype *)(y.ui+1);
       degtype * resptr=(degtype *)(z.ui+1);
@@ -4083,6 +4084,7 @@ namespace giac {
     tdeg_t v=shift+shift; // new memory slot
     int dim=p.dim;
     for (;jt!=jtend;++jt){
+      //CERR << "dbg " << jt->u << " " << shift << "\n";
       add(jt->u,shift,v,dim);
       for (;it!=itend && tdeg_t_strictly_greater(it->u,v,p.order);++it){
 	r.coord.push_back(*it);
@@ -12936,7 +12938,8 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     if (coeffsmodptr){ // initialize to "identity"
       coeffsmodptr->clear();
       coeffsmodptr->resize(ressize);
-      TMP2.coord.push_back(T_unsigned<modint,tdeg_t>(1,0));
+      tdeg_t dg(index_t(dim),order);
+      TMP2.coord.push_back(T_unsigned<modint,tdeg_t>(1,dg));
       for (unsigned l=0;l<ressize;++l){
 	(*coeffsmodptr)[l].resize(ressize);
         for (unsigned m=0;m<ressize;++m){
@@ -12951,7 +12954,25 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 #ifdef GIAC_REDUCEMODULO
       reducesmallmod(resmod[l],resmod,G,-1,env,TMP2,env!=0,0,false,coeffsmodptr?&(*coeffsmodptr)[l]:0,coeffsmodptr);
 #endif
-      gbasis_updatemod(G,B,resmod,l,TMP2,env,true,oldG);
+      gbasis_updatemod(G,B,resmod,l,TMP2,env,coeffsmodptr?false:true,oldG);
+    }
+    for (unsigned l=0;l<ressize;++l){
+      // debug
+      if (0 && coeffsmodptr){ // check resmodorig=resmod at function begin
+        polymod<tdeg_t> _TMP1=resmod[l],_TMP2(order,dim);
+        vector< vectpolymod<tdeg_t> > & v = *coeffsmodptr;
+        int s=v.front().size();
+        vectpolymod<tdeg_t> & newcoeffs=v[l];
+        for (size_t k=0;k<s;k++){ // - sum(newcoeffs[k]*resmodorig[k])
+          for (size_t l=0;l<newcoeffs[k].coord.size();++l){
+            smallmultsubmodshift(_TMP1,0,newcoeffs[k].coord[l].g,resmodorig[k],newcoeffs[k].coord[l].u,_TMP2,env);
+            _TMP1.coord.swap(_TMP2.coord);
+          }
+        }
+        // should be 0
+        if (_TMP1.coord.size())
+          CERR << "zgbasis reduce coeff error " << _TMP1 << "\n";
+      }
     }
     if (debug_infolevel>1)
       CERR << CLOCK()*1e-6 << " initial collect, pairs " << B.size() << '\n';
@@ -13150,10 +13171,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  tdeg_t pshift=lcm-pi;
 	  tdeg_t qshift=lcm-qi;
 	  polymod<tdeg_t> _TMP1(order,dim),_TMP2(order,dim),_TMP3(order,dim);
+          vectpolymod<tdeg_t> & curfirst=v[i1];
+          vectpolymod<tdeg_t> & cursecond=v[i2];
 	  for (size_t k=0;k<s;k++){
-	    vectpolymod<tdeg_t> & curfirst=v[i1];
 	    _TMP1=curfirst[k];
-	    vectpolymod<tdeg_t> & cursecond=v[i2];
 	    _TMP2=cursecond[k];
 	    smallshift(_TMP1.coord,pshift,_TMP1.coord);
 	    smallmultsubmodshift(_TMP1,0,c,_TMP2,qshift,_TMP3,env);
@@ -13163,7 +13184,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           // debug
           if (0){ // check resmodorig=resmod at function begin
             _TMP1=TMP1; 
-            for (size_t k=0;k<s;k++){ // - sum(newcoeffs[k]*resmod[k])
+            for (size_t k=0;k<s;k++){ // - sum(newcoeffs[k]*resmodorig[k])
               for (size_t l=0;l<newcoeffs[k].coord.size();++l){
                 smallmultsubmodshift(_TMP1,0,newcoeffs[k].coord[l].g,resmodorig[k],newcoeffs[k].coord[l].u,_TMP2,env);
                 _TMP1.coord.swap(_TMP2.coord);
