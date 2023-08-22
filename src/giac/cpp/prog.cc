@@ -4020,7 +4020,7 @@ namespace giac {
     for (int i=0;i<n-1;++i){
       // j ← random integer such that i ≤ j < n
       // exchange a[i] and a[j]
-      int j=int(i+(giac_rand(contextptr)/double(rand_max2))*(n-i));
+      int j=int(i+(giac_rand(contextptr)/double(rand_max2+1.0))*(n-i));
       std::swap(temp[i],temp[j]);
     }
   }
@@ -4034,7 +4034,7 @@ namespace giac {
       for (int essai=20;essai>=0;--essai){
 	int i;
 	for (i=0;i<k;++i)
-	  ts[i]=t[i]=int(giac_rand(contextptr)/double(rand_max2)*n);
+	  ts[i]=t[i]=int(giac_rand(contextptr)/double(rand_max2+1.0)*n);
 	sort(ts.begin(),ts.end());
 	for (i=1;i<k;++i){
 	  if (ts[i]==ts[i-1])
@@ -4048,7 +4048,7 @@ namespace giac {
       vector<int> t; t.reserve(k);
       // (algorithm suggested by O. Garet)
       while (n>0){
-	int r=int(giac_rand(contextptr)/double(rand_max2)*n);
+	int r=int(giac_rand(contextptr)/double(rand_max2+1.0)*n);
 	if (r<n-k) // (n-k)/n=proba that the current n is not in the list
 	  --n;
 	else {
@@ -4068,7 +4068,7 @@ namespace giac {
     for (int j=0;j<k;++j){
       int r=-1;
       for (;;){
-	r=int(giac_rand(contextptr)/double(rand_max2)*n);
+	r=int(giac_rand(contextptr)/double(rand_max2+1.0)*n);
 	if (tab[r]){ tab[r]=false;  break; }
       }
       v[j]=r;

@@ -81,6 +81,16 @@ using namespace std;
 #define sprintf256 sprintf
 #endif
 
+#if defined HAVE_TGAMMAF || defined __APPLE__ || defined EMCC || defined EMCC2 || defined NO_BSD 
+inline float fgamma(float f1){ return tgammaf(f1); }
+#else
+#if defined(__MINGW_H) || defined(VISUALC) || defined(FXCG)// FIXME gamma, not used
+inline float fgamma(float f1){ return f1; }
+#else
+inline float fgamma(float f1){ return gammaf(f1); } // or tgammaf(f1) on some versions of emscripten
+#endif
+#endif
+
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC

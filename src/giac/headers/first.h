@@ -578,15 +578,6 @@ inline float ffloor(float f1){
 #endif
 }
 inline float finv(float f1){ return 1/f1; }
-#if defined HAVE_TGAMMAF || defined __APPLE__ || defined EMCC || defined EMCC2 || defined NO_BSD 
-inline float fgamma(float f1){ return tgammaf(f1); }
-#else
-#if defined(__MINGW_H) || defined(VISUALC) || defined(FXCG)// FIXME gamma, not used
-inline float fgamma(float f1){ return f1; }
-#else
-inline float fgamma(float f1){ return gammaf(f1); } // or tgammaf(f1) on some versions of emscripten
-#endif
-#endif
 #ifdef FXCG
 inline float atan2f(float f1,float f2,int rad){ if (rad) return std::atan2(f1,f2); else return std::atan2(f1,f2)*180/3.14159265358979323846;}
 #else
