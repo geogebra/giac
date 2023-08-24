@@ -9054,7 +9054,7 @@ namespace giac {
     return b;
   }
 
-  // set P mod p*q to be chinese remainder of P mod p and Q mod q
+  // set P mod p*q to be chinese remainder of P mod p and Q mod q 
   template<class tdeg_t>
   bool chinrem(poly8<tdeg_t> &P,const gen & pmod,poly8<tdeg_t> & Q,const gen & qmod,poly8<tdeg_t> & tmp){
     gen u,v,d,pqmod(pmod*qmod);
@@ -9189,10 +9189,54 @@ namespace giac {
     return 1;
   }
 
+  // parallel chinrem
+  
+  template<class tdeg_t>
+  struct chinrem_t {
+    poly8<tdeg_t> * Pptr;
+    const polymod<tdeg_t> * Qptr;
+    size_t start,end;
+    int U,qmodval;
+    mpz_t * pmodptr,*tmpzptr;
+  };
+
+  template<class tdeg_t>
+  void * thread_chinrem(void * _ptr){
+    chinrem_t<tdeg_t> * ptr=(chinrem_t<tdeg_t> *) _ptr;
+    poly8<tdeg_t> & P=*ptr->Pptr;
+    const polymod<tdeg_t> & Q=*ptr->Qptr;
+    size_t start=ptr->start,end=ptr->end;
+    if (end>P.coord.size())
+      end=P.coord.size();
+    int U=ptr->U,qmodval=ptr->qmodval;
+    mpz_t * pmodptr=ptr->pmodptr,*tmpzptr=ptr->tmpzptr;
+    typename vector< T_unsigned<gen,tdeg_t> >::iterator it=P.coord.begin()+start,itend=P.coord.begin()+end;
+    typename vector< T_unsigned<modint,tdeg_t> >::const_iterator jt=Q.coord.begin()+start;
+    for (;it!=itend;++it,++jt){
+      if (it->g.type==_ZINT){
+        int amodq=modulo(*it->g._ZINTptr,qmodval);
+        if (amodq==jt->g)
+          continue;
+        mpz_mul_si(*tmpzptr,*pmodptr,(U*(jt->g-longlong(amodq)))%qmodval);
+        mpz_add(*it->g._ZINTptr,*it->g._ZINTptr,*tmpzptr);
+      }
+      else {
+        mpz_mul_si(*tmpzptr,*pmodptr,(U*(longlong(jt->g)-it->g.val))%qmodval);
+        if (it->g.val>=0)
+          mpz_add_ui(*tmpzptr,*tmpzptr,it->g.val);
+        else
+          mpz_sub_ui(*tmpzptr,*tmpzptr,-it->g.val);
+        it->g=*tmpzptr;
+      }
+    }
+    return ptr;
+  }
 
   // set P mod p*q to be chinese remainder of P mod p and Q mod q
   template<class tdeg_t>
-  bool chinrem(poly8<tdeg_t> &P,const gen & pmod,const polymod<tdeg_t> & Q,int qmodval,poly8<tdeg_t> & tmp){
+  bool chinrem(poly8<tdeg_t> &P,const gen & pmod,const polymod<tdeg_t> & Q,int qmodval,poly8<tdeg_t> & tmp,int nthreads=1){
+    if (pmod.type!=_ZINT)
+      nthreads=1;
     gen u,v,d,pqmod(qmodval*pmod);
     egcd(pmod,qmodval,u,v,d);
     if (u.type==_ZINT)
@@ -9212,6 +9256,42 @@ namespace giac {
 	  break;
       }
       if (it==itend){
+#ifndef USE_GMP_REPLACEMENTS
+        if (0 &&
+            nthreads>1
+            // && P.coord.size()>=64*nthreads
+            ){
+          // realloc mpz_t inside P 
+          size_t taille=sizeinbase2(pqmod)+1;
+          for (it=P.coord.begin();it!=itend;++it){
+            if (it->g.type!=_ZINT) continue;
+            mpz_t & z=*it->g._ZINTptr;
+            size_t cur=mpz_size(z)*sizeof(mp_limb_t)*8;
+            if (cur<taille)
+              mpz_realloc2(z,2*taille);
+          }
+          // parallel chinese remaindering 
+          chinrem_t<tdeg_t> chinrem_param[64]; mpz_t tmptab[64];
+          pthread_t tab[64];
+          for (int j=0;j<nthreads;++j){
+            chinrem_t<tdeg_t> tmp={&P,&Q,j*P.coord.size()/nthreads,(j+1)*P.coord.size()/nthreads,U,qmodval,pmod._ZINTptr,&tmptab[j]};
+            chinrem_param[j]=tmp;
+            mpz_init2(tmptab[j],taille);
+            bool res=true;
+            if (j<nthreads-1)
+              res=pthread_create(&tab[j],(pthread_attr_t *) NULL,thread_chinrem<tdeg_t>,(void *) &chinrem_param[j]);
+            if (res)
+              thread_chinrem<tdeg_t>((void *)&chinrem_param[j]);
+          } // end creating threads
+          for (unsigned j=0;j<nthreads;++j){
+            void * ptr_=(void *)&nthreads; // non-zero initialisation
+            if (j<nthreads-1) pthread_join(tab[j],&ptr_);
+            mpz_clear(tmptab[j]); 
+          }
+          mpz_clear(tmpz);
+          return true;
+        }
+#endif
 	for (it=P.coord.begin(),jt=Q.coord.begin();it!=itend;++jt,++it){
 	  if (pmod.type!=_ZINT){
 	    it->g=it->g+u*(jt->g-it->g)*pmod;
@@ -9310,7 +9390,7 @@ namespace giac {
   // P and Q must have same leading monomials,
   // otherwise returns 0 and leaves P unchanged
   template<class tdeg_t>
-  int chinrem(vectpoly8<tdeg_t> &P,const gen & pmod,const vectpolymod<tdeg_t> & Q,int qmod,poly8<tdeg_t> & tmp,int start=0){
+  int chinrem(vectpoly8<tdeg_t> &P,const gen & pmod,const vectpolymod<tdeg_t> & Q,int qmod,poly8<tdeg_t> & tmp,int start=0,int nthreads=1){
     if (P.size()!=Q.size())
       return 0;
     for (unsigned i=start;i<P.size();++i){
@@ -9325,7 +9405,7 @@ namespace giac {
     }
     // LP(P)==LP(Q), proceed to chinese remaindering
     for (unsigned i=start;i<P.size();++i){
-      if (!chinrem(P[i],pmod,Q[i],qmod,tmp))
+      if (!chinrem(P[i],pmod,Q[i],qmod,tmp,nthreads))
 	return -1;
     }
     return 1;
@@ -16042,7 +16122,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	if (jpos<gbmod.size()){
 	  if (debug_infolevel)
 	    CERR << CLOCK()*1e-6 << " i=" << i << " begin chinese remaindering " << p << " (" << count+(t==th) << ")" << '\n';
-	  int r=chinrem(V[i],P[i],gbmod,p.val,poly8tmp,recon_added);// was jpos_start); but fails for cyclic7 // IMPROVE: maybe start at jpos in V[i]? at least start at recon_added
+	  int r=chinrem(V[i],P[i],gbmod,p.val,poly8tmp,recon_added,nthreads);// was jpos_start); but fails for cyclic7 // IMPROVE: maybe start at jpos in V[i]? at least start at recon_added
 	  if (debug_infolevel)
 	    CERR << CLOCK()*1e-6 << " end chinese remaindering" << '\n';
 	  if (r==-1){

@@ -3267,6 +3267,8 @@ namespace giac {
     decal=(b-a)/nstep;
     b=a+decal;
     for (int i=0;i<nstep;++i, a=b, fa=fb,b+=decal){
+      if (calc_mode(contextptr)==1 && res.size()>=16)
+        return res;
 #ifndef NO_STDEXCEPT
       try {
 #endif

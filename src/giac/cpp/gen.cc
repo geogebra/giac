@@ -14390,7 +14390,8 @@ void sprint_double(char * s,double d){
       return (_CPLXptr->print(contextptr) + string("+") + (_CPLXptr+1)->print(contextptr) + "*")+printi(contextptr);
     case _IDNT:
       if (calc_mode(contextptr)==1 && (is_inf(*this) ||
-                                       is_undef(*this)))
+                                       is_undef(*this) ||
+                                       strcmp(_IDNTptr->id_name,"undefined")==0))
 	return "?";
       return _IDNTptr->print(contextptr);
     case _SYMB: 
