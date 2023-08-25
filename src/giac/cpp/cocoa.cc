@@ -9256,8 +9256,8 @@ namespace giac {
 	  break;
       }
       if (it==itend){
-#ifndef USE_GMP_REPLACEMENTS
-        if (0 &&
+#if !defined USE_GMP_REPLACEMENTS && defined HAVE_LIBPTHREAD
+        if (//0 &&
             nthreads>1
             // && P.coord.size()>=64*nthreads
             ){
@@ -15936,7 +15936,8 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    } // end if !rur ...
 	    break; // find another prime
 	  }
-	  if (debug_infolevel) CERR << CLOCK()*1e-6 << " checking\n";
+	  if (debug_infolevel && (rur || t==th))
+            CERR << CLOCK()*1e-6 << " checking\n";
 	  for (;jpos<V[i].size();++jpos){
 	    unsigned Vijs=unsigned(V[i][jpos].coord.size());
 	    if (Vijs!=gbmod[jpos].coord.size()){
@@ -15950,6 +15951,11 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    int chks[]={int(.1*Vijs),int(Vijs/2), int(.9*Vijs)};
 	    //int chks[]={Vijs/2, int(.9*Vijs)};
 	    for (int chk=0;chk<sizeof(chks)/sizeof(int);++chk){
+              if (!rur && t<th){
+                // check only for the last prime of parallel threads
+                dobrk=true;
+                break;
+              }
 	      Vijs=chks[chk];
 	      if (Vijs && V[i][jpos].coord[Vijs].g.type==_ZINT){
 		if (!in_fracmod(P[i],V[i][jpos].coord[Vijs].g,
