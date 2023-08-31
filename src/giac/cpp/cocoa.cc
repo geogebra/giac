@@ -4245,8 +4245,9 @@ namespace giac {
     modint a=p.coord.front().g,b=q.coord.front().g;
     tdeg_t pshift=lcm-pi;
     unsigned sugarshift=pshift.total_degree(p.order);
-    // adjust sugar for res
+    // adjust sugar/logz for res
     res.sugar=p.sugar+sugarshift;
+    res.logz=p.logz+q.logz;
     // CERR << "spoly mod " << res.sugar << " " << pi << qi << '\n';
     if (p.order.o==_PLEX_ORDER || sugarshift!=0)
       smallshift(TMP1.coord,pshift,TMP1.coord);
@@ -4347,6 +4348,79 @@ namespace giac {
     if (z1.pos!=z2.pos)
       return z2.pos>z1.pos;
     return false;
+  }
+
+  // rewrite sum(A[i]*F[i]) mod env. By decreasing degree of A[i]*F[i]
+  // if a monomial of A[i] is divisible by the leading monomial of F[j]
+  // and A[j]*F[j] has a monomial of same degree
+  // replace A[i] by A[i]-quotient*F[j] and A[j] by A[j]+quotient*F[i]
+  // this will modify only monomials with smaller degree
+  template<class tdeg_t>
+  void reduceAF(vectpolymod<tdeg_t> & A,const vectpolymod<tdeg_t> & F,modint env,order_t order){
+    return; // no visible effect
+    polymod<tdeg_t> tmp;
+    int s=F.size();
+    vector <tdeg_t> lF;
+    for (unsigned i=0;i<s;++i)
+      lF.push_back(F[i].coord.front().u);
+    vector<int> startpos(s);
+    while (1){
+      tdeg_t aifideg;
+      bool prev=false;
+      vector<int> pos;
+      // find degree
+      for (int i=0;i<s;++i){
+        if (startpos[i]<A[i].coord.size()){
+          tdeg_t curdeg=A[i].coord[startpos[i]].u+lF[i];
+          if (prev){
+            if (curdeg==aifideg){
+              pos.push_back(i);
+              continue;
+            }
+            if (tdeg_t_greater(curdeg,aifideg,order)){
+              pos.clear(); pos.push_back(i);
+              aifideg=curdeg;
+            }
+          }
+          else {
+            pos.push_back(i);
+            aifideg=curdeg;
+            prev=true;
+          }
+        }
+      }
+      if (pos.empty()) // nothing left
+        break;
+      bool found=false;
+      // check for divisibility
+      for (int i=0;!found && i<pos.size()-1;++i){
+        int posi=pos[i];
+        aifideg=A[posi].coord[startpos[posi]].u;
+        for (int j=i+1;j<pos.size();++j){
+          int posj=pos[j];
+          if (tdeg_t_all_greater(aifideg,lF[posj],order)){
+            found=true;
+            modint a=A[posi].coord[startpos[posi]].g;
+            modint b=F[posj].coord[0].g;
+            modint q=smod(modint2(a)*invmod(b,env),env);
+            tdeg_t du=aifideg-lF[posj];
+            // replace A[posi] by A[posi]-quotient*F[posj]
+            // and A[posj]] by A[posj]+quotient*F[posi]
+            smallmultsubmodshift(A[posi],0,q,F[posj],du,tmp,env);
+            A[posi].coord.swap(tmp.coord);
+            smallmultsubmodshift(A[posj],0,-q,F[posi],du,tmp,env);
+            A[posj].coord.swap(tmp.coord);
+            break;
+          }
+        }
+      }
+      if (!found){
+        // increase positions
+        for (int i=0;i<pos.size();++i){
+          ++startpos[pos[i]];
+        }
+      }
+    }
   }
 
   template<class tdeg_t>
@@ -9258,17 +9332,24 @@ namespace giac {
       if (it==itend){
 #if !defined USE_GMP_REPLACEMENTS && defined HAVE_LIBPTHREAD
         if (//0 &&
-            nthreads>1
+            nthreads>1 
             // && P.coord.size()>=64*nthreads
             ){
-          // realloc mpz_t inside P 
-          size_t taille=sizeinbase2(pqmod)+1;
-          for (it=P.coord.begin();it!=itend;++it){
-            if (it->g.type!=_ZINT) continue;
-            mpz_t & z=*it->g._ZINTptr;
-            size_t cur=mpz_size(z)*sizeof(mp_limb_t)*8;
-            if (cur<taille)
-              mpz_realloc2(z,2*taille);
+          // realloc mpz_t inside P ?
+          size_t cur=sizeinbase2(pqmod);
+          int N=sizeinbase2(cur)-1;
+          size_t N2=(1ULL << N);
+          gen N3=pow(2,N2+31);
+          if (is_greater(N3,pqmod,context0)){
+            if (debug_infolevel)
+              CERR << CLOCK()*1e-6 << " parallel chinrem realloc bits=" << 2*N2 << "\n";
+            for (it=P.coord.begin();it!=itend;++it){
+              if (it->g.type!=_ZINT) continue;
+              mpz_t & z=*it->g._ZINTptr;
+              size_t taille=mpz_size(z)*sizeof(mp_limb_t)*8;
+              if (taille<2*N2)
+                mpz_realloc2(z,2*N2);
+            }
           }
           // parallel chinese remaindering 
           chinrem_t<tdeg_t> chinrem_param[64]; mpz_t tmptab[64];
@@ -9276,7 +9357,7 @@ namespace giac {
           for (int j=0;j<nthreads;++j){
             chinrem_t<tdeg_t> tmp={&P,&Q,j*P.coord.size()/nthreads,(j+1)*P.coord.size()/nthreads,U,qmodval,pmod._ZINTptr,&tmptab[j]};
             chinrem_param[j]=tmp;
-            mpz_init2(tmptab[j],taille);
+            mpz_init2(tmptab[j],cur);
             bool res=true;
             if (j<nthreads-1)
               res=pthread_create(&tab[j],(pthread_attr_t *) NULL,thread_chinrem<tdeg_t>,(void *) &chinrem_param[j]);
@@ -9467,10 +9548,107 @@ namespace giac {
     return true;
   }
 
+  bool chk_equal_mod(const gen & a,const vector<int> & p,int m){
+    if (a.type!=_VECT || a._VECTptr->size()!=p.size())
+      return false;
+    const_iterateur it=a._VECTptr->begin(),itend=a._VECTptr->end();
+    vector<int>::const_iterator jt=p.begin();
+    for (;it!=itend;++jt,++it){
+      if (it->type==_INT_ && it->val==*jt) continue;
+      if (!chk_equal_mod(*it,*jt,m))
+	return false;
+    }
+    return true;
+  }
+
+  bool chk_equal_mod(const vecteur & v,const vector< vector<int> >& p,int m){
+    if (v.size()!=p.size())
+      return false;
+    for (unsigned i=0;i<p.size();++i){
+      if (!chk_equal_mod(v[i],p[i],m))
+	return false;
+    }
+    return true;
+  }
+
   template<class tdeg_t>
-  bool fracmod(const poly8<tdeg_t> &P,const gen & p,
+  bool chk_equal_mod(const poly8<tdeg_t> & v,const polymod<tdeg_t> & p,int m){
+    // sizes may differ if a coeff of v is 0 mod m
+    if (v.coord.size()<p.coord.size())
+      return false;
+    if (v.coord.empty())
+      return true;
+    unsigned s = unsigned(v.coord.size());
+    int lc=smod(v.coord[0].g,m).val;
+    int lcp=p.coord.empty()?1:p.coord[0].g;
+    if (s==p.coord.size()){
+      if (lcp!=1){
+	for (unsigned i=0;i<s;++i){
+	  if (!chk_equal_mod(lcp*v.coord[i].g,(longlong(lc)*p.coord[i].g)%m,m))
+	    return false;
+	}
+      }
+      else {
+	for (unsigned i=0;i<s;++i){
+	  if (!chk_equal_mod(v.coord[i].g,(longlong(lc)*p.coord[i].g)%m,m))
+	    return false;
+	}
+      }
+      return true;
+    }
+    unsigned j=0; // position in p
+    for (unsigned i=0;i<s;++i){
+      if (v.coord[i].u==p.coord[j].u){
+	if (!chk_equal_mod(lcp*v.coord[i].g,(longlong(lc)*p.coord[j].g)%m,m))
+	  return false;
+	++j;
+      }
+      if (!chk_equal_mod(lcp*v.coord[i].g,0,m))
+	return false;
+    }
+    return true;
+  }
+
+  template<class tdeg_t>
+  bool chk_equal_mod(const vectpoly8<tdeg_t> & v,const vectpolymod<tdeg_t> & p,const vector<unsigned> & G,int m){
+    if (v.size()!=G.size())
+      return false;
+    for (unsigned i=0;i<G.size();++i){
+      if (!chk_equal_mod(v[i],p[G[i]],m))
+	return false;
+    }
+    return true;
+  }
+
+  template<class tdeg_t>
+  bool chk_equal_mod(const poly8<tdeg_t> & v,const poly8<tdeg_t> & p,int m){
+    if (v.coord.size()!=p.coord.size())
+      return false;
+    unsigned s=unsigned(p.coord.size());
+    int lc=smod(v.coord[0].g,m).val;
+    for (unsigned i=0;i<s;++i){
+      if (!chk_equal_mod(v.coord[i].g,(longlong(lc)*p.coord[i].g.val)%m,m))
+	return false;
+    }
+    return true;
+  }
+
+  template<class tdeg_t>
+  bool chk_equal_mod(const vectpoly8<tdeg_t> & v,const vectpoly8<tdeg_t> & p,const vector<unsigned> & G,int m){
+    if (v.size()!=G.size())
+      return false;
+    for (unsigned i=0;i<G.size();++i){
+      if (!chk_equal_mod(v[i],p[G[i]],m))
+	return false;
+    }
+    return true;
+  }
+
+  template<class tdeg_t>
+  int fracmod(const poly8<tdeg_t> &P,const gen & p,
 	       mpz_t & d,mpz_t & d1,mpz_t & absd1,mpz_t &u,mpz_t & u1,mpz_t & ur,mpz_t & q,mpz_t & r,mpz_t &sqrtm,mpz_t & tmp,
-	       poly8<tdeg_t> & Q){
+	       poly8<tdeg_t> & Q,
+               polymod<tdeg_t> * chkptr=0,int chkp=0){
     Q.coord.clear();
     Q.coord.reserve(P.coord.size());
     Q.dim=P.dim;
@@ -9484,7 +9662,7 @@ namespace giac {
 	g.uncoerce();
       if ( (g.type!=_ZINT) || (p.type!=_ZINT) ){
 	CERR << "bad type"<<'\n';
-	return false;
+	return 0;
       }
       if (tryL && L.type==_ZINT){
 	num=smod(L*g,p);
@@ -9495,7 +9673,7 @@ namespace giac {
 	}
       }
       if (!in_fracmod(p,g,d,d1,absd1,u,u1,ur,q,r,sqrtm,tmp,num,den))
-	return false;
+	return 0;
       if (num.type==_ZINT && mpz_sizeinbase(*num._ZINTptr,2)<=30)
 	num=int(mpz_get_si(*num._ZINTptr));
       if (den.type==_ZINT && mpz_sizeinbase(*den._ZINTptr,2)<=30)
@@ -9510,8 +9688,13 @@ namespace giac {
 	tryL=is_greater(p,L*L,context0);
       }
       Q.coord.push_back(T_unsigned<gen,tdeg_t>(g,P.coord[i].u));
+      if (chkptr && !chk_equal_mod(g,chkptr->coord[i].g,chkp)){
+        if (debug_infolevel)
+          CERR << CLOCK()*1e-6 << " early fracmod chk failure position " << i << " (" << P.coord.size() << ")\n";
+        return 2;
+      }
     }
-    return true;
+    return 1;
   }
 
   template<class tdeg_t>
@@ -9909,102 +10092,6 @@ namespace giac {
 	B=b;
     }
     return B;
-  }
-
-  bool chk_equal_mod(const gen & a,const vector<int> & p,int m){
-    if (a.type!=_VECT || a._VECTptr->size()!=p.size())
-      return false;
-    const_iterateur it=a._VECTptr->begin(),itend=a._VECTptr->end();
-    vector<int>::const_iterator jt=p.begin();
-    for (;it!=itend;++jt,++it){
-      if (it->type==_INT_ && it->val==*jt) continue;
-      if (!chk_equal_mod(*it,*jt,m))
-	return false;
-    }
-    return true;
-  }
-
-  bool chk_equal_mod(const vecteur & v,const vector< vector<int> >& p,int m){
-    if (v.size()!=p.size())
-      return false;
-    for (unsigned i=0;i<p.size();++i){
-      if (!chk_equal_mod(v[i],p[i],m))
-	return false;
-    }
-    return true;
-  }
-
-  template<class tdeg_t>
-  bool chk_equal_mod(const poly8<tdeg_t> & v,const polymod<tdeg_t> & p,int m){
-    // sizes may differ if a coeff of v is 0 mod m
-    if (v.coord.size()<p.coord.size())
-      return false;
-    if (v.coord.empty())
-      return true;
-    unsigned s = unsigned(v.coord.size());
-    int lc=smod(v.coord[0].g,m).val;
-    int lcp=p.coord.empty()?1:p.coord[0].g;
-    if (s==p.coord.size()){
-      if (lcp!=1){
-	for (unsigned i=0;i<s;++i){
-	  if (!chk_equal_mod(lcp*v.coord[i].g,(longlong(lc)*p.coord[i].g)%m,m))
-	    return false;
-	}
-      }
-      else {
-	for (unsigned i=0;i<s;++i){
-	  if (!chk_equal_mod(v.coord[i].g,(longlong(lc)*p.coord[i].g)%m,m))
-	    return false;
-	}
-      }
-      return true;
-    }
-    unsigned j=0; // position in p
-    for (unsigned i=0;i<s;++i){
-      if (v.coord[i].u==p.coord[j].u){
-	if (!chk_equal_mod(lcp*v.coord[i].g,(longlong(lc)*p.coord[j].g)%m,m))
-	  return false;
-	++j;
-      }
-      if (!chk_equal_mod(lcp*v.coord[i].g,0,m))
-	return false;
-    }
-    return true;
-  }
-
-  template<class tdeg_t>
-  bool chk_equal_mod(const vectpoly8<tdeg_t> & v,const vectpolymod<tdeg_t> & p,const vector<unsigned> & G,int m){
-    if (v.size()!=G.size())
-      return false;
-    for (unsigned i=0;i<G.size();++i){
-      if (!chk_equal_mod(v[i],p[G[i]],m))
-	return false;
-    }
-    return true;
-  }
-
-  template<class tdeg_t>
-  bool chk_equal_mod(const poly8<tdeg_t> & v,const poly8<tdeg_t> & p,int m){
-    if (v.coord.size()!=p.coord.size())
-      return false;
-    unsigned s=unsigned(p.coord.size());
-    int lc=smod(v.coord[0].g,m).val;
-    for (unsigned i=0;i<s;++i){
-      if (!chk_equal_mod(v.coord[i].g,(longlong(lc)*p.coord[i].g.val)%m,m))
-	return false;
-    }
-    return true;
-  }
-
-  template<class tdeg_t>
-  bool chk_equal_mod(const vectpoly8<tdeg_t> & v,const vectpoly8<tdeg_t> & p,const vector<unsigned> & G,int m){
-    if (v.size()!=G.size())
-      return false;
-    for (unsigned i=0;i<G.size();++i){
-      if (!chk_equal_mod(v[i],p[G[i]],m))
-	return false;
-    }
-    return true;
   }
 
   // excluded==-1 and G==identity in calls
@@ -12986,7 +13073,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 
   template<class tdeg_t>
   bool in_zgbasis(vectpolymod<tdeg_t> &resmod,unsigned ressize,vector<unsigned> & G,modint env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool eliminate_flag,bool multimodular,int parallel,bool interred,vector< vectpolymod<tdeg_t> > * coeffsmodptr){
-    vectpolymod<tdeg_t> resmodorig=resmod; // used for debug only
+    vectpolymod<tdeg_t> resmodorig(resmod); resmodorig.resize(ressize);
     unsigned generators=ressize;
     bool seldeg=true; int sel1=0;
     ulonglong cleared=0;
@@ -13033,6 +13120,8 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     for (unsigned l=0;l<ressize;++l){
 #ifdef GIAC_REDUCEMODULO
       reducesmallmod(resmod[l],resmod,G,-1,env,TMP2,env!=0,0,false,coeffsmodptr?&(*coeffsmodptr)[l]:0,coeffsmodptr);
+      if (coeffsmodptr)
+        reduceAF((*coeffsmodptr)[l],resmodorig,env,order);
 #endif
       gbasis_updatemod(G,B,resmod,l,TMP2,env,coeffsmodptr?false:true,oldG);
     }
@@ -13109,11 +13198,12 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	}
       }
       vector<tdeg_t> Blcm(B.size());
-      vector<int> Blcmdeg(B.size());
+      vector<int> Blcmdeg(B.size()),Blogz(B.size());
       vector<unsigned> nterms(B.size());
       for (unsigned i=0;i<B.size();++i){
 	clean[B[i].first]=false;
 	clean[B[i].second]=false;
+        Blogz[i]=resmod[B[i].first].logz+resmod[B[i].second].logz;
 	index_lcm(res[B[i].first].ldeg,res[B[i].second].ldeg,Blcm[i],order);
 	if (!totdeg)
 	  Blcmdeg[i]=giacmax(res[B[i].first].maxtdeg+(Blcm[i]-res[B[i].first].ldeg).total_degree(order),res[B[i].second].maxtdeg+(Blcm[i]-res[B[i].second].ldeg).total_degree(order));
@@ -13217,8 +13307,26 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	}
 	polymod<tdeg_t> TMP1(order,dim),TMP2(order,dim);
 	zpolymod<tdeg_t> TMP;
-	paire bk=B[smallposv.back()];
-	B.erase(B.begin()+smallposv.back());
+	paire bk;
+        if (coeffsmodptr){
+#if 0
+          // find smallest logz
+          int logzpos=0,logz=Blogz[smallposv.front()];
+          for (int i=1;i<smallposv.size();++i){
+            if (Blogz[smallposv[i]]<logz){
+              logzpos=i;
+              logz=Blogz[smallposv[i]];
+            }
+          }
+          bk=B[smallposv[logzpos]]; B.erase(B.begin()+smallposv[logzpos]);
+#else
+          bk=B[smallposv.front()]; B.erase(B.begin()+smallposv.front());
+#endif
+        }
+        else {
+          bk=B[smallposv.back()];
+          B.erase(B.begin()+smallposv.back());
+        }
 	if (!learning && pairs_reducing_to_zero && learned_position<pairs_reducing_to_zero->size() && bk==(*pairs_reducing_to_zero)[learned_position]){
 	  if (debug_infolevel>2)
 	    CERR << bk << " learned " << learned_position << '\n';
@@ -13306,6 +13414,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	}
 	if (!TMP1.coord.empty()){
 	  resmod.push_back(TMP1);
+          reduceAF(newcoeffs,resmodorig,env,order);
 	  if (coeffsmodptr){
 	    coeffsmodptr->push_back(newcoeffs);
 	    // if coeffsmodptr, we need TMP and res only to run zgbasis_updatemod, maybe we could run gbasis_updatemod without zpolymod with reduce=false argument
@@ -13534,8 +13643,16 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       unsigned t=0;
       for (unsigned i=0;i<resmod.size();++i)
 	t += unsigned(resmod[i].coord.size());
-      CERR << CLOCK()*1e-6 << " total number of monomials in res " << t << " basis size " << G.size() << '\n';
+      CERR << CLOCK()*1e-6 << " total number of monomials in gbasis " << t << " basis size " << G.size() << '\n';
       CERR << "Number of monomials cleared " << cleared << '\n';
+      if (coeffsmodptr){
+        for (unsigned i=0;i<G.size();++i){
+          const vector<polymod<tdeg_t> > & v=(*coeffsmodptr)[G[i]];
+          for (unsigned j=0;j<v.size();++j)
+            t += v[j].coord.size();
+        }
+        CERR << "Number of monomials in gbasis and coeffs " << t << '\n';
+      }
     }
     smod(resmod,env);
     return true;
@@ -15982,9 +16099,10 @@ void G_idn(vector<unsigned> & G,size_t s){
 	      }
 	      break;
 	    }
-	    if (!fracmod(V[i][jpos],P[i],
-			 zd,zd1,zabsd1,zu,zu1,zur,zq,zr,zsqrtm,ztmp,
-			 poly8tmp)){
+            int chkfrac=fracmod(V[i][jpos],P[i],
+                                zd,zd1,zabsd1,zu,zu1,zur,zq,zr,zsqrtm,ztmp,
+                                poly8tmp,&gbmod[jpos],p.val);
+	    if (chkfrac==0){
 	      rechecked=0;
 	      CERR << CLOCK()*1e-6 << " reconstruction failure at position " << jpos << '\n';
 	      break;
@@ -15996,7 +16114,9 @@ void G_idn(vector<unsigned> & G,size_t s){
 	      }
 	      break;
 	    }
-	    if (!chk_equal_mod(poly8tmp,gbmod[jpos],p.val)){
+	    if (chkfrac==2 || !chk_equal_mod(poly8tmp,gbmod[jpos],p.val)){
+              if (chkfrac==2 && debug_infolevel)
+                CERR << CLOCK()*1e-6 << " unstable modular check at position " << jpos << "\n";
 	      rechecked=0;
 	      if (rur_gbasis && rur>0 && jpos<gbasis_size){ // go try to reconstruct the rur part
 		jpos=gbasis_size-1; continue;
@@ -16038,7 +16158,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	      cleardeno(current_gbasis);
 	    }
 	    double reconpart=recon_n2/double(V[i].size());
-	    if (!rur &&
+	    if (!rur && !coeffsmodptr &&
 		recon_n0/double(V[i].size())<0.95 && 
 		(reconpart-prevreconpart>augmentgbasis 
 		 // || (reconpart>prevreconpart && recon_count>=giacmax(128,th*4))

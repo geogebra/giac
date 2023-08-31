@@ -7563,14 +7563,14 @@ namespace giac {
     // if (l.front()._VECTptr->size()==15 && order.val==11) l.front()._VECTptr->insert(l.front()._VECTptr->begin()+11,0);
     // convert eq to polynomial
     if (debug_infolevel)
-      CERR << CLOCK()*1e-6 << " before convert :" << memory_usage()*1e-6 << '\n';
+      CERR << CLOCK()*1e-6 << " memory before convert :" << memory_usage()*1e-6 << "M\n";
     vectpoly eqp;
     {
       // all negative integers will be duplicated in e2r, adding about 50% mem
       gen eqtmp=e2r(v[0],l,contextptr);
       const vecteur & eq_in=*eqtmp._VECTptr;
       if (debug_infolevel)
-	CERR << CLOCK()*1e-6 << " after convert :" << memory_usage()*1e-6 << '\n';
+	CERR << CLOCK()*1e-6 << " after convert :" << memory_usage()*1e-6 << "M\n";
       if (!vecteur2vector_polynome(eq_in,l,eqp))
 	return vecteur(1,plus_one);
     }
