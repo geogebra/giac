@@ -830,6 +830,10 @@ namespace giac {
   gen common_EXT(gen & a,gen & b,const vecteur * l,GIAC_CONTEXT){
     if (a==b)
       return a;
+    if (0 && a.type==_VECT && b.type==_VECT && *a._VECTptr==*b._VECTptr){
+      a.subtype=b.subtype=_POLY1__VECT;
+      return a;
+    }
     if (a.type==_FRAC)
       return common_EXT(a._FRACptr->num,b,l,contextptr);
     if (b.type==_FRAC)

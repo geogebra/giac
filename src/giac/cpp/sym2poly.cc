@@ -1046,7 +1046,7 @@ namespace giac {
 	num=num._POLYptr->coord.front().value;
       }
     }
-    if (num.type==_FRAC){
+    while (num.type==_FRAC){
       den=den*num._FRACptr->den;
       num=num._FRACptr->num*pow(num._FRACptr->den,d-1);
     }

@@ -5893,6 +5893,13 @@ namespace giac {
       return gensizeerr(contextptr);
     if (v[1].type==_INT_){
       v[0]=eval(v[0],eval_level(contextptr),contextptr);
+      if (v[0].type==_VECT && s==2 && args.subtype==_SEQ__VECT && v[1].val>0){
+        const vecteur & l=*v[0]._VECTptr; int step=v[1].val;
+        gen res;
+        for (int pos=0;pos<l.size();pos+=step)
+          res += l[pos];
+        return res;
+      }
       return prodsum(v,false);
     }
     if (s==5)
@@ -6147,7 +6154,9 @@ namespace giac {
     if (!all){
       if (n==2)
 	return inv(6,context0);
+#ifndef WIN32 // otherwise wrong for n>=28??
       if (0)
+#endif
 	return bernoulli_rat(n);
 #if defined HAVE_LIBBERNMM && !defined BF2GMP_H
       if (n>=
@@ -6173,7 +6182,7 @@ namespace giac {
 #ifdef HAVE_LIBPARI
       return _pari(makesequence(string2gen("bernfrac",false),n),context0);
 #endif
-      return bernoulli_rat(n);
+      return bernoulli_rat(n); 
     }
     gen a(plus_one);
     gen b(rdiv(1-n,plus_two,context0));

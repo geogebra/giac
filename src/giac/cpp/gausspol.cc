@@ -6145,12 +6145,36 @@ namespace giac {
 	  vecteur v=*res._VECTptr;
 	  unsigned j=0;
 	  lv=vecteur(1,vecteur(1,lv[0]));
+          int fpos=f.size();
 	  for (;j<v.size();++j){
 	    res=v[j];
 	    if (res.type!=_VECT || res._VECTptr->size()!=2)
 	      break;
 	    int mult=res._VECTptr->back().val;
-	    res=sym2r(res._VECTptr->front(),lv,context0);
+	    res=res._VECTptr->front();
+            if (res.is_symb_of_sommet(at_plus) && res._SYMBptr->feuille.type==_VECT && res._SYMBptr->feuille._VECTptr->size()==2 && res._SYMBptr->feuille._VECTptr->front()==x__IDNT_e
+                ){
+              res=res._SYMBptr->feuille._VECTptr->back();
+              gen den=1;
+              if (res.is_symb_of_sommet(at_prod) && res._SYMBptr->feuille.type==_VECT && res._SYMBptr->feuille._VECTptr->size()==2){
+                den=res._SYMBptr->feuille._VECTptr->back();
+                if (den.is_symb_of_sommet(at_inv))
+                  den=den._SYMBptr->feuille;
+                else
+                  den=undef;
+                res=res._SYMBptr->feuille._VECTptr->front();
+              }
+              if (!is_integer(den) || !res.is_symb_of_sommet(at_rootof))
+                break;
+              res=res._SYMBptr->feuille;
+              res=algebraic_EXTension(res[0],change_subtype(res[1],0))/den;
+              polynome p(1);
+              p.coord.push_back(monomial<gen>(1,1,1,1));
+              p.coord.push_back(monomial<gen>(res,0,1,1));
+              f.push_back(facteur<polynome>(p,mult));
+              continue;
+            } else
+              break; // res=sym2r(res,lv,context0); // FIXME, might recurse
 	    if (res.type==_FRAC)
 	      res=res._FRACptr->num;
 	    if (res.type!=_POLY)
@@ -6166,6 +6190,8 @@ namespace giac {
 	    }
 	    continue;// return true;
 	  }
+          else
+            f.erase(f.begin()+fpos,f.end());
 	}
       }
 #endif
