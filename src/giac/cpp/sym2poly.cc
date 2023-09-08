@@ -794,7 +794,7 @@ namespace giac {
     int lowest_degree=int(v.size()),deg;
     factorization::const_iterator f_it,f_itend=f.end();
     // Rewrite num if it's an ext with i, because it is rewritten by factor
-    if (num.type==_EXT && has_i(num)){
+    if (num.type==_EXT && has_i(num)){ 
       gen b=1;
       for (f_it=f.begin();f_it!=f_itend;++f_it){
 	b=b*f_it->fact.coord.back().value;
@@ -842,10 +842,31 @@ namespace giac {
 	  break;
 	}
 	int d=v.size()-1;
-	gen cur=abs(d*arg(numlvf,contextptr)-numprevf);
+	gen cur0=arg(numlvf,contextptr)-numprevf/gen(d),cur=d*cur0;
+        gen N=_round(cur/cst_two_pi,contextptr);
+        cur=cur-N*cst_two_pi;
+        cur=abs(cur,contextptr);
 	if (is_greater(prev,cur,contextptr)){
+          bool doit=!is_zero(N) && v.front()==1; //  && v.back()==-num; // extensions are not represented the same...
+          for (int i=1;doit && i<d;++i){
+            if (!is_zero(v[i]))
+              doit=false;
+          }
 	  v=vcur;
-	  num=numcur;
+          num=numcur;
+          // fix argument, only valid if v==x^d-num
+          if (doit){
+            gen f=exp(-N*cst_two_pi*cst_i/gen(d),contextptr);
+            f=sym2r(f,vecteur(1,vecteur(0)),contextptr);
+            gen n,d;
+            fxnd(f,n,d);
+            if (n.type==_POLY){
+              n=n._POLYptr->coord.front().value; // FIXME?? rewrite i in n using extensions of numcur??
+              gen fixarg=n/d;
+              num=numcur*fixarg;
+              v.back()=v.back()*fixarg;
+            }
+          }
 	  prev=cur;
 	}
       }
