@@ -2,6 +2,7 @@
 // Thanks to Zoltan Kovacs for motivating this work, in order to improve geogebra theorem proving
 // Special thanks to Anna M. Bigatti from CoCoA team for insightfull discussions on how to choose an order for elimination
 #include "giacPCH.h"
+#define MAXNTHREADS 64
 
 #ifndef WIN32
 #define COCOA9950
@@ -9311,6 +9312,8 @@ namespace giac {
   bool chinrem(poly8<tdeg_t> &P,const gen & pmod,const polymod<tdeg_t> & Q,int qmodval,poly8<tdeg_t> & tmp,int nthreads=1){
     if (pmod.type!=_ZINT)
       nthreads=1;
+    if (nthreads>MAXNTHREADS)
+      nthreads=MAXNTHREADS;
     gen u,v,d,pqmod(qmodval*pmod);
     egcd(pmod,qmodval,u,v,d);
     if (u.type==_ZINT)
@@ -9352,8 +9355,8 @@ namespace giac {
             }
           }
           // parallel chinese remaindering 
-          chinrem_t<tdeg_t> chinrem_param[64]; mpz_t tmptab[64];
-          pthread_t tab[64];
+          chinrem_t<tdeg_t> chinrem_param[MAXNTHREADS]; mpz_t tmptab[MAXNTHREADS];
+          pthread_t tab[MAXNTHREADS];
           for (int j=0;j<nthreads;++j){
             chinrem_t<tdeg_t> tmp={&P,&Q,j*P.coord.size()/nthreads,(j+1)*P.coord.size()/nthreads,U,qmodval,pmod._ZINTptr,&tmptab[j]};
             chinrem_param[j]=tmp;
@@ -11784,7 +11787,7 @@ template<class modint_t,class modint_u>
     if (info_ptr && !learning)
       Ksizes=giacmin(info_ptr->Ksizes+3,Kcols);
     bool Kdone=false;
-    int th=parallel-1; // giacmin(threads,64)-1;
+    int th=giacmin(parallel,MAXNTHREADS)-1; // giacmin(threads,64)-1;
 #ifdef GIAC_CACHE2ND
     vector<modint2> subcoeff2;
 #else
@@ -11848,8 +11851,8 @@ template<class modint_t,class modint_u>
 	else
 	  positions.back()=Bs;
       } // end else interreduce 
-      pthread_t tab[64];
-      thread_buchberger_t<tdeg_t> buchberger_param[64];
+      pthread_t tab[MAXNTHREADS];
+      thread_buchberger_t<tdeg_t> buchberger_param[MAXNTHREADS];
       int colonnes=N;
       for (int j=0;j<=th;++j){
 	thread_buchberger_t<tdeg_t> tmp={&res,&K,&G,&B,&permuB,&leftshift,&rightshift,&R,Rhashptr,&Rdegpos,env,positions[j],positions[j+1],int(N),int(Kcols),&firstpos,&Mindex,&Mcoeff,&coeffindex,&indexes,&used,bitmap,j==th && debug_infolevel>1,learning,(short int)interreduce,pairs_reducing_to_zero,learned_parallel[j]};
@@ -12551,7 +12554,7 @@ template<class modint_t,class modint_u>
       }
       swap(K1,K);
     }
-    int th=parallel-1; // giacmin(threads,64)-1;
+    int th=giacmin(parallel,MAXNTHREADS)-1; // giacmin(threads,64)-1;
     if (interreduce){ // interreduce==true means final interreduction
       ;
     }
@@ -15302,11 +15305,11 @@ void G_idn(vector<unsigned> & G,size_t s){
       lcmdeno(v[i],vden[i],context0);
     }
 #ifdef HAVE_LIBPTHREAD
-    int nthreads=threads_allowed?threads:1;
+    int nthreads=threads_allowed?giacmin(threads,MAXNTHREADS):1;
     if (nthreads>1){
       if (nthreads>rur_certify_maxthreads) nthreads=rur_certify_maxthreads; // don't use too much memory
       *logptr(contextptr) << "rur_certify: multi-thread check, info displayed on may miss some threads info. Threads in use: " << nthreads << "\n";
-      pthread_t tab[64];
+      pthread_t tab[MAXNTHREADS];
       vector< rur_certify_t<tdeg_t> > rur_certify_param; rur_certify_param.reserve(nthreads);
       for (int j=0;j<nthreads;++j){
 	vector<int> chk_index;
@@ -15321,7 +15324,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  thread_rur_certify<tdeg_t>((void *)&rur_certify_param[j]);
       }
       bool ans=true;
-      void * threadretval[64];
+      void * threadretval[MAXNTHREADS];
       for (int j=0;j<nthreads;++j){
 	threadretval[j]=&threadretval; // non-0 initialization
 	if (j<nthreads-1)
@@ -15454,9 +15457,9 @@ void G_idn(vector<unsigned> & G,size_t s){
     mpz_init(ztmp);
     bool ok=true;
 #ifdef HAVE_LIBPTHREAD
-    int nthreads=(threads_allowed && multithread_enabled)?threads:1,th,parallel=1;
-    pthread_t tab[64];
-    thread_gbasis_t<tdeg_t> gbasis_param[64];
+    int nthreads=(threads_allowed && multithread_enabled)?giacmin(threads,MAXNTHREADS):1,th,parallel=1;
+    pthread_t tab[MAXNTHREADS];
+    thread_gbasis_t<tdeg_t> gbasis_param[MAXNTHREADS];
 #else
     int nthreads=1,th,parallel=1;
 #endif
@@ -15486,7 +15489,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	if (count>=simult_primes_seuil3)
 	  sp=simult_primes3;
 	th=giacmin(nthreads-1,sp-1); // no more than simult_primes 
-	th=giacmin(th,63);
+	th=giacmin(th,MAXNTHREADS-1);
 	parallel=nthreads/(th+1);
       }
 #if !defined(EMCC) && !defined(EMCC2)
@@ -15642,7 +15645,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 #endif
 #ifdef HAVE_LIBPTHREAD
       // finish threads before chinese remaindering
-      void * threadretval[64];
+      void * threadretval[MAXNTHREADS];
       for (int t=0;t<th;++t){
 	threadretval[t]=&threadretval; // non-0 initialization
 	pthread_join(tab[t],&threadretval[t]);
