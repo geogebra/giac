@@ -34,7 +34,7 @@ using namespace std;
 #include <sys/time.h>
 #include <time.h>
 #else 
-#if defined VISUALC //|| defined __MINGW_H
+#if defined VISUALC && !defined FREERTOS //|| defined __MINGW_H
 
 #include <sys/timeb.h>
 #include <sys/types.h>

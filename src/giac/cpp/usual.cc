@@ -87,7 +87,9 @@ inline float fgamma(float f1){ return tgammaf(f1); }
 #if defined(__MINGW_H) || defined(VISUALC) || defined(FXCG)// FIXME gamma, not used
 inline float fgamma(float f1){ return f1; }
 #else
+#if !defined GIAC_HAS_STO_38 && !defined FREERTOS
 inline float fgamma(float f1){ return gammaf(f1); } // or tgammaf(f1) on some versions of emscripten
+#endif
 #endif
 #endif
 

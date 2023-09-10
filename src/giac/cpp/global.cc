@@ -78,9 +78,11 @@ using namespace std;
 #endif
 #ifndef BESTA_OS
 #ifdef WIN32
-#ifdef VISUALC
+#if defined VISUALC
+#if !defined FREERTOS
 #include <chrono>
 #include <thread>
+#endif
 #else
 #if !defined(GNUWINCE) && !defined(__MINGW_H)
 #include <sys/cygwin.h>
@@ -1980,7 +1982,7 @@ namespace giac {
     // return _access(path, mode );
     return 0;
   }
-#if defined RTOS_THREADX || defined VISUALC
+#if (defined RTOS_THREADX || defined VISUALC) && !defined FREERTOS
 extern "C" void Sleep(unsigned int miliSecond);
 #endif
 
