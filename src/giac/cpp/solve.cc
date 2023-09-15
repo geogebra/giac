@@ -623,6 +623,17 @@ namespace giac {
       v=vecteur(1,gensizeerr(gettext("Bad equal in")+e.print(contextptr)));
       return;
     }
+    if (is_inequation(e)){
+      if (e._SYMBptr->sommet==at_inferieur_strict)
+	v=solve_inequation(e,x,-2,contextptr);
+      else if (e._SYMBptr->sommet==at_inferieur_egal)
+	v=solve_inequation(e,x,-1,contextptr);
+      else if (e._SYMBptr->sommet==at_superieur_strict)
+	v=solve_inequation(e,x,2,contextptr);
+      else if (e._SYMBptr->sommet==at_superieur_egal)
+	v=solve_inequation(e,x,1,contextptr);
+      return;
+    }
     bool complexmode=isolate_mode & 1;
     vecteur lv(lvarx(e,x));
     int s=int(lv.size());

@@ -23,7 +23,11 @@
 #define LCD_HEIGHT_PX 128
 #else
 #define LCD_WIDTH_PX 320
+#if defined NUMWORKS || defined NSPIRE_NEWLIB
+#define LCD_HEIGHT_PX 222
+#else
 #define LCD_HEIGHT_PX 240
+#endif
 #endif
 #ifdef __cplusplus
 extern "C" {
@@ -184,13 +188,13 @@ extern "C" {
   
 #ifdef __cplusplus
 #ifdef NUMWORKS
-  inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake=0){ return os_draw_string_small(x,y,c,bg,s,fake);}
+  inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake=0){ return os_draw_string(x,y,c,bg,s,fake);}
 #else
   int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake=0);
 #endif
 #else
 #ifdef NUMWORKS
-  inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake){ return os_draw_string_small(x,y,c,bg,s,fake);}
+  inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake){ return os_draw_string(x,y,c,bg,s,fake);}
 #else
   int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake);
 #endif

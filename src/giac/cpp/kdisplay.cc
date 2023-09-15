@@ -203,7 +203,7 @@ int get_free_memory(){
 }
 #endif
 
-#if defined NSPIRE_NEWLIB && !defined BW
+#if defined NUMWORKS // || (defined NSPIRE_NEWLIB && !defined BW) 
   int GetSetupSetting(int mode){
     return 0;
   }
@@ -15398,7 +15398,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 #ifdef NSPIRE_NEWLIB
     int res=inputline((lang==1)?"esc ou chaine vide: annulation":"esc or empty string: cancel",(lang==1)?"Nom de fichier:":"Filename:",str,false,65,0);
 #else
-    int res=inputline((lang==1)?"EXIT ou chaine vide: annulation":"EXIT or empty string: cancel",(lang==1)?"Nom de fichier:":"Filename:",str,false);
+    int res=inputline((lang==1)?"EXIT ou chaine vide: annulation":"EXIT or empty string: cancel",(lang==1)?"Nom de fichier:":"Filename:",str,false,65,0);
 #endif
     if (res==KEY_CTRL_EXIT || str.empty())
       return 0;

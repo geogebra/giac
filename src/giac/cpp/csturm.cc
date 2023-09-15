@@ -3801,8 +3801,10 @@ bool aberth_singleprec(const vfdbl & P0,int N,double eps,vfdbl & R,int cluster_s
       else
         d=d/(fdbl(1-rand()/2.0/RAND_MAX));
       if (absdz<eps/deg){
+#ifndef KHICAS
         if (debug_infolevel>1 && !zi_done[i])
           *logptr(contextptr) << "New root found " << zi-d << "\n";
+#endif
         zi_done[i]=1;
       }
       delta += absdz;
@@ -3815,12 +3817,14 @@ bool aberth_singleprec(const vfdbl & P0,int N,double eps,vfdbl & R,int cluster_s
       if (zi_done[k])
         ++count;
     }
+#ifndef KHICAS
     if (debug_infolevel>0){
       *logptr(contextptr) << "Aberth single prec iter " << k <<  " found=" << count << " cluster_search_start=" << cluster_start << ".." << cluster_afterend << " delta=" << delta << " time " << clock()*1e-6 << "\n";
       if (debug_infolevel>2){
         *logptr(contextptr) << "Current approx roots " << R << "\n";
       }
     }
+#endif
     if (doing_cluster){
       if (ok>=afteriter)
         return true;
