@@ -2499,7 +2499,14 @@ namespace giac {
       return v;
     }
     // Inequation?
-    if (e.type==_SYMB){ 
+    if (e.type==_SYMB){
+      if (e._SYMBptr->sommet==at_prod){
+        vecteur res;
+        vecteur v=gen2vecteur(e._SYMBptr->feuille);
+        for (int i=0;i<v.size();++i)
+          res=mergevecteur(res,solve(v[i],x,isolate_mode,contextptr));
+        return res;
+      }
       if (e._SYMBptr->sommet==at_inferieur_strict)
 	return solve_inequation(e,x,-2,contextptr);
       if (e._SYMBptr->sommet==at_inferieur_egal)
