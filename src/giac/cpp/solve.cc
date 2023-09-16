@@ -2602,7 +2602,7 @@ namespace giac {
       res=vecteur(1,x); // everything is solution up to now
       double eps=epsilon(contextptr);
       int N=decimal_digits(contextptr);
-      int addN=10; double muleps=eps*std::pow(10.0,-addN);
+      int addN=50; double muleps=eps*std::pow(10.0,-addN);
       for (;it!=itend;++it){
 	if (res==vecteur(1,x)){
           // temp. increase proot default precision, otherwise roots are discarded
