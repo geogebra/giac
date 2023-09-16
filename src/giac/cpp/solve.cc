@@ -2602,10 +2602,11 @@ namespace giac {
       res=vecteur(1,x); // everything is solution up to now
       double eps=epsilon(contextptr);
       int N=decimal_digits(contextptr);
+      int addN=10; double muleps=eps*std::pow(10.0,-addN);
       for (;it!=itend;++it){
 	if (res==vecteur(1,x)){
           // temp. increase proot default precision, otherwise roots are discarded
-          epsilon(1e-10*eps,contextptr); decimal_digits(N+10,contextptr);
+          epsilon(muleps*eps,contextptr); decimal_digits(N+addN,contextptr);
 	  res=solve(*it,*x._IDNTptr,isolate_mode,contextptr);
           epsilon(eps,contextptr); decimal_digits(N,contextptr);
         }
@@ -2618,7 +2619,7 @@ namespace giac {
 		jt->is_symb_of_sommet(at_and)){
 	      assumesymbolic(*jt,0,contextptr); // assume and solve next equation
               // temp. increase proot default precision, otherwise roots are discarded
-              epsilon(1e-10*eps,contextptr); decimal_digits(N+10,contextptr);
+              epsilon(muleps*eps,contextptr); decimal_digits(N+addN,contextptr);
 	      newres=mergevecteur(newres,solve(*it,*x._IDNTptr,isolate_mode,contextptr));
               epsilon(eps,contextptr); decimal_digits(N,contextptr);
 	      purgenoassume(x,contextptr);
