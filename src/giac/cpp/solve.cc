@@ -2498,7 +2498,7 @@ namespace giac {
 	return vecteur(1,gensizeerr(gettext("Modulo too large")));
       return v;
     }
-    // Inequation?
+    // embedded inequation? Beware, needs revert if we evaluate later to check one solution 
     if (e.type==_SYMB){
       if (e._SYMBptr->sommet==at_prod){
         vecteur res;
@@ -2555,6 +2555,27 @@ namespace giac {
     return remove_and(g._SYMBptr->feuille,u);
   }
 
+  // revert inequations for checking because solve(x>0) returns x>0 but x>0 evals to 1, not 0
+  gen solve_revert_inequations(const gen & g){
+    if (g.type==_VECT){
+      vecteur v=*g._VECTptr;
+      for (int i=0;i<v.size();++i)
+        v[i]=solve_revert_inequations(v[i]);
+      return gen(v,g.subtype);
+    }
+    if (g.type!=_SYMB)
+      return g;
+    if (g._SYMBptr->sommet==at_superieur_strict)
+      return symbolic(at_inferieur_egal,g._SYMBptr->feuille);
+    if (g._SYMBptr->sommet==at_superieur_egal)
+      return symbolic(at_inferieur_strict,g._SYMBptr->feuille);
+    if (g._SYMBptr->sommet==at_inferieur_strict)
+      return symbolic(at_superieur_egal,g._SYMBptr->feuille);
+    if (g._SYMBptr->sommet==at_inferieur_egal)
+      return symbolic(at_superieur_strict,g._SYMBptr->feuille);
+    return symbolic(g._SYMBptr->sommet,solve_revert_inequations(g._SYMBptr->feuille));
+  }
+
   vecteur solve(const gen & e,const gen & x,int isolate_mode,GIAC_CONTEXT){
     bool complexmode=isolate_mode & 1;
     vecteur res;
@@ -2583,6 +2604,7 @@ namespace giac {
 	if (res==vecteur(1,x))
 	  res=solve(*it,*x._IDNTptr,isolate_mode,contextptr);
 	else { // check every element of res
+          gen eq=solve_revert_inequations(*it);
 	  vecteur newres;
 	  const_iterateur jt=res.begin(),jtend=res.end();
 	  for (;jt!=jtend;++jt){
@@ -2593,7 +2615,7 @@ namespace giac {
 	      purgenoassume(x,contextptr);
 	    }
 	    else { 
-	      gen tst=subst(*it,x,*jt,true,contextptr);
+	      gen tst=subst(eq,x,*jt,true,contextptr);
 	      tst=eval(tst,1,contextptr);
 	      tst=normal(tst,1,contextptr);
 	      if (is_zero(tst,contextptr))

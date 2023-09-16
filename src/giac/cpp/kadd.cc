@@ -749,6 +749,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	  ptr=strcpy(ptr,electroneg+4)+strlen(ptr);
 	}
 	copy_clipboard(console_buf,true);
+        return KEY_CTRL_PASTE;        
 	// return Console_Input(console_buf);
       }
       if (smallmenu.selection==4){
@@ -764,6 +765,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	if (c>=0){
 	  char buf[2]={c,0};
 	  copy_clipboard(buf,true);
+          return KEY_CTRL_PASTE;
 	}
 	break;
       }

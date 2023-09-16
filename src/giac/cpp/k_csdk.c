@@ -1145,7 +1145,7 @@ int ascii_get(int* adaptive_cursor_state){
   // Special chars
   if (isKeyPressed(KEY_NSPIRE_SCRATCHPAD)) return SHIFTCTRL(KEY_CTRL_SETUP,KEY_LOAD,KEY_SAVE);
   if (isKeyPressed(KEY_NSPIRE_VAR)) return SHIFTCTRL(KEY_CTRL_VARS,KEY_CHAR_FACTOR,KEY_CHAR_STORE);
-  if (isKeyPressed(KEY_NSPIRE_DOC))		return SHIFT(KEY_CTRL_MENU,KEY_CTRL_SD);
+  if (isKeyPressed(KEY_NSPIRE_DOC))		return SHIFTCTRL(KEY_CTRL_MENU,KEY_CTRL_SD,KEY_CTRL_INS);
   if (isKeyPressed(KEY_NSPIRE_CAT))		return KEY_BOOK;
   if (isKeyPressed(KEY_NSPIRE_DEL))		return SHIFTCTRL(KEY_CTRL_DEL,KEY_CTRL_DEL,KEY_CTRL_AC);
   if (isKeyPressed(KEY_NSPIRE_RET))		return KEY_CTRL_EXE;

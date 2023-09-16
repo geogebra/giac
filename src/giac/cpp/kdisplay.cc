@@ -19288,6 +19288,8 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
         int res=khicas_addins_menu(contextptr);
         if (res==KEY_CTRL_MENU)
           return res;
+        if (res==KEY_CTRL_PASTE)
+          Console_Input((const char *) paste_clipboard());
         Console_Disp(1,contextptr);
         return CONSOLE_SUCCEEDED;
       }
