@@ -2600,9 +2600,15 @@ namespace giac {
       const_iterateur it=e._VECTptr->begin(),itend=e._VECTptr->end();
       gen curx=x._IDNTptr->eval(1,x,contextptr);
       res=vecteur(1,x); // everything is solution up to now
+      double eps=epsilon(contextptr);
+      int N=decimal_digits(contextptr);
       for (;it!=itend;++it){
-	if (res==vecteur(1,x))
+	if (res==vecteur(1,x)){
+          // temp. increase proot default precision, otherwise roots are discarded
+          epsilon(1e-10*eps,contextptr); decimal_digits(N+10,contextptr);
 	  res=solve(*it,*x._IDNTptr,isolate_mode,contextptr);
+          epsilon(eps,contextptr); decimal_digits(N,contextptr);
+        }
 	else { // check every element of res
           gen eq=solve_revert_inequations(*it);
 	  vecteur newres;
@@ -2611,7 +2617,10 @@ namespace giac {
 	    if (is_inequation(*jt) ||
 		jt->is_symb_of_sommet(at_and)){
 	      assumesymbolic(*jt,0,contextptr); // assume and solve next equation
+              // temp. increase proot default precision, otherwise roots are discarded
+              epsilon(1e-10*eps,contextptr); decimal_digits(N+10,contextptr);
 	      newres=mergevecteur(newres,solve(*it,*x._IDNTptr,isolate_mode,contextptr));
+              epsilon(eps,contextptr); decimal_digits(N,contextptr);
 	      purgenoassume(x,contextptr);
 	    }
 	    else { 
