@@ -2501,11 +2501,18 @@ namespace giac {
     // embedded inequation? Beware, needs revert if we evaluate later to check one solution 
     if (e.type==_SYMB){
       if (e._SYMBptr->sommet==at_prod){
-        vecteur res;
         vecteur v=gen2vecteur(e._SYMBptr->feuille);
-        for (int i=0;i<v.size();++i)
-          res=mergevecteur(res,solve(v[i],x,isolate_mode,contextptr));
-        return res;
+        int i=0;
+        for (;i<v.size();++i){
+          if (is_inequation(v[i]))
+            break;
+        }
+        if (i<v.size()){
+          vecteur res;
+          for (i=0;i<v.size();++i)
+            res=mergevecteur(res,solve(v[i],x,isolate_mode,contextptr));
+          return res;
+        }
       }
       if (e._SYMBptr->sommet==at_inferieur_strict)
 	return solve_inequation(e,x,-2,contextptr);
