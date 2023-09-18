@@ -79,7 +79,7 @@ def emsdkRunDir = file("$emsdkDir")
 
 def emscriptenVersion = 'tag-3.1.18'
 if (System.env['EMSCRIPTEN_VERSION'] != null) {
-    emscriptenVersion = System.env['EMSCRIPTEN_VERSION'];
+    emscriptenVersion = System.env['EMSCRIPTEN_VERSION']
 }
 def emscriptenDir = file("$emsdkRunDir/emscripten/latest")
 
@@ -138,14 +138,14 @@ def minIosVersion = '9.0'
 def simulatorPostfix = "-simulator"
 def catalystPostfix = "-macabi"
 def iosTarget(arch, minIosVersion, postfix = "") {
-    return "${arch}-apple-ios${minIosVersion}${postfix}";
+    return "${arch}-apple-ios${minIosVersion}${postfix}"
 }
 
 def iosClangCompilerArgs(args, sdk, arch, minIosVersion, target) {
     appleCompilerArgs(args)
     for (int i = args.size() - 1; i >= 0; i--) {
         if (args[i].equals("-nostdinc")) {
-            args.remove(i);
+            args.remove(i)
         }
     }
     args << "-isysroot"
@@ -286,8 +286,8 @@ def appleCompilerArgs(args) {
     // isystem args also removed, see https://github.com/gradle/gradle-native/issues/583
     for (int i = args.size() - 1; i >= 0; i--) {
         if ((args[i].equals("-I") || args[i].equals("-isystem")) && !args[i+1].startsWith("$rootDir")) {
-            args.remove(i + 1);
-            args.remove(i);
+            args.remove(i + 1)
+            args.remove(i)
         }
     }
 }
@@ -1038,7 +1038,7 @@ task createGiacWasmJs(dependsOn: 'createGiacGgbJsWasm') {
             commandLine "bash", "-c", "base64 -w0 giacggb.wasm > giacggb.wasm.b64"
             workingDir binaryJsDir
         }
-        def wasmBase64 = file("${binaryJsDir}/giacggb.wasm.b64").text;
+        def wasmBase64 = file("${binaryJsDir}/giacggb.wasm.b64").text
         file("${binaryJsDir}/giac.wasm.js").text = file("${binaryJsDir}/giacggb.js").text
                 .replace('Module', '__ggb__giac').replace('"use asm";', '')
                 .replace('giacggb.wasm', "data:application/octet-stream;base64,${wasmBase64}")
