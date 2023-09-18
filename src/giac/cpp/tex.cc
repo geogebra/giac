@@ -627,7 +627,7 @@ namespace giac {
     mathmode=true;
     int n=int(s0.size()),j;
     for (j=n-1;j>=2;--j){
-      if (s0[j]>32 && isalpha(s0[j]))
+      if (s0[j]>32 && my_isalpha(s0[j]))
 	break;
     }
     string s=s0.substr(0,j+1),sadd;
@@ -1362,7 +1362,7 @@ namespace giac {
       if (par && !v.front().is_symb_of_sommet(at_plus)){
 	int ress=int(res.size()),i;
 	for (i=1;i<ress;++i){
-	  if (res[i]<=32 || !isalpha(res[i]))
+	  if (res[i]<=32 || !my_isalpha(res[i]))
 	    break;
 	}
 	if (i+12<ress && res.substr(i,6)=="\\left(" && res.substr(ress-6,6)=="right)")

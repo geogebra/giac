@@ -1192,7 +1192,7 @@ namespace giac {
 	if (ss>2 && s[0]=='\'' && s[ss-1]=='\'')
 	  s=s.substr(1,ss-2);
 	for (unsigned i=0;i<s.size();++i){
-	  if (!isalpha(s[i]))
+	  if (!my_isalpha(s[i]))
 	    s[i]='_';
 	}
 	lock_syms_mutex();  
@@ -12123,7 +12123,8 @@ namespace giac {
   const mksa_unit __l_unit={0.001,3,0,0,0,0,0,0,0};
   const mksa_unit __lam_unit={3183.09886184,-2,0,0,0,0,0,1,0};
   const mksa_unit __lb_unit={0.45359237,0,1,0,0,0,0,0,0};
-  const mksa_unit __lbf_unit={4.44922161526,1,1,-2,0,0,0,0,0};
+  const mksa_unit __lbf_unit={4.44822161526,1,1,-2,0,0,0,0,0};
+  //const mksa_unit __lbf_unit={4.44922161526,1,1,-2,0,0,0,0,0};
   const mksa_unit __lbmol_unit={453.59237,0,0,0,0,0,1,0,0};
   const mksa_unit __lbt_unit={0.3732417216,0,1,0,0,0,0,0,0};
   const mksa_unit __lep_unit={0.857*41.76e6,2,1,-2,0,0,0,0,0};

@@ -7585,6 +7585,10 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
   }
 #endif
 
+  bool my_isalpha(char c){
+    return (c>='a' && c<='z') || (c>='A' && c<='Z');
+  }
+
   int find_or_make_symbol(const string & s,gen & res,void * scanner,bool check38,GIAC_CONTEXT){
       int tmpo=opened_quote(contextptr);
       if (tmpo & 2)
@@ -7744,7 +7748,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	      string coeff;
 	      for (++i;i<ss;++i){
 		// up to next alphabetic char
-		if (s[i]>32 && isalpha(s[i])){
+		if (s[i]>32 && my_isalpha(s[i])){
 		  --i;
 		  break;
 		}
@@ -7862,7 +7866,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 
   void convert_python(string & cur,GIAC_CONTEXT){
     bool indexshift=array_start(contextptr); //xcas_mode(contextptr)!=0 || abs_calc_mode(contextptr)==38;
-    if (cur[0]=='_' && (cur.size()==1 || !isalpha(cur[1])))
+    if (cur[0]=='_' && (cur.size()==1 || !my_isalpha(cur[1])))
       cur[0]='@'; // python shortcut for ans(-1)
     bool instring=cur.size() && cur[0]=='"';
     int openpar=0;
@@ -8126,7 +8130,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
       pythonmode=true;
       pythoncompat=true;
     }
-    if (s_orig[first]=='#' || (s_orig[first]=='_' && !isalpha(s_orig[first+1])) || s_orig.substr(first,4)=="from" || s_orig.substr(first,7)=="import " || s_orig.substr(first,4)=="def "){
+    if (s_orig[first]=='#' || (s_orig[first]=='_' && !my_isalpha(s_orig[first+1])) || s_orig.substr(first,4)=="from" || s_orig.substr(first,7)=="import " || s_orig.substr(first,4)=="def "){
       pythonmode=true;
       pythoncompat=true;
     }
@@ -8303,7 +8307,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	    if (p>0 && p<int(cur.size())){
 	      --p;
 	      // does cur[pos+1..p-1] look like a string?
-	      bool str=!isalpha(cur[q]) || !isalphan(cur[p]);
+	      bool str=!my_isalpha(cur[q]) || !isalphan(cur[p]);
 	      if (p && cur[p]=='.' && cur[p-1]>'9')
 		str=true;
 	      if (p-q>=minchar_for_quote_as_string(contextptr))

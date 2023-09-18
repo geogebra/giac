@@ -980,7 +980,7 @@ namespace giac {
       else {
 	string coeff;
 	for (++i;i<ss;++i){
-	  if (s[i]>32 && isalpha(s[i])){
+	  if (s[i]>32 && my_isalpha(s[i])){
 	    --i;
 	    break;
 	  }

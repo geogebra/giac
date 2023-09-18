@@ -3208,7 +3208,7 @@ namespace giac {
   // check value type for storing value in s using 38 compatibility mode
   bool check_sto_38(gen & value,const char * s){
     int ss=int(strlen(s));
-    if (ss>2 || (ss==2 && s[1]>32 && isalpha(s[1])) ){
+    if (ss>2 || (ss==2 && s[1]>32 && my_isalpha(s[1])) ){
       if (s[0]=='G')
 	return true;
       for (int i=0;i<ss;++i){

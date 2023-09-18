@@ -667,7 +667,7 @@ namespace giac {
 	menu->selection=menu->numitems;
 	return MENU_RETURN_SELECTION;
       }
-      if (key<256 && isalpha(key)){
+      if (key<256 && my_isalpha(key)){
 	key=tolower(key);
 	int pos=strlen(keyword);
 	if (pos>=4)
@@ -4384,7 +4384,7 @@ namespace xcas {
     int lc=int(text_width(a.fontsize,(",")));
     string us=u.ptr()->s;
     int ls=int(text_width(a.fontsize,(us.c_str())));
-    // if (isalpha(u.ptr()->s[0])) ls += 1;
+    // if (my_isalpha(u.ptr()->s[0])) ls += 1;
     if (u==at_abs)
       ls = 2;
     // special cases first int, sigma, /, ^
@@ -10847,7 +10847,7 @@ namespace xcas {
 #ifndef BW
 	  handle_f5();
 #endif
-	  if (inputline(menu_name,(lang==1)?"Nouvelle valeur?":"New value?",s1,false,65,0)==KEY_CTRL_EXE && s1.size()>0 && isalpha(s1[0])){
+	  if (inputline(menu_name,(lang==1)?"Nouvelle valeur?":"New value?",s1,false,65,0)==KEY_CTRL_EXE && s1.size()>0 && my_isalpha(s1[0])){
 	    if (s1.size()>10)
 	      s1=s1.substr(0,10);
 	    strcpy(menu_name,("name "+s1).c_str());
@@ -12284,7 +12284,7 @@ namespace xcas {
 	  handle_f5();
 #endif
 	std::string varname;
-	if (inputline(((lang==1)?"Stocker la selection dans":"Save selection in",(lang==1)?"Nom de variable: ":"Variable name: "),0,varname,false,65,contextptr) && !varname.empty() && isalpha(varname[0])){
+	if (inputline(((lang==1)?"Stocker la selection dans":"Save selection in",(lang==1)?"Nom de variable: ":"Variable name: "),0,varname,false,65,contextptr) && !varname.empty() && my_isalpha(varname[0])){
 	  giac::gen g(varname,contextptr);
 	  giac::gen ge(protecteval(g,1,contextptr));
 	  if (g.type!=_IDNT){
@@ -13480,7 +13480,7 @@ namespace xcas {
 	  }
 	  std::string firsterr;
 	  for (j=i;j<err.size();++j){
-	    if (!isalpha(err[j]))
+	    if (!my_isalpha(err[j]))
 	      break;
 	    firsterr += err[j];
 	  }
@@ -13789,7 +13789,7 @@ namespace xcas {
   }
 
   bool isalphanum(char c){
-    return isalpha(c) || (c>='0' && c<='9');
+    return my_isalpha(c) || (c>='0' && c<='9');
   }
 
   void search_msg(){
@@ -13944,7 +13944,7 @@ namespace xcas {
     if (!buf)
       return;
     // if (!fake) cout << "print:" << buf << " " << strlen(buf) << " " << color << "\n";
-    if (!isalpha(buf[0]) && color != 2016 && color != 4)
+    if (!my_isalpha(buf[0]) && color != 2016 && color != 4)
       color = 0;
     if (!fake){
       if (minimini || color == 2016 || color == 4) // comment in small font
@@ -14341,7 +14341,7 @@ namespace xcas {
 int find_color(const char * s,GIAC_CONTEXT){
     if (s[0]=='"')
       return 4;
-    if (!isalpha(s[0]))
+    if (!my_isalpha(s[0]))
       return 0;
     char buf[256];
     const char * ptr=s;
@@ -14709,7 +14709,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
           }
           if (i == 0)
           {
-            if (isalpha(*src))
+            if (my_isalpha(*src))
             { // skip keyword
               for (; giac::isalphanum(*src) || *src == '_'; ++src)
               {
@@ -14719,7 +14719,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
             // go to next space or alphabetic char
             for (; *src; ++i, ++src)
             {
-              if (*src == ' ' || (i && *src == ',') || (text->python && *src == '#') || (!text->python && *src == '/' && *(src + 1) == '/') || *src == '"' || isalpha(*src))
+              if (*src == ' ' || (i && *src == ',') || (text->python && *src == '#') || (!text->python && *src == '/' && *(src + 1) == '/') || *src == '"' || my_isalpha(*src))
                 break;
             }
           }
@@ -14806,7 +14806,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
           print(textX, textY, singleword, couleur, invert, /*fake*/ false, minimini);
         else { // print two parts, commandname in color and remain in black
           char *ptr = singleword;
-          if (isalpha(*ptr)){
+          if (my_isalpha(*ptr)){
             while (giac::isalphanum(*ptr) || *ptr == '_')
               ++ptr;
           }
@@ -15083,14 +15083,14 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      ++i;
 	    }
 	    if (i==0){
-	      if (isalpha(*src)){ // skip keyword
+	      if (my_isalpha(*src)){ // skip keyword
 		for (;isalphanum(*src) || *src=='_';++src){
 		  ++i;
 		}
 	      }
 	      // go to next space or alphabetic char
 	      for (;*src;++i,++src){
-		if (*src==' ' || (i && *src>=' ' && *src<='/') || (text->python>0 && *src=='#') || (text->python<=0 && *src=='/' && *(src+1)=='/')|| *src=='"' || isalpha(*src))
+		if (*src==' ' || (i && *src>=' ' && *src<='/') || (text->python>0 && *src=='#') || (text->python<=0 && *src=='/' && *(src+1)=='/')|| *src=='"' || my_isalpha(*src))
 		  break;
 	      }
 	    }
@@ -15172,7 +15172,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	    print(textX,textY,singleword,couleur,invert,/*fake*/false,minimini);
 	  else { // print two parts, commandname in color and remain in black
 	    char * ptr=singleword;
-	    if (isalpha(*ptr)){
+	    if (my_isalpha(*ptr)){
 	      while (isalphanum(*ptr) || *ptr=='_')
 		++ptr;
 	    }
@@ -15464,7 +15464,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     else
       msg=(((lang==1)?"Creer nouveau ou editer ":"Create new or edit ")+(w.size()==1?w.front():giac::gen(w,giac::_SEQ__VECT)).print(contextptr));
     handle_f5();
-    if (inputline(msg.c_str(),((lang==1)?"Nom de variable:":"Variable name:"),*sptr,false,65,0) && !sptr->empty() && isalpha((*sptr)[0])){
+    if (inputline(msg.c_str(),((lang==1)?"Nom de variable:":"Variable name:"),*sptr,false,65,0) && !sptr->empty() && my_isalpha((*sptr)[0])){
       giac::gen g(*sptr,contextptr);
       giac::gen ge(protecteval(g,1,contextptr));
       if (g.type==giac::_IDNT){
@@ -19924,14 +19924,14 @@ int print_x=1,print_y=0;
             ++i;
           }
           if (i==0){
-            if (isalpha(*src)){ // skip keyword
+            if (my_isalpha(*src)){ // skip keyword
               for (;isalphanum(*src) || *src=='_';++src){
                 ++i;
               }
             }
             // go to next space or alphabetic char
             for (;*src;++i,++src){
-              if (*src==' ' || (i && *src>=' ' && *src<='/') || (python && *src=='#') || (!python && *src=='/' && *(src+1)=='/')|| *src=='"' || isalpha(*src))
+              if (*src==' ' || (i && *src>=' ' && *src<='/') || (python && *src=='#') || (!python && *src=='/' && *(src+1)=='/')|| *src=='"' || my_isalpha(*src))
                 break;
             }
           }
@@ -19953,7 +19953,7 @@ int print_x=1,print_y=0;
         print(print_x,print_y,singleword,couleur,invert,/*fake*/false,minimini);
       else { // print two parts, commandname in color and remain in black
         char * ptr=singleword;
-        if (isalpha(*ptr)){
+        if (my_isalpha(*ptr)){
           while (isalphanum(*ptr) || *ptr=='_')
             ++ptr;
         }

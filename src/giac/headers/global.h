@@ -224,6 +224,8 @@ void giac_sha256_final(SHA256_CTX *ctx, BYTE hash[]);
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
+  bool my_isalpha(char c); // avoid assert failure with isalpha on visualc
+
   // 3 or 1 if a list of space separated commandnames includes buf
   int dichotomic_search(const char * const * tab,unsigned tab_size,const char * s);
   void opaque_double_copy(void * source,void * target);

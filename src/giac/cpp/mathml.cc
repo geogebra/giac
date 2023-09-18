@@ -883,11 +883,11 @@ namespace giac {
     size_t l=s.size(),deb=0;
     string cur;
     for (size_t i=0;i<l;++i){
-      if (!isalpha(s[i])){
+      if (!my_isalpha(s[i])){
 	cur=cur+idnt2mathml_(s.substr(deb,i-deb));
 	deb=i;
 	for (;i<l;++i){
-	  if (isalpha(s[i]))
+	  if (my_isalpha(s[i]))
 	    break;
 	}
 	cur = cur +s.substr(deb,i-deb);
@@ -1780,7 +1780,7 @@ namespace giac {
     string s0=sorig;
     int n=int(s0.size()),j;
     for (j=n-1;j>=2;--j){
-      if (s0[j]>32 && isalpha(s0[j]))
+      if (s0[j]>32 && my_isalpha(s0[j]))
 	break;
     }
     string s=s0.substr(0,j+1),sadd;
