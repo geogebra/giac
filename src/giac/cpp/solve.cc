@@ -2634,7 +2634,7 @@ namespace giac {
 	    else { 
 	      gen tst=subst(eq,x,*jt,true,contextptr);
 	      tst=eval(tst,1,contextptr);
-	      tst=normal(tst,1,contextptr);
+	      tst=normal(tst,1,contextptr); // FIXME call a solve_simplify(tst,contextptr);
 	      if (is_zero(tst,contextptr))
 		newres.push_back(*jt);
 	    }
@@ -6677,7 +6677,7 @@ namespace giac {
 		vecteur elim(var);
 		eqs.erase(eqs.begin()+i);
 		for (unsigned k=0;k<eqs.size();++k){
-		  eqs[k]=_numer(subst(eqs[k],elim[j],elimj,false,contextptr),contextptr);
+		  eqs[k]=_numer(subst(eqs[k],elim[j],elimj,false,contextptr),contextptr); // FIXME a solve_simplify should be called to simplify more, example solve([a=b*c,ln(a)=ln(b)+ln(c)],[a,b,c]);
 		}
 		elim.erase(elim.begin()+j);
 		vecteur res=gsolve(eqs,elim,complexmode,evalf_after,contextptr);
@@ -6770,7 +6770,7 @@ namespace giac {
 	    if (!is_undef(res)){
 	      eq.erase(eq.begin()+i);
 	      for (unsigned j=0;j<sol.size();++j){
-		gen eq1=subst(eq,curvar,sol[j],false,contextptr),tmp;
+		gen eq1=subst(eq,curvar,sol[j],false,contextptr),tmp; eq1=ratnormal(eq1);
 		if (var.size()==1){
 		  if (eq1.type==_VECT && eq1._VECTptr->size()==1)
 		    tmp=solve(eq1._VECTptr->front(),var.front(),complexmode,contextptr);
