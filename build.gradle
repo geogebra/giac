@@ -212,7 +212,7 @@ def giacSpecificSettings(cppCompiler, linker, targetPlatform) {
         cppCompiler.define 'usleep',''
         cppCompiler.define 'YY_NO_UNISTD_H'
 
-        cppCompiler.args '-I', file('src/jni/jdkHeaders/win32').toString()
+        cppCompiler.args '-I', file('src/jni/jdkHeaders/win').toString()
         // Insert prebuilt libraries
         linker.args '-Wl,--add-stdcall-alias'
         linker.args '-s' // stripping
@@ -329,17 +329,9 @@ model {
     }
 
     platforms {
-        win32 {
-            architecture 'i386'
-            operatingSystem 'windows'
-        }
         win64 {
             architecture 'x64'
             operatingSystem 'windows'
-        }
-        linux32 { // this will be fixed in Gradle 2.4 (-> linux32)
-            architecture 'i386'
-            operatingSystem 'linux'
         }
         linux64 {
             architecture 'x64'
@@ -397,10 +389,6 @@ model {
 
     toolChains {
         mingw(Gcc) {
-            target('win32') {
-                cppCompiler.executable 'i686-w64-mingw32-g++'
-                linker.executable 'i686-w64-mingw32-g++'
-            }
             target('win64') {
                 cppCompiler.executable 'x86_64-w64-mingw32-g++'
                 linker.executable 'x86_64-w64-mingw32-g++'
@@ -510,7 +498,6 @@ model {
     components {
         // giac static libary
         giac(NativeLibrarySpec) {
-            targetPlatform 'linux32'
             targetPlatform 'linux64'
             targetPlatform 'ios_arm64'
             targetPlatform 'iphonesimulator_x86_64'
@@ -561,7 +548,6 @@ model {
         }
 
         minigiac(NativeExecutableSpec) {
-            targetPlatform 'linux32'
             targetPlatform 'linux64'
 
             binaries.all {
@@ -585,9 +571,7 @@ model {
         }
 
         javagiac(NativeLibrarySpec) {
-            targetPlatform 'win32'
             targetPlatform 'win64'
-            targetPlatform 'linux32' // this will be fixed in Gradle 2.4 (-> linux32)
             targetPlatform 'linux64'
             if (isMac) {
                 targetPlatform 'osx_amd64'

@@ -12,9 +12,7 @@ pipeline {
             MAVEN = credentials('maven-repo')
           }
           steps {
-            bat "C:\\msys64\\usr\\bin\\env.exe MSYSTEM=CLANG32 C:\\msys64\\usr\\bin\\bash -l -c \"cd ${env.WORKSPACE.replace('\\','/').replace('C:','/c')}; bash ./recompile-msys.sh cbuild\""
             bat "C:\\msys64\\usr\\bin\\env.exe MSYSTEM=CLANG64 C:\\msys64\\usr\\bin\\bash -l -c \"cd ${env.WORKSPACE.replace('\\','/').replace('C:','/c')}; bash ./recompile-msys.sh cbuild64\""
-            bat './gradlew javagiacWin32JarClang --info'
             stash name: "giac-clang", includes: "cbuild*/**"
           }
           post {

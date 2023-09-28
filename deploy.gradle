@@ -17,20 +17,6 @@ task javagiacPomJar (type: Jar) {
     destinationDir = javagiacDir
 }
 
-task javagiacWin32JarClang (type: Jar) {
-    description 'Create the Windows 32 bit .jar package for the Java Giac library (via clang).'
-    baseName = 'javagiac-win32'
-    destinationDir = javagiacDir
-    from "cbuild" // Make sure the DLL is compiled and put into this folder first.
-    include '*.dll'
-    rename 'libjavagiac.dll', 'javagiac.dll'
-    classifier 'natives-windows-i586'
-}
-
-task testJavagiacWin32 (dependsOn: 'javagiacWin32JarClang') {
-    description 'Tests the Windows 32 bit version of Java Giac. [incubating]'
-}
-
 task javagiacWin64JarClang (type: Jar) {
     description 'Create the Windows 64 bit .jar package for the Java Giac library (via clang).'
     baseName = 'javagiac-win64'
@@ -86,12 +72,12 @@ task testJavagiacAndroidX86 (dependsOn: 'javagiacAndroidx86SharedLibrary') {
 }
 
 task testJavagiac (dependsOn: ['testJavagiacLinux64',
-                               'testJavagiacWin32', 'testJavagiacWin64', 'testJavagiacMac', 'testJavagiacAndroidArm', 'testJavagiacAndroidX86']) {
+                               'testJavagiacWin64', 'testJavagiacMac', 'testJavagiacAndroidArm', 'testJavagiacAndroidX86']) {
     description 'Tests the Linux, Windows, Mac and Android versions of the Java Giac library. [incubating]'
 }
 
 task javagiacJars (dependsOn: ['javagiacMacJar', 'javagiacLinux64Jar',
-                               'javagiacWin32JarClang', 'javagiacWin64JarClang']) {
+                               'javagiacWin64JarClang']) {
     description 'Creates the native .jar files for Windows, Linux and Mac for Java Giac.'
 }
 
@@ -113,7 +99,6 @@ publishing {
             version = ggrev
             artifact javagiacLinux64Jar
             artifact javagiacWin64JarClang
-            artifact javagiacWin32JarClang
             artifact javagiacMacJar
             artifact javagiacPomJar
             pom {

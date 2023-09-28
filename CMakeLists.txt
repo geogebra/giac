@@ -311,6 +311,6 @@ if(WIN32)
         -DHAVE_NO_SYS_RESOURCE_WAIT_H -DHAVE_NO_PWD_H -DHAVE_NO_CWD -DNO_CLOCK
         -Dusleep= -DYY_NO_UNISTD_H)
     target_include_directories(javagiac PUBLIC
-        ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders/win32)
+        ${CMAKE_SOURCE_DIR}/src/jni/jdkHeaders/win)
     target_link_options(javagiac PRIVATE -static-libgcc -static-libstdc++)
 endif()
