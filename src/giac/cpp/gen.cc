@@ -7034,7 +7034,7 @@ namespace giac {
 	   // && base.subtype==3
 	   ) 
 	  || base.type==_FLOAT_ || ( (base.type<_POLY || base.type==_FLOAT_) && (exponent.type==_REAL || exponent.type==_DOUBLE_ || exponent.type==_FLOAT_)))
-	return exp(exponent*log(base,contextptr),contextptr);
+	return exp(operator_times(exponent,log(base,contextptr),contextptr),contextptr);
       /* 
 	 if (base.is_symb_of_sommet(at_neg))
 	 return minus1pow(exponent)*pow(base._SYMBptr->feuille,exponent);

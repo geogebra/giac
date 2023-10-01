@@ -105,9 +105,7 @@ namespace giac {
   extern const lexer_tab_int_type * const lexer_tab_int_values_end;
   std::string translate_at(const char * ch);
 
-  inline bool tri (const std::pair<const char *,gen> & a ,const std::pair<const char *,gen> & b){
-    return strcmp(a.first, b.first) < 0;
-  }
+  bool tri (const std::pair<const char *,gen> & a ,const std::pair<const char *,gen> & b);
   bool tri1(const lexer_tab_int_type & a,const lexer_tab_int_type & b);
  
   typedef std::pair<const char *,gen> charptr_gen;

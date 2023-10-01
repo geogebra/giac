@@ -13066,7 +13066,7 @@ namespace giac {
     if (s>5)
       return g;
     // look first if it's a mksa
-    int pos=0;
+    int pos=-1;
     for (int i=1;i<5;++i){
       if (v[i]==zero)
 	continue;
@@ -13076,6 +13076,8 @@ namespace giac {
       }
       pos=i;
     }
+    if (pos==-1)
+      return v[0];
     if (pos)
       return mksa_reduce(g,contextptr);
     v[0]=plus_one;
