@@ -12055,6 +12055,8 @@ namespace giac {
     return symbolic(at_unit,makevecteur(1,mksa_register(s,equiv)));
   }
   const gen * tab_usual_units[]={&C_unit_rom_IDNT_e,&F_unit_rom_IDNT_e,&Gy_unit_rom_IDNT_e,&H_unit_rom_IDNT_e,&Hz_unit_rom_IDNT_e,&J_unit_rom_IDNT_e,&mho_unit_rom_IDNT_e,&N_unit_rom_IDNT_e,&Ohm_unit_rom_IDNT_e,&Pa_unit_rom_IDNT_e,&rad_unit_rom_IDNT_e,&S_unit_rom_IDNT_e,&Sv_unit_rom_IDNT_e,&T_unit_rom_IDNT_e,&V_unit_rom_IDNT_e,&W_unit_rom_IDNT_e,&Wb_unit_rom_IDNT_e};
+
+  
   const mksa_unit __Angstrom_unit={1e-10,1,0,0,0,0,0,0,0};
   const mksa_unit __Btu_unit={1055.05585262,2,1,-2,0,0,0,0,0};
   const mksa_unit __Curie_unit={3.7e10,0,0,-1,0,0,0,0,0};
@@ -12090,7 +12092,7 @@ namespace giac {
   const mksa_unit __deg_unit={1.74532925199e-2,0,0,0,0,0,0,0,0};
   // const mksa_unit __degreeF_unit={5./9,0,0,0,0,1,0,0,0};
   const mksa_unit __dyn_unit={1e-5,1,1,-2,0,0,0,0,0};
-  const mksa_unit __eV_unit={1.60217733e-19,2,1,-2,0,0,0,0,0};
+  const mksa_unit __eV_unit={1.602176634e-19,2,1,-2,0,0,0,0,0}; // Electron volt
   const mksa_unit __erg_unit={1e-7,2,1,-2,0,0,0,0,0};
   const mksa_unit __fath_unit={1.82880365761,1,0,0,0,0,0,0,0};
   const mksa_unit __fbm_unit={0.002359737216,3,0,0,0,0,0,0,0};
@@ -12178,7 +12180,7 @@ namespace giac {
   const mksa_unit __yr_unit={31556925.9747,0,0,1,0,0,0,0,0};
   const mksa_unit __micron_unit={1e-6,1,0,0,0,0,0,0,0};
 
-  const mksa_unit __hbar_unit={1.05457266e-34,2,1,-1,0,0,0,0};        
+  const mksa_unit __hbar_unit={1.054571817e-34,2,1,-1,0,0,0,0}; // Reduced Planck constant
   const mksa_unit __c_unit={299792458,1,0,-1,0,0,0,0};        
   const mksa_unit __g__unit={9.80665,1,0,-2,0,0,0,0};       
   const mksa_unit __IO_unit={1e-12,0,1,-3,0,0,0,0}; 
@@ -12191,29 +12193,29 @@ namespace giac {
   const mksa_unit __lambdac_unit={ 0.00242631058e-9,1,0,0,0,0,0,0,0}; 
   const mksa_unit __f0_unit={2.4179883e14,0,0,-1,0,0,0,0}; 
   const mksa_unit __lambda0_unit={1239.8425e-9,1,0,0,0,0,0,0}; 
-  const mksa_unit __muN_unit={5.0507866e-27,2,0,0,1,0,0,0}; 
-  const mksa_unit __muB_unit={ 9.2740154e-24,2,0,0,1,0,0,0}; 
+  const mksa_unit __muN_unit={5.0507837461e-27,2,0,0,1,0,0,0}; // Nuclear magneton
+  const mksa_unit __muB_unit={9.2740100783e-24,2,0,0,1,0,0,0}; // Bohr magneton
   const mksa_unit __a0_unit={.0529177249e-9,1,0,0,0,0,0,0}; 
   const mksa_unit __Rinfinity_unit={10973731.534,-1,0,0,0,0,0,0}; 
   const mksa_unit __Faraday_unit={96485.309,0,0,1,1,0,-1,0}; 
   const mksa_unit __phi_unit={2.06783461e-15,2,1,-2,-1,0,0,0};
-  const mksa_unit __alpha_unit={7.29735308e-3,0,0,0,0,0,0,0}; 
-  const mksa_unit __mpme_unit={1836.152701,0,0,0,0,0,0,0}; 
-  const mksa_unit __mp_unit={1.6726231e-27,0,1,0,0,0,0,0}; 
-  const mksa_unit __qme_unit={1.75881962e11,0,-1,1,1,0,0,0};
-  const mksa_unit __me_unit={9.1093897e-31,0,1,0,0,0,0,0}; 
+  const mksa_unit __alpha_unit={7.2973525693e-3,0,0,0,0,0,0,0}; // fine-structure constant
+  const mksa_unit __mpme_unit={1836.15267343,0,0,0,0,0,0,0}; // proton-electron mass ratio
+  const mksa_unit __mp_unit={1.67262192369e-27,0,1,0,0,0,0,0}; // Proton mass
+  const mksa_unit __qme_unit={1.75882001076e11,0,-1,1,1,0,0,0}; // electron charge to mass quotient
+  const mksa_unit __me_unit={9.1093837015e-31,0,1,0,0,0,0,0}; // Electron mass
   const mksa_unit __qe_unit={1.60217733e-19,0,0,1,1,0,0,0};
-  const mksa_unit __h__unit={6.6260755e-34,2,1,-1,0,0,0,0}; 
-  const mksa_unit __G_unit={6.67408e-11,3,-1,-2,0,0,0,0}; 
-  const mksa_unit __mu0_unit={1.25663706144e-6,1,1,-2,-2,0,0,0}; 
-  const mksa_unit __epsilon0_unit={8.85418781761e-12,-3,-1,4,2,0,0,0}; 
-  const mksa_unit __sigma_unit={ 5.67051e-8,0,1,-3,0,-4,0,0}; 
+  const mksa_unit __h__unit={6.62607015e-34,2,1,-1,0,0,0,0}; // Planck constant
+  const mksa_unit __G_unit={6.67430e-11,3,-1,-2,0,0,0,0}; // Newtonian constant of gravitation
+  const mksa_unit __mu0_unit={1.25663706212e-6,1,1,-2,-2,0,0,0}; // Vacuum magnetic permeability
+  const mksa_unit __epsilon0_unit={8.8541878128e-12,-3,-1,4,2,0,0,0}; // Vacuum electric permittivity
+  const mksa_unit __sigma_unit={5.670374419e-8,0,1,-3,0,-4,0,0}; // Stefan-Boltzmann constant
   const mksa_unit __StdP_unit={101325.0,-1,1,-2,0,0,0,0}; 
   const mksa_unit __StdT_unit={273.15,0,0,0,0,1,0,0}; 
-  const mksa_unit __R__unit={8.31451,2,1,-2,0,-1,-1,0}; 
-  const mksa_unit __Vm_unit={22.4141e-3,3,0,0,0,0,-1,0}; 
-  const mksa_unit __k_unit={1.380658e-23,2,1,-2,0,-1,0,0}; 
-  const mksa_unit __NA_unit={6.0221367e23,0,0,0,0,0,-1,0}; 
+  const mksa_unit __R__unit={8.314462618,2,1,-2,0,-1,-1,0}; // molar gas constant
+  const mksa_unit __Vm_unit={22.41396954e-3,3,0,0,0,0,-1,0}; // molar volume of ideal gas (273.15 K, 101.325 kPa)
+  const mksa_unit __k_unit={1.380649e-23,2,1,-2,0,-1,0,0}; // Boltzmann constant
+  const mksa_unit __NA_unit={6.02214076e23,0,0,0,0,0,-1,0}; // Avogadro constant
   const mksa_unit __mSun_unit={1.989e30,0,1,0,0,0,0,0}; 
   const mksa_unit __RSun_unit={6.955e8,1,0,0,0,0,0,0}; 
   const mksa_unit __PSun_unit={3.846e26,2,1,-3,0,0,0,0}; 
