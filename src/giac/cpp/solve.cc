@@ -195,20 +195,20 @@ namespace giac {
 
   static gen isolate_sinh(const gen & e,int isolate_mode,GIAC_CONTEXT){
     gen asine= asinh(e,contextptr);
-    if (!(isolate_mode & 2))
+    if ((isolate_mode & 3)!=3)
       return asine;
     identificateur * x=new identificateur(string("n_")+print_intvar_counter(contextptr));
     return makevecteur(asine+(*x)*one_tour(contextptr)*cst_i,(one_half_tour(contextptr)+(*x)*one_tour(contextptr))*cst_i-asine);
   }
   static gen isolate_cosh(const gen & e,int isolate_mode,GIAC_CONTEXT){
     gen acose=acosh(e,contextptr);
-    if (!(isolate_mode & 2))
+    if ((isolate_mode & 3)!=3)
       return makevecteur(acose,-acose);
     identificateur * x=new identificateur(string("n_")+print_intvar_counter(contextptr));
     return makevecteur(acose+(*x)*one_tour(contextptr)*cst_i,-acose+(*x)*one_tour(contextptr)*cst_i);
   }
   static gen isolate_tanh(const gen & e,int isolate_mode,GIAC_CONTEXT){
-    if (!(isolate_mode & 2))
+    if ((isolate_mode & 3)!=3)
       return atanh(e,contextptr);
     identificateur * x=new identificateur(string("n_")+print_intvar_counter(contextptr));
     return atanh(e,contextptr)+(*x)*one_half_tour(contextptr)*cst_i;

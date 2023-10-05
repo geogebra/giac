@@ -5960,6 +5960,8 @@ void yyfree (void * ptr , yyscan_t yyscanner)
 	    ++i;
 	    continue;
 	  }
+	  if ((unsigned char)s[i]==0xc2 && (unsigned char)s[i+1]!=0xb5) // µ
+            ss += "micro";
 	  if (i && (unsigned char)s[i]==0xc2 && (unsigned char)s[i+1]!=0xb0)
 	    ss += ' ';
 	  if ( (unsigned char)s[i]==0xef && i<l-3 ){

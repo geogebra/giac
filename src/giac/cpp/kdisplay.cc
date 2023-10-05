@@ -27,9 +27,9 @@
 #include <sys/types.h>
 #include <os.h>
 #include <syscall.h>
-#include "qrcodegen.h"
 #include "sha256.h"
 #endif
+#include "qrcodegen.h"
 #include <alloca.h>
 #ifndef is_cx2
 #define is_cx2 false
@@ -17427,7 +17427,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 static void do_QRdisp(const uint8_t qrcode[]) {
   drawRectangle(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,0xffff);
   int x=0,y=180;
-  os_draw_string_small(0,205,0,0xffff,"EXE or EXIT: leave. QR Code generator (c) Project Nayuki.");
+  os_draw_string_small(0,205,0,0xffff,"QR Code generator (c) Project Nayuki.");
   int size = qrcodegen_getSize(qrcode);
   int border = 0;
   int sb=size+border;
@@ -17480,7 +17480,7 @@ string replace_html5(const string & s){
   return res;
 }
 
-  void save_console_state_smem(const char * filename,bool xwaspy,GIAC_CONTEXT){
+void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONTEXT){
     console_changed=0;
     dbgprintf("save_console_state %s\n",filename);
     string state(khicas_state(contextptr));
@@ -17513,7 +17513,7 @@ string replace_html5(const string & s){
     int pos=1;
     string qrs=lang?"http://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasfr.html#":"http://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasen.html#";//"https://xcas.univ-grenoble-alpes.fr/xcasjs/#";
     qrs += xcas_python_eval==1?"micropy=":"cas=";
-    qrs += "0,0,"+replace_html5(script)+'&';
+    if (qr) qrs += "0,0,"+replace_html5(script)+'&';
     // save console state
     for (int i=start_row;i<=Last_Line;++i){
       console_line & cur=Line[i];
@@ -17523,7 +17523,7 @@ string replace_html5(const string & s){
       Bfile_WriteFile_OS2(hFile, s);
       unsigned char c=cur.type;
       Bfile_WriteFile_OS(hFile, &c, sizeof(c));
-      if (c==0){ // qrcode write input
+      if (qr && c==0){ // qrcode write input
         string qrsadd = replace_html5((const char *)cur.str);
         int xpos=(pos%2)*400;
         int ypos=(pos/2)*400;
@@ -17544,7 +17544,7 @@ string replace_html5(const string & s){
       }
       Bfile_WriteFile_OS(hFile, buf, l);
     }
-    QRdisp(qrs.c_str());
+    if (qr) QRdisp(qrs.c_str());
     char BUF[2]={0,0};
     Bfile_WriteFile_OS(hFile, BUF, sizeof(BUF));
 #ifdef NUMWORKS
@@ -18378,7 +18378,7 @@ string replace_html5(const string & s){
   }
 
 
-  void save(const char * fname,GIAC_CONTEXT){
+  void save(const char * fname,bool qr,GIAC_CONTEXT){
     dbgprintf("save %s %08lx \n",fname,contextptr);
     if (nspire_exam_mode==2)
       return;
@@ -18403,7 +18403,7 @@ string replace_html5(const string & s){
 #ifdef NSPIRE_NEWLIB
     filename+=".tns";
 #endif
-    save_console_state_smem(filename.c_str(),xwaspy,contextptr); // call before save_khicas_symbols_smem(), because this calls create_data_folder if necessary!
+    save_console_state_smem(filename.c_str(),xwaspy,qr,contextptr); // call before save_khicas_symbols_smem(), because this calls create_data_folder if necessary!
     // save_khicas_symbols_smem(("\\\\fls0\\"+filename+".xw").c_str());
     if (edptr)
       check_leave(edptr);
@@ -19093,7 +19093,7 @@ string replace_html5(const string & s){
       }
 #endif
       if (key==KEY_SAVE){
-	save(session_filename,contextptr);
+	save(session_filename,false,contextptr);
 	console_changed=false;
 	console_disp_status(contextptr);
 	continue;
@@ -19210,14 +19210,14 @@ string replace_html5(const string & s){
 	      if (strcmp(session_filename,"session")==0)
 		smallmenu.selection=3;
 	      else {
-		save(session_filename,contextptr);
+		save(session_filename,true,contextptr);
 		break;
 	      }
 	    }
 	    if (smallmenu.selection==3 && !exam_mode && nspire_exam_mode!=2){
 	      char buf[270];
 	      if (get_filename(buf,".xw")){
-		save(buf,contextptr);
+		save(buf,true,contextptr);
 		string fname(remove_path(giac::remove_extension(buf)));
 		strcpy(session_filename,fname.c_str());
 		if (edptr)
@@ -20424,11 +20424,11 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 		  (lang==1)?"OK: sauve, Back: tant pis":"OK: save, Back: discard changes"
 #endif
 		  )==KEY_CTRL_F1){
-	save(session_filename,contextptr);
+	save(session_filename,true,contextptr);
 	console_changed=0;
       }    
     }
-    save("session",contextptr);
+    save("session",true,contextptr);
     // this is only called on exit, no need to reinstall the check_execution_abort timer.
     if (edptr && edptr->changed && edptr->filename!="session.py"){
       if (!check_leave(edptr)){
@@ -20790,7 +20790,7 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
       }
       else {
 #ifdef NUMWORKS // add auto-save, to avoid Memory full data loss
-        save("session",contextptr);
+        save("session",false,contextptr);
 #endif
         run(expr,7,contextptr);
       }
@@ -22591,7 +22591,7 @@ void c_turtle_fillcolor1(int c){
 
 // auto-shutdown
 int do_shutdown(){
-  xcas::save_console_state_smem("session.xw.tns",false,giac::context0);
+  xcas::save_console_state_smem("session.xw.tns",false,false,giac::context0);
 #ifdef NO_STDEXCEPT
   return 1;
 #else
