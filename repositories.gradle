@@ -8,7 +8,6 @@
 
     repositories {
         maven { url 'http://dev.geogebra.org/maven2' }
-        maven { url 'https://repo.vertispan.com/gwt-snapshot' }
         mavenCentral()
         google()
     }
