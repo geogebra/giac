@@ -37,7 +37,7 @@ publishing {
             artifact sourcesJar
             pom {
                 name = 'Giac for GWT'
-                description = 'GWT bining for giac.js and giac.wasm.js'
+                description = 'GWT bining for giac.wasm.js'
             }
         }
     }
