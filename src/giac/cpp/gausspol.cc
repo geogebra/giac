@@ -6285,6 +6285,15 @@ namespace giac {
   }
 
   bool ext_factor(const polynome &p,const gen & e,gen & an,polynome & p_content,factorization & f,bool complexmode,gen & extra_div){
+    if (e.type==_EXT && (e._EXTptr+1)->type==_EXT){
+      gen E=ext_reduce(e);
+      polynome P(p);
+      vector< monomial<gen> >::iterator it=P.coord.begin(),itend=P.coord.end();
+      for (;it!=itend;++it){
+        if (it->value.type==_EXT) it->value=ext_reduce(it->value);
+      }
+      return ext_factor(P,E,an,p_content,f,complexmode,extra_div);
+    }
     if (!ext_factor_nodegck(p,e,an,p_content,f,complexmode,extra_div))
       return false;
     // additional check that degrees match
