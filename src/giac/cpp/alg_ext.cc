@@ -1033,8 +1033,11 @@ namespace giac {
 	if (!deep_emb) 
 	  racines=proot(gen2vecteur(evalf(polynome2poly1(pb),1,contextptr)),contextptr);
       }
-      else
-	racines=proot(*evalf(b__VECT,1,contextptr)._VECTptr,contextptr); // evalf to avoid recursion if computing exact roots of b__VECT
+      else {
+        gen tmp=evalf(b__VECT,1,contextptr);
+        if (is_undef(tmp)) return gensizeerr(contextptr);
+	racines=proot(*tmp._VECTptr,contextptr); // evalf to avoid recursion if computing exact roots of b__VECT
+      }
       if (is_undef(racines)) return gensizeerr(contextptr);
       // racines= list of approx roots if b__VECT is numeric
       // empty if not numeric
