@@ -3250,6 +3250,117 @@ namespace giac {
     return res;
   }
 
+  void recursive_lvar(vecteur & v){
+    vecteur w(v);
+    for (int i=0;i<v.size();++i){
+      gen g=v[i];
+      if (g.type!=_SYMB)
+        continue;
+      vecteur V=lvar(g._SYMBptr->feuille);
+      recursive_lvar(V);
+      for (int j=0;j<V.size();++j)
+        if (!equalposcomp(w,V[j]))
+          w.push_back(V[j]);
+    }
+    v=w;
+  }
+
+  const int alg_digits_evalf=100;
+  
+  // detect if e is in an algebraic extension of Q, simplifies
+  bool algnum_normal(gen & e,GIAC_CONTEXT){
+    gen ef;
+    if (has_i(e) || !has_evalf(e,ef,1,contextptr)) // FIXME: handle i
+      return false;
+    vecteur v;
+    alg_lvar(e,v);
+    if (v.size()!=1 || v.front().type!=_VECT || !v.front()._VECTptr->empty())
+      return false;
+    v=lvar(e);
+    recursive_lvar(v);
+    sort1(v);
+    int n=v.size();
+    vecteur vars(n);
+    for (int i=0;i<n;++i){
+      gen g("x"+print_INT_(i),contextptr);
+      vars[i]=g;
+    }
+    gen E=subst(e,v,vars,false,contextptr);
+    vecteur syst;
+    for (int i=0;i<n;++i){
+      if (v[i].is_symb_of_sommet(at_pow)){
+        gen g=v[i]._SYMBptr->feuille;
+        if (g.type!=_VECT || g._VECTptr->size()!=2)
+          return false;
+        gen base=g[0], expo=g[1],n,d;
+        fxnd(expo,n,d);
+        base=subst(base,v,vars,false,contextptr);
+        syst.push_back(symb_pow(vars[i],d)-symb_pow(base,n));
+      }
+      else
+        return false;
+    }
+    gen G=_gbasis(makesequence(syst,vars,change_subtype(_RUR_REVLEX,_INT_GROEBNER)),contextptr);
+    if (G.type==_VECT && G._VECTptr->size()==vars.size()+4 && G._VECTptr->front().type==_INT_ && G._VECTptr->front().val==_RUR_REVLEX){
+      gen var,sep=G[1],pmin=G[2],diffpmin=G[3]; vecteur pminv;
+      var=lvar(pmin)[0];
+      gen pminfact=_factors(pmin,contextptr);
+      if (pminfact.type!=_VECT)
+        return false;
+      int pmins=pminfact._VECTptr->size();
+      pmin=pminfact[0];
+      gen curpmin=_symb2poly(makesequence(pmin,var),contextptr);
+      if (curpmin.type!=_VECT)
+        return false;
+      pminv=*curpmin._VECTptr;
+      if (pmins>2){
+        gen r=subst(sep,vars,v,false,contextptr);
+        r=_evalf(makesequence(r,alg_digits_evalf),contextptr);
+        gen curmin=abs(horner(pminv,r),contextptr);
+        for (int j=2;j<pmins;j+=2){
+          gen curpmin=_symb2poly(makesequence(pminfact[j],var),contextptr);
+          if (curpmin.type!=_VECT)
+            continue;
+          gen curval=abs(horner(*curpmin._VECTptr,r),contextptr);
+          if (is_greater(curmin,curval,contextptr)){
+            pmin=curpmin;
+            curmin=curval;
+            pminv=*curpmin._VECTptr;
+          }
+        }
+      }
+      if (!is_positive(pminv[0],contextptr))
+        pminv=-pminv;
+      vecteur nums=vecteur(G._VECTptr->begin()+4,G._VECTptr->end());
+      // rewrite E as a rational frac in var, replace vars by nums/diffpmin
+      E=subst(E,vars,inv(diffpmin,contextptr)*nums,false,contextptr);
+      // now simplify numerator and denominator
+      gen End=_fxnd(E,contextptr),En,Ed;
+      if (End.type!=_VECT)
+        return false;
+      En=End[0]; Ed=End[1];
+      En=_rem(makesequence(En,pmin,var),contextptr);
+      Ed=_rem(makesequence(Ed,pmin,var),contextptr);
+      // multiply by conjugate
+      gen bez=_egcd(makesequence(Ed,pmin,var),contextptr);
+      if (bez.type!=_VECT || bez._VECTptr->size()!=3)
+        return false;
+      // bez[0]*Ed+bez[1]*pmin=bez[2]
+      // hence En/Ed=En*bez[0]/bez[2]
+      En=_rem(makesequence(En*bez[0],pmin,var),contextptr);
+      En=_symb2poly(makesequence(En,var),contextptr);
+      E=algebraic_EXTension(En,pminv)/bez[2];
+      E=r2e(E,vecteur(1,vecteur(0)),contextptr);
+      bool b=calc_mode(contextptr)==1 || abs_calc_mode(contextptr)==38;
+      if (b && !lop(E,at_rootof).empty())
+        e=simplifier(ratnormal(e,contextptr),contextptr);
+      else
+        e=E;
+      return true;
+    }
+    return false;
+  }
+
   gen recursive_normal(const gen & e,bool distribute_div,GIAC_CONTEXT){
 #ifdef TIMEOUT
     control_c();
@@ -3311,7 +3422,11 @@ namespace giac {
     }
     if (e.type==_VECT)
       return apply(e,contextptr,(const gen_op_context) recursive_normal);
-    gen e_copy(e); // was eval(e,1,contextptr)); 
+    gen e_copy(e); // was eval(e,1,contextptr));
+#if !defined FXCG && !defined KHICAS
+    if (algnum_normal(e_copy,contextptr))
+      return e_copy;
+#endif
     //recursive BUG F(x):=int(1/sqrt(1+t^2),t,0,x);u(x):=exp(x); F(u(x))
     if (e_copy.is_symb_of_sommet(at_pnt))
       e_copy=e;
