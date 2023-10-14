@@ -1562,7 +1562,7 @@ namespace giac {
     }
     if (it==itend){
       // extract system of equations from alg_extin and call gbasis
-      // problem: for e.g. sqrt(2),sqrt(3),sqrt(6) it will return a poly of deg. 8
+      // factor minimal polynomial and find the correct factor
     }
     alg_extin.clear(); alg_extoutnum.clear(); alg_extoutden.clear();
 #endif

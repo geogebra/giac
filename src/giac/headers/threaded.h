@@ -3107,14 +3107,14 @@ namespace giac {
 	  bqdeg=index_lcm(bqdeg,adeg);
 	  std::vector<U> newvars(vars.size());
 	  partial_degrees2vars(bqdeg,newvars);
-	  std::vector< T_unsigned<T,U> > acopy(a),bcopy(b),qcopy(q),bq;
+	  std::vector< T_unsigned<T,U> > acopy(a),bCopy(b),qcopy(q),bq;
 	  convert(acopy,vars,newvars);
-	  convert(bcopy,vars,newvars);
+	  convert(bCopy,vars,newvars);
 	  convert(qcopy,vars,newvars);
 	  if (debug_infolevel>1)
 	    CERR << CLOCK()*1e-6 << " compress monomials done" <<'\n';
-	  if (!threadmult(bcopy,qcopy,bq,newvars.front(),reduce,a.size()))
-	    smallmult(bcopy,qcopy,bq,reduce,as);
+	  if (!threadmult(bCopy,qcopy,bq,newvars.front(),reduce,a.size()))
+	    smallmult(bCopy,qcopy,bq,reduce,as);
 	  if (!is_zero(reduce))
 	    smallsub(acopy,bq,r,reduce);
 	  else

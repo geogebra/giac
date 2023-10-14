@@ -12337,7 +12337,7 @@ template<class modint_t,class modint_u>
 #if 0
       f4buchberger_info->push_back(*info_ptr);
 #else
-      zinfo_t<tdeg_t> tmp;
+      zinfo_t<tdeg_t> tmp; tmp.nonzero=0; tmp.Ksizes=0;
       f4buchberger_info.push_back(tmp);
       zinfo_t<tdeg_t> & i=f4buchberger_info.back();
       swap(i.quo,info_tmp.quo);
@@ -14890,7 +14890,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	for (unsigned i=0;int(i)<d;++i){
 	  index_t l(dim);
 	  l[i]=1;
-	  int r1=int((std_rand()/double(RAND_MAX)-0.5)*n);
+	  int r1=essai==1?1:int((std_rand()/double(RAND_MAX)-0.5)*n); // try with the sum of all 
 	  if (r1)
 	    s.coord.push_back(T_unsigned<modint,tdeg_t>(r1,tdeg_t(l,order)));
 	}

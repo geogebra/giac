@@ -10731,9 +10731,9 @@ namespace giac {
   static gen _CPLXgcd(const gen & a,const gen & b){ // a & b must be gen
     if (!is_cinteger(a) || !is_cinteger(b) )
       return plus_one;
-    gen acopy(a),bcopy(b),r;
+    gen acopy(a),bCopy(b),r;
     for (;;){
-      if (is_exactly_zero(bcopy)){
+      if (is_exactly_zero(bCopy)){
 	complex<double> c=gen2complex_d(acopy);
 	double d=arg(c);
 	int quadrant=int(std::floor((2*d)/M_PI));
@@ -10750,9 +10750,9 @@ namespace giac {
 	  return acopy;
 	}
       }
-      r=acopy%bcopy;
-      acopy=bcopy;
-      bcopy=r;
+      r=acopy%bCopy;
+      acopy=bCopy;
+      bCopy=r;
     }
   }
 
