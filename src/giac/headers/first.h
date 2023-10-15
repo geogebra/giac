@@ -35,9 +35,7 @@
 #define x86_64 1
 #else
 #ifdef __MINGW_H
-#undef RAND_MAX
-#define RAND_MAX 2147483647
-
+ 
 #define MINGW32
 #ifndef M_LN2
 #define M_LN2 0.693147180559945310
@@ -622,4 +620,8 @@ namespace ustl {
 }
 #endif
 
+//#ifdef __MINGW_H
+#undef RAND_MAX
+#define RAND_MAX 2147483647
+//#endif
 #endif // _GIAC_FIRST_H_

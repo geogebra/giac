@@ -10621,7 +10621,7 @@ namespace giac {
     }
     if (debug_infolevel>2)
       CERR << "Modinv end " << CLOCK()*1e-6 << '\n';
-    unsigned n=sizeinbase2(h2)/std::log2(p.val)+1;
+    unsigned n=sizeinbase2(h2)/std::log(p.val)*M_LN2+1;
     gen pn=pow(p,int(n),context0);
     gen sqrtpn=isqrt(pn); // (pow(gen(p),int(n/2),context0)-1)/2;
     vecteur resp=padic_linsolve_c(a,b,c,n,p,reconstruct);
