@@ -1552,13 +1552,13 @@ namespace giac {
 	if (is_zero(a)){ ok=false; break; }
       }
       if (ok) break;
-      double z=rand()*0.1/RAND_MAX;
+      double z=std_rand()*0.1/RAND_MAX;
       xmin -= z*std::abs(xmin);
-      z=rand()*0.1/RAND_MAX;
+      z=std_rand()*0.1/RAND_MAX;
       xmax += z*std::abs(xmax);
-      z=rand()*0.1/RAND_MAX;
+      z=std_rand()*0.1/RAND_MAX;
       ymin -= z*std::abs(ymin);
-      z=rand()*0.1/RAND_MAX;
+      z=std_rand()*0.1/RAND_MAX;
       ymax += z*std::abs(ymax);      
     }
     vector<double> yxmin,yxmax,xymin,xymax; // contains intersections of curves with the 4 edges of the domain

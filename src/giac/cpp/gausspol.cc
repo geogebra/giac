@@ -5648,12 +5648,12 @@ namespace giac {
 	    int b0d=itfact.dim;
 	    vecteur vb0(b0d),vb1(b0d),lv(b0d);
 	    lv[0]=gen("x0",context0);
-	    // int hasard=rand()/(RAND_MAX/env->modulo.val);
+	    // int hasard=std_rand()/(RAND_MAX/env->modulo.val);
 	    int hasard=0;
 	    vb0[0]=sym2r(lv[0]+hasard,lv,context0);
 	    vb1[0]=sym2r(lv[0]-hasard,lv,context0);
 	    for (int i=1;i<b0d;i++){
-	      int hasard1=0; // rand()/(RAND_MAX/env->modulo.val);
+	      int hasard1=0; // std_rand()/(RAND_MAX/env->modulo.val);
 	      int hasard2=std_rand()/(RAND_MAX/env->modulo.val);
 	      lv[i]=gen("x"+print_INT_(i),context0);
 	      vb0[i]=sym2r(lv[i]+hasard1*lv[0]+hasard2,lv,context0);
@@ -6931,7 +6931,7 @@ namespace giac {
 	  // search a smaller b
 	  for (int essai=0;essai<3;++essai){
 	    for (int i=0;i<b0d;++i){
-	      //b[i]=1+iquo(rand(),RAND_MAX/3);
+	      //b[i]=1+iquo(std_rand(),RAND_MAX/3);
 	      b[i]=1+iquo(giac_rand(context0),RAND_MAX/4);
 	    }
 	    if (find_good_eval(pcur,pcur,Fb,Gb,b,(debug_infolevel>=2))){

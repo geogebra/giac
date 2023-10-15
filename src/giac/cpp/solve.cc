@@ -4690,7 +4690,7 @@ namespace giac {
       //on prend un d�part au hasard (a=x0=un _DOUBLE_)
       // a=gen(2.0);
       if (guess_first)
-	a=j*4*(rand()/(RAND_MAX+1.0)-0.5);
+	a=j*4*(std_rand()/(RAND_MAX+1.0)-0.5);
       else {
 	a=guess;
 	guess_first=true;
@@ -4700,7 +4700,7 @@ namespace giac {
       e=newtona(f, x, a,niter1,niter2,eps1,eps2,prefact1,prefact2,b);
       if (b==1) return e;
       gen c;
-      c=j*4*(rand()/(RAND_MAX+1.0)-0.5);
+      c=j*4*(std_rand()/(RAND_MAX+1.0)-0.5);
       // COUT<<j<<"j"<<c<<'\n';
       // g=x-gen(0.5)*rdiv(f,derive(f,x));
       gen ao(gen(0.0),c);

@@ -2571,7 +2571,7 @@ double largest(const vfdbl & fP,int maxiter=100,double eps=1e-6){
   //if (debug_infolevel) *logptr(contextptr) << "power method " << fP << "\n";
   vfdbl v(deg);
   for (int i=0;i<deg;++i)
-    v[i]=fdbl(rand()/(1.0+RAND_MAX),rand()/(1.0+RAND_MAX));
+    v[i]=fdbl(std_rand()/(1.0+RAND_MAX),std_rand()/(1.0+RAND_MAX));
   div(v,l1norm(v));
   vfdbl w(deg);
   double oldR(0.0);
@@ -3144,7 +3144,7 @@ double largest(const vdbl & fP,int maxiter=100,double eps=1e-6){
   int deg=fP.size()-1;
   vdbl v(deg);
   for (int i=0;i<deg;++i)
-    v[i]=dbl(rand()/(1.0+RAND_MAX),rand()/(1.0+RAND_MAX));
+    v[i]=dbl(std_rand()/(1.0+RAND_MAX),std_rand()/(1.0+RAND_MAX));
   div(v,l1norm(v));
   vdbl w(deg);
   double oldR(0.0);
@@ -3799,7 +3799,7 @@ bool aberth_singleprec(const vfdbl & P0,int N,double eps,vfdbl & R,int cluster_s
       if (binv)
         d=d/(fdbl(1)-d*p);
       else
-        d=d/(fdbl(1-rand()/2.0/RAND_MAX));
+        d=d/(fdbl(1-std_rand()/2.0/RAND_MAX));
       if (absdz<eps/deg){
 #ifndef KHICAS
         if (debug_infolevel>1 && !zi_done[i])
@@ -4402,7 +4402,7 @@ int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl 
         isol=false;
         if (ok)
           return 0;
-        d=d/(1-rand()/2.0/RAND_MAX);
+        d=d/(1-std_rand()/2.0/RAND_MAX);
       }
       delta += absdz;
       newR[i]=zi-d;
@@ -4634,7 +4634,7 @@ int aberth_z(const vdbl & P0,int nbits,int N,double eps,vdbl & R,int cluster_sta
       else {
         if (ok)
           return 0;
-        d=d/(1-exact(rand()/2.0/RAND_MAX,contextptr));
+        d=d/(1-exact(std_rand()/2.0/RAND_MAX,contextptr));
       } 
       delta += absdz;
       newR[i]=round(zi-d,pow2,nbits);

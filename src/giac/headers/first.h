@@ -35,6 +35,9 @@
 #define x86_64 1
 #else
 #ifdef __MINGW_H
+#undef RAND_MAX
+#define RAND_MAX 2147483647
+
 #define MINGW32
 #ifndef M_LN2
 #define M_LN2 0.693147180559945310
@@ -95,6 +98,7 @@
 #endif
 
 #define MAX_INTSTACK 32768 // maximal size for allocating an array by int tab[]
+
 
 #ifdef FXCG
 #define RAND_MAX 2147483647

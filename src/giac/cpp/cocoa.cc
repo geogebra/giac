@@ -14552,7 +14552,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	// https://en.wikipedia.org/wiki/B%C3%A9zout_matrix
 	tmp.resize(S);//=vector<int>(S);
 	for (int i=0;i<S;++i) 
-	  tmp[i]=rand()/2;
+	  tmp[i]=std_rand()/2;
 	vector<int> g(2*S);
 	vector< vector<int> > hankelsystb(d,vector<int>(S)); // second members of Hankel systems
 	for (int i=0;i<S;++i){

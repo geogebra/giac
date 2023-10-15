@@ -307,7 +307,7 @@ namespace giac {
 
   double randNorm(GIAC_CONTEXT){
     /*
-    double d=rand()/(rand_max2+1.0);
+    double d=std_rand()/(rand_max2+1.0);
     d=2*d-1;
     identificateur x(" x");
     return newton(erf(x)-d,x,d);
@@ -318,7 +318,7 @@ namespace giac {
   }
   void randnorm2(double & r1,double & r2,GIAC_CONTEXT){
     /*
-    double d=rand()/(rand_max2+1.0);
+    double d=std_rand()/(rand_max2+1.0);
     d=2*d-1;
     identificateur x(" x");
     return newton(erf(x)-d,x,d);
