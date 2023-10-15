@@ -3265,6 +3265,12 @@ namespace giac {
     v=w;
   }
 
+#if defined FXCG || defined KHICAS
+  bool algnum_normal(gen & e,GIAC_CONTEXT){
+    return false;
+  }
+#else
+
   const int alg_digits_evalf=100;
   
   // detect if e is in an algebraic extension of Q, simplifies
@@ -3278,8 +3284,10 @@ namespace giac {
       return false;
     v=lvar(e);
     recursive_lvar(v);
-    sort1(v);
     int n=v.size();
+    if (n>10)
+      return false;
+    sort1(v);
     vecteur vars(n);
     for (int i=0;i<n;++i){
       gen g("x"+print_INT_(i),contextptr);
@@ -3331,6 +3339,11 @@ namespace giac {
       }
       if (!is_positive(pminv[0],contextptr))
         pminv=-pminv;
+      if (pminv.size()>MAX_COMMON_ALG_EXT_ORDER_SIZE+1){
+        *logptr(contextptr) << "Algebraic extension degree too large " << pminv.size()-1 << " max is " << MAX_COMMON_ALG_EXT_ORDER_SIZE << "\n";
+        e=simplifier(ratnormal(e,contextptr),contextptr);
+        return true;
+      }
       vecteur nums=vecteur(G._VECTptr->begin()+4,G._VECTptr->end());
       // rewrite E as a rational frac in var, replace vars by nums/diffpmin
       E=subst(E,vars,inv(diffpmin,contextptr)*nums,false,contextptr);
@@ -3360,6 +3373,7 @@ namespace giac {
     }
     return false;
   }
+#endif
 
   gen recursive_normal(const gen & e,bool distribute_div,GIAC_CONTEXT){
 #ifdef TIMEOUT
@@ -3423,10 +3437,8 @@ namespace giac {
     if (e.type==_VECT)
       return apply(e,contextptr,(const gen_op_context) recursive_normal);
     gen e_copy(e); // was eval(e,1,contextptr));
-#if !defined FXCG && !defined KHICAS
     if (algnum_normal(e_copy,contextptr))
       return e_copy;
-#endif
     //recursive BUG F(x):=int(1/sqrt(1+t^2),t,0,x);u(x):=exp(x); F(u(x))
     if (e_copy.is_symb_of_sommet(at_pnt))
       e_copy=e;

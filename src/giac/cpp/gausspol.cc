@@ -5260,7 +5260,7 @@ namespace giac {
       return;
     }
     if (p1t==0 && p2t==0 
-	&& (p1.dim!=1 || (p1.lexsorted_degree()>=GIAC_PADIC/2 && p2.lexsorted_degree()>=GIAC_PADIC/2))
+	&& (p1.dim!=1 || (p1.lexsorted_degree()>=giacmax(MAX_COMMON_ALG_EXT_ORDER_SIZE+1,GIAC_PADIC/2) && p2.lexsorted_degree()>=giacmax(MAX_COMMON_ALG_EXT_ORDER_SIZE+1,GIAC_PADIC/2)))
 	){
       if (debug_infolevel>2)
 	CERR << CLOCK()*1e-6 << "starting extended gcd degrees " << p1.lexsorted_degree() << " " << p2.lexsorted_degree() << '\n';

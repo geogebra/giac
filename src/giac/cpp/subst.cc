@@ -2341,6 +2341,8 @@ namespace giac {
     if (e_orig.type<=_POLY || is_inf(e_orig) || has_num_coeff(e_orig))
       return e_orig;
     gen e=simplifier(e_orig,contextptr);
+    if (algnum_normal(e,contextptr))
+      return e;
     if (e.type==_FRAC)
       return _evalc(e_orig,contextptr);
     // first check for a fractional power -> substitution

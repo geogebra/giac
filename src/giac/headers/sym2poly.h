@@ -47,6 +47,7 @@ namespace giac {
   // high-level fonctions on gen
   gen ratnormal(const gen & e,GIAC_CONTEXT0);
   gen recursive_ratnormal(const gen & e,GIAC_CONTEXT);
+  bool algnum_normal(gen & e,GIAC_CONTEXT); // simplification of expression inside a real algebraic extension of Q, requires gbasis/rur implementation
   // gen normal(const gen & e); // rational simplifications
   gen normal(const gen & e,GIAC_CONTEXT); // rational simplifications
   gen normal(const gen & e,bool distribute_div,GIAC_CONTEXT);
