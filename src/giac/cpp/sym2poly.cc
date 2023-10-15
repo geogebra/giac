@@ -3275,6 +3275,7 @@ namespace giac {
   
   // detect if e is in an algebraic extension of Q, simplifies
   bool algnum_normal(gen & e,GIAC_CONTEXT){
+    return false: // until it's fixed
     gen ef;
     if (has_i(e) || !has_evalf(e,ef,1,contextptr)) // FIXME: handle i
       return false;
