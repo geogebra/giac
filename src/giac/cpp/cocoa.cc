@@ -14882,6 +14882,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       // pour j de 1 jusque 100 faire gb:=gbasis(eqs,[c,a,b],rur);fpour;
       // 40 was insufficient for the 11th gbasis rur computation
       unsigned essai=0;
+      int testall1=gbmod.size()==dim?0:rur_separate_max_tries/8;
       for (;essai<rur_separate_max_tries;++essai){
 	if (debug_infolevel)
 	  CERR << CLOCK()*1e-6 << " rur separate non monomial attempt " << essai << '\n';	  
@@ -14890,7 +14891,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	for (unsigned i=0;int(i)<d;++i){
 	  index_t l(dim);
 	  l[i]=1;
-	  int r1=essai==1?1:int((std_rand()/double(RAND_MAX)-0.5)*n); // try with the sum of all 
+	  int r1=essai==testall1?1:int((std_rand()/double(RAND_MAX)-0.5)*n); // try with the sum of all 
 	  if (r1)
 	    s.coord.push_back(T_unsigned<modint,tdeg_t>(r1,tdeg_t(l,order)));
 	}

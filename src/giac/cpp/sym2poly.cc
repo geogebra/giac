@@ -3286,7 +3286,13 @@ namespace giac {
     v=lvar(e);
     recursive_lvar(v);
     int n=v.size();
-    if (n<3 || n>10)
+    if (n<3 ||
+#ifdef __MINGW_H // NTL support not working, factor would take too long
+        n>7
+#else
+        n>10
+#endif
+        )
       return false;
     sort1(v);
     vecteur vars(n);
