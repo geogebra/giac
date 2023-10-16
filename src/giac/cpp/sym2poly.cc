@@ -3275,7 +3275,7 @@ namespace giac {
   
   // detect if e is in an algebraic extension of Q, simplifies
   bool algnum_normal(gen & e,GIAC_CONTEXT){
-    return false: // until it's fixed
+    // return false: // until it's fixed
     gen ef;
     if (has_i(e) || !has_evalf(e,ef,1,contextptr)) // FIXME: handle i
       return false;
@@ -3286,7 +3286,7 @@ namespace giac {
     v=lvar(e);
     recursive_lvar(v);
     int n=v.size();
-    if (n>10)
+    if (n<3 || n>10)
       return false;
     sort1(v);
     vecteur vars(n);
@@ -3311,20 +3311,18 @@ namespace giac {
     }
     gen G=_gbasis(makesequence(syst,vars,change_subtype(_RUR_REVLEX,_INT_GROEBNER)),contextptr);
     if (G.type==_VECT && G._VECTptr->size()==vars.size()+4 && G._VECTptr->front().type==_INT_ && G._VECTptr->front().val==_RUR_REVLEX){
-      gen var,sep=G[1],pmin=G[2],diffpmin=G[3]; vecteur pminv;
+      gen sep=G[1],var,pmin=G[2],diffpmin=G[3]; vecteur pminv;
       var=lvar(pmin)[0];
-      gen pminfact=_factors(pmin,contextptr);
-      if (pminfact.type!=_VECT)
-        return false;
-      int pmins=pminfact._VECTptr->size();
+      vecteur pminfact=factors(pmin,var,contextptr);
+      int pmins=pminfact.size();
       pmin=pminfact[0];
       gen curpmin=_symb2poly(makesequence(pmin,var),contextptr);
       if (curpmin.type!=_VECT)
         return false;
       pminv=*curpmin._VECTptr;
+      gen r=subst(sep,vars,v,false,contextptr);
+      r=_evalf(makesequence(r,alg_digits_evalf),contextptr);
       if (pmins>2){
-        gen r=subst(sep,vars,v,false,contextptr);
-        r=_evalf(makesequence(r,alg_digits_evalf),contextptr);
         gen curmin=abs(horner(pminv,r),contextptr);
         for (int j=2;j<pmins;j+=2){
           gen curpmin=_symb2poly(makesequence(pminfact[j],var),contextptr);
@@ -3354,6 +3352,15 @@ namespace giac {
         return false;
       En=End[0]; Ed=End[1];
       En=_rem(makesequence(En,pmin,var),contextptr);
+      if (is_zero(En)){
+        e=En;
+        return true;
+      }
+      // now check that r is the max root of pminv, otherwise
+      // it's not rootof([1,0],pminv)
+      gen R=evalf(algebraic_EXTension(makevecteur(1,0),pminv),1,contextptr);
+      if (is_greater(abs(1-r/R,contextptr),1e-10,contextptr))
+        return false;
       Ed=_rem(makesequence(Ed,pmin,var),contextptr);
       // multiply by conjugate
       gen bez=_egcd(makesequence(Ed,pmin,var),contextptr);
