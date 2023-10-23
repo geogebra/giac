@@ -13534,6 +13534,20 @@ namespace giac {
       res[1+i]=smod(-N[n-1][n-1-i],modulo);
   }
 
+  struct thread_mod_pcar_t {
+    vector< vector<int> > * Nptr,*ttempptr;
+    int modulo;
+    bool krylov,compute_pmin,retval;
+    vector<int> * resptr;
+    const context * contextptr;
+  };
+
+  void * do_thread_mod_pcar(void * ptr_){
+    thread_mod_pcar_t * ptr=(thread_mod_pcar_t*) ptr_;
+    ptr->retval=mod_pcar(*ptr->Nptr,ptr->modulo,ptr->krylov,*ptr->resptr,ptr->contextptr,ptr->compute_pmin,*ptr->ttempptr);
+    return ptr_;
+  }
+
   bool mod_pcar(vector< vector<int> > & N,int modulo,bool & krylov,vector<int> & res,GIAC_CONTEXT,bool compute_pmin,vector< vector<int> > & ttemp){
     int n=int(N.size());
     if (krylov){ // try Krylov pmin
@@ -13578,7 +13592,7 @@ namespace giac {
       vector<int> permutation,maxrankcol;
       if (debug_infolevel>2)
 	CERR << CLOCK()*1e-6 << " Charpoly mod " << modulo << " rref " << '\n';
-      smallmodrref(1,ttemp,pivots,permutation,maxrankcol,det,0,n,0,n+1,false/*full reduction */,0,modulo,2/* LU */,true,0,true,-1);
+      smallmodrref(1/* nthreads*/,ttemp,pivots,permutation,maxrankcol,det,0,n,0,n+1,false/*full reduction */,0,modulo,2/* LU */,true,0,true,-1);
       if (debug_infolevel>2)
 	CERR << CLOCK()*1e-6 << " Charpoly mod " << modulo << " det=" << det << " " << '\n';
       // If rank==n-1 extract the min polynomial and find charpoly using the trace
@@ -13743,6 +13757,77 @@ namespace giac {
     vector_int2vecteur(modpcar,charpol);
     int initial_clock=CLOCK();
     int dbglevel=debug_infolevel;
+#ifdef HAVE_LIBPTHREAD
+    // parallel using mod_pcar_t and pthread_create do_mod_pcar
+    int nthreads=threads_allowed?threads:1;
+    if (nthreads>1){
+      // initialization
+      pthread_t tab[nthreads];
+      vector< vector< vector<int> > > Ntab(nthreads,N),ttemptab(nthreads,ttemp);
+      vector< vector<int> > restab(nthreads,modpcar);
+      thread_mod_pcar_t pcarparam[nthreads];
+      for (int j=0;j<nthreads;++j){
+	thread_mod_pcar_t tmp={&Ntab[j],&ttemptab[j],0,krylov,compute_pmin,false,&restab[j],contextptr};
+	pcarparam[j]=tmp;
+      }
+      // main loop
+      for (;pipd < (testvalue=logbound*charpol.size()/(n+1.0));){
+        if (currentprob < proba &&  pipd<testvalue/1.33 && CLOCK()-initial_clock>min_proba_time*CLOCKS_PER_SEC)
+          break;
+        if (n>10 && dbglevel<2 && CLOCK()-initial_clock>60*CLOCKS_PER_SEC)
+          dbglevel=2;
+        if (dbglevel>1)
+          CERR << CLOCK()*1e-6 << " " << 100*pipd/testvalue << " % done" << (currentprob<proba?", stable.":", unstable.")<< '\n';
+        for (int j=0;j<nthreads;++j){
+          currentp=nextprime(currentp.val+2);
+          pcarparam[j].modulo=currentp.val;
+          bool res=true;
+          if (j<nthreads-1)
+            res=pthread_create(&tab[j],(pthread_attr_t *) NULL,do_thread_mod_pcar,(void *) &pcarparam[j]);
+          if (res)
+            do_thread_mod_pcar((void *)&pcarparam[j]);
+        }
+        for (int j=0;j<nthreads;++j){
+          void * ptr=(void *)&nthreads; // non-zero initialisation
+          if (j<nthreads-1)
+            pthread_join(tab[j],&ptr);
+        }
+        for (int j=0;j<nthreads;++j){
+          if (!pcarparam[j].retval)
+            return vecteur(1,gensizeerr(contextptr));
+          const vector<int> & modpcar=*pcarparam[j].resptr;
+          int currentp=pcarparam[j].modulo;
+          if (modpcar.size()<charpol.size())
+            continue;
+          if (modpcar.size()>charpol.size()){
+            vector_int2vecteur(modpcar,charpol);
+            pip=currentp;
+            continue;
+          }
+          bool stable;
+          int tmp;
+          if (pip.type==_ZINT && (tmp=ichinrem_inplace(charpol,modpcar,pip,currentp)) ){
+            stable=tmp==2;
+          } else {
+            modpoly newcharpol,currentcharpol;
+            vector_int2vecteur(modpcar,currentcharpol);
+            newcharpol=ichinrem(charpol,currentcharpol,pip,currentp);
+            stable=newcharpol==charpol;
+            charpol.swap(newcharpol);
+          }
+          if (stable)
+            currentprob=currentprob/currentp;
+          else 
+            currentprob=1.0;
+          pip=currentp*pip;
+          pipd += std::log10(double(currentp));
+        }
+      }
+      if (pipd<testvalue)
+        *logptr(contextptr) << gettext("Probabilistic answer. Run proba_epsilon:=0 for a certified result. Error <") << proba << '\n';
+      return charpol;
+    } // end nthreads>1
+#endif // PTHREAD
     for (;pipd < (testvalue=logbound*charpol.size()/(n+1.0));){
       if (currentprob < proba &&  pipd<testvalue/1.33 && CLOCK()-initial_clock>min_proba_time*CLOCKS_PER_SEC)
 	break;
