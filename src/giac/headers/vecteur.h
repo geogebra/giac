@@ -390,8 +390,8 @@ namespace giac {
   vecteur mpcar_int(const matrice & A,bool krylov,GIAC_CONTEXT,bool compute_pmin);
 
   void mod_pcar(std_matrix<gen> & N,vecteur & res,bool compute_pmin);
-  bool mod_pcar(const matrice & A,std::vector< std::vector<int> > & N,int modulo,bool & krylov,std::vector<int> & res,GIAC_CONTEXT,bool compute_pmin);
-  bool mod_pcar(std::vector< std::vector<int> > & N,int modulo,bool & krylov,std::vector<int> & res,GIAC_CONTEXT,bool compute_pmin);
+  bool mod_pcar(const matrice & A,std::vector< std::vector<int> > & N,int modulo,bool & krylov,std::vector<int> & res,GIAC_CONTEXT,bool compute_pmin,std::vector< std::vector<int> > & ttemp);
+  bool mod_pcar(std::vector< std::vector<int> > & N,int modulo,bool & krylov,std::vector<int> & res,GIAC_CONTEXT,bool compute_pmin,std::vector< std::vector<int> > & ttemp);
   vecteur mpcar_hessenberg(const matrice & A,int modulo,GIAC_CONTEXT);
   gen _pcar_hessenberg(const gen & g,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_pcar_hessenberg ;

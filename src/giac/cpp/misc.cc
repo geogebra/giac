@@ -1807,11 +1807,11 @@ namespace giac {
 	gen mg=unmod(m);
 	if (mg.type==_VECT){
 	  matrice M=*mg._VECTptr;
-	  vector< vector<int> > N;
+	  vector< vector<int> > N,ttemp;
 	  int modulo=(p._MODptr+1)->val;
 	  bool krylov=true;
 	  vector<int> res;
-	  if (mod_pcar(M,N,modulo,krylov,res,contextptr,true)){
+	  if (mod_pcar(M,N,modulo,krylov,res,contextptr,true,ttemp)){
 	    vector_int2vecteur(res,w);
 	    return makemod(gen(w,_POLY1__VECT),modulo);
 	    // environment env; w=modularize(w,modulo,&env);

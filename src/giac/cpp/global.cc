@@ -5848,7 +5848,7 @@ NULL,NULL,SW_SHOWNORMAL);
   }
 #else
 
-  bool make_thread(const gen & g,int level,const giac_callback & f,void * f_param,context * contextptr){
+  bool make_thread(const gen & g,int level,const giac_callback & f,void * f_param,const context * contextptr){
     return false;
   }
 

@@ -3265,7 +3265,7 @@ namespace giac {
     v=w;
   }
 
-#if defined FXCG || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined FXCG || defined KHICAS
   bool algnum_normal(gen & e,GIAC_CONTEXT){
     return false;
   }

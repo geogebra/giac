@@ -834,6 +834,9 @@ namespace giac {
 	pos=-1;
       if (xvar._SYMBptr->sommet==at_NTHROOT)
 	pos=-2;
+      if (xvar._SYMBptr->sommet==at_factorial && e==xvar){
+        return;
+      }
       if (!pos){
 #ifndef NO_STDEXCEPT
 	throw(std::runtime_error(string(gettext("Unable to isolate function "))+xvar._SYMBptr->sommet.ptr()->print(contextptr)));
@@ -2609,7 +2612,11 @@ namespace giac {
       res=vecteur(1,x); // everything is solution up to now
       double eps=epsilon(contextptr);
       int N=decimal_digits(contextptr);
-      int addN=50; double muleps=eps*std::pow(10.0,-addN);
+#ifdef HAVE_LIBMPFR
+      int addN=60; double muleps=std::pow(10.0,-addN);
+#else
+      int addN=1; double muleps=0.1;
+#endif
       for (;it!=itend;++it){
 	if (res==vecteur(1,x)){
           // temp. increase proot default precision, otherwise roots are discarded
