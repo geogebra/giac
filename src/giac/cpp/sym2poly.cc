@@ -42,6 +42,7 @@ using namespace std;
 #include "poly.h"
 #include "plot.h"
 #include "misc.h"
+#include "modfactor.h"
 #include "giacintl.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -3290,7 +3291,7 @@ namespace giac {
 #ifdef __MINGW_H // NTL support not working, factor would take too long
         n>7
 #else
-        n>10
+        n>11
 #endif
         )
       return false;
@@ -3301,21 +3302,85 @@ namespace giac {
       vars[i]=g;
     }
     gen E=subst(e,v,vars,false,contextptr);
-    vecteur syst;
+    vecteur syst; 
+    gen G,prevG;
     for (int i=0;i<n;++i){
       if (v[i].is_symb_of_sommet(at_pow)){
         gen g=v[i]._SYMBptr->feuille;
         if (g.type!=_VECT || g._VECTptr->size()!=2)
           return false;
-        gen base=g[0], expo=g[1],n,d;
-        fxnd(expo,n,d);
+        gen base=g[0], expo=g[1],num,d;
+        fxnd(expo,num,d);
         base=subst(base,v,vars,false,contextptr);
-        syst.push_back(symb_pow(vars[i],d)-symb_pow(base,n));
+        syst.push_back(symb_pow(vars[i],d)-pow(base,num,contextptr));
+        if (i){
+          // check if the last extension is required
+          vecteur curvars(vars.begin(),vars.begin()+i+1);
+          prevG=G;
+          G=_gbasis(makesequence(syst,curvars,change_subtype(_RUR_REVLEX,_INT_GROEBNER)),contextptr);
+          gen sep=G[1],pmin=G[2];
+          if (_is_irreducible(pmin,contextptr)==0){
+            // last equation of syst will split using previous variables
+            sep=prevG[1];pmin=prevG[2];
+            gen var=lvar(pmin)[0];
+            gen curpmin=_symb2poly(makesequence(pmin,var),contextptr);
+            if (curpmin.type!=_VECT)
+              return false;
+            if (curpmin._VECTptr->front()==-1){
+              curpmin=-curpmin;
+            }
+            gen ro=rootof(pmin,contextptr);
+            gen gg=symb_pow(vx_var,d)-pow(g[0],num,contextptr);
+            gg=e2r(makevecteur(ro,gg),vecteur(1,vecteur(1,vx_var)),contextptr);
+            gg=gg[1];
+            gen ggn,ggd;
+            fxnd(gg,ggn,ggd);
+            if (ggn.type==_POLY){
+              gen an(1),extra_div(1); polynome p_content; factorization f;
+              gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
+              if (ext_factor(*ggn._POLYptr,ext,an,p_content,f,false,extra_div) && f.size()==d){
+                // select the right factor in f
+                gen vival=evalf(v[i],1,contextptr);
+                gen curval,curerr,err;
+                for (int j=0;j<f.size();++j){
+                  polynome & pcur=f[j].fact;
+                  modpoly P=polynome2poly1(pcur,1);
+                  if (P.size()!=2)
+                    return false;
+                  gen cur=-P[1]/P[0],err=abs(cur-vival,contextptr);
+                  if (j==0){
+                    curval=cur;
+                    curerr=err;
+                  }
+                  else {
+                    if (is_greater(curerr,err,contextptr)){
+                      curval=cur;
+                      curerr=err;
+                    }
+                  }
+                }
+                fxnd(curval,ggn,ggd);
+                if (ggn.type==_EXT && ggn._EXTptr->type==_VECT){
+                  // vars[i] will be replaced using sep
+                  gen dep=symb_horner(*ggn._EXTptr->_VECTptr,sep)/ggd;
+                  gen dep2=subst(dep,vars,v,false,contextptr);
+                  E=subst(E,vars[i],dep,false,contextptr);
+                  v=subst(v,v[i],dep2,false,contextptr);
+                  vars.erase(vars.begin()+i); v.erase(v.begin()+i);
+                  syst.pop_back();
+                  --i; --n;
+                  G=prevG;
+                }
+              }
+            }
+          }
+        }
       }
       else
         return false;
-    }
-    gen G=_gbasis(makesequence(syst,vars,change_subtype(_RUR_REVLEX,_INT_GROEBNER)),contextptr);
+    }    
+    if (prevG==0) // should not happen
+      G=_gbasis(makesequence(syst,vars,change_subtype(_RUR_REVLEX,_INT_GROEBNER)),contextptr);
     if (G.type==_VECT && G._VECTptr->size()==vars.size()+4 && G._VECTptr->front().type==_INT_ && G._VECTptr->front().val==_RUR_REVLEX){
       gen sep=G[1],var,pmin=G[2],diffpmin=G[3]; vecteur pminv;
       var=lvar(pmin)[0];
@@ -3364,7 +3429,7 @@ namespace giac {
       }
       // now check that r is the max root of pminv, otherwise
       // it's not rootof([1,0],pminv)
-      gen R=evalf(algebraic_EXTension(makevecteur(1,0),pminv),1,contextptr);
+      gen R=accurate_evalf(algebraic_EXTension(makevecteur(1,0),pminv),100);
       if (is_greater(abs(1-r/R,contextptr),1e-10,contextptr))
         return false;
       Ed=_rem(makesequence(Ed,pmin,var),contextptr);

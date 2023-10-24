@@ -70,6 +70,8 @@ namespace giac {
   bool do_factorunivsqff(const polynome & q,environment * env,vectpoly & v,int & i,int debug,int modfactor_primes);
   bool factorunivsqff(const polynome & q,environment * env,vectpoly & v,int & ithprime,int debug,int modfactor_primes);
 
+  gen _is_irreducible(const gen & args,GIAC_CONTEXT);
+  
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac
 #endif // NO_NAMESPACE_GIAC
