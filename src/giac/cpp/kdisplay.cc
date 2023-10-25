@@ -10965,6 +10965,9 @@ namespace xcas {
     gr.precision=saveprecision;    
     gr.must_redraw=true;
     for (;;){
+      vecteur & hist=history_plot(contextptr);
+      if (hist.size()>=256)
+        hist.erase(hist.begin(),hist.end()-128);
 #ifdef NSPIRE_NEWLIB
       DefineStatusMessage((char*)"shift-1: help, menu: menu, esc: quit", 1, 0, 0);
 #else
