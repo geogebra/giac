@@ -2947,9 +2947,28 @@ namespace giac {
     }
     return a.print(context0)<b.print(context0);
   }
+  static bool sort_func2(const gen & a,const gen & b){
+    if (a.type!=b.type)
+      return a.type<b.type;
+    if (a.type==_IDNT)
+      return strcmp(a._IDNTptr->id_name,b._IDNTptr->id_name)<0;
+    if (a.type==_SYMB){
+      int at=taille(a,256),bt=taille(b,256);
+      if (at!=bt)
+	return at<bt;
+      int cmp=strcmp(a._SYMBptr->sommet.ptr()->s,b._SYMBptr->sommet.ptr()->s);
+      if (cmp) return cmp<0;
+    }
+    return a.print(context0)<b.print(context0);
+  }
   static vecteur sort1(const vecteur & l){
     vecteur res(l);
     gen_sort_f(res.begin(),res.end(),sort_func);
+    return res;
+  }
+  static vecteur sort2(const vecteur & l){
+    vecteur res(l);
+    gen_sort_f(res.begin(),res.end(),sort_func2);
     return res;
   }
   static void sort0(vecteur & l){
@@ -3273,6 +3292,54 @@ namespace giac {
 #else
 
   const int alg_digits_evalf=100;
+
+  gen rur_mult(const gen & a,const gen &b,const vecteur & pmin){
+    gen r=a*b;
+    return r.type==_VECT?*r._VECTptr %pmin:r;
+  }
+  
+  bool rur_subst(const gen & g,const vecteur &vars,const vecteur & nums,const gen & den,const gen & pmin,gen & n, gen & d,GIAC_CONTEXT){
+    if (g.type==_IDNT){
+      int i=equalposcomp(vars,g);
+      if (!i){
+        return false;
+        // or
+        n=g;
+        d=1;
+        return true;
+      }
+      n=nums[i-1];
+      if (n.type==_VECT) n.subtype=_POLY1__VECT;
+      d=den; d.subtype=_POLY1__VECT;
+      return true;
+    }
+    if (g.type==_SYMB){
+      if (g._SYMBptr->sommet==at_prod){
+
+      }
+    }
+    n=g;
+    d=1;
+    return true;
+  }
+
+  gen rur_subst(const gen &E,const vecteur &vars,const vecteur & nums_,const gen & den,const gen & pmin_,GIAC_CONTEXT){
+    gen n,d;
+    gen x=lidnt(den).front();
+    vecteur nums(nums_);
+    for (int i=0;i<nums.size();++i)
+      nums[i]=_symb2poly(makesequence(nums[i],x),contextptr);
+    vecteur pmin=gen2vecteur(_symb2poly(makesequence(pmin,x),contextptr));
+    if (!rur_subst(E,vars,nums,den,pmin,n,d,contextptr))
+      return undef;
+    // invert d with bezout
+    gen u,v,g;
+    egcd(d,pmin,u,v,g);
+    rur_mult(n,u,pmin);
+    // convert back
+    n=_poly2symb(makesequence(n,x),contextptr);
+    return n/g; 
+  }
   
   // detect if e is in an algebraic extension of Q, simplifies
   bool algnum_normal(gen & e,GIAC_CONTEXT){
@@ -3295,7 +3362,7 @@ namespace giac {
 #endif
         )
       return false;
-    sort1(v);
+    v=sort2(v);
     vecteur vars(n);
     for (int i=0;i<n;++i){
       gen g("x"+print_INT_(i),contextptr);
@@ -3321,8 +3388,13 @@ namespace giac {
           gen sep=G[1],pmin=G[2];
           if (_is_irreducible(pmin,contextptr)==0){
             // last equation of syst will split using previous variables
-            sep=prevG[1];pmin=prevG[2];
-            gen var=lvar(pmin)[0];
+            if (prevG==0){
+	      pmin=syst[0]; sep=lidnt(pmin)[0];
+	    }
+	    else {
+	      sep=prevG[1];pmin=prevG[2];
+	    }
+            gen var=lidnt(pmin)[0];
             gen curpmin=_symb2poly(makesequence(pmin,var),contextptr);
             if (curpmin.type!=_VECT)
               return false;
@@ -3338,40 +3410,50 @@ namespace giac {
             if (ggn.type==_POLY){
               gen an(1),extra_div(1); polynome p_content; factorization f;
               gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
-              if (ext_factor(*ggn._POLYptr,ext,an,p_content,f,false,extra_div) && f.size()==d){
-                // select the right factor in f
-                gen vival=evalf(v[i],1,contextptr);
-                gen curval,curerr,err;
-                for (int j=0;j<f.size();++j){
-                  polynome & pcur=f[j].fact;
-                  modpoly P=polynome2poly1(pcur,1);
-                  if (P.size()!=2)
-                    return false;
-                  gen cur=-P[1]/P[0],err=abs(cur-vival,contextptr);
-                  if (j==0){
-                    curval=cur;
-                    curerr=err;
-                  }
-                  else {
-                    if (is_greater(curerr,err,contextptr)){
-                      curval=cur;
-                      curerr=err;
-                    }
-                  }
-                }
-                fxnd(curval,ggn,ggd);
-                if (ggn.type==_EXT && ggn._EXTptr->type==_VECT){
-                  // vars[i] will be replaced using sep
-                  gen dep=symb_horner(*ggn._EXTptr->_VECTptr,sep)/ggd;
-                  gen dep2=subst(dep,vars,v,false,contextptr);
-                  E=subst(E,vars[i],dep,false,contextptr);
-                  v=subst(v,v[i],dep2,false,contextptr);
-                  vars.erase(vars.begin()+i); v.erase(v.begin()+i);
-                  syst.pop_back();
-                  --i; --n;
-                  G=prevG;
-                }
-              }
+              if (!ext_factor(*ggn._POLYptr,ext,an,p_content,f,false,extra_div))
+		return false;
+	      // if (f.size()!=d) return false;
+	      // select the right factor in f
+	      gen vival=_evalf(makesequence(v[i],alg_digits_evalf),contextptr);
+	      gen curval(undef),curerr,err;
+	      for (int j=0;j<f.size();++j){
+		polynome & pcur=f[j].fact;
+		modpoly P=polynome2poly1(pcur,1);
+		if (P.size()!=2)
+		  continue;
+		gen cur=-P[1]/P[0],err=abs(cur-vival,contextptr);
+		if (is_undef(curval) && is_greater(1e-10,err,contextptr)){
+		  curval=cur;
+		  curerr=err;
+		}
+		else {
+		  if (is_greater(curerr,err,contextptr)){
+		    curval=cur;
+		    curerr=err;
+		  }
+		}
+	      }
+	      if (is_undef(curval))
+		return false;
+	      fxnd(curval,ggn,ggd);
+	      if (ggn.type==_EXT && ggn._EXTptr->type==_VECT){
+		// vars[i] will be replaced using sep
+		gen dep=horner(*ggn._EXTptr->_VECTptr,sep)/ggd;
+#if 0
+		// reduce dep using syst/vars
+		// disabled because it expands sums
+		// leading to much larger expressions
+		for (int k=syst.size()-2;k>=0;--k)
+		  dep=_rem(makesequence(dep,syst[k],vars[k]),contextptr);
+#endif
+		gen dep2=subst(dep,vars,v,false,contextptr);
+		E=subst(E,vars[i],dep,false,contextptr);
+		v=subst(v,v[i],dep2,false,contextptr);
+		vars.erase(vars.begin()+i); v.erase(v.begin()+i);
+		syst.pop_back();
+		--i; --n;
+		G=prevG;
+	      }
             }
           }
         }
@@ -3416,6 +3498,9 @@ namespace giac {
       }
       vecteur nums=vecteur(G._VECTptr->begin()+4,G._VECTptr->end());
       // rewrite E as a rational frac in var, replace vars by nums/diffpmin
+#if 0
+      E=rur_subst(E,vars,nums,diffpmin,pmin,contextptr);
+#else
       E=subst(E,vars,inv(diffpmin,contextptr)*nums,false,contextptr);
       // now simplify numerator and denominator
       gen End=_fxnd(E,contextptr),En,Ed;
@@ -3427,6 +3512,7 @@ namespace giac {
         e=En;
         return true;
       }
+#endif
       // now check that r is the max root of pminv, otherwise
       // it's not rootof([1,0],pminv)
       gen R=accurate_evalf(algebraic_EXTension(makevecteur(1,0),pminv),100);

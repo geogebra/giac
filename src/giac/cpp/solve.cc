@@ -7231,7 +7231,7 @@ namespace giac {
 	return vecteur(0); // no solution since cst equation
     }
     int rur=0;
-    gbasis_param_t gbasis_param={false,-1,-1,-1,true};
+    gbasis_param_t gbasis_param={false,-1,-1,-1,true,false};
     vectpoly eqpr(gbasis(eqp,_PLEX_ORDER,/* cocoa */false,/* f5 */ false,/*environment * */0,rur,contextptr,gbasis_param,0));
     // should reorder eqpr with lex order here
     // solve from right to left
@@ -7421,6 +7421,8 @@ namespace giac {
   static bool read_gbargs(vecteur & v,int start,int s,gen & order,bool & with_cocoa,bool & with_f5,int & modular,gbasis_param_t & gbasis_param){
     bool ret=false;
     for (int i=start;i<s;++i){
+      if (v[i]==at_gbasis)
+        gbasis_param.gbasis=true;
       if (v[i]==at_eliminate){
 	gbasis_param.eliminate_flag=true;
       }
@@ -7598,7 +7600,7 @@ namespace giac {
     gen order=_REVLEX_ORDER; // 0 assumes plex and 0-dimension ideal so that FGLM applies
     // v[2] will serve for ordering
     bool with_f5=false,with_cocoa=false;
-    gbasis_param_t gbasis_param={false,-1,-1,-1,true};
+    gbasis_param_t gbasis_param={false,-1,-1,-1,true,false};
     int modular=1;
     vector<vectpoly> gbasiscoeff; vector<vectpoly> * coeffsptr=0;
     if (read_gbargs(v,2,s,order,with_cocoa,with_f5,modular,gbasis_param))
@@ -7688,8 +7690,10 @@ namespace giac {
     }
     if (order.val<0 && rur){
       // subst l[0] by another variable name to avoid confusion in res[2..]?
-      if (res[0].type==_IDNT && l.front().type==_VECT && !l.front()._VECTptr->empty())
-	res=subst(res,l.front()[0],res[0],false,contextptr);
+      if (res[0].type==_IDNT && l.front().type==_VECT && !l.front()._VECTptr->empty()){
+	for (int i=1;i<=dim+2;++i)
+          res[i]=subst(res[i],l.front()[0],res[0],false,contextptr);
+      }
       res.insert(res.begin(),change_subtype(order,_INT_GROEBNER));
     }
     return coeffsptr?makevecteur(res,coeffs):res;
@@ -7847,7 +7851,7 @@ namespace giac {
     // v[3] will serve for ordering
     gen order=_REVLEX_ORDER;// _PLEX_ORDER; // FIXME for parameters!
     bool with_f5=false,with_cocoa=false;
-    gbasis_param_t gbasis_param={false,-1,-1,-1,true};
+    gbasis_param_t gbasis_param={false,-1,-1,-1,true,false};
     int modular=1;
     read_gbargs(v,3,s,order,with_cocoa,with_f5,modular,gbasis_param);
     vecteur l1=gen2vecteur(v[2]),l0=lidnt_with_at(makevecteur(v[0],v[1]));
@@ -7948,7 +7952,7 @@ namespace giac {
     if (args._VECTptr->back()==at_resultant)
       returngb=3;
     bool with_f5=false,with_cocoa=false; int modular=1; gen o;
-    gbasis_param_t gbasis_param={epsilon(contextptr)!=0,-1,-1,-1,true};
+    gbasis_param_t gbasis_param={epsilon(contextptr)!=0,-1,-1,-1,true,false};
     read_gbargs(*args._VECTptr,2,int(args._VECTptr->size()),o,with_cocoa,with_f5,modular,gbasis_param);
     vecteur eqs=gen2vecteur(remove_equal(args._VECTptr->front()));
     vecteur elim=gen2vecteur((*args._VECTptr)[1]);
@@ -8369,7 +8373,7 @@ namespace giac {
     alg_lvar(v[0],l);
     gen order=_PLEX_ORDER; // _REVLEX_ORDER;
     bool with_f5=false,with_cocoa=false;
-    gbasis_param_t gbasis_param={false,-1,-1,-1,true};
+    gbasis_param_t gbasis_param={false,-1,-1,-1,true,false};
     int modular=1;
     read_gbargs(v,3,s,order,with_cocoa,with_f5,modular,gbasis_param);
     // convert eq to polynomial

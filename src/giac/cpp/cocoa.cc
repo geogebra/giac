@@ -14891,8 +14891,10 @@ void G_idn(vector<unsigned> & G,size_t s){
 	for (unsigned i=0;int(i)<d;++i){
 	  index_t l(dim);
 	  l[i]=1;
-	  int r1=essai==testall1?1:int((std_rand()/double(RAND_MAX)-0.5)*n); // try with the sum of all 
-	  if (r1)
+	  int r1=1;
+          if (essai!=testall1) //  && essai!=testall1+1)
+            r1=int((std_rand()/double(RAND_MAX)-0.5)*n); // try with the sum of all 
+	  if (r1) //  && (essai!=testall1 || i!=d-1) )
 	    s.coord.push_back(T_unsigned<modint,tdeg_t>(r1,tdeg_t(l,order)));
 	}
 	if (s.coord.size()<2) // monomials already done
@@ -15469,7 +15471,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 #else
     int nthreads=1,th,parallel=1;
 #endif
-    bool rur_gbasis=rur_do_gbasis>=0;
+    bool rur_gbasis=rur_do_gbasis>=0 || gbasis_par.gbasis;
     // for more than 2 threads, real time is currently better without
     // reason might be that the gbasis is large, reduction mod p for
     // all threads has bad cache performances?
@@ -16157,7 +16159,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  recon_n2=recon_n1;
 	  recon_n1=recon_n0;
 	  recon_n0=Wlast[i].size();
-	  if (eps>1e-20 &&
+	  if (eps>1e-20 && !gbasis_par.gbasis &&
 	      // recon_n2==recon_n1 && recon_n1==recon_n0 &&
 	      zdata && augmentgbasis && t==th && i==0){
 	    if (rur_gbasis && rur==1 && recon_n2>=gbasis_size){ // the gbasis is known
@@ -16267,7 +16269,8 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  P[i]=P[i]*p;
 	  continue; // next prime
 	}
-	else if (Wrur.size()<dim+2) { // final check
+	else if (Wrur.size()<dim+4) { // was dim+2, but dim+4 required if gbasis_par.gbasis is true
+          // final check
 	  W[i]=Wlast[i];
 	  if (!rur && !coeffsmodptr){
 	    if (debug_infolevel)
@@ -16278,10 +16281,20 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  if (debug_infolevel)
 	    CERR << CLOCK()*1e-6 << " end rational reconstruction " << '\n';
 	  // now check if W[i] is a Groebner basis over Q, if so it's the answer
-	  if (rur && rur!=2 && rur_certify(res,W[i],rur_gbasis?gbasis_size:0,contextptr)){ // rur!=2 was added otherwise crash for eliminate([-v5+1,-v6,v7-1,v8-1,v10^2-v6^2-v5^2+2*v6-1,v9^2-1,v9*m-v10,v9*n-1],[v1,v2,v3,v4,v5,v6,v7,v8,v10,v9,n])
+	  if (rur && rur!=2 && !gbasis_par.gbasis && rur_certify(res,W[i],rur_gbasis?gbasis_size:0,contextptr)){ // rur!=2 was added otherwise crash for eliminate([-v5+1,-v6,v7-1,v8-1,v10^2-v6^2-v5^2+2*v6-1,v9^2-1,v9*m-v10,v9*n-1],[v1,v2,v3,v4,v5,v6,v7,v8,v10,v9,n])
 	    swap(res,W[i]);
 	    if (rur_gbasis)
 	      res.erase(res.begin(),res.begin()+gbasis_size);
+            goto cleanup;
+          }
+	  if (rur && rur!=2 && gbasis_par.gbasis && rur_certify(res,rur_gbasis?Wrur:W[i],0,contextptr)){ // rur!=2 was added otherwise crash for eliminate([-v5+1,-v6,v7-1,v8-1,v10^2-v6^2-v5^2+2*v6-1,v9^2-1,v9*m-v10,v9*n-1],[v1,v2,v3,v4,v5,v6,v7,v8,v10,v9,n])
+	    if (rur_gbasis){
+	      swap(res,Wrur);
+              for (int k=0;k<W[i].size();++k)
+                res.push_back(W[i][k]);
+            }
+            else
+              swap(res,W[i]);
           cleanup:
 	    mpz_clear(zd);
 	    mpz_clear(zu);

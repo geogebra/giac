@@ -2725,8 +2725,12 @@ extern "C" void Sleep(unsigned int miliSecond);
     return *ans;
   }
   vecteur & history_plot(GIAC_CONTEXT){
-    if (contextptr)
-      return *contextptr->history_plot_ptr;
+    if (contextptr){
+      vecteur * hist=contextptr->history_plot_ptr;
+      if (hist->size()>=256)
+        hist->erase(hist->begin(),hist->end()-128);
+      return *hist;
+    }
     else
       return _history_plot_();
   }
