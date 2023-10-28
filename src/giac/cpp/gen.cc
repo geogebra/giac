@@ -6783,6 +6783,9 @@ namespace giac {
 	}
 	return operator_times(base,base,contextptr);
       }
+      if (0 && exponent.val%2==0 && base.is_symb_of_sommet(at_abs)){
+        return pow(base._SYMBptr->feuille*conj(base._SYMBptr->feuille,contextptr),exponent/2,contextptr);
+      }
     }
     if (is_undef(base))
       return base;
