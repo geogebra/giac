@@ -3379,11 +3379,12 @@ namespace giac {
       }
       gen z0,z1;
       if (same_deno(d0,d1,z0,z1)){
-        n=z0*Nv[1]+z1*Nv[0];
+        // Nv[0]/d0+Nv[1]/d1, d0*z0=d1*z1 -
+        n=z0*Nv[0]+z1*Nv[1];
         if (is_zero(n)){
           n=0; d=1; return true;
         }
-        d=z0*d1;
+        d=z0*d0;
         return true;
       }
       n=Nv[0]*d1+Nv[1]*d0;
@@ -3421,12 +3422,12 @@ namespace giac {
     }
     gen z1,z2;
     if (same_deno(d1,d2,z1,z2)){
-      // d1*z2=d2*z1, n1/d1+n2/d2=(n1*z2+n2*z1)/(d1*z2)
-      n=z2*n1+z1*n2;
+      // d1*z1=d2*z2, n1/d1+n2/d2=(n1*z1+n2*z2)/(d1*z1)
+      n=z1*n1+z2*n2;
       if (is_zero(n)){
         n=0; d=1; return true;
       }
-      d=z2*d1;
+      d=z1*d1;
       return true;
     }
     modpoly rem,quo,tmp;
