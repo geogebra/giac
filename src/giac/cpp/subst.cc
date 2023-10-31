@@ -457,7 +457,14 @@ namespace giac {
 
   static bool has_subst(const gen & e,const gen & i,const gen & newi,gen & newe,bool quotesubst,GIAC_CONTEXT){
     switch (e.type){
-    case _INT_: case _ZINT: case _CPLX: case _DOUBLE_: case _REAL: case _STRNG: case _MOD: case _SPOL1: case _USER:
+    case _INT_: case _ZINT: case _DOUBLE_: case _REAL: case _STRNG: case _MOD: case _SPOL1: case _USER:
+      return false;
+    case _CPLX:
+      if (i==cst_i){
+        newe=*e._CPLXptr+*(e._CPLXptr+1)*newi;
+        return true;
+      }
+      newe=e;
       return false;
     case _IDNT: case _FUNC:
       if (e==i){
@@ -531,7 +538,7 @@ namespace giac {
       }
       return subst(e,*i._VECTptr,*newi._VECTptr,quotesubst,contextptr);
     }
-    if (i.type!=_IDNT && i.type!=_SYMB && i.type!=_FUNC)
+    if (i.type!=_IDNT && i.type!=_SYMB && i.type!=_FUNC && i!=cst_i)
       *logptr(contextptr) << gettext("Warning, replacing ") << i << gettext(" by ") << newi << gettext(", a substitution variable should perhaps be purged.") << '\n';
     gen res;
     if (has_subst(e,i,newi,res,quotesubst,contextptr))
@@ -789,8 +796,14 @@ namespace giac {
       return e;
     int pos;
     switch (e.type){
-    case _INT_: case _ZINT: case _DOUBLE_: case _CPLX: case _REAL:
+    case _INT_: case _ZINT: case _DOUBLE_: case _REAL:
       return e;
+    case _CPLX:
+      pos=findpos(i,cst_i);
+      if (pos)
+	return *e._CPLXptr+*(e._CPLXptr+1)*newi[pos-1];
+      else
+	return e;      
     case _IDNT:
       pos=findpos(i,e);
       if (pos)

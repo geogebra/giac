@@ -3453,7 +3453,7 @@ namespace giac {
   }
   
   bool rur_subst(const gen & g,const vecteur &vars,const vecteur & nums,const gen & den,const vecteur & pmin,gen & n, gen & d,GIAC_CONTEXT){
-    if (g.type==_CPLX){
+    if (0 && g.type==_CPLX){
       gen r,i;
       reim(g,r,i,contextptr);
       n=r+i*nums[0];
@@ -3619,9 +3619,13 @@ namespace giac {
     if (has_rootof && lop(v,at_rootof).empty()){
       ext=subst(sep,vars,v,false,contextptr);
       E=horner(EN,ext)/bez[2];
-      e=ratnormal(E,contextptr);
-      if (taille(E,RAND_MAX)<taille(e,RAND_MAX))
+      if (taille(E,128)>=128)
         e=E;
+      else {
+        e=ratnormal(E,contextptr);
+        if (taille(E,RAND_MAX)<taille(e,RAND_MAX))
+          e=E;
+      }
       return true;
     }
     bool b=calc_mode(contextptr)==1 || abs_calc_mode(contextptr)==38;
@@ -3658,28 +3662,21 @@ namespace giac {
     }
     vecteur V(v),VARS(vars);
     gen E=subst(e,v,vars,false,contextptr);
-    bool cplx=has_i(e);
-    if (0 && cplx){ // does not work for algbench
-      gen Er,Ei;
-      reim(E,Er,Ei,contextptr);
-      if (is_zero(Ei)){
-        cplx=false;
-        e=Er;
-      }
-    }
-    if (cplx){
-      v.insert(v.begin(),cst_i);
-      vars.insert(vars.begin(),gen("x0",contextptr));
-      ++n;
-    }
     vecteur syst; 
     gen G,prevG;
+    bool cplx=has_i(E);
+    if (cplx){
+      v.push_back(cst_i);
+      vars.push_back(gen("x0",contextptr));
+      ++n;
+    }
     for (int i=0;i<n;++i){
-      if (i==0 && v[i]==cst_i){
-        syst.push_back(vars.front()*vars.front()+1);
-        continue;
+      gen gg=undef;
+      if (i==n-1 && cplx && v[i]==cst_i){
+        syst.push_back(vars.back()*vars.back()+1);
+        gg=vx_var*vx_var+1;
       }
-      if (v[i].is_symb_of_sommet(at_rootof)){
+      else if (v[i].is_symb_of_sommet(at_rootof)){
         gen g=v[i]._SYMBptr->feuille;
         if (g.type!=_VECT || g._VECTptr->size()!=2)
           return false;
@@ -3688,149 +3685,156 @@ namespace giac {
         E=subst(E,vars[i],p,false,contextptr);
         pmin=horner(pmin,vars[i]);
         syst.push_back(pmin);
-        continue;
+        gg=pmin;
       }
-      if (v[i].is_symb_of_sommet(at_pow)){
+      else if (v[i].is_symb_of_sommet(at_pow)){
         gen g=v[i]._SYMBptr->feuille;
         if (g.type!=_VECT || g._VECTptr->size()!=2)
           return false;
         gen base=g[0], expo=g[1],num,d;
         fxnd(expo,num,d);
+        gg=symb_pow(vx_var,d)-pow(g[0],num,contextptr);
         base=subst(base,V,VARS,false,contextptr);
         syst.push_back(symb_pow(vars[i],d)-pow(base,num,contextptr));
-        if (i){
-          // check if the last extension is required
-          vecteur curvars(vars.begin(),vars.begin()+i+1);
-          prevG=G;
-          G=_gbasis(makesequence(syst,curvars,change_subtype(_RUR_REVLEX,_INT_GROEBNER)),contextptr);
-          gen sep=G[1],pmin=G[2];
-          if (_is_irreducible(pmin,contextptr)==0){
-            // last equation of syst will split using previous variables
-            if (prevG==0){
-	      pmin=syst[0]; sep=lidnt(pmin)[0];
-	    }
-	    else {
-	      sep=prevG[1];pmin=prevG[2];
-	    }
-            gen var=lidnt(pmin)[0];
-            gen curpmin=_symb2poly(makesequence(pmin,var),contextptr);
-            if (curpmin.type!=_VECT)
-              return false;
-            if (curpmin._VECTptr->front()==-1){
-              curpmin=-curpmin;
-            }
-            gen ro=rootof(pmin,contextptr);
-            gen gg=symb_pow(vx_var,d)-pow(g[0],num,contextptr);
-            gg=e2r(makevecteur(ro,gg),vecteur(1,vecteur(1,vx_var)),contextptr);
-            gg=gg[1];
-            gen ggn,ggd;
-            fxnd(gg,ggn,ggd);
-            if (ggn.type==_POLY){
-              gen an(1),extra_div(1); polynome p_content; factorization f;
-              gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
-              if (!ext_factor(*ggn._POLYptr,ext,an,p_content,f,false,extra_div))
-		return false;
-	      // if (f.size()!=d) return false;
-	      // select the right factor in f
-	      gen vival=_evalf(makesequence(v[i],alg_digits_evalf),contextptr);
-	      gen curval(undef),curerr,err;
-	      for (int j=0;j<f.size();++j){
-		polynome & pcur=f[j].fact;
-		modpoly P=polynome2poly1(pcur,1);
-		if (P.size()!=2)
-		  continue;
-		gen cur=-P[1]/P[0],err=abs(cur-vival,contextptr);
-		if (is_undef(curval) && is_greater(1e-10,err,contextptr)){
-		  curval=cur;
-		  curerr=err;
-		}
-		else {
-		  if (is_greater(curerr,err,contextptr)){
-		    curval=cur;
-		    curerr=err;
-		  }
-		}
-	      }
-	      if (is_undef(curval))
-		return false;
-	      fxnd(curval,ggn,ggd);
-	      if (ggn.type==_EXT && ggn._EXTptr->type==_VECT){
-		// vars[i] will be replaced using sep
-		gen dep=horner(*ggn._EXTptr->_VECTptr,sep)/ggd;
-		gen dep2=subst(dep,vars,v,false,contextptr);
-		E=subst(E,vars[i],dep,false,contextptr);
-		v=subst(v,v[i],dep2,false,contextptr);
-		vars.erase(vars.begin()+i); v.erase(v.begin()+i);
-		syst.pop_back();
-		--i; --n;
-		G=prevG;
-	      }
-            }
-          } else {
-            if (!rootofallowed) continue;
-            gen var=lidnt(pmin)[0];
-            gen curpmin=_symb2poly(makesequence(pmin,var),contextptr);
-            if (curpmin.type!=_VECT)
-              return false;
-            if (curpmin._VECTptr->front()==-1){
-              curpmin=-curpmin;
-            }
-            // pmin is irreducible
-            // but sep is not necessarily the largest root of pmin
-            // we must adjust if possible, factor pmin over pmin extension
-            // and replace in E vars[i] by the root in terms of the extension
-            gen an(1),extra_div(1); polynome p_content; factorization f;
-            gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
-            gen vival=_evalf(makesequence(subst(sep,vars,v,false,contextptr),alg_digits_evalf),contextptr);
-            if (is_greater(abs(vival-ext,contextptr),1e-10,contextptr)){
-              if (curpmin._VECTptr->size()>17){
-                rootofallowed=false; continue;
-              }
-              polynome p(poly12polynome(*curpmin._VECTptr));
-              if (!ext_factor(p,ext,an,p_content,f,false,extra_div))
-                return false;
-              // if (f.size()!=d) return false;
-              // select the right factor in f
-              gen curval(undef),curerr,err;
-              for (int j=0;j<f.size();++j){
-                polynome & pcur=f[j].fact;
-                modpoly P=polynome2poly1(pcur,1);
-                if (P.size()!=2)
-                  continue;
-                gen cur=-P[1]/P[0],err=abs(cur-vival,contextptr);
-                if (is_undef(curval) && is_greater(1e-10,err,contextptr)){
-                  curval=cur;
-                  curerr=err;
-                }
-                else {
-                  if (is_greater(curerr,err,contextptr)){
-                    curval=cur;
-                    curerr=err;
-                  }
-                }
-              }
-              if (is_undef(curval)){
-                rootofallowed=false;
-                continue;
-              }
-              gen ggn,ggd; fxnd(curval,ggn,ggd);
-              if (ggn.type==_EXT && ggn._EXTptr->type==_VECT){
-                // vars[i] will be replaced using sep
-                gen dep=horner(*ggn._EXTptr->_VECTptr,sep)/ggd;
-                gen dep2=algebraic_EXTension(makevecteur(1,0),curpmin);
-                dep2=r2e(dep2,vecteur(1,vecteur(0)),contextptr);
-                E=subst(E,vars[i],dep,false,contextptr);
-                v=subst(v,v[i],dep2,false,contextptr);
-                syst[i]=pmin;
-                --i;
-                continue;
-              }
-            } // end v[i] was not the largest root of pmin
-          } // end pmin irreducible
-        } // end i>0
       }
       else
         return false;
+      if (i){
+        // check if the last extension is required
+        vecteur curvars(vars.begin(),vars.begin()+i+1);
+        prevG=G;
+        G=_gbasis(makesequence(syst,curvars,change_subtype(_RUR_REVLEX,_INT_GROEBNER)),contextptr);
+        gen sep=G[1],pmin=G[2];
+        if (_is_irreducible(pmin,contextptr)==0){
+          // last equation of syst will split using previous variables
+          if (prevG==0){
+            pmin=syst[0]; sep=lidnt(pmin)[0];
+          }
+          else {
+            sep=prevG[1];pmin=prevG[2];
+          }
+          gen var=lidnt(pmin)[0];
+          gen curpmin=_symb2poly(makesequence(pmin,var),contextptr);
+          if (curpmin.type!=_VECT)
+            return false;
+          if (curpmin._VECTptr->front()==-1){
+            curpmin=-curpmin;
+          }
+          gen ro=rootof(pmin,contextptr);
+          gg=e2r(makevecteur(ro,gg),vecteur(1,vecteur(1,vx_var)),contextptr);
+          gg=gg[1];
+          gen ggn,ggd;
+          fxnd(gg,ggn,ggd);
+          if (ggn.type==_POLY){
+            gen an(1),extra_div(1); polynome p_content; factorization f;
+            gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
+            if (!ext_factor(*ggn._POLYptr,ext,an,p_content,f,false,extra_div))
+              return false;
+            // if (f.size()!=d) return false;
+            // select the right factor in f
+            gen vival=_evalf(makesequence(v[i],alg_digits_evalf),contextptr);
+            gen curval(undef),curerr,err;
+            for (int j=0;j<f.size();++j){
+              polynome & pcur=f[j].fact;
+              modpoly P=polynome2poly1(pcur,1);
+              if (P.size()!=2)
+                continue;
+              gen cur=-P[1]/P[0],err=abs(cur-vival,contextptr);
+              if (is_undef(curval) && is_greater(1e-10,err,contextptr)){
+                curval=cur;
+                curerr=err;
+              }
+              else {
+                if (is_greater(curerr,err,contextptr)){
+                  curval=cur;
+                  curerr=err;
+                }
+              }
+            }
+            if (is_undef(curval))
+              return false;
+            fxnd(curval,ggn,ggd);
+            if (ggn.type==_EXT && ggn._EXTptr->type==_VECT){
+              // vars[i] will be replaced using sep
+              gen dep=horner(*ggn._EXTptr->_VECTptr,sep)/ggd;
+              gen dep2=subst(dep,vars,v,false,contextptr);
+              E=subst(E,vars[i],dep,false,contextptr);
+              V=subst(V,v[i],dep2,false,contextptr);
+              v=subst(v,v[i],dep2,false,contextptr);
+              vars.erase(vars.begin()+i); v.erase(v.begin()+i);
+              syst.pop_back();
+              --i; --n;
+              G=prevG;
+            }
+          }
+        } else {
+          if (cplx && v[i]==cst_i){
+            vars.pop_back(); v.pop_back(); syst.pop_back(); cplx=false;
+            --i; --n; G=prevG;
+            continue;
+          }
+          if (!rootofallowed) continue;
+          gen var=lidnt(pmin)[0];
+          gen curpmin=_symb2poly(makesequence(pmin,var),contextptr);
+          if (curpmin.type!=_VECT)
+            return false;
+          if (curpmin._VECTptr->front()==-1){
+            curpmin=-curpmin;
+          }
+          // pmin is irreducible
+          // but sep is not necessarily the largest root of pmin
+          // we must adjust if possible, factor pmin over pmin extension
+          // and replace in E vars[i] by the root in terms of the extension
+          gen an(1),extra_div(1); polynome p_content; factorization f;
+          gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
+          gen vival=_evalf(makesequence(subst(sep,vars,v,false,contextptr),alg_digits_evalf),contextptr);
+          if (is_greater(abs(vival-ext,contextptr),1e-10,contextptr)){
+            if (curpmin._VECTptr->size()>17){
+              rootofallowed=false; continue;
+            }
+            polynome p(poly12polynome(*curpmin._VECTptr));
+            if (!ext_factor(p,ext,an,p_content,f,false,extra_div))
+              return false;
+            // if (f.size()!=d) return false;
+            // select the right factor in f
+            gen curval(undef),curerr,err;
+            for (int j=0;j<f.size();++j){
+              polynome & pcur=f[j].fact;
+              modpoly P=polynome2poly1(pcur,1);
+              if (P.size()!=2)
+                continue;
+              gen cur=-P[1]/P[0],err=abs(cur-vival,contextptr);
+              if (is_undef(curval) && is_greater(1e-10,err,contextptr)){
+                curval=cur;
+                curerr=err;
+              }
+              else {
+                if (is_greater(curerr,err,contextptr)){
+                  curval=cur;
+                  curerr=err;
+                }
+              }
+            }
+            if (is_undef(curval)){
+              rootofallowed=false;
+              continue;
+            }
+            gen ggn,ggd; fxnd(curval,ggn,ggd);
+            if (ggn.type==_EXT && ggn._EXTptr->type==_VECT){
+              // vars[i] will be replaced using sep
+              gen dep=horner(*ggn._EXTptr->_VECTptr,sep)/ggd;
+              gen dep2=algebraic_EXTension(makevecteur(1,0),curpmin);
+              dep2=r2e(dep2,vecteur(1,vecteur(0)),contextptr);
+              E=subst(E,vars[i],dep,false,contextptr);
+              V=subst(V,v[i],dep2,false,contextptr);
+              v=subst(v,v[i],dep2,false,contextptr);
+              syst[i]=pmin;
+              --i;
+              continue;
+            }
+          } // end v[i] was not the largest root of pmin
+        } // end pmin irreducible
+      } // end i>0
     }
     if (n>9){
       *logptr(contextptr) << "Algebraic extension degree too large!\n";
@@ -3912,6 +3916,7 @@ namespace giac {
       }
       vecteur nums=vecteur(G._VECTptr->begin()+4,G._VECTptr->end());
       // rewrite E as a rational frac in var, replace vars by nums/diffpmin
+      pmin=horner(pminv,var);
       if (!algnum_rewritable(E,vars,v,nums,diffpmin,pminv,pmin,var,ext,sep,rootofallowed,e,contextptr))
         return false;
       return true;
