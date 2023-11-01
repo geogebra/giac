@@ -6783,8 +6783,17 @@ namespace giac {
 	}
 	return operator_times(base,base,contextptr);
       }
-      if (0 && exponent.val%2==0 && base.is_symb_of_sommet(at_abs)){
-        return pow(base._SYMBptr->feuille*conj(base._SYMBptr->feuille,contextptr),exponent/2,contextptr);
+      if (exponent.val%2==0 && base.is_symb_of_sommet(at_prod) && has_op(base,*at_pow)){
+        const gen & f=base._SYMBptr->feuille;
+        if (f.type==_VECT){
+          const vecteur & v=*f._VECTptr;
+          int s=v.size();
+          vecteur w(v);
+          for (int i=0;i<s;++i){
+            w[i]=pow(w[i],exponent,contextptr);
+          }
+          return symbolic(at_prod,gen(w,_SEQ__VECT));
+        }
       }
     }
     if (is_undef(base))

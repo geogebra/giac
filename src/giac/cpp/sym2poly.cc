@@ -3596,6 +3596,13 @@ namespace giac {
       e=En;
       return true;
     }
+    if (0){
+      ext=subst(sep,vars,v,false,contextptr);
+      gen EN=_symb2poly(makesequence(En,var),contextptr);
+      gen ED=_symb2poly(makesequence(Ed,var),contextptr);
+      e=horner(EN,ext)/horner(ED,ext);
+      return true;
+    }
     // multiply denominator by conjugate
     gen bez=_egcd(makesequence(Ed,pmin,var),contextptr);
     if (bez.type!=_VECT || bez._VECTptr->size()!=3)
@@ -3683,9 +3690,9 @@ namespace giac {
         gen p=g[0], pmin=g[1];
         p=horner(p,vars[i]);
         E=subst(E,vars[i],p,false,contextptr);
+        gg=horner(pmin,vx_var);
         pmin=horner(pmin,vars[i]);
         syst.push_back(pmin);
-        gg=pmin;
       }
       else if (v[i].is_symb_of_sommet(at_pow)){
         gen g=v[i]._SYMBptr->feuille;
@@ -3773,6 +3780,7 @@ namespace giac {
             --i; --n; G=prevG;
             continue;
           }
+          //rootofallowed=false;
           if (!rootofallowed) continue;
           gen var=lidnt(pmin)[0];
           gen curpmin=_symb2poly(makesequence(pmin,var),contextptr);
