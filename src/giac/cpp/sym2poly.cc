@@ -3398,7 +3398,7 @@ namespace giac {
         n=0; d=1; return true;
       }
       if (d0.type==_VECT && d1.type==_VECT){
-        mulmodpoly(*d0._VECTptr,*d1._VECTptr,0,tmp);
+        tmp=operator_times(*d0._VECTptr,*d1._VECTptr,0);
         DivRem(tmp,pmin,0,quo,rem);
         d=rem;
       }
@@ -3441,7 +3441,7 @@ namespace giac {
       n=0; d=1; return true;
     }
     if (d1.type==_VECT && d2.type==_VECT){
-      mulmodpoly(*d1._VECTptr,*d2._VECTptr,0,tmp);
+      tmp=operator_times(*d1._VECTptr,*d2._VECTptr,0);
       DivRem(tmp,pmin,0,quo,rem);
       d=rem;
     }
@@ -3556,17 +3556,83 @@ namespace giac {
     return n/d; 
   }
 
-  gen horner_rur(const vecteur & p,const gen & x,const vecteur & syst,const vecteur & vars,GIAC_CONTEXT){
-    gen r=0;
+  gen r2e_recursive(const polynome & p,const vecteur & l,GIAC_CONTEXT){
+    if (l.empty() || p.dim==0)
+      return r2e(p,l,contextptr);
+    vecteur v;
+    polynome2poly1(p,1,v);
+    gen x=l[0]; vecteur ltail(l.begin()+1,l.end());
+    for (int i=0;i<v.size();++i){
+      if (v[i].type==_POLY)
+        v[i]=r2e_recursive(*v[i]._POLYptr,ltail,contextptr);
+    }
+    return horner(v,x);
+  }
+
+  gen horner_rur(const vecteur & p,const gen & x,const vecteur & syst,const vecteur & vars,bool convert_internal,GIAC_CONTEXT){
     int s=giacmin(syst.size(),vars.size());
-    for (int i=0;i<p.size();++i){
-      // r=r*x+p[i] modulo syst
-      r=r*x+p[i];
+    if (convert_internal){
+      // this should be faster once back conversion at the end is returned in recursive form instead of distributed
+      vecteur lv(vars);
+      lvar(x,lv);
+      lvar(syst,lv);
+      gen X=e2r(x,lv,contextptr),N,D;
+      fxnd(X,N,D);
+      if (D.type==_POLY || N.type!=_POLY)
+        return horner(p,x);
+      polynome & n =*N._POLYptr;
+      int dim=n.dim;
+      polynome r(dim); polynome d(dim);
+      r.coord.push_back(monomial<gen>(p[0],dim));
+      d.coord.push_back(monomial<gen>(1,dim));
+      vector<polynome> systnum(s);
+      vector< vector<int> > transpositions(s);
       for (int j=0;j<s;++j){
-        r=_rem(makesequence(r,syst[j],vars[j]),contextptr);
+        gen tmp=e2r(syst[j],lv,contextptr),tmpn,tmpd;
+        fxnd(tmp,tmpn,tmpd);
+        if (tmpd.type==_POLY || tmpn.type!=_POLY)
+          return horner(p,x);
+        systnum[j]=*tmpn._POLYptr;
+        if (j){
+          transpositions[j]=transposition(0,j,dim);
+          systnum[j].reorder(transpositions[j]);
+        }
+      }
+      polynome quo,rem,a;
+      for (int i=1;i<p.size();++i){
+        // r/d*n/D+p[i]= (r*n+p[i]*d*D)/(d*D)
+        d=D*d;
+        r=r*n;
+        a=p[i]*d;
+        r=r+a;
+        // now reduce r/d
+        for (int j=s-1;j>=0;--j){
+          if (j)
+            r.reorder(transpositions[j]);
+          r.TPseudoDivRem(systnum[j],quo,rem,a);
+          if (j){
+            a.reorder(transpositions[j]);
+            rem.reorder(transpositions[j]);
+          }
+          r.coord.swap(rem.coord);
+          d=a*d;
+        }
+      }
+      index_t idx=r.gcddeg(); a=polynome(monomial<gen>(plus_one,idx));;
+      r=r.shift(-idx);
+      gen R=r2e_recursive(a,lv,contextptr)*r2e_recursive(r,lv,contextptr)/r2e(d,lv,contextptr);
+      // gen R=r2e_recursive(r,lv,contextptr)/r2e(d,lv,contextptr);
+      return R;
+    }
+    gen rR=0;
+    for (int i=0;i<p.size();++i){
+      // rR=rR*x+p[i] modulo syst
+      rR=rR*x+p[i];
+      for (int j=s-1;j>=0;--j){
+        rR=_rem(makesequence(rR,syst[j],vars[j]),contextptr);
       }
     }
-    return r;
+    return rR;
   }
   
   bool algnum_rewritable(const gen & E_,const vecteur & syst,const vecteur &vars,const vecteur & v,const vecteur & nums,const gen & diffpmin,const vecteur & pminv,const gen & pmin,const gen & var, gen& ext,const gen & sep,bool rootofallowed,gen & e,GIAC_CONTEXT){
@@ -3610,10 +3676,10 @@ namespace giac {
       return true;
     }
     if (0){
-      ext=subst(sep,vars,v,false,contextptr);
       gen EN=_symb2poly(makesequence(En,var),contextptr);
       gen ED=_symb2poly(makesequence(Ed,var),contextptr);
-      e=horner(EN,ext)/horner(ED,ext);
+      E=horner_rur(gen2vecteur(EN),sep,syst,vars,true,contextptr)/horner_rur(gen2vecteur(ED),sep,syst,vars,true,contextptr);
+      e=subst(E,vars,v,false,contextptr);
       return true;
     }
     // multiply denominator by conjugate
@@ -3625,8 +3691,8 @@ namespace giac {
     En=_rem(makesequence(En*bez[0],pmin,var),contextptr);
     gen EN=_symb2poly(makesequence(En,var),contextptr);
     if (!rootofallowed){
-      ext=subst(sep,vars,v,false,contextptr);
-      e=horner_rur(gen2vecteur(EN),ext,syst,vars,contextptr)/bez[2];
+      E=horner_rur(gen2vecteur(EN),sep,syst,vars,true,contextptr)/bez[2];
+      e=subst(E,vars,v,false,contextptr);
       return true;
     }
     E=horner(EN,ext)/bez[2];
@@ -3635,8 +3701,8 @@ namespace giac {
     bool has_rootof=!lop(E,at_rootof).empty();
     bool b=calc_mode(contextptr)==1 || abs_calc_mode(contextptr)==38;
     if (b || (has_rootof && lop(v,at_rootof).empty()) ){
-      ext=subst(sep,vars,v,false,contextptr);
-      e=horner_rur(gen2vecteur(EN),ext,syst,vars,contextptr)/bez[2];
+      E=horner_rur(gen2vecteur(EN),sep,syst,vars,true,contextptr)/bez[2];
+      e=subst(E,vars,v,false,contextptr);
       return true;
     }
     e=E;
@@ -3762,7 +3828,7 @@ namespace giac {
             if (ggn.type==_EXT && ggn._EXTptr->type==_VECT){
               // vars[i] will be replaced using sep
               //gen dep=horner(*ggn._EXTptr->_VECTptr,sep)/ggd;
-              gen dep=horner_rur(*ggn._EXTptr->_VECTptr,sep,vecteur(syst.begin(),syst.end()-1),vecteur(vars.begin(),vars.begin()+i),contextptr)/ggd;
+              gen dep=horner_rur(*ggn._EXTptr->_VECTptr,sep,vecteur(syst.begin(),syst.end()-1),vecteur(vars.begin(),vars.begin()+i),true,contextptr)/ggd;
               gen dep2=subst(dep,vars,v,false,contextptr);
               E=subst(E,vars[i],dep,false,contextptr);
               VARS=subst(VARS,vars[i],dep,false,contextptr);
