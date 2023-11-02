@@ -3556,14 +3556,27 @@ namespace giac {
     return n/d; 
   }
 
-  bool algnum_rewritable(const gen & E_,const vecteur &vars,const vecteur & v,const vecteur & nums,const gen & diffpmin,const vecteur & pminv,const gen & pmin,const gen & var, gen& ext,const gen & sep,bool rootofallowed,gen & e,GIAC_CONTEXT){
+  gen horner_rur(const vecteur & p,const gen & x,const vecteur & syst,const vecteur & vars,GIAC_CONTEXT){
+    gen r=0;
+    int s=giacmin(syst.size(),vars.size());
+    for (int i=0;i<p.size();++i){
+      // r=r*x+p[i] modulo syst
+      r=r*x+p[i];
+      for (int j=0;j<s;++j){
+        r=_rem(makesequence(r,syst[j],vars[j]),contextptr);
+      }
+    }
+    return r;
+  }
+  
+  bool algnum_rewritable(const gen & E_,const vecteur & syst,const vecteur &vars,const vecteur & v,const vecteur & nums,const gen & diffpmin,const vecteur & pminv,const gen & pmin,const gen & var, gen& ext,const gen & sep,bool rootofallowed,gen & e,GIAC_CONTEXT){
     if (E_.type==_VECT){
       int s=E_._VECTptr->size();
       const vecteur & Ev=*E_._VECTptr;
       vecteur ans(Ev);
       for (int i=0;i<s;++i){
         gen ee;
-        if (!algnum_rewritable(Ev[i],vars,v,nums,diffpmin,pminv,pmin,var,ext,sep,rootofallowed,ee,contextptr))
+        if (!algnum_rewritable(Ev[i],syst,vars,v,nums,diffpmin,pminv,pmin,var,ext,sep,rootofallowed,ee,contextptr))
           return false;
         ans[i]=ee;
       }
@@ -3613,38 +3626,23 @@ namespace giac {
     gen EN=_symb2poly(makesequence(En,var),contextptr);
     if (!rootofallowed){
       ext=subst(sep,vars,v,false,contextptr);
-      E=horner(EN,ext)/bez[2];
-      e=ratnormal(E,contextptr);
-      if (taille(E,RAND_MAX)<taille(e,RAND_MAX))
-        e=E;
+      e=horner_rur(gen2vecteur(EN),ext,syst,vars,contextptr)/bez[2];
       return true;
     }
     E=horner(EN,ext)/bez[2];
     //E=algebraic_EXTension(EN,pminv)/bez[2];
     E=r2e(E,vecteur(1,vecteur(0)),contextptr);
     bool has_rootof=!lop(E,at_rootof).empty();
-    if (has_rootof && lop(v,at_rootof).empty()){
+    bool b=calc_mode(contextptr)==1 || abs_calc_mode(contextptr)==38;
+    if (b || (has_rootof && lop(v,at_rootof).empty()) ){
       ext=subst(sep,vars,v,false,contextptr);
-      E=horner(EN,ext)/bez[2];
-      if (taille(E,128)>=128)
-        e=E;
-      else {
-        e=ratnormal(E,contextptr);
-        if (taille(E,RAND_MAX)<taille(e,RAND_MAX))
-          e=E;
-      }
+      e=horner_rur(gen2vecteur(EN),ext,syst,vars,contextptr)/bez[2];
       return true;
     }
-    bool b=calc_mode(contextptr)==1 || abs_calc_mode(contextptr)==38;
-    if (b && has_rootof){
-      e=simplifier(ratnormal(e,contextptr),contextptr);
-      //e=simplifier(ratnormal(En/bez[2],contextptr),contextptr);
-    }
-    else
-      e=E;
+    e=E;
     return true;
   }
-  
+
   // detect if e is in an algebraic extension of Q, simplifies
   bool algnum_normal(gen & e,GIAC_CONTEXT){
     // return false: // until it's fixed
@@ -3763,9 +3761,11 @@ namespace giac {
             fxnd(curval,ggn,ggd);
             if (ggn.type==_EXT && ggn._EXTptr->type==_VECT){
               // vars[i] will be replaced using sep
-              gen dep=horner(*ggn._EXTptr->_VECTptr,sep)/ggd;
+              //gen dep=horner(*ggn._EXTptr->_VECTptr,sep)/ggd;
+              gen dep=horner_rur(*ggn._EXTptr->_VECTptr,sep,vecteur(syst.begin(),syst.end()-1),vecteur(vars.begin(),vars.begin()+i),contextptr)/ggd;
               gen dep2=subst(dep,vars,v,false,contextptr);
               E=subst(E,vars[i],dep,false,contextptr);
+              VARS=subst(VARS,vars[i],dep,false,contextptr);
               V=subst(V,v[i],dep2,false,contextptr);
               v=subst(v,v[i],dep2,false,contextptr);
               vars.erase(vars.begin()+i); v.erase(v.begin()+i);
@@ -3925,7 +3925,7 @@ namespace giac {
       vecteur nums=vecteur(G._VECTptr->begin()+4,G._VECTptr->end());
       // rewrite E as a rational frac in var, replace vars by nums/diffpmin
       pmin=horner(pminv,var);
-      if (!algnum_rewritable(E,vars,v,nums,diffpmin,pminv,pmin,var,ext,sep,rootofallowed,e,contextptr))
+      if (!algnum_rewritable(E,syst,vars,v,nums,diffpmin,pminv,pmin,var,ext,sep,rootofallowed,e,contextptr))
         return false;
       return true;
     }
@@ -3937,6 +3937,7 @@ namespace giac {
 #ifdef TIMEOUT
     control_c();
 #endif
+    if (e.type<=_CPLX) return e;
     if (is_inequation(e) && e._SYMBptr->feuille.type==_VECT){
       vecteur & v=*e._SYMBptr->feuille._VECTptr;
       unary_function_ptr u=e._SYMBptr->sommet;
