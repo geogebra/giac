@@ -4291,14 +4291,14 @@ namespace giac {
     if (is_zero_or_contains(realpart,contextptr)){
       if (is_zero_or_contains(imagpart,contextptr))
 	return undef;
-      return (cst_pi_over_2-atan(realpart/imagpart,contextptr))*sign(imagpart,contextptr);
+      return operator_plus(cst_pi_over_2,-atan(realpart/imagpart,contextptr),contextptr)*sign(imagpart,contextptr);
     }
     if (is_zero_or_contains(imagpart,contextptr))
-      return (1-sign(realpart,contextptr))*cst_pi_over_2+atan(imagpart/realpart,contextptr);
+      return operator_plus((1-sign(realpart,contextptr))*cst_pi_over_2,atan(imagpart/realpart,contextptr),contextptr);
     if ( (realpart.type==_DOUBLE_ || realpart.type==_FLOAT_) || (imagpart.type==_DOUBLE_ || imagpart.type==_FLOAT_) )
       return eval(atan(rdiv(imagpart,realpart,contextptr),contextptr)+(1-sign(realpart,contextptr))*sign(imagpart,contextptr)*evalf_double(cst_pi_over_2,1,contextptr),1,contextptr);
     else
-      return atan(rdiv(imagpart,realpart,contextptr),contextptr)+(1-sign(realpart,contextptr))*sign(imagpart,contextptr)*cst_pi_over_2;
+      return operator_plus(atan(rdiv(imagpart,realpart,contextptr),contextptr),(1-sign(realpart,contextptr))*sign(imagpart,contextptr)*cst_pi_over_2,contextptr);
   }
   
   static gen _VECTarg(const vecteur & a,GIAC_CONTEXT){
