@@ -579,7 +579,7 @@ namespace giac {
       if (is_undef(Q))
 	return -1;
       env->moduloon=true;
-      // _VECTute Q such that q=lcoeff*(pi+p^k*Q)
+      // compute Q such that q=lcoeff*(pi+p^k*Q)
       // modulo=modulonext; // work in Z/p^(2), done by modularize below
       // COUT << "Q:" << Q << '\n';
       // _VECTute new v_in
@@ -800,7 +800,7 @@ namespace giac {
     gen lcoeff(smod(q.front(),env->modulo));
     bool notunit=(!is_one(lcoeff));
     if (n==1){
-      polynome temp(unmodularize(lcoeff*v_in.front()));
+      polynome temp(unmodularize(smod(lcoeff*v_in.front(),env->modulo)));
       if (notunit)
 	ppz(temp);
       v_out.push_back(temp);
@@ -920,7 +920,7 @@ namespace giac {
 		factorunivsqff(unmodularize(quo),env,v_out,j,debuglevel,int(v_new.size()));
 	      }
 	      else {
-		// re_VECTute possible_degrees
+		// recompute possible_degrees
 		int founddeg=found.lexsorted_degree();
 		int newqdeg=int(q.size())-1-founddeg;
 		vector<bool> new_possible_degrees(newqdeg+1);
@@ -1297,7 +1297,7 @@ namespace giac {
     }
 #endif // HAVE_LIBPARI
     // quadratic lift commented until bug is fixed for factor(poly2symb([2052661997653969,0,-28627701862508750,0,2045357156640625],x));
-    if (0 && is_strictly_greater(bound,pow(env->modulo,(long unsigned int) HENSEL_QUADRATIC_POWER),context0)) { // bound>pow(...)
+    if (is_strictly_greater(bound,pow(env->modulo,(long unsigned int) HENSEL_QUADRATIC_POWER),context0)) { // bound>pow(...)
       int res=liftq(env,q1,bound,w,v,possible_degrees);
       if (res==-1)
 	return false;

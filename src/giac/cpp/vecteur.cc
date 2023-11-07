@@ -6489,7 +6489,6 @@ namespace giac {
 #define CLOCKS_PER_SEC 1e6
 #endif
   
-#ifndef GIAC_HAS_STO_38
   // compute first prime suitable for padic linsolve
   // returns true on success
   bool padic_firstprime(const matrice & a,gen & p){
@@ -6520,6 +6519,8 @@ namespace giac {
     p=nextprime(int(p0));
     return true;
   }
+
+#ifndef GIAC_HAS_STO_38
   
   static int mrref_int(const matrice & a, matrice & res, vecteur & pivots, gen & det,int l, int lmax, int c,int cmax,
 			int fullreduction,int dont_swap_below,bool convert_internal,int algorithm,int rref_or_det_or_lu,

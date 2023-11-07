@@ -3962,7 +3962,7 @@ namespace giac {
         return false;
       }
       if (i){
-#if 1
+#if 1 // if changed to 0, #if below must be changed too
         // check if the last extension is required
         vecteur prevvars(vars.begin(),vars.begin()+i);
         vecteur prevsyst(syst); prevsyst.pop_back();
@@ -4008,10 +4008,12 @@ namespace giac {
         gen an(1),extra_div(1); polynome p_content; factorization f;
         if (dbg)
           CERR << CLOCK()*1e-6 << " ext_factor start\n";
+        //debug_infolevel=dbg;              
         if (!ext_factor(*ggn._POLYptr,ext,an,p_content,f,false,extra_div)){
           debug_infolevel=dbg;              
           return false;
         }
+        //--debug_infolevel;
         if (dbg)
           CERR << CLOCK()*1e-6 << " ext_factor end\n";
         if (f.size()>1){
@@ -4326,6 +4328,25 @@ namespace giac {
       debug_infolevel=dbg;
       return true;
     }
+#if 1
+    if (dbg) CERR << CLOCK()*1e-6 << " End constructing common algebraic extension\n";
+    debug_infolevel=dbg;
+    gen sep=G[1],var,pmin=G[2],diffpmin=G[3]; vecteur pminv;
+    var=lvar(pmin)[0];
+    gen curpmin=_symb2poly(makesequence(pmin,var),contextptr);
+    if (curpmin.type!=_VECT)
+      return false;
+    pminv=*curpmin._VECTptr;
+    gen rexact=subst(sep,vars,v,false,contextptr);
+    gen ext=rootofallowed?algebraic_EXTension(makevecteur(1,0),pminv):rexact;
+    gen r=_evalf(makesequence(rexact,alg_digits_evalf),contextptr);
+    vecteur nums=vecteur(G._VECTptr->begin()+4,G._VECTptr->end());
+    // rewrite E as a rational frac in var, replace vars by nums/diffpmin
+    pmin=horner(pminv,var);
+    if (!algnum_rewritable(E,syst,vars,v,nums,diffpmin,pminv,pmin,var,ext,r,sep,rootofallowed,true/* ckdeg2*/,e,contextptr))
+      return false;
+    return true;
+#else
     if (prevG==0) //  || (G.type==_VECT && G._VECTptr->size()!=vars.size()+4) // should not happen
       G=_gbasis(makesequence(syst,vars,change_subtype(_RUR_REVLEX,_INT_GROEBNER)),contextptr);
     if (dbg) CERR << CLOCK()*1e-6 << " End constructing common algebraic extension\n";
@@ -4408,6 +4429,7 @@ namespace giac {
         return false;
       return true;
     }
+#endif
     return false;
   }
 #endif
