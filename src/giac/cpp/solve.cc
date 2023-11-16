@@ -3030,10 +3030,10 @@ namespace giac {
 	      }
 	    }
 	    if (doit && lvarx(arg1,v.back()).size()>1){
-              bool l=do_lnabs(contextptr);
+              bool l=do_lnabs(contextptr); // check for solve(log10(((n)^(2))*(((x)/(n))^(log10(x))))=log10((x)^(2)),x);
               if (l){
                 // change for solve(x^4=2^x) where a1=x^4 and we want to keep ln(abs(x))
-                if (a1.is_symb_of_sommet(at_pow) && a1._SYMBptr->feuille[1].type==_INT_ && a1._SYMBptr->feuille[1].val % 2==0)
+                if (lidnt(arg1).size()==1)
                   l=0;
                 if (l)
                   do_lnabs(false,contextptr);
