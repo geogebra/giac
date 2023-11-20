@@ -3772,7 +3772,7 @@ namespace giac {
   }
 
   // returns 0 if syst not polynomial, -1 if x not polynomial, 1 otherwise
-  int prepare(const gen & x,const vecteur & syst,const vecteur & vars,vector<polynome> & systnums,vector< vector<int> > & transpositions,vecteur &lv,polynome & n,gen & D,GIAC_CONTEXT){
+  int prepare(const gen & x,const vecteur & syst,const vecteur & vars,vector<polynome> & systnums,vector< vector<int> > & transpositions,int chkext,vecteur &lv,polynome & n,gen & D,GIAC_CONTEXT){
     lv=vars;
     lvar(x,lv);
     lvar(syst,lv);
@@ -3791,6 +3791,7 @@ namespace giac {
         systnums[j].reorder(transpositions[j]);
       }
     }
+    // e2r call should be replaced using reduction by syst
     gen X=e2r(x,lv,contextptr),N;
     fxnd(X,N,D);
     if (N.type==_POLY)
@@ -3802,7 +3803,7 @@ namespace giac {
 
   gen mreduce_gen(const gen & x,vecteur & syst,const vecteur & vars,const vecteur & v,vecteur & varapprox,int chkext,GIAC_CONTEXT){
     vector<polynome> systnums; vecteur lv; vector< vector<int> > transpositions; polynome n; gen D;
-    if (prepare(x,syst,vars,systnums,transpositions,lv,n,D,contextptr)<=0)
+    if (prepare(x,syst,vars,systnums,transpositions,chkext,lv,n,D,contextptr)<=0)
       return x;
     // now reduce
     if (D.type==_POLY)
@@ -4127,10 +4128,12 @@ namespace giac {
         //v=subst(v,cst_i,x0,false,contextptr); V=v;
         v.insert(v.begin(),cst_i);
         vars.insert(vars.begin(),x0);
+        varapprox.insert(varapprox.begin(),cst_i);
       }
       else {
         v.push_back(cst_i);
         vars.push_back(x0);
+        varapprox.push_back(cst_i);
       }
       ++n;
     }
@@ -4563,7 +4566,7 @@ namespace giac {
     if (n<2)
       return false;
     vector<polynome> systnums; vecteur lv; vector< vector<int> > transpositions; polynome tmpn; gen tmpD;
-    if (!prepare(E[0][0],syst,vars,systnums,transpositions,lv,tmpn,tmpD,contextptr))
+    if (!prepare(E[0][0],syst,vars,systnums,transpositions,chkext,lv,tmpn,tmpD,contextptr))
       return false;
     gen EE=e2r(E,lv,contextptr),EN,ED;
     fxnd(EE,EN,ED);
