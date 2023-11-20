@@ -7088,7 +7088,7 @@ namespace giac {
     return status;
   }
 
-  bool remove_identity(matrice & res,GIAC_CONTEXT){
+  bool remove_identity(matrice & res,bool normalize,GIAC_CONTEXT){
     int s=int(res.size());
     // "shrink" res
     for (int i=0;i<s;++i){
@@ -7100,7 +7100,7 @@ namespace giac {
 	return false;
       gen tmp=new ref_vecteur(v.begin()+s,v.end());
       divvecteur(*tmp._VECTptr,v[i],*tmp._VECTptr);
-      res[i] = normal(tmp,contextptr);
+      res[i] = normalize?normal(tmp,contextptr):tmp;
     }
     return true;
   }
@@ -7121,6 +7121,16 @@ namespace giac {
 	    GIAC_CONTEXT){
     if (!ckmatrix(a))
       return 0;
+    // check for a matrix with coefficients in an alg. extension of Q 
+    int redtype=0;
+    if (!fullreduction_)
+      redtype=1;
+    if (rref_or_det_or_lu==1)
+      redtype=2;
+    else if (rref_or_det_or_lu==2)
+      redtype=3;
+    if (l==0 && c==0 && lmax==a.size() && cmax==a[0]._VECTptr->size() && algnum_rref(a,res,pivots,det,redtype,contextptr))
+      return 3;
     double eps=epsilon(contextptr);
     unsigned as=unsigned(a.size()),a0s=unsigned(a.front()._VECTptr->size());
     bool step_rref=false;
@@ -7674,7 +7684,7 @@ namespace giac {
     int ok=1;
     if (convert_internal){
       if (rm_idn_after){
-	if (!remove_identity(res,contextptr))
+	if (!remove_identity(res,false/* normalize*/,contextptr))
 	  return 0;
 	res = *(r2sym (res,lv,contextptr)._VECTptr);
 	res =*normal(res,contextptr)._VECTptr;
@@ -9828,7 +9838,7 @@ namespace giac {
   }
 
   bool remove_identity(matrice & res){
-    return remove_identity(res,context0);
+    return remove_identity(res,false,context0);
   }
 
   bool remove_identity(vector< vector<int> > & res,int modulo){
@@ -11648,7 +11658,7 @@ namespace giac {
       return false;
     if (debug_infolevel)
       CERR << CLOCK()*1e-6 << " remove identity" << '\n';
-    if (ok!=2 && !remove_identity(res,contextptr))
+    if (ok!=2 && !remove_identity(res,ok!=3,contextptr))
       return false;
     if (debug_infolevel)
       CERR << CLOCK()*1e-6 << " end matrix inv" << '\n';

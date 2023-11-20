@@ -916,7 +916,7 @@ namespace giac {
 	  if (is_rational(kk,n,d)){
 	    if (b==0 && (d==5 || d==10) && calc_mode(contextptr)!=1)
 	      return cos(kk*cst_pi,contextptr)-cst_i*sin(kk*cst_pi,contextptr);
-	    if (d<7){ 
+	    if (d<MAX_ALG_EXT_ORDER_SIZE){ 
 	      q=-n/d;
 	      r=-n%d;
 	      if (q%2)
@@ -9276,7 +9276,13 @@ namespace giac {
       double absx=z._DOUBLE_val;
       complex_long_double z(evalf_double(re(x,contextptr),1,contextptr)._DOUBLE_val,
 			     evalf_double(im(x,contextptr),1,contextptr)._DOUBLE_val);
-      if (absx<=3){
+      if (
+#ifdef HAVE_LIBMPFR
+          absx<=3
+#else
+          absx<6.5
+#endif
+          ){
 	// numerical computation of int(exp(-t^2),t=0..x) 
 	// by series expansion at x=0
 	// x*sum( (-1)^n*(x^2)^n/n!/(2*n+1),n=0..inf)
@@ -9348,7 +9354,9 @@ namespace giac {
 	erfc=gen(double(res.real()),double(res.imag()));
 	if (std::abs(z.real())<=1e-2*std::abs(z.imag())){
 	  *logptr(contextptr) << "Low accuracy\n";
-	  return -erfc;
+	  gen e=-erfc;
+          erfc+=1;
+          return e;
 	}
 	gen e=1-erfc;
 	if (!neg)

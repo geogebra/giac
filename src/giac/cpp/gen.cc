@@ -2643,7 +2643,7 @@ namespace giac {
     if (g.type==_EXT){
       gen a,b;
       if (has_evalf(*g._EXTptr,a,level,contextptr) && has_evalf(*(g._EXTptr+1),b,level,contextptr)){
-	a=alg_evalf(a,b,contextptr);
+	a=alg_evalf(a,b,*(g._EXTptr+2),contextptr);
 	return a.type==_EXT?false:has_evalf(a,res,level,contextptr);
       }
       return false;
@@ -2752,7 +2752,10 @@ namespace giac {
 	return true;
       }
       if (_SYMBptr->sommet==at_rootof){
-	evaled=approx_rootof(_SYMBptr->feuille.evalf(level,contextptr),contextptr);
+        gen f=_SYMBptr->feuille;
+        if (f.type==_VECT && f._VECTptr->size()>2 && f[1].type!=_VECT)
+          f=makevecteur(makevecteur(1,0),f);
+	evaled=approx_rootof(f.evalf(level,contextptr),contextptr);
 	return true;
       }
       if (_SYMBptr->sommet==at_cell)
@@ -2786,7 +2789,7 @@ namespace giac {
     case _MOD: case _ROOT:
       return false; // replace in RPN mode
     case _EXT:
-      evaled=alg_evalf(_EXTptr->eval(level,contextptr),(_EXTptr+1)->eval(level,contextptr),contextptr);
+      evaled=alg_evalf(_EXTptr->eval(level,contextptr),(_EXTptr+1)->eval(level,contextptr),*(_EXTptr+2),contextptr);
       return true;
     case _POLY:
       evaled=apply(*_POLYptr,no_context_evalf);

@@ -13268,7 +13268,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       }
       else {
 	// find smallest lcm pair in B
-	unsigned smallnterms=RAND_MAX,firstdeg=RAND_MAX-1;
+	unsigned smallnterms=RAND_MAX,firstdeg=RAND_MAX-1,ismallnterms=-1;
 	for (unsigned i=0;i<B.size();++i){
 	  if (!B[i].live) continue;
 	  unsigned f=Blcm[i].total_degree(order);
@@ -13277,20 +13277,27 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  if (f<firstdeg){
 	    firstdeg=f;
 	    smallnterms=nterms[i];
+            ismallnterms=i;
 	    continue;
 	  }
-	  if (nterms[i]<smallnterms)
+	  if (nterms[i]<smallnterms){
 	    smallnterms=nterms[i];
+            ismallnterms=i;
+          }
 	}
-	smallnterms *= 5;
-	for (unsigned i=0;i<B.size();++i){
-	  if (!B[i].live) continue;
-	  if (
-	      //nterms[i]<=smallnterms && 
-	      Blcm[i].total_degree(order)==firstdeg){
-	    smallposv.push_back(i);
-	  }
-	}
+        if (0 && coeffsmodptr) // disabled, smallest number of terms is slower than just first pair in cyclic6 with coeffs
+          smallposv.push_back(ismallnterms);
+        else {
+          smallnterms *= 5;
+          for (unsigned i=0;i<B.size();++i){
+            if (!B[i].live) continue;
+            if (
+                //nterms[i]<=smallnterms && 
+                Blcm[i].total_degree(order)==firstdeg){
+              smallposv.push_back(i);
+            }
+          }
+        }
 	if (smallposv.empty()) smallposv.resize(B.size());
 	if (debug_infolevel>1)
 	  CERR << CLOCK()*1e-6 << " zpairs min total degrees, nterms " << firstdeg << "," << smallnterms << " #pairs " << smallposv.size() << '\n';
@@ -13313,7 +13320,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	paire bk;
         if (coeffsmodptr){
 #if 0
-          // find smallest logz
+          // find smallest logz, disabled, slower for cyclic6 with coeffs
           int logzpos=0,logz=Blogz[smallposv.front()];
           for (int i=1;i<smallposv.size();++i){
             if (Blogz[smallposv[i]]<logz){
@@ -14575,6 +14582,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	if (debug_infolevel>1) CERR << CLOCK()*1e-6 << " Hankel mult end\n" ;
 	vecteur V; vector_int2vecteur(g,V);
 	reverse(V.begin(),V.end()); // degree(V)=2S-1, size(V)=2S
+        V=trim(V,0);
 	vecteur x2n(2*S+1),A,B,G,U,unused,D,tmp1,tmp2; x2n[0]=1; // x2n=x^(2*S)
 	environment env; env.modulo=p; env.moduloon=true;
 	if (

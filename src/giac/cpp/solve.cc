@@ -6821,7 +6821,7 @@ namespace giac {
 	gen tmp=rationalize(eq,*it,contextptr);
 	if (tmp.type==_VECT){
 	  eq=*tmp._VECTptr;
-	  l=lvarx(eq,*it);
+	  l=rlvarx(eq,*it);
 	  if (l.size()==1){
 	    // solve with respect to l[0] then extract *it
 	    gen newvar=l.front();

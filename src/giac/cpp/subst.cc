@@ -457,7 +457,7 @@ namespace giac {
 
   static bool has_subst(const gen & e,const gen & i,const gen & newi,gen & newe,bool quotesubst,GIAC_CONTEXT){
     switch (e.type){
-    case _INT_: case _ZINT: case _DOUBLE_: case _REAL: case _STRNG: case _MOD: case _SPOL1: case _USER:
+    case _INT_: case _ZINT: case _DOUBLE_: case _REAL: case _STRNG: case _MOD: case _SPOL1: case _USER: case _EXT:
       return false;
     case _CPLX:
       if (i==cst_i){

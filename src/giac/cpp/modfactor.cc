@@ -1504,10 +1504,12 @@ namespace giac {
     if ( g.type==_STRNG && g.subtype==-1) return  g;
     if (g.type==_VECT && g._VECTptr->empty())
       return MAX_COMMON_ALG_EXT_ORDER_SIZE;
-    if (g.type!=_INT_ || g.val<0)
+    if (g.type!=_INT_ )
       return gensizeerr(contextptr);
+    if (g.val<=0)
+      return LAZY_ALG_EXT=-g.val;
     if (g.val>0)
-      MAX_COMMON_ALG_EXT_ORDER_SIZE=g.val;
+      return MAX_COMMON_ALG_EXT_ORDER_SIZE=g.val;
     return MAX_COMMON_ALG_EXT_ORDER_SIZE;
   }
   static const char _max_common_alg_ext_order_size_s []="max_common_alg_ext_order_size";

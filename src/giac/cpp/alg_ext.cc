@@ -298,15 +298,19 @@ namespace giac {
     return r;
   }
 
-  gen alg_evalf(const gen & a,const gen &b,GIAC_CONTEXT){
+  gen alg_evalf(const gen & a,const gen &b,const gen & c,GIAC_CONTEXT){
     if (a.type==_FRAC)
-      return rdiv(alg_evalf(a._FRACptr->num,b,contextptr),alg_evalf(a._FRACptr->den,b,contextptr),contextptr);
+      return rdiv(alg_evalf(a._FRACptr->num,b,c,contextptr),alg_evalf(a._FRACptr->den,b,c,contextptr),contextptr);
     gen a1=a.evalf(1,contextptr),b1=b.evalf(1,contextptr);
     if (a1.type!=_VECT)
       return a1;
     if (b1.type!=_VECT)
       return algebraic_EXTension(a1,b1);
-    gen r(select_root(*b1._VECTptr,contextptr)); 
+    gen r;
+    if (c.type==_VECT && c._VECTptr->size()>=2)
+      r=(*c._VECTptr)[1];
+    else
+      r=select_root(*b1._VECTptr,contextptr); 
     if (is_undef(r))
       return algebraic_EXTension(a1,b1);
     return horner(*a1._VECTptr,r);
@@ -1126,6 +1130,8 @@ namespace giac {
     gen a(ext_reduce(aa)),b(ext_reduce(bb));
     if ( (a.type!=_EXT) || (b.type!=_EXT) )
       return a+b;
+    if (*(a._EXTptr+2) != *(b._EXTptr+2))
+      return gensizeerr("Incompatible algebraic extensions");
     if (*(a._EXTptr+1)==*(b._EXTptr+1)){
       if ( (a._EXTptr->type==_VECT) && (b._EXTptr->type==_VECT)){
 	gen c=new ref_vecteur;
@@ -1143,6 +1149,8 @@ namespace giac {
   }
 
   gen ext_sub(const gen & a,const gen & b,GIAC_CONTEXT){
+    if (*(a._EXTptr+2) != *(b._EXTptr+2))
+      return gensizeerr("Incompatible algebraic extensions");
     if (*(a._EXTptr+1)==*(b._EXTptr+1)){
       if ( (a._EXTptr->type==_VECT) && (b._EXTptr->type==_VECT)){
 #if 1
@@ -1162,6 +1170,8 @@ namespace giac {
     gen a(ext_reduce(aa)),b(ext_reduce(bb));
     if ( (a.type!=_EXT) || (b.type!=_EXT) )
       return a*b;
+    if (*(a._EXTptr+2) != *(b._EXTptr+2))
+      return gensizeerr("Incompatible algebraic extensions");
     if (*(a._EXTptr+1)==*(b._EXTptr+1)){
       if ((a._EXTptr->type==_VECT) && (b._EXTptr->type==_VECT)){
 #if 1
@@ -1292,7 +1302,10 @@ namespace giac {
     }
     // should call factor before returning unevaluated rootof
     if (e.type==_VECT && e._VECTptr->size()==2 && e._VECTptr->back().type==_VECT){
-      vecteur v2=*e._VECTptr->back()._VECTptr;
+      const vecteur & v=*e._VECTptr->back()._VECTptr;
+      if (!v.empty() && v[0]==1 && is_integer_vecteur(v))
+        return symbolic(at_rootof,e);
+      vecteur v2=v;
       gen g(1);
       lcmdeno(v2,g,contextptr);
       if (is_minus_one(v2[0]))
@@ -1304,12 +1317,14 @@ namespace giac {
     return symbolic(at_rootof,e);
   }
   gen approx_rootof(const gen & e,GIAC_CONTEXT){
-    if ( (e.type!=_VECT) || (e._VECTptr->size()!=2) )
+    if ( (e.type!=_VECT) || (e._VECTptr->size()<2) )
       return gensizeerr(contextptr);
     if (!lidnt(e).empty())
       return symbolic(at_rootof,e);
-    gen a=e._VECTptr->front(),b=e._VECTptr->back();
-    return alg_evalf(a,b,contextptr);
+    gen a=e._VECTptr->front(),b=(*e._VECTptr)[1],c=0;
+    if (e._VECTptr->size()>=3)
+      c=(*e._VECTptr)[2];
+    return alg_evalf(a,b,c,contextptr);
   }
   /* statically in derive.cc
   static gen d1_rootof(const gen & args,GIAC_CONTEXT){
@@ -1338,9 +1353,11 @@ namespace giac {
 
   gen max_algext(const gen & args,GIAC_CONTEXT){
     gen g=args;
+    if (g.type==_VECT && g._VECTptr->empty())
+      return MAX_ALG_EXT_ORDER_SIZE;
     if (!is_integral(g) || g.type!=_INT_ || g.val<3)
       return gensizeerr(contextptr);
-    return MAX_ALG_EXT_ORDER_SIZE=MAX_COMMON_ALG_EXT_ORDER_SIZE=g.val;
+    return MAX_ALG_EXT_ORDER_SIZE=g.val;
   }
   static const char _max_algext_s []="max_algext";
   static define_unary_function_eval (__max_algext,&max_algext,_max_algext_s);

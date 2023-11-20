@@ -47,7 +47,7 @@ namespace giac {
   gen horner_rootof(const vecteur & p,const gen & g,GIAC_CONTEXT);
   bool has_rootof_value(const gen & Pmin,gen & value,GIAC_CONTEXT);
 
-  gen alg_evalf(const gen & a,const gen &b,GIAC_CONTEXT);
+  gen alg_evalf(const gen & a,const gen &b,const gen & c,GIAC_CONTEXT);
   gen approx_rootof(const gen & e,GIAC_CONTEXT);
   gen common_EXT(gen & a,gen & b,const vecteur * l,GIAC_CONTEXT);
   gen common_minimal_POLY(const gen & ga,const gen & gb, gen & a,gen & b,int &k,const vecteur *l,GIAC_CONTEXT);
