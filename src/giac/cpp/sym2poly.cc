@@ -3723,7 +3723,7 @@ namespace giac {
           lc=lc.untrunc1(0);
           lc.reorder(transpositions[j]);
           if (!algnum_is_zero(lc,syst,j,lv,systnums,varsymb,varapprox,transpositions,contextptr)){
-            rem.coord.erase(rem.coord.begin(),it);
+            rem.coord.erase(rem.coord.begin(),rem.coord.begin()+(it-rem.coord.begin())); // second argument rewritten, was rem.coord.erase(rem.coord.begin(),it);
             break;
           }
         }
