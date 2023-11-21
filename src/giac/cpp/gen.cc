@@ -9803,8 +9803,12 @@ namespace giac {
     else {
       if (has_inf_or_undef(i))
 	return undef;
-      if (*this==x__IDNT_e || *this==t__IDNT_e)
-	return i; // avoid warning for expressions used as function if var is x or t
+      if (*this==x__IDNT_e || *this==t__IDNT_e){
+        if (i.type==_IDNT && i._IDNTptr->quoted)
+          ; // for e.g. desolve(t*x'+x=0), we don't want x(t) to be evaled to t
+        else
+          return i; // avoid warning for expressions used as function if var is x or t
+      }
       return symb_of(*this,i);
     }
   }
