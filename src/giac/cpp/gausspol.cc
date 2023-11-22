@@ -6363,7 +6363,7 @@ namespace giac {
     // test if p has a numeric coeff
     if (has_num_coeff(p)){
       vecteur w=polynome2poly1(p,1);
-      w=proot(w); 
+      w=proot(w,context0); 
       if (is_undef(w))
 	return false;
       const_iterateur it=w.begin(),itend=w.end();

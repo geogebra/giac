@@ -952,7 +952,7 @@ namespace giac {
     if (d>2){
       if (has_num_coeff(w)){
 	if (complexmode)
-	  newv=proot(w,epsilon(contextptr));
+	  newv=proot(w,epsilon(contextptr),contextptr);
 	else
 	  newv=real_proot(w,epsilon(contextptr),contextptr);
 	solve_ckrange(x,newv,isolate_mode,contextptr);
@@ -1084,7 +1084,7 @@ namespace giac {
 	  try {
 #endif
 	    if (complexmode)
-	      newv=proot(w,epsilon(contextptr));
+	      newv=proot(w,epsilon(contextptr),contextptr);
 	    else {
 	      if (lvar(w_orig).empty() && !has_num_coeff(w_orig))
 		newv=gen2vecteur(_realroot(gen(makevecteur(w_orig,epsilon(contextptr),at_evalf),_SEQ__VECT),contextptr));
@@ -3908,7 +3908,7 @@ namespace giac {
 	tmp=evalf(tmp,eval_level(contextptr),contextptr);
 	if (tmp.type==_VECT && tmp._VECTptr->size()<1024){
 	  // call realroot? this would be more accurate
-	  gen res=complex_mode(contextptr)?proot(*tmp._VECTptr,epsilon(contextptr)):(lvar(tmp1).empty()?_realroot(gen(makevecteur(tmp1,epsilon(contextptr),at_evalf),_SEQ__VECT),contextptr):real_proot(*tmp._VECTptr,epsilon(contextptr),contextptr));
+	  gen res=complex_mode(contextptr)?proot(*tmp._VECTptr,epsilon(contextptr),contextptr):(lvar(tmp1).empty()?_realroot(gen(makevecteur(tmp1,epsilon(contextptr),at_evalf),_SEQ__VECT),contextptr):real_proot(*tmp._VECTptr,epsilon(contextptr),contextptr));
 	  if (res.type==_VECT && res._VECTptr->size()==1)
 	    return res._VECTptr->front();
 	  return res;
@@ -3929,7 +3929,7 @@ namespace giac {
 	    tmp=tmp._FRACptr->num;
 	  tmp=evalf(tmp,eval_level(contextptr),contextptr);
 	  if (tmp.type==_VECT){
-	    vecteur res0=complex_mode(contextptr)?proot(*tmp._VECTptr,epsilon(contextptr)):real_proot(*tmp._VECTptr,epsilon(contextptr),contextptr);
+	    vecteur res0=complex_mode(contextptr)?proot(*tmp._VECTptr,epsilon(contextptr),contextptr):real_proot(*tmp._VECTptr,epsilon(contextptr),contextptr);
 	    vecteur res;
 	    if (testpi && is_zero(subst(v0orig,v[1],M_PI,false,contextptr),contextptr))
 	      res.push_back(M_PI);

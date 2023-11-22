@@ -22297,7 +22297,7 @@ bool c_egv(c_complex * x,int n){
 bool c_proot(c_complex * x,int n){
   giac::matrice M(n);
   c_complexptr2matrice(x,n,0,M);
-  M=giac::proot(M);
+  M=giac::proot(M,giac::context0);
   return matrice2c_complexptr(M,x);
 }
 

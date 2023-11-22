@@ -39,6 +39,15 @@ using namespace std;
 #include "plot.h"
 #include "modfactor.h"
 #include"giacintl.h"
+#include <fstream>
+#define MPFI_CERT
+#ifdef HAVE_LIBMPS
+#include <mps/mps.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <gmp.h>
+#include <string.h>
+#endif
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
@@ -244,10 +253,10 @@ namespace giac {
     if (!eps || !n)
       return n;
     /* disabled localization of roots, do isolation of roots instead
-    if (is_strictly_greater(eps,(t1-t0)*abs(b,contextptr),contextptr)){
-      realroots.push_back(makevecteur(makevecteur(a+t0*b,a+t1*b),n));
-      return n;
-    }
+       if (is_strictly_greater(eps,(t1-t0)*abs(b,contextptr),contextptr)){
+       realroots.push_back(makevecteur(makevecteur(a+t0*b,a+t1*b),n));
+       return n;
+       }
     */
     if (n==1){
       gen T0=t0,T1=t1,T2;
@@ -308,36 +317,36 @@ namespace giac {
     // try with horiz_sturm and vert_sturm
     gen ab(b-a);
     /* // Optimization fails for sturmab(x^3-1,-1-i,1+i)
-    if (is_zero(re(ab,contextptr))){ // b-a is pure imaginary
-      if (vert_sturm.empty()){
-	gen A=gen(makevecteur(1,0),_POLY1__VECT);
-	vert_sturm.push_back(undef);
-	vecteur tmp;
-	vert_sturm=csturm_segment_seq(P,A,A+cst_i,tmp,eps,horiz_sturm,vert_sturm,contextptr);
-	if (is_undef(vert_sturm))
-	  return vert_sturm;
-      }
-      if (vert_sturm.size()==9){
-	vecteur res(vert_sturm);
-	gen A=re(a,contextptr);
-	res[0]=A; // re(a)
-	res[1]=A+cst_i; // re(a)+i
-	res[2]=apply1st(res[2],A,horner); // R 
-	res[3]=apply1st(res[3],A,horner); // S
-	res[4]=horner(res[4],A); // g
-	vecteur tmp(*res[5]._VECTptr);
-	int tmps=tmp.size();
-	for (int j=0;j<tmps;++j)
-	  tmp[j]=apply1st(tmp[j],A,horner); 
-	res[5]=tmp; // listquo
-	res[6]=apply1st(res[6],A,horner); // coeffP
-	res[7]=apply1st(res[7],A,horner); // coeffR
-	if (res[6].type==_VECT && !equalposcomp(*res[6]._VECTptr,0))
-	  return res;
-	else
-	  CERR << "list of quotients is not regular" << '\n';
-      }
-    }
+       if (is_zero(re(ab,contextptr))){ // b-a is pure imaginary
+       if (vert_sturm.empty()){
+       gen A=gen(makevecteur(1,0),_POLY1__VECT);
+       vert_sturm.push_back(undef);
+       vecteur tmp;
+       vert_sturm=csturm_segment_seq(P,A,A+cst_i,tmp,eps,horiz_sturm,vert_sturm,contextptr);
+       if (is_undef(vert_sturm))
+       return vert_sturm;
+       }
+       if (vert_sturm.size()==9){
+       vecteur res(vert_sturm);
+       gen A=re(a,contextptr);
+       res[0]=A; // re(a)
+       res[1]=A+cst_i; // re(a)+i
+       res[2]=apply1st(res[2],A,horner); // R 
+       res[3]=apply1st(res[3],A,horner); // S
+       res[4]=horner(res[4],A); // g
+       vecteur tmp(*res[5]._VECTptr);
+       int tmps=tmp.size();
+       for (int j=0;j<tmps;++j)
+       tmp[j]=apply1st(tmp[j],A,horner); 
+       res[5]=tmp; // listquo
+       res[6]=apply1st(res[6],A,horner); // coeffP
+       res[7]=apply1st(res[7],A,horner); // coeffR
+       if (res[6].type==_VECT && !equalposcomp(*res[6]._VECTptr,0))
+       return res;
+       else
+       CERR << "list of quotients is not regular" << '\n';
+       }
+       }
     */
     modpoly Q(taylor(P,a));
     change_scale(Q,b-a);
@@ -667,13 +676,13 @@ namespace giac {
       B1=(B0+B2)/2;
       gen P1=hornerarg(P,A1+cst_i*B0),P7=hornerarg(P,A0+cst_i*B1),P8=hornerarg(P,A1+cst_i*B1),P3,P5;
       bool found=false;
-    /*
-      P6(A0,B2) - P5(A1,B2) - P4(A2,B2)  
-         |            |           |      
-      P7(A0,B1) - P8(A1,B1) - P3(A2,B1) 
-         |            |            |      
-      P0(A0,B0) - P1(A1,B0) - P2(A2,B0)  
-     */
+      /*
+        P6(A0,B2) - P5(A1,B2) - P4(A2,B2)  
+        |            |           |      
+        P7(A0,B1) - P8(A1,B1) - P3(A2,B1) 
+        |            |            |      
+        P0(A0,B0) - P1(A1,B0) - P2(A2,B0)  
+      */
       // ? P0, P1, P8, P7
       if (arg_in_0_pi(P0,P1) && arg_in_0_pi(P1,P8) && arg_in_0_pi(P8,P7) && arg_in_0_pi(P7,P0)){
 	A2=A1;
@@ -899,11 +908,11 @@ namespace giac {
     }
     /*
       (a0,b1)  - (a01,b1)  -  (a1,b1)         seq3                seq3
-         |     n4   |     n3    |        seq4   n4      seqvert    n3     seq2
+      |     n4   |     n3    |        seq4   n4      seqvert    n3     seq2
       (a0,b01) - (a01,b01) -  (a1,b01)        seqhoriz           seqhoriz
-         |     n1   |     n2    |        seq4   n1      seqvert   n2      seq2
+      |     n1   |     n2    |        seq4   n1      seqvert   n2      seq2
       (a0,b0)  - (a01,b0)  -  (a1,b0)         seq1                seq1
-     */
+    */
     int n1=complex_roots(P,a0,b0,a01,b01,seq1,seqvert,seqhoriz,seq4,realroots,complexroots,eps,horiz_sturm,vert_sturm),nadd;
     if (n1==-2)
       return -2;
@@ -1144,10 +1153,11 @@ namespace giac {
 
   // find roots of polynomial P at precision eps using proot or 
   // complex Sturm sequences
-  // P must have numeric coefficients, in Q[i]
+  // P must have numeric coefficients, in Q[i] and should be squarefree
   vecteur complex_roots(const modpoly & P,const gen & a0,const gen & b0,const gen & a1,const gen & b1,bool complexe,double eps,bool use_proot){
     if (P.empty())
       return P;
+    bool mps=eps<0;
     eps=absdouble(eps);
     if (eps>1e-6)
       eps=1e-6;
@@ -1163,7 +1173,7 @@ namespace giac {
 	double cureps=std::pow(2.0,-n);
 	if (debug_infolevel)
 	  CERR << CLOCK() << " proot at precision " << cureps << '\n';
-	vecteur v=proot(P,cureps,n);
+	vecteur v=proot(P,cureps,n,context0);
 	if (debug_infolevel)
 	  CERR << CLOCK() << " proot end at precision " << cureps << '\n';
 	vecteur vradius(v.size());
@@ -1300,7 +1310,7 @@ namespace giac {
     if (eps<=0)
       eps=1e-12;
     if (v[0].type==_VECT && has_num_coeff(v[0])){
-      v=proot(*v[0]._VECTptr,eps);
+      v=proot(*v[0]._VECTptr,eps,contextptr);
       vecteur w;
       for (unsigned i=0;i<v.size();++i){
 	if (is_zero(im(v[i],contextptr)))
@@ -1913,9 +1923,9 @@ namespace giac {
       else 
 #endif
 	{
-	res1=VAS_positive_roots(v,1,0,0,1,contextptr);
-	res2=VAS_positive_roots(w,-1,0,0,1,contextptr);
-      }
+          res1=VAS_positive_roots(v,1,0,0,1,contextptr);
+          res2=VAS_positive_roots(w,-1,0,0,1,contextptr);
+        }
       if (has_zero)
 	res2.push_back(0);
       res1=mergevecteur(res2,res1);
@@ -2026,6 +2036,8 @@ namespace giac {
   // isolate and find real roots of P at precision eps between a and b
   // returns a list of intervals or of rationals
   bool vas(const modpoly & P,const gen & a0,const gen &b0,double eps,vecteur & vasres,bool with_mult,GIAC_CONTEXT){
+    if (eps<=0)
+      eps=1e-12;
     if (P.size()<=3){
       if (P.size()<2)
 	return true;

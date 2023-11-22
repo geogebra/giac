@@ -4387,10 +4387,12 @@ namespace giac {
 
   gen gen::squarenorm(GIAC_CONTEXT) const {
     switch (type ) {
-    case _INT_: case _DOUBLE_: case _FLOAT_: case _ZINT: case _REAL:
+    case _INT_: case _DOUBLE_: case _FLOAT_: case _ZINT: 
       return (*this) * (*this);
+    case _REAL:
+      return sq(*this);
     case _CPLX:
-      return ( (*_CPLXptr)*(*_CPLXptr)+(*(_CPLXptr+1)*(*(_CPLXptr+1))) );   
+      return sq(*_CPLXptr)+sq(*(_CPLXptr+1));   
     case _FRAC:
       return fraction(_FRACptr->num.squarenorm(contextptr),_FRACptr->den.squarenorm(contextptr));
     default: 
@@ -4407,7 +4409,7 @@ namespace giac {
     if (a.type==_REAL){
       if (real_interval * ptr=dynamic_cast<real_interval *>(a._REALptr)){
 	mpfi_t interv;
-	mpfi_init(interv);
+	mpfi_init2(interv,mpfi_get_prec(ptr->infsup));
         mpfi_sqr(interv,ptr->infsup);
         gen res=gen(real_interval(interv));
 	mpfi_clear(interv);
@@ -13428,7 +13430,11 @@ void sprint_double(char * s,double d){
 #ifdef KHICAS
     if (python_compat(contextptr)<0)
       return "I";
+#ifdef NSPIRE_NEWLIB
+    return "i";
+#else
     return os_shell?"i":"𝐢";
+#endif
 #endif
     if (calc_mode(contextptr)==1)
       return "ί";
