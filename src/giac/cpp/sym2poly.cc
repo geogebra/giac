@@ -3310,7 +3310,7 @@ namespace giac {
   }  
 #else
 
-  const int alg_digits_evalf=100;
+  const int alg_digits_evalf=180;
 
   /* univariate algebraic extensions */
   gen rur_mult(const gen & a,const gen &b,const vecteur & pmin){
@@ -3638,7 +3638,9 @@ namespace giac {
       return false;
     // first try with num eval
     gen r=peval(a,varapprox,0);
-    if (!is_zero(r,contextptr))
+    if (!is_zero(r,contextptr)
+        // is_greater(abs(r,contextptr),1e-6,contextptr)
+        )
       return false;
     // r value is small, try to prove a smaller degree relation in syst
     polynome g(a),h(systnums[s-1]);
@@ -3662,7 +3664,9 @@ namespace giac {
     }
     // g is the gcd, if it evals to 0 then replace in syst and systnums
     r=peval(g,varapprox,0);
-    if (!is_zero(r,contextptr)){
+    if (!is_zero(r,contextptr)
+        //is_greater(abs(r,contextptr),1e-6,contextptr)
+        ){
       // replace g by cofactor of g in syst[s-1]
       polynome A(systnums[s-1]),quo(a.dim),rem(a.dim),c(a.dim);
       A.reorder(transpositions[s-1]);
@@ -3759,6 +3763,8 @@ namespace giac {
       for (;;){
         r=r_orig;
         mreduce(r,d,systnums,transpositions,contextptr);
+        if (r.coord.empty())
+          break;
         if (!algnum_is_zero(d,syst,syst.size(),lv,systnums,varsymb,varapprox,transpositions,contextptr)){
           if (algnum_is_zero(r,syst,syst.size(),lv,systnums,varsymb,varapprox,transpositions,contextptr))
             r.coord.clear();
@@ -3776,7 +3782,9 @@ namespace giac {
       if (N.type==_POLY){
         polynome n(*N._POLYptr),d(n.dim);
         mreduce(n,d,n.dim,systnums,transpositions,contextptr);
-        N=n; D=d*D;
+        N=n;
+        gen dg(d);
+        D=dg*D;
       }
       if (D.type!=_POLY)
         break;
@@ -3790,6 +3798,56 @@ namespace giac {
     }
   }
 
+  void lazy_dbg(const gen & x,const gen & N,const gen & D,const vecteur & vars,const vecteur & varapprox,GIAC_CONTEXT){
+    if (0){
+      if (x.type==_VECT){
+        for (int i=0;i<x._VECTptr->size();++i)
+          lazy_dbg(x[i],N[i],D[i],vars,varapprox,contextptr);
+        return;
+      }
+      gen xx=subst(x,vars,varapprox,false,contextptr);
+      gen n=N.type==_POLY?peval(*N._POLYptr,varapprox,0):N;
+      gen d=D.type==_POLY?peval(*D._POLYptr,varapprox,0):D;
+      gen delta=abs(xx-n/d,contextptr);
+      if (is_greater(delta,1e-6,contextptr))
+        cout << x << " " << delta << endl;
+    }
+  }    
+  
+  void lazy_dbgreduce(const gen & n,const gen & d,const gen & N,const gen & D,const vecteur & vars,const vecteur & varapprox,GIAC_CONTEXT){
+    if (0){
+      gen NN=N.type==_POLY?peval(*N._POLYptr,varapprox,0):N;
+      gen DD=D.type==_POLY?peval(*D._POLYptr,varapprox,0):D;
+      gen nn=n.type==_POLY?peval(*n._POLYptr,varapprox,0):n;
+      gen dd=d.type==_POLY?peval(*d._POLYptr,varapprox,0):d;
+      gen delta=abs(nn/dd-NN/DD,contextptr);
+      if (is_greater(1e-6,abs(DD,contextptr),contextptr) || is_greater(1e-6,abs(NN,contextptr),contextptr) || is_greater(delta,1e-6,contextptr))
+        cout << "lazy_dbgreduce " << delta << " " << D << endl;
+    }
+  }    
+  
+  void lazy_dbg(const gen & x,int beg,int end,const gen & N,const gen & D,const vecteur & vars,const vecteur & varapprox,GIAC_CONTEXT){
+    if (0 && x.type==_SYMB){
+      gen x1(symbolic(x._SYMBptr->sommet,gen(vecteur(x._SYMBptr->feuille._VECTptr->begin()+beg,x._SYMBptr->feuille._VECTptr->begin()+end),x._SYMBptr->feuille.subtype)));
+      lazy_dbg(x1,N,D,vars,varapprox,contextptr);
+    }
+  }    
+  
+  void lazy_dbgsum(const gen & n,const gen & d,const gen & N,const gen & D,const vecteur & vars,const vecteur & varapprox,GIAC_CONTEXT){
+    if (0 && n.type==_VECT){
+      gen xx=0;
+      vecteur & v=*n._VECTptr; vecteur & w=*d._VECTptr;
+      for (int i=0;i<v.size();++i){
+        xx += (v[i].type==_POLY?peval(*v[i]._POLYptr,varapprox,0):v[i])/(w[i].type==_POLY?peval(*w[i]._POLYptr,varapprox,0):w[i]);
+      }
+      gen n_=N.type==_POLY?peval(*N._POLYptr,varapprox,0):N;
+      gen d_=D.type==_POLY?peval(*D._POLYptr,varapprox,0):D;
+      gen delta=abs(xx-n_/d_,contextptr);
+      if (is_greater(delta,1e-6,contextptr))
+        cout << "lazy_dbgsum err " << delta << endl;
+    }
+  }    
+  
   int lazy_prod(const gen & feuille,gen & N,gen & D,const vector<polynome> & systnums,const  vector< vector<int> > & transpositions,GIAC_CONTEXT){
     D=1;
     int s=systnums.size();
@@ -3820,7 +3878,7 @@ namespace giac {
     return v.size();
   }
 
-  int lazy_sum(const vecteur & nums,const vecteur & dens,gen & N,gen & D,const vector<polynome> & systnums,const  vector< vector<int> > & transpositions,GIAC_CONTEXT){
+  int lazy_sum(const vecteur & nums,const vecteur & dens,gen & N,gen & D,const vector<polynome> & systnums,const vecteur & vars,vecteur & varapprox,const  vector< vector<int> > & transpositions,GIAC_CONTEXT){
     D=1;
     int s=systnums.size();
     if (nums.empty()){ N=0; return 0;}
@@ -3835,14 +3893,17 @@ namespace giac {
       if (N.type==_POLY){
         polynome n(*N._POLYptr),d(systnums.size());
         mreduce(n,d,s,systnums,transpositions,contextptr);
+        lazy_dbgreduce(N,D,n,d,vars,varapprox,contextptr);
         N=n; D=d;
       }
       D=D*dens[0]*dens[1];
       if (D.type==_POLY){
         polynome n(*D._POLYptr),d(systnums.size());
         mreduce(n,d,s,systnums,transpositions,contextptr);
-        N=n*N; D=d;
+        lazy_dbgreduce(D,1,n,d,vars,varapprox,contextptr);
+        N=gen(d)*N; D=n;
       }
+      lazy_dbgsum(nums,dens,N,D,vars,varapprox,contextptr);
       return 2;
     }
     vecteur num1(nums.begin(),nums.begin()+nums.size()/2);
@@ -3850,9 +3911,13 @@ namespace giac {
     vecteur den1(dens.begin(),dens.begin()+dens.size()/2);
     vecteur den2(dens.begin()+dens.size()/2,dens.end());
     gen n1,d1,n2,d2;
-    lazy_sum(num1,den1,n1,d1,systnums,transpositions,contextptr);
-    lazy_sum(num2,den2,n2,d2,systnums,transpositions,contextptr);
-    lazy_sum(makevecteur(n1,n2),makevecteur(d1,d2),N,D,systnums,transpositions,contextptr);
+    lazy_sum(num1,den1,n1,d1,systnums,vars,varapprox,transpositions,contextptr);
+    lazy_dbgsum(num1,den1,n1,d1,vars,varapprox,contextptr);
+    lazy_sum(num2,den2,n2,d2,systnums,vars,varapprox,transpositions,contextptr);
+    lazy_dbgsum(num2,den2,n2,d2,vars,varapprox,contextptr);
+    vecteur nn(makevecteur(n1,n2)),dd(makevecteur(d1,d2));
+    lazy_sum(nn,dd,N,D,systnums,vars,varapprox,transpositions,contextptr);
+    lazy_dbgsum(nn,dd,N,D,vars,varapprox,contextptr);
     return nums.size();
   }
 
@@ -3871,7 +3936,7 @@ namespace giac {
     lazy_reduce(N,D,systnums,transpositions,contextptr);
     return n;
   }
-  
+
   // returns -1 on error, 0 on undef, 1 otherwise
   int algnum_lazy_convert(const gen & x,vecteur & syst,const vecteur & vars,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,vector< vector<int> > & transpositions,int chkext,vecteur &lv,gen & N,gen & D,GIAC_CONTEXT){
     int s=syst.size();
@@ -3924,10 +3989,12 @@ namespace giac {
           N=n1*d2;
           D=n2*d1;
           lazy_reduce(N,D,systnums,transpositions,contextptr);
+          lazy_dbg(x,N,D,vars,varapprox,contextptr);
           return 1;
         }
       }
       int res=algnum_lazy_convert(x._SYMBptr->feuille,syst,vars,systnums,varsymb,varapprox,transpositions,chkext,lv,N,D,contextptr);
+      lazy_dbg(x._SYMBptr->feuille,N,D,vars,varapprox,contextptr);
       if (res<=0)
         return res;
       if (x._SYMBptr->sommet==at_neg){
@@ -3940,10 +4007,11 @@ namespace giac {
         lazy_prod(D,n2,d2,systnums,transpositions,contextptr);
         N=n1*d2; D=n2*d1;
         lazy_reduce(N,D,systnums,transpositions,contextptr);
+        lazy_dbg(x,N,D,vars,varapprox,contextptr);
         return 1;
       }
       if (x._SYMBptr->sommet==at_inv){
-        if (chkext && D.type==_POLY && algnum_is_zero(*D._POLYptr,syst,syst.size(),vars,systnums,varsymb,varapprox,transpositions,contextptr))
+        if (chkext && N.type==_POLY && algnum_is_zero(*N._POLYptr,syst,syst.size(),vars,systnums,varsymb,varapprox,transpositions,contextptr))
           return 0;
         swapgen(N,D);
         return 1;
@@ -3952,7 +4020,8 @@ namespace giac {
         if (N.type!=_VECT || D.type!=_VECT)
           return 1;
         gen n,d;
-        lazy_sum(*N._VECTptr,*D._VECTptr,n,d,systnums,transpositions,contextptr);
+        lazy_sum(*N._VECTptr,*D._VECTptr,n,d,systnums,vars,varapprox,transpositions,contextptr);
+        lazy_dbg(x,n,d,vars,varapprox,contextptr);
         N=n;
         D=d;
         return 1;
@@ -3985,7 +4054,7 @@ namespace giac {
     }
     // e2r call should be replaced using reduction by syst
     gen N; int res=-1;
-    if (0)
+    if (1)
       res=algnum_lazy_convert(x,syst,vars,systnums,varsymb,varapprox,transpositions,chkext,lv,N,D,contextptr);
     if (res<=0){
       gen X=e2r(x,lv,contextptr);
@@ -4081,6 +4150,7 @@ namespace giac {
       r=r.shift(-idx);
       gen zn=ppz(r);
       gen zzd=zd*ppz(d);
+      simplify3(zn,zzd);
       gen R=zn*r2e_recursive(a,lv,contextptr)*r2e_recursive(r,lv,contextptr)/r2e(d,lv,contextptr)/zzd;
       // gen R=r2e_recursive(r,lv,contextptr)/r2e(d,lv,contextptr);
       return R;
@@ -4268,7 +4338,8 @@ namespace giac {
   // symbolic identifiers contained in list vars (effective values in v)
   // where vars satisfy syst
   // G is a rur for syst
-  int algnum_convert(const gen & e_,gen & E,gen & G,vecteur & syst,vecteur & vars,vecteur & v,vecteur & varapprox,int chkext,GIAC_CONTEXT){
+  int algnum_convert(const gen & e_,gen & E,gen & G,vecteur & syst,vecteur & vars,vecteur & v,vecteur & varapprox,int & chkext,GIAC_CONTEXT){
+    double oldeps=epsilon(contextptr);
     // return 0: // until it's fixed
     gen e(e_);
     gen ef;
@@ -4309,6 +4380,7 @@ namespace giac {
       varapprox=gen2vecteur(_evalf(makesequence(v,alg_digits_evalf),contextptr));
     else
       varapprox=v;
+    epsilon(oldeps,contextptr);
     vars.resize(n);
     for (int i=0;i<n;++i){
       gen g("x"+print_INT_(i+1),contextptr);
@@ -4335,7 +4407,7 @@ namespace giac {
       ++n;
     }
     int dbg=debug_infolevel;
-    int algext_order=1;
+    int algext_order=1,algext_cur=0;
     if (dbg)
       debug_infolevel--;
     for (int i=0;i<n;++i){
@@ -4346,6 +4418,7 @@ namespace giac {
         if (i==0){
           E=subst(E,cst_i,vars[0],false,contextptr);
         }
+        algext_cur=2;
         algext_order*=2;
       }
       else if (v[i].is_symb_of_sommet(at_rootof)){
@@ -4357,7 +4430,8 @@ namespace giac {
         else {
           p=g[0];
           pmin=g[1];
-          algext_order *= gen2vecteur(pmin).size()-1;
+          algext_cur = gen2vecteur(pmin).size()-1;;
+          algext_order *= algext_cur;
         }
         p=horner(p,vars[i]);
         E=subst(E,vars[i],p,false,contextptr);
@@ -4373,6 +4447,7 @@ namespace giac {
         }
         gen base=g[0], expo=g[1],num,d;
         fxnd(expo,num,d);
+        algext_cur=d.val;
         algext_order *= d.val;
         gg=symb_pow(vx_var,d)-pow(g[0],num,contextptr);
         base=subst(base,V,VARS,true,contextptr); // DOIT base should be reduced wrt syst
@@ -4383,6 +4458,11 @@ namespace giac {
       else {
         debug_infolevel=dbg;
         return 0;
+      }
+      if (!chkext && algext_order>MAX_COMMON_ALG_EXT_ORDER_SIZE){
+        chkext=algext_order;
+        varapprox=gen2vecteur(_evalf(makesequence(v,alg_digits_evalf),contextptr));
+        epsilon(oldeps,contextptr);
       }
       if ( (!chkext || algext_order<chkext) && i){
 #if 1 // if changed to 0, #if below must be changed too
@@ -4410,6 +4490,7 @@ namespace giac {
         gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
         gen ggn,ggd;
         gen extapprox=_evalf(makesequence(ext,alg_digits_evalf),contextptr);
+        epsilon(oldeps,contextptr);
         gen p=_symb2poly(makesequence(syst.back(),vars[i]),contextptr);
         if (G.type==_VECT){
           vecteur nums=vecteur(G._VECTptr->begin()+4,G._VECTptr->end());
@@ -4478,6 +4559,7 @@ namespace giac {
               vars.erase(vars.begin()+i); v.erase(v.begin()+i);
               syst.pop_back();
               --i; --n;
+              algext_order/=algext_cur;
               continue;
             }
           } // end variable can be eliminated

@@ -2775,7 +2775,10 @@ namespace giac {
   }
 
   vecteur proot(const vecteur & v,double & eps,int & rprec,GIAC_CONTEXT){
-    return proot(v,eps,rprec,true,contextptr);
+    //double oldeps=epsilon(contextptr);
+    vecteur res(proot(v,eps,rprec,true,contextptr));
+    //epsilon(oldeps,contextptr);
+    return res;
   }
 
   vecteur proot(const vecteur & v,double eps,GIAC_CONTEXT){
