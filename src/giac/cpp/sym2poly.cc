@@ -3771,8 +3771,200 @@ namespace giac {
     return mreduce_back(r,lv,contextptr)/mreduce_back(d,lv,contextptr);;
   }
 
+  void lazy_reduce(gen & N,gen & D,const vector<polynome> & systnums,const  vector< vector<int> > & transpositions,GIAC_CONTEXT){
+    for (;;){
+      if (N.type==_POLY){
+        polynome n(*N._POLYptr),d(n.dim);
+        mreduce(n,d,n.dim,systnums,transpositions,contextptr);
+        N=n; D=d*D;
+      }
+      if (D.type!=_POLY)
+        break;
+      polynome n(*D._POLYptr),d(n.dim);
+      mreduce(n,d,n.dim,systnums,transpositions,contextptr);
+      D=n;
+      gen dg(d);
+      N=N*dg;
+      if (dg.type!=_POLY)
+        break;
+    }
+  }
+
+  int lazy_prod(const gen & feuille,gen & N,gen & D,const vector<polynome> & systnums,const  vector< vector<int> > & transpositions,GIAC_CONTEXT){
+    D=1;
+    int s=systnums.size();
+    if (feuille.type!=_VECT){
+      N=feuille;
+      return 1;
+    }
+    const vecteur & v =*feuille._VECTptr;
+    if (v.empty()){ N=0; return 0;}
+    if (v.size()==1){ N=v[0]; return 1; }
+    if (v.size()==2){
+      N=v[0]*v[1];
+      if (N.type==_POLY){
+        polynome n(*N._POLYptr),d(systnums.size());
+        mreduce(n,d,s,systnums,transpositions,contextptr);
+        N=n; D=d;
+      }
+      return 2;
+    }
+    vecteur v1(v.begin(),v.begin()+v.size()/2);
+    vecteur v2(v.begin()+v.size()/2,v.end());
+    gen n1,d1,n2,d2;
+    lazy_prod(v1,n1,d1,systnums,transpositions,contextptr);
+    lazy_prod(v2,n2,d2,systnums,transpositions,contextptr);
+    N=n1*n2;
+    D=d1*d2;
+    lazy_reduce(N,D,systnums,transpositions,contextptr);
+    return v.size();
+  }
+
+  int lazy_sum(const vecteur & nums,const vecteur & dens,gen & N,gen & D,const vector<polynome> & systnums,const  vector< vector<int> > & transpositions,GIAC_CONTEXT){
+    D=1;
+    int s=systnums.size();
+    if (nums.empty()){ N=0; return 0;}
+    if (nums.size()==1){ N=nums[0]; D=dens[0]; return 1; }
+    if (nums.size()==2){
+      if (dens[0]==dens[1]){
+        N=nums[0]+nums[1];
+        D=dens[0];
+        return 2;
+      }
+      N=nums[0]*dens[1]+nums[1]*dens[0];
+      if (N.type==_POLY){
+        polynome n(*N._POLYptr),d(systnums.size());
+        mreduce(n,d,s,systnums,transpositions,contextptr);
+        N=n; D=d;
+      }
+      D=D*dens[0]*dens[1];
+      if (D.type==_POLY){
+        polynome n(*D._POLYptr),d(systnums.size());
+        mreduce(n,d,s,systnums,transpositions,contextptr);
+        N=n*N; D=d;
+      }
+      return 2;
+    }
+    vecteur num1(nums.begin(),nums.begin()+nums.size()/2);
+    vecteur num2(nums.begin()+nums.size()/2,nums.end());
+    vecteur den1(dens.begin(),dens.begin()+dens.size()/2);
+    vecteur den2(dens.begin()+dens.size()/2,dens.end());
+    gen n1,d1,n2,d2;
+    lazy_sum(num1,den1,n1,d1,systnums,transpositions,contextptr);
+    lazy_sum(num2,den2,n2,d2,systnums,transpositions,contextptr);
+    lazy_sum(makevecteur(n1,n2),makevecteur(d1,d2),N,D,systnums,transpositions,contextptr);
+    return nums.size();
+  }
+
+  int lazy_pow(const gen & base,int n,gen & N,gen & D,const vector<polynome> & systnums,const  vector< vector<int> > & transpositions,GIAC_CONTEXT){
+    if (n==0){
+      N=1; D=1; return 0;
+    }
+    if (n==1){
+      N=base; D=1; return 1;
+    }
+    lazy_pow(base,n/2,N,D,systnums,transpositions,contextptr);
+    N=N*N;
+    D=D*D;
+    if (n%2)
+      N=base*N;
+    lazy_reduce(N,D,systnums,transpositions,contextptr);
+    return n;
+  }
+  
+  // returns -1 on error, 0 on undef, 1 otherwise
+  int algnum_lazy_convert(const gen & x,vecteur & syst,const vecteur & vars,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,vector< vector<int> > & transpositions,int chkext,vecteur &lv,gen & N,gen & D,GIAC_CONTEXT){
+    int s=syst.size();
+    if (x.type==_FRAC){
+      N=x._FRACptr->num;
+      D=x._FRACptr->den;
+      return true;
+    }
+    if (x.type==_VECT){
+      const vecteur & v =*x._VECTptr;
+      vecteur Nv(v.size()),Dv(v.size());
+      for (int i=0;i<v.size();++i){
+        int res=algnum_lazy_convert(v[i],syst,vars,systnums,varsymb,varapprox,transpositions,chkext,lv,N,D,contextptr);
+        if (res<=0)
+          return res;
+        Nv[i]=N;
+        Dv[i]=D;
+      }
+      N=Nv;
+      D=Dv;
+      return 1;
+    }
+    if (x.type==_IDNT || x.type==_SYMB){
+      int i=equalposcomp(vars,x);
+      if (i){
+        polynome n(vars.size());
+        n.coord.push_back(monomial<gen>(1,1,i,vars.size()));
+        N=n;
+        D=1;
+        return 1;
+      }
+    }
+    if (x.type==_SYMB){
+      if (x._SYMBptr->sommet==at_pow){
+        gen & f=x._SYMBptr->feuille;
+        if (f.type==_VECT && f._VECTptr->size()==2 && f._VECTptr->back().type==_INT_){
+          int n=f._VECTptr->back().val;
+          int res=algnum_lazy_convert(f._VECTptr->front(),syst,vars,systnums,varsymb,varapprox,transpositions,chkext,lv,N,D,contextptr);
+          if (res<=0)
+            return res;
+          if (n<0){
+            if (chkext && N.type==_POLY && algnum_is_zero(*N._POLYptr,syst,syst.size(),vars,systnums,varsymb,varapprox,transpositions,contextptr))
+              return 0;
+            swapgen(N,D);
+            n=-n;
+          }
+          gen n1,d1,n2,d2;
+          lazy_pow(N,n,n1,d1,systnums,transpositions,contextptr);
+          lazy_pow(D,n,n2,d2,systnums,transpositions,contextptr);
+          N=n1*d2;
+          D=n2*d1;
+          lazy_reduce(N,D,systnums,transpositions,contextptr);
+          return 1;
+        }
+      }
+      int res=algnum_lazy_convert(x._SYMBptr->feuille,syst,vars,systnums,varsymb,varapprox,transpositions,chkext,lv,N,D,contextptr);
+      if (res<=0)
+        return res;
+      if (x._SYMBptr->sommet==at_neg){
+        N=-N;
+        return 1;
+      }
+      if (x._SYMBptr->sommet==at_prod){
+        gen n1,d1,n2,d2;
+        lazy_prod(N,n1,d1,systnums,transpositions,contextptr);
+        lazy_prod(D,n2,d2,systnums,transpositions,contextptr);
+        N=n1*d2; D=n2*d1;
+        lazy_reduce(N,D,systnums,transpositions,contextptr);
+        return 1;
+      }
+      if (x._SYMBptr->sommet==at_inv){
+        if (chkext && D.type==_POLY && algnum_is_zero(*D._POLYptr,syst,syst.size(),vars,systnums,varsymb,varapprox,transpositions,contextptr))
+          return 0;
+        swapgen(N,D);
+        return 1;
+      }
+      if (x._SYMBptr->sommet==at_plus){
+        if (N.type!=_VECT || D.type!=_VECT)
+          return 1;
+        gen n,d;
+        lazy_sum(*N._VECTptr,*D._VECTptr,n,d,systnums,transpositions,contextptr);
+        N=n;
+        D=d;
+        return 1;
+      }
+    }
+    N=x;
+    D=1;
+    return 2;
+  }
+
   // returns 0 if syst not polynomial, -1 if x not polynomial, 1 otherwise
-  int prepare(const gen & x,const vecteur & syst,const vecteur & vars,vector<polynome> & systnums,vector< vector<int> > & transpositions,int chkext,vecteur &lv,polynome & n,gen & D,GIAC_CONTEXT){
+  int prepare(const gen & x,vecteur & syst,const vecteur & vars,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,vector< vector<int> > & transpositions,int chkext,vecteur &lv,polynome & n,gen & D,GIAC_CONTEXT){
     lv=vars;
     lvar(x,lv);
     lvar(syst,lv);
@@ -3792,8 +3984,13 @@ namespace giac {
       }
     }
     // e2r call should be replaced using reduction by syst
-    gen X=e2r(x,lv,contextptr),N;
-    fxnd(X,N,D);
+    gen N; int res=-1;
+    if (0)
+      res=algnum_lazy_convert(x,syst,vars,systnums,varsymb,varapprox,transpositions,chkext,lv,N,D,contextptr);
+    if (res<=0){
+      gen X=e2r(x,lv,contextptr);
+      fxnd(X,N,D);
+    }
     if (N.type==_POLY)
       n = *N._POLYptr;
     else
@@ -3803,7 +4000,7 @@ namespace giac {
 
   gen mreduce_gen(const gen & x,vecteur & syst,const vecteur & vars,const vecteur & v,vecteur & varapprox,int chkext,GIAC_CONTEXT){
     vector<polynome> systnums; vecteur lv; vector< vector<int> > transpositions; polynome n; gen D;
-    if (prepare(x,syst,vars,systnums,transpositions,chkext,lv,n,D,contextptr)<=0)
+    if (prepare(x,syst,vars,systnums,v,varapprox,transpositions,chkext,lv,n,D,contextptr)<=0)
       return x;
     // now reduce
     if (D.type==_POLY)
@@ -3884,7 +4081,7 @@ namespace giac {
       r=r.shift(-idx);
       gen zn=ppz(r);
       gen zzd=zd*ppz(d);
-      gen R=zn/zzd*r2e_recursive(a,lv,contextptr)*r2e_recursive(r,lv,contextptr)/r2e(d,lv,contextptr);
+      gen R=zn*r2e_recursive(a,lv,contextptr)*r2e_recursive(r,lv,contextptr)/r2e(d,lv,contextptr)/zzd;
       // gen R=r2e_recursive(r,lv,contextptr)/r2e(d,lv,contextptr);
       return R;
     }
@@ -4566,7 +4763,7 @@ namespace giac {
     if (n<2)
       return false;
     vector<polynome> systnums; vecteur lv; vector< vector<int> > transpositions; polynome tmpn; gen tmpD;
-    if (!prepare(E[0][0],syst,vars,systnums,transpositions,chkext,lv,tmpn,tmpD,contextptr))
+    if (!prepare(E[0][0],syst,vars,systnums,v,varapprox,transpositions,chkext,lv,tmpn,tmpD,contextptr))
       return false;
     gen EE=e2r(E,lv,contextptr),EN,ED;
     fxnd(EE,EN,ED);
