@@ -3643,7 +3643,7 @@ namespace giac {
       return false;
     // r value is small, try to prove a smaller degree relation in syst
     polynome g(a),h(systnums[s-1]);
-    if (s>2)
+    if (s>=2)
       h.reorder(transpositions[s-1]); // since systnums[s-1] is already ready for division and therefore transpositionned
     if (algnum_gcd(g,h,syst,s,lv,systnums,varsymb,varapprox,transpositions,contextptr)==0){
       if (s>=2){
@@ -3669,10 +3669,12 @@ namespace giac {
         ){
       // replace g by cofactor of g in syst[s-1]
       polynome A(systnums[s-1]),quo(a.dim),rem(a.dim),c(a.dim);
-      g.reorder(transpositions[s-1]);
+      if (s>=2)
+        g.reorder(transpositions[s-1]);
       A.TPseudoDivRem(g,quo,rem,c);
       g.coord.swap(quo.coord);
-      g.reorder(transpositions[s-1]);
+      if (s>=2)
+        g.reorder(transpositions[s-1]);
     }
     syst[s-1]=r2e(g,lv,contextptr);
     systnums[s-1]=g;
@@ -3730,7 +3732,7 @@ namespace giac {
         b.coord.swap(rem.coord);
       }
       // trim: lcoeff of b must be !=0
-      b.reorder(transpositions[s-1]);
+      if (s>=2) b.reorder(transpositions[s-1]);
       vector< monomial<gen> >::const_iterator it=b.coord.begin(),itend=b.coord.end();
       while (it!=itend){
         polynome lc(Tnextcoeff<gen>(it,itend));
@@ -3741,7 +3743,7 @@ namespace giac {
         b.coord.erase(b.coord.begin(),b.coord.begin()+(it-b.coord.begin())); // second argument rewritten, was rem.coord.erase(rem.coord.begin(),it);
         it=b.coord.begin(); itend=b.coord.end();
       }
-      b.reorder(transpositions[s-1]);
+      if (s>=2) b.reorder(transpositions[s-1]);
     }
     return a.degree(s-1);
   }
@@ -4069,6 +4071,8 @@ namespace giac {
     }
     if (N.type==_POLY)
       n = *N._POLYptr;
+    else if (dim>=0 && is_exactly_zero(N))
+      n= polynome(dim);
     else
       return -1;
     return 1;
