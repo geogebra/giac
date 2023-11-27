@@ -397,6 +397,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   extern int MAX_ALG_EXT_ORDER_SIZE; // x^1/d extension not algebraic if d>
   extern int MAX_COMMON_ALG_EXT_ORDER_SIZE;
   extern int LAZY_ALG_EXT;
+  extern int ALG_EXT_DIGITS;
   // 0 use a unique algebraic extension, >0: don't search a unique alg ext if degree is >
   extern int TRY_FU_UPRIME;
   extern int SOLVER_MAX_ITERATE;

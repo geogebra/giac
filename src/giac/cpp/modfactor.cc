@@ -1516,6 +1516,22 @@ namespace giac {
   static define_unary_function_eval (__max_common_alg_ext_order_size,&_max_common_alg_ext_order_size,_max_common_alg_ext_order_size_s);
   define_unary_function_ptr5( at_max_common_alg_ext_order_size ,alias_at_max_common_alg_ext_order_size,&__max_common_alg_ext_order_size,0,true);
 
+  gen _alg_ext_digits(const gen & g,GIAC_CONTEXT){
+    if ( g.type==_STRNG && g.subtype==-1) return  g;
+    if (g.type==_VECT && g._VECTptr->empty())
+      return ALG_EXT_DIGITS;
+    if (g.type!=_INT_ )
+      return gensizeerr(contextptr);
+    if (g.val<=0)
+      return LAZY_ALG_EXT=-g.val;
+    if (g.val>0)
+      return ALG_EXT_DIGITS=g.val;
+    return ALG_EXT_DIGITS;
+  }
+  static const char _alg_ext_digits_s []="alg_ext_digits";
+  static define_unary_function_eval (__alg_ext_digits,&_alg_ext_digits,_alg_ext_digits_s);
+  define_unary_function_ptr5( at_alg_ext_digits ,alias_at_alg_ext_digits,&__alg_ext_digits,0,true);
+
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac

@@ -3310,7 +3310,6 @@ namespace giac {
   }  
 #else
 
-  const int alg_digits_evalf=180;
 
   /* univariate algebraic extensions */
   gen rur_mult(const gen & a,const gen &b,const vecteur & pmin){
@@ -3644,7 +3643,8 @@ namespace giac {
       return false;
     // r value is small, try to prove a smaller degree relation in syst
     polynome g(a),h(systnums[s-1]);
-    if (s>=2) h.reorder(transpositions[s-1]);
+    if (s>2)
+      h.reorder(transpositions[s-1]); // since systnums[s-1] is already ready for division and therefore transpositionned
     if (algnum_gcd(g,h,syst,s,lv,systnums,varsymb,varapprox,transpositions,contextptr)==0){
       if (s>=2){
         // recursively check coefficients of a
@@ -3669,7 +3669,6 @@ namespace giac {
         ){
       // replace g by cofactor of g in syst[s-1]
       polynome A(systnums[s-1]),quo(a.dim),rem(a.dim),c(a.dim);
-      A.reorder(transpositions[s-1]);
       g.reorder(transpositions[s-1]);
       A.TPseudoDivRem(g,quo,rem,c);
       g.coord.swap(quo.coord);
@@ -3680,6 +3679,12 @@ namespace giac {
     return true;
   }
 
+  bool algnum_rref_is_zero(const gen & a,vecteur & syst,const vecteur & lv,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,const vector< vector<int> > & transpositions,int chkext,GIAC_CONTEXT){
+    if (!chkext || a.type!=_POLY)
+      return is_zero(a,contextptr);
+    return algnum_is_zero(*a._POLYptr,syst,a._POLYptr->dim,lv,systnums,varsymb,varapprox,transpositions,contextptr);
+  }
+  
   // replace a by gcd of a and b with respect to variable s-1, where variables
   // 0 to s-2 satisfy systnums
   // returns gcd degree
@@ -3720,21 +3725,23 @@ namespace giac {
         if (j)
           b.reorder(transpositions[j]);
         b.TPseudoDivRem(systnums[j],quo,rem,c);
-        // trim rem: lcoeff must be !=0
-        vector< monomial<gen> >::const_iterator it=rem.coord.begin(),itend=rem.coord.end();
-        while (it!=itend){
-          polynome lc(Tnextcoeff<gen>(it,itend));
-          lc=lc.untrunc1(0);
-          lc.reorder(transpositions[j]);
-          if (!algnum_is_zero(lc,syst,j,lv,systnums,varsymb,varapprox,transpositions,contextptr)){
-            rem.coord.erase(rem.coord.begin(),rem.coord.begin()+(it-rem.coord.begin())); // second argument rewritten, was rem.coord.erase(rem.coord.begin(),it);
-            break;
-          }
-        }
         if (j)
           rem.reorder(transpositions[j]);
         b.coord.swap(rem.coord);
       }
+      // trim: lcoeff of b must be !=0
+      b.reorder(transpositions[s-1]);
+      vector< monomial<gen> >::const_iterator it=b.coord.begin(),itend=b.coord.end();
+      while (it!=itend){
+        polynome lc(Tnextcoeff<gen>(it,itend));
+        lc=lc.untrunc1(0);
+        if (s-1) lc.reorder(transpositions[s-1]);
+        if (!algnum_is_zero(lc,syst,s-1,lv,systnums,varsymb,varapprox,transpositions,contextptr))
+          break;
+        b.coord.erase(b.coord.begin(),b.coord.begin()+(it-b.coord.begin())); // second argument rewritten, was rem.coord.erase(rem.coord.begin(),it);
+        it=b.coord.begin(); itend=b.coord.end();
+      }
+      b.reorder(transpositions[s-1]);
     }
     return a.degree(s-1);
   }
@@ -4222,7 +4229,7 @@ namespace giac {
                 if (is_zero(chk)){
                   vecteur sols=protect_solve((k[2]*vx_var+k[1])*vx_var+k[0],*vx_var._IDNTptr,1,contextptr);
                   if (sols.size()==2){
-                    gen sol0=_evalf(makesequence(sols[0],alg_digits_evalf),contextptr),sol1=_evalf(makesequence(sols[1],alg_digits_evalf),contextptr);
+                    gen sol0=_evalf(makesequence(sols[0],ALG_EXT_DIGITS),contextptr),sol1=_evalf(makesequence(sols[1],ALG_EXT_DIGITS),contextptr);
                     if (is_greater(abs(sol0-Eapprox,contextptr),abs(sol1-Eapprox,contextptr),contextptr))
                       e=sols[1];
                     else
@@ -4251,7 +4258,7 @@ namespace giac {
                       vecteur sols=protect_solve((k[2]*vx_var+k[1])*vx_var+k[0],*vx_var._IDNTptr,1,contextptr);
                       if (sols.size()==2){
                         gen E2approx=horner(En2,extapprox)/horner(Ed2,extapprox);
-                        gen sol0=_evalf(makesequence(sols[0],alg_digits_evalf),contextptr),sol1=_evalf(makesequence(sols[1],alg_digits_evalf),contextptr);
+                        gen sol0=_evalf(makesequence(sols[0],ALG_EXT_DIGITS),contextptr),sol1=_evalf(makesequence(sols[1],ALG_EXT_DIGITS),contextptr);
                         if (is_greater(abs(sol0-E2approx,contextptr),abs(sol1-E2approx,contextptr),contextptr))
                           e=sqrt(sols[1],contextptr);
                         else
@@ -4377,7 +4384,7 @@ namespace giac {
       return 0;
     v=sort2(v);
     if (chkext)
-      varapprox=gen2vecteur(_evalf(makesequence(v,alg_digits_evalf),contextptr));
+      varapprox=gen2vecteur(_evalf(makesequence(v,ALG_EXT_DIGITS),contextptr));
     else
       varapprox=v;
     epsilon(oldeps,contextptr);
@@ -4461,7 +4468,7 @@ namespace giac {
       }
       if (!chkext && algext_order>MAX_COMMON_ALG_EXT_ORDER_SIZE){
         chkext=algext_order;
-        varapprox=gen2vecteur(_evalf(makesequence(v,alg_digits_evalf),contextptr));
+        varapprox=gen2vecteur(_evalf(makesequence(v,ALG_EXT_DIGITS),contextptr));
         epsilon(oldeps,contextptr);
       }
       if ( (!chkext || algext_order<chkext) && i){
@@ -4489,7 +4496,7 @@ namespace giac {
         }
         gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
         gen ggn,ggd;
-        gen extapprox=_evalf(makesequence(ext,alg_digits_evalf),contextptr);
+        gen extapprox=_evalf(makesequence(ext,ALG_EXT_DIGITS),contextptr);
         epsilon(oldeps,contextptr);
         gen p=_symb2poly(makesequence(syst.back(),vars[i]),contextptr);
         if (G.type==_VECT){
@@ -4522,12 +4529,12 @@ namespace giac {
           CERR << CLOCK()*1e-6 << " ext_factor end\n";
         if (f.size()>1){
           // select the right factor in f
-          gen vival=_evalf(makesequence(v[i],alg_digits_evalf),contextptr);
+          gen vival=_evalf(makesequence(v[i],ALG_EXT_DIGITS),contextptr);
           gen curerr(undef); vecteur curP;
           for (int j=0;j<f.size();++j){
             polynome & pcur=f[j].fact;
             modpoly P=polynome2poly1(pcur,1);
-            modpoly Papprox=gen2vecteur(_evalf(makesequence(P,alg_digits_evalf),contextptr));
+            modpoly Papprox=gen2vecteur(_evalf(makesequence(P,ALG_EXT_DIGITS),contextptr));
             gen err=abs(horner(Papprox,vival),contextptr);
             if (is_undef(curerr) && is_greater(1e-10,err,contextptr)){
               curP=P;
@@ -4626,7 +4633,7 @@ namespace giac {
               return 0;
             pminv=*curpmin._VECTptr;
             gen rexact=subst(sep,vars,v,false,contextptr);
-            gen r=_evalf(makesequence(rexact,alg_digits_evalf),contextptr);
+            gen r=_evalf(makesequence(rexact,ALG_EXT_DIGITS),contextptr);
             if (pmins>2){
               gen curmin=abs(horner(pminv,r),contextptr);
               for (int j=2;j<pmins;j+=2){
@@ -4684,7 +4691,7 @@ namespace giac {
             gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
             gen ggn,ggd;
             if (prevG!=0){
-              gen extapprox=_evalf(makesequence(ext,alg_digits_evalf),contextptr);
+              gen extapprox=_evalf(makesequence(ext,ALG_EXT_DIGITS),contextptr);
               gen p=_symb2poly(makesequence(syst.back(),vars[i]),contextptr);
               vecteur prevvars(curvars),prevsyst(syst); prevvars.pop_back(); prevsyst.pop_back();
               vecteur nums=vecteur(prevG._VECTptr->begin()+4,prevG._VECTptr->end());
@@ -4710,7 +4717,7 @@ namespace giac {
                 CERR << CLOCK()*1e-6 << " ext_factor end\n";
               // if (f.size()!=d) return 0;
               // select the right factor in f
-              gen vival=_evalf(makesequence(v[i],alg_digits_evalf),contextptr);
+              gen vival=_evalf(makesequence(v[i],ALG_EXT_DIGITS),contextptr);
               gen curval(undef),curerr,err;
               for (int j=0;j<f.size();++j){
                 polynome & pcur=f[j].fact;
@@ -4718,7 +4725,7 @@ namespace giac {
                 if (P.size()!=2)
                   continue;
                 gen cur=-P[1]/P[0];
-                gen curf=_evalf(makesequence(cur,alg_digits_evalf),contextptr);
+                gen curf=_evalf(makesequence(cur,ALG_EXT_DIGITS),contextptr);
                 gen err=abs(curf-vival,contextptr);
                 if (is_undef(curval) && is_greater(1e-10,err,contextptr)){
                   curval=cur;
@@ -4775,7 +4782,7 @@ namespace giac {
           // and replace in E vars[i] by the root in terms of the extension
           gen an(1),extra_div(1); polynome p_content; factorization f;
           gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
-          gen vival=_evalf(makesequence(subst(sep,vars,v,false,contextptr),alg_digits_evalf),contextptr);
+          gen vival=_evalf(makesequence(subst(sep,vars,v,false,contextptr),ALG_EXT_DIGITS),contextptr);
           if (is_greater(abs(vival-ext,contextptr),1e-10,contextptr)){
             if (curpmin._VECTptr->size()>17){
               rootofallowed=false; continue;
@@ -4861,7 +4868,7 @@ namespace giac {
     for (;l<L && c<C;){
       // find pivot
       gen p=res[l][c];
-      if (is_zero(p)){
+      if (algnum_rref_is_zero(p,syst,lv,systnums,v,varapprox,transpositions,chkext,contextptr)){
         for (int i=l+1;i<=L;++i){
           if (i==L){
             if (redtype==2){
@@ -4874,7 +4881,7 @@ namespace giac {
             i=l;
           }
           p=res[i][c];
-          if (!is_zero(p)){
+          if (!algnum_rref_is_zero(p,syst,lv,systnums,v,varapprox,transpositions,chkext,contextptr)){
             res[i]._VECTptr->swap(*res[l]._VECTptr);
             det=-det;
             swapgen(permu[i],permu[l]);
@@ -4911,20 +4918,27 @@ namespace giac {
       }
       ++l; ++c;
     }
-    gen sep=G[1],var,pmin=G[2],diffpmin=G[3]; vecteur pminv;
-    var=lvar(pmin)[0];
-    gen curpmin=_symb2poly(makesequence(pmin,var),contextptr);
-    if (curpmin.type!=_VECT)
-      return false;
-    pminv=*curpmin._VECTptr;
-    gen rexact=subst(sep,vars,v,false,contextptr);
-    gen ext=rexact;
-    gen r=_evalf(makesequence(rexact,alg_digits_evalf),contextptr);
-    vecteur nums=vecteur(G._VECTptr->begin()+4,G._VECTptr->end());
-    // rewrite E as a rational frac in var, replace vars by nums/diffpmin
-    pmin=horner(pminv,var);
+    gen sep,var,pmin,diffpmin,curpmin,rexact,ext,r; vecteur pminv,nums;
+    bool rootofallowed=false;
+    if (!chkext && G.type==_VECT){
+      sep=G[1]; pmin=G[2]; diffpmin=G[3];
+      var=lvar(pmin)[0];
+      curpmin=_symb2poly(makesequence(pmin,var),contextptr);
+      if (curpmin.type!=_VECT)
+        return false;
+      pminv=*curpmin._VECTptr;
+      rexact=subst(sep,vars,v,false,contextptr);
+      if (!rootofallowed){
+        rootofallowed=!lop(v,at_rootof).empty();
+      }
+      ext=rootofallowed?algebraic_EXTension(makevecteur(1,0),pminv):rexact;
+      r=_evalf(makesequence(rexact,ALG_EXT_DIGITS),contextptr);
+      nums=vecteur(G._VECTptr->begin()+4,G._VECTptr->end());
+      // rewrite E as a rational frac in var, replace vars by nums/diffpmin
+      pmin=horner(pminv,var);
+    }
     E=mreduce_back(det,lv,contextptr);
-    if (!algnum_rewritable(E,syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,r,sep,false /* rootofallowed*/,true/* ckdeg2*/,chkext,det,contextptr))
+    if (!algnum_rewritable(E,syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,r,sep,rootofallowed,!rootofallowed/* ckdeg2*/,chkext,det,contextptr))
       return false;
     if (redtype==2)
       return true;
@@ -4935,7 +4949,7 @@ namespace giac {
       for (int j=0;j<C;++j)
         resi[j]=mreduce_back(resi[j],lv,contextptr);
     }
-    if (!algnum_rewritable(res,syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,r,sep,false /* rootofallowed*/,true/* ckdeg2*/,chkext,E,contextptr) || !ckmatrix(E))
+    if (!algnum_rewritable(res,syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,r,sep,rootofallowed,!rootofallowed/* ckdeg2*/,chkext,E,contextptr) || !ckmatrix(E))
       return false;
     res=*E._VECTptr;
     return true;
@@ -4969,7 +4983,7 @@ namespace giac {
         rootofallowed=!lop(v,at_rootof).empty();
       }
       ext=rootofallowed?algebraic_EXTension(makevecteur(1,0),pminv):rexact;
-      r=_evalf(makesequence(rexact,alg_digits_evalf),contextptr);
+      r=_evalf(makesequence(rexact,ALG_EXT_DIGITS),contextptr);
       nums=vecteur(G._VECTptr->begin()+4,G._VECTptr->end());
       // rewrite E as a rational frac in var, replace vars by nums/diffpmin
       pmin=horner(pminv,var);
@@ -4992,7 +5006,7 @@ namespace giac {
         return false;
       pminv=*curpmin._VECTptr;
       gen rexact=subst(sep,vars,v,false,contextptr);
-      gen r=_evalf(makesequence(rexact,alg_digits_evalf),contextptr);
+      gen r=_evalf(makesequence(rexact,ALG_EXT_DIGITS),contextptr);
       if (pmins>2){
         gen curmin=abs(horner(pminv,r),contextptr);
         for (int j=2;j<pmins;j+=2){

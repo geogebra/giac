@@ -3666,6 +3666,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int ABERTH_NMAX=25;
   int ABERTH_NBITSMAX=8192;
   int LAZY_ALG_EXT=0;
+  int ALG_EXT_DIGITS=180;
 #if defined RTOS_THREADX || defined BESTA_OS || defined(KHICAS)
 #ifdef BESTA_OS
   int LIST_SIZE_LIMIT = 100000 ;
