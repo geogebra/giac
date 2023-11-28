@@ -3629,15 +3629,33 @@ namespace giac {
     mreduce(r,d,s,systnums,transpositions,contextptr);
   }
   
-  int algnum_gcd(polynome & a,polynome & b,vecteur & syst,int s,const vecteur & lv,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,const vector< vector<int> > & transpositions,GIAC_CONTEXT);
+  int algnum_gcd(polynome & a,polynome & b,vecteur & syst,int s,const vecteur & lv,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,const vector< vector<int> > & transpositions,ext_param_t & extpar,GIAC_CONTEXT);
+
+  gen algnum_evalf(const gen & g,int digits,GIAC_CONTEXT){
+#ifdef HAVE_LIBMPFI
+    return convert_interval(g,digits*10/3,contextptr);
+#else
+    return _evalf(makesequence(g,digits),contextptr);
+#endif
+  }
+
+  void algnum_increase_precision(const vecteur & varsymb,vecteur & varapprox,ext_param_t & extpar,GIAC_CONTEXT){
+    if (extpar.digits==extpar.max_digits)
+      return;
+    int digits=2*extpar.digits;
+    if (digits>extpar.max_digits)
+      digits=extpar.max_digits;
+    extpar.digits=digits;
+    varapprox=gen2vecteur(algnum_evalf(varsymb,digits,contextptr));
+  }
   
   // check if a is 0, if so modifies syst
-  bool algnum_is_zero(const polynome & a,vecteur & syst,int s,const vecteur & lv,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,const vector< vector<int> > & transpositions,GIAC_CONTEXT){
+  bool algnum_is_zero(const polynome & a,vecteur & syst,int s,const vecteur & lv,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,const vector< vector<int> > & transpositions,ext_param_t & extpar,GIAC_CONTEXT){
     if (s==0)
       return false;
     // first try with num eval
     gen r=peval(a,varapprox,0);
-    if (!is_zero(r,contextptr)
+    if (!is_zero_or_contains(r,contextptr)
         // is_greater(abs(r,contextptr),1e-6,contextptr)
         )
       return false;
@@ -3645,7 +3663,7 @@ namespace giac {
     polynome g(a),h(systnums[s-1]);
     if (s>=2)
       h.reorder(transpositions[s-1]); // since systnums[s-1] is already ready for division and therefore transpositionned
-    if (algnum_gcd(g,h,syst,s,lv,systnums,varsymb,varapprox,transpositions,contextptr)==0){
+    if (algnum_gcd(g,h,syst,s,lv,systnums,varsymb,varapprox,transpositions,extpar,contextptr)==0){
       if (s>=2){
         // recursively check coefficients of a
         g=a;
@@ -3655,12 +3673,15 @@ namespace giac {
           polynome lc(Tnextcoeff<gen>(it,itend));
           lc=lc.untrunc1(0);
           lc.reorder(transpositions[s-1]);
-          if (!algnum_is_zero(lc,syst,s-1,lv,systnums,varsymb,varapprox,transpositions,contextptr))
+          if (!algnum_is_zero(lc,syst,s-1,lv,systnums,varsymb,varapprox,transpositions,extpar,contextptr)){
+            algnum_increase_precision(varsymb,varapprox,extpar,contextptr);
             return false;
+          }
         }
         return true;
       }
-      return false;
+      algnum_increase_precision(varsymb,varapprox,extpar,contextptr);
+      return false; 
     }
     // g is the gcd, if it evals to 0 then replace in syst and systnums
     r=peval(g,varapprox,0);
@@ -3681,10 +3702,10 @@ namespace giac {
     return true;
   }
 
-  bool algnum_rref_is_zero(const gen & a,vecteur & syst,const vecteur & lv,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,const vector< vector<int> > & transpositions,int chkext,GIAC_CONTEXT){
-    if (!chkext || a.type!=_POLY)
+  bool algnum_rref_is_zero(const gen & a,vecteur & syst,const vecteur & lv,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,const vector< vector<int> > & transpositions,ext_param_t & extpar,GIAC_CONTEXT){
+    if (!extpar.chkext || a.type!=_POLY)
       return is_zero(a,contextptr);
-    return algnum_is_zero(*a._POLYptr,syst,a._POLYptr->dim,lv,systnums,varsymb,varapprox,transpositions,contextptr);
+    return algnum_is_zero(*a._POLYptr,syst,a._POLYptr->dim,lv,systnums,varsymb,varapprox,transpositions,extpar,contextptr);
   }
   
   // replace a by gcd of a and b with respect to variable s-1, where variables
@@ -3699,7 +3720,7 @@ namespace giac {
   // a by x3+x1*x2 because the remainder of x3^2-6 by x3-x1*x2 is x1^2*x2^2-6
   // and this reduces to 0
   // This information may be used to simplify syst
-  int algnum_gcd(polynome & a,polynome & b,vecteur & syst,int s,const vecteur & lv,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,const vector< vector<int> > & transpositions,GIAC_CONTEXT){
+  int algnum_gcd(polynome & a,polynome & b,vecteur & syst,int s,const vecteur & lv,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,const vector< vector<int> > & transpositions,ext_param_t & extpar,GIAC_CONTEXT){
     if (a.degree(s-1)<b.degree(s-1))
       a.coord.swap(b.coord);
     int dim=a.dim;
@@ -3738,7 +3759,7 @@ namespace giac {
         polynome lc(Tnextcoeff<gen>(it,itend));
         lc=lc.untrunc1(0);
         if (s-1) lc.reorder(transpositions[s-1]);
-        if (!algnum_is_zero(lc,syst,s-1,lv,systnums,varsymb,varapprox,transpositions,contextptr))
+        if (!algnum_is_zero(lc,syst,s-1,lv,systnums,varsymb,varapprox,transpositions,extpar,contextptr))
           break;
         b.coord.erase(b.coord.begin(),b.coord.begin()+(it-b.coord.begin())); // second argument rewritten, was rem.coord.erase(rem.coord.begin(),it);
         it=b.coord.begin(); itend=b.coord.end();
@@ -3765,17 +3786,17 @@ namespace giac {
       d=mreduce_back(*d._POLYptr,lv,contextptr);
     return n/d;
   }
-  gen algnum_reduce(polynome & r,vecteur & syst,const vecteur & lv,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,const vector< vector<int> > & transpositions,int chkext,GIAC_CONTEXT){
+  gen algnum_reduce(polynome & r,vecteur & syst,const vecteur & lv,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,const vector< vector<int> > & transpositions,ext_param_t & extpar,GIAC_CONTEXT){
     polynome d(r.dim);
-    if (chkext){
+    if (extpar.chkext){
       polynome r_orig(r);
       for (;;){
         r=r_orig;
         mreduce(r,d,systnums,transpositions,contextptr);
         if (r.coord.empty())
           break;
-        if (!algnum_is_zero(d,syst,syst.size(),lv,systnums,varsymb,varapprox,transpositions,contextptr)){
-          if (algnum_is_zero(r,syst,syst.size(),lv,systnums,varsymb,varapprox,transpositions,contextptr))
+        if (!algnum_is_zero(d,syst,syst.size(),lv,systnums,varsymb,varapprox,transpositions,extpar,contextptr)){
+          if (algnum_is_zero(r,syst,syst.size(),lv,systnums,varsymb,varapprox,transpositions,extpar,contextptr))
             r.coord.clear();
           break;
         }
@@ -3947,7 +3968,7 @@ namespace giac {
   }
 
   // returns -1 on error, 0 on undef, 1 otherwise
-  int algnum_lazy_convert(const gen & x,vecteur & syst,const vecteur & vars,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,vector< vector<int> > & transpositions,int chkext,vecteur &lv,gen & N,gen & D,GIAC_CONTEXT){
+  int algnum_lazy_convert(const gen & x,vecteur & syst,const vecteur & vars,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,vector< vector<int> > & transpositions,ext_param_t & extpar,vecteur &lv,gen & N,gen & D,GIAC_CONTEXT){
     int s=syst.size();
     if (x.type==_FRAC){
       N=x._FRACptr->num;
@@ -3958,7 +3979,7 @@ namespace giac {
       const vecteur & v =*x._VECTptr;
       vecteur Nv(v.size()),Dv(v.size());
       for (int i=0;i<v.size();++i){
-        int res=algnum_lazy_convert(v[i],syst,vars,systnums,varsymb,varapprox,transpositions,chkext,lv,N,D,contextptr);
+        int res=algnum_lazy_convert(v[i],syst,vars,systnums,varsymb,varapprox,transpositions,extpar,lv,N,D,contextptr);
         if (res<=0)
           return res;
         Nv[i]=N;
@@ -3983,11 +4004,11 @@ namespace giac {
         gen & f=x._SYMBptr->feuille;
         if (f.type==_VECT && f._VECTptr->size()==2 && f._VECTptr->back().type==_INT_){
           int n=f._VECTptr->back().val;
-          int res=algnum_lazy_convert(f._VECTptr->front(),syst,vars,systnums,varsymb,varapprox,transpositions,chkext,lv,N,D,contextptr);
+          int res=algnum_lazy_convert(f._VECTptr->front(),syst,vars,systnums,varsymb,varapprox,transpositions,extpar,lv,N,D,contextptr);
           if (res<=0)
             return res;
           if (n<0){
-            if (chkext && N.type==_POLY && algnum_is_zero(*N._POLYptr,syst,syst.size(),vars,systnums,varsymb,varapprox,transpositions,contextptr))
+            if (extpar.chkext && N.type==_POLY && algnum_is_zero(*N._POLYptr,syst,syst.size(),vars,systnums,varsymb,varapprox,transpositions,extpar,contextptr))
               return 0;
             swapgen(N,D);
             n=-n;
@@ -4002,7 +4023,7 @@ namespace giac {
           return 1;
         }
       }
-      int res=algnum_lazy_convert(x._SYMBptr->feuille,syst,vars,systnums,varsymb,varapprox,transpositions,chkext,lv,N,D,contextptr);
+      int res=algnum_lazy_convert(x._SYMBptr->feuille,syst,vars,systnums,varsymb,varapprox,transpositions,extpar,lv,N,D,contextptr);
       lazy_dbg(x._SYMBptr->feuille,N,D,vars,varapprox,contextptr);
       if (res<=0)
         return res;
@@ -4020,7 +4041,7 @@ namespace giac {
         return 1;
       }
       if (x._SYMBptr->sommet==at_inv){
-        if (chkext && N.type==_POLY && algnum_is_zero(*N._POLYptr,syst,syst.size(),vars,systnums,varsymb,varapprox,transpositions,contextptr))
+        if (extpar.chkext && N.type==_POLY && algnum_is_zero(*N._POLYptr,syst,syst.size(),vars,systnums,varsymb,varapprox,transpositions,extpar,contextptr))
           return 0;
         swapgen(N,D);
         return 1;
@@ -4042,7 +4063,7 @@ namespace giac {
   }
 
   // returns 0 if syst not polynomial, -1 if x not polynomial, 1 otherwise
-  int prepare(const gen & x,vecteur & syst,const vecteur & vars,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,vector< vector<int> > & transpositions,int chkext,vecteur &lv,polynome & n,gen & D,GIAC_CONTEXT){
+  int prepare(const gen & x,vecteur & syst,const vecteur & vars,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,vector< vector<int> > & transpositions,ext_param_t & extpar,vecteur &lv,polynome & n,gen & D,GIAC_CONTEXT){
     lv=vars;
     lvar(x,lv);
     lvar(syst,lv);
@@ -4064,7 +4085,7 @@ namespace giac {
     // e2r call should be replaced using reduction by syst
     gen N; int res=-1;
     if (1)
-      res=algnum_lazy_convert(x,syst,vars,systnums,varsymb,varapprox,transpositions,chkext,lv,N,D,contextptr);
+      res=algnum_lazy_convert(x,syst,vars,systnums,varsymb,varapprox,transpositions,extpar,lv,N,D,contextptr);
     if (res<=0){
       gen X=e2r(x,lv,contextptr);
       fxnd(X,N,D);
@@ -4078,18 +4099,18 @@ namespace giac {
     return 1;
   }
 
-  gen mreduce_gen(const gen & x,vecteur & syst,const vecteur & vars,const vecteur & v,vecteur & varapprox,int chkext,GIAC_CONTEXT){
+  gen mreduce_gen(const gen & x,vecteur & syst,const vecteur & vars,const vecteur & v,vecteur & varapprox,ext_param_t & extpar,GIAC_CONTEXT){
     vector<polynome> systnums; vecteur lv; vector< vector<int> > transpositions; polynome n; gen D;
-    if (prepare(x,syst,vars,systnums,v,varapprox,transpositions,chkext,lv,n,D,contextptr)<=0)
+    if (prepare(x,syst,vars,systnums,v,varapprox,transpositions,extpar,lv,n,D,contextptr)<=0)
       return x;
     // now reduce
     if (D.type==_POLY)
-      D=algnum_reduce(*D._POLYptr,syst,lv,systnums,v,varapprox,transpositions,chkext,contextptr);
-    gen N=algnum_reduce(n,syst,lv,systnums,v,varapprox,transpositions,chkext,contextptr);
+      D=algnum_reduce(*D._POLYptr,syst,lv,systnums,v,varapprox,transpositions,extpar,contextptr);
+    gen N=algnum_reduce(n,syst,lv,systnums,v,varapprox,transpositions,extpar,contextptr);
     return N/D;
   }
 
-  gen algnum_reduce_rref(const gen & x,vecteur & syst,const vecteur & lv,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,const vector< vector<int> > & transpositions,int chkext, GIAC_CONTEXT){
+  gen algnum_reduce_rref(const gen & x,vecteur & syst,const vecteur & lv,vector<polynome> & systnums,const vecteur & varsymb,vecteur & varapprox,const vector< vector<int> > & transpositions,ext_param_t & extpar, GIAC_CONTEXT){
     gen N,D;
     fxnd(x,N,D);
     if (N.type!=_POLY && D.type!=_POLY)
@@ -4178,7 +4199,7 @@ namespace giac {
   }
   
   void lrdm(modpoly & p,int n);
-  bool algnum_rewritable(const gen & E_,vecteur & syst,const vecteur &vars,const vecteur & v,vecteur & varapprox,const vecteur & nums,const gen & diffpmin,const vecteur & pminv,const gen & pmin,const gen & var, const gen& ext,const gen & extapprox,const gen & sep,bool rootofallowed,bool ckdeg2,int chkext,gen & e,GIAC_CONTEXT){
+  bool algnum_rewritable(const gen & E_,vecteur & syst,const vecteur &vars,const vecteur & v,vecteur & varapprox,const vecteur & nums,const gen & diffpmin,const vecteur & pminv,const gen & pmin,const gen & var, const gen& ext,const gen & extapprox,const gen & sep,bool rootofallowed,bool ckdeg2,ext_param_t & extpar,gen & e,GIAC_CONTEXT){
     // DOIT should extract denominator of nums?
     if (E_.type==_VECT){
       int s=E_._VECTptr->size();
@@ -4186,7 +4207,7 @@ namespace giac {
       vecteur ans(Ev);
       for (int i=0;i<s;++i){
         gen ee;
-        if (!algnum_rewritable(Ev[i],syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,extapprox,sep,rootofallowed,ckdeg2,chkext,ee,contextptr))
+        if (!algnum_rewritable(Ev[i],syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,extapprox,sep,rootofallowed,ckdeg2,extpar,ee,contextptr))
           return false;
         ans[i]=ee;
       }
@@ -4197,8 +4218,8 @@ namespace giac {
     gen E(E_),En,Ed;
     if (1){
       // DOIT should reduce E wrt syst?
-      gen EE=mreduce_gen(E,syst,vars,v,varapprox,chkext,contextptr);
-      if (chkext){
+      gen EE=mreduce_gen(E,syst,vars,v,varapprox,extpar,contextptr);
+      if (extpar.chkext){
         e=subst(EE,vars,v,false,contextptr);
         return true;
       }
@@ -4214,7 +4235,7 @@ namespace giac {
         En=EE[0]; Ed=EE[1];
         if (ckdeg2 && Ed.type==_VECT){
           // detect if E is solution of a 2nd order equation
-          gen EE2=mreduce_gen(pow(E,2,contextptr),syst,vars,v,varapprox,chkext,contextptr);
+          gen EE2=mreduce_gen(pow(E,2,contextptr),syst,vars,v,varapprox,extpar,contextptr);
           EE2=rur_subst(EE2,vars,nums,diffpmin,pminv,contextptr);
           if (EE2.type==_VECT && EE2[1].type==_VECT){
             gen Eapprox=horner(En,extapprox)/horner(Ed,extapprox);
@@ -4233,7 +4254,7 @@ namespace giac {
                 if (is_zero(chk)){
                   vecteur sols=protect_solve((k[2]*vx_var+k[1])*vx_var+k[0],*vx_var._IDNTptr,1,contextptr);
                   if (sols.size()==2){
-                    gen sol0=_evalf(makesequence(sols[0],ALG_EXT_DIGITS),contextptr),sol1=_evalf(makesequence(sols[1],ALG_EXT_DIGITS),contextptr);
+                    gen sol0=_evalf(makesequence(sols[0],extpar.digits),contextptr),sol1=_evalf(makesequence(sols[1],extpar.digits),contextptr);
                     if (is_greater(abs(sol0-Eapprox,contextptr),abs(sol1-Eapprox,contextptr),contextptr))
                       e=sols[1];
                     else
@@ -4243,7 +4264,7 @@ namespace giac {
                 }
               } // end m.size()==1
               // try bisquare
-              gen EE4=mreduce_gen(pow(E,4,contextptr),syst,vars,v,varapprox,chkext,contextptr);
+              gen EE4=mreduce_gen(pow(E,4,contextptr),syst,vars,v,varapprox,extpar,contextptr);
               EE4=rur_subst(EE4,vars,nums,diffpmin,pminv,contextptr);
               if (EE4.type==_VECT && EE4[1].type==_VECT){
                 gen En4=EE4[0],Ed4=EE4[1];
@@ -4262,7 +4283,7 @@ namespace giac {
                       vecteur sols=protect_solve((k[2]*vx_var+k[1])*vx_var+k[0],*vx_var._IDNTptr,1,contextptr);
                       if (sols.size()==2){
                         gen E2approx=horner(En2,extapprox)/horner(Ed2,extapprox);
-                        gen sol0=_evalf(makesequence(sols[0],ALG_EXT_DIGITS),contextptr),sol1=_evalf(makesequence(sols[1],ALG_EXT_DIGITS),contextptr);
+                        gen sol0=_evalf(makesequence(sols[0],extpar.digits),contextptr),sol1=_evalf(makesequence(sols[1],extpar.digits),contextptr);
                         if (is_greater(abs(sol0-E2approx,contextptr),abs(sol1-E2approx,contextptr),contextptr))
                           e=sqrt(sols[1],contextptr);
                         else
@@ -4349,7 +4370,7 @@ namespace giac {
   // symbolic identifiers contained in list vars (effective values in v)
   // where vars satisfy syst
   // G is a rur for syst
-  int algnum_convert(const gen & e_,gen & E,gen & G,vecteur & syst,vecteur & vars,vecteur & v,vecteur & varapprox,int & chkext,GIAC_CONTEXT){
+  int algnum_convert(const gen & e_,gen & E,gen & G,vecteur & syst,vecteur & vars,vecteur & v,vecteur & varapprox,ext_param_t & extpar,GIAC_CONTEXT){
     double oldeps=epsilon(contextptr);
     // return 0: // until it's fixed
     gen e(e_);
@@ -4387,8 +4408,8 @@ namespace giac {
         )
       return 0;
     v=sort2(v);
-    if (chkext)
-      varapprox=gen2vecteur(_evalf(makesequence(v,ALG_EXT_DIGITS),contextptr));
+    if (extpar.chkext)
+      varapprox=gen2vecteur(algnum_evalf(v,extpar.digits,contextptr));
     else
       varapprox=v;
     epsilon(oldeps,contextptr);
@@ -4470,12 +4491,12 @@ namespace giac {
         debug_infolevel=dbg;
         return 0;
       }
-      if (!chkext && algext_order>MAX_COMMON_ALG_EXT_ORDER_SIZE){
-        chkext=algext_order;
-        varapprox=gen2vecteur(_evalf(makesequence(v,ALG_EXT_DIGITS),contextptr));
+      if (!extpar.chkext && algext_order>MAX_COMMON_ALG_EXT_ORDER_SIZE){
+        extpar.chkext=algext_order;
+        varapprox=gen2vecteur(algnum_evalf(v,extpar.digits,contextptr));
         epsilon(oldeps,contextptr);
       }
-      if ( (!chkext || algext_order<chkext) && i){
+      if ( (!extpar.chkext || algext_order<extpar.chkext) && i){
 #if 1 // if changed to 0, #if below must be changed too
         // check if the last extension is required
         vecteur prevvars(vars.begin(),vars.begin()+i);
@@ -4500,13 +4521,13 @@ namespace giac {
         }
         gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
         gen ggn,ggd;
-        gen extapprox=_evalf(makesequence(ext,ALG_EXT_DIGITS),contextptr);
+        gen extapprox=_evalf(makesequence(ext,extpar.digits),contextptr);
         epsilon(oldeps,contextptr);
         gen p=_symb2poly(makesequence(syst.back(),vars[i]),contextptr);
         if (G.type==_VECT){
           vecteur nums=vecteur(G._VECTptr->begin()+4,G._VECTptr->end());
           vecteur pminv=*curpmin._VECTptr;
-          if (algnum_rewritable(p,prevsyst,prevvars,vecteur(v.begin(),v.begin()+i),varapprox,nums,G[3],pminv,pmin,var,ext,extapprox,sep,true/* rootof allowed */,false/* ckdeg2*/,chkext,ggn,contextptr) && ggn.type==_VECT){
+          if (algnum_rewritable(p,prevsyst,prevvars,vecteur(v.begin(),v.begin()+i),varapprox,nums,G[3],pminv,pmin,var,ext,extapprox,sep,true/* rootof allowed */,false/* ckdeg2*/,extpar,ggn,contextptr) && ggn.type==_VECT){
             ggn=poly12polynome(*ggn._VECTptr);
           }
         }
@@ -4533,12 +4554,12 @@ namespace giac {
           CERR << CLOCK()*1e-6 << " ext_factor end\n";
         if (f.size()>1){
           // select the right factor in f
-          gen vival=_evalf(makesequence(v[i],ALG_EXT_DIGITS),contextptr);
+          gen vival=_evalf(makesequence(v[i],extpar.digits),contextptr);
           gen curerr(undef); vecteur curP;
           for (int j=0;j<f.size();++j){
             polynome & pcur=f[j].fact;
             modpoly P=polynome2poly1(pcur,1);
-            modpoly Papprox=gen2vecteur(_evalf(makesequence(P,ALG_EXT_DIGITS),contextptr));
+            modpoly Papprox=gen2vecteur(_evalf(makesequence(P,extpar.digits),contextptr));
             gen err=abs(horner(Papprox,vival),contextptr);
             if (is_undef(curerr) && is_greater(1e-10,err,contextptr)){
               curP=P;
@@ -4637,7 +4658,7 @@ namespace giac {
               return 0;
             pminv=*curpmin._VECTptr;
             gen rexact=subst(sep,vars,v,false,contextptr);
-            gen r=_evalf(makesequence(rexact,ALG_EXT_DIGITS),contextptr);
+            gen r=_evalf(makesequence(rexact,extpar.digits),contextptr);
             if (pmins>2){
               gen curmin=abs(horner(pminv,r),contextptr);
               for (int j=2;j<pmins;j+=2){
@@ -4695,7 +4716,7 @@ namespace giac {
             gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
             gen ggn,ggd;
             if (prevG!=0){
-              gen extapprox=_evalf(makesequence(ext,ALG_EXT_DIGITS),contextptr);
+              gen extapprox=_evalf(makesequence(ext,extpar.digits),contextptr);
               gen p=_symb2poly(makesequence(syst.back(),vars[i]),contextptr);
               vecteur prevvars(curvars),prevsyst(syst); prevvars.pop_back(); prevsyst.pop_back();
               vecteur nums=vecteur(prevG._VECTptr->begin()+4,prevG._VECTptr->end());
@@ -4721,7 +4742,7 @@ namespace giac {
                 CERR << CLOCK()*1e-6 << " ext_factor end\n";
               // if (f.size()!=d) return 0;
               // select the right factor in f
-              gen vival=_evalf(makesequence(v[i],ALG_EXT_DIGITS),contextptr);
+              gen vival=_evalf(makesequence(v[i],extpar.digits),contextptr);
               gen curval(undef),curerr,err;
               for (int j=0;j<f.size();++j){
                 polynome & pcur=f[j].fact;
@@ -4729,7 +4750,7 @@ namespace giac {
                 if (P.size()!=2)
                   continue;
                 gen cur=-P[1]/P[0];
-                gen curf=_evalf(makesequence(cur,ALG_EXT_DIGITS),contextptr);
+                gen curf=_evalf(makesequence(cur,extpar.digits),contextptr);
                 gen err=abs(curf-vival,contextptr);
                 if (is_undef(curval) && is_greater(1e-10,err,contextptr)){
                   curval=cur;
@@ -4786,7 +4807,7 @@ namespace giac {
           // and replace in E vars[i] by the root in terms of the extension
           gen an(1),extra_div(1); polynome p_content; factorization f;
           gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
-          gen vival=_evalf(makesequence(subst(sep,vars,v,false,contextptr),ALG_EXT_DIGITS),contextptr);
+          gen vival=_evalf(makesequence(subst(sep,vars,v,false,contextptr),extpar.digits),contextptr);
           if (is_greater(abs(vival-ext,contextptr),1e-10,contextptr)){
             if (curpmin._VECTptr->size()>17){
               rootofallowed=false; continue;
@@ -4851,12 +4872,12 @@ namespace giac {
   bool algnum_rref(const matrice & a, matrice & res, vecteur & pivots, gen & det,int redtype,GIAC_CONTEXT){
     gen E,G;
     vecteur syst,vars,v,varapprox;
-    int chkext=LAZY_ALG_EXT;
-    int n=algnum_convert(a,E,G,syst,vars,v,varapprox,chkext,contextptr);
+    ext_param_t extpar={LAZY_ALG_EXT,ALG_EXT_DIGITS,4096};
+    int n=algnum_convert(a,E,G,syst,vars,v,varapprox,extpar,contextptr);
     if (n<2)
       return false;
     vector<polynome> systnums; vecteur lv; vector< vector<int> > transpositions; polynome tmpn; gen tmpD;
-    if (!prepare(E[0][0],syst,vars,systnums,v,varapprox,transpositions,chkext,lv,tmpn,tmpD,contextptr))
+    if (!prepare(E[0][0],syst,vars,systnums,v,varapprox,transpositions,extpar,lv,tmpn,tmpD,contextptr))
       return false;
     gen EE=e2r(E,lv,contextptr),EN,ED;
     fxnd(EE,EN,ED);
@@ -4872,7 +4893,7 @@ namespace giac {
     for (;l<L && c<C;){
       // find pivot
       gen p=res[l][c];
-      if (algnum_rref_is_zero(p,syst,lv,systnums,v,varapprox,transpositions,chkext,contextptr)){
+      if (algnum_rref_is_zero(p,syst,lv,systnums,v,varapprox,transpositions,extpar,contextptr)){
         for (int i=l+1;i<=L;++i){
           if (i==L){
             if (redtype==2){
@@ -4885,7 +4906,7 @@ namespace giac {
             i=l;
           }
           p=res[i][c];
-          if (!algnum_rref_is_zero(p,syst,lv,systnums,v,varapprox,transpositions,chkext,contextptr)){
+          if (!algnum_rref_is_zero(p,syst,lv,systnums,v,varapprox,transpositions,extpar,contextptr)){
             res[i]._VECTptr->swap(*res[l]._VECTptr);
             det=-det;
             swapgen(permu[i],permu[l]);
@@ -4896,7 +4917,7 @@ namespace giac {
           break;
       }
       pivots.push_back(p);
-      det=algnum_reduce_rref(p*det,syst,lv,systnums,v,varapprox,transpositions,chkext,contextptr);
+      det=algnum_reduce_rref(p*det,syst,lv,systnums,v,varapprox,transpositions,extpar,contextptr);
       fxnd(p,EN,ED);
       p=ED/EN;
       // reduce line (0 or l+1) to L
@@ -4906,25 +4927,25 @@ namespace giac {
           continue;
         vecteur & curline=*res[i]._VECTptr;
         gen cur=p*curline[c];
-        cur=algnum_reduce_rref(cur,syst,lv,systnums,v,varapprox,transpositions,chkext,contextptr);
+        cur=algnum_reduce_rref(cur,syst,lv,systnums,v,varapprox,transpositions,extpar,contextptr);
         if (redtype<2)
           curline[c]=0;
         else if (redtype==3)
           curline[c]=cur;
         for (int j=c+1;j<C;++j){
-          curline[j]=algnum_reduce_rref(curline[j]-cur*pivotline[j],syst,lv,systnums,v,varapprox,transpositions,chkext,contextptr);
+          curline[j]=algnum_reduce_rref(curline[j]-cur*pivotline[j],syst,lv,systnums,v,varapprox,transpositions,extpar,contextptr);
         }
       }
       if (redtype==0){ // divide pivotline by pivot
         for (int j=c+1;j<C;++j)
-          pivotline[j]=algnum_reduce_rref(p*pivotline[j],syst,lv,systnums,v,varapprox,transpositions,chkext,contextptr);
+          pivotline[j]=algnum_reduce_rref(p*pivotline[j],syst,lv,systnums,v,varapprox,transpositions,extpar,contextptr);
         pivotline[c]=1;
       }
       ++l; ++c;
     }
     gen sep,var,pmin,diffpmin,curpmin,rexact,ext,r; vecteur pminv,nums;
     bool rootofallowed=false;
-    if (!chkext && G.type==_VECT){
+    if (!extpar.chkext && G.type==_VECT){
       sep=G[1]; pmin=G[2]; diffpmin=G[3];
       var=lvar(pmin)[0];
       curpmin=_symb2poly(makesequence(pmin,var),contextptr);
@@ -4936,13 +4957,13 @@ namespace giac {
         rootofallowed=!lop(v,at_rootof).empty();
       }
       ext=rootofallowed?algebraic_EXTension(makevecteur(1,0),pminv):rexact;
-      r=_evalf(makesequence(rexact,ALG_EXT_DIGITS),contextptr);
+      r=_evalf(makesequence(rexact,extpar.digits),contextptr);
       nums=vecteur(G._VECTptr->begin()+4,G._VECTptr->end());
       // rewrite E as a rational frac in var, replace vars by nums/diffpmin
       pmin=horner(pminv,var);
     }
     E=mreduce_back(det,lv,contextptr);
-    if (!algnum_rewritable(E,syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,r,sep,rootofallowed,!rootofallowed/* ckdeg2*/,chkext,det,contextptr))
+    if (!algnum_rewritable(E,syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,r,sep,rootofallowed,!rootofallowed/* ckdeg2*/,extpar,det,contextptr))
       return false;
     if (redtype==2)
       return true;
@@ -4953,7 +4974,7 @@ namespace giac {
       for (int j=0;j<C;++j)
         resi[j]=mreduce_back(resi[j],lv,contextptr);
     }
-    if (!algnum_rewritable(res,syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,r,sep,rootofallowed,!rootofallowed/* ckdeg2*/,chkext,E,contextptr) || !ckmatrix(E))
+    if (!algnum_rewritable(res,syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,r,sep,rootofallowed,!rootofallowed/* ckdeg2*/,extpar,E,contextptr) || !ckmatrix(E))
       return false;
     res=*E._VECTptr;
     return true;
@@ -4963,11 +4984,11 @@ namespace giac {
   bool algnum_normal(gen & e,GIAC_CONTEXT){
     gen E,G;
     vecteur syst,vars,v,varapprox;
-    int chkext=LAZY_ALG_EXT;
-    if (!algnum_convert(e,E,G,syst,vars,v,varapprox,chkext,contextptr))
+    ext_param_t extpar={LAZY_ALG_EXT,ALG_EXT_DIGITS,4096};
+    if (!algnum_convert(e,E,G,syst,vars,v,varapprox,extpar,contextptr))
       return false;
     int n=syst.size();
-    if (chkext==0 && n>9){
+    if (extpar.chkext==0 && n>9){
       *logptr(contextptr) << "Algebraic extension degree too large!\n";
       e=simplifier(ratnormal(e,contextptr),contextptr);
       return true;
@@ -4975,7 +4996,7 @@ namespace giac {
     bool rootofallowed=false;
 #if 1
     gen sep,var,pmin,diffpmin,curpmin,rexact,ext,r; vecteur pminv,nums;
-    if (!chkext && G.type==_VECT){
+    if (!extpar.chkext && G.type==_VECT){
       sep=G[1]; pmin=G[2]; diffpmin=G[3];
       var=lvar(pmin)[0];
       curpmin=_symb2poly(makesequence(pmin,var),contextptr);
@@ -4987,12 +5008,12 @@ namespace giac {
         rootofallowed=!lop(v,at_rootof).empty();
       }
       ext=rootofallowed?algebraic_EXTension(makevecteur(1,0),pminv):rexact;
-      r=_evalf(makesequence(rexact,ALG_EXT_DIGITS),contextptr);
+      r=_evalf(makesequence(rexact,extpar.digits),contextptr);
       nums=vecteur(G._VECTptr->begin()+4,G._VECTptr->end());
       // rewrite E as a rational frac in var, replace vars by nums/diffpmin
       pmin=horner(pminv,var);
     }
-    if (!algnum_rewritable(E,syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,r,sep,rootofallowed,!rootofallowed/* ckdeg2*/,chkext,e,contextptr))
+    if (!algnum_rewritable(E,syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,r,sep,rootofallowed,!rootofallowed/* ckdeg2*/,extpar,e,contextptr))
       return false;
     return true;
 #else
@@ -5010,7 +5031,7 @@ namespace giac {
         return false;
       pminv=*curpmin._VECTptr;
       gen rexact=subst(sep,vars,v,false,contextptr);
-      gen r=_evalf(makesequence(rexact,ALG_EXT_DIGITS),contextptr);
+      gen r=_evalf(makesequence(rexact,extpar.digits),contextptr);
       if (pmins>2){
         gen curmin=abs(horner(pminv,r),contextptr);
         for (int j=2;j<pmins;j+=2){

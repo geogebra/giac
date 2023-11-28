@@ -33,6 +33,11 @@ namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
   struct unary_function_ptr;
+  struct ext_param_t {
+    int chkext;
+    int digits;
+    int max_digits;
+  };
   // helper for symbolic functions working on expressions
   // if the user enters a function instead of an expression
   // Example of use in _factor

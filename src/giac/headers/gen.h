@@ -1001,6 +1001,7 @@ namespace giac {
 
 
   bool is_zero(const gen & a,GIAC_CONTEXT0);
+  bool is_zero_or_contains(const gen & g,GIAC_CONTEXT); // for intervals
   bool is_exactly_zero(const gen & a);
   bool is_one(const gen & a);
   inline bool is_exactly_one(const gen & a){ return is_one(a); }

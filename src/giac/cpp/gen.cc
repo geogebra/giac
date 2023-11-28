@@ -4266,10 +4266,12 @@ namespace giac {
   }
 
   // workaround for intervals
-  static bool is_zero_or_contains(const gen & g,GIAC_CONTEXT){
+  bool is_zero_or_contains(const gen & g,GIAC_CONTEXT){
 #ifdef NO_RTTI
     return is_zero(g,contextptr);
 #else
+    if (g.type==_CPLX)
+      return is_zero_or_contains(*g._CPLXptr,contextptr) && is_zero_or_contains(*(g._CPLXptr+1),contextptr);
     if (is_zero(g,contextptr))
       return true;
     if (g.type!=_REAL)
