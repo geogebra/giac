@@ -9854,6 +9854,7 @@ namespace giac {
     case _CPLX: 
       {
 	gen a1=abs(*this,context0),a2=abs(other,context0);
+	//gen a1=squarenorm(context0),a2=other.squarenorm(context0);
 	if (a1!=a2)
 	  return is_strictly_greater(a1,a2,context0);
 	a1=re(context0);

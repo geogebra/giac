@@ -2775,9 +2775,7 @@ namespace giac {
   }
 
   vecteur proot(const vecteur & v,double & eps,int & rprec,GIAC_CONTEXT){
-    //double oldeps=epsilon(contextptr);
     vecteur res(proot(v,eps,rprec,true,contextptr));
-    //epsilon(oldeps,contextptr);
     return res;
   }
 
@@ -6379,10 +6377,29 @@ namespace giac {
     return true;
   }
 
+  bool is_cinteger_vecteur(const vecteur & m){
+    const_iterateur it=m.begin(),itend=m.end();
+    for (;it!=itend;++it){
+      if (it->type==_INT_) continue;
+      if (it->type==_ZINT) continue;
+      if (it->type==_CPLX && is_integer(*it->_CPLXptr) && is_integer(*(it->_CPLXptr+1))) continue;
+      return false;
+      // if (!is_integer(*it)) return false;
+    }
+    return true;
+  }
+
   bool is_integer_matrice(const matrice & m,bool intonly){
     const_iterateur it=m.begin(),itend=m.end();
     for (;it!=itend;++it)
       if (it->type!=_VECT || !is_integer_vecteur(*it->_VECTptr,intonly)) return false;
+    return true;
+  }
+
+  bool is_cinteger_matrice(const matrice & m){
+    const_iterateur it=m.begin(),itend=m.end();
+    for (;it!=itend;++it)
+      if (it->type!=_VECT || !is_cinteger_vecteur(*it->_VECTptr)) return false;
     return true;
   }
 
@@ -15265,6 +15282,28 @@ namespace giac {
   // return a vector which elements are the basis of the ker of a
   bool mker(const matrice & a,vecteur & v,int algorithm,GIAC_CONTEXT){
     v.clear();
+    if (is_cinteger_matrice(a)){ // quick modular check that ker is not empty
+      int L=a.size(),C=a.front()._VECTptr->size();
+      vector< vector<int> > A,V;
+      double p=((1LL<<62)-giac_rand(contextptr))/L/L;
+      p=std::sqrt(p)-1e5;
+      int modulo=nextprime(int(p)).val;
+      gen az(a);
+      if (!is_integer_matrice(a)){
+        while (modulo%4!=1){
+          modulo=nextprime(modulo+1).val;
+        }
+        int i=modsqrtminus1(modulo);
+        gen ar,ai;
+        reim(az,ar,ai,contextptr);
+        az=ar+i*ai;
+      }
+      vecteur2vectvector_int(*az._VECTptr,modulo,A);
+      if (mker(A,V,modulo)){
+        if (V.empty())
+          return true;
+      }
+    }
     gen det;
     vecteur pivots;
     matrice res;

@@ -4251,11 +4251,11 @@ namespace giac {
             int s=giacmax(x0.size(),giacmax(x1.size(),x2.size()));
             lrdm(x0,s); lrdm(x1,s); lrdm(x2,s);
             if (s>2){
-              matrice m=makevecteur(makevecteur(x0[0],x1[0],x2[0]),makevecteur(x0[1],x1[1],x2[1]),makevecteur(x0[2],x1[2],x2[2]));
+              matrice m=makevecteur(makevecteur(x0[s-1],x1[s-1],x2[s-1]),makevecteur(x0[s-2],x1[s-2],x2[s-2]),makevecteur(x0[s-3],x1[s-3],x2[s-3]));
               if (s>3)
-                m.push_back(makevecteur(x0[3],x1[3],x2[3]));
+                m.push_back(makevecteur(x0[s-4],x1[s-4],x2[s-4]));
               if (s>4)
-                m.push_back(makevecteur(x0[4],x1[4],x2[4]));
+                m.push_back(makevecteur(x0[s-5],x1[s-5],x2[s-5]));
               m=mker(m,contextptr);
               if (m.size()==1){
                 vecteur k=gen2vecteur(m[0]);
@@ -4272,28 +4272,63 @@ namespace giac {
                   }
                 }
               } // end m.size()==1
-              // try bisquare
               gen EE3=mreduce_gen(pow(E,3,contextptr),syst,vars,v,varapprox,extpar,contextptr);
               EE3=rur_subst(EE3,vars,nums,diffpmin,pminv,contextptr);
-              gen EE4=mreduce_gen(pow(E,4,contextptr),syst,vars,v,varapprox,extpar,contextptr);
-              EE4=rur_subst(EE4,vars,nums,diffpmin,pminv,contextptr);
-              if (EE4.type==_VECT && EE4[1].type==_VECT && EE3.type==_VECT && EE3[1].type==_VECT){
-                gen En3=EE3[0],Ed3=EE3[1];
+              gen En3,Ed3;
+              gen Ed12=Ed*Ed2 % pminv;
+              bool chk4=true;
+              if (EE3.type==_VECT && EE3[1].type==_VECT){
+                // 3rd order check
+                En3=EE3[0],Ed3=EE3[1];
+                vecteur x0=gen2vecteur(Ed12*Ed3 % pminv),x1=gen2vecteur(En*Ed2*Ed3 % pminv),x2=gen2vecteur(En2*Ed*Ed3 % pminv),x3=gen2vecteur(En3*Ed12 % pminv);
+                
+                int s=giacmax(giacmax(x0.size(),x1.size()),giacmax(x2.size(),x3.size()));
+                lrdm(x0,s); lrdm(x1,s); lrdm(x2,s); lrdm(x3,s); 
+                if (s>2){
+                  matrice m=makevecteur(makevecteur(x0[s-1],x1[s-1],x2[s-1],x3[s-1]),makevecteur(x0[s-2],x1[s-2],x2[s-2],x3[s-2]),makevecteur(x0[s-3],x1[s-3],x2[s-3],x3[s-3]));
+                  if (s>3)
+                    m.push_back(makevecteur(x0[s-4],x1[s-4],x2[s-4],x3[s-4]));
+                  if (s>4)
+                    m.push_back(makevecteur(x0[s-5],x1[s-5],x2[s-5],x3[s-5]));
+                  m=mker(m,contextptr);
+                  if (m.size()==1){
+                    vecteur k=gen2vecteur(m[0]);
+                    gen chk=dotvecteur(k,makevecteur(x0,x1,x2,x3));
+                    if (is_zero(chk)){
+                      reverse(k.begin(),k.end());
+                      lcmdeno(k,chk,contextptr);
+                      negmodpoly(k,k);
+                      gen pmin=symb_horner(k,vx_var);
+                      *logptr(contextptr) << "Root of " << pmin << "\n";
+                      chk4=false; // could be rewritten with Cardan?
+                    }
+                  }
+                }
+              }
+              // try bisquare
+              gen EE4;
+              if (chk4){
+                EE4=mreduce_gen(pow(E,4,contextptr),syst,vars,v,varapprox,extpar,contextptr);
+                EE4=rur_subst(EE4,vars,nums,diffpmin,pminv,contextptr);
+              }
+              if (chk4 && EE4.type==_VECT && EE4[1].type==_VECT && EE3.type==_VECT && EE3[1].type==_VECT){
                 gen En4=EE4[0],Ed4=EE4[1];
                 gen Ed34=Ed3*Ed4 % pminv;
-                gen Ed12=Ed*Ed2 % pminv;
                 vecteur x0=gen2vecteur(Ed12*Ed34 % pminv),x1=gen2vecteur(En*Ed2*Ed34 % pminv),x2=gen2vecteur(En2*Ed*Ed34 % pminv),x3=gen2vecteur(En3*Ed12*Ed4 % pminv),x4=gen2vecteur(En4*Ed12*Ed3 % pminv);
                 int s=giacmax(x4.size(),giacmax(giacmax(x0.size(),x1.size()),giacmax(x2.size(),x3.size())));
                 lrdm(x0,s); lrdm(x1,s); lrdm(x2,s); lrdm(x3,s); lrdm(x4,s);
                 if (s>2){
-                  matrice m=makevecteur(makevecteur(x0[0],x1[0],x2[0],x3[0],x4[0]),makevecteur(x0[1],x1[1],x2[1],x3[1],x4[1]),makevecteur(x0[2],x1[2],x2[2],x3[2],x4[2]));
+                  matrice m=makevecteur(makevecteur(x0[s-1],x1[s-1],x2[s-1],x3[s-1],x4[s-1]),makevecteur(x0[s-2],x1[s-2],x2[s-2],x3[s-2],x4[s-2]),makevecteur(x0[s-3],x1[s-3],x2[s-3],x3[s-3],x4[s-3]));
                   if (s>3)
-                    m.push_back(makevecteur(x0[3],x1[3],x2[3],x3[3],x4[3]));
+                    m.push_back(makevecteur(x0[s-4],x1[s-4],x2[s-4],x3[s-4],x4[s-4]));
                   if (s>4)
-                    m.push_back(makevecteur(x0[4],x1[4],x2[4],x3[4],x4[4]));
+                    m.push_back(makevecteur(x0[s-5],x1[s-5],x2[s-5],x3[s-5],x4[s-5]));
                   if (s>5)
-                    m.push_back(makevecteur(x0[5],x1[5],x2[5],x3[5],x4[5]));
+                    m.push_back(makevecteur(x0[s-6],x1[s-6],x2[s-6],x3[s-6],x4[s-6]));
                   m=mker(m,contextptr);
+                  if (m.size()==2){
+                    // FIXME: it's a root of a 3rd order polynomial
+                  }
                   if (m.size()==1){
                     vecteur k=gen2vecteur(m[0]);
                     gen chk=dotvecteur(k,makevecteur(x0,x1,x2,x3,x4));
@@ -5011,7 +5046,7 @@ namespace giac {
 
   // detect if e is in an algebraic extension of Q, simplifies
   bool algnum_normal(gen & e,GIAC_CONTEXT){
-    e=normalize_sqrt(e,contextptr);
+    // e=normalize_sqrt(e,contextptr); // fails with algbench, why?
     gen E,G;
     vecteur syst,vars,v,varapprox;
     ext_param_t extpar={LAZY_ALG_EXT,ALG_EXT_DIGITS,4096};
