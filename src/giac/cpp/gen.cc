@@ -11165,7 +11165,7 @@ namespace giac {
     case _INT___CPLX: case _ZINT__CPLX: case _CPLX__CPLX:   
       return(a-b*iquo(a,b));
     case _VECT__VECT:
-      return (*a._VECTptr)%(*b._VECTptr);
+      return gen((*a._VECTptr)%(*b._VECTptr),_POLY1__VECT);
     default:
       return gentypeerr(gettext("%"));
     }

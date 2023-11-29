@@ -6816,13 +6816,16 @@ namespace giac {
     for (it=var.begin();it!=itend;++it,++varn){
       if (it->type!=_IDNT) // should not occur!
 	return vecteur(1,gensizeerr(gettext("Bad var ")+it->print(contextptr)));
-      vecteur l(rlvarx(eq,*it));
+      vecteur l(rlvarx(eq,*it)),lerr(l);
       if (l.size()>1){
 	gen tmp=rationalize(eq,*it,contextptr);
 	if (tmp.type==_VECT){
 	  eq=*tmp._VECTptr;
-	  l=rlvarx(eq,*it);
-	  if (l.size()==1){
+          // if you change below, check with solve([z^3=y^2*x, sqrt(x)=log10(3*z^2), 5*z*x=y^x], [x, y, z]);solve([((2)*(exp(((x)^(2))+((y)^(2)))))-(16), ((-16)*((y)^(2)))+((2)*(exp(((x)^(2))+((y)^(2)))))],[x,y]);
+	  l=lvarx(eq,*it); 
+	  if (l.size()==1
+              && l[0]!=*it
+              ){
 	    // solve with respect to l[0] then extract *it
 	    gen newvar=l.front();
 	    gen tmpeq=subst(eq,newvar,*it,false,contextptr);
@@ -6853,7 +6856,7 @@ namespace giac {
 	    }
 	  }
 	}
-	return vecteur(1,gensizeerr(gen(l).print(contextptr)+gettext(" is not rational w.r.t. ")+it->print(contextptr)));
+	return vecteur(1,gensizeerr(gen(lerr).print(contextptr)+gettext(" is not rational w.r.t. ")+it->print(contextptr)));
       }
     }
     // if one equation factors recurse with each factor

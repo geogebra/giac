@@ -1977,6 +1977,8 @@ namespace giac {
 	if (!sumab(argv[i],x,a_orig,b_orig,tmp,testi,contextptr))
 	  break;
 	res += tmp;
+        if (is_undef(res))
+          return false;
       }
       if (i==args)
 	return true;

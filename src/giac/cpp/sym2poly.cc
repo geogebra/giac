@@ -3581,6 +3581,8 @@ namespace giac {
       rur_mult(n,u,pmin);
       d=g;
     }
+    if (n.type==_VECT) n.subtype=_POLY1__VECT;
+    if (d.type==_VECT) d.subtype=_POLY1__VECT;
     return makevecteur(n,d); 
   }
 
@@ -4183,6 +4185,11 @@ namespace giac {
       gen zn=ppz(r);
       gen zzd=zd*ppz(d);
       simplify3(zn,zzd);
+      if (zzd.type==_CPLX){
+        gen zcd=conj(zzd,contextptr);
+        zn=zn*zcd;
+        zzd=zzd*zcd;
+      }
       gen R=zn*r2e_recursive(a,lv,contextptr)*r2e_recursive(r,lv,contextptr)/r2e(d,lv,contextptr)/zzd;
       // gen R=r2e_recursive(r,lv,contextptr)/r2e(d,lv,contextptr);
       return R;
@@ -4247,6 +4254,8 @@ namespace giac {
               matrice m=makevecteur(makevecteur(x0[0],x1[0],x2[0]),makevecteur(x0[1],x1[1],x2[1]),makevecteur(x0[2],x1[2],x2[2]));
               if (s>3)
                 m.push_back(makevecteur(x0[3],x1[3],x2[3]));
+              if (s>4)
+                m.push_back(makevecteur(x0[4],x1[4],x2[4]));
               m=mker(m,contextptr);
               if (m.size()==1){
                 vecteur k=gen2vecteur(m[0]);
@@ -4264,33 +4273,53 @@ namespace giac {
                 }
               } // end m.size()==1
               // try bisquare
+              gen EE3=mreduce_gen(pow(E,3,contextptr),syst,vars,v,varapprox,extpar,contextptr);
+              EE3=rur_subst(EE3,vars,nums,diffpmin,pminv,contextptr);
               gen EE4=mreduce_gen(pow(E,4,contextptr),syst,vars,v,varapprox,extpar,contextptr);
               EE4=rur_subst(EE4,vars,nums,diffpmin,pminv,contextptr);
-              if (EE4.type==_VECT && EE4[1].type==_VECT){
+              if (EE4.type==_VECT && EE4[1].type==_VECT && EE3.type==_VECT && EE3[1].type==_VECT){
+                gen En3=EE3[0],Ed3=EE3[1];
                 gen En4=EE4[0],Ed4=EE4[1];
-                vecteur x0=gen2vecteur(Ed2*Ed4 % pminv),x1=gen2vecteur(En2*Ed4 % pminv),x2=gen2vecteur(En4*Ed2 % pminv);
-                int s=giacmax(x0.size(),giacmax(x1.size(),x2.size()));
-                lrdm(x0,s); lrdm(x1,s); lrdm(x2,s);
+                gen Ed34=Ed3*Ed4 % pminv;
+                gen Ed12=Ed*Ed2 % pminv;
+                vecteur x0=gen2vecteur(Ed12*Ed34 % pminv),x1=gen2vecteur(En*Ed2*Ed34 % pminv),x2=gen2vecteur(En2*Ed*Ed34 % pminv),x3=gen2vecteur(En3*Ed12*Ed4 % pminv),x4=gen2vecteur(En4*Ed12*Ed3 % pminv);
+                int s=giacmax(x4.size(),giacmax(giacmax(x0.size(),x1.size()),giacmax(x2.size(),x3.size())));
+                lrdm(x0,s); lrdm(x1,s); lrdm(x2,s); lrdm(x3,s); lrdm(x4,s);
                 if (s>2){
-                  matrice m=makevecteur(makevecteur(x0[0],x1[0],x2[0]),makevecteur(x0[1],x1[1],x2[1]),makevecteur(x0[2],x1[2],x2[2]));
+                  matrice m=makevecteur(makevecteur(x0[0],x1[0],x2[0],x3[0],x4[0]),makevecteur(x0[1],x1[1],x2[1],x3[1],x4[1]),makevecteur(x0[2],x1[2],x2[2],x3[2],x4[2]));
                   if (s>3)
-                    m.push_back(makevecteur(x0[3],x1[3],x2[3]));
+                    m.push_back(makevecteur(x0[3],x1[3],x2[3],x3[3],x4[3]));
+                  if (s>4)
+                    m.push_back(makevecteur(x0[4],x1[4],x2[4],x3[4],x4[4]));
+                  if (s>5)
+                    m.push_back(makevecteur(x0[5],x1[5],x2[5],x3[5],x4[5]));
                   m=mker(m,contextptr);
                   if (m.size()==1){
                     vecteur k=gen2vecteur(m[0]);
-                    gen chk=dotvecteur(k,makevecteur(x0,x1,x2));
+                    gen chk=dotvecteur(k,makevecteur(x0,x1,x2,x3,x4));
                     if (is_zero(chk)){
-                      vecteur sols=protect_solve((k[2]*vx_var+k[1])*vx_var+k[0],*vx_var._IDNTptr,1,contextptr);
-                      if (sols.size()==2){
-                        gen E2approx=horner(En2,extapprox)/horner(Ed2,extapprox);
-                        gen sol0=_evalf(makesequence(sols[0],extpar.digits),contextptr),sol1=_evalf(makesequence(sols[1],extpar.digits),contextptr);
-                        if (is_greater(abs(sol0-E2approx,contextptr),abs(sol1-E2approx,contextptr),contextptr))
-                          e=sqrt(sols[1],contextptr);
-                        else
-                          e=sqrt(sols[0],contextptr);
-                        if (!is_positive(Eapprox,contextptr))
-                          e=-e;
-                        return true;
+                      reverse(k.begin(),k.end());
+                      gen shift=k[1]/4;
+                      k=taylor(k,shift);
+                      if (k[3]==0){
+                        vecteur sols=protect_solve((k[0]*vx_var+k[2])*vx_var+k[4],*vx_var._IDNTptr,1,contextptr);
+                        if (sols.size()==2){
+                          sols[0] = ratnormal(sols[0],contextptr);
+                          sols[1] = ratnormal(sols[1],contextptr);
+                          gen Eapprox=horner(En,extapprox)/horner(Ed,extapprox);
+                          gen Eapproxshift=Eapprox-shift;
+                          gen E2approx=Eapproxshift*Eapproxshift;
+                          gen sol0=_evalf(makesequence(sols[0] ,extpar.digits),contextptr),sol1=_evalf(makesequence(sols[1],extpar.digits),contextptr);
+                          if (is_greater(abs(sol0-E2approx,contextptr),abs(sol1-E2approx,contextptr),contextptr))
+                            e=sqrt(sols[1],contextptr);
+                          else
+                            e=sqrt(sols[0],contextptr);
+                          e=normalize_sqrt(e,contextptr);
+                          if (!is_positive(Eapproxshift,contextptr))
+                            e=-e;
+                          e += shift;
+                          return true;
+                        }
                       }
                     }
                   } // end bisquare m.size()==1
@@ -4404,7 +4433,7 @@ namespace giac {
     bool rootofallowed=false;//true;
     int n=v.size();
     if (n<3
-        && n!=1
+        && 0 // n!=1
         )
       return 0;
     v=sort2(v);
@@ -4982,6 +5011,7 @@ namespace giac {
 
   // detect if e is in an algebraic extension of Q, simplifies
   bool algnum_normal(gen & e,GIAC_CONTEXT){
+    e=normalize_sqrt(e,contextptr);
     gen E,G;
     vecteur syst,vars,v,varapprox;
     ext_param_t extpar={LAZY_ALG_EXT,ALG_EXT_DIGITS,4096};
