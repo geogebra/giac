@@ -3605,7 +3605,7 @@ namespace giac {
     d.dim=r.dim;
     d.coord.clear();
     d.coord.push_back(monomial<gen>(1,dim));
-    if (s<1 || r.degree(s)<systnum[s-1].degree(s))
+    if (s<1 || r.degree(s-1)<systnum[s-1].degree(s-1))
       return;
     polynome quo(dim),rem(dim),a(dim);
     for (int j=s-1;j>=0;--j){
@@ -4261,6 +4261,7 @@ namespace giac {
                 vecteur k=gen2vecteur(m[0]);
                 gen chk=dotvecteur(k,makevecteur(x0,x1,x2));
                 if (is_zero(chk)){
+                  lcmdeno(k,chk,contextptr);
                   vecteur sols=protect_solve((k[2]*vx_var+k[1])*vx_var+k[0],*vx_var._IDNTptr,1,contextptr);
                   if (sols.size()==2){
                     gen sol0=_evalf(makesequence(sols[0],extpar.digits),contextptr),sol1=_evalf(makesequence(sols[1],extpar.digits),contextptr);

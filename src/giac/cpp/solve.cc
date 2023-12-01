@@ -1143,6 +1143,9 @@ namespace giac {
       v=mergevecteur(v,newv);
       return ;
     }
+    if (w[0].type==_CPLX){
+      w=multvecteur(conj(w[0],contextptr),w);
+    }
     gen b_over_2=rdiv(w[1],plus_two,contextptr);
     if (b_over_2.type!=_FRAC){
       gen a=r2sym(w.front(),lv,contextptr);
