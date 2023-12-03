@@ -2906,9 +2906,24 @@ namespace giac {
     return subst(e,lin,lout,false,contextptr);
   }
 
+  void cleanup_pow(gen & g){
+    if (g.type==_VECT){
+      vecteur & v=*g._VECTptr;
+      for (int i=0;i<v.size();++i)
+        cleanup_pow(v[i]);
+    }
+    if (g.is_symb_of_sommet(at_pow)){
+      gen & f=g._SYMBptr->feuille;
+      if (f.type==_VECT)
+        f.subtype=_SEQ__VECT;
+    }
+  }
+
   gen normalize_sqrt(const gen & e,GIAC_CONTEXT,bool keep_abs){
     vecteur L;
-    return in_normalize_sqrt(rewrite_exp_integer(e,contextptr),L,keep_abs,contextptr);
+    gen E=in_normalize_sqrt(rewrite_exp_integer(e,contextptr),L,keep_abs,contextptr);
+    //cleanup_pow(E);
+    return E;
   }
 
   static bool has_embedded_fractions(const gen & g){
@@ -4586,7 +4601,10 @@ namespace giac {
         }
         gen ext=algebraic_EXTension(makevecteur(1,0),*curpmin._VECTptr);
         gen ggn,ggd;
-        gen extapprox=_evalf(makesequence(ext,extpar.digits),contextptr);
+        gen extapprox=subst(sep,vars,v,false,contextptr);
+        extapprox=_evalf(makesequence(extapprox,extpar.digits),contextptr);
+        // beware that evalf(ext) might return a wrong value
+        // gen extapprox=_evalf(makesequence(ext,extpar.digits),contextptr);
         epsilon(oldeps,contextptr);
         gen p=_symb2poly(makesequence(syst.back(),vars[i]),contextptr);
         if (G.type==_VECT){
@@ -4623,8 +4641,15 @@ namespace giac {
           gen curerr(undef); vecteur curP;
           for (int j=0;j<f.size();++j){
             polynome & pcur=f[j].fact;
-            modpoly P=polynome2poly1(pcur,1);
-            modpoly Papprox=gen2vecteur(_evalf(makesequence(P,extpar.digits),contextptr));
+            modpoly P=polynome2poly1(pcur,1),Papprox(P);
+            // rewrite extensions in P using original sep
+            for (int i=0;i<P.size();++i){
+              gen & Pi=Papprox[i];
+              if (Pi.type==_FRAC && Pi._FRACptr->num.type==_EXT)
+                Papprox[i]=horner(*Pi._FRACptr->num._EXTptr,extapprox)/Pi._FRACptr->den;
+              else if (Pi.type==_EXT)
+                Papprox[i]=horner(*Pi._EXTptr,extapprox);
+            }
             gen err=abs(horner(Papprox,vival),contextptr);
             if (is_undef(curerr) && is_greater(1e-10,err,contextptr)){
               curP=P;
@@ -5047,7 +5072,7 @@ namespace giac {
 
   // detect if e is in an algebraic extension of Q, simplifies
   bool algnum_normal(gen & e,GIAC_CONTEXT){
-    // e=normalize_sqrt(e,contextptr); // fails with algbench, why?
+    e=normalize_sqrt(e,contextptr); // fails with algbench, why?
     gen E,G;
     vecteur syst,vars,v,varapprox;
     ext_param_t extpar={LAZY_ALG_EXT,ALG_EXT_DIGITS,4096};

@@ -8762,7 +8762,9 @@ namespace giac {
 	return true;
       if (a.subtype!=b.subtype){
 	if ( (a.subtype==_MATRIX__VECT && b.subtype==0) ||
-	     (b.subtype==_MATRIX__VECT && a.subtype==0) )
+	     (b.subtype==_MATRIX__VECT && a.subtype==0) ||
+             (a.subtype==_SORTED__VECT && b.subtype==_SEQ__VECT) ||
+             (a.subtype==_SEQ__VECT && b.subtype==_SORTED__VECT))
 	  ; // don't consider them different
 	else
 	  return false;
