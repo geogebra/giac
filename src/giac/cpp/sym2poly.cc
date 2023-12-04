@@ -5072,7 +5072,7 @@ namespace giac {
 
   // detect if e is in an algebraic extension of Q, simplifies
   bool algnum_normal(gen & e,GIAC_CONTEXT){
-    e=normalize_sqrt(e,contextptr); // fails with algbench, why?
+    e=normalize_sqrt(e,contextptr); 
     gen E,G;
     vecteur syst,vars,v,varapprox;
     ext_param_t extpar={LAZY_ALG_EXT,ALG_EXT_DIGITS,4096};
