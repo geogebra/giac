@@ -5958,6 +5958,8 @@ namespace giac {
     }
     if (debug_infolevel)
       CERR << CLOCK()*1e-6 << " norme factor begin" << '\n';
+    gen normden(1); lcmdeno(norme,normden);
+    norme=normden*norme;
     bool test=factor(norme,temp,f,true,false,complexmode,1,extra_div);
     if (debug_infolevel)
       CERR << CLOCK()*1e-6 << " norme factor end" << '\n';
@@ -6612,7 +6614,7 @@ namespace giac {
 
   static bool sqff_evident_primitive(const polynome & pp,factorization & f,bool with_sqrt,bool complexmode){
     // first square-free factorization
-
+    
 #if 0 // Cette version ne marche pas it->fact plus bas renvoie un vecteur vide.. ou quelquechose comme ca..
    const factorization & sqff_f = has_num_coeff(pp)?factorization(1,facteur< polynome >(pp,1)):sqff(pp);
 #else // celle la, plus ancienne, marche... 
