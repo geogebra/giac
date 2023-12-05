@@ -4264,7 +4264,7 @@ namespace giac {
             gen En2=EE2[0],Ed2=EE2[1];
             vecteur x0=gen2vecteur(Ed*Ed2 % pminv),x1=gen2vecteur(En*Ed2 % pminv),x2=gen2vecteur(En2*Ed % pminv);
             int s=giacmax(x0.size(),giacmax(x1.size(),x2.size()));
-            lrdm(x0,s); lrdm(x1,s); lrdm(x2,s);
+            lrdm(x0,s-1); lrdm(x1,s-1); lrdm(x2,s-1);
             if (s>2){
               matrice m=makevecteur(makevecteur(x0[s-1],x1[s-1],x2[s-1]),makevecteur(x0[s-2],x1[s-2],x2[s-2]),makevecteur(x0[s-3],x1[s-3],x2[s-3]));
               if (s>3)
@@ -4299,7 +4299,7 @@ namespace giac {
                 vecteur x0=gen2vecteur(Ed12*Ed3 % pminv),x1=gen2vecteur(En*Ed2*Ed3 % pminv),x2=gen2vecteur(En2*Ed*Ed3 % pminv),x3=gen2vecteur(En3*Ed12 % pminv);
                 
                 int s=giacmax(giacmax(x0.size(),x1.size()),giacmax(x2.size(),x3.size()));
-                lrdm(x0,s); lrdm(x1,s); lrdm(x2,s); lrdm(x3,s); 
+                lrdm(x0,s-1); lrdm(x1,s-1); lrdm(x2,s-1); lrdm(x3,s-1); 
                 if (s>2){
                   matrice m=makevecteur(makevecteur(x0[s-1],x1[s-1],x2[s-1],x3[s-1]),makevecteur(x0[s-2],x1[s-2],x2[s-2],x3[s-2]),makevecteur(x0[s-3],x1[s-3],x2[s-3],x3[s-3]));
                   if (s>3)
@@ -4332,7 +4332,7 @@ namespace giac {
                 gen Ed34=Ed3*Ed4 % pminv;
                 vecteur x0=gen2vecteur(Ed12*Ed34 % pminv),x1=gen2vecteur(En*Ed2*Ed34 % pminv),x2=gen2vecteur(En2*Ed*Ed34 % pminv),x3=gen2vecteur(En3*Ed12*Ed4 % pminv),x4=gen2vecteur(En4*Ed12*Ed3 % pminv);
                 int s=giacmax(x4.size(),giacmax(giacmax(x0.size(),x1.size()),giacmax(x2.size(),x3.size())));
-                lrdm(x0,s); lrdm(x1,s); lrdm(x2,s); lrdm(x3,s); lrdm(x4,s);
+                lrdm(x0,s-1); lrdm(x1,s-1); lrdm(x2,s-1); lrdm(x3,s-1); lrdm(x4,s-1);
                 if (s>2){
                   matrice m=makevecteur(makevecteur(x0[s-1],x1[s-1],x2[s-1],x3[s-1],x4[s-1]),makevecteur(x0[s-2],x1[s-2],x2[s-2],x3[s-2],x4[s-2]),makevecteur(x0[s-3],x1[s-3],x2[s-3],x3[s-3],x4[s-3]));
                   if (s>3)
