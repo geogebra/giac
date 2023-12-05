@@ -107,7 +107,7 @@ namespace giac {
     int reinject_for_calc;
     bool interred;
     bool gbasis; // for rur return gbasis too
-    vector<int> initsep; // separating variable (integer coeffs of monomials)
+    std::vector<int> initsep; // separating variable (integer coeffs of monomials)
   };
   extern int rur_separate_max_tries;
   vectpoly gbasis(const vectpoly & v,const gen & order,bool with_cocoa,int modular,environment * env,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param,std::vector< vectpoly> * coeffsptr=0); // with_f5 is in fact modular_check
