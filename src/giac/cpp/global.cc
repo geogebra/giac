@@ -3703,6 +3703,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int GBASIS_DETERMINISTIC=20;
   int GBASISF4_MAX_TOTALDEG=1024;
   int GBASISF4_MAXITER=256;
+  int RUR_PARAM_MAX_DEG=128;
   // int GBASISF4_BUCHBERGER=5;
   const int BUFFER_SIZE=512;
 #else
@@ -3755,6 +3756,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int GBASIS_DETERMINISTIC=50;
   int GBASISF4_MAX_TOTALDEG=16384;
   int GBASISF4_MAXITER=1024;
+  int RUR_PARAM_MAX_DEG=128;
   // int GBASISF4_BUCHBERGER=5;
   const int BUFFER_SIZE=16384;
 #endif

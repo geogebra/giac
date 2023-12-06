@@ -406,6 +406,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   extern int GBASIS_DETERMINISTIC;
   extern int GBASISF4_MAX_TOTALDEG;
   extern int GBASISF4_MAXITER;
+  extern int RUR_PARAM_MAX_DEG;
   // extern int GBASISF4_BUCHBERGER;
   extern unsigned max_pairs_by_iteration; 
   extern unsigned simult_primes,simult_primes2,simult_primes_seuil2,simult_primes3,simult_primes_seuil3; 

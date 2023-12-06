@@ -14846,9 +14846,24 @@ void G_idn(vector<unsigned> & G,size_t s){
   bool rur_separate(vectpolymod<tdeg_t> & gbmod,polymod<tdeg_t> & lm,modint p,polymod<tdeg_t> & s,vector<int> * initsep,vecteur & m,matrice & M,int radical){
     order_t order=lm.order;
     int dim=lm.dim,d=rur_dim(dim,order);
-    s.order=order; s.dim=dim; 
-    // first try coordinates
+    s.order=order; s.dim=dim;
     vecteur minp(d);
+    if (initsep && !initsep->empty()){
+      s.coord.clear(); m.clear(); M.clear();
+      for (unsigned i=0;int(i)<d;++i){
+        index_t l(dim);
+        l[i]=1;
+        int r1=(*initsep)[i];
+        if (r1) //  && (essai!=testall1 || i!=d-1) )
+          s.coord.push_back(T_unsigned<modint,tdeg_t>(r1,tdeg_t(l,order)));
+      }
+      if (!rur_minpoly(gbmod,lm,s,p,m,M))
+        return false;
+      if (m.size()==lm.coord.size()+1)
+        return true;
+      return false;
+    }
+    // first try coordinates
     for (int i=d-1;i>=0;--i){
       s.coord.clear(); m.clear(); M.clear();
       index_t l(dim);

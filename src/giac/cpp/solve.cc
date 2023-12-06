@@ -2796,17 +2796,20 @@ namespace giac {
     return false;
   }
 
-  gen _solve_uncompressed(const gen & args,GIAC_CONTEXT){
+  gen _solve_uncompressed(const gen & args,bool postprocess,GIAC_CONTEXT){
     if (args.type==_VECT && args.subtype==0 && ckmatrix(args))
-      return _solve_uncompressed(change_subtype(args,_SEQ__VECT),contextptr);
+      return _solve_uncompressed(change_subtype(args,_SEQ__VECT),postprocess,contextptr);
     if (args.type==_VECT && args.subtype==_SEQ__VECT && lidnt(args).empty())
       return _linsolve(args,contextptr);
     if (args.type==_VECT && !args._VECTptr->empty() && (args._VECTptr->back()==at_equal || args._VECTptr->back()==at_different)){
       int x=calc_mode(contextptr);
-      calc_mode(args._VECTptr->back()==at_equal?1:0,contextptr);
+      calc_mode(1,contextptr);
       gen g=gen(vecteur(args._VECTptr->begin(),args._VECTptr->end()-1),args.subtype);
-      g=_solve(g,contextptr);
+      postprocess=args._VECTptr->back()==at_equal;
+      g=_solve_uncompressed(g,postprocess,contextptr);
       calc_mode(x,contextptr);
+      if (x==1 && g.subtype==_LIST__VECT)
+        g.subtype=0;
       return g;
     }
     int isolate_mode=int(complex_mode(contextptr)) | int(int(all_trig_sol(contextptr)) << 1);
@@ -3096,7 +3099,7 @@ namespace giac {
 	// lidnt(res).empty() && is_zero(im(res,contextptr),contextptr)
 	)
       res=protect_sort(res,contextptr);
-    if (!xcas_mode(contextptr) && calc_mode(contextptr)!=1)
+    if (!postprocess)
       return gen(res,_LIST__VECT);
     gen vres=solvepostprocess(res,v[1],contextptr);
     return vres;
@@ -3111,7 +3114,8 @@ namespace giac {
 	return vecteur(0);
       }
     }
-    gen res=_solve_uncompressed(args,contextptr);
+    bool postprocess=xcas_mode(contextptr) || calc_mode(contextptr)==1;
+    gen res=_solve_uncompressed(args,postprocess,contextptr);
     if (res.type==_VECT){
       vecteur v=*res._VECTptr;
       comprim(v);
@@ -7461,8 +7465,10 @@ namespace giac {
                 else
                   break;
               }
-              if (sep.size()==d.size())
+              if (sep.size()==d.size()){
                 gbasis_param.initsep=sep;
+                order=_RUR_REVLEX;
+              }
             }
           }
         }
@@ -7653,6 +7659,34 @@ namespace giac {
       lidnt(l0,lparam,true);
       lparam=vecteur(lparam.begin()+l1.size(),lparam.end());
       int nparam=lparam.size();
+      vecteur vargs=makevecteur(v[0],v[1],0);
+      if (0 && nparam==1){
+        gen cursep=0;
+        for (int iparam=0;iparam<nparam;++iparam){
+          vecteur Lx,Ly;
+          for (int j=0;;++j){
+            if (j==RUR_PARAM_MAX_DEG)
+              return gensizeerr("Parametric rur interpolation degree too large");
+            gen x=j;
+            if (cursep==0)
+              vargs[2]=change_subtype(_RUR_REVLEX,_INT_GROEBNER);
+            else
+              vargs[2]=symb_equal(_RUR_REVLEX,cursep);
+            gen curarg=subst(vargs,lparam[iparam],j,false,contextptr);
+            gen y=_gbasis(change_subtype(curarg,_SEQ__VECT),contextptr);
+            if (y.type!=_VECT || y._VECTptr->empty() ||y._VECTptr->front()!=_RUR_REVLEX)
+              continue;
+            // should check pmin degree and compare to previous degree
+            Lx.push_back(x); Ly.push_back(y);
+            modpoly G;
+            interpolate(Lx,Ly,G,0); // should add divided differences instead
+            if (ratnormal(G[0])==0){
+              // FIXME check G
+              return G;
+            }
+          }
+        }
+      }
     }
     // remove variables not in args0
     vecteur l;
