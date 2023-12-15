@@ -3035,7 +3035,7 @@ namespace giac {
     }
     // subst in original expression and make the asymptotic expansion
     double ordre=begin_ordre;
-    f=subst(ecopy,faster_var,faster_var_subst,false,contextptr);
+    f=subst(ecopy,faster_var,faster_var_subst,true,contextptr);
     if (!dont_invert)
       f=subst(f,w,inv(w,contextptr),false,contextptr);
     if (faster_var.front().is_symb_of_sommet(at_exp)){
