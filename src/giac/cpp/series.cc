@@ -226,7 +226,7 @@ namespace giac {
 
 
   bool ptruncate(sparse_poly1 & p,const gen & ordre,GIAC_CONTEXT){
-    if ( (series_flags(contextptr) & 0x2) || p.empty() ){
+    if ( (series_flags(contextptr) & 0x2) && !p.empty() ){
       sparse_poly1::iterator it=p.begin(),itend=p.end();
       gen first=it->exponent;
       for (;it!=itend;++it){
@@ -243,7 +243,7 @@ namespace giac {
   }
 
   void poly_truncate(sparse_poly1 & p,int ordre,GIAC_CONTEXT){
-    if ( (series_flags(contextptr) & 0x2) || p.empty() ){
+    if ( (series_flags(contextptr) & 0x2) && !p.empty() ){
       sparse_poly1::iterator it=p.begin(),itend=p.end();
       for (;it!=itend;++it){
 	if (is_undef(it->coeff))

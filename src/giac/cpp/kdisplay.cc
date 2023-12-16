@@ -29,7 +29,6 @@
 #include <syscall.h>
 #include "sha256.h"
 #endif
-#include "qrcodegen.h"
 #include <alloca.h>
 #ifndef is_cx2
 #define is_cx2 false
@@ -56,6 +55,7 @@ int shell_x=0,shell_y=0,shell_fontw=12,shell_fonth=18;
 // soit comme sur la CX si l'ecriture en flash NAND marche un jour
 
 #ifdef KHICAS
+#include "qrcodegen.h"
 
 #ifdef NUMWORKS
 char * freeptr=0;
