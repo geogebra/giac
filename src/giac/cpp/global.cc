@@ -4622,8 +4622,12 @@ extern "C" void Sleep(unsigned int miliSecond);
       s=giac_aide_location;
       s=s.substr(0,s.size()-8);
 #endif
-      if (s.size())
-	read_config(s+"/xcas.rc",contextptr,verbose);
+      if (s.size()){
+        if (s[s.size()-1]=='/')
+          read_config(s+"xcas.rc",contextptr,verbose);
+        else
+          read_config(s+"/xcas.rc",contextptr,verbose);
+      }
       s=home_directory();
       if (s.size()<2)
 	s="";

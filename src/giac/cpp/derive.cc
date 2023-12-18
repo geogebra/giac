@@ -544,7 +544,7 @@ namespace giac {
       return res;
     }
     case _FRAC:
-      return fraction(derive(e._FRACptr->num,i,contextptr)*e._FRACptr->den-(e._FRACptr->num)*derive(e._FRACptr->den,i,contextptr),e._FRACptr->den);
+      return fraction(derive(e._FRACptr->num,i,contextptr)*e._FRACptr->den-(e._FRACptr->num)*derive(e._FRACptr->den,i,contextptr),pow(e._FRACptr->den,2,contextptr));
     case _EXT:
       if (is_zero(derive(*(e._EXTptr+1),i,contextptr)))
 	return algebraic_EXTension(derive(*e._EXTptr,i,contextptr),*(e._EXTptr+1));

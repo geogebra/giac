@@ -2717,16 +2717,21 @@ namespace giac {
 
   vecteur solvepreprocess(const gen & args,bool complexmode,GIAC_CONTEXT){
     gen g(args);
+    if (g.is_symb_of_sommet(at_and) && g._SYMBptr->feuille.type==_VECT)
+      g=makesequence(*g._SYMBptr->feuille._VECTptr,vx_var);
     if (g.type==_VECT && !g._VECTptr->empty() && (g._VECTptr->front().is_symb_of_sommet(at_abs))){
       vecteur v(*g._VECTptr);
       v.front()=v.front()._SYMBptr->feuille;
       g=gen(v,g.subtype);
     }
-    if (g.is_symb_of_sommet(at_and) && g._SYMBptr->feuille.type==_VECT)
-      g=makesequence(*g._SYMBptr->feuille._VECTptr,vx_var);
-    if (g.type==_VECT && !g._VECTptr->empty() && g._VECTptr->front().is_symb_of_sommet(at_and)){
+    if (g.type==_VECT && !g._VECTptr->empty() && (g._VECTptr->front().is_symb_of_sommet(at_and) || g._VECTptr->front().is_symb_of_sommet(at_ou))){
       vecteur v(*g._VECTptr);
-      v.front()=remove_and(v.front(),at_and);
+      if (v.front().is_symb_of_sommet(at_ou) && v.front()._SYMBptr->feuille.type==_VECT){
+        // FIXME should merge if solving inequation
+        v.front()=symbolic(at_prod,v.front()._SYMBptr->feuille);
+      }
+      else
+        v.front()=remove_and(v.front(),at_and);
       g=gen(v,g.subtype);
     }
     // quote < <= > and >=
@@ -3104,6 +3109,62 @@ namespace giac {
 	// lidnt(res).empty() && is_zero(im(res,contextptr),contextptr)
 	)
       res=protect_sort(res,contextptr);
+    if (v[1].type==_IDNT && !res.empty() && is_inequation(res.front())){
+      // collect all inequations
+      vecteur resineq,other;
+      for (int i=0;i<res.size();++i){
+        if (is_inequation(res[i]))
+          resineq.push_back(res[i]);
+        else
+          other.push_back(res[i]);
+      }
+      if (resineq.size()>1){
+        gen xval=assumeeval(v[1],contextptr);
+        gen a0(assumesymbolic(resineq[0],0,contextptr));
+        gen a0about=undef;
+        // merge inequation intervals
+        vecteur merged;
+        if (a0==v[1]){
+          a0about=a0._IDNTptr->eval(1,a0,contextptr);
+          if (a0about.type==_VECT){
+            merged=*a0about._VECTptr;
+            int i=1;
+            for (;i<resineq.size();++i){
+              restorepurge(xval,v[1],contextptr);
+              gen a1=assumesymbolic(resineq[i],0,contextptr);
+              gen a1about=undef;
+              if (a1!=v[1])
+                break;
+              a1about=a1._IDNTptr->eval(1,a1,contextptr);
+              if (a1about.type!=_VECT)
+                break;
+              vecteur oldmerged(merged);
+              glue(oldmerged,*a1about._VECTptr,merged,contextptr);
+            }
+            if (i==resineq.size() && merged.size()>=3){
+              gen i=merged[1],e=merged[2];
+              resineq.clear();
+              if (i.type==_VECT && e.type==_VECT){
+                for (int j=0;j<i._VECTptr->size();++j){
+                  gen cur=i[j];
+                  gen m=cur[0],M=cur[1];
+                  gen tmp1=symbolic(equalposcomp(*e._VECTptr,m)?at_superieur_strict:at_superieur_egal,makesequence(v[1],m));
+                  gen tmp2=symbolic(equalposcomp(*e._VECTptr,M)?at_inferieur_strict:at_inferieur_egal,makesequence(v[1],M));
+                  if (m==minus_inf)
+                    resineq.push_back(tmp2);
+                  else if (M==plus_inf)
+                    resineq.push_back(tmp1);
+                  else
+                    resineq.push_back(symb_and(tmp1,tmp2));
+                }
+                res=mergevecteur(resineq,other);
+              }
+            }
+          } // end a0about of type vect
+        } // end a0==v[1]
+        restorepurge(xval,v[1],contextptr);
+      } // end if resineq.size()>1
+    }
     if (!postprocess)
       return gen(res,_LIST__VECT);
     gen vres=solvepostprocess(res,v[1],contextptr);
@@ -7665,12 +7726,15 @@ namespace giac {
       lparam=vecteur(lparam.begin()+l1.size(),lparam.end());
       int nparam=lparam.size();
       vecteur vargs=makevecteur(v[0],v[1],0);
-      if (0 && nparam==1){
+      if (//0 &&
+          nparam==1){
+        *logptr(contextptr) << "Warning, parametric rur: experimental code\n";
         gen cursep=0;
         for (int iparam=0;iparam<nparam;++iparam){
-          vecteur Lx,Ly;
+          vecteur Lx,Ly,Ldiff,Llast;
+          int pmindeg=0,interpcurdeg=0;
           for (int j=0;;++j){
-            if (j==RUR_PARAM_MAX_DEG)
+            if (interpcurdeg==RUR_PARAM_MAX_DEG)
               return gensizeerr("Parametric rur interpolation degree too large");
             gen x=j;
             if (cursep==0)
@@ -7679,13 +7743,43 @@ namespace giac {
               vargs[2]=symb_equal(_RUR_REVLEX,cursep);
             gen curarg=subst(vargs,lparam[iparam],j,false,contextptr);
             gen y=_gbasis(change_subtype(curarg,_SEQ__VECT),contextptr);
-            if (y.type!=_VECT || y._VECTptr->empty() ||y._VECTptr->front()!=_RUR_REVLEX)
+            if (y.type!=_VECT || y._VECTptr->size()<3 ){
+              cursep=0;
               continue;
-            // should check pmin degree and compare to previous degree
+            }
+            if (y._VECTptr->front()!=_RUR_REVLEX){
+              cursep=0;
+              continue;
+            }
+            cursep=y[1];
+            // check pmin degree and compare to previous degree
+            gen pmin=y[2],var=lidnt(pmin)[0];
+            int deg=_degree(makesequence(pmin,var),contextptr).val;
+            if (deg<pmindeg)
+              continue;
+            if (deg>pmindeg){
+              Lx.clear(); Ly.clear(); Ldiff.clear(); Llast.clear();
+              interpcurdeg=0; pmindeg=deg;
+            }
+            interpcurdeg++;
             Lx.push_back(x); Ly.push_back(y);
-            modpoly G;
-            interpolate(Lx,Ly,G,0); // should add divided differences instead
-            if (ratnormal(G[0])==0){
+            // update divided differences
+            gen cur=y;
+            vecteur newline; newline.reserve(Llast.size()+1);
+            newline.push_back(y);
+            for (int k=0;k<Llast.size();++k){
+              cur=ratnormal((cur-Llast[k])/(Lx[k+1]-Lx[0]),contextptr); 
+              newline.push_back(cur);
+            }
+            Ldiff.push_back(cur);
+            Llast.swap(newline);
+            if (is_zero(cur)){
+              // build G from Ldiff and Lx, and variable lparam[iparam]
+              int s=Ldiff.size()-1;
+              gen x=lparam[iparam],G=Ldiff[s-1];
+              for (int i=s-2;i>=0;--i){
+                G=ratnormal((x-Lx[i])*G+Ldiff[i],contextptr);
+              }
               // FIXME check G
               return G;
             }

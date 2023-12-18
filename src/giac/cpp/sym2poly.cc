@@ -6372,6 +6372,46 @@ namespace giac {
   static define_unary_function_eval (__resultant,&_resultant,_resultant_s);
   define_unary_function_ptr5( at_resultant ,alias_at_resultant,&__resultant,0,true);
 
+  static const char _discriminant_s []="discriminant";
+  gen _discriminant(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG && args.subtype==-1) return  args;
+    vecteur v =gen2vecteur(args);
+    int s=int(v.size());
+    if (s==0)
+      toofewargs("discriminant");
+    if (has_num_coeff(v)){
+      gen g=exact(args,contextptr);
+      if (!has_num_coeff(g)){
+	g=_discriminant(g,contextptr);
+	return evalf(g,1,contextptr);
+      }
+    }
+    if (v[0].type==_VECT ){
+      int n=v[0]._VECTptr->size()-1;
+      if (n<0) return undef;
+      gen r=_resultant(makesequence(v[0],derivative(*v[0]._VECTptr)),contextptr)/v[0]._VECTptr->front();
+      r=ratnormal(r,contextptr);
+      if ((n*(n-1))/2 % 2)
+        return -r;
+      else
+        return r;
+    }
+    if (v.size()==1)
+      v.push_back(vx_var);
+    if (v.size()>2)
+      return gentoomanyargs("discriminant");
+    gen x=v.back();
+    gen p1=v.front(),p2=derive(p1,x,contextptr);
+    gen r=_resultant(makesequence(p1,p2,x),contextptr)/_lcoeff(makesequence(p1,x),contextptr);
+    r=ratnormal(r,contextptr);
+    int n=_degree(makesequence(p1,x),contextptr).val;
+    if ((n*(n-1))/2 % 2)
+      return -r;
+    else
+      return r;
+  }
+  static define_unary_function_eval (__discriminant,&_discriminant,_discriminant_s);
+  define_unary_function_ptr5( at_discriminant ,alias_at_discriminant,&__discriminant,0,true);
   /* I/O on stream */
 #ifdef NSPIRE
   template<class T>

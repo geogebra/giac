@@ -6133,22 +6133,31 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 
   gen _aire(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    if (args.type==_VECT && !args._VECTptr->empty() && args._VECTptr->front().is_symb_of_sommet(at_pnt) && args._VECTptr->back().is_symb_of_sommet(at_pnt)){
-      gen res=remove_at_pnt(args._VECTptr->front());
-      bool loop=true;
-      if (res.type==_VECT && res.subtype==_POINT__VECT)
-	loop=false;
-      else if (res.type<_IDNT)
-	loop=false;
-      else if (res.type==_SYMB && has_i(res))
-	loop=false;
-      if (res.is_symb_of_sommet(at_curve))
-	loop=true; /* workaround for ggb area([circle(x^(2)+4y^(2)=1)]) */
-      if (loop){
-	res=0;
-	for (unsigned i=0;i<args._VECTptr->size();++i)
-	  res += _aire((*args._VECTptr)[i],contextptr);
-	return res;
+    if (args.type==_VECT && !args._VECTptr->empty()){
+      if (args._VECTptr->front().is_symb_of_sommet(at_pnt) && args._VECTptr->back().is_symb_of_sommet(at_pnt)){
+        gen res=remove_at_pnt(args._VECTptr->front());
+        bool loop=true;
+        if (res.type==_VECT && res.subtype==_POINT__VECT)
+          loop=false;
+        else if (res.type<_IDNT)
+          loop=false;
+        else if (res.type==_SYMB && has_i(res))
+          loop=false;
+        if (res.is_symb_of_sommet(at_curve))
+          loop=true; /* workaround for ggb area([circle(x^(2)+4y^(2)=1)]) */
+        if (loop){
+          res=0;
+          for (unsigned i=0;i<args._VECTptr->size();++i)
+            res += _aire((*args._VECTptr)[i],contextptr);
+          return res;
+        }
+      }
+      // plotinequation answer
+      if (args._VECTptr->front().is_symb_of_sommet(at_equal) && args._VECTptr->size()>=3){
+        gen res=0;
+        for (unsigned i=2;i<args._VECTptr->size();++i)
+          res += abs(_aire((*args._VECTptr)[2],contextptr),contextptr);
+        return res;
       }
     }
     gen g=args;
