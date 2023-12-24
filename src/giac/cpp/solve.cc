@@ -3081,7 +3081,7 @@ namespace giac {
       return gensizeerr(contextptr);
     arg1=subst(arg1,undef,identificateur("undef_"),true,contextptr);
     vecteur _res=solve(arg1,v.back(),isolate_mode,contextptr);
-    if (_res.empty() || _res.front().type==_STRNG || is_undef(_res))
+    if (_res.empty() || _res.front().type==_STRNG || is_undef(_res) || _res.back().type==_STRNG)
       return _res;
     // quick check if back substitution returns undef
     const_iterateur it=_res.begin(),itend=_res.end();
@@ -4425,6 +4425,235 @@ namespace giac {
     return(A);
   }
 
+  // return -2 invalid, -1 (unknown), 0 (no solution), 1 (solution exist)
+  int linsolve_ineq(const vecteur & sl,const vecteur & x,vecteur & sol,GIAC_CONTEXT){
+    // first extract equations, recursive solve and substitute
+    for (int i=0;i<sl.size();++i){
+      gen sli=sl[i],a,b,xj,XJ;
+      if (!is_inequation(sli)){
+        for (int j=0;j<x.size();++j){
+          xj=x[j];
+          if (is_linear_wrt(sli,xj,a,b,contextptr) && !is_zero(a)){
+            XJ=-b/a;
+            vecteur SL=sl;
+            SL.erase(SL.begin()+i);
+            SL=subst(SL,xj,XJ,false,contextptr);
+            vecteur X(x);
+            X.erase(X.begin()+i);
+            int r=linsolve_ineq(SL,X,sol,contextptr);
+            if (r<1)
+              return r;
+            sol.insert(sol.begin()+j,0);
+            xj=subst(XJ,x,sol,false,contextptr);
+            sol[j]=xj;
+            return 0;
+          }
+        }
+      }
+    }
+    // now we have only inequations, rewrite them as Ax>=0
+    // and keep a list of indices for strict inequalities
+    vector<int> strict; vecteur SL; gen g;
+    for (int i=0;i<sl.size();++i){
+      gen sli=sl[i];
+      if (!is_inequation(sli))
+        return -2;
+      if (sli._SYMBptr->sommet==at_superieur_strict || sli._SYMBptr->sommet==at_inferieur_strict)
+        strict.push_back(i);
+      g=sli._SYMBptr->feuille[0]-sli._SYMBptr->feuille[1];
+      if (sli._SYMBptr->sommet==at_inferieur_egal || sli._SYMBptr->sommet==at_inferieur_strict)
+        g=-g;
+      SL.push_back(g);
+    }
+    matrice A=sxa(SL,x,contextptr);
+    int n=x.size();
+    // if x is n-dimensional, search n independant inequalities
+    // change basis to rewrite them as x>=0
+    matrice Ared; vecteur pivots; gen det;
+    vector<int> permutation; int R;
+    for (;;){
+      permutation.resize(A.size());
+      for (int i=0;i<A.size();++i)
+        permutation[i]=i;
+      // reduction without last column (constants)
+      mrref(A,Ared,permutation,pivots,det,0,A.size(),0,A[0]._VECTptr->size()-1,0,0,true,0,0,contextptr);
+      R=A.size();
+      for (;R>0;--R){
+        const vecteur & v=*Ared[R-1]._VECTptr;
+        int j=0;
+        for (;j<v.size()-1;++j){
+          if (!is_exactly_zero(v[j]))
+            break;
+        }
+        if (j<v.size()-1)
+          break;
+      }
+      if (R==0)
+        return -2;
+      if (R==x.size())
+        break;
+      // add a fake large inequalities
+      // find which x_i we should add
+      int i=0;
+      for (;i<x.size() && i<Ared.size();++i){
+        if (is_zero(Ared[i][i]))
+          break;
+      }
+      vecteur line(x.size()+1);
+      line[i]=1;
+      A.push_back(line); // go reduce it
+    } 
+    // extrnact invertible matrix
+    matrice P(R);
+    for (int i=0;i<R;++i){
+      vecteur & v=*A[permutation[i]]._VECTptr;
+      P[i]=vecteur(v.begin(),v.begin()+R);
+    }
+    // invert
+    matrice Pinv=minv(P,contextptr);
+    vecteur translate(R);
+    // origin translation
+    for (int i=0;i<R;++i)
+      translate[i]=A[permutation[i]][R];
+    // multiply each line by Pinv : line <- Pinv*line
+    for (int i=R;i<A.size();++i){
+      vecteur & v =*A[permutation[i]]._VECTptr;
+      vecteur w(v.begin(),v.begin()+R);
+      w=multvecteurmat(w,Pinv);
+      gen & cst=v[R];
+      cst = -cst;
+      for (int j=0;j<R;++j){
+        v[j]=w[j];
+        cst += v[j]*translate[j];
+      }
+    }
+    sol.resize(R);
+    if (A.size()==R){
+      // no more inequalities, we can take [1...1] translated as solution
+      for (int i=0;i<R;++i)
+        sol[i]=-translate[i]+1;
+      sol=multmatvecteur(P,sol);
+      return 1;
+    }
+    // there are additional remaining inequalities
+    matrice Ab;
+    for (int i=R;i<A.size();++i)
+      Ab.push_back(-A[permutation[i]]);
+    matrice Aborig(Ab);
+    int m=Ab.size(); vecteur last2(m);
+    for (int i=0;i<m;++i){
+      if (is_strictly_positive(-Ab[i][R],contextptr)){
+        Ab[i]=-Ab[i];
+        // if b_i<0 we must optimize with respect to this variable
+        // and the optimum of the artificial problem (phase I) used
+        // to find a solution of the large inequalities system
+        // optimum must be 0 (so that the artificial variable disappear)
+        last2[i]=1; 
+      }
+    }
+    // insert identity
+    for (int i=0;i<m;++i){
+      vecteur & v=*Ab[i]._VECTptr;
+      gen cst=v[R];
+      v.pop_back();
+      for (int j=0;j<m;++j)
+        v.push_back(i==j?1:0);
+      v.push_back(cst);
+    }
+    vecteur last(mergevecteur(vecteur(R,0),last2));
+    last.push_back(0);
+    Ab.push_back(last);
+    vecteur v; gen optimum;
+    // if we have m additional inequalities between Ax and b, b>=0
+    // search solutions for Ax=b under constraints x>=0
+    // If b_i<0 change sign s.t. b>=0
+    // Call simplex_reduce on (m additional slack variables y)
+    // ( A | I_m | B )
+    // (0.0| 1.1 | 0 )
+    // if optimum is <0, there is no solution
+    // otherwise extract m first components of the solution
+    matrice res=simplex_reduce(Ab,v,optimum,true,false,contextptr);
+    if (!is_zero(optimum))
+      return 0;
+    // now v fullfills large inequalities in translated new basis
+    // update solution
+    sol=vecteur(v.begin(),v.begin()+n);
+    for (int i=0;i<sol.size();++i)
+      sol[i] -= translate[i];
+    bool nostrict=true;
+    for (int i=0;i<strict.size();++i){
+      // pos=strict[i] is a strict ineq
+      // if v[permutation[pos]]!=0 large ineq is already strict
+      int pos=strict[i];
+      if (is_exactly_zero(v[pos])){
+        nostrict=false;
+        break;
+      }
+    }
+    if (nostrict){
+      sol=multmatvecteur(Pinv,sol);
+      return 1;
+    }    
+    // In non degenerate situations, n inequalities (including x>=0)
+    // will be equalities, with nomal vectors that form a basis,
+    // in this basis increasing a little bit the coordinates will
+    // keep all other inequalities strict
+    vector<int> zeropos; gen minabs(1);
+    for (int i=0;i<m+R;++i){
+      if (is_exactly_zero(v[i])){
+        zeropos.push_back(i);
+      }
+      else {
+        gen curabs;
+        if (i<R)
+          curabs=abs(v[i],contextptr);
+        else
+          curabs=Aborig[i-R][R];
+        if (is_greater(minabs,curabs,contextptr))
+          minabs=curabs;
+      }        
+    }
+    int z=zeropos.size();
+    matrice P2(z),I(midn(n));
+    vecteur strictv(z);
+    // homogeneous strict inequalities: run a small translation
+    // find direction by solving an optimization problem
+    for (int i=0;i<z;++i){
+      int pos=zeropos[i];
+      bool is_strict=equalposcomp(strict,permutation[pos]);
+      if (pos<R){
+        P2[i]=I[pos];
+      }
+      else {
+        vecteur &w=*Aborig[pos-R]._VECTptr;
+        P2[i]=-vecteur(w.begin(),w.begin()+n);
+      }
+      // add identity parts
+      for (int j=0;j<z;++j)
+        P2[i]._VECTptr->push_back(i==j?-1:0);
+      for (int j=0;j<z;++j)
+        P2[i]._VECTptr->push_back(i==j?1:0);
+      P2[i]._VECTptr->push_back(is_strict?1:0);
+      if (is_strict)
+        strictv[i]=1;
+    }
+    vecteur ligne(n+z,0); ligne=mergevecteur(ligne,strictv); ligne.push_back(0);
+    P2.push_back(ligne);
+    res=simplex_reduce(P2,v,optimum,true,false,contextptr);
+    if (!is_zero(optimum)){
+      sol=multmatvecteur(Pinv,sol);
+      *logptr(contextptr) << "Unable to solve with strict constraints, large solution " << sol << "\n";
+      return 0; 
+    }
+    // v is the direction
+    v=vecteur(v.begin(),v.begin()+n);
+    gen Pnorm=linfnorm(v,contextptr)*linfnorm(Pinv,contextptr);
+    vecteur delta=minabs/Pnorm/gen(2*n)*v;
+    sol=addvecteur(sol,delta);
+    sol=multmatvecteur(Pinv,sol);
+    return 1;
+  }
+
   vecteur linsolve(const vecteur & sl,const vecteur & x,GIAC_CONTEXT){
     if (sl.empty())
       return x;
@@ -4479,6 +4708,18 @@ namespace giac {
     }
     if (ckmatrix(sl,false,false)) // check whether sl has undef inside
       return vecteur(x.size(),undef);
+    // symbolic system. First check for inequalities
+    if (has_op(sl,*at_superieur_strict) || has_op(sl,*at_inferieur_strict) ||
+        has_op(sl,*at_superieur_egal) || has_op(sl,*at_inferieur_egal)){
+      vecteur res;
+      int val=linsolve_ineq(sl,x,res,contextptr);
+      if (val<0)
+        return vecteur(1,gensizeerr(gettext("Unable to solve inequalities system")));
+      if (val==0)
+        return vecteur(0);
+      //return res;
+      return makevecteur(res,string2gen(gettext("Certificate of existence, more solutions may exist"),false));
+    }
     A=sxa(sl,x,contextptr);
     vecteur B,R(x);
     gen rep;
@@ -6674,7 +6915,7 @@ namespace giac {
     // check if the whole system is linear
     if (is_zero(derive(derive(eq_orig,var,contextptr),var,contextptr),contextptr)){
       gen sol=_linsolve(makesequence(eq_orig,var),contextptr);
-      if (sol.type==_VECT && sol._VECTptr->empty())
+      if (sol.type==_VECT && (sol._VECTptr->empty() || sol._VECTptr->back().type==_STRNG))
 	return *sol._VECTptr;
       return vecteur(1,sol);
     }

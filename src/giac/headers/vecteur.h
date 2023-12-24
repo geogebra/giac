@@ -290,6 +290,8 @@ namespace giac {
   // Returns 0 on failure, 1 on success, 2 if success inverting and no need to remove identity
   int mrref(const matrice & a, matrice & res, vecteur & pivots, gen & det,int l, int lmax, int c,int cmax,
 	     int fullreduction,int dont_swap_below,bool convert_internal,int algorithm,int rref_or_det_or_lu,GIAC_CONTEXT);
+  int mrref(const matrice & a, matrice & res, vector<int> & permutation,vecteur & pivots, gen & det,int l, int lmax, int c,int cmax,
+	     int fullreduction,int dont_swap_below,bool convert_internal,int algorithm,int rref_or_det_or_lu,GIAC_CONTEXT);
   // holds temporary work storage for block operation
   struct smallmodrref_temp_t {
     std::vector< std::vector<int> > Ainvtran,Ainv,CAinv;
