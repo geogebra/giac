@@ -3889,6 +3889,22 @@ namespace giac {
     return false;
   }
 
+  gen _integrate_(const gen &args,GIAC_CONTEXT);
+  // integrate w=[M,N]=Mdx+Ndy along curve, v=[x,y]
+  gen curviligne(const vecteur & w,const vecteur & v,const gen & curve,GIAC_CONTEXT){
+    gen c=remove_at_pnt(curve);
+    c=c[1][1];
+    gen eq=c[0],t=c[1],tmin=c[2],tmax=c[3],xt,yt,V;
+    reim(eq,xt,yt,contextptr);
+    vecteur vt=makevecteur(xt,yt);
+    if (is_potential(w,v,V,contextptr))
+      return subst(V,v,subst(vt,t,tmax,false,contextptr),false,contextptr)-subst(V,v,subst(vt,t,tmin,false,contextptr),false,contextptr);
+    gen M=subst(w[0],v,vt,false,contextptr);
+    gen N=subst(w[1],v,vt,false,contextptr);
+    gen g=M*derive(xt,t,contextptr)+N*derive(yt,t,contextptr);
+    return _integrate_(makesequence(g,t,tmin,tmax),contextptr);
+  }
+
   gen _integrate_(const gen &args,GIAC_CONTEXT){
 #ifdef LOGINT
     *logptr(contextptr) << gettext("integrate begin") << '\n';
@@ -3937,7 +3953,43 @@ namespace giac {
     }
     if (s==1)
       return gentoofewargs("integrate");
-    if (s==3){ 
+    if (s==2 && v[0].type==_VECT && v[0]._VECTptr->size()==2 && v[1].is_symb_of_sommet(at_pnt))
+      return curviligne(*v[0]._VECTptr,makevecteur(x__IDNT_e,y__IDNT_e),v[1],contextptr);
+
+    if (s==7){
+      for (int i=0;i<s;++i)
+        v[i]=eval(v[i],1,contextptr);
+      gen M,N,x,y;
+      // integrate([M,N],[x,y],x(t),y(t),t,tmin,tmax)
+      // integrate(M,N,x(t),y(t),t,tmin,tmax)
+      if (v[0].type==_VECT && v[1].type==_VECT && v[0]._VECTptr->size()==2 && v[1]._VECTptr->size()==2){
+        x=v[1]._VECTptr->front();
+        y=v[1]._VECTptr->back();
+        M=v[0]._VECTptr->front();
+        N=v[0]._VECTptr->back();        
+      }
+      else {
+        x=x__IDNT_e;
+        y=y__IDNT_e;
+        M=v[0];
+        N=v[1];
+      }
+      gen xt=v[2],yt=v[3],t=v[4],tmin=v[5],tmax=v[6];
+      gen xy=makevecteur(x,y); gen xyt=makevecteur(xt,yt),V;
+      if (is_potential(makevecteur(M,N),*xy._VECTptr,V,contextptr))
+        return subst(V,xy,subst(xyt,t,tmax,false,contextptr),false,contextptr)-subst(V,xy,subst(xyt,t,tmin,false,contextptr),false,contextptr);
+      M=subst(M,xy,xyt,false,contextptr);
+      N=subst(N,xy,xyt,false,contextptr);
+      gen g=M*derive(xt,t,contextptr)+N*derive(yt,t,contextptr);
+      return _integrate_(makesequence(g,t,tmin,tmax),contextptr);
+    }
+    if (s==3){
+      // integrate([M,N],[x,y],G)
+      if (v[0].type==_VECT && v[0]._VECTptr->size()==2 && v[1].type==_VECT && v[1]._VECTptr->size()==2){
+        v[0]=eval(v[0],1,contextptr);
+        v[2]=eval(v[2],1,contextptr);
+        return curviligne(*v[0]._VECTptr,*v[1]._VECTptr,v[2],contextptr);
+      }
       if (calc_mode(contextptr)!=1)
 	// indefinite integration with constant of integration
 	return _integrate(gen(makevecteur(v[0],v[1]),_SEQ__VECT),contextptr)+v[2];

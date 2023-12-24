@@ -82,6 +82,7 @@ namespace giac {
   gen _gramschmidt(const gen & g,GIAC_CONTEXT);
   gen _fmod(const gen & g,GIAC_CONTEXT);
   gen _pmin(const gen & g,GIAC_CONTEXT);
+  bool is_potential(const vecteur & fv,const vecteur & xv,gen & res,GIAC_CONTEXT);
   gen _potential(const gen & g,GIAC_CONTEXT);
   gen _vpotential(const gen & g,GIAC_CONTEXT);
   gen _poly2symb(const gen & g,GIAC_CONTEXT);
