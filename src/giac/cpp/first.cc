@@ -18,8 +18,10 @@
 #include "config.h"
 #endif
 #include "first.h"
+#ifndef USE_GMP_REPLACEMENTS
 int init_gmp_memory::refcount = 0;
 init_gmp_memory init_gmp_memory_instance;
+#endif
 
 #ifdef HAVE_LIBGC
 #include <new>

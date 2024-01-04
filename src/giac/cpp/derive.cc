@@ -981,7 +981,10 @@ namespace giac {
       ndiff=g.val;
     }
     gen eq(remove_equal(args._VECTptr->front())),x((*args._VECTptr)[1]),y((*args._VECTptr)[2]);
-    gen yprime=-derive(eq,x,contextptr)/derive(eq,y,contextptr);
+    gen dy=derive(eq,y,contextptr);
+    if (is_squarematrix(dy))
+      dy=mtran(*dy._VECTptr);
+    gen yprime=-inv(dy,contextptr)*derive(eq,x,contextptr);
     if (ndiff==1)
       return yprime;
     gen yn=yprime;

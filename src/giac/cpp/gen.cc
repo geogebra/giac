@@ -12701,6 +12701,13 @@ void sprint_double(char * s,double d){
 	ch=toupper(ch);
       if (forme.size()<2 || forme.size()>3 || forme[1]<'0' || forme[1]>'9' || (forme.size()==3 && forme[2]<'0' && forme[2]>'9'))
 	return "invalid format";
+      if (forme.size()==3){
+        int dig=(forme[1]-'0')*10+forme[2]-'0';
+        if (dig>17){
+          forme[1]='1';
+          forme[2]='7';
+        }
+      }
       if (my_isnan(d))
 	return "undef";
       if (my_isinf(d))
