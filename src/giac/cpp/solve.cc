@@ -4683,6 +4683,13 @@ namespace giac {
     return g;
   }
 
+  void resize_solutions(vecteur & v, int s){
+    for (int i=0;i<v.size();++i){
+      if (v[i].type==_VECT && v[i]._VECTptr->size()>s)
+        v[i]=vecteur(v[i]._VECTptr->begin(),v[i]._VECTptr->begin()+s);
+    }
+  }
+
   // return -3 too many random tries, -2 invalid, -1 (unknown), 0 (no solution), 1 (solution exist)
   int solve_ineq(const vecteur & sl_,const vecteur &x,vecteur & res,bool allowrec,GIAC_CONTEXT){
     vecteur v(x);
@@ -4836,6 +4843,7 @@ namespace giac {
     }
     if (ineqs.empty()){
       res=gsolve(eq,X,false/*complexmode*/,false/*evalfafter*/,contextptr);
+      resize_solutions(res,x.size());
       return res.empty()?0:1;
     }
 #if 1 // try replacing ineqs by eq
@@ -4848,8 +4856,10 @@ namespace giac {
     int nmax=ineqs.size();
     res.clear();
     for (int n=0;n<=nmax;++n){
-      if (n>=1 && !res.empty())
+      if (n>=1 && !res.empty()){
+        resize_solutions(res,x.size());
         return 1;
+      }
 #ifdef NO_STDEXCEPT
       if (n+eq.size()<X.size())
         continue;
@@ -4969,8 +4979,10 @@ namespace giac {
                           newsys.push_back(cur);
                         }
                         int ires=solve_ineq(newsys,x,res,false/*allowrec*/,contextptr);
-                        if (ires==1)
+                        if (ires==1){
+                          resize_solutions(res,x.size());
                           return 1;
+                        }
                       }
                     }
                   }
@@ -4984,8 +4996,10 @@ namespace giac {
               }
             }
           } // end R not empty
-          if (n==0)
+          if (n==0){
+            resize_solutions(res,x.size());
             return res.empty()?0:1;
+          }
         } // end 0 dimensional system
         // increment pos
         for (int j=n-1;j>=0;j--){
@@ -5078,6 +5092,7 @@ namespace giac {
         res.clear();
         res.push_back(sol);
         res.push_back(string2gen("Certificate of existence, more solution may exist",false));
+        resize_solutions(res,x.size());
         return 1;
       }
     }
