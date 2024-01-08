@@ -78,8 +78,9 @@ using namespace std;
 #include <unistd.h>
 #endif
 #ifdef GIAC_HAS_STO_38
-#define sprintf256 sprintf
+#define sprintf512 sprintf
 #endif
+#define SPRINTF_BUF_LENGTH 512
 
 #if defined HAVE_TGAMMAF || defined __APPLE__ || defined EMCC || defined EMCC2 || defined NO_BSD 
 inline float fgamma(float f1){ return tgammaf(f1); }
@@ -6469,7 +6470,7 @@ namespace giac {
     if (args.type==_VECT && args._VECTptr->size()>1 && args._VECTptr->front().type==_STRNG){
       vecteur v=*args._VECTptr;
       const char * fmt=v.front()._STRNGptr->c_str();
-      char buf[256];
+      char buf[SPRINTF_BUF_LENGTH];
       size_t s=v.size(),fs=1;
       // count % in fmt, should match s
       for (size_t i=0;i<strlen(fmt);++i){
@@ -6491,13 +6492,13 @@ namespace giac {
       if (s==2){
 	switch (v[1].type){
 	case _INT_:
-	  sprintf256(buf,fmt,v[1].val);
+	  sprintf512(buf,fmt,v[1].val);
 	  break;
 	case _DOUBLE_:
-	  sprintf256(buf,fmt,v[1]._DOUBLE_val);
+	  sprintf512(buf,fmt,v[1]._DOUBLE_val);
 	  break;
 	case _STRNG:
-	  sprintf256(buf,fmt,v[1]._STRNGptr->c_str());
+	  sprintf512(buf,fmt,v[1]._STRNGptr->c_str());
 	  break;
 	default:
 	  return gentypeerr(contextptr);
@@ -6508,31 +6509,31 @@ namespace giac {
 	unsigned t=(v[1].type<< _DECALAGE) | v[2].type;
 	switch (t){
 	case _INT___INT_:
-	  sprintf256(buf,fmt,v[1].val,v[2].val);
+	  sprintf512(buf,fmt,v[1].val,v[2].val);
 	  break;
 	case _INT___DOUBLE_:
-	  sprintf256(buf,fmt,v[1].val,v[2]._DOUBLE_val);
+	  sprintf512(buf,fmt,v[1].val,v[2]._DOUBLE_val);
 	  break;
 	case _INT___STRNG:
-	  sprintf256(buf,fmt,v[1].val,v[2]._STRNGptr->c_str());
+	  sprintf512(buf,fmt,v[1].val,v[2]._STRNGptr->c_str());
 	  break;
 	case _DOUBLE___INT_:
-	  sprintf256(buf,fmt,v[1]._DOUBLE_val,v[2].val);
+	  sprintf512(buf,fmt,v[1]._DOUBLE_val,v[2].val);
 	  break;
 	case _DOUBLE___DOUBLE_:
-	  sprintf256(buf,fmt,v[1]._DOUBLE_val,v[2]._DOUBLE_val);
+	  sprintf512(buf,fmt,v[1]._DOUBLE_val,v[2]._DOUBLE_val);
 	  break;
 	case _DOUBLE___STRNG:
-	  sprintf256(buf,fmt,v[1]._DOUBLE_val,v[2]._STRNGptr->c_str());
+	  sprintf512(buf,fmt,v[1]._DOUBLE_val,v[2]._STRNGptr->c_str());
 	  break;
 	case _STRNG__INT_:
-	  sprintf256(buf,fmt,v[1]._STRNGptr->c_str(),v[2].val);
+	  sprintf512(buf,fmt,v[1]._STRNGptr->c_str(),v[2].val);
 	  break;
 	case _STRNG__DOUBLE_:
-	  sprintf256(buf,fmt,v[1]._STRNGptr->c_str(),v[2]._DOUBLE_val);
+	  sprintf512(buf,fmt,v[1]._STRNGptr->c_str(),v[2]._DOUBLE_val);
 	  break;
 	case _STRNG__STRNG:
-	  sprintf256(buf,fmt,v[1]._STRNGptr->c_str(),v[2]._STRNGptr->c_str());
+	  sprintf512(buf,fmt,v[1]._STRNGptr->c_str(),v[2]._STRNGptr->c_str());
 	  break;
 	default:
 	  return gentypeerr(contextptr);
@@ -6549,28 +6550,28 @@ namespace giac {
 	if (v1.type==_DOUBLE_){
 	  if (v2.type==_DOUBLE_){
 	    if (v3.type==_DOUBLE_)
-	      sprintf256(buf,fmt,v1._DOUBLE_val,v2._DOUBLE_val,v3._DOUBLE_val);
+	      sprintf512(buf,fmt,v1._DOUBLE_val,v2._DOUBLE_val,v3._DOUBLE_val);
 	    else
-	      sprintf256(buf,fmt,v1._DOUBLE_val,v2._DOUBLE_val,v3._STRNGptr->c_str());
+	      sprintf512(buf,fmt,v1._DOUBLE_val,v2._DOUBLE_val,v3._STRNGptr->c_str());
 	  }
 	  else {
 	    if (v3.type==_DOUBLE_)
-	      sprintf256(buf,fmt,v1._DOUBLE_val,v2._STRNGptr->c_str(),v3._DOUBLE_val);
+	      sprintf512(buf,fmt,v1._DOUBLE_val,v2._STRNGptr->c_str(),v3._DOUBLE_val);
 	    else
-	      sprintf256(buf,fmt,v1._DOUBLE_val,v2._STRNGptr->c_str(),v3._STRNGptr->c_str());	    
+	      sprintf512(buf,fmt,v1._DOUBLE_val,v2._STRNGptr->c_str(),v3._STRNGptr->c_str());	    
 	  }
 	} else {
 	  if (v2.type==_DOUBLE_){
 	    if (v3.type==_DOUBLE_)
-	      sprintf256(buf,fmt,v1._STRNGptr->c_str(),v2._DOUBLE_val,v3._DOUBLE_val);
+	      sprintf512(buf,fmt,v1._STRNGptr->c_str(),v2._DOUBLE_val,v3._DOUBLE_val);
 	    else
-	      sprintf256(buf,fmt,v1._STRNGptr->c_str(),v2._DOUBLE_val,v3._STRNGptr->c_str());
+	      sprintf512(buf,fmt,v1._STRNGptr->c_str(),v2._DOUBLE_val,v3._STRNGptr->c_str());
 	  }
 	  else {
 	    if (v3.type==_DOUBLE_)
-	      sprintf256(buf,fmt,v1._STRNGptr->c_str(),v2._STRNGptr->c_str(),v3._DOUBLE_val);
+	      sprintf512(buf,fmt,v1._STRNGptr->c_str(),v2._STRNGptr->c_str(),v3._DOUBLE_val);
 	    else
-	      sprintf256(buf,fmt,v1._STRNGptr->c_str(),v2._STRNGptr->c_str(),v3._STRNGptr->c_str());	    
+	      sprintf512(buf,fmt,v1._STRNGptr->c_str(),v2._STRNGptr->c_str(),v3._STRNGptr->c_str());	    
 	  }
 	}
 	return string2gen(buf,false);	

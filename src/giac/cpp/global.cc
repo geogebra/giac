@@ -193,14 +193,14 @@ size_t pythonjs_stack_size=30*1024,
 void * bf_ctx_ptr=0;
 size_t bf_global_prec=128; // global precision for BF
 
-int sprintf256(char * s, const char * format, ...){
+int sprintf512(char * s, const char * format, ...){
   int z;
   va_list ap;
   va_start(ap,format);
 #if defined(FIR) && !defined(FIR_LINUX)
-  z = firvsprintf(s, format, ap);
+  z = firvsnprintf(s, 512, format, ap);
 #else
-  z = vsnprintf(s, 256, format, ap);
+  z = vsnprintf(s, 512, format, ap);
 #endif
   va_end(ap);
   return z;

@@ -174,8 +174,8 @@ typedef double giac_double;
 typedef long double  long_double;
 
 // sprintf replacement
-// calls snprintf instead of sprintf with n=256, assumes s bufsize>=256
-int sprintf256(char *s,const char *format,...);
+// calls snprintf instead of sprintf with n=512, assumes s bufsize>=512
+int sprintf512(char *s,const char *format,...);
 int my_sprintf(char * s, const char * format, ...);
 #ifdef GIAC_HAS_STO_38
 //#define WITH_MYOSTREAM
