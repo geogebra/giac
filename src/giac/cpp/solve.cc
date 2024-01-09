@@ -5004,7 +5004,7 @@ namespace giac {
         // increment pos
         for (int j=n-1;j>=0;j--){
           ++pos[j];
-          if (pos[j]<nmax+(n-1-j)){
+          if (pos[j]<nmax-(n-1-j)){
             for (int k=j+1;k<n;++k){
               pos[k]=pos[k-1]+1;
             }
@@ -5043,9 +5043,7 @@ namespace giac {
         return -3;
       gen J=0; int alpha=1,beta=0,gamma=1,delta=0;
       for (int i=0;i<n;++i){
-        if (nr){
-          alpha=1+std_rand()%9;
-        }
+        alpha=1+std_rand()%9;
         beta=std_rand()%9;
         J += alpha*pow(X[i]-beta,2,contextptr);
       }
@@ -5056,9 +5054,7 @@ namespace giac {
           J += V[i]*(ineqs[i-eqs]-pow(W[i],2,contextptr));
         else
           J += V[i]*(pow(W[i],2,contextptr)*ineqs[i-eqs]-1);
-        if (nr){
-          gamma=1+std_rand()%9;
-        }
+        gamma=1+std_rand()%9;
         delta=std_rand()%9;
         J += gamma*pow(W[i]-delta,2,contextptr);
       }
@@ -5097,6 +5093,88 @@ namespace giac {
       }
     }
     return -1;
+  }
+
+  vecteur ineq_addassume(const vecteur & sl_,const vecteur &x,GIAC_CONTEXT){
+    vecteur sl(sl_);
+    for (int i=0;i<x.size();++i){
+      gen g=x[i];
+      if (g.type!=_IDNT)
+        continue;
+      gen g2=g._IDNTptr->eval(1,g,contextptr);
+      if (g2.type!=_VECT || g2.subtype!=_ASSUME__VECT)
+        continue;
+      vecteur v=*g2._VECTptr;
+      if ( v.size()==3 && (v.front()==vecteur(0) || v.front()==_DOUBLE_ || v.front()==_ZINT || v.front()==_SYMB || v.front()==0) && v[1].type==_VECT){
+        vecteur a=*v[1]._VECTptr;
+        if (a.empty() || a.front().type!=_VECT)
+          continue;
+        if (a.size()>1)
+          *logptr(contextptr) << "Assumption on" << x[i] << ": solving only for the first interval in " << a << "\n";
+        a=*a.front()._VECTptr;
+        if (a.size()==2 && v[2].type==_VECT){
+          if (a[0]!=minus_inf)
+            sl.push_back(symbolic(equalposcomp(*v[2]._VECTptr,a[0])?at_superieur_strict:at_superieur_egal,makesequence(x[i],a[0])));
+          if (a[1]!=plus_inf)
+            sl.push_back(symbolic(equalposcomp(*v[2]._VECTptr,a[1])?at_inferieur_strict:at_inferieur_egal,makesequence(x[i],a[1])));          
+        }
+      }
+    }
+    return sl;
+  }
+
+  // number of possible assumptions on x
+  vector<int> ineq_countassume(const vecteur &x,GIAC_CONTEXT){
+    vector<int> res(x.size(),1);
+    for (int i=0;i<x.size();++i){
+      gen g=x[i];
+      if (g.type!=_IDNT)
+        continue;
+      gen g2=g._IDNTptr->eval(1,g,contextptr);
+      if (g2.type!=_VECT || g2.subtype!=_ASSUME__VECT)
+        continue;
+      vecteur v=*g2._VECTptr;
+      if ( v.size()==3 && (v.front()==vecteur(0) || v.front()==_DOUBLE_ || v.front()==_ZINT || v.front()==_SYMB || v.front()==0) && v[1].type==_VECT){
+        vecteur a=*v[1]._VECTptr;
+        if (a.empty() || a.front().type!=_VECT)
+          continue;
+        res[i]=a.size();
+      }
+    }
+    return res;
+  }
+  
+  vecteur ineq_addassume(const vecteur & sl_,const vecteur &x,const vector<int> & Nassume,int n,GIAC_CONTEXT){
+    vector<int> N(Nassume.size());
+    for (int i=0;i<Nassume.size();++i){
+      N[i]=n%Nassume[i];
+      n=n/Nassume[i];
+    }
+    vecteur sl(sl_);
+    for (int i=0;i<x.size();++i){
+      gen g=x[i];
+      if (g.type!=_IDNT)
+        continue;
+      gen g2=g._IDNTptr->eval(1,g,contextptr);
+      if (g2.type!=_VECT || g2.subtype!=_ASSUME__VECT)
+        continue;
+      vecteur v=*g2._VECTptr;
+      if ( v.size()==3 && (v.front()==vecteur(0) || v.front()==_DOUBLE_ || v.front()==_ZINT || v.front()==_SYMB || v.front()==0) && v[1].type==_VECT){
+        vecteur a=*v[1]._VECTptr;
+        if (a.empty())
+          continue;
+        if (a.size()<N[i] || a[N[i]].type!=_VECT)
+          *logptr(contextptr) << "ineq_addassume bug!\n";
+        a=*a[N[i]]._VECTptr;
+        if (a.size()==2 && v[2].type==_VECT){
+          if (a[0]!=minus_inf)
+            sl.push_back(symbolic(equalposcomp(*v[2]._VECTptr,a[0])?at_superieur_strict:at_superieur_egal,makesequence(x[i],a[0])));
+          if (a[1]!=plus_inf)
+            sl.push_back(symbolic(equalposcomp(*v[2]._VECTptr,a[1])?at_inferieur_strict:at_inferieur_egal,makesequence(x[i],a[1])));          
+        }
+      }
+    }
+    return sl;
   }
 
   vecteur linsolve(const vecteur & sl,const vecteur & x,GIAC_CONTEXT){
@@ -5157,13 +5235,29 @@ namespace giac {
     if (has_op(sl,*at_superieur_strict) || has_op(sl,*at_inferieur_strict) ||
         has_op(sl,*at_superieur_egal) || has_op(sl,*at_inferieur_egal)){
       vecteur res;
-      int val=linsolve_ineq(sl,x,res,contextptr);
-      if (val<0)
-        return vecteur(1,gensizeerr(gettext("Unable to solve inequalities system")));
-      if (val==0)
-        return vecteur(0);
-      //return res;
-      return makevecteur(res,string2gen(gettext("Certificate of existence, more solutions may exist"),false));
+      vector<int> Nassume(ineq_countassume(x,contextptr));
+      int N=1;
+      for (int i=0;i<Nassume.size();++i)
+        N *= Nassume[i];
+#if 0
+      if (N==1){
+        int val=linsolve_ineq(ineq_addassume(sl,x,contextptr),x,res,contextptr);
+        if (val<0)
+          return vecteur(1,gensizeerr(gettext("Unable to solve inequalities system")));
+        if (val==0)
+          return vecteur(0);
+        //return res;
+        return makevecteur(res,string2gen(gettext("Certificate of existence, more solutions may exist"),false));
+      }
+#endif
+      for (int i=0;i<N;++i){
+        int val=linsolve_ineq(ineq_addassume(sl,x,Nassume,i,contextptr),x,res,contextptr);
+        if (val<-1)
+          return vecteur(1,gensizeerr(gettext("Unable to solve inequalities system")));
+        if (val>0)
+          return makevecteur(res,string2gen(gettext("Certificate of existence, more solutions may exist"),false));
+      }
+      return vecteur(0);
     }
     A=sxa(sl,x,contextptr);
     vecteur B,R(x);
@@ -7358,7 +7452,7 @@ namespace giac {
     if (!lop(eq_orig,*at_unit).empty())
       *logptr(contextptr) << "Units are not supported"<<'\n';
     // check if the whole system is linear
-    if (is_zero(derive(derive(eq_orig,var,contextptr),var,contextptr),contextptr)){
+    if (is_zero(derive(derive(remove_ineq(eq_orig),var,contextptr),var,contextptr),contextptr)){
       gen sol=_linsolve(makesequence(eq_orig,var),contextptr);
       if (sol.type==_VECT && (sol._VECTptr->empty() || sol._VECTptr->back().type==_STRNG))
 	return *sol._VECTptr;
@@ -7377,9 +7471,19 @@ namespace giac {
     }
     bool ineq=has_op(eq_orig,*at_superieur_strict) || has_op(eq_orig,*at_inferieur_strict) || has_op(eq_orig,*at_superieur_egal) || has_op(eq_orig,*at_inferieur_egal);
     if (ineq){
-      vecteur sol;
-      int r=solve_ineq(eq_orig,var,sol,true/*allowrecursion*/,contextptr);
-      return sol;
+      vector<int> Nassume(ineq_countassume(var,contextptr));
+      int N=1;
+      for (int i=0;i<Nassume.size();++i)
+        N *= Nassume[i];
+      for (int i=0;i<N;++i){
+        vecteur eq(ineq_addassume(eq_orig,var,Nassume,i,contextptr)),sol;
+        int r=solve_ineq(eq,var,sol,true/*allow recursion*/,contextptr);
+        if (r<-1)
+          return vecteur(1,gensizeerr(gettext("Unable to solve inequalities system")));
+        if (r>0)
+          return sol;
+      }
+      return vecteur(0);
     }
 #if 0
     if (s>int(eq_orig.size())){
