@@ -4437,16 +4437,16 @@ namespace giac {
             XJ=-b/a;
             vecteur SL=sl;
             SL.erase(SL.begin()+i);
-            SL=subst(SL,xj,XJ,false,contextptr);
+            SL=subst(SL,xj,XJ,true,contextptr);
             vecteur X(x);
-            X.erase(X.begin()+i);
+            X.erase(X.begin()+j);
             int r=linsolve_ineq(SL,X,sol,contextptr);
             if (r<1)
               return r;
             sol.insert(sol.begin()+j,0);
             xj=subst(XJ,x,sol,false,contextptr);
             sol[j]=xj;
-            return 0;
+            return 1;
           }
         }
       }
@@ -4690,18 +4690,53 @@ namespace giac {
     }
   }
 
+  vecteur remove_sommet(const vecteur & v){
+    vecteur w(v);
+    for (int i=0;i<w.size();++i){
+      if (w[i].type==_SYMB)
+        w[i]=w[i]._SYMBptr->feuille;
+    }
+    return w;
+  }
+
   // return -3 too many random tries, -2 invalid, -1 (unknown), 0 (no solution), 1 (solution exist)
   int solve_ineq(const vecteur & sl_,const vecteur &x,vecteur & res,bool allowrec,GIAC_CONTEXT){
     vecteur v(x);
     vecteur sl(gen2vecteur(exact(sl_,contextptr)));
+    sl=gen2vecteur(hyp2exp(sl,contextptr));
     lvar(remove_ineq(sl),v);
     vecteur X(x);
     int count=0;
     // for each algebraic var add an equation
     if (v!=x){
+      vecteur vt=mergevecteur(mergevecteur(lop(v,at_sin),lop(v,at_cos)),mergevecteur(lop(v,at_tan),lop(v,at_exp)));
+      if (vt.size()>1){
+        gen vtexp=_texpand(vt,contextptr);
+        vecteur wt=mergevecteur(mergevecteur(lop(vtexp,at_sin),lop(vtexp,at_cos)),mergevecteur(lop(vtexp,at_tan),lop(vtexp,at_exp)));
+        vecteur vtfeuille(remove_sommet(vt)),wtfeuille(remove_sommet(wt));
+        comprim(wtfeuille); comprim(vtfeuille);
+        if (wtfeuille.size()<vtfeuille.size()){
+          sl=subst(sl,vt,gen2vecteur(vtexp),true,contextptr);
+          v=x;
+          lvar(remove_ineq(sl),v);
+        }
+      }
+      vecteur vsincos,vexp;
       vecteur vin,vout;
       for (int i=0;i<v.size();++i){
         gen g=v[i];
+        if (g.is_symb_of_sommet(at_sin) || g.is_symb_of_sommet(at_cos) || g.is_symb_of_sommet(at_tan)){
+          g=g._SYMBptr->feuille;
+          if (!equalposcomp(vsincos,g))
+            vsincos.push_back(g);
+          continue;
+        }
+        if (g.is_symb_of_sommet(at_exp)){
+          g=g._SYMBptr->feuille;
+          if (!equalposcomp(vexp,g))
+            vexp.push_back(g);
+          continue;
+        }
         if (g.is_symb_of_sommet(at_pow)){
           gen base=g._SYMBptr->feuille[0];
           gen expo=g._SYMBptr->feuille[1];
@@ -4717,7 +4752,62 @@ namespace giac {
           continue;
         return -3; // non polynomial
       }
-      sl=subst(sl,vin,vout,false,contextptr);
+      if (!vin.empty())
+        sl=subst(sl,vin,vout,true,contextptr);
+      if (!vsincos.empty() || !vexp.empty()){
+        // FIXME sort phases and detect relationships
+        // add two variables per phase
+        vecteur vtrigin,vtrigout,vtrig,vexp_,vexpin,vexpout;
+        for (int i=0;i<vsincos.size();++i){
+          gen ci=create_var(X,count);
+          gen si=create_var(X,count);
+          gen ti=si/ci;
+          gen g=vsincos[i];
+          vtrig.push_back(ci);
+          vtrig.push_back(si);
+          vtrigin.push_back(symb_cos(g));
+          vtrigin.push_back(symb_sin(g));
+          vtrigin.push_back(symb_tan(g));
+          vtrigout.push_back(ci);
+          vtrigout.push_back(si);
+          vtrigout.push_back(ti);
+          sl.push_back(ci*ci+si*si-1);
+        }
+        sl=subst(sl,vtrigin,vtrigout,true,contextptr);
+        for (int i=0;i<vexp.size();++i){
+          gen ei=create_var(X,count);
+          gen g=vexp[i];
+          vexp_.push_back(ei);
+          vexpin.push_back(symb_exp(g));
+          vexpout.push_back(inv(ei*ei,contextptr));
+        }
+        sl=subst(sl,vexpin,vexpout,true,contextptr);
+        vecteur vars(mergevecteur(vtrig,vexp_));
+        lidnt(sl,vars,true);
+        int r=solve_ineq(sl,vars,res,allowrec,contextptr);
+        if (r<=0)
+          return r;
+        // solve vars==res[0]
+        vecteur sol=gen2vecteur(res.front());
+        vecteur EQ;
+        for (int i=0;i<vsincos.size();++i){
+          EQ.push_back(vsincos[i]-arg(gen(sol[2*i],sol[2*i+1]),contextptr));
+        }
+        for (int i=0;i<vexp.size();++i){
+          gen g=sol[i+vtrig.size()];
+          EQ.push_back(vexp[i]+ln(normal(g*g,contextptr),contextptr));
+        }
+        for (int i=vtrig.size()+vexp_.size();i<vars.size();++i)
+          EQ.push_back(vars[i]-sol[i]);
+        vecteur V=gsolve(EQ,X,false,false,contextptr);
+        if (V.empty()){
+          res.clear();
+          return -1;
+        }
+        resize_solutions(V,x.size());
+        res[0]=V;
+        return 1;
+      }
     }
     res=vecteur(1,undef);
     int strict=0; // ineqs with index >= strict are strict
@@ -4892,7 +4982,11 @@ namespace giac {
           gen rurvar=lidnt(G[2]).front();
           vecteur GX(Gv.begin()+3,Gv.end()),GX1(Gv.begin()+4,Gv.end());
           GX1=multvecteur(inv(GX.front(),contextptr),GX1);
-          vecteur R=gen2vecteur(_realroot(makesequence(pmin,epsilon(contextptr)),contextptr));
+          vecteur R;
+          if (_degree(pmin,contextptr).val<=4)
+            R=solve(pmin,rurvar,0,contextptr);
+          if (R.empty())
+            R=gen2vecteur(_realroot(makesequence(pmin,epsilon(contextptr)),contextptr));
           if (!R.empty() && !is_undef(R)){
             vector<bool> ineq_is_zero(ineqs.size());
             for (int k=0;k<ineqsnum.size();++k){
@@ -4903,7 +4997,7 @@ namespace giac {
               ineq_is_zero[k]=is_exactly_zero(cur);
             }
             for (int j=0;j<R.size();++j){
-              gen solrur=R[j]; solrur=solrur[0]; // remove multiplicity
+              gen solrur=R[j]; if (solrur.type==_VECT) solrur=solrur[0]; // remove multiplicity
               vecteur GXsol=subst(GX,rurvar,solrur,false,contextptr);
               gen sol=normal(inv(GXsol.front(),contextptr)*vecteur(GXsol.begin()+1,GXsol.end()),contextptr);
               // check if R satisfies remaining ineq

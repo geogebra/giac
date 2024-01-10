@@ -1047,7 +1047,7 @@ namespace giac {
   }
 
   gen hyp2exp(const gen & e,GIAC_CONTEXT){
-    return subst(e,sinhcoshtanh_tab,hyp2exp_tab,false,contextptr);
+    return subst(e,sinhcoshtanh_tab,hyp2exp_tab,true,contextptr);
   }
   gen _hyp2exp(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
