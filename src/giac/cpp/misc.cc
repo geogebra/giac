@@ -1135,21 +1135,43 @@ namespace giac {
   static gen sqrfree(const gen & g,const vecteur & l,GIAC_CONTEXT){
     if (g.type!=_POLY)
       return r2sym(g,l,contextptr);
+    polynome p=*g._POLYptr;
+    gen res(plus_one);
+    if (l.size()>1){ // recursive call on content
+      polynome c=lgcd(p);
+      p=p/c;
+      res=sqrfree(c.trunc1(),vecteur(l.begin()+1,l.end()),contextptr);
+    }
+    if (l.size()==1 && l[0].type==_VECT && l[0]._VECTptr->size()>1){ // recursive call on content
+      polynome c=lgcd(p);
+      p=p/c;
+      res=sqrfree(c.trunc1(),vecteur(1,vecteur(l[0]._VECTptr->begin()+1,l[0]._VECTptr->end())),contextptr);
+    }
     factorization f(sqff(*g._POLYptr));
     factorization::const_iterator it=f.begin(),itend=f.end();
-    gen res(plus_one);
     for (;it!=itend;++it)
       res=res*pow(r2e(it->fact,l,contextptr),it->mult);
     return res;
   }
-  static vecteur sqrfree(const gen & g,const vecteur & l,int mult,GIAC_CONTEXT){
+  vecteur sqrfree(const gen & g,const vecteur & l,int mult,GIAC_CONTEXT){
     vecteur res;
     if (g.type!=_POLY){
       if (is_one(g))
 	return res;
       return vecteur(1,makevecteur(r2sym(g,l,contextptr),mult));
     }
-    factorization f(sqff(*g._POLYptr));
+    polynome p=*g._POLYptr;
+    if (l.size()>1){ // recursive call on content
+      polynome c=lgcd(p);
+      p=p/c;
+      res=sqrfree(c.trunc1(),vecteur(l.begin()+1,l.end()),mult,contextptr);
+    }
+    if (l.size()==1 && l[0].type==_VECT && l[0]._VECTptr->size()>1){ // recursive call on content
+      polynome c=lgcd(p);
+      p=p/c;
+      res=sqrfree(c.trunc1(),vecteur(1,vecteur(l[0]._VECTptr->begin()+1,l[0]._VECTptr->end())),mult,contextptr);
+    }
+    factorization f(sqff(p));
     factorization::const_iterator it=f.begin(),itend=f.end();
     for (;it!=itend;++it){
       const polynome & p=it->fact;

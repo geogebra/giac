@@ -4779,7 +4779,12 @@ namespace giac {
           gen g=vexp[i];
           vexp_.push_back(ei);
           vexpin.push_back(symb_exp(g));
+#ifdef INEQEXPINV
           vexpout.push_back(inv(ei*ei,contextptr));
+#else
+          vexpout.push_back(ei);
+          sl.push_back(symb_superieur_strict(ei,0));
+#endif
         }
         sl=subst(sl,vexpin,vexpout,true,contextptr);
         vecteur vars(mergevecteur(vtrig,vexp_));
@@ -4795,7 +4800,11 @@ namespace giac {
         }
         for (int i=0;i<vexp.size();++i){
           gen g=sol[i+vtrig.size()];
+#ifdef INEQEXPINV
           EQ.push_back(vexp[i]+ln(normal(g*g,contextptr),contextptr));
+#else
+          EQ.push_back(vexp[i]-ln(g,contextptr));
+#endif
         }
         for (int i=vtrig.size()+vexp_.size();i<vars.size();++i)
           EQ.push_back(vars[i]-sol[i]);
@@ -4892,29 +4901,29 @@ namespace giac {
                   continue;
                 fraction f=sym2r(g-S[r],X,contextptr);
                 if (f.num.type==_POLY && is_integer(f.num._POLYptr->coord.front().value) && is_positive(-f.num._POLYptr->coord.front().value,contextptr) && is_integer(f.den) && is_positive(f.den,contextptr)){
-                  factorization fa(sqff(-*f.num._POLYptr));
-                  factorization::const_iterator it=fa.begin(),itend=fa.end();
+                  polynome p=-*f.num._POLYptr;
+                  vecteur S=sqrfree(p,X,1,contextptr),EQ; int I;
                   // check degrees of sqrfree factorization
-                  for (;it!=itend;++it){
-                    const polynome & p=it->fact;
-                    if (p.total_degree() && it->mult%2)
-                      break;
+                  for (I=0;I<S.size();++I){
+                    const gen g=S[I];
+                    if (g.type==_VECT && g._VECTptr->size()==2){
+                      gen g0=g._VECTptr->front();
+                      if (!is_zero(derive(g0,X,contextptr))){
+                        if (g._VECTptr->back().val%2)
+                          break; // even multiplicity
+                        EQ.push_back(g0);
+                      }
+                    }
                   }
-                  if (it==itend){
+                  if (I==S.size()){
                     // all multiplicities are even
                     if (!iszero){
                       res.clear();
                       return 0;
                     }
                     // add equations
-                    it=fa.begin();
-                    for (;it!=itend;++it){
-                      const polynome & p=it->fact;
-                      if (p.total_degree()){
-                        eq.push_back(r2sym(p,X,contextptr));
-                      }
-                      done=true;
-                    }
+                    eq=mergevecteur(eq,EQ);
+                    done=true;
                   }
                 }
               }
@@ -5012,6 +5021,7 @@ namespace giac {
                   if (!equalposcomp(pos,k))
                     break;
                   strictiszero.push_back(k);
+                  continue;
                 }
                 gen cur=ineqs[k];
                 cur=subst(cur,X,sol,false,contextptr);
