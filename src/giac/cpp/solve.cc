@@ -4836,109 +4836,114 @@ namespace giac {
         gen num=g._VECTptr->front();
         g=num*g._VECTptr->back();
         // n/d>0 is equivalent to n*d>0 and n/d>=0 is equivalent to n*d>=0
-        if (stricteq){
-          ineqs.push_back(g);
-          ineqsnum.push_back(num);
+        bool done=false;
+        // detect here some simple ineqs that are equations, like -x^2-y^2>=0
+        gen deg=_total_degree(makesequence(g,X),contextptr);
+        if (deg==2){
+          fraction p=sym2r(g,X,contextptr);
+          if (p.num.type==_POLY){
+            // extract homogeneous part of degree 2
+            polynome q(p.num._POLYptr->dim);
+            vector< monomial<gen> >::const_iterator it=p.num._POLYptr->coord.begin(),itend=p.num._POLYptr->coord.end();
+            for (;it!=itend;++it){
+              if (total_degree(it->index)==2)
+                q.coord.push_back(*it);
+            }
+            gen Q=r2sym(q,X,contextptr);
+            vecteur D,U,P;
+            vecteur w=gauss(Q,X,D,U,P,contextptr);
+            // find signature
+            int i=0;
+            for (;i<D.size();++i){
+              if (is_strictly_positive(D[i],contextptr))
+                break; // we have a true inequation
+            }
+            if (i==D.size()){
+              // is it possible to translate?
+              vecteur dg=gen2vecteur(derive(g,X,contextptr));
+              vecteur delta=linsolve(dg,X,contextptr);
+              if (delta.size()==X.size()){
+                gen gt=subst(g,X,delta,false,contextptr);
+                if (is_exactly_zero(ratnormal(gt,contextptr))){
+                  // each element of w translated is an equation ==0
+                  w=subst(w,X,X-delta,false,contextptr);
+                  for (int i=0;i<w.size();++i){ if (!is_zero(w[i])) eq.push_back(remove_neg_sq(w[i])); } // eq=mergevecteur(eq,w);
+                  done=true;
+                }
+                else if (is_positive(-gt,contextptr)){ // empty solution
+                  res.clear();
+                  return 0;
+                }
+              }
+            }
+          }
         }
-        else {
-          bool done=false;
-          // detect here some simple ineqs that are equations, like -x^2-y^2>=0
-          gen deg=_total_degree(makesequence(g,X),contextptr);
-          if (deg==2){
-            fraction p=sym2r(g,X,contextptr);
-            if (p.num.type==_POLY){
-              // extract homogeneous part of degree 2
-              polynome q(p.num._POLYptr->dim);
-              vector< monomial<gen> >::const_iterator it=p.num._POLYptr->coord.begin(),itend=p.num._POLYptr->coord.end();
-              for (;it!=itend;++it){
-                if (total_degree(it->index)==2)
-                  q.coord.push_back(*it);
-              }
-              gen Q=r2sym(q,X,contextptr);
-              vecteur D,U,P;
-              vecteur w=gauss(Q,X,D,U,P,contextptr);
-              // find signature
-              int i=0;
-              for (;i<D.size();++i){
-                if (is_strictly_positive(D[i],contextptr))
-                  break; // we have a true inequation
-              }
-              if (i==D.size()){
-                // is it possible to translate?
-                vecteur dg=gen2vecteur(derive(g,X,contextptr));
-                vecteur delta=linsolve(dg,X,contextptr);
-                if (delta.size()==X.size()){
-                  gen gt=subst(g,X,delta,false,contextptr);
-                  if (is_exactly_zero(ratnormal(gt,contextptr))){
-                    // each element of w translated is an equation ==0
-                    w=subst(w,X,X-delta,false,contextptr);
-                    for (int i=0;i<w.size();++i){ if (!is_zero(w[i])) eq.push_back(remove_neg_sq(w[i])); } // eq=mergevecteur(eq,w);
-                    done=true;
+        else if (deg%2==0){ // check for -(perfect square)
+          gen var=create_var(X,count);
+          --count; X.pop_back();
+          for (int i=0;!done && i<X.size();++i){
+            if (is_constant_wrt(g,X[i],contextptr))
+              continue;
+            gen gv=g-var;
+            gen g1=derive(gv,X[i],contextptr);
+            gen R=_resultant(makesequence(gv,g1,X[i]),contextptr);
+            vecteur S=solve(R,var,0,contextptr);
+            for (int r=0;!done && r<S.size();++r){
+              if (!is_zero(derive(S[r],X,contextptr)))
+                continue;
+              bool iszero=is_exactly_zero(S[r]);
+              if (!iszero && is_positive(S[r],contextptr))
+                continue;
+              fraction f=sym2r(g-S[r],X,contextptr);
+              if (f.num.type==_POLY && is_integer(f.num._POLYptr->coord.front().value) && is_positive(-f.num._POLYptr->coord.front().value,contextptr) && is_integer(f.den) && is_positive(f.den,contextptr)){
+                polynome p=-*f.num._POLYptr;
+                vecteur S=sqrfree(p,X,1,contextptr),EQ; int I;
+                // check degrees of sqrfree factorization
+                for (I=0;I<S.size();++I){
+                  const gen g=S[I];
+                  if (g.type==_VECT && g._VECTptr->size()==2){
+                    gen g0=g._VECTptr->front();
+                    if (!is_zero(derive(g0,X,contextptr))){
+                      if (g._VECTptr->back().val%2)
+                        break; // even multiplicity
+                      EQ.push_back(g0);
+                    }
                   }
-                  else if (is_positive(-gt,contextptr)){ // empty solution
+                }
+                if (I==S.size()){
+                  // all multiplicities are even
+                  if (!iszero){
                     res.clear();
                     return 0;
                   }
+                  // add equations
+                  eq=mergevecteur(eq,EQ);
+                  done=true;
                 }
               }
             }
           }
-          else if (deg%2==0){ // check for -(perfect square)
-            gen var=create_var(X,count);
-            --count; X.pop_back();
-            for (int i=0;!done && i<X.size();++i){
-              if (is_constant_wrt(g,X[i],contextptr))
-                continue;
-              gen gv=g-var;
-              gen g1=derive(gv,X[i],contextptr);
-              gen R=_resultant(makesequence(gv,g1,X[i]),contextptr);
-              vecteur S=solve(R,var,0,contextptr);
-              for (int r=0;!done && r<S.size();++r){
-                if (!is_zero(derive(S[r],X,contextptr)))
-                  continue;
-                bool iszero=is_exactly_zero(S[r]);
-                if (!iszero && is_positive(S[r],contextptr))
-                  continue;
-                fraction f=sym2r(g-S[r],X,contextptr);
-                if (f.num.type==_POLY && is_integer(f.num._POLYptr->coord.front().value) && is_positive(-f.num._POLYptr->coord.front().value,contextptr) && is_integer(f.den) && is_positive(f.den,contextptr)){
-                  polynome p=-*f.num._POLYptr;
-                  vecteur S=sqrfree(p,X,1,contextptr),EQ; int I;
-                  // check degrees of sqrfree factorization
-                  for (I=0;I<S.size();++I){
-                    const gen g=S[I];
-                    if (g.type==_VECT && g._VECTptr->size()==2){
-                      gen g0=g._VECTptr->front();
-                      if (!is_zero(derive(g0,X,contextptr))){
-                        if (g._VECTptr->back().val%2)
-                          break; // even multiplicity
-                        EQ.push_back(g0);
-                      }
-                    }
-                  }
-                  if (I==S.size()){
-                    // all multiplicities are even
-                    if (!iszero){
-                      res.clear();
-                      return 0;
-                    }
-                    // add equations
-                    eq=mergevecteur(eq,EQ);
-                    done=true;
-                  }
-                }
-              }
-            }
+        } // else if deg%2==0
+        if (done){
+          if (stricteq){
+            res.clear();
+            return 0;
           }
-          if (!done){
+        }
+        else {
+          if (stricteq){
+            ineqs.push_back(g);
+            ineqsnum.push_back(num);
+          }
+          else {
             ineqs.insert(ineqs.begin()+strict,g);
             ineqsnum.insert(ineqsnum.begin()+strict,num);
             ++strict;
           }
         }
       }
-      else {
+      else 
         eq.push_back(_numer(equal2diff(g),contextptr));
-      }
     }
     if (ineqs.empty()){
       res=gsolve(eq,X,false/*complexmode*/,false/*evalfafter*/,contextptr);
@@ -4954,6 +4959,7 @@ namespace giac {
     // until rur works
     int nmax=ineqs.size();
     res.clear();
+    bool dim0=false;
     for (int n=0;n<=nmax;++n){
       if (n>=1 && !res.empty()){
         resize_solutions(res,x.size());
@@ -4986,6 +4992,7 @@ namespace giac {
 #endif
         if (G.type==_VECT && G._VECTptr->size()==X.size()+4 && G._VECTptr->front().type==_INT_ && G._VECTptr->front().val==_RUR_REVLEX){
           // system is 0 dimensional, find real solutions
+          dim0=true;
           vecteur Gv=*G._VECTptr,S;
           gen pmin=G[2];
           gen rurvar=lidnt(G[2]).front();
@@ -5045,50 +5052,58 @@ namespace giac {
                       cur=scalar_product(cur,X,contextptr);
                       SL.push_back(cur);
                     }
+                    bool non0=true;
                     for (int i=0;i<largezero.size();++i){
                       gen cur=ineqs[largezero[i]];
                       cur=derive(cur,X,contextptr);
                       cur=subst(cur,X,sol,false,contextptr);
+                      cur=normal(cur,contextptr);
+                      if (is_zero(cur)){
+                        non0=false;
+                        break;
+                      }
                       cur=scalar_product(cur,X,contextptr);
                       cur=symbolic(equalposcomp(strictiszero,pos[i])?at_superieur_strict:at_superieur_egal,makesequence(cur,zero));  
                       SL.push_back(cur);
                     }
-                    vecteur linsol;
-                    int lres=linsolve_ineq(SL,X,linsol,contextptr);
-                    if (lres==1){
-                      // if there is a solution to the linearized pb
-                      // recursive call with these strict ineq replaced by large ineq with 0 replaced by value*epsilon for epsilon=1,1/2, 1/2^2, ... until it works
-                      gen eps=1;
-                      vecteur strictv;
-                      for (int expo=0;expo<10;++expo,eps=eps/2){
-                        vecteur newsys(eq);
-                        int strictcount=0;
-                        for (int i=0;i<ineqs.size();++i){
-                          gen cur=ineqs[i];
-                          if (equalposcomp(strictiszero,i)){
-                            if (strictv.size()>strictcount)
-                              cur=symbolic(at_superieur_egal,makesequence(cur,eps*strictv[strictcount]));
-                            else {
-                              gen dcur=derive(cur,X,contextptr);
-                              dcur=subst(dcur,X,sol,false,contextptr);
-                              dcur=scalar_product(dcur,linsol,contextptr);
-                              dcur=normal(dcur,contextptr);
-                              strictv.push_back(dcur);
-                              cur=symbolic(at_superieur_egal,makesequence(cur,eps*dcur));
+                    if (non0){
+                      vecteur linsol;
+                      int lres=linsolve_ineq(SL,X,linsol,contextptr);
+                      if (lres==1){
+                        // if there is a solution to the linearized pb
+                        // recursive call with these strict ineq replaced by large ineq with 0 replaced by value*epsilon for epsilon=1,1/2, 1/2^2, ... until it works
+                        gen eps=1;
+                        vecteur strictv;
+                        for (int expo=0;expo<10;++expo,eps=eps/2){
+                          vecteur newsys(eq);
+                          int strictcount=0;
+                          for (int i=0;i<ineqs.size();++i){
+                            gen cur=ineqs[i];
+                            if (equalposcomp(strictiszero,i)){
+                              if (strictv.size()>strictcount)
+                                cur=symbolic(at_superieur_egal,makesequence(cur,eps*strictv[strictcount]));
+                              else {
+                                gen dcur=derive(cur,X,contextptr);
+                                dcur=subst(dcur,X,sol,false,contextptr);
+                                dcur=scalar_product(dcur,linsol,contextptr);
+                                dcur=normal(dcur,contextptr);
+                                strictv.push_back(dcur);
+                                cur=symbolic(at_superieur_egal,makesequence(cur,eps*dcur));
+                              }
+                              ++strictcount;
                             }
-                            ++strictcount;
+                            else
+                              cur=symbolic(i>=strict?at_superieur_strict:at_superieur_egal,makesequence(cur,zero));
+                            newsys.push_back(cur);
                           }
-                          else
-                            cur=symbolic(i>=strict?at_superieur_strict:at_superieur_egal,makesequence(cur,zero));
-                          newsys.push_back(cur);
-                        }
-                        int ires=solve_ineq(newsys,x,res,false/*allowrec*/,contextptr);
-                        if (ires==1){
-                          resize_solutions(res,x.size());
-                          return 1;
+                          int ires=solve_ineq(newsys,x,res,false/*allowrec*/,contextptr);
+                          if (ires==1){
+                            resize_solutions(res,x.size());
+                            return 1;
+                          }
                         }
                       }
-                    }
+                    } // if non0
                   }
                   continue;
                 }
@@ -5119,6 +5134,11 @@ namespace giac {
     } // end for n
 #endif
     // all attempts replacing ineqs by eq failed
+    if (dim0 && proba_epsilon(contextptr)){
+      *logptr(contextptr) << "No solution found, run proba_epsilon:=0 to certify\n";
+      res.clear();
+      return 0;
+    }
     int n=X.size(),eqs=eq.size(),ins=ineqs.size(),s=eqs+ins;
     vecteur V(s),W(s); // identifiers
     int vi=0,wi=0;
@@ -5714,6 +5734,30 @@ namespace giac {
   gen newton(const gen & f0, const gen & x,const gen & guess_,int niter,double eps1, double eps2,bool real,double xmin,double xmax,double rand_xmin,double rand_xmax,double init_prefactor,GIAC_CONTEXT){
     if (real && (!is_zero(im(f0,contextptr),contextptr) || !is_zero(im(guess_,contextptr),contextptr)) )
       real=false;
+    if (abs_calc_mode(contextptr)==38 && x.type==_VECT){
+      vecteur AZin,AZout;
+      int count=0;
+      const vecteur & X=*x._VECTptr;
+      for (int i=0;i<X.size();++i){
+        if (X[i].type==_IDNT && strlen(X[i]._IDNTptr->id_name)==1 && X[i]._IDNTptr->id_name[0]>='A' && X[i]._IDNTptr->id_name[0]<='Z'){
+          for (;;++count){
+            identificateur newx_("x"+print_INT_(count));
+            gen newx(newx_);
+            if (!equalposcomp(X,newx)){
+              AZin.push_back(X[i]);
+              AZout.push_back(newx);
+              ++count;
+              break;
+            }
+          }
+        }
+      }
+      if (!AZin.empty()){
+        gen newf0=subst(f0,AZin,AZout,true,contextptr);
+        gen newx=subst(X,AZin,AZout,true,contextptr);
+        return newton(newf0,newx,guess_,niter,eps1,eps2,real,xmin,xmax,rand_xmin,rand_xmax,init_prefactor,contextptr);
+      }
+    }
     if (x.type!=_IDNT && x.type!=_VECT){
       if (x.type!=_SYMB || (x._SYMBptr->sommet!=at_at && x._SYMBptr->sommet!=at_of))
 	return gensizeerr(contextptr);
