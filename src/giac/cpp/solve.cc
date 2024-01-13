@@ -2715,10 +2715,31 @@ namespace giac {
     return symbolic(at_quote,symbolic(at_im,eval(g,eval_level(contextptr),contextptr)));
   }
 
+  gen expand_not(const gen & g,GIAC_CONTEXT){
+    if (g.type==_VECT){
+      vecteur res(*g._VECTptr);
+      for (int i=0;i<res.size();++i)
+        res[i]=expand_not(res[i],contextptr);
+      return gen(res,g.subtype);
+    }
+    if (!g.is_symb_of_sommet(at_not))
+      return g;
+    gen f=g._SYMBptr->feuille;
+    if (f.is_symb_of_sommet(at_not))
+      return f._SYMBptr->feuille;
+    if (f.is_symb_of_sommet(at_and))
+      return symbolic(at_ou,solve_revert_inequations(f._SYMBptr->feuille));
+    if (f.is_symb_of_sommet(at_ou))
+      return symbolic(at_and,solve_revert_inequations(f._SYMBptr->feuille));
+    if (is_inequation(f))
+      return solve_revert_inequations(f);
+    return g;
+  }
+
   vecteur solvepreprocess(const gen & args,bool complexmode,GIAC_CONTEXT){
-    gen g(args);
+    gen g(expand_not(args,contextptr));
     if (g.is_symb_of_sommet(at_and) && g._SYMBptr->feuille.type==_VECT)
-      g=makesequence(*g._SYMBptr->feuille._VECTptr,vx_var);
+      g=makesequence(expand_not(*g._SYMBptr->feuille._VECTptr,contextptr),vx_var);
     if (g.type==_VECT && !g._VECTptr->empty() && (g._VECTptr->front().is_symb_of_sommet(at_abs))){
       vecteur v(*g._VECTptr);
       v.front()=v.front()._SYMBptr->feuille;
@@ -2731,7 +2752,7 @@ namespace giac {
         v.front()=symbolic(at_prod,v.front()._SYMBptr->feuille);
       }
       else
-        v.front()=remove_and(v.front(),at_and);
+        v.front()=expand_not(remove_and(v.front(),at_and),contextptr);
       g=gen(v,g.subtype);
     }
     // quote < <= > and >=
@@ -4835,6 +4856,26 @@ namespace giac {
           return -2;
         gen num=g._VECTptr->front();
         g=num*g._VECTptr->back();
+        if (0 && !stricteq){ // would be slower
+          gen var;
+          if (num.type==_IDNT) // num>0
+            var=num;
+          else if (num.is_symb_of_sommet(at_neg) && num._SYMBptr->feuille.type==_IDNT)
+            var=-num; // num<0
+          if (var.type==_IDNT && equalposcomp(X,var)){
+            gen xi=create_var(X,count);
+            gen xi2=symb_pow(xi,2);
+            if (num.type==_IDNT){        
+              eq.push_back(var-xi2);
+              sl=subst(sl,var,xi2,true,contextptr);
+            }
+            else {
+              eq.push_back(var+xi2);
+              sl=subst(sl,var,-xi2,true,contextptr);
+            }
+            continue;
+          }
+        }
         // n/d>0 is equivalent to n*d>0 and n/d>=0 is equivalent to n*d>=0
         bool done=false;
         // detect here some simple ineqs that are equations, like -x^2-y^2>=0
@@ -4950,6 +4991,53 @@ namespace giac {
       resize_solutions(res,x.size());
       return res.empty()?0:1;
     }
+    if (eq.empty() && X.size()<=3){
+      // only inequalities, try some points?
+      if (X.size()==2){
+        const int N=11; // 11^2=121
+        for (int i=0;i<N*N;++i){
+          vecteur Xval(makevecteur(i/11-5,i%11-5));
+          for (int j=0;j<ineqs.size();++j){
+            gen cur=normal(subst(ineqs[j],X,Xval,true,contextptr),contextptr);
+            if (is_exactly_zero(cur) && j>=strict)
+              break;
+            if (is_positive(cur,contextptr)){
+              if (j==ineqs.size()-1){
+                res.clear();
+                res.push_back(Xval);
+                res.push_back(string2gen(gettext("Certificate of existence, more solutions may exist"),false));
+                resize_solutions(res,x.size());
+                return 1;
+              }
+              continue;
+            }
+            break;
+          }
+        }
+      }
+      else {
+        const int N=5; // 5^3=125
+        for (int i=0;i<N*N*N;++i){
+          vecteur Xval(makevecteur(i/25-2,(i%25)/5-2,i%5-2));
+          for (int j=0;j<ineqs.size();++j){
+            gen cur=normal(subst(ineqs[j],X,Xval,true,contextptr),contextptr);
+            if (is_exactly_zero(cur) && j>=strict)
+              break;
+            if (is_positive(cur,contextptr)){
+              if (j==ineqs.size()-1){
+                res.clear();
+                res.push_back(Xval);
+                res.push_back(string2gen(gettext("Certificate of existence, more solutions may exist"),false));
+                resize_solutions(res,x.size());
+                return 1;
+              }
+              continue;
+            }
+            break;
+          }
+        }
+      }
+    }
 #if 1 // try replacing ineqs by eq
     // now we have a polynomial system of equations, call gbasis
     gen G;
@@ -4992,7 +5080,6 @@ namespace giac {
 #endif
         if (G.type==_VECT && G._VECTptr->size()==X.size()+4 && G._VECTptr->front().type==_INT_ && G._VECTptr->front().val==_RUR_REVLEX){
           // system is 0 dimensional, find real solutions
-          dim0=true;
           vecteur Gv=*G._VECTptr,S;
           gen pmin=G[2];
           gen rurvar=lidnt(G[2]).front();
@@ -5004,6 +5091,7 @@ namespace giac {
           if (R.empty())
             R=gen2vecteur(_realroot(makesequence(pmin,epsilon(contextptr)),contextptr));
           if (!R.empty() && !is_undef(R)){
+            dim0=true;
             vector<bool> ineq_is_zero(ineqs.size());
             for (int k=0;k<ineqsnum.size();++k){
               gen cur=ineqsnum[k];
@@ -5134,12 +5222,12 @@ namespace giac {
     } // end for n
 #endif
     // all attempts replacing ineqs by eq failed
-    if (dim0 && proba_epsilon(contextptr)){
+    int n=X.size(),eqs=eq.size(),ins=ineqs.size(),s=eqs+ins;
+    if (dim0 && s>3 && proba_epsilon(contextptr)){
       *logptr(contextptr) << "No solution found, run proba_epsilon:=0 to certify\n";
       res.clear();
       return 0;
     }
-    int n=X.size(),eqs=eq.size(),ins=ineqs.size(),s=eqs+ins;
     vecteur V(s),W(s); // identifiers
     int vi=0,wi=0;
     for (int i=0;i<s;++i){
