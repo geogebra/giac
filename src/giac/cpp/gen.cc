@@ -2,10 +2,12 @@
 #include "giacPCH.h"
 #ifdef KHICAS
 #include "kdisplay.h"
-#if defined DEVICE && !defined NSPIRE_NEWLIB
+#if defined DEVICE && !defined NSPIRE_NEWLIB && !defined N0120
 size_t stackptr=0x20036000;
-#else
+#elseif defined x86_64
 size_t stackptr=0xffffffffffffffff;
+#else
+size_t stackptr=0xffffffff;
 #endif
 #endif
 
@@ -2463,6 +2465,8 @@ namespace giac {
       return gen(accurate_evalf(*g._VECTptr,nbits),g.subtype);
     if (g.type==_SYMB)
       return symbolic(g._SYMBptr->sommet,accurate_evalf(g._SYMBptr->feuille,nbits));
+    if (g.type==_IDNT)
+      return g;
     gen r,i;reim(g,r,i,context0); // only called for numeric values
     if (is_exactly_zero(i))
       return set_precision(r,nbits);
@@ -2934,8 +2938,10 @@ namespace giac {
       if (s.quoted()) {
 	if (s==at_quote)
 	  return f;
+        if (f.type==_SYMB && contains(f,cst_pi))
+	  f=evalf2double_nock(f,1,contextptr);
 	f=s(f,contextptr);
-	if (f.type<_IDNT || f.type==_FRAC || (f.type==_SYMB && contains(f,cst_pi)) )
+	if (f.type<_IDNT || f.type==_FRAC)
 	  f=evalf2double_nock(f,1,contextptr);
 	return f;
       }
@@ -4301,9 +4307,9 @@ namespace giac {
     if (is_zero_or_contains(imagpart,contextptr))
       return operator_plus((1-sign(realpart,contextptr))*cst_pi_over_2,atan(imagpart/realpart,contextptr),contextptr);
     if ( (realpart.type==_DOUBLE_ || realpart.type==_FLOAT_) || (imagpart.type==_DOUBLE_ || imagpart.type==_FLOAT_) )
-      return eval(atan(rdiv(imagpart,realpart,contextptr),contextptr)+(1-sign(realpart,contextptr))*sign(imagpart,contextptr)*evalf_double(cst_pi_over_2,1,contextptr),1,contextptr);
+      return eval(atan(ratnormal(rdiv(imagpart,realpart,contextptr),contextptr),contextptr)+(1-sign(realpart,contextptr))*sign(imagpart,contextptr)*evalf_double(cst_pi_over_2,1,contextptr),1,contextptr);
     else
-      return operator_plus(atan(rdiv(imagpart,realpart,contextptr),contextptr),(1-sign(realpart,contextptr))*sign(imagpart,contextptr)*cst_pi_over_2,contextptr);
+      return operator_plus(atan(ratnormal(rdiv(imagpart,realpart,contextptr),contextptr),contextptr),(1-sign(realpart,contextptr))*sign(imagpart,contextptr)*cst_pi_over_2,contextptr);
   }
   
   static gen _VECTarg(const vecteur & a,GIAC_CONTEXT){
@@ -6931,7 +6937,7 @@ namespace giac {
 	if (new_exp.type>_IDNT)
 	  new_exp=normal(new_exp,contextptr);
 	if ( v1.type==_INT_ && v1.val%2==0 
-	     && (new_exp.type!=_INT_ || new_exp.val%2 )
+	     && ((new_exp.type!=_INT_ && !is_assumed_integer(new_exp,contextptr)) || new_exp.val%2 )
 	     && !complex_mode(contextptr) ) 
 	  return pow(abs(v[0],contextptr),new_exp,contextptr); 
 	else 
@@ -14512,6 +14518,8 @@ void sprint_double(char * s,double d){
 	else
 	  return "return ;";
       }
+      if (*this==at_display)
+        return "display";
       if (rpn_mode(contextptr) || _FUNCptr->ptr()->printsommet==&printastifunction || subtype==0) 
 	return _FUNCptr->ptr()->print(contextptr);
       else

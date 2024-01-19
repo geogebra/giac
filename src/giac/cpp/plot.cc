@@ -4834,10 +4834,13 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       return gensizeerr(contextptr);  
     //grad
     int mode=get_mode_set_radian(contextptr);
+    gen theta= cst_pi/n;
+    if (mode)
+      theta=evalf(theta,1,contextptr);
     if (n>0){
       context tmp;
       gen c;
-      c=(e+f)/2+nd/(2*tan(cst_pi/n,&tmp));
+      c=(e+f)/2+nd/(2*tan(theta,&tmp));
       f=e;
       e=c;
       ef=f-e;
@@ -4854,7 +4857,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     vecteur w;
     w.push_back(f);
     for (int i=1;i<n;++i){
-      w.push_back(e+ef*cos(2*i*cst_pi/n,contextptr)+nd*sin(2*i*cst_pi/n,contextptr));
+      w.push_back(e+ef*cos(2*i*theta,contextptr)+nd*sin(2*i*theta,contextptr));
     }
     w.push_back(f);
     //grad
@@ -16862,13 +16865,26 @@ gen _vers(const gen & g,GIAC_CONTEXT){
       int ws=int(w.size());
       a=w[0];
       gen c=v[2];
-      gen d=distance2pp(a,c,contextptr);
-      for (int i=1;i<ws;++i){
-	gen dcur=distance2pp(w[i],c,contextptr);
-	if (is_strictly_greater(d,dcur,contextptr)){
-	  d=dcur;
-	  a=w[i];
-	}
+      if (c.type==_VECT){ // intersection not in list
+        vecteur v=*c._VECTptr;
+        for (int i=0;i<v.size();++i)
+          v[i]=normal(remove_at_pnt(v[i]),contextptr);
+        for (int i=0;i<ws;++i){
+          if (!equalposcomp(v,remove_at_pnt(w[i]))){
+            a=w[i];
+            break;
+          }
+        }
+      }
+      else { // intersection near point
+        gen d=distance2pp(a,c,contextptr);
+        for (int i=1;i<ws;++i){
+          gen dcur=distance2pp(w[i],c,contextptr);
+          if (is_strictly_greater(d,dcur,contextptr)){
+            d=dcur;
+            a=w[i];
+          }
+        }
       }
     }
     else

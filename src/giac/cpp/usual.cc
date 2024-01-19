@@ -6972,11 +6972,17 @@ namespace giac {
     vecteur lnew(l);
     int ls=int(l.size());
     for (int i=0;i<ls;i++){
-      if (l[i].type==_IDNT || lidnt(l[i]).empty()){
-	lnew[i]=evalf(l[i],1,contextptr);
+      gen tmp;
+      if (//l[i].type==_IDNT || lidnt(l[i]).empty()
+          has_evalf(l[i],tmp,1,contextptr)
+          ){
+	lnew[i]=tmp;
 #ifdef HAVE_LIBMPFR
-	if (lnew[i].type==_DOUBLE_)
-	  lnew[i]=accurate_evalf(eval(l[i],1,contextptr),100);
+	if (lnew[i].type==_DOUBLE_){
+          tmp=accurate_evalf(eval(l[i],1,contextptr),100);
+          if (tmp.type==_REAL)
+            lnew[i]=tmp;
+        }
 #endif
       }
     }
