@@ -582,7 +582,7 @@ namespace giac {
       // compute Q such that q=lcoeff*(pi+p^k*Q)
       // modulo=modulonext; // work in Z/p^(2), done by modularize below
       // COUT << "Q:" << Q << '\n';
-      // _VECTute new v_in
+      // compute new v_in
       if (Q.empty())
 	env->modulo=modulonext;
       else {
@@ -620,7 +620,7 @@ namespace giac {
 	      int fin_time=CLOCK();
 	      if (debuglevel)
 		COUT << fin_time << "Found true factor " << *itv << '\n' << "New bound:"<< bound << '\n';
-	      // yes! _VECTute new q and bound
+	      // yes! compute new q and bound
 	      truefactor[i]=true;
 	      nfact_to_find--;
 	      v_out.push_back(unmodularize(truefact));

@@ -424,8 +424,32 @@ namespace giac {
       lv=vecteur(lvptr->begin()+1,lvptr->end());
     iterateur it=v.begin(),itend=v.end();
     for (;it!=itend;++it){
-      if (lvptr)
-	*it=r2e(*it,lv,contextptr);
+      if (lvptr){
+#if 0 // fails with oim 2018 p1
+        if (it->type==_POLY){
+          int dim=it->_POLYptr->dim;
+          for (;;){
+            if (lv.empty() || lv.front().type!=_VECT)
+              return false;
+            if (lv.front()._VECTptr->size()==dim)
+              break;
+            lv.erase(lv.begin());
+          }
+        }
+#endif
+#ifdef NO_STDEXCEPT
+        *it=r2e(*it,lv,contextptr);
+        if (is_undef(*it))
+          return false;
+#else
+        try {
+          *it=r2e(*it,lv,contextptr);
+        }
+        catch (std::runtime_error &){
+          return false;
+        }
+#endif
+      }
       else {
 	if (it->type!=_INT_)
 	  return false;
