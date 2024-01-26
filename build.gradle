@@ -64,15 +64,8 @@ def emgiacSourceDir = "$externalSourceDir/emgiac"
 
 def jsPrebuiltDir = "src/giac.js/prebuilt"
 def LlvmMpfrA = "$jsPrebuiltDir/libmpfr.a"
+def LlvmMpfiA = "$jsPrebuiltDir/libmpfi.a"
 def LlvmGmpA = "$jsPrebuiltDir/libgmp.a"
-if (System.env['EXT_GMPMPFR'] != null && System.env['EXT_GMPMPFR'] == "local") {
-    LlvmMpfrA = "$mpfrSourceDir/src/.libs/libmpfr.a"
-    LlvmGmpA = "$gmpSourceDir/.libs/libgmp.a"
-}
-if (System.env['EXT_GMPMPFR'] != null && System.env['EXT_GMPMPFR'] == "emgiac") {
-    LlvmMpfrA = "$emgiacSourceDir/giac/libmpfr.a"
-    LlvmGmpA = "$emgiacSourceDir/giac/libgmp.a"
-}
 
 def emsdkDir = file('emsdk')
 def emsdkRunDir = file("$emsdkDir")
@@ -939,7 +932,7 @@ tasks.addRule("Pattern: emccCompileWasm_<FILE>Cc: Compile <FILE>.cc into <FILE>.
                     commandline += " -s PRECISE_I64_MATH=1 -Oz" // new setting
                     commandline += " -DHAVE_UNISTD_H"
                     commandline += ' -DGIAC_GGB' // from old Makefile
-                    commandline += ' -DTIMEOUT -DEMCC2 ' // from old config.h
+                    commandline += ' -DTIMEOUT -DEMCC2 -DHAVE_LIBMPFI' // from old config.h
                     commandline += " -Isrc/giac/headers -c $input -o $output"
                     println "Compiling: ${commandline}"
                     commandLine commandline.split()
@@ -988,6 +981,7 @@ task emccGiacJsWasm(dependsOn: 'emccCompileWasm') {
 
         file(binaryJsDir).mkdirs()
         exec {
+            linkerArgs << LlvmMpfiA
             linkerArgs << LlvmMpfrA // mpfr must precede gmp, see http://www.mpfr.org/faq.html, Q5
             linkerArgs << LlvmGmpA
             linkerArgs << '--js-library' << 'src/giac.js/js/time.js'
