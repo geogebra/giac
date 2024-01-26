@@ -4681,7 +4681,7 @@ namespace giac {
 #ifdef GIAC_LLPRECOND
     longlong N=W.size()/2;
     fft_rev1(a+1,a+N-1,p);
-    fft_rev1(a+N+1,a+2*N-1,1);
+    fft_rev1(a+N+1,a+2*N-1,1); // last arg 1 or p??
 #else
     fft_rev1(a+1,a+W.size()-1,p);
 #endif
@@ -5845,7 +5845,7 @@ namespace giac {
     int * a=&W.front();
     int N=W.size()/2;
     fft_rev1(a+1,a+N-1,p);
-    fft_rev1(a+N+1,a+2*N-1,1);
+    fft_rev1(a+N+1,a+2*N-1,1); // last arg 1 or p??
   }
 
   void fft2wp(vector<int> & W,int n,int w,int p){
@@ -14024,7 +14024,7 @@ namespace giac {
 	makepositive(&fftmult_p.front(),as,p4);
 	makepositive(&fftmult_q.front(),bs,p4);
       }
-      if (W.empty() || W[0]==0){ 
+      if (1 || W.empty() || W[0]==0){ // always called because fft_reverse does not work with p4 see below
 	W.clear();
 	fft2wp4(W,n,w);
       }
@@ -14033,10 +14033,11 @@ namespace giac {
       for (int i=0;i<n;++i){
 	fftmult_p[i]=mulmodp4(fftmult_p[i],fftmult_q[i]);
       }
-      fft_reverse(W,p4);
-      // w=invmod(w,p4); if (w<0) w+=p4; W.clear(); fft2wp4(W,n,w);
+      //fft_reverse(W,p4);
+      // fft_reverse call does not work, because it introduces negatives values that are not reset to positive in fft_loop_p1/2/3 by precond_mulmodp1/2/3 before addmod is called, leading to integer overflow
+      w=invmod(w,p4); if (w<0) w+=p4; W.clear(); fft2wp4(W,n,w);
       fft2p4nopermbefore(&fftmult_p.front(),n,&W.front());
-      fft_reverse(W,p4);
+      //fft_reverse(W,p4);
       fftmult_p.resize(rs);
       if (dividebyn){
 	int ninv=invmod(n,p4); if (ninv<0) ninv+=p4;
@@ -15362,7 +15363,7 @@ namespace giac {
 	  // unless an additional reduction modulo p1/p2/p3 is done
 	  // after reduction modulo modulo in the recursive call
 	  // because e.g. submod might return a negative number
-	  if (0 && logrs<=25 && prime==p3 && nprimes==0) 
+	  if (logrs<=25 && prime==p3 && nprimes==0) 
 	    prime=p4;//int(std::sqrt(1.8e18/mindeg));
           // FIXME using prime p4 fails for bugfft 
           // -*-: mode:text -*-

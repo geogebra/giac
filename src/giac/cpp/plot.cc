@@ -8108,6 +8108,12 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
   }  
   
   static gen projection(const vecteur & v,int s,GIAC_CONTEXT){
+    if (s==3){
+      vecteur w(v);
+      w.erase(w.begin());
+      w.front()=_droite(makesequence(v[0],v[1]),contextptr);
+      return projection(w,2,contextptr);
+    }
     if (s==2){
       gen a=remove_at_pnt(v[0]);
       gen af=evalf_double(a,1,contextptr);

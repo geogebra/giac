@@ -17512,7 +17512,7 @@ void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONT
     Bfile_WriteFile_OS(hFile, script.c_str(), scriptsize);
     // save console state
     int pos=1;
-    string qrs=lang?"http://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasfr.html#":"http://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasen.html#";//"https://xcas.univ-grenoble-alpes.fr/xcasjs/#";
+    string qrs=lang?"https://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasfr.html#":"https://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasen.html#";//"https://xcas.univ-grenoble-alpes.fr/xcasjs/#";
     qrs += xcas_python_eval==1?"micropy=":"cas=";
     if (qr) qrs += "0,0,"+replace_html5(script)+'&';
     // save console state
