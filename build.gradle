@@ -70,7 +70,7 @@ def LlvmGmpA = "$jsPrebuiltDir/libgmp.a"
 def emsdkDir = file('emsdk')
 def emsdkRunDir = file("$emsdkDir")
 
-def emscriptenVersion = 'tag-3.1.52'
+def emscriptenVersion = 'tag-3.1.41'
 if (System.env['EMSCRIPTEN_VERSION'] != null) {
     emscriptenVersion = System.env['EMSCRIPTEN_VERSION']
 }
