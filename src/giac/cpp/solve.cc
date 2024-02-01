@@ -8758,7 +8758,7 @@ namespace giac {
       lparam=vecteur(lparam.begin()+l1.size(),lparam.end());
       int nparam=lparam.size();
       vecteur vargs=makevecteur(v[0],v[1],0);
-      if (//0 &&
+      if (0 &&
           nparam==1){
         *logptr(contextptr) << "Warning, parametric rur: experimental code\n";
         gen cursep=0;

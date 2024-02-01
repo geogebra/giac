@@ -243,12 +243,61 @@ namespace giac {
     }
   }
 
+  static void remove(matrice & m,const vecteur & v,int l){
+    // remove vars in v from m if they are not in line l
+    for (int k=0;k<v.size();++k){
+      int I,J;
+      if (equalposmat(m,v[k],I,J) && I!=l){
+        vecteur mI=*m[I]._VECTptr;
+        mI.erase(mI.begin()+J);
+        m[I]=mI;
+      }
+    }
+  }
+
   static matrice ext_glue_matrices(const matrice & a,const matrice & b){
     if (a.size()>b.size())
       return ext_glue_matrices(b,a);
-    // Algorithm should be fixed in all generality
+#if 0
+    // if a variable is common to 2 extensions, merge
+    // all variables that are at level >=?
+    if (!a.empty()){
+      vecteur v(lvar(a));
+      lvar(b,v);
+      for (int i=0;i<v.size();++i){
+        int ia,ja,ib,jb;
+        if (equalposmat(a,v[i],ia,ja) && equalposmat(b,v[i],ib,jb)){
+          gen aij=a[ia],bij=b[ib];
+          if (aij!=bij && aij.type==_VECT && bij.type==_VECT){
+            matrice A(a),B(b);
+            if (!ia && !ib)
+              continue;
+            if (ia && ib){
+              vecteur common=mergevecteur(*aij._VECTptr,*bij._VECTptr); comprim(common);
+              A[ia]=common;
+              B[ib]=common;
+              remove(A,common,ia);
+              remove(B,common,ib);
+            }
+            else if (ia){
+              vecteur B0=*B[0]._VECTptr;
+              B0.erase(B0.begin()+jb);
+              B[0]=B0;
+            }
+            else if (ib){
+              vecteur A0=*A[0]._VECTptr;
+              A0.erase(A0.begin()+ja);
+              A[0]=A0;
+            }
+            return ext_glue_matrices(A,B);
+          }
+        }
+      }
+    }
+#endif
+    // Now a.size()<=b.size()
+    // Algorithm should be fixed in all generality FAILS for a=[[],[c,d]] and b=[[b,d],[c]], should return [[b],[c,d]]
     // the loop below fixes assume(a>0); normal(-sqrt(a)*sqrt(a*pi)*sqrt(pi))
-    // a.size()<=b.size()
     if (a.size()==b.size()){
       for (int i=0;i<a.size();++i){
 	if (a[i].type==_VECT && b[i].type==_VECT){
@@ -292,10 +341,12 @@ namespace giac {
     }
   }
 
+  static vecteur sort1(const vecteur & l);
   // return true if there is at least one algebraic extension
   void alg_lvar(const gen & e,matrice & m){
     vecteur temp;
     lvar(e,temp);
+    //temp=sort1(temp);
     int i,j;
     // For each variable of temp, 
     // if not alg var look if still inside m else add it to the first line
@@ -333,7 +384,6 @@ namespace giac {
       }
     }
   }
-
   gen alg_lvar_f(const gen & g,GIAC_CONTEXT){
     vecteur w=lvar(g);
     return symbolic(at_pow,makesequence(_product(w,contextptr),plus_one_half));
@@ -1043,23 +1093,29 @@ namespace giac {
     vector<int> embeddings_s;
     if (is_atomic(num)){
       const_iterateur it=l.begin(),itend=l.end();
-      embeddings=int(itend-it);
-      if (
-	  0 &&  // disable for expressions with mixed rootof/fracpow?
-	  embeddings==1 && it->type==_VECT && it->_VECTptr->empty())
-	embeddings=0; 
+      if (it!=itend && it->type!=_VECT){
+        embeddings=1;
+        embeddings_s.push_back(itend-it);
+      }
       else {
-	for (int j=0;j<embeddings;++it,++j){ 
-	  if (it->type!=_VECT){
-	    string s("sym2rxroot error num="+num.print(contextptr)+" den="+den.print(contextptr)+" l="+gen(l).print(contextptr));
-	    CERR << s << "\n";
+        embeddings=int(itend-it);
+        if (
+            0 &&  // disable for expressions with mixed rootof/fracpow?
+            embeddings==1 && it->type==_VECT && it->_VECTptr->empty())
+          embeddings=0; 
+        else {
+          for (int j=0;j<embeddings;++it,++j){ 
+            if (it->type!=_VECT){
+              string s("sym2rxroot error num="+num.print(contextptr)+" den="+den.print(contextptr)+" l="+gen(l).print(contextptr));
+              CERR << s << "\n";
 #ifndef NO_STDEXCEPT
-	    setsizeerr(s);
+              setsizeerr(s);
 #endif
-	    return false;
-	  }
-	  embeddings_s.push_back(int(it->_VECTptr->size()));
-	}
+              return false;
+            }
+            embeddings_s.push_back(int(it->_VECTptr->size()));
+          }
+        }
       }
     }
     else {
@@ -2791,7 +2847,7 @@ namespace giac {
       return e;
     // remove multiple factors inside sqrt
     // vecteur l0=lop(e,at_pow),lin,lout;
-    vecteur l0=lop_pow(e),lin,lout;
+    vecteur l0=lop_pow(e),lin,lout,lspow,larg;
     const_iterateur it=l0.begin(),itend=l0.end();
     for (;it!=itend;++it){
       vecteur & arg=*it->_SYMBptr->feuille._VECTptr;
@@ -2870,7 +2926,7 @@ namespace giac {
       }
       if (nd.type!=_POLY)
 	continue;
-      lin.push_back(*it);
+      lin.push_back(*it);      
       const factorization & f=rsqff(*nd._POLYptr);
       polynome s(plus_one,nd._POLYptr->dim),d(plus_one,s.dim);
       factorization::const_iterator jt=f.begin(),jtend=f.end();
@@ -2883,7 +2939,25 @@ namespace giac {
       gen cont=Tppz<gen>(s);
       if (s.dim==0 && !s.coord.empty() && is_positive(-s.coord[0].value,contextptr)){
 	cont=-cont; s=-s;
-      }	
+      }
+      if (s.dim && !larg.empty()){
+        // check if s divide a previous sqrt arg
+        gen S=recursive_normal(r2e(s,lv,contextptr),contextptr);
+        if (S!=1){
+          for (int i=0;i<larg.size();++i){
+            if (lspow[i].type!=_SYMB)
+              continue;
+            gen g=_fxnd(larg[i]/S,contextptr);
+            if (g.type==_VECT && g._VECTptr->size()==2 && g[1]==1){
+              // replace lspow by pow(s,nover2)*pow(quo,nover2)
+              gen in=lspow[i],expo=in._SYMBptr->feuille[1],quo=g[0];
+              larg[i]=quo;
+              lspow[i]=pow(quo,expo,contextptr);
+              lout=subst(lout,in,pow(S,expo,contextptr)*lspow[i],false,contextptr);
+            }
+          }
+        }
+      }
       gen simpl,doubl; bool pos;
       zint2simpldoublpos(cont,simpl,doubl,pos,2,contextptr);
       if (!pos) simpl=-simpl;
@@ -2901,7 +2975,21 @@ namespace giac {
 	tmparg=abs(tmparg,contextptr);
 	tmpd=abs(tmpd,contextptr);
       }
-      lout.push_back(pow(simpl*out,nover2,contextptr)*pow(doubl,expnum,contextptr)*pow(recursive_normal(r2e(s,lv,contextptr),contextptr),nover2,contextptr)*pow(tmpd,expnum,contextptr)*pow(tmparg,-expnum,contextptr));
+      gen prev=1,S=recursive_normal(r2e(s,lv,contextptr),contextptr);
+      if (s.dim && !larg.empty()){
+        // check if s is divisible by a previous sqrt arg
+        for (int i=0;i<larg.size();++i){
+          if (larg[i]==1) continue;
+          gen g=_fxnd(S/larg[i],contextptr);
+          if (g.type==_VECT && g._VECTptr->size()==2 && g[1]==1){
+            prev=prev*pow(larg[i],nover2,contextptr);
+            S=g[0];
+          }
+        }
+      }
+      larg.push_back(S);
+      lspow.push_back(pow(S,nover2,contextptr));
+      lout.push_back(prev*pow(simpl*out,nover2,contextptr)*pow(doubl,expnum,contextptr)*lspow.back()*pow(tmpd,expnum,contextptr)*pow(tmparg,-expnum,contextptr));
     }
     return subst(e,lin,lout,false,contextptr);
   }

@@ -3357,6 +3357,8 @@ namespace giac {
       find_conjugates(n,v_in,v_out);
       gen mult=subst(n,v_in,v_out,false,contextptr);
       n=n*mult; // n=simplify(n*mult);
+      if (!deno)
+        return n;
       d=d*mult;
     }
     else {
