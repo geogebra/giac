@@ -5340,12 +5340,20 @@ namespace giac {
 	    int p2s=P2n.lexsorted_degree();
 	    V=vecteur(U.begin()+p2s,U.end());
 	    poly12polynome(V,1,v);
-	    v=(v*P2) % p1;
-	    U=vecteur(U.begin(),U.begin()+p2s);
-	    poly12polynome(U,1,u);
-	    u=(u*P1) % p2;
-	    //CERR << (operator_times(u,p1,0)+operator_times(v,p2,0))/D << '\n';
-	    return;
+	    //v=(v*P2) % p1;
+            polynome prod(v*P2),quo(p1.dim),rem(p1.dim);
+            if (prod.TDivRem1(p1,quo,rem,true)){
+              v=rem;
+              U=vecteur(U.begin(),U.begin()+p2s);
+              poly12polynome(U,1,u);
+              // u=(u*P1) % p2;
+              prod=u*P1;
+              if (prod.TDivRem1(p2,quo,rem,true)){
+                u=rem;
+                //CERR << (operator_times(u,p1,0)+operator_times(v,p2,0))/D << '\n';
+                return;
+              }
+            }
 	  }
 	}
       }

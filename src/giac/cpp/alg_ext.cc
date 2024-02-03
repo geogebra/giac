@@ -1937,6 +1937,8 @@ namespace giac {
     if (!s
 #ifdef EMCC
 	|| s>1
+#else
+	|| s>4
 #endif
 	)
       return fastsign(g,contextptr);
