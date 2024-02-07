@@ -254,7 +254,7 @@ include_directories(src/giac/headers)
 
 add_definitions(-DHAVE_NO_HOME_DIRECTORY -DGIAC_GGB -DIN_GIAC -DHAVE_LIB_PTHREAD
         -DGIAC_GENERIC_CONSTANTS -DTIMEOUT
-        -DHAVE_LIBMPFR -DVERSION="1.2.3") # Version number seems hardwired, FIXME.
+        -DHAVE_LIBMPFR -DVERSION="1.9.0") # Version number seems hardwired, FIXME.
 
 add_executable(minigiac
         ${GIAC_SOURCES}

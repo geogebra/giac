@@ -20,7 +20,7 @@
 
 /* Define to the full name and version of this package. */
 #ifndef PACKAGE_STRING
-#define PACKAGE_STRING "giac 1.2.3"
+#define PACKAGE_STRING "giac 1.9.0"
 #endif
 
 /* Define to the one symbol short name of this package. */
@@ -28,12 +28,12 @@
 
 /* Define to the version of this package. */
 #ifndef PACKAGE_VERSION
-#define PACKAGE_VERSION "1.2.3"
+#define PACKAGE_VERSION "1.9.0"
 #endif
 
 /* Version number of package */
 #ifndef VERSION
-#define VERSION "1.2.3"
+#define VERSION "1.9.0"
 #endif
 
 #define GIAC_NO_OPTIMIZATIONS
