@@ -3567,8 +3567,10 @@ namespace giac {
       DivRem(tmp,pmin,0,quo,rem);
       d=rem;
     }
-    else
+    else if (d1.type==_VECT || d2.type==_VECT)
       d=d1*d2 % pmin;
+    else
+      d=d1*d2;
     if (d.type==_VECT)
       d.subtype=_POLY1__VECT;
     return true;

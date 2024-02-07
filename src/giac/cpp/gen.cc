@@ -4,10 +4,12 @@
 #include "kdisplay.h"
 #if defined DEVICE && !defined NSPIRE_NEWLIB && !defined N0120
 size_t stackptr=0x20036000;
-#elseif defined x86_64
+#else
+#if defined x86_64
 size_t stackptr=0xffffffffffffffff;
 #else
 size_t stackptr=0xffffffff;
+#endif
 #endif
 #endif
 
@@ -894,7 +896,7 @@ namespace giac {
 #else
     __ZINTptr= new ref_mpz_t(m);
 #endif
-#ifdef KHICAS
+#if defined KHICAS && !defined SIMU
       if ((size_t) _ZINTptr > stackptr)
 	ctrl_c=interrupted=true;
 #endif
@@ -916,7 +918,7 @@ namespace giac {
       * ((ulonglong * ) this) = ulonglong(ptr) << 16;
 #else
       __ZINTptr= new ref_mpz_t();
-#ifdef KHICAS
+#if defined KHICAS && !defined SIMU
       if ((size_t) _ZINTptr > stackptr)
 	ctrl_c=interrupted=true;
 #endif
@@ -968,7 +970,7 @@ namespace giac {
 #else
     __VECTptr= new_ref_vecteur(v);
 #endif
-#ifdef KHICAS
+#if defined KHICAS && !defined SIMU
     if (v.size()>1 &&
 	( (size_t) _VECTptr > stackptr ||
 	  (size_t) _VECTptr->begin() > stackptr)
@@ -987,7 +989,7 @@ namespace giac {
 #endif
     type=_VECT;
     subtype=(signed char)s;
-#ifdef KHICAS
+#if defined KHICAS && !defined SIMU
     if (_VECTptr->size()>1 &&
 	( (size_t) _VECTptr > stackptr ||
 	  (size_t) _VECTptr->begin() > stackptr)
@@ -1022,7 +1024,7 @@ namespace giac {
 #endif
     type = _SYMB;
     subtype = 0;
-#ifdef KHICAS
+#if defined KHICAS && !defined SIMU
     if (_SYMBptr->sommet!=at_restart && _SYMBptr->sommet!=at_purge && (size_t) _SYMBptr > stackptr)
       ctrl_c=interrupted=true;
 #endif
@@ -1036,7 +1038,7 @@ namespace giac {
 #endif
     type = _SYMB;
     subtype = 0;
-#ifdef KHICAS
+#if defined KHICAS && !defined SIMU
     if (_SYMBptr->sommet!=at_restart && _SYMBptr->sommet!=at_purge && (size_t) _SYMBptr > stackptr)
       ctrl_c=interrupted=true;
 #endif
@@ -1158,7 +1160,7 @@ namespace giac {
 #else
 	__POLYptr = new Tref_tensor<gen>(p) ;
 #endif
-#ifdef KHICAS
+#if defined KHICAS && !defined SIMU
 	if ((size_t) _POLYptr > stackptr)
 	  ctrl_c=interrupted=true;
 #endif
@@ -1211,7 +1213,7 @@ namespace giac {
 #else
     __POLYptr = pptr ;
 #endif
-#ifdef KHICAS
+#if defined KHICAS && !defined SIMU
     if ((size_t) _POLYptr > stackptr)
       ctrl_c=interrupted=true;
 #endif
@@ -1246,7 +1248,7 @@ namespace giac {
 #else
       __ZINTptr = mptr;
 #endif
-#ifdef KHICAS
+#if defined KHICAS && !defined SIMU
       if ((size_t) _ZINTptr > stackptr)
 	ctrl_c=interrupted=true;
 #endif
@@ -1314,7 +1316,7 @@ namespace giac {
 #else
       __ZINTptr = new ref_mpz_t(z.ptr);
 #endif
-#ifdef KHICAS
+#if defined KHICAS && !defined SIMU
       if ((size_t) _ZINTptr > stackptr)
 	ctrl_c=interrupted=true;
 #endif
@@ -1579,7 +1581,7 @@ namespace giac {
 #else
 	__SPOL1ptr= new ref_sparse_poly1(p);
 #endif
-#ifdef KHICAS
+#if defined KHICAS && !defined SIMU
 	if ((size_t) _SPOL1ptr > stackptr)
 	  ctrl_c=interrupted=true;
 #endif
@@ -15373,7 +15375,7 @@ void sprint_double(char * s,double d){
 #else
     mpf_set(_REALptr->inf,g.inf);
 #endif
-#ifdef KHICAS
+#if defined KHICAS && !defined SIMU
     if ((size_t) _REALptr > stackptr)
       ctrl_c=interrupted=true;
 #endif
@@ -15385,7 +15387,7 @@ void sprint_double(char * s,double d){
 #else
       __REALptr = (ref_real_object *) new ref_real_interval;
 #endif
-#ifdef KHICAS
+#if defined KHICAS && !defined SIMU
     if ((size_t) _REALptr > stackptr)
       ctrl_c=interrupted=true;
 #endif
