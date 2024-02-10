@@ -21,6 +21,10 @@
 #ifndef _GIAC_FIRST_H_
 #define _GIAC_FIRST_H_
 
+#ifdef _GLIBCXX_ASSERTIONS
+#undef _GLIBCXX_ASSERTIONS
+#endif
+
 #ifdef NUMWORKS
 #define KHICAS 1
 #endif

@@ -14665,9 +14665,12 @@ void G_idn(vector<unsigned> & G,size_t s){
 		return true;
 	      } // end D.size()==1
 	      else {
-		m.clear(); 
-		if (D.back()==0 && D[D.size()-2]==0)
-		  return true; 
+		if (1 && D.back()==0 && D[D.size()-2]==0){
+                  DivRem(m,D,&env,unused,U);m=unused;//m.clear();
+		  return true;
+                }
+                else
+                  m.clear();
 	      }
 	    } // end B.front()!=0
 	  } // end B.size()==S+1

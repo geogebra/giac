@@ -8046,7 +8046,7 @@ namespace giac {
 	if (convertpos){
 	  int C=col+1;
 	  longlong * buf=&buffer[C];
-	  longlong * bufend=&buffer[cmax]-8;
+	  longlong * bufend=&buffer[0]+cmax-8;
 	  const int * nline=&Nline[C];
 	  for (;buf<=bufend;buf+=8,nline+=8){
 	    longlong x,y;
@@ -8070,7 +8070,7 @@ namespace giac {
 	else {
 	  int C=col+1;
 	  longlong * buf=&buffer[C];
-	  longlong * bufend=&buffer[cmax]-8;
+	  longlong * bufend=&buffer[0]+cmax-8;
 	  const int * nline=&Nline[C];
 	  for (;buf<=bufend;buf+=8,nline+=8){
 	    buf[0] -= coeff*nline[0];
@@ -8316,7 +8316,7 @@ namespace giac {
 	    }
 #else
 	    int C=col+1;
-	    longlong * ptr= &buffer[C],*ptrend=&buffer[cmax]-4;
+	    longlong * ptr= &buffer[C],*ptrend=&buffer[0]+cmax-4;
 	    const int *ptrN=&Nline[C];
 	    for (;ptr<ptrend;ptrN+=4,ptr+=4){
 	      longlong x = *ptr;
@@ -8348,7 +8348,7 @@ namespace giac {
 	  }
 	  else {
 	    int C=col+1;
-	    longlong * ptr= &buffer[C],*ptrend=&buffer[cmax]-4;
+	    longlong * ptr= &buffer[C],*ptrend=&buffer[0]+cmax-4;
 	    const int *ptrN=&Nline[C];
 	    for (;ptr<ptrend;ptrN+=4,ptr+=4){
 	      *ptr -= coeff*(*ptrN);
