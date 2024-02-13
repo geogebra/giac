@@ -486,7 +486,7 @@ namespace giac {
   // if GIAC_SHORTSHIFTTYPE is defined, sparse matrix is using shift index
   // coded on 2 bytes -> FIXME segfault for cyclic9
 
-#define GIAC_SHORTSHIFTTYPE 16
+  #define GIAC_SHORTSHIFTTYPE 16
   //#define GIAC_GBASIS_DELAYPAIRS
 
   void swap_indices(short * tab){
@@ -6356,7 +6356,55 @@ namespace giac {
 
   void f4_innerloop_special_mod(modint2 * wt,const modint * jt,const modint * jtend,modint C,const shifttype* it,modint env){
     modint2 env2=modint2(env)*env;
+    if (0 && jtend-jt>3 && ((ulonglong) it &0x2)){ // should be always true (since we have already read one time)
+      wt += *it; ++it;
+      special_mod(*wt,C,*jt,env,env2); ++jt;
+      if ((ulonglong) it &0x4){
+	wt += *it; ++it;
+	special_mod(*wt,C,*jt,env,env2); ++jt;
+	wt += *it; ++it;
+	special_mod(*wt,C,*jt,env,env2); ++jt;
+      }
+    }
     jtend -= 16;
+#if 0 // ndef BIDGENDIAN  // it has an address 64 bits aligned
+    for (;jt<=jtend;){
+      ulonglong B; int b;
+      B=*(ulonglong *) it; 
+      wt += B&0xffff; b=(B&0xffffffff)>>16;
+      special_mod(*wt,C,*jt,env,env2); 
+      special_mod(wt[b],C,jt[1],env,env2); 
+      wt += b+((B&0xffffffffffff)>>32); b=B>>48;
+      special_mod(*wt,C,jt[2],env,env2); 
+      special_mod(wt[b],C,jt[3],env,env2);
+      it += 4; jt+=4;
+      B=*(ulonglong *) it; 
+      wt += b+(B&0xffff);  b=(B&0xffffffff)>>16;   
+      special_mod(*wt,C,*jt,env,env2); 
+      special_mod(wt[b],C,jt[1],env,env2); 
+      wt += b+((B&0xffffffffffff)>>32); b=B>>48;
+      special_mod(*wt,C,jt[2],env,env2); 
+      special_mod(wt[b],C,jt[3],env,env2);
+      it += 4; jt+=4;
+      B=*(ulonglong *) it; 
+      wt += b+(B&0xffff);  b=(B&0xffffffff)>>16;   
+      special_mod(*wt,C,*jt,env,env2); 
+      special_mod(wt[b],C,jt[1],env,env2); 
+      wt += b+((B&0xffffffffffff)>>32); b=B>>48;
+      special_mod(*wt,C,jt[2],env,env2); 
+      special_mod(wt[b],C,jt[3],env,env2);
+      it += 4; jt+=4;
+      B=*(ulonglong *) it; 
+      wt += b+(B&0xffff);  b=(B&0xffffffff)>>16;   
+      special_mod(*wt,C,*jt,env,env2); 
+      special_mod(wt[b],C,jt[1],env,env2); 
+      wt += b+((B&0xffffffffffff)>>32); b=B>>48;
+      special_mod(*wt,C,jt[2],env,env2); 
+      special_mod(wt[b],C,jt[3],env,env2);
+      it += 4; jt+=4;
+      wt += b;
+    }
+#else
     for (;jt<=jtend;){
       wt += it[0]; int b=it[1];
       special_mod(*wt,C,*jt,env,env2); 
@@ -6385,6 +6433,7 @@ namespace giac {
       wt += b;
       it += 16; jt+=16;
     }
+#endif
     jtend += 16;
     for (;jt!=jtend;++jt){
       wt += *it; ++it;
@@ -9312,6 +9361,14 @@ namespace giac {
   bool chinrem(poly8<tdeg_t> &P,const gen & pmod,const polymod<tdeg_t> & Q,int qmodval,poly8<tdeg_t> & tmp,int nthreads=1){
     if (pmod.type!=_ZINT)
       nthreads=1;
+    if (pmod.type!=_ZINT)
+      nthreads=1;
+    else {
+      double work=P.coord.size();
+      work=work*sizeinbase2(pmod)/256/29; // correction of number of monomials by a factor corresponding to 256 primes of size 29 bits
+      if (work/nthreads<128)
+        nthreads=giacmin(nthreads,giacmax(1,work/128));
+    }
     if (nthreads>MAXNTHREADS)
       nthreads=MAXNTHREADS;
     gen u,v,d,pqmod(qmodval*pmod);
@@ -9344,7 +9401,7 @@ namespace giac {
           size_t N2=(1ULL << N);
           gen N3=pow(2,N2+31);
           if (is_greater(N3,pqmod,context0)){
-            if (debug_infolevel)
+            if (debug_infolevel>1)
               CERR << CLOCK()*1e-6 << " parallel chinrem realloc bits=" << 2*N2 << "\n";
             for (it=P.coord.begin();it!=itend;++it){
               if (it->g.type!=_ZINT) continue;
@@ -15499,6 +15556,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     int nthreads=1,th,parallel=1;
 #endif
     bool rur_gbasis=rur_do_gbasis>=0 || gbasis_par.gbasis;
+    bool chk_initial_generator=true;
     // for more than 2 threads, real time is currently better without
     // reason might be that the gbasis is large, reduction mod p for
     // all threads has bad cache performances?
@@ -15702,8 +15760,8 @@ void G_idn(vector<unsigned> & G,size_t s){
       else {
 	if (time2ndrun<0){
 	  time2ndrun=(t_1-t_0)/(th+1); // we are computing th+1 primes
-	  if (debug_infolevel)
-	    CERR << "2nd run " << time2ndrun << " 1st run " << time1strun << '\n';
+	  if (time1strun>=1 || debug_infolevel)
+	    CERR << "// Timing for 2nd run " << time2ndrun << " 1st run " << time1strun << " speed ratio " << time2ndrun/time1strun << " [current reconstructed ratio for reinjection=" <<  gbasis_reinject_ratio << " speed_ratio for reinjection=" << gbasis_reinject_speed_ratio << " modifiable by gbasis_reinject(reconstructed_ratio,speed_ratio) command]" << '\n';
 	  if (time2ndrun<time1strun*gbasis_reinject_speed_ratio 
 	      || gbasis_par.reinject_for_calc>0
 	      //|| time2ndrun<0.5
@@ -16354,8 +16412,9 @@ void G_idn(vector<unsigned> & G,size_t s){
             goto cleanup;
           }
 	  // first verify that the initial generators reduce to 0
-	  if (!eliminate_flag && !check_initial_generators(res,W[i],G,eps))
+	  if (!eliminate_flag && chk_initial_generator && !check_initial_generators(res,W[i],G,eps))
 	    continue;
+          chk_initial_generator=false;
 	  if (int(W[i].size())<=GBASIS_DETERMINISTIC)
 	    eps=0;
 	  if (eliminate_flag && eps==0)

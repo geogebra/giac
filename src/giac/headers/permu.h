@@ -77,7 +77,7 @@ namespace giac {
   std::vector<int> p1oc2(const std::vector<int> & p1, const std::vector<int> & c2);
 
   // arithmetic mean column by column  gen l2norm2(const gen & g);
-  //gen _hilbert(const gen & args,GIAC_CONTEXT); // moved to signalprocessing.h
+  gen _hilbert(const gen & args,GIAC_CONTEXT); // moved to signalprocessing.h
   gen square_hadamard_bound(const matrice & m);
   gen _hadamard(const gen & args,GIAC_CONTEXT);
   gen _trn(const gen & args,GIAC_CONTEXT);

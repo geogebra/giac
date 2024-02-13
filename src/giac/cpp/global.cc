@@ -3653,7 +3653,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   // gbasis modular algorithm on Q: simultaneous primes (more primes means more parallel threads but also more memory required)
   double gbasis_reinject_ratio=0.2;
   // gbasis modular algo on Q: if new basis element exceed this ratio, new elements are reinjected in the ideal generators for the remaining computations
-  double gbasis_reinject_speed_ratio=1/6.;
+  double gbasis_reinject_speed_ratio=1./6; // fails for cyclic8
   // gbasis modular algo on Q: new basis elements are reinjected if the 2nd run with learning CPU speed / 1st run without learning CPU speed is >=
   int gbasis_logz_age_sort=0,gbasis_stop=0;
   // rur_do_gbasis==-1 no gbasis Q recon for rur, ==0 always gbasis Q recon, >0 size limit in monomials of the gbasis for gbasis Q recon
