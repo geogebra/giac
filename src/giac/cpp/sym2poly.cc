@@ -2764,7 +2764,7 @@ namespace giac {
       if (!equalposcomp(l,x))
 	break;
     }
-    gen f=x*x-d*x+e;
+    gen f=_numer(x*x-d*x+e,contextptr);
     f=factor(f,x,false,contextptr);
     if (f.type!=_SYMB)
       return false;

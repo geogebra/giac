@@ -10693,9 +10693,9 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       if (is_undef(a)) return a;
       if (a.type==_VECT)
 	n=a;
-      a=rdiv(abs_norm(a-F1,contextptr)+abs_norm(a-F2,contextptr),plus_two,contextptr);
+      a=normal(rdiv(abs_norm(a-F1,contextptr)+abs_norm(a-F2,contextptr),plus_two,contextptr),contextptr);
       gen MF1=distance2(M,F1,contextptr),MF2=distance2(M,F2,contextptr);
-      a2=(MF1+MF2)/4+sqrt(MF1*MF2,contextptr)/2;
+      a2=normal(MF1+MF2,contextptr)/4+sqrt(normal(MF1*MF2,contextptr),contextptr)/2;
     }
     else {
       gen F1F2=F2-F1;
@@ -10706,10 +10706,10 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     gen eq=ellipse_hyperbole_equation(F1,F2,a2,contextptr);
     vecteur vparam=conique_ratparams(eq,M,contextptr);
     gen parameq=conique_ratparam(eq,M,contextptr);
-    gen F1F2=F2-F1;
-    gen O=rdiv(F1+F2,plus_two,contextptr);
+    gen F1F2=normal(F2-F1,contextptr);
+    gen O=normal(rdiv(F1+F2,plus_two,contextptr),contextptr);
     gen c2=rdiv(F1F2.squarenorm(contextptr),gen(4),contextptr);
-    gen b=sqrt(a2-c2,contextptr),res;
+    gen b=sqrt(normal(a2-c2,contextptr),contextptr),res;
 #if 0 // def GIAC_HAS_STO_38
     gen theta=vx_var;
 #else
@@ -10730,8 +10730,8 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       res=O+a*symb_cos(theta)*F1F2/abs_norm(F1F2,contextptr)+b*symb_sin(theta)*n/abs_norm(n,contextptr);
     }
     else { // 2-d
-      gen xF1F2=re(F1F2,contextptr),yF1F2=im(F1F2,contextptr);
-      gen eitheta(xy2eitheta(xF1F2,yF1F2,contextptr));
+      gen xF1F2,yF1F2; reim(F1F2,xF1F2,yF1F2,contextptr);
+      gen eitheta(xy2eitheta(normal(xF1F2,contextptr),yF1F2,contextptr));
       res=eitheta*(a*symb_cos(theta)+b*cst_i*symb_sin(theta))+O;
       gen r,i;
       reim(res,r,i,contextptr);
@@ -10773,9 +10773,9 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       if (is_undef(a)) return a;
       if (a.type==_VECT)
 	n=a;
-      a=rdiv(abs_norm(a-F1,contextptr)-abs_norm(a-F2,contextptr),plus_two,contextptr);
+      a=normal(rdiv(abs_norm(a-F1,contextptr)-abs_norm(a-F2,contextptr),plus_two,contextptr),contextptr);
       gen MF1=distance2(M,F1,contextptr),MF2=distance2(M,F2,contextptr);
-      a2=(MF1+MF2)/4-sqrt(MF1*MF2,contextptr)/2;
+      a2=normal(MF1+MF2,contextptr)/4-sqrt(normal(MF1*MF2,contextptr),contextptr)/2;
     }
     else {
       gen F1F2=F2-F1;
@@ -10786,8 +10786,8 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     gen eq=ellipse_hyperbole_equation(F1,F2,a2,contextptr);
     gen parameq=conique_ratparam(eq,M,contextptr);
     vecteur vparam=conique_ratparams(eq,M,contextptr);
-    gen F1F2=F2-F1;
-    gen O=rdiv(F1+F2,plus_two,contextptr);
+    gen F1F2=normal(F2-F1,contextptr);
+    gen O=normal(rdiv(F1+F2,plus_two,contextptr),contextptr);
     gen c2=rdiv(F1F2.squarenorm(contextptr),gen(4),contextptr);
     gen b=sqrt(c2-a2,contextptr),res,res1,res2;
 #if 0 // def GIAC_HAS_STO_38
@@ -10802,8 +10802,8 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       res2=-a*cosh(theta,contextptr)*F1F2/abs_norm(F1F2,contextptr)+b*sinh(theta,contextptr)*n/abs_norm(n,contextptr);
     }
     else {
-      gen xF1F2=re(F1F2,contextptr),yF1F2=im(F1F2,contextptr);
-      gen eitheta(xy2eitheta(xF1F2,yF1F2,contextptr));
+      gen xF1F2,yF1F2; reim(F1F2,xF1F2,yF1F2,contextptr);
+      gen eitheta(xy2eitheta(normal(xF1F2,contextptr),yF1F2,contextptr));
       res=eitheta*(a*cosh(theta,contextptr)+b*cst_i*sinh(theta,contextptr));
       gen r,i;
       reim(res+O,r,i,contextptr);
