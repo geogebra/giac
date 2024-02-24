@@ -2833,6 +2833,21 @@ namespace giac {
 	v=v2;
 	rvarsize=int(v2.size());
       }
+      v2=lop(lvar(e),*at_pow);
+      if (v2.size()==1){
+        // code added for integrate(x^n*ln(x))
+        gen v20=v2.front()._SYMBptr->feuille;
+        if (!lvar(v20[1]).empty()){
+          e2=ratnormal(powexpand(e,contextptr),contextptr);
+          v2.clear();
+          rlvarx(e2,gen_x,v2);
+          if (lvar(e2).size()<lvar(e).size()){
+            e=e2;
+            v=v2;
+            rvarsize=int(v2.size());
+          }
+        }
+      }
       if (rvarsize==2){
 	e2=simplifier(e,contextptr);
 	v2.clear();

@@ -2467,8 +2467,13 @@ namespace giac {
       return gen(accurate_evalf(*g._VECTptr,nbits),g.subtype);
     if (g.type==_SYMB)
       return symbolic(g._SYMBptr->sommet,accurate_evalf(g._SYMBptr->feuille,nbits));
-    if (g.type==_IDNT)
+    if (g.type==_IDNT){
+      if (g==cst_pi)
+	return m_pi(nbits);
+      if (g==cst_euler_gamma)
+	return m_gamma(nbits);
       return g;
+    }
     gen r,i;reim(g,r,i,context0); // only called for numeric values
     if (is_exactly_zero(i))
       return set_precision(r,nbits);
