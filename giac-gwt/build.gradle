@@ -6,9 +6,9 @@ plugins {
 apply from: '../repositories.gradle'
 
 dependencies {
-    api 'org.gwtproject:gwt-dev:2.10.0',
-        'org.gwtproject.resources:gwt-resources-api:HEAD-SNAPSHOT'
-    annotationProcessor 'org.gwtproject.resources:gwt-resources-processor:HEAD-SNAPSHOT'
+    api 'org.gwtproject:gwt-dev:2.11.0',
+        'org.treblereel.gwt.gwtproject.resources:gwt-resources-api:202402231'
+    annotationProcessor 'org.treblereel.gwt.gwtproject.resources:gwt-resources-processor:202402231'
 }
 
 compileJava.options.sourcepath = files(processResources.destinationDir).builtBy(processResources)
