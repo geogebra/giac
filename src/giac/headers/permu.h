@@ -76,6 +76,36 @@ namespace giac {
   std::vector<int> c1op2(const std::vector<int> & c1, const std::vector<int> & p2);
   std::vector<int> p1oc2(const std::vector<int> & p1, const std::vector<int> & c2);
 
+  template<typename T>
+  void apply_cycle(std::vector<T>& v, const std::vector<int>& c){
+    for (int i=1;i<c.size();++i){
+      std::swap(v[c[i-1]],v[c[i]]);
+    }
+  }
+  
+  template<typename T>
+  void apply_permutation(std::vector<T>& v, const std::vector<int>& indices_){
+#if 1
+    std::vector<int> indices(indices_); // copy since modified in place to track indices already done
+    for (size_t i = 0; i < indices.size(); i++) {
+      size_t current = i;
+      while (i != indices[current]) {
+	int next = indices[current];
+	swap(v[current], v[next]);
+	indices[current] = current;
+	current = next;
+      }
+      indices[current] = current;
+ }
+#else
+    std::vector< std::vector<int> > C(permu2cycles(indices));
+    for (int i=0;i<C.size();++i){
+      apply_cycle(v,C[i]);
+    }
+    #endif
+  }
+  
+
   // arithmetic mean column by column  gen l2norm2(const gen & g);
   gen _hilbert(const gen & args,GIAC_CONTEXT); // moved to signalprocessing.h
   gen square_hadamard_bound(const matrice & m);
