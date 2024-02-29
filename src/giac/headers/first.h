@@ -21,6 +21,10 @@
 #ifndef _GIAC_FIRST_H_
 #define _GIAC_FIRST_H_
 
+// register is deprecated in c++17
+#define register 
+
+
 #ifdef _GLIBCXX_ASSERTIONS
 #undef _GLIBCXX_ASSERTIONS
 #endif

@@ -64,8 +64,12 @@ using namespace std;
 // vector class version 1 by Agner Fog https://github.com/vectorclass
 // this might be faster for CPU with AVX512DQ instruction set
 // (fast multiplication of Vec4q)
-#ifdef HAVE_VCL1_VECTORCLASS_H 
-#include <vcl1/vectorclass.h>
+#if defined HAVE_VCL2_VECTORCLASS_H 
+// https://github.com/vectorclass, compile with -mavx2 -mfma 
+#include <vcl2/vectorclass.h>
+#ifdef __AVX2__
+#define CPU_SIMD
+#endif
 #endif
 
 // Apple has the Accelerate framework for lapack if you did not install Atlas/lapack
@@ -5160,7 +5164,7 @@ namespace giac {
     a=pseudo_mod(a+((longlong)b)*c,p,invp,nbits);
   }
 
-#ifdef HAVE_VCL1_VECTORCLASS_H 
+#if defined CPU_SIMD
   inline Vec4q pseudo_mod4(const Vec4q & x,const Vec4q& p4,const Vec4q & invp4,int nbits){
     return x - _mm256_mul_epi32(_mm256_mul_epi32((x>>nbits),invp4)>>(nbits),p4);
     // return x - (((x>>nbits)*invp)>>(nbits))*p;
@@ -5209,11 +5213,12 @@ namespace giac {
 	){
       int nbits=sizeinbase2(p); 
       unsigned invp=((1ULL<<(2*nbits)))/p+1;
-#ifdef HAVE_VCL1_VECTORCLASS_H
+#ifdef CPU_SIMD
       Vec4q p4(p),invp4(invp);
 #endif
       for (;it1<=it1_;){
-#if 0 // def HAVE_VCL1_VECTORCLASS_H
+#if 0 //def CPU_SIMD
+#if 1
 	Vec4i I1,I2,I3,I4,T;
 	I1.load(it1); I2.load(it2); I3.load(it3); I4.load(it4); T.load(jt);
 	Vec4q I1_,I2_,I3_,I4_,T_;
@@ -5225,6 +5230,24 @@ namespace giac {
 	I1=compress(I1_); I2=compress(I2_); I3=compress(I3_); I4=compress(I4_);
 	I1.store(it1); I2.store(it2); I3.store(it3); I4.store(it4);
 	jt+=4;it4+=4;it3+=4;it2+=4;it1+=4;
+#else
+	Vec4i I1,T;
+	Vec4q I1_,T_;
+	T.load(jt); T_=extend(T);
+	I1.load(it1); I1_=extend(I1); 
+	pseudo_mod4(I1_,c1,T_,p4,invp4,nbits);
+	I1=compress(I1_); I1.store(it1); 
+	I1.load(it2); I1_=extend(I1); 
+	pseudo_mod4(I1_,c2,T_,p4,invp4,nbits);
+	I1=compress(I1_); I1.store(it2); 
+	I1.load(it3); I1_=extend(I1); 
+	pseudo_mod4(I1_,c3,T_,p4,invp4,nbits);
+	I1=compress(I1_); I1.store(it3); 
+	I1.load(it4); I1_=extend(I1);
+	pseudo_mod4(I1_,c4,T_,p4,invp4,nbits);
+	I1=compress(I1_); I1.store(it4);
+	jt+=4;it4+=4;it3+=4;it2+=4;it1+=4;
+#endif
 #else
 	int tmp=*jt;
 	pseudo_mod(*it1,c1,tmp,p,invp,nbits);
@@ -8010,7 +8033,7 @@ namespace giac {
     longlong modulo2=longlong(modulo)*modulo;
     bool convertpos= double(modulo2)*ps >= 9.22e18;
     if (convertpos)
-      makepositive(N,lstart,lmax,c,cmax,modulo);
+      makepositive(N,l,lmax,c,cmax,modulo);
     vector<longlong> buffer(cmax);
     for (int L=l;L<lmax;++L){
       if (debuginfo){
@@ -8049,6 +8072,17 @@ namespace giac {
 	  longlong * bufend=&buffer[0]+cmax-8;
 	  const int * nline=&Nline[C];
 	  for (;buf<=bufend;buf+=8,nline+=8){
+#ifdef CPU_SIMD
+	    Vec4q x,n; Vec4i nn;
+	    x.load(buf); nn.load(nline); n=extend(nn);
+	    x -= coeff*n;
+	    x += ((x>>63) & modulo2);
+	    x.store(buf);
+	    x.load(buf+4); nn.load(nline+4); n=extend(nn);
+	    x -= coeff*n;
+	    x += ((x>>63) & modulo2);
+	    x.store(buf+4);
+#else
 	    longlong x,y;
 	    x=buf[0]; x -= coeff*nline[0]; x -= (x>>63)*modulo2; buf[0]=x; 
 	    y=buf[1]; y -= coeff*nline[1]; y -= (y>>63)*modulo2; buf[1]=y; 
@@ -8057,7 +8091,8 @@ namespace giac {
 	    x=buf[4]; x -= coeff*nline[4]; x -= (x>>63)*modulo2; buf[4]=x; 
 	    y=buf[5]; y -= coeff*nline[5]; y -= (y>>63)*modulo2; buf[5]=y; 
 	    x=buf[6]; x -= coeff*nline[6]; x -= (x>>63)*modulo2; buf[6]=x; 
-	    y=buf[7]; y -= coeff*nline[7]; y -= (y>>63)*modulo2; buf[7]=y; 
+	    y=buf[7]; y -= coeff*nline[7]; y -= (y>>63)*modulo2; buf[7]=y;
+#endif
 	  }
 	  for (C+=int(buf-&buffer[C]);C<cmax;++C){
 	    longlong & b=buffer[C] ;
@@ -8275,6 +8310,9 @@ namespace giac {
     // desalloc null lines
     free_null_lines(N,l,lmax,c,cmax);
     longlong modulo2=longlong(modulo)*modulo;
+#ifdef CPU_SIMD
+    Vec4q P(modulo2);
+#endif
     bool convertpos= double(modulo2)*(lmax-l) >= 9.22e18;
     if (convertpos){
       makepositive(N,l,lmax,c,cmax,modulo);
@@ -8319,6 +8357,14 @@ namespace giac {
 	    longlong * ptr= &buffer[C],*ptrend=&buffer[0]+cmax-4;
 	    const int *ptrN=&Nline[C];
 	    for (;ptr<ptrend;ptrN+=4,ptr+=4){
+#ifdef CPU_SIMD
+	      Vec4q x; x.load(ptr);
+	      Vec4i n; n.load(ptrN);
+	      Vec4q N; N=extend(n);
+	      x -= coeff*N;
+	      x += ((x>>63)&P);
+	      x.store(ptr);
+#else
 	      longlong x = *ptr;
 	      x -= coeff*(*ptrN);   
 	      x += (x>>63)&modulo2;
@@ -8335,6 +8381,7 @@ namespace giac {
 	      x -= coeff*(ptrN[3]);   
 	      x += (x>>63)&modulo2;
 	      ptr[3] = x;
+#endif
 	    }
 	    C += ptr-&buffer[C];
 	    for (;C<cmax;++C){
@@ -8664,7 +8711,8 @@ namespace giac {
     
   void * do_thread_lower_reduction(void * ptr_){
     thread_modular_reduction_t * ptr=(thread_modular_reduction_t *) ptr_;
-    smallmodrref_lower(*ptr->Nptr,ptr->linit,ptr->l,ptr->lmax,ptr->c,ptr->effcmax,*ptr->pivotcols,ptr->modulo,ptr->debuginfo);
+    if (ptr->l<ptr->lmax)
+	smallmodrref_lower(*ptr->Nptr,ptr->linit,ptr->l,ptr->lmax,ptr->c,ptr->effcmax,*ptr->pivotcols,ptr->modulo,ptr->debuginfo);
     return ptr;
   }
 
@@ -8848,18 +8896,17 @@ namespace giac {
     }
     int ilmax=lmax;
     if (allow_block){
-      for (int i=0;i<lmax-1;){
-      if (N[lmax-1].empty()){
-      --lmax;
-      continue;
+      // move empty lines at end
+      for (int i=0;i<lmax-1;++i){
+        if (N[i].empty()){
+          // beware this will modify permutation wrt normal Gaussian elimination
+          for (int j=i;j<lmax-1;++j){
+            swap(N[j],N[j+1]);
+            swap(permutation[j],permutation[j+1]);
+            idet=-idet;
+          }
+        }
       }
-      if (N[i].empty()){
-	swap(N[i],N[lmax-1]);
-	swap(permutation[i],permutation[lmax-1]);
-	--lmax;
-      }
-      ++i;
-    }
     }
     if (debug_infolevel>2)
       CERR << CLOCK()*1e-6 << " Effective number of rows " << lmax << "/" << ilmax << '\n';
@@ -8887,6 +8934,7 @@ namespace giac {
 	if (debug_infolevel>2)
 	  CERR << CLOCK()*1e-6 << " rref_lower begin " << effl << ".." << lmax << "/" << c << ".." << cmax << '\n';
 	// CERR << pivotcols << '\n';
+	makepositive(N,l,effl,c,cmax,modulo);
 #ifdef HAVE_LIBPTHREAD
 	if (nthreads>1 && double(lmax-effl)*(cmax-c)>1e5){
 	  pthread_t tab[64];
@@ -8900,7 +8948,7 @@ namespace giac {
 	  for (int j=0;j<nthreads;++j){
 	    redparam[j].l=k;
 	    k += kstep;
-	    if (k>lmax)
+	    if (k>lmax || j==nthreads-1)
 	      k=lmax;
 	    redparam[j].lmax=k;
 	    bool res=true;

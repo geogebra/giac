@@ -6464,7 +6464,8 @@ namespace giac {
     if (args.type==_VECT && args._VECTptr->size()==2 && args._VECTptr->front().type==_INT_ && args._VECTptr->back().type==_INT_){
       int a=args._VECTptr->front().val,b=args._VECTptr->back().val;
       if (b) a %= b ;
-      if (b>0) a -= (a>>31)*b;
+      //if (b>0) a -= (a>>31)*b;
+      if (a<0) a += absint(b);
       return a;
     }
     if (args.type==_VECT && args._VECTptr->size()>1 && args._VECTptr->front().type==_STRNG){

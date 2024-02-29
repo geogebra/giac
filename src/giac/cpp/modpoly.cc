@@ -54,8 +54,12 @@ using namespace std;
 // vector class version 1 by Agner Fog https://github.com/vectorclass
 // this might be faster for CPU with AVX512DQ instruction set
 // (fast multiplication of Vec4q)
-#ifdef HAVE_VCL1_VECTORCLASS_H 
-#include <vcl1/vectorclass.h>
+#if defined HAVE_VCL2_VECTORCLASS_H 
+// https://github.com/vectorclass, compile with -mavx2 -mfma 
+#include <vcl2/vectorclass.h>
+#ifdef __AVX2__
+#define CPU_SIMD
+#endif
 #endif
 
 #ifndef NO_NAMESPACE_GIAC
@@ -12931,7 +12935,7 @@ namespace giac {
 	fft_loop_p_precond_(&Aeff[3],&An2[3],Weff[3],Weff[7],p);
 	Aeff+=4; An2+=4; Weff+=8;
 	for (;Aeff<Aend;){
-#if 0 // def HAVE_VCL1_VECTORCLASS_H 
+#if 0 // def CPU_SIMD
 	  Vec4ui A4,An4,B4;
 	  Vec4uq C4;
 	  A4.load(Aeff);
@@ -12949,7 +12953,7 @@ namespace giac {
 	  An4 += ( (Vec4i) An4>>31)&p; 
 	  An4.store(An2);
 	  Aeff+=4; An2+=4; Weff+=8; continue;
-#endif // VECTORCLASS_H
+#endif // CPU_SIMD
 	  fft_loop_p_precond_(&Aeff[0],&An2[0],Weff[0],Weff[4],p);
 	  fft_loop_p_precond_(&Aeff[1],&An2[1],Weff[1],Weff[5],p);
 	  fft_loop_p_precond_(&Aeff[2],&An2[2],Weff[2],Weff[6],p);
@@ -13045,7 +13049,7 @@ namespace giac {
       fft_loop_p_(Acur,An2cur,Wcur,n2,p,invp);
       ++Acur;++An2cur; Wcur += step;
       // continue;
-#if 0 // def HAVE_VCL1_VECTORCLASS_H // debug
+#if 0 // def CPU_SIMD// debug
       A4.load(Acur-4);
       An4.load(An2cur-4);
       if ( horizontal_count(An4==compress(C4))!=4 || horizontal_count(A4==compress(B4))!=4)
