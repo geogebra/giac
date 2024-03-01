@@ -4194,7 +4194,7 @@ namespace giac {
 #ifdef x86_64
     int128_t C=0; // int128_t to avoid %
 #else
-    modint_t2 C=0; // int128_t to avoid %
+    modint2 C=0; // int128_t to avoid %
 #endif
     unsigned k=0,i; // k=position in f
     tdeg_t m;

@@ -3625,8 +3625,8 @@ namespace giac {
   }
   
 #if 1 // ndef GIAC_HAS_STO_38
-  const int mmult_double_blocksize=45; // 2*45^2*sizeof(double)= a little less than 32K
-  int mmult_int_blocksize=60; // 2*60^2*sizeof(int)= a little less than 32K
+  const int mmult_double_blocksize=44; // 2*45^2*sizeof(double)= a little less than 32K
+  int mmult_int_blocksize=64; // 2*64^2*sizeof(int)= a little less than 32K
   gen _blockmatrix_mult_size(const gen & args,GIAC_CONTEXT){
     if (args.type==_VECT && args._VECTptr->empty())
       return mmult_int_blocksize;
@@ -3645,74 +3645,70 @@ namespace giac {
     for (int a=a0;a<a1;++a){
       const vector<giac_double> & Aa=A[a];
       vector<giac_double> & Ca=C[a+c0];
-      matrix_double::const_iterator it=Btran.begin()+b0,itend=Btran.begin()+b1-5;
+      matrix_double::const_iterator it=Btran.begin()+b0,itend=Btran.begin()+b1-4;
       vector<giac_double>::iterator jt=Ca.begin()+b0+c1;
       for (;it<=itend;){
-	giac_double t0=0.0,t1=0.0,t2=0.0,t3=0.0,t4=0.0;
+	giac_double t0=0.0,t1=0.0,t2=0.0,t3=0.0;
 	const giac_double * i=&Aa[i0+delta], *iend=i+(i1-i0);
 	const giac_double *j0=&(*it)[i0];++it; 
 	const giac_double *j1=&(*it)[i0];++it;
 	const giac_double *j2=&(*it)[i0];++it;
 	const giac_double *j3=&(*it)[i0];++it;
-	const giac_double *j4=&(*it)[i0];++it;
 #if 1	
-	for (;i<iend-4;j0+=5,j1+=5,j2+=5,j3+=5,j4+=5,i+=5){
+	for (;i<=iend-4;j0+=4,j1+=4,j2+=4,j3+=4,i+=4){
+#ifdef CPU_SIMD
+	  Vec4d U,J0,J1,J2,J3;
+	  U.load(i);
+	  J0.load(j0); J1.load(j1); J2.load(j2); J3.load(j3);
+	  t0 += horizontal_add(U*J0);
+	  t1 += horizontal_add(U*J1);
+	  t2 += horizontal_add(U*J2);
+	  t3 += horizontal_add(U*J3);
+#else
 	  giac_double u = *i;
 	  t0 += u*(*j0);
 	  t1 += u*(*j1);
 	  t2 += u*(*j2);
 	  t3 += u*(*j3);
-	  t4 += u*(*j4);
 	  u = i[1];
 	  t0 += u*(j0[1]);
 	  t1 += u*(j1[1]);
 	  t2 += u*(j2[1]);
 	  t3 += u*(j3[1]);
-	  t4 += u*(j4[1]);
 	  u = i[2];
 	  t0 += u*(j0[2]);
 	  t1 += u*(j1[2]);
 	  t2 += u*(j2[2]);
 	  t3 += u*(j3[2]);
-	  t4 += u*(j4[2]);
 	  u = i[3];
 	  t0 += u*(j0[3]);
 	  t1 += u*(j1[3]);
 	  t2 += u*(j2[3]);
 	  t3 += u*(j3[3]);
-	  t4 += u*(j4[3]);
-	  u = i[4];
-	  t0 += u*(j0[4]);
-	  t1 += u*(j1[4]);
-	  t2 += u*(j2[4]);
-	  t3 += u*(j3[4]);
-	  t4 += u*(j4[4]);
+#endif
 	}
 #endif
-	for (;i<iend;++j0,++j1,++j2,++j3,++j4,++i){
+	for (;i<iend;++j0,++j1,++j2,++j3,++i){
 	  giac_double u = *i;
 	  t0 += u*(*j0);
 	  t1 += u*(*j1);
 	  t2 += u*(*j2);
 	  t3 += u*(*j3);
-	  t4 += u*(*j4);
 	}
 	if (add){
 	  *jt+=t0; ++jt;
 	  *jt+=t1; ++jt;
 	  *jt+=t2; ++jt;
 	  *jt+=t3; ++jt;
-	  *jt+=t4; ++jt;
 	}
 	else {
 	  *jt-=t0; ++jt;
 	  *jt-=t1; ++jt;
 	  *jt-=t2; ++jt;
 	  *jt-=t3; ++jt;
-	  *jt-=t4; ++jt;
 	}
       }
-      itend +=5;
+      itend +=4;
       for (;it<itend;++it){
 	giac_double t=0.0;
 	const giac_double * i=&Aa[i0+delta], *iend=i+(i1-i0), *j=&(*it)[i0];
@@ -3737,10 +3733,9 @@ namespace giac {
     for (int a=a0;a<a1;++a){
       const vector<int> & Aa=A[a];
       vector<int> & Ca=C[a+c0];
-      vector< vector<int> >::const_iterator it=Btran.begin()+b0,itend=Btran.begin()+b1-6;
+      vector< vector<int> >::const_iterator it=Btran.begin()+b0,itend=Btran.begin()+b1-8;
       vector<int>::iterator jt=Ca.begin()+b0+c1;
       for (;it<=itend;){
-	longlong t0=0,t1=0,t2=0,t3=0,t4=0,t5=0;
 	const int * i=&Aa[i0+delta], *iend=i+(i1-i0);
 	const int *j0=&(*it)[i0];++it; 
 	const int *j1=&(*it)[i0];++it;
@@ -3748,7 +3743,65 @@ namespace giac {
 	const int *j3=&(*it)[i0];++it;
 	const int *j4=&(*it)[i0];++it;
 	const int *j5=&(*it)[i0];++it;
-	for (;i<iend-5;j0+=6,j1+=6,j2+=6,j3+=6,j4+=6,j5+=6,i+=6){
+	const int *j6=&(*it)[i0];++it;
+	const int *j7=&(*it)[i0];++it;
+	longlong t0=0,t1=0,t2=0,t3=0,t4=0,t5=0,t6=0,t7=0;
+#ifdef CPU_SIMD
+#if 0 // for 512 bits SIMD registers, faster only if AVX512 is available
+	for (;i<=iend-8;j0+=8,j1+=8,j2+=8,j3+=8,j4+=8,j5+=8,j6+=8,j7+=8,i+=8){
+	  Vec8i u; Vec8q U;
+	  Vec8i J0,J1,J2,J3,J4,J5,J6,J7;
+	  u.load(i);  U=extend(u);
+	  J0.load(j0); J1.load(j1); J2.load(j2); J3.load(j3);
+	  J4.load(j4); J5.load(j5); J6.load(j6); J7.load(j7);
+	  t0 += horizontal_add(U*extend(J0));
+	  t1 += horizontal_add(U*extend(J1));
+	  t2 += horizontal_add(U*extend(J2));
+	  t3 += horizontal_add(U*extend(J3));
+	  t4 += horizontal_add(U*extend(J4));
+	  t5 += horizontal_add(U*extend(J5));
+	  t6 += horizontal_add(U*extend(J6));
+	  t7 += horizontal_add(U*extend(J7));
+	}
+#else // 512bits
+	Vec4q T0(0),T1(0),T2(0),T3(0),T4(0),T5(0),T6(0),T7(0);
+	for (;i<=iend-8;j0+=8,j1+=8,j2+=8,j3+=8,j4+=8,j5+=8,j6+=8,j7+=8,i+=8){
+	  Vec4i u; Vec4q U;
+	  Vec4i J0,J1,J2,J3,J4,J5,J6,J7;
+	  u.load(i);  U=extend(u);
+	  J0.load(j0); J1.load(j1); J2.load(j2); J3.load(j3);
+	  J4.load(j4); J5.load(j5); J6.load(j6); J7.load(j7);
+	  T0 += U*extend(J0);
+	  T1 += U*extend(J1);
+	  T2 += U*extend(J2);
+	  T3 += U*extend(J3);
+	  T4 += U*extend(J4);
+	  T5 += U*extend(J5);
+	  T6 += U*extend(J6);
+	  T7 += U*extend(J7);
+	  u.load(i+4);  U=extend(u);
+	  J0.load(j0+4); J1.load(j1+4); J2.load(j2+4); J3.load(j3+4);
+	  J4.load(j4+4); J5.load(j5+4); J6.load(j6+4); J7.load(j7+4);
+	  T0 += U*extend(J0);
+	  T1 += U*extend(J1);
+	  T2 += U*extend(J2);
+	  T3 += U*extend(J3);
+	  T4 += U*extend(J4);
+	  T5 += U*extend(J5);
+	  T6 += U*extend(J6);
+	  T7 += U*extend(J7);
+	}
+	t0 = horizontal_add(T0);
+	t1 = horizontal_add(T1);
+	t2 = horizontal_add(T2);
+	t3 = horizontal_add(T3);
+	t4 = horizontal_add(T4);
+	t5 = horizontal_add(T5);
+	t6 = horizontal_add(T6);
+	t7 = horizontal_add(T7);
+#endif // 512bits
+#else // CPU_SIMD
+	for (;i<=iend-8;j0+=8,j1+=8,j2+=8,j3+=8,j4+=8,j5+=8,j6+=8,j7+=8,i+=8){
 	  longlong u = *i;
 	  t0 += u*(*j0);
 	  t1 += u*(*j1);
@@ -3756,6 +3809,8 @@ namespace giac {
 	  t3 += u*(*j3);
 	  t4 += u*(*j4);
 	  t5 += u*(*j5);
+	  t6 += u*(*j6);
+	  t7 += u*(*j7);
 	  u = i[1];
 	  t0 += u*(j0[1]);
 	  t1 += u*(j1[1]);
@@ -3763,6 +3818,8 @@ namespace giac {
 	  t3 += u*(j3[1]);
 	  t4 += u*(j4[1]);
 	  t5 += u*(j5[1]);
+	  t6 += u*(j6[1]);
+	  t7 += u*(j7[1]);
 	  u = i[2];
 	  t0 += u*(j0[2]);
 	  t1 += u*(j1[2]);
@@ -3770,6 +3827,8 @@ namespace giac {
 	  t3 += u*(j3[2]);
 	  t4 += u*(j4[2]);
 	  t5 += u*(j5[2]);
+	  t6 += u*(j6[2]);
+	  t7 += u*(j7[2]);
 	  u = i[3];
 	  t0 += u*(j0[3]);
 	  t1 += u*(j1[3]);
@@ -3777,6 +3836,8 @@ namespace giac {
 	  t3 += u*(j3[3]);
 	  t4 += u*(j4[3]);
 	  t5 += u*(j5[3]);
+	  t6 += u*(j6[3]);
+	  t7 += u*(j7[3]);
 	  u = i[4];
 	  t0 += u*(j0[4]);
 	  t1 += u*(j1[4]);
@@ -3784,6 +3845,8 @@ namespace giac {
 	  t3 += u*(j3[4]);
 	  t4 += u*(j4[4]);
 	  t5 += u*(j5[4]);
+	  t6 += u*(j6[4]);
+	  t7 += u*(j7[4]);
 	  u = i[5];
 	  t0 += u*(j0[5]);
 	  t1 += u*(j1[5]);
@@ -3791,8 +3854,29 @@ namespace giac {
 	  t3 += u*(j3[5]);
 	  t4 += u*(j4[5]);
 	  t5 += u*(j5[5]);
+	  t6 += u*(j6[5]);
+	  t7 += u*(j7[5]);
+	  u = i[6];
+	  t0 += u*(j0[6]);
+	  t1 += u*(j1[6]);
+	  t2 += u*(j2[6]);
+	  t3 += u*(j3[6]);
+	  t4 += u*(j4[6]);
+	  t5 += u*(j5[6]);
+	  t6 += u*(j6[6]);
+	  t7 += u*(j7[6]);
+	  u = i[7];
+	  t0 += u*(j0[7]);
+	  t1 += u*(j1[7]);
+	  t2 += u*(j2[7]);
+	  t3 += u*(j3[7]);
+	  t4 += u*(j4[7]);
+	  t5 += u*(j5[7]);
+	  t6 += u*(j6[7]);
+	  t7 += u*(j7[7]);
 	}
-	for (;i<iend;++j0,++j1,++j2,++j3,++j4,++j5,++i){
+#endif
+	for (;i<iend;++j0,++j1,++j2,++j3,++j4,++j5,++j6,++j7,++i){
 	  longlong u = *i;
 	  t0 += u*(*j0);
 	  t1 += u*(*j1);
@@ -3800,6 +3884,8 @@ namespace giac {
 	  t3 += u*(*j3);
 	  t4 += u*(*j4);
 	  t5 += u*(*j5);
+	  t6 += u*(*j6);
+	  t7 += u*(*j7);
 	}
 	if (add){
 	  if (p){
@@ -3809,6 +3895,8 @@ namespace giac {
 	    *jt = (*jt+t3)%p; ++jt;
 	    *jt = (*jt+t4)%p; ++jt;
 	    *jt = (*jt+t5)%p; ++jt;
+	    *jt = (*jt+t6)%p; ++jt;
+	    *jt = (*jt+t7)%p; ++jt;
 	  }
 	  else {
 	    *jt+=t0; ++jt;
@@ -3817,6 +3905,8 @@ namespace giac {
 	    *jt+=t3; ++jt;
 	    *jt+=t4; ++jt;
 	    *jt+=t5; ++jt;
+	    *jt+=t6; ++jt;
+	    *jt+=t7; ++jt;
 	  }
 	}
 	else {
@@ -3827,6 +3917,8 @@ namespace giac {
 	    *jt = (*jt-t3)%p; ++jt;
 	    *jt = (*jt-t4)%p; ++jt;
 	    *jt = (*jt-t5)%p; ++jt;
+	    *jt = (*jt-t6)%p; ++jt;
+	    *jt = (*jt-t7)%p; ++jt;
 	  }
 	  else {
 	    *jt-=t0; ++jt;
@@ -3835,10 +3927,12 @@ namespace giac {
 	    *jt-=t3; ++jt;
 	    *jt-=t4; ++jt;
 	    *jt-=t5; ++jt;
+	    *jt-=t6; ++jt;
+	    *jt-=t7; ++jt;
 	  }
 	}
       }
-      itend +=6;
+      itend +=8;
       for (;it<itend;++it){
 	longlong t=0;
 	const int * i=&Aa[i0+delta], *iend=i+(i1-i0), *j=&(*it)[i0];
