@@ -223,7 +223,7 @@ int do_mastermind(GIAC_CONTEXT){
       if (essai.size()==4){
         if (essai==solution){
           char buf[16]; giac::sprint_int(buf,essais.size());
-          confirm(lang==1?"Solution found! Tries:":"Vous avez trouve. Essais:",buf);
+          confirm(lang!=1?"Solution found! Tries:":"Vous avez trouve. Essais:",buf);
           return i;
         }
         fulldisp=true;
@@ -233,7 +233,7 @@ int do_mastermind(GIAC_CONTEXT){
           mastermind_disp(solution,essais,essai,true,contextptr);
           for (int i=0;i<solution.size();++i)
             draw_filled_circle(30+C20*i+C20/2,190+C20,C20/2,mmind_col[solution[i]],true,true,contextptr);
-          confirm(lang==1?"Game over!":"Vous avez perdu.",lang==1?"Solution was":"La solution etait",false,140);
+          confirm(lang!=1?"Game over!":"Vous avez perdu.",lang!=1?"Solution was":"La solution etait",false,140);
           return -1;
         }
       }
@@ -815,6 +815,10 @@ int khicas_addins_menu(GIAC_CONTEXT){
 #ifdef NUMWORKS
 
 void flash_info(const char * buf,std::vector<fileinfo_t> &v,size_t & first_modif,bool modif,int initpos,GIAC_CONTEXT){
+  if (v.empty()){
+    do_confirm(lang==1?"Pas de fichier.":"No file found");
+    return;
+  }
   Menu smallmenu;
   smallmenu.numitems=v.size();
   MenuItem smallmenuitems[smallmenu.numitems];
@@ -862,10 +866,6 @@ void flash_info(const char * buf,std::vector<fileinfo_t> &v,size_t & first_modif
     if (sres == MENU_RETURN_SELECTION  || sres==KEY_CTRL_EXE) {
       if (modif){
 	flash_synchronize(buf,v,&first_modif);
-#if defined NUMWORKS && !defined DEVICE
-	// debug
-	file_savetar("file.tar",(char *)buf,tar_totalsize(buf,0));
-#endif
 	break;
       }
       string msg1=vs[i];
@@ -892,7 +892,7 @@ void flash_info(const char * buf,std::vector<fileinfo_t> &v,size_t & first_modif
     }
     if (sres==KEY_CHAR_ANS){
       if (i>=0 && i<v.size()){
-	if (modif && i>10){
+	if (modif && (v[0].filename!="KhiCAS" || i>10)){
 	  smallmenuitems[i].value=!smallmenuitems[i].value;
 	  int m=v[i].mode;
 	  if (smallmenuitems[i].value)
@@ -927,9 +927,9 @@ void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
 }
 
 // copy text file from ram scriptstore
-int flash_from_ram(const char * buf,size_t & first_modif,GIAC_CONTEXT){
+int flash_from_ram(const char * buf,const char * ext,size_t & first_modif,GIAC_CONTEXT){
   char filename[MAX_FILENAME_SIZE+1];
-  int n=giac_filebrowser(filename,"py",(lang==1?"Choisir fichier a copier":"Select file to copy"),0);
+  int n=giac_filebrowser(filename,ext,(lang==1?"Choisir fichier a copier":"Select file to copy"),0);
   if (n==0) return 0;
   const char * data=read_file(filename);
   n=flash_adddata(buf,filename,data,strlen(data),0);
@@ -945,7 +945,7 @@ void handle_flash(GIAC_CONTEXT){
   text.title =(lang==1)?"EXIT: annuler, EXE: ok":"EXIT: cancel, EXE: run";
   add(&text,(lang==1)?flash_fr:flash_en);
   int key=doTextArea(&text,contextptr);
-  if (key!=1
+  if ( (key!=1 && key!=KEY_CTRL_EXE && key!=KEY_CTRL_OK)
 #ifdef DEVICE
       || inexammode()
 #endif
@@ -957,22 +957,23 @@ void handle_flash(GIAC_CONTEXT){
     confirm(lang==1?"Pas assez de memoire RAM.":"RAM Memory full",lang==1?"Purgez et relancez KhiCAS":"Purge and restart KhiCAS");    
     return;
   }
-#ifndef NUMWORKS
+#ifndef DEVICE
   char * freeptr=0;
   const char * flash_buf=file_gettar_aligned("apps.tar",freeptr);
 #endif
   Menu smallmenu;
-  smallmenu.numitems=5;
+  smallmenu.numitems=6;
   MenuItem smallmenuitems[smallmenu.numitems];
   smallmenu.items=smallmenuitems;
   smallmenu.height=12;
   smallmenu.scrollbar=1;
   smallmenu.scrollout=1;
   smallmenuitems[0].text = (char*)(lang==1?"Informations flash":"Flash informations");
-  smallmenuitems[1].text = (char*)(lang==1?"Copier RAM->flash":"Copy RAM->flash");
-  smallmenuitems[2].text = (char*)(lang==1?"Modifier infos fichiers":"Modify file infos");
-  smallmenuitems[3].text = (char*)(lang==1?"Vider la corbeille":"Empty trash");
-  smallmenuitems[4].text = (char*)(lang==1?"Quitter":"Leave");
+  smallmenuitems[1].text = (char*)(lang==1?"KhiCAS RAM->flash":"KhiCAS RAM->flash");
+  smallmenuitems[2].text = (char*)(lang==1?"Python RAM->flash":"Python RAM->flash");
+  smallmenuitems[3].text = (char*)(lang==1?"Modifier infos fichiers":"Modify file infos");
+  smallmenuitems[4].text = (char*)(lang==1?"Vider la corbeille":"Empty trash");
+  smallmenuitems[5].text = (char*)(lang==1?"Quitter":"Leave");
   while (1){
     size_t first_modif=tar_totalsize(flash_buf,numworks_maxtarsize);
     string title=(lang==1?"Flash libre ":"Free flash ");
@@ -981,17 +982,25 @@ void handle_flash(GIAC_CONTEXT){
     smallmenu.selection = 1;
     int sres = doMenu(&smallmenu);
     if (sres==MENU_RETURN_EXIT){
-      break;
+#if defined NUMWORKS && !defined DEVICE
+      if (do_confirm(lang==1?"Quitter sans synchroniser?":"Leave without synchronization"))
+#endif
+        break;
     } 
     if (sres == MENU_RETURN_SELECTION  || sres==KEY_CTRL_EXE) {
-      if (smallmenu.selection == smallmenu.numitems)
+      if (smallmenu.selection == smallmenu.numitems){
+#if defined NUMWORKS && !defined DEVICE
+        if (do_confirm(lang==1?"Synchroniser apps.tar?":"Synchronize apps.tar?"))
+          file_savetar("apps.tar",(char *)flash_buf,tar_totalsize(flash_buf,0));
+#endif
 	break;
+      }
       if (smallmenu.selection == 1){
 	flash_info(flash_buf,first_modif,false,contextptr); // info only, no erase
 	continue;
       }
-      if (smallmenu.selection == 2){
-	if (flash_from_ram(flash_buf,first_modif,contextptr)){
+      if (smallmenu.selection==2 || smallmenu.selection==3){
+	if (flash_from_ram(flash_buf,smallmenu.selection==3?"py":"xw",first_modif,contextptr)){
 	  // uncheck files having the same filename
 	  std::vector<fileinfo_t> v=tar_fileinfo(flash_buf,0);
 	  int n=v.size();
@@ -1013,11 +1022,11 @@ void handle_flash(GIAC_CONTEXT){
 	}
 	continue;
       }
-      if (smallmenu.selection == 3){
+      if (smallmenu.selection == 4){
 	flash_info(flash_buf,first_modif,true,contextptr); // erase files
 	continue;
       }
-      if (smallmenu.selection==4){
+      if (smallmenu.selection==5){
 	if (numworks_maxtarsize-first_modif>65536 && do_confirm(lang==1?"Il reste de la place, etes-vous sur?":"There's still room, are you sure?"))
 	  flash_emptytrash(flash_buf,&first_modif);
       }
