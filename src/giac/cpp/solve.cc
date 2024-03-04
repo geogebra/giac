@@ -2827,11 +2827,25 @@ namespace giac {
     return false;
   }
 
+  static gen postprocess_return(const vecteur & res,const gen &x,bool withequal,GIAC_CONTEXT){
+    if (!withequal){
+      vecteur res_(res);
+      for (int i=0;i<res.size();++i){
+        if (res_[i].is_symb_of_sommet(at_equal))
+          res_[i]=res_[i][2];
+      }
+      return gen(res_,_LIST__VECT);
+    }
+    gen vres=solvepostprocess(res,x,contextptr);
+    return vres;
+  }    
+
   gen _solve_uncompressed(const gen & args,bool postprocess,GIAC_CONTEXT){
     if (args.type==_VECT && args.subtype==0 && ckmatrix(args))
       return _solve_uncompressed(change_subtype(args,_SEQ__VECT),postprocess,contextptr);
     if (args.type==_VECT && args.subtype==_SEQ__VECT && lidnt(args).empty())
       return _linsolve(args,contextptr);
+    vecteur res;
     if (args.type==_VECT && !args._VECTptr->empty() && (args._VECTptr->back()==at_equal || args._VECTptr->back()==at_different)){
       int x=calc_mode(contextptr);
       calc_mode(1,contextptr);
@@ -3026,13 +3040,16 @@ namespace giac {
 	    if (!lvarx(a12,v.back()).empty()){
 	      gen res1=_solve(makesequence(symb_equal(a12,0),v.back()),contextptr);
 	      gen res2=_solve(makesequence(symb_equal(ratnormal(a1/a12,contextptr),ratnormal(a2/a12,contextptr)),v.back()),contextptr);
-	      return gen(mergevecteur(gen2vecteur(res1),gen2vecteur(res2)),res1.subtype);
+	      res=mergevecteur(gen2vecteur(res1),gen2vecteur(res2));
+              return postprocess_return(res,v[1],postprocess,contextptr);
 	    }
 	    if (w.size()>=3){
 	      gen tst=tsimplify(_lin(a1/a2,contextptr),contextptr);
 	      w=lvarx(tst,v.back());
-	      if (w.size()==1)
-		return _solve(makesequence(tst-1,v.back()),contextptr);
+	      if (w.size()==1){
+                res=gen2vecteur(_solve(makesequence(tst-1,v.back()),contextptr));
+		return postprocess_return(res,v[1],postprocess,contextptr);;
+              }
 	    }
 	    gen a1arg,a2arg; 
 	    bool a1log=is_log10(a1,a1arg),a2log=is_log10(a2,a2arg);
@@ -3106,7 +3123,6 @@ namespace giac {
       return _res;
     // quick check if back substitution returns undef
     const_iterateur it=_res.begin(),itend=_res.end();
-    vecteur res;
     for (;it!=itend;++it){
       if (is_inequation(*it) || it->is_symb_of_sommet(at_ou) || it->is_symb_of_sommet(at_and)){
 	res.push_back(*it);
