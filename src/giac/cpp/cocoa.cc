@@ -13203,8 +13203,8 @@ template<class tdeg_t,class modint_t>
       vecteur pivots; vector<int> permutation,maxrankcols; longlong idet;
       int th=giacmin(parallel,MAXNTHREADS)-1; // giacmin(threads,64)-1;
       if (!interreduce){
-        //smallmodrref(parallel,K,pivots,permutation,maxrankcols,idet,0,int(K.size()),0,usedcount,0/* lower reduction*/,0/*dontswapbelow*/,env.tab[pos],0/* rrefordetorlu*/,permutation.empty()/* reset */,0,!multimodular,-1); 
-        smallmodrref(parallel,K,pivots,permutation,maxrankcols,idet,0,int(K.size()),0,usedcount,0/* lower reduction*/,0/*dontswapbelow*/,env.tab[pos],0/* rrefordetorlu*/,permutation.empty()/* reset */,0,true,-1);
+        smallmodrref(parallel,K,pivots,permutation,maxrankcols,idet,0,int(K.size()),0,usedcount,0/* lower reduction*/,0/*dontswapbelow*/,env.tab[pos],0/* rrefordetorlu*/,permutation.empty()/* reset */,0,!multimodular,-1); 
+        //smallmodrref(parallel,K,pivots,permutation,maxrankcols,idet,0,int(K.size()),0,usedcount,0/* lower reduction*/,0/*dontswapbelow*/,env.tab[pos],0/* rrefordetorlu*/,permutation.empty()/* reset */,0,true,-1);
         if (permutation0.empty())
           permutation0=permutation;
         else { // check for identity permutation
