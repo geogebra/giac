@@ -9066,6 +9066,8 @@ namespace giac {
 	// reduce second half
 	//cerr << N <<'\n';
 	smallmodrref(nthreads,N,pivots,permutation,maxrankcols,idet,l+halfl,lmax,c+(idet && rref_or_det_or_lu==1?halfl:0),cmax,0/*fullreduction*/,0,modulo,0,false,workptr,true,carac);
+	// call again on the whole matrix without block
+	smallmodrref(nthreads,N,pivots,permutation,maxrankcols,idet,l,lmax,c+(idet && rref_or_det_or_lu==1?halfl:0),cmax,0/*fullreduction*/,0,modulo,0,false,workptr,false,carac);
 	if (debug_infolevel>2)
 	  CERR << CLOCK()*1e-6 << " rref end " << lmax-l << "x" << cmax-c << '\n';
 	//cerr << N <<'\n';
