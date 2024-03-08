@@ -42,7 +42,7 @@ pipeline {
             MAVEN = credentials('maven-repo')
             ANDROID_SDK_ROOT='/var/lib/jenkins/.android-sdk'
             BINARYEN="${env.WORKSPACE}/emsdk/upstream"
-            EMSDK_PYTHON='/usr/bin/python3.8'
+            EMSDK_PYTHON='/usr/bin/python3.11'
             PATH="$crosscompilers/x86/bin:$crosscompilers/x86_64/bin:$crosscompilers/arm/bin:$crosscompilers/arm64/bin:$PATH"
           }
           steps {
