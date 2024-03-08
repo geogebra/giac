@@ -1245,7 +1245,7 @@ namespace giac {
     if (warn){
       *logptr(contextptr) << gettext("// Parsing ") << d << '\n';
       lastprog_name(d.print(contextptr),contextptr);
-      if (!lop(c,at_derive).empty() || !lop(c,at_integrate).empty()){
+      if (contains(a,vx_var) && c.type==_SYMB && (!lop(c,at_derive).empty() || !lop(c,at_integrate).empty())){
 	*logptr(contextptr) << gettext("Warning, defining a function with a derivative/antiderivative should probably be done with ") <<  d << ":=unapply(" << c << "," << a << "). Evaluating for you.\n";
         c=eval(c,1,contextptr);
       }

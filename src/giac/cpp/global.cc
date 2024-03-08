@@ -1186,19 +1186,30 @@ int dfu_exec(const char * s_){
 #endif 
 }
 
-bool dfu_get_scriptstore_addr(size_t & start,size_t & taille){
+const int dfupos=15; // position of ...-a0 or -a1 in dfu command
+
+bool dfu_get_scriptstore_addr(size_t & start,size_t & taille,char & altdfu){
   // first try multi-boot
   const char * slots[]={"0x90000000","0x90180000","0x90400000"};
   const char * slots1[]={"0x90010000","0x90190000","0x90410000"};
+  const char * slots2[]={"0x90020000","0x90190000","0x90420000"};
   unsigned char r[32];
+  altdfu='0';
   for (int j=0;j<sizeof(slots)/sizeof(char *);++j){
     unlink("__platf");
     char cmd[256];
     strcpy(cmd,"dfu-util -i0 -a0 -s ");
     strcat(cmd,slots[j]);
-    strcat(cmd,":0x20 -U __platf");
-    if (dfu_exec(cmd))
-      return false;
+    strcat(cmd,":0x20:force -U __platf");
+    if (dfu_exec(cmd)){
+      unlink("__platf");
+      strcpy(cmd,"dfu-util -i0 -a1 -s ");
+      strcat(cmd,slots[j]);
+      strcat(cmd,":0x20:force -U __platf");
+      if (dfu_exec(cmd))
+        return false;
+      altdfu='1';
+    }
     FILE * f=fopen("__platf","r");
     if (!f){ return false; }
     int i=fread(r,1,32,f);
@@ -1211,8 +1222,9 @@ bool dfu_get_scriptstore_addr(size_t & start,size_t & taille){
       break;
     unlink("__platf");
     strcpy(cmd,"dfu-util -i0 -a0 -s ");
+    cmd[dfupos]=altdfu;
     strcat(cmd,slots1[j]);
-    strcat(cmd,":0x20 -U __platf");
+    strcat(cmd,":0x20:force -U __platf");
     if (dfu_exec(cmd))
       return false;
     f=fopen("__platf","r");
@@ -1221,12 +1233,29 @@ bool dfu_get_scriptstore_addr(size_t & start,size_t & taille){
     fclose(f);
     if (i!=32)
       return false;
+    if (r[0]!=0xfe || r[1]!=0xed || r[2]!=0xc0 || r[3]!=0xde){
+      unlink("__platf");
+      strcpy(cmd,"dfu-util -i0 -a0 -s ");
+      cmd[dfupos]=altdfu;
+      strcat(cmd,slots2[j]);
+      strcat(cmd,":0x20:force -U __platf");
+      if (dfu_exec(cmd))
+        return false;
+      f=fopen("__platf","r");
+      if (!f){ return false; }
+      i=fread(r,1,32,f);
+      fclose(f);
+      if (i!=32)
+        return false;
+    }
     start=((r[15]*256U+r[14])*256+r[13])*256+r[12];
-    if (r[15]!=0x20) // ram is at 0x20000000 (+256K)
+    if (r[15]!=0x20 && r[15]!=0x24) // ram is at 0x20000000 (+256K)
       continue;
     taille=((r[19]*256U+r[18])*256+r[17])*256+r[16];
     unlink("__platf");   // check 4 bytes at start address
-    if (dfu_exec(("dfu-util -i0 -a0 -s "+giac::print_INT_(start)+":0x4:force -U __platf").c_str()))
+    string ds="dfu-util -i0 -a0 -s "+giac::print_INT_(start)+":0x4:force -U __platf";
+    ds[dfupos]=altdfu;
+    if (dfu_exec((ds).c_str()))
       continue;
     f=fopen("__platf","r");
     if (!f){ return false; }
@@ -1239,7 +1268,9 @@ bool dfu_get_scriptstore_addr(size_t & start,size_t & taille){
   }
   // no valid slot, try without bootloader
   unlink("__platf");
-  if (dfu_exec("dfu-util -i0 -a0 -s 0x080001c4:0x20 -U __platf"))
+  string ds="dfu-util -i0 -a0 -s 0x080001c4:0x20:force -U __platf";
+  ds[dfupos]=altdfu;
+  if (dfu_exec(ds.c_str()))
     return false;
   FILE * f=fopen("__platf","r");
   if (!f){ return false; }
@@ -1253,23 +1284,35 @@ bool dfu_get_scriptstore_addr(size_t & start,size_t & taille){
   return true;
 }
 
+char dfu_alt(){
+  size_t start,taille;
+  char altdfu;
+  if (!dfu_get_scriptstore_addr(start,taille,altdfu)) return ' ';
+  return altdfu;
+}
+
 bool dfu_get_scriptstore(const char * fname){
   unlink(fname);
   size_t start,taille;
-  if (!dfu_get_scriptstore_addr(start,taille)) return false;
-  string s="dfu-util -U "+string(fname)+" -i0 -a0 -s "+ giac::print_INT_(start)+":"+giac::print_INT_(taille)+":force";
+  char altdfu;
+  if (!dfu_get_scriptstore_addr(start,taille,altdfu)) return false;
+  string s="dfu-util -i0 -a0 -U "+string(fname)+" -s "+ giac::print_INT_(start)+":"+giac::print_INT_(taille)+":force";
+  s[dfupos]=altdfu;
   return !dfu_exec(s.c_str());
 }
 
 bool dfu_send_scriptstore(const char * fname){
   size_t start,taille;
-  if (!dfu_get_scriptstore_addr(start,taille)) return false;
-  string s="dfu-util -D "+string(fname)+" -i0 -a0 -s "+ giac::print_INT_(start)+":"+giac::print_INT_(taille)+":force";
+  char altdfu;
+  if (!dfu_get_scriptstore_addr(start,taille,altdfu)) return false;
+  string s="dfu-util -i0 -a0 -D "+string(fname)+" -s "+ giac::print_INT_(start)+":"+giac::print_INT_(taille)+":force";
+  s[dfupos]=altdfu;
   return !dfu_exec(s.c_str());
 } 
 
 bool dfu_send_rescue(const char * fname){
   string s=string("dfu-util -i0 -a0 -s 0x20030000:force:leave -D ")+ fname;
+  s[dfupos]=dfu_alt();
   return !dfu_exec(s.c_str());
 }
 
@@ -1282,7 +1325,8 @@ char hex2char(int i){
 
 // send to 0x90000000+offset*0x10000
 bool dfu_send_firmware(const char * fname,int offset){
-  string s=string("dfu-util -i0 -a0 -s 0x90"); 
+  string s=string("dfu-util -i0 -a0 -s 0x90");
+  s[dfupos]=dfu_alt();
   s += hex2char(offset/16);
   s += hex2char(offset);
   s += "0000 -D ";
@@ -1291,25 +1335,28 @@ bool dfu_send_firmware(const char * fname,int offset){
 }
 
 bool dfu_send_apps(const char * fname){
-  string s=string("dfu-util -i 0 -a 0 -s 0x90200000 -D ")+ fname;
+  string s=string("dfu-util -i0 -a0 -s 0x90200000 -D ")+ fname;
   return !dfu_exec(s.c_str());
 }
 
 bool dfu_get_epsilon_internal(const char * fname){
   unlink(fname);
-  string s=string("dfu-util -i 0 -a 0 -s 0x08000000:0x8000 -U ")+ fname;
+  string s=string("dfu-util -i0 -a0 -s 0x08000000:0x8000:force -U ")+ fname;
+  s[dfupos]=dfu_alt();
   return !dfu_exec(s.c_str());
 }
 
 bool dfu_send_bootloader(const char * fname){
   unlink(fname);
-  string s=string("dfu-util -i 0 -a 0 -s 0x08000000 -D ")+ fname;
+  string s=string("dfu-util -i0 -a0 -s 0x08000000 -D ")+ fname;
+  s[dfupos]=dfu_alt();
   return !dfu_exec(s.c_str());
 }
 
 bool dfu_get_slot(const char * fname,int slot){
   unlink(fname);
-  string s=string("dfu-util -i 0 -a 0 -s ");
+  string s=string("dfu-util -i0 -a0 -s ");
+  s[dfupos]=dfu_alt();
   switch (slot){
   case 1:
     s += "0x90000000:0x130000";
@@ -1367,12 +1414,13 @@ bool dfu_check_epsilon2(const char * fname){
   fclose(f);
   // write to the device something that can not be guessed 
   // without really storing to flash
-  string s=string("dfu-util -i 0 -a 0 -s 0x90120000:0xe0000 -D ")+ fname;
+  string s=string("dfu-util -i0 -a0 -s 0x90120000:0xe0000:force -D ")+ fname;
   if (dfu_exec(s.c_str()))
     return false;
   // retrieve it and compare
   unlink(fname);
-  s=string("dfu-util -i 0 -a 0 -s 0x90120000:0xe0000 -U ")+ fname;
+  s=string("dfu-util -i0 -a0 -s 0x90120000:0xe0000:force -U ")+ fname;
+  s[dfupos]=dfu_alt();
   if (dfu_exec(s.c_str()))
     return false;
   f=fopen(fname,"rb");
@@ -1389,6 +1437,7 @@ bool dfu_check_epsilon2(const char * fname){
 // check that we can really read/write on the Numworks at 0x90740000
 // and get the same
 bool dfu_check_apps2(const char * fname){
+  char altdfu=dfu_alt();
   FILE * f=fopen(fname,"wb");
   int n=0xa0000;
   char * ptr=(char *) malloc(n);
@@ -1404,12 +1453,13 @@ bool dfu_check_apps2(const char * fname){
   fclose(f);
   // write to the device something that can not be guessed 
   // without really storing to flash
-  string s=string("dfu-util -i 0 -a 0 -s 0x90740000:0xa0000 -D ")+ fname;
+  string s=string("dfu-util -i0 -a0 -s 0x90740000:0xa0000 -D ")+ fname;
   if (dfu_exec(s.c_str()))
     return false;
   // retrieve it and compare
   unlink(fname);
-  s=string("dfu-util -i 0 -a 0 -s 0x90740000:0xa0000 -U ")+ fname;
+  s=string("dfu-util -i0 -a0 -s 0x90740000:0xa0000:force -U ")+ fname;
+  s[dfupos]=altdfu;
   if (dfu_exec(s.c_str()))
     return false;
   f=fopen(fname,"rb");
@@ -1422,11 +1472,18 @@ bool dfu_check_apps2(const char * fname){
   return i==n;
 }
 
-bool dfu_get_apps(const char * fname){
+bool dfu_get_apps(const char * fname,char & altdfu){
   unlink(fname);
-  string s=string("dfu-util -i 0 -a 0 -s 0x90200000:0x600000 -U ")+ fname;
+  string s=string("dfu-util -i0 -a0 -s 0x90200000:0x600000:force -U ")+ fname;
+  s[dfupos]=altdfu;
   return !dfu_exec(s.c_str());
 }
+
+bool dfu_get_apps(const char * fname){
+  char altdfu=dfu_alt();
+  return dfu_get_apps(fname,altdfu);
+}
+
 
 char * numworks_gettar(size_t & tar_first_modif_offset){
   if (!dfu_get_apps("__apps"))

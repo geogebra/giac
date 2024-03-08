@@ -110,7 +110,7 @@ extern "C" int ctrl_c_interrupted(int exception);
 extern "C" void console_print(const char * s);
 extern "C" const char * console_prompt(const char * s);
 
-bool dfu_get_scriptstore_addr(size_t & start,size_t & taille);
+bool dfu_get_scriptstore_addr(size_t & start,size_t & taille,char & altdfu);
 bool dfu_get_scriptstore(const char * fname);
 bool dfu_send_scriptstore(const char * fname);
 bool dfu_send_rescue(const char * fname);
