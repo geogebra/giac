@@ -10489,8 +10489,11 @@ namespace giac {
   }
 
   int absint(int a){
-    if (a<0)
+    if (a<0){
+      if (a==-2147483648)
+        return 2147483647; // better than returning -2147483648
       return -a;
+    }
     else
       return a;
   }

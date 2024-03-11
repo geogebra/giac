@@ -58,6 +58,10 @@ int shell_x=0,shell_y=0,shell_fontw=12,shell_fonth=18;
 #include "qrcodegen.h"
 
 #ifdef NUMWORKS
+#if defined NUMWORKS_SLOTB || defined NUMWORKS_SLOTAB
+extern "C" void sync_screen(){}
+#endif
+
 char * freeptr=0;
 #ifndef DEVICE
 const char * flash_buf=file_gettar_aligned("apps.tar",freeptr);
@@ -331,7 +335,7 @@ namespace giac {
   
   void copy_clipboard(const string & s,bool status){
     dbgprintf("clip %s\n",s.c_str());
-#if defined NUMWORKS && defined DEVICE
+#if defined NUMWORKS && defined DEVICE && !defined NUMWORKS_SLOTB && !defined NUMWORKS_SLOTAB
     extapp_clipboardStore(s.c_str());
 #else
     if (1 || clip_pasted) // adding to clipboard is sometimes annoying
@@ -349,7 +353,7 @@ namespace giac {
   const char * paste_clipboard(){
     dbgprintf("clip %s\n",clipboard()->c_str());
     clip_pasted=true;
-#if defined NUMWORKS && defined DEVICE
+#if defined NUMWORKS && defined DEVICE && !defined NUMWORKS_SLOTB && !defined NUMWORKS_SLOTAB
     return extapp_clipboardText();
 #endif
     return clipboard()->c_str();
@@ -1893,7 +1897,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     // search in catalog: dichotomy would be more efficient
     // but leading spaces cmdnames would be missed
     int nfunc=(lang==1)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN;//sizeof(completeCat)/sizeof(catalogFunc);
-#if !defined BW && (defined NSPIRE_NEWLIB || defined NUMWORKS) // should match static_help[] in help.cc
+#if !defined BW && !defined NUMWORKS_SLOTB && !defined NUMWORKS_SLOTAB && (defined NSPIRE_NEWLIB || defined NUMWORKS) // should match static_help[] in help.cc
     int iii=nfunc; // no search in completeCat, directly in static_help.h
     //if (xcas_python_eval) iii=0;
 #else
@@ -2078,7 +2082,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
           ++example; ++cmdnameorig;
         }
         while (*cmdnameorig){
-          ++back;
+          back=0; // ++back; // otherwise shift-2 3 integrate( Ans/EXE cuts integrate(
           ++cmdnameorig;
         }
         if (example[0]=='#')
@@ -6462,7 +6466,7 @@ namespace xcas {
 	return true;
       }
 #endif
-#if defined NUMWORKS && defined DEVICE
+#if defined NUMWORKS && defined DEVICE && !defined NUMWORKS_SLOTB && !defined NUMWORKS_SLOTAB
       if (iskeydown(KEY_CTRL_EXIT))
 	return true;
       if (iskeydown(KEY_CTRL_OK)){
@@ -13180,7 +13184,7 @@ namespace xcas {
 #endif
 #endif
 
-#if defined NUMWORKS && defined DEVICE
+#if defined NUMWORKS && defined DEVICE && !defined NUMWORKS_SLOTB
   BYTE bootloader_hash[]={116,198,71,80,107,25,110,250,180,171,154,127,1,174,88,153,108,172,2,218,82,101,93,157,148,76,37,33,102,53,12,136,};
   const int bootloader_size=65480;
   // check bootloade code, skipping exam mode buffer sector
@@ -17482,6 +17486,9 @@ string replace_html5(const string & s){
 }
 
 void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONTEXT){
+#ifdef NUMWORKS_SLOTB
+  qr=false;
+#endif
     console_changed=0;
     dbgprintf("save_console_state %s\n",filename);
     string state(khicas_state(contextptr));
@@ -18459,7 +18466,13 @@ void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONT
     edptr->pos=0;
     return 2;
   }
-#if defined NUMWORKS && defined DEVICE
+
+#if defined NUMWORKS && defined DEVICE 
+#if defined NUMWORKS_SLOTB  || defined NUMWORKS_SLOTAB
+void numworks_certify_internal(){
+}
+#else
+
   void numworks_certify_internal(){
     // check internal flash sha256 signature
     size_t internal_flash_start=0x08000000;
@@ -18499,7 +18512,9 @@ void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONT
     }
     Bdisp_AllClr_VRAM();
   }
-  				   
+#endif
+
+
   int restore_session(const char * fname,GIAC_CONTEXT){
     // cout << "0" << fname << "\n"; Console_Disp(1); GetKey(&key);
     string filename(remove_path(remove_extension(fname)));
