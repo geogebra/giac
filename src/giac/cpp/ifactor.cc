@@ -3999,6 +3999,7 @@ namespace giac {
   }
 
   static vecteur ifactors1(const gen & n0,GIAC_CONTEXT){
+    // CERR << "ifactors1 " << n0 << '\n';
     if (is_greater(1e71,n0,contextptr))
       return giac_ifactors(n0,contextptr);
     if (n0.type==_VECT && !n0._VECTptr->empty())

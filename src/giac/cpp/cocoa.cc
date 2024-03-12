@@ -2,7 +2,7 @@
 // Thanks to Zoltan Kovacs for motivating this work, in order to improve geogebra theorem proving
 // Special thanks to Anna M. Bigatti from CoCoA team for insightfull discussions on how to choose an order for elimination
 #include "giacPCH.h"
-
+//#define EMCC
 // vector class version 1 by Agner Fog https://github.com/vectorclass
 // this might be faster for CPU with AVX512DQ instruction set
 // (fast multiplication of Vec4q)
@@ -6636,7 +6636,7 @@ namespace giac {
   }
 
   inline void special_mod(double & x,double c,modint d,modint env,double env2){
-    register modint2 y=extend(x-c*d);
+    register modint2 y=x-c*d;
     if (y<0) x = double(y+env2); else x=double(y);// if y is negative make it positive by adding env^2
   }
 
@@ -7573,7 +7573,7 @@ namespace giac {
       const modint * jt=&mcoeff.front(),*jtend=jt+mcoeff.size(),*jt_=jtend-8;
       // if (pos>v.size()) CERR << "error" <<'\n';
       // if (*jt!=1) CERR << "not normalized" << '\n';
-      modint c=extend(*wt) % env; // (extend(*jt)*(*wt % env))%env;
+      modint c=longlong(*wt) % env; // (extend(*jt)*(*wt % env))%env;
       if (c<0) c += env;
       *wt=0;
       if (!c)
@@ -7660,7 +7660,7 @@ namespace giac {
 #endif
     if (!res){
       for (;wt<wtend;++wt){
-	modint2 i=extend(*wt);
+	modint2 i=*wt;
 	if (!i) continue;
 	*wt = 0;
 	i %= env;
@@ -7677,13 +7677,13 @@ namespace giac {
     }
 #if 1
     for (;wt<=wt1;++wt){
-      modint2 i=extend(*wt);
+      modint2 i=*wt;
       if (!i){
-	++wt; i=extend(*wt);
+	++wt; i=*wt;
 	if (!i){
-	  ++wt; i=extend(*wt);
+	  ++wt; i=*wt;
 	  if (!i){
-	    ++wt; i=extend(*wt);
+	    ++wt; i=*wt;
 	    if (!i)
 	      continue;
 	  }
@@ -7699,7 +7699,7 @@ namespace giac {
     }
 #endif
     for (;wt<wtend;++wt){
-      modint2 i=extend(*wt);
+      modint2 i=*wt;
       if (!i) continue;
       *wt=0;
       i %= env;
