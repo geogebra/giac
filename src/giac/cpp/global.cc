@@ -408,7 +408,15 @@ const char * console_prompt(const char * s){
 // support for tar archive in flash on the numworks
 char * buf64k=0; // we only have 64k of RAM buffer on the Numworks
 const size_t buflen=(1<<16);
+#if defined NUMWORKS_SLOTB 
+int numworks_maxtarsize=0x200000-0x10000;
+#else
+#ifdef NUMWORKS_SLOTAB
+int numworks_maxtarsize=0x60000;
+#else
 int numworks_maxtarsize=0x600000-0x10000;
+#endif
+#endif
 size_t tar_first_modified_offset=0; // set to non 0 if tar data comes from Numworks
 
 
@@ -1336,6 +1344,17 @@ bool dfu_send_firmware(const char * fname,int offset){
 
 bool dfu_send_apps(const char * fname){
   string s=string("dfu-util -i0 -a0 -s 0x90200000 -D ")+ fname;
+  return !dfu_exec(s.c_str());
+}
+
+bool dfu_send_slotab(const char * fnamea,const char * fnameb1,const char * fnameb2){
+  size_t start,taille; char altdfu;
+  if (!dfu_get_scriptstore_addr(start,taille,altdfu))
+    return false;
+  string s=string("dfu-util -i0 -a0 -s 0x90260000 -D ")+ fnamea;
+  if (dfu_exec(s.c_str()))
+    return false;
+  s=string("dfu-util -i0 -a0 -s 0x90400000 -D ")+ (start>=0x24000000?fnameb2:fnameb1);
   return !dfu_exec(s.c_str());
 }
 

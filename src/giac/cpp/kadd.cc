@@ -937,6 +937,9 @@ int flash_from_ram(const char * buf,const char * ext,size_t & first_modif,GIAC_C
 }
 
 void handle_flash(GIAC_CONTEXT){
+#ifdef NUMWORKS_SLOTB
+  return ; // disabled to save roomX
+#endif
   const char flash_fr[]="Cette application, disponible hors mode examen, permet de sauvegarder et gerer des scripts en memoire flash. Elle a besoin de 70K de memoire RAM, lancez-la tout de suite apres avoir ouvert KhiCAS.\nPour eviter une usure trop rapide de la flash, il est conseille de l'utiliser le moins souvent possible et de ne pas vider la corbeille avant que cela ne soit necessaire (ainsi les nouveaux fichiers s'ecriront sur d'autres secteurs).\nL'auteur decline toute responsabilite en cas d'usure prematuree de votre memoire flash.";
   const char flash_en[]="This app (not available if exam mode is on) lets you save and handle scripts in flash memory. It requires 70K of free RAM, you should run it immediatly after launching KhiCAS.\nIn order to avoid premature wear of your flash, run this app only when required. Don't empty the trash unless it's necessary (that way new files will be written in other sectors).\nThe author declines all responsability in the event of premature wear of your flash memory.";
   textArea text;
@@ -961,6 +964,14 @@ void handle_flash(GIAC_CONTEXT){
   char * freeptr=0;
   const char * flash_buf=file_gettar_aligned("apps.tar",freeptr);
 #endif
+  // skip user apps
+  while (numworks_maxtarsize>0 && (
+                                   ((unsigned char) *flash_buf)==0xba ||
+                                   ((unsigned char) flash_buf[1])==0xbe)
+         ){
+    flash_buf += 0x10000;
+    numworks_maxtarsize -= 0x10000;
+  }
   Menu smallmenu;
   smallmenu.numitems=6;
   MenuItem smallmenuitems[smallmenu.numitems];

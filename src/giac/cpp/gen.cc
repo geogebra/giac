@@ -2,7 +2,7 @@
 #include "giacPCH.h"
 #ifdef KHICAS
 #include "kdisplay.h"
-#if defined DEVICE && !defined NSPIRE_NEWLIB && !defined N0120
+#if defined DEVICE && !defined NUMWORKS_SLOTAB && !defined NUMWORKS_SLOTB && !defined NSPIRE_NEWLIB 
 size_t stackptr=0x20036000;
 #else
 #if defined x86_64

@@ -144,7 +144,7 @@ extern "C" {
   inline void os_redraw(){ return numworks_redraw(); }
   inline void os_wait_1ms(int ms) { numworks_wait_1ms(ms); }
   int getkey_raw(int allow_suspend); // Numworks scan code
-#ifdef NUMWORKS_SLOTB
+#if defined NUMWORKS_SLOTB || defined NUMWORKS_SLOTAB
   void sync_screen();
 #else
   inline void sync_screen(){}

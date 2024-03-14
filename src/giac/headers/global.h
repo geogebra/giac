@@ -119,6 +119,7 @@ const int nwstoresize1=0x8000,nwstoresize2=0x8014;
 // send to 0x90000000+offset*0x10000
 bool dfu_send_firmware(const char * fname,int offset);
 bool dfu_send_apps(const char * fname);
+bool dfu_send_slotab(const char * fnamea,const char * fnameb1,const char * fnameb2);
 bool dfu_update_khicas(const char * fname); 
 
 #if defined HAVE_LIBMICROPYTHON

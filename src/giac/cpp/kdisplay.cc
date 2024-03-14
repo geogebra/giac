@@ -1897,7 +1897,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     // search in catalog: dichotomy would be more efficient
     // but leading spaces cmdnames would be missed
     int nfunc=(lang==1)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN;//sizeof(completeCat)/sizeof(catalogFunc);
-#if !defined BW && !defined NUMWORKS_SLOTB && !defined NUMWORKS_SLOTAB && (defined NSPIRE_NEWLIB || defined NUMWORKS) // should match static_help[] in help.cc
+#if !defined BW && !defined NUMWORKS_SLOTB && (defined NSPIRE_NEWLIB || defined NUMWORKS) // should match static_help[] in help.cc
     int iii=nfunc; // no search in completeCat, directly in static_help.h
     //if (xcas_python_eval) iii=0;
 #else
@@ -11689,7 +11689,7 @@ namespace xcas {
             gr.update_rotation();
             gr.draw();
             gr.must_redraw=gr.solid3d;
-#ifndef SIMU
+#if !defined SIMU && !defined NUMWORKS_SLOTB && !defined NUMWORKS_SLOTAB
             if (!iskeydown(KEY_CTRL_UP))
               break;
 #else
@@ -11749,7 +11749,7 @@ namespace xcas {
             gr.update_rotation();
             gr.draw();
             gr.must_redraw=gr.solid3d;
-#ifndef SIMU
+#if !defined SIMU && !defined NUMWORKS_SLOTB && !defined NUMWORKS_SLOTAB
             if (!iskeydown(KEY_CTRL_DOWN))
               break;
 #else
@@ -11807,7 +11807,7 @@ namespace xcas {
             gr.update_rotation();
             gr.draw();
             gr.must_redraw=gr.solid3d;
-#ifndef SIMU
+#if !defined SIMU && !defined NUMWORKS_SLOTB && !defined NUMWORKS_SLOTAB
             if (!iskeydown(KEY_CTRL_LEFT))
               break;
 #else
@@ -11865,7 +11865,7 @@ namespace xcas {
             gr.update_rotation();
             gr.draw();
             gr.must_redraw=gr.solid3d;
-#ifndef SIMU
+#if !defined SIMU && !defined NUMWORKS_SLOTB && !defined NUMWORKS_SLOTAB
             if (!iskeydown(KEY_CTRL_RIGHT))
               break;
 #else
@@ -18516,7 +18516,7 @@ void numworks_certify_internal(){
 
 
   int restore_session(const char * fname,GIAC_CONTEXT){
-    // cout << "0" << fname << "\n"; Console_Disp(1); GetKey(&key);
+    //confirm("restore session",fname); 
     string filename(remove_path(remove_extension(fname)));
 #ifdef NSPIRE_NEWLIB
     if (file_exists((filename+".xw.tns").c_str()))
@@ -18578,6 +18578,22 @@ void numworks_certify_internal(){
       }
 #endif
 #ifdef NUMWORKS
+#if defined NUMWORKS_SLOTAB || defined NUMWORKS_SLOTB
+      if (lang==1){
+	*logptr(contextptr) << "!!! DU CAS POUR TOUS !!!\n";
+	*logptr(contextptr) << "Le calcul formel est autorise\n";
+        *logptr(contextptr) << "aux examens en France.\n";
+	*logptr(contextptr) << "Mobilisez-vous! Numworks peut\n";
+	*logptr(contextptr) << "authentifier et rendre KhiCAS\n";
+	*logptr(contextptr) << "utilisable en mode exam comme\n";
+	*logptr(contextptr) << "sur les calcs CAS plus cheres\n";
+      } else {
+	*logptr(contextptr) << "!!! BEWARE !!!\n";
+	*logptr(contextptr) << "Make sure that CAS is allowed\n";
+	*logptr(contextptr) << "if you are using KhiCAS during\n";
+	*logptr(contextptr) << "a test\n";
+      }
+#else
       if (lang==1){
 	*logptr(contextptr) << "!!! ATTENTION !!!\n";
 	*logptr(contextptr) << "Ne faites pas de mises a jour\n";
@@ -18591,6 +18607,7 @@ void numworks_certify_internal(){
 	*logptr(contextptr) << "They lock your calculator\n";
 	*logptr(contextptr) << "it's incompatible with KhiCAS\n";
       }
+#endif
 #endif
       Bdisp_AllClr_VRAM();
 #ifdef GIAC_SHOWTIME
@@ -20660,6 +20677,7 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 
   int console_main(GIAC_CONTEXT,const char * sessionname){
 #if defined NUMWORKS && defined DEVICE
+    os_set_pixel(0, 0, 0x7ff); 
     // insure value not too high (_heap_size depends on launcher firmware)
     if (pythonjs_heap_size>_heap_size-52*1024)
       pythonjs_heap_size=_heap_size-52*1024;
@@ -21316,7 +21334,14 @@ int select_item(const char ** ptr,const char * title,bool askfor1){
 }
 
 int select_interpreter(){
-  const char * choix[]={"Xcas interpreter","Xcas compat Python ^=**","Xcas compat Python ^=xor","MicroPython interpreter","Javascript (QuickJS)",0};
+  const char * choix[]={"Xcas interpreter","Xcas compat Python ^=**","Xcas compat Python ^=xor",
+#ifdef MICROPY_LIB
+    "MicroPython interpreter",
+#endif
+#ifdef QUICKJS
+    "Javascript (QuickJS)",
+#endif
+    0};
   return select_item(choix,"Syntax",false);
 }
 

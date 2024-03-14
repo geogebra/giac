@@ -1433,8 +1433,10 @@ namespace giac {
     modpoly res(a);
     iterateur it=res.begin(),itend=res.end();
     for (;it!=itend;++it){
-      if (is_integer(*it))
+      if (is_integer(*it)){
+        *it=smod(*it,m);
 	continue;
+      }
       if (it->type!=_MOD || *(it->_MODptr+1)!=m)
 	return modpoly(1,gensizeerr("Can not convert "+it->print(context0)+" mod "+m.print(context0)));
       *it=*it->_MODptr;
@@ -2901,6 +2903,7 @@ namespace giac {
 	modpoly::const_iterator itq=B_beg;
 	++itq; // first elements cancel
 	if (env && (env->moduloon && !env->complexe && is_zero(env->coeff)) && (env->modulo.type==_INT_) && (env->modulo.val<smallint)){
+          // BEWARE: this code is not valid if th or other are not reduced
 	  for (;itq!=B_end;--tmpptr,++itq){ // no mod here to save comput. time
 	    tmpptr->val -= q.val*itq->val ;
 	  }	  

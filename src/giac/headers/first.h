@@ -31,6 +31,9 @@
 
 #ifdef NUMWORKS
 #define KHICAS 1
+#ifdef NUMWORKS_SLOTB
+#undef MICROPY_LIB
+#endif
 #endif
 
 #ifndef GIAC_VERSION
