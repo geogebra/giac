@@ -1351,9 +1351,12 @@ bool dfu_send_slotab(const char * fnamea,const char * fnameb1,const char * fname
   size_t start,taille; char altdfu;
   if (!dfu_get_scriptstore_addr(start,taille,altdfu))
     return false;
-  string s=string("dfu-util -i0 -a0 -s 0x90260000 -D ")+ fnamea;
-  if (dfu_exec(s.c_str()))
-    return false;
+  string s;
+  if (fnamea){
+    s=string("dfu-util -i0 -a0 -s 0x90260000 -D ")+ fnamea;
+    if (dfu_exec(s.c_str()))
+      return false;
+  }
   s=string("dfu-util -i0 -a0 -s 0x90400000 -D ")+ (start>=0x24000000?fnameb2:fnameb1);
   return !dfu_exec(s.c_str());
 }
@@ -5340,7 +5343,7 @@ NULL,NULL,SW_SHOWNORMAL);
     language(i,contextptr);
     add_language(i,contextptr);
 #endif
-#ifdef KHICAS
+#if defined KHICAS && !defined NUMWORKS_SLOTBFR
     lang=i;
 #endif
     return find_doc_prefix(i);

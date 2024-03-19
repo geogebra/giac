@@ -137,7 +137,11 @@ extern "C" {
   extern int shell_x,shell_y,shell_fontw,shell_fonth; 
   
 }
+#ifdef NUMWORKS_SLOTBFR
+extern const int lang;
+#else
 extern int lang;
+#endif
 extern short int nspirelua;
 extern bool warn_nr;
 
