@@ -19460,9 +19460,7 @@ bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * 
 		       rur,contextptr,gbasis_param,coeffsptr?&gbasis_coeffs:0)){
           if (debug_infolevel)
             *logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 <<  " Memory " << memory_usage()*1e-6 << "M" << '\n';
-	  newres=vectpoly(res.size(),polynome(v.front().dim,v.front()));
-	  for (unsigned i=0;i<res.size();++i)
-	    res[i].get_polynome(newres[i]);
+	  get_newres(res,newres,v,&gbasis_coeffs,coeffsptr);
 	  debug_infolevel=save_debuginfo; return true;
 	}
       }

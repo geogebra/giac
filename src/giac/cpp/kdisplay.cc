@@ -2685,7 +2685,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     case KEY_CHAR_DIV: 
       return "/";
     case KEY_CHAR_POW:
-      return "^";
+      return py?"**":"^";
     case KEY_CHAR_ROOT:
       return "sqrt(";
     case KEY_CHAR_SQUARE:
@@ -2705,11 +2705,11 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     case KEY_CTRL_XTT:
       return xthetat?"t":"x";
     case KEY_CHAR_LN:
-      return "ln(";
+      return py?"log(":"ln(";
     case KEY_CHAR_LOG:
       return "log10(";
     case KEY_CHAR_EXPN10:
-      return "10^";
+      return py?"10**":"10^";
     case KEY_CHAR_EXPN:
       return "exp(";
     case KEY_CHAR_SIN:
@@ -2755,7 +2755,15 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
     case KEY_CHAR_ACCOLADES:
       return "{}";
     case KEY_CTRL_INS:
-      return ":=";
+      {
+        int c=giac::chartab();
+        if (c>=32 && c<127){
+          text[0]=c;
+          text[1]=0;
+          return text;
+        }
+      }
+      return ""; // ":=";
     case KEY_CHAR_MAT:{
       const char * ptr=xcas::input_matrix(false,contextptr); if (ptr) return ptr;
       if (showCatalog(text,17,contextptr)) return text;
@@ -8643,13 +8651,13 @@ namespace xcas {
 	    if (is3d){
 	      find_xyz(i,j,current_depth,x,y,z);
 	      round_xy(x,y); round3(z,window_zmin,window_zmax);
-	      sprintf(s+pos," %.3g,%.3g,%.3g",x,y,z);
+	      sprintf(s+pos," %s,%s,%s",print_DOUBLE_(x,3).c_str(),print_DOUBLE_(y,3).c_str(),print_DOUBLE_(z,3));
 	    }
 	    else {
 	      find_xy(i,j,x,y);
 	      // round to maximum pixel range
 	      round_xy(x,y);
-	      sprintf(s+pos," x=%.3g,y=%.3g",x,y);
+	      sprintf(s+pos," x=%s,y=%s",print_DOUBLE_(x,3).c_str(),print_DOUBLE_(y,3).c_str());
 	    }
 	    pos=strlen(s);
 	  }
@@ -9095,7 +9103,7 @@ namespace xcas {
       DefineStatusMessage((char*)"menu: menu, esc: quit", 1, 0, 0);
 #else
 #if defined NUMWORKS_SLOTB || defined NUMWORKS_SLOTAB
-      DefineStatusMessage((char*)"shift-1: help, shift-EXE: menu, back: quit", 1, 0, 0);
+      DefineStatusMessage((char*)"shift-1:help |-EXE:menu |back:quit", 1, 0, 0);
 #else
       DefineStatusMessage((char*)"shift-1: help, home: menu, back: quit", 1, 0, 0);
 #endif
@@ -11005,7 +11013,7 @@ namespace xcas {
       DefineStatusMessage((char*)"shift-1: help, menu: menu, esc: quit", 1, 0, 0);
 #else
 #if defined NUMWORKS_SLOTB || defined NUMWORKS_SLOTAB
-      DefineStatusMessage((char*)"shift-home: menu, shift-1: help, back: quit", 1, 0, 0);
+      DefineStatusMessage((char*)"shift-1: help|-EXE: menu|back: quit", 1, 0, 0);
 #else
       DefineStatusMessage((char*)"shift-1: help, home: menu, back: quit", 1, 0, 0);
 #endif
@@ -11514,8 +11522,14 @@ namespace xcas {
           smallmenuitems[21].text = (char*) ((lang==1)?"Effacer traces geometrie":"Clear geometry traces");
           drawRectangle(0,180,LCD_WIDTH_PX,60,_BLACK);
           int sres = doMenu(&smallmenu);
-          if (sres == MENU_RETURN_EXIT)
+          if (sres == MENU_RETURN_EXIT){
+#ifndef SIMU
+            if (iskeydown(KEY_CTRL_EXIT))
+              wait_1ms(100);
+#endif
+            gr.must_redraw=true;
             break;
+          }
           if (sres == MENU_RETURN_SELECTION || sres==KEY_CTRL_EXE) {
             const char * ptr=0;
             string s1; double d;
@@ -11642,8 +11656,6 @@ namespace xcas {
             }
           }
         }
-        gr.draw();
-        gr.must_redraw=false;
         continue;
       }
 
@@ -15890,18 +15902,22 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	if (clipline<0){
 	  const char * adds;
     //dbgprintf("key 4 %i %i\n",key,clipline);
+#ifdef SIMU
+          if (key==KEY_CTRL_F16)
+            key=KEY_CTRL_INS;
+#endif
 #if 1
 	  if ( (key>=KEY_CTRL_F1 && key<=KEY_CTRL_F4) || key==KEY_CTRL_F6 ||
 	       (key >= KEY_CTRL_F7 && key <= KEY_CTRL_F16)
 	       ){
 	    string le_menu;
 	    if (text->gr) { // geometry menu
-	      le_menu="F1 points\npoint(\nmidpoint(\ncenter(\nelement(\nsingle_inter(\ninter(\nlegende(\ntrace(\nF2 lines\nsegment(\nline(\nhalf_line(\nvector(\nparallel(\nperpendicular(\ntangent(\nplane(\ncircle(\nF4 disp\ndisplay=\nfilled\nred\nblue\ngreen\ncyan\nmagenta\nyellow\nF6 curves\ncircle(\nellipse(\nhyperbola(\nparabola(\nplot(\nplotparam(\nplotpolar(\nplotode(\nF7 triangle\ntriangle(\nequilateral_triangle(\nmedian(\nperpen_bisector(\nbisector(\nisobarycenter(\nF8 polygon\nsquare(\nrectangle(\nquadrilateral(\nhexagon(\npolygon(\nisopolygon(\nvertices(\nF9 3d\nplane(\ncube(\ntetrahedron(\nsphere(\ncone(\nhalf_cone(\ncylinder(\nplot3d(\nF: transf\nprojection(\nreflection(\ntranslation(\nrotation(\nhomothety(\nsimilarity(\nF; geodiff\ntangent(\nosculating_circle(\nevolute(\ncurvature(\nfrenet(\noctahedron(\ndodecahedron(\nicosahedron(\nF< mesures\ndistance(\ndistance2(\nradius(\naire(\nperimetre(\npente(\nangle(\nF= test\nis_collinear(\nis_concyclic(\nis_coplanar(\nis_cospherical(\nis_element(\nis_parallel(\nis_perpendicular(\nF> analyt\ncoordonnees(\nequation(\nparameq(\nabscisse(\nordonnee(\naffixe(\narg(\n";
+	      le_menu="F1 points\npoint(\nmidpoint(\ncenter(\nelement(\nsingle_inter(\ninter(\nlegende(\ntrace(\nF2 lines\nsegment(\nline(\nhalf_line(\nvector(\nparallel(\nperpendicular(\ntangent(\nplane(\ncircle(\nF4 disp\ndisplay=\nfilled\nred\nblue\ngreen\ncyan\nmagenta\nyellow\nF6 curves\ncircle(\nellipse(\nhyperbola(\nparabola(\nplot(\nplotparam(\nplotpolar(\nplotode(\nF7 triangle\ntriangle(\nequilateral_triangle(\nmedian(\nperpen_bisector(\nbisector(\nisobarycenter(\nincircle(\ncircumcircle(\nF8 polygon\nsquare(\nrectangle(\nquadrilateral(\nhexagon(\npolygon(\nisopolygon(\nvertices(\nF9 3d\nplane(\ncube(\ntetrahedron(\nsphere(\ncone(\nhalf_cone(\ncylinder(\nplot3d(\nF: transf\nprojection(\nreflection(\ntranslation(\nrotation(\nhomothety(\nsimilarity(\nF; geodiff\ntangent(\nosculating_circle(\nevolute(\ncurvature(\nfrenet(\noctahedron(\ndodecahedron(\nicosahedron(\nF< mesures\ndistance(\ndistance2(\nradius(\naire(\nperimetre(\npente(\nangle(\nF= test\nis_collinear(\nis_concyclic(\nis_coplanar(\nis_cospherical(\nis_element(\nis_parallel(\nis_perpendicular(\nF> analyt\ncoordonnees(\nequation(\nparameq(\nabscisse(\nordonnee(\naffixe(\narg(\n";
 	    } else {
 	      if (xcas_python_eval==1)//text->python?
-		le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\n:\n;\n_\n!\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF: plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\nmul(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\n";
+		le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\nchartab\n:\n;\n_\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF: plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\nmul(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\n";
 	      if (xcas_python_eval<=0)
-		le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nvar\nF4 misc\n;\n:\n_\n!\n%\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF< plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF: misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
+		le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nvar\nF4 misc\nchartab\n;\n:\n_\n!\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF< plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF: misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
 	      if (xcas_python_eval>=0)
 		le_menu += "F= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF> prog\n;\n:\n\\\n&\n?\n!\ndebug(\npython(\nF? geo\npoint(\nline(\nsegment(\ncircle(\ntriangle(\nplane(\nsphere(\nsingle_inter(\nF@ color\ncolor=\nred\ncyan\ngreen\nblue\nmagenta\nyellow\nlegend(";
 	    } // else not geometry
@@ -15910,6 +15926,15 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      show_status(text,search,replace);
 	      continue;
 	    }
+            if (strcmp(ptr,"chartab")==0){
+              int c=giac::chartab();
+              if (c>=32 && c<127){
+                char tab[2]={0};
+                tab[0]=c;
+                insert(text,tab,true);
+              }
+              continue;
+            }
 	    adds=ptr;
 	  }
 	  else
@@ -19627,7 +19652,7 @@ void numworks_certify_internal(){
 #endif
 	return Console_Input(tmp);
       }
-      const char * ptr=keytostring(key,keyflag,0,contextptr);
+      const char * ptr=keytostring(key,keyflag,xcas_python_eval==1,contextptr);
       if (ptr){
 	Console_Input((const char *)ptr);
 	Console_Disp(1,contextptr);
@@ -19890,16 +19915,16 @@ const char *Console_Draw_FMenu(int key, struct FMenu *menu, char *cfg, int activ
     box3.bottom=3*box.bottom+22;
     box3.top=3*box.top+20;
     giac::freeze=true; // avoid clearscreen
-    drawRectangle(box3.left,box3.top,box3.right-box3.left,box3.bottom-box3.top,COLOR_WHITE);
-    drawLine(box3.left, box3.top, box3.right, box3.top,COLOR_BLACK);
-    drawLine(box3.left, box3.bottom, box3.left, box3.top,COLOR_BLACK);
-    drawLine(box3.right, box3.bottom, box3.right, box3.top,COLOR_BLACK);
-    drawLine(box3.left, box3.bottom, box3.right, box3.bottom,COLOR_BLACK);
     giac::freeze=false; // temporary workaround
     
     // Cursor_SetFlashOff();
     
     for (;;){
+      drawRectangle(box3.left,box3.top,box3.right-box3.left,box3.bottom-box3.top,COLOR_WHITE);
+      drawLine(box3.left, box3.top, box3.right, box3.top,COLOR_BLACK);
+      drawLine(box3.left, box3.bottom, box3.left, box3.top,COLOR_BLACK);
+      drawLine(box3.right, box3.bottom, box3.right, box3.top,COLOR_BLACK);
+      drawLine(box3.left, box3.bottom, box3.right, box3.bottom,COLOR_BLACK);
       for(i=0; i<nb_entries; i++) {
         quick[0] = '0'+(i+1);
         PrintMini(3+position_x, box.bottom-7*i, quick, 0);
