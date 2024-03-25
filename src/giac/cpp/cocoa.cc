@@ -4642,7 +4642,7 @@ namespace giac {
   }
 
 #define GIAC_GBASIS_PERMUTATION1
-  //#define GIAC_GBASIS_PERMUTATION2
+#define GIAC_GBASIS_PERMUTATION2
   template<class tdeg_t>
   struct zsymb_data {
     unsigned pos;
@@ -4650,17 +4650,19 @@ namespace giac {
     order_t o;
     unsigned terms;
     int age;
+    double coeffs;
   };
 
 #ifdef GIAC_GBASIS_PERMUTATION2
   template<class tdeg_t>
-  bool tri (const zsymb_data<tdeg_t> & z1,const zsymb_data<tdeg_t> & z2){
-    if (z1.terms!=z2.terms) 
-      return z1.terms<z2.terms;
+  bool tri(const zsymb_data<tdeg_t> & z1,const zsymb_data<tdeg_t> & z2){
+    if (z1.coeffs!=z2.coeffs) return z1.coeffs<z2.coeffs;
+    if (z1.pos!=z2.pos)
+      return z1.pos<z2.pos;
     int d1=z1.deg.total_degree(z1.o),d2=z2.deg.total_degree(z2.o);
     if (d1!=d2) return d1<d2;
-    if (z1.pos!=z2.pos)
-      return z2.pos>z1.pos;
+    if (z1.terms!=z2.terms) 
+      return z1.terms<z2.terms;
     return false;
   }
 #endif
@@ -4793,14 +4795,20 @@ namespace giac {
       excluded=G[excluded];
     else
       excluded=-1;
-    vector<zsymb_data> zsGi(Gs);
+    vector< zsymb_data<tdeg_t> > zsGi(Gs);
     for (unsigned i=0;i<Gs;++i){
       int Gi=G[i];
       const polymod<tdeg_t,modint_t> & cur=res[Gi];
-      zsymb_data tmp={Gi,cur.coord.empty()?0:cur.coord.front().u,o,cur.coord.size(),0};
+      zsymb_data<tdeg_t> tmp={(unsigned)Gi,cur.coord.empty()?0:cur.coord.front().u,o,cur.coord.size(),0,0.0};
+      if (coeffsmodptr){
+        vectpolymod<tdeg_t,modint_t> & V=(*coeffsmodptr)[Gi];
+        for (size_t j=0;j<V.size();++j){
+          tmp.coeffs += V[j].coord.empty()?0:V[j].coord.front().u.total_degree(o);
+        }
+      }
       zsGi[i]=tmp;
     }
-    sort(zsGi.begin(),zsGi.end(),tri);
+    sort(zsGi.begin(),zsGi.end(),tri<tdeg_t>); //reverse(zsGi.begin(),zsGi.end());
 #else
     const tdeg_t ** resGi=(const tdeg_t **) malloc(Gs*sizeof(tdeg_t *));
     for (unsigned i=0;i<Gs;++i){
@@ -4817,7 +4825,7 @@ namespace giac {
       const tdeg_t &ptu=pt->u;
 #ifdef GIAC_GBASIS_PERMUTATION2
       for (i=0;i<Gs;++i){
-	zsymb_data & zs=zsGi[i];
+	zsymb_data<tdeg_t> & zs=zsGi[i];
 	if (zs.terms && zs.pos!=excluded && tdeg_t_all_greater(ptu,zs.deg,o))
 	  break;
       }
@@ -11674,7 +11682,7 @@ template<class tdeg_t,class modint_t>
     // and the number of terms (should be minimal)
     vector<zsymb_data<tdeg_t> > GG(G.size());
     for (unsigned i=0;i<G.size();++i){
-      zsymb_data<tdeg_t> zz={i,g[G[i]].ldeg,g[G[i]].order,unsigned(g[G[i]].coord.size()),g[G[i]].age};
+      zsymb_data<tdeg_t> zz={i,g[G[i]].ldeg,g[G[i]].order,unsigned(g[G[i]].coord.size()),g[G[i]].age,0.0};
       GG[i]=zz;
     }
     sort(GG.begin(),GG.end());
