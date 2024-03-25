@@ -4656,10 +4656,13 @@ namespace giac {
 #ifdef GIAC_GBASIS_PERMUTATION2
   template<class tdeg_t>
   bool tri(const zsymb_data<tdeg_t> & z1,const zsymb_data<tdeg_t> & z2){
+    int d1=z1.deg.total_degree(z1.o),d2=z2.deg.total_degree(z2.o);
+    // beware that ordering must be stable across successives modular runs
+    //if (z1.coeffs*d1!=z2.coeffs*d2) return z1.coeffs*d1<z2.coeffs*d2;
+    //if (z1.coeffs+d1!=z2.coeffs+d2) return z1.coeffs+d1<z2.coeffs+d2;
     if (z1.coeffs!=z2.coeffs) return z1.coeffs<z2.coeffs;
     if (z1.pos!=z2.pos)
       return z1.pos<z2.pos;
-    int d1=z1.deg.total_degree(z1.o),d2=z2.deg.total_degree(z2.o);
     if (d1!=d2) return d1<d2;
     if (z1.terms!=z2.terms) 
       return z1.terms<z2.terms;
@@ -4799,7 +4802,7 @@ namespace giac {
     for (unsigned i=0;i<Gs;++i){
       int Gi=G[i];
       const polymod<tdeg_t,modint_t> & cur=res[Gi];
-      zsymb_data<tdeg_t> tmp={(unsigned)Gi,cur.coord.empty()?0:cur.coord.front().u,o,cur.coord.size(),0,0.0};
+      zsymb_data<tdeg_t> tmp={(unsigned)Gi,cur.coord.empty()?0:cur.coord.front().u,o,(unsigned)cur.coord.size(),0,0.0};
       if (coeffsmodptr){
         vectpolymod<tdeg_t,modint_t> & V=(*coeffsmodptr)[Gi];
         for (size_t j=0;j<V.size();++j){
