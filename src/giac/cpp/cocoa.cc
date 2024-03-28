@@ -13985,7 +13985,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
   }
 
   template<class tdeg_t,class modint_t,class modint_t2>
-  bool in_zgbasis(vectpolymod<tdeg_t,modint_t> &resmod,unsigned ressize,vector<unsigned> & G,modint_t env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool eliminate_flag,bool multimodular,int parallel,bool interred,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr){
+  bool in_zgbasis(vectpolymod<tdeg_t,modint_t> &resmod,unsigned ressize,vector<unsigned> & G,modint_t env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool eliminate_flag,bool multimodular,int parallel,bool interred,bool rawcoeffs,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr){
     vectpolymod<tdeg_t,modint_t> resmodorig(resmod); resmodorig.resize(ressize);
     unsigned generators=ressize;
     bool seldeg=true; int sel1=0;
@@ -13997,7 +13997,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       // requires pairs_reducing_to_zero to be the same (permutation...)
       // and comment multimodular after zf4mod call below
       vectpolymod<tdeg_t,modint_t> resmodcopy(resmod); vector<unsigned> Gcopy(G);
-      in_zgbasis<tdeg_t,modint_t,modint_t2>(resmodcopy,ressize,Gcopy,env,totdeg,pairs_reducing_to_zero,f4buchberger_info,recomputeR,eliminate_flag,multimodular,parallel,interred, (vector< vectpolymod<tdeg_t,modint_t> > *) 0);
+      in_zgbasis<tdeg_t,modint_t,modint_t2>(resmodcopy,ressize,Gcopy,env,totdeg,pairs_reducing_to_zero,f4buchberger_info,recomputeR,eliminate_flag,multimodular,parallel,interred, rawcoeffs,(vector< vectpolymod<tdeg_t,modint_t> > *) 0);
       learning=false;
     }
     unsigned capa = unsigned(f4buchberger_info.capacity());
@@ -14475,6 +14475,13 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     }
     G.swap(G1);
 #endif
+    if (coeffsmodptr){
+      // FIXME gbasis is not interreduced. This might be too costly on Q
+      if (!rawcoeffs){
+        // try to reduce coeffs degrees using the identity f_i*f_j-f_j*f_i=0
+        // assumes that the initial generator are sorted wrt the monomial order
+      }
+    }
     // convert back zpolymod<tdeg_t,modint_t> to polymod<tdeg_t,modint_t_t>
     // if eliminate_flag is true, keep only basis element that do not depend
     // on variables to eliminate
@@ -14604,7 +14611,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 
 
   template<class tdeg_t,class modint_t,class modint_t2>
-  bool zgbasisrur(vectpoly8<tdeg_t> & res8,vectpolymod<tdeg_t,modint_t> &resmod,vector<unsigned> & G,modint_t env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool convertpoly8,bool eliminate_flag,bool multimodular,int parallel,bool interred,int & rurinzgbasis,vectpolymod<tdeg_t,modint_t> &rurv,polymod<tdeg_t,modint> & rurs,vector<int> * initsep,polymod<tdeg_t,modint_t> & rurlm,polymod<tdeg_t,modint_t> &rurlmmodradical,polymod<tdeg_t,modint_t> * rurgblmptr,polymod<tdeg_t,modint_t> * rurlmptr,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr){
+  bool zgbasisrur(vectpoly8<tdeg_t> & res8,vectpolymod<tdeg_t,modint_t> &resmod,vector<unsigned> & G,modint_t env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool convertpoly8,bool eliminate_flag,bool multimodular,int parallel,bool interred,int & rurinzgbasis,vectpolymod<tdeg_t,modint_t> &rurv,polymod<tdeg_t,modint> & rurs,vector<int> * initsep,polymod<tdeg_t,modint_t> & rurlm,polymod<tdeg_t,modint_t> &rurlmmodradical,polymod<tdeg_t,modint_t> * rurgblmptr,polymod<tdeg_t,modint_t> * rurlmptr,bool rawcoeffs,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr){
     if (1 || 
 	rurinzgbasis>=0){
       for (unsigned i=0;i<resmod.size();++i)
@@ -14616,7 +14623,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       convert(res8,resmod,env,rurinzgbasis<0?-rurinzgbasis:0,!coeffsmodptr/* unitarize*/);
     }
     unsigned ressize = unsigned(res8.size());
-    bool b=rurinzgbasis<0?true:in_zgbasis<tdeg_t,modint_t,modint_t2>(resmod,ressize,G,env,totdeg,pairs_reducing_to_zero,f4buchberger_info,recomputeR,eliminate_flag,multimodular,parallel,interred,coeffsmodptr);
+    bool b=rurinzgbasis<0?true:in_zgbasis<tdeg_t,modint_t,modint_t2>(resmod,ressize,G,env,totdeg,pairs_reducing_to_zero,f4buchberger_info,recomputeR,eliminate_flag,multimodular,parallel,interred,rawcoeffs,coeffsmodptr);
     if (rurinzgbasis==1 || rurinzgbasis<0){
       vectpolymod<tdeg_t,modint_t> gbmod; 
       if (rurinzgbasis==1){
@@ -14659,13 +14666,13 @@ void G_idn(vector<unsigned> & G,size_t s){
   //
   // Rur improvements: see https://arxiv.org/abs/2402.07141
   template<class tdeg_t,class modint_t,class modint_t2>
-  bool zgbasis(vectpoly8<tdeg_t> & res8,vectpolymod<tdeg_t,modint_t> &resmod,vector<unsigned> & G,modint env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool convertpoly8,bool eliminate_flag,bool multimodular,int parallel,bool interred,vector<int> * initsep,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr=0){
+  bool zgbasis(vectpoly8<tdeg_t> & res8,vectpolymod<tdeg_t,modint_t> &resmod,vector<unsigned> & G,modint env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool convertpoly8,bool eliminate_flag,bool multimodular,int parallel,bool interred,vector<int> * initsep,bool rawcoeffs,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr){
     vectpolymod<tdeg_t,modint_t> rurv; 
     polymod<tdeg_t,modint> rurs;
     polymod<tdeg_t,modint_t> rurlm,rurlmmodradical;
     int rurinzgbasis=0;
     polymod<tdeg_t,modint_t> * Nullptr=0;
-    return zgbasisrur<tdeg_t,modint_t,modint_t2>(res8,resmod,G,env,totdeg,pairs_reducing_to_zero,f4buchberger_info,recomputeR,convertpoly8,eliminate_flag,multimodular,parallel,interred,rurinzgbasis,rurv,rurs,initsep,rurlm,rurlmmodradical,Nullptr,Nullptr,coeffsmodptr);
+    return zgbasisrur<tdeg_t,modint_t,modint_t2>(res8,resmod,G,env,totdeg,pairs_reducing_to_zero,f4buchberger_info,recomputeR,convertpoly8,eliminate_flag,multimodular,parallel,interred,rurinzgbasis,rurv,rurs,initsep,rurlm,rurlmmodradical,Nullptr,Nullptr,rawcoeffs,coeffsmodptr);
   }
 #endif // GIAC_SHORTSHIFTTYPE==16
   /* *************
@@ -16066,6 +16073,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     bool zdata;
     bool eliminate_flag; // if true, for double revlex order returns only the gbasis part made of polynomials that do not depend on variables to eliminate
     bool interred;
+    bool rawcoeffs;
     int rurinzgbasis;
     int parallel; // max number of parallel threads for 1 modular computation
   };
@@ -16077,7 +16085,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     if (ptr->zdata){
       if (!zgbasisrur<tdeg_t,modint_t,modint_t2>(*ptr->currentptr,ptr->resmod,ptr->G,ptr->p,true,
 		   ptr->reduceto0,*ptr->zf4buchberger_info,false,false,ptr->eliminate_flag,true,ptr->parallel,ptr->interred,
-		      ptr->rurinzgbasis,ptr->rurv,ptr->rurs,ptr->initsep,ptr->rurlm,ptr->rurlmmodradical,ptr->rurgblmptr,ptr->rurlmptr,ptr->coeffsmodptr))
+                                                 ptr->rurinzgbasis,ptr->rurv,ptr->rurs,ptr->initsep,ptr->rurlm,ptr->rurlmmodradical,ptr->rurgblmptr,ptr->rurlmptr,ptr->rawcoeffs,ptr->coeffsmodptr))
 	return 0;
       ptr->zdata=0;
     }
@@ -16573,6 +16581,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	gbasis_param[j].initsep=&gbasis_par.initsep;
 	gbasis_param[j].rurgblmptr=&mainthrurgblm;
 	gbasis_param[j].rurlmptr=&mainthrurlmsave;
+	gbasis_param[j].rawcoeffs=gbasis_par.rawcoeffs;
 	gbasis_param[j].coeffsmodptr=coeffsmodptr?&gbasiscoeffv[j]:0;
 	if (count==1)
 	  gbasis_param[j].resmod.reserve(resmod.size());
@@ -16600,14 +16609,14 @@ void G_idn(vector<unsigned> & G,size_t s){
       // CERR << "write " << th << " " << p << '\n';
 #ifdef GBASISF4_BUCHBERGER 
       if (zdata){
-	if (!zgbasisrur<tdeg_t,qmodint_t,qmodint_t2>(current_gbasis,resmod,G,p_qmodint,true,&reduceto0,zf4buchberger_info,false,false,eliminate_flag,true,parallel,interred,mainthrurinzgbasis,mainthrurv,rurs,&gbasis_par.initsep,mainthrurlm,mainthrurlmmodradical,&mainthrurgblm,&mainthrurlmsave,coeffsmodptr?&gbasiscoeffv[th]:0)){
+	if (!zgbasisrur<tdeg_t,qmodint_t,qmodint_t2>(current_gbasis,resmod,G,p_qmodint,true,&reduceto0,zf4buchberger_info,false,false,eliminate_flag,true,parallel,interred,mainthrurinzgbasis,mainthrurv,rurs,&gbasis_par.initsep,mainthrurlm,mainthrurlmmodradical,&mainthrurgblm,&mainthrurlmsave,gbasis_par.rawcoeffs,coeffsmodptr?&gbasiscoeffv[th]:0)){
 	  if (augmentgbasis>0) 
 	    augmentgbasis=2;
 	  reduceto0.clear();
 	  zf4buchberger_info.clear();
 	  zf4buchberger_info.reserve(4*zf4buchberger_info.capacity());
 	  G.clear();
-	  if (!zgbasisrur<tdeg_t,qmodint_t,qmodint_t2>(current_gbasis,resmod,G,p_qmodint,true/*totaldeg*/,&reduceto0,zf4buchberger_info,false,false,eliminate_flag,true,parallel,interred,mainthrurinzgbasis,mainthrurv,rurs,&gbasis_par.initsep,mainthrurlm,mainthrurlmmodradical,&mainthrurgblm,&mainthrurlmsave,coeffsmodptr?&gbasiscoeffv[th]:0)){
+	  if (!zgbasisrur<tdeg_t,qmodint_t,qmodint_t2>(current_gbasis,resmod,G,p_qmodint,true/*totaldeg*/,&reduceto0,zf4buchberger_info,false,false,eliminate_flag,true,parallel,interred,mainthrurinzgbasis,mainthrurv,rurs,&gbasis_par.initsep,mainthrurlm,mainthrurlmmodradical,&mainthrurgblm,&mainthrurlmsave,gbasis_par.rawcoeffs,coeffsmodptr?&gbasiscoeffv[th]:0)){
 	    ok=false;
 	    break;
 	  }
@@ -17382,7 +17391,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    int p=268435399;
 	    if (debug_infolevel)
 	      CERR << CLOCK()*1e-6 << " Checking that the basis is a gbasis modulo " << p << '\n';
-	    if (!zgbasis<tdeg_t,modint,modint2>(res_,resmod,G,p,true,0,zf4buchberger_info,false,false,false,false,threads /* parallel*/,true,&gbasis_par.initsep))
+	    if (!zgbasis<tdeg_t,modint,modint2>(res_,resmod,G,p,true,0,zf4buchberger_info,false,false,false,false,threads /* parallel*/,true,&gbasis_par.initsep,gbasis_par.rawcoeffs,0))
 	      return 0;
 	    sort(resmod.begin(),resmod.end(),tripolymod_tri<polymod<tdeg_t,modint> >(false));
 	    sort(W[i].begin(),W[i].end(),tripolymod_tri<poly8<tdeg_t> >(false));
@@ -19353,7 +19362,7 @@ bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * 
 	    vector< vectpolymod<tdeg_t14,modint> > gbasiscoeff;
 	    vector< paire > pairs_reducing_to_zero;
 	    f4buchberger_info.reserve(GBASISF4_MAXITER);
-	    if (zgbasis<tdeg_t14,modint,modint2>(res,resmod,G,env->modulo.val,true/*totaldeg*/,&pairs_reducing_to_zero,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false /* 1 mod only */,parallel,interred,&gbasis_param.initsep,coeffsptr?&gbasiscoeff:0)){
+	    if (zgbasis<tdeg_t14,modint,modint2>(res,resmod,G,env->modulo.val,true/*totaldeg*/,&pairs_reducing_to_zero,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false /* 1 mod only */,parallel,interred,&gbasis_param.initsep,gbasis_param.rawcoeffs,coeffsptr?&gbasiscoeff:0)){
               if (debug_infolevel)
                 *logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 <<  " Memory " << memory_usage()*1e-6 << "M" <<'\n';
 	      get_newres_ckrur<tdeg_t14>(resmod,newres,v,G,env->modulo.val,rur,&gbasis_param.initsep,&gbasiscoeff,coeffsptr);
@@ -19418,7 +19427,7 @@ bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * 
 	  vector< vectpolymod<tdeg_t11,modint> > gbasiscoeff;
 	  vector< paire > pairs_reducing_to_zero;
 	  f4buchberger_info.reserve(GBASISF4_MAXITER);
-	  if (zgbasis<tdeg_t11,modint,modint2>(res,resmod,G,env->modulo.val,true/*totaldeg*/,&pairs_reducing_to_zero,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false /* 1 mod only */,parallel,interred,&gbasis_param.initsep,coeffsptr?&gbasiscoeff:0)){
+	  if (zgbasis<tdeg_t11,modint,modint2>(res,resmod,G,env->modulo.val,true/*totaldeg*/,&pairs_reducing_to_zero,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false /* 1 mod only */,parallel,interred,&gbasis_param.initsep,gbasis_param.rawcoeffs,coeffsptr?&gbasiscoeff:0)){
             if (debug_infolevel)
               *logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 <<  " Memory " << memory_usage()*1e-6 << "M" << '\n';
 	    get_newres_ckrur<tdeg_t11>(resmod,newres,v,G,env->modulo.val,rur,&gbasis_param.initsep,&gbasiscoeff,coeffsptr);
@@ -19482,7 +19491,7 @@ bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * 
 	  vector< vectpolymod<tdeg_t15,modint> > gbasiscoeff;
 	  vector< paire > pairs_reducing_to_zero;
 	  f4buchberger_info.reserve(GBASISF4_MAXITER);
-	  if (!zgbasis<tdeg_t15,modint,modint2>(res,resmod,G,env->modulo.val,true/*totaldeg*/,&pairs_reducing_to_zero,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false/* 1 mod only*/,parallel,interred,&gbasis_param.initsep,coeffsptr?&gbasiscoeff:0))
+	  if (!zgbasis<tdeg_t15,modint,modint2>(res,resmod,G,env->modulo.val,true/*totaldeg*/,&pairs_reducing_to_zero,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false/* 1 mod only*/,parallel,interred,&gbasis_param.initsep,gbasis_param.rawcoeffs,coeffsptr?&gbasiscoeff:0))
 	    return false;
           if (debug_infolevel)
             *logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 <<  " Memory " << memory_usage()*1e-6 << "M" << '\n';
@@ -19546,7 +19555,7 @@ bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * 
 	vector< vectpolymod<tdeg_t64,modint> > gbasiscoeff;
 	vector< paire > pairs_reducing_to_zero;
 	f4buchberger_info.reserve(GBASISF4_MAXITER);
-	zgbasis<tdeg_t64,modint,modint2>(res,resmod,G,env->modulo.val,true/*totaldeg*/,&pairs_reducing_to_zero,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false/* 1 mod only*/,parallel,interred,&gbasis_param.initsep,coeffsptr?&gbasiscoeff:0);	
+	zgbasis<tdeg_t64,modint,modint2>(res,resmod,G,env->modulo.val,true/*totaldeg*/,&pairs_reducing_to_zero,f4buchberger_info,false/* recomputeR*/,false /* don't compute res8*/,eliminate_flag,false/* 1 mod only*/,parallel,interred,&gbasis_param.initsep,gbasis_param.rawcoeffs,coeffsptr?&gbasiscoeff:0);	
         if (debug_infolevel)
           *logptr(contextptr) << "// Groebner basis computation time " << (CLOCK()-c)*1e-6 <<  " Memory " << memory_usage()*1e-6 << "M" << '\n';
 #if 1

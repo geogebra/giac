@@ -107,7 +107,7 @@ namespace giac {
     int reinject_for_calc;
     bool interred;
     bool gbasis; // for rur return gbasis too
-    bool denselinalg_block; // true for denselinalg rref with block rref
+    bool rawcoeffs; // if true keep raw coeffs in transform matrix, if false try to reduce the degree
     std::vector<int> initsep; // separating variable (integer coeffs of monomials)
   };
   extern int rur_separate_max_tries;

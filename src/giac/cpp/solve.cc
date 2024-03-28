@@ -6327,6 +6327,21 @@ namespace giac {
 #endif
   }
 
+  struct polyptr_int {
+    polynome * polyptr;
+    int i;
+  };
+
+  bool operator < (const polyptr_int & a,const polyptr_int & b){
+    const polynome & p=*a.polyptr;
+    const polynome & q=*b.polyptr;
+    if (p.coord.empty())
+      return false;
+    if (q.coord.empty())
+      return true;
+    return p.is_strictly_greater(p.coord.front().index,q.coord.front().index);
+  }
+
   void reduce(vectpoly & res,environment * env){
     if (res.empty())
       return;
@@ -7475,16 +7490,31 @@ namespace giac {
       order=-order;
       rur=1;
     }
-    if (gbasis_param.reinject_begin==-1 && gbasis_param.reinject_end==-1 && !coeffsptr){
+    vector<int> coeffsperm(res.size());
+    if (gbasis_param.reinject_begin==-1 && gbasis_param.reinject_end==-1){
+      if (coeffsptr){ // sort, track permutation for coeffs reordering
+        vector<polyptr_int> v(res.size());
+        for (int i=0;i<v.size();++i){
+          v[i].polyptr=&res[i];
+          v[i].i=i;
+        }
+        sort(v.begin(),v.end());
+        for (int i=0;i<v.size();++i)
+          coeffsperm[i]=v[i].i;
+        reverse(coeffsperm.begin(),coeffsperm.end());
+        apply_permutation(res,coeffsperm);
+      }
+      else {
 #ifdef GIAC_REDUCEMODULO
-      //if (res.size()<=2*res.front().dim) reduce(res,env);
+        //if (res.size()<=2*res.front().dim) reduce(res,env);
 #else
-      reduce(res,env);
+        reduce(res,env);
 #endif
-      sort_vectpoly(res.begin(),res.end());
-      reverse(res.begin(),res.end());
-      if (debug_infolevel>6)
-	res.dbgprint();
+        sort_vectpoly(res.begin(),res.end());
+        reverse(res.begin(),res.end());
+        if (debug_infolevel>6)
+          res.dbgprint();
+      }
     }
 #if !defined GIAC_HAS_STO_38 && !defined FXCG && !defined KHICAS // CAS38_DISABLED
     if (
@@ -7497,6 +7527,9 @@ namespace giac {
       if (!gbasis8(res,order_,tmp,env,modularcheck!=0,modularcheck>=2,rur,contextptr,gbasis_param,coeffsptr))
 	return false;
       if (coeffsptr){ // ordering and null elements
+        vector<int> invp(perminv(coeffsperm));
+        for (int i=0;i<coeffsptr->size();++i)
+          apply_permutation((*coeffsptr)[i],invp);
         gbasis_coeffs_sort(tmp,*coeffsptr,contextptr);
         res.swap(tmp);
         return true;
