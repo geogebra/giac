@@ -14480,6 +14480,34 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       if (!rawcoeffs){
         // try to reduce coeffs degrees using the identity f_i*f_j-f_j*f_i=0
         // assumes that the initial generator are sorted wrt the monomial order
+        // resmod is the gbasis, let coeffs=*coeffsmodptr, f_j=resmodorig[j]
+        // we have
+        // resmod[k] = sum(coeffs[k][j]*f_j,j,0,resmod.size()-1)
+        // f is sorted by decreasing order
+        // if i<j then f_i<f_j for this order, let quo=coeffs[i] by f_j
+        // and set coeffs[k][i] -= quo*f_j, coeffs[k][j] += quo*f_i
+        vector< vectpolymod<tdeg_t,modint_t> > & coeffs=*coeffsmodptr;
+        int N=resmodorig.size(); // ==coeffs.size()
+	polymod<tdeg_t,modint_t> TMP1;
+        TMP1.dim=dim, TMP1.order=order;
+        for (int k=0;k<coeffs.size();++k){
+          vectpolymod<tdeg_t,modint_t> & coeffsk=coeffs[k];
+          for (int i=N-2;i>=0;--i){
+            // we will modify coeffsk[i]
+            for (int j=i+1;j<N;++j){
+              if (resmodorig[j].coord.front().u.total_degree(order)==resmodorig[i].coord.front().u.total_degree(order))
+                continue;
+              while (!coeffsk[i].coord.empty() && coeffsk[i].coord.front().u!=resmodorig[j].coord.front().u && tdeg_t_all_greater(coeffsk[i].coord.front().u,resmodorig[j].coord.front().u,order)){
+                tdeg_t du(coeffsk[i].coord.front().u-resmodorig[j].coord.front().u);
+                modint a(coeffsk[i].coord.front().g),b(resmodorig[j].coord.front().g),c(smod(a*extend(invmod(b,env)),env));
+                smallmultsubmodshift(coeffsk[i],0,c,resmodorig[j],du,TMP1,env);
+                coeffsk[i].swap(TMP1);
+                smallmultsubmodshift(coeffsk[j],0,-c,resmodorig[i],du,TMP1,env);
+                coeffsk[j].swap(TMP1);
+              }
+            }
+          }
+        }
       }
     }
     // convert back zpolymod<tdeg_t,modint_t> to polymod<tdeg_t,modint_t_t>
