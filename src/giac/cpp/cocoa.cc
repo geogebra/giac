@@ -777,6 +777,10 @@ namespace giac {
   }
   
 
+  inline bool operator < (const paire & a,const paire &b){
+    return a.first!=b.first?a.first<b.first:a.second<b.second;
+  }
+
 #if !defined CAS38_DISABLED && !defined FXCG && !defined KHICAS
   //#define GBASIS_SELECT_TOTAL_DEGREE
 #if GROEBNER_VARS!=15 && !defined BIGENDIAN // double revlex ordering is not compatible with indices swapping for tdeg_t64
@@ -14214,29 +14218,34 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       }
       if (debug_infolevel>3)
 	CERR << "pairs reduced " << B << " indices " << smallposv << '\n';
-      if (coeffsmodptr && learned_position==pairs_reducing_to_zero->size()){
-        // make a "dry" F4 run, not computing coefficients
-        // and update pairs_reducing_to_zero
-        vectzpolymod<tdeg_t,modint_t> new_res(res);
-        int np=smallposv.size(); // number of s-pairs
-        smallposp.clear();
-        for (int count=0;count<np;++count){
-          smallposp.push_back(B[smallposv[count]]);
-        }
-        const vector<unsigned> * permuBptr=0;
-        vectzpolymod<tdeg_t,modint_t> f4buchbergerv; // collect all spolys
-        unsigned int new_learned_position(learned_position);
-        int f4res=-1;
-        f4res=zf4mod<tdeg_t,modint_t,modint_t2>(new_res,G,env,smallposp,permuBptr,f4buchbergerv,true /* learning*/,new_learned_position,pairs_reducing_to_zero,f4buchberger_info,f4buchberger_info_position,recomputeR,age,multimodular,parallel,0);
-        if (f4res==-1)
-          return false;
-        if (permuBptr){
-          for (unsigned i=0;i<f4buchbergerv.size();++i){
-            if (f4buchbergerv[i].coord.empty()){
-              if (debug_infolevel>2)
-                CERR << "learning f4buchberger " << smallposp[(*permuBptr)[i]] << '\n';
-              pairs_reducing_to_zero->push_back(smallposp[(*permuBptr)[i]]);
+#if F4COEFFS // too slow for I0:=[2*v7-v3-v1,2*v8-v4-v2,2*v9-v5-v1,2*v10-v6-v2,-v12+v10-v5+v1,-v11+v9+v6-v2,-v14+v8+v3-v1,-v13+v7-v4+v2,v15*v12-v16*v11-v15*v10+v11*v10+v16*v9-v12*v9,v15*v14-v16*v13-v15*v8+v13*v8+v16*v7-v14*v7,v17*v14-v18*v13-v17*v8+v13*v8+v18*v7-v14*v7,-v18^2-v17^2+2*v18*v16+2*v17*v15-2*v16*v2+v2^2-2*v15*v1+v1^2,v19*v12-v20*v11-v19*v10+v11*v10+v20*v9-v12*v9,-v20^2-v19^2+2*v20*v16+2*v19*v15-2*v16*v2+v2^2-2*v15*v1+v1^2,-v21*v4+v22*v3+v21*v2-v3*v2-v22*v1+v4*v1,v21*v20-v22*v19-v21*v18+v19*v18+v22*v17-v20*v17,v23*v6-v24*v5-v23*v2+v5*v2+v24*v1-v6*v1,v23*v20-v24*v19-v23*v18+v19*v18+v24*v17-v20*v17,-1+v27*v24^2+v27*v23^2-v27*v22^2-v27*v21^2-2*v27*v24*v2+2*v27*v22*v2-2*v27*v23*v1+2*v27*v21*v1,-1+v28*v6^2-2*v28*v6^3+v28*v6^4+v28*v5^2-2*v28*v6*v5^2+2*v28*v6^2*v5^2+v28*v5^4]:;I1:=subst(I0,[v4=1,v3=0,v2=0,v1=0]):;v:=[v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v27,v28,v1,v2,v3,v4,v5,v6]:;G,M:=gbasis(I1,v,coeffs):;
+      vector< paire > coeffszeropairs;
+      const vector<unsigned> * coeffpermuBptr=0;
+      if (coeffsmodptr){
+        if (learned_position==pairs_reducing_to_zero->size()){
+          // make a "dry" F4 run, not computing coefficients
+          // and update pairs_reducing_to_zero
+          vectzpolymod<tdeg_t,modint_t> new_res(res);
+          int np=smallposv.size(); // number of s-pairs
+          smallposp.clear();
+          for (int count=0;count<np;++count){
+            smallposp.push_back(B[smallposv[count]]);
+          }
+          vectzpolymod<tdeg_t,modint_t> f4buchbergerv; // collect all spolys
+          unsigned int coeffs_learned_position(learned_position);
+          int f4res=-1;
+          f4res=zf4mod<tdeg_t,modint_t,modint_t2>(new_res,G,env,smallposp,coeffpermuBptr,f4buchbergerv,true /* learning*/,coeffs_learned_position,&coeffszeropairs,f4buchberger_info,f4buchberger_info_position,recomputeR,age,multimodular,parallel,0);
+          if (f4res==-1)
+            return false;
+          if (coeffpermuBptr){
+            for (unsigned i=0;i<f4buchbergerv.size();++i){
+              if (f4buchbergerv[i].coord.empty()){
+                if (debug_infolevel>=1)
+                  CERR << "learning f4buchberger " << smallposp[(*coeffpermuBptr)[i]] << '\n';
+                coeffszeropairs.push_back(smallposp[(*coeffpermuBptr)[i]]);
+              }
             }
+            sort(coeffszeropairs.begin(),coeffszeropairs.end());
           }
         }
       }
@@ -14264,8 +14273,16 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  B.erase(B.begin()+smallposv[i]);
         for (int count=0;count<smallposv.size();++count){
           bk=smallposp[count];
-          if ( (!learning || coeffsmodptr) && pairs_reducing_to_zero && learned_position<pairs_reducing_to_zero->size() && bk==(*pairs_reducing_to_zero)[learned_position]){
-            if (debug_infolevel>2)
+          if (coeffsmodptr && binary_search(coeffszeropairs.begin(),coeffszeropairs.end(),bk)){
+            if (learning && pairs_reducing_to_zero){
+              if (debug_infolevel>2)
+                CERR << "learning " << bk << '\n';
+              pairs_reducing_to_zero->push_back(bk);
+            }
+            continue;
+          }
+          if (!learning  && pairs_reducing_to_zero && learned_position<pairs_reducing_to_zero->size() && bk==(*pairs_reducing_to_zero)[learned_position]){
+            if (debug_infolevel>=1)
               CERR << bk << " learned " << learned_position << '\n';
             ++learned_position;
             continue;
@@ -14333,7 +14350,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           // reducemod(TMP1,resmod,G,-1,TMP1,env,true);
           if (debug_infolevel>1){
             if (debug_infolevel>3){ CERR << TMP1 << '\n'; }
-            CERR << CLOCK()*1e-6 << " mod reduce end, remainder degree " << TMP1.coord.front().u << " size " << TMP1.coord.size() << " begin gbasis update" << '\n';
+            CERR << CLOCK()*1e-6 << " mod reduce end, remainder degree " << (TMP1.coord.empty()?0:TMP1.coord.front().u) << " size " << TMP1.coord.size() << " begin gbasis update" << '\n';
           }
           if (!TMP1.coord.empty()){
             resmod.push_back(TMP1);
@@ -14358,7 +14375,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
               CERR << CLOCK()*1e-6 << " mod basis indexes " << G << " pairs indexes " << B << '\n';
           }
           else {
-            if (learning && !coeffsmodptr && pairs_reducing_to_zero){
+            if (learning && pairs_reducing_to_zero){
               if (debug_infolevel>2)
                 CERR << "learning " << bk << '\n';
               pairs_reducing_to_zero->push_back(bk);
@@ -14367,6 +14384,169 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
         } // end for loop on all spairs
         continue;
       } // end coeffsmodptr or smallposp.size() small (<=GBASISF4_BUCHBERGER)
+#else
+      if (// 1 ||  // FIXME comment 1 || 
+	  coeffsmodptr || (order.o!=_REVLEX_ORDER && smallposv.size()<=GBASISF4_BUCHBERGER)){ 
+	// pairs not handled by f4
+	int modsize=int(resmod.size());
+	if (modsize<res.size())
+	  resmod.resize(res.size());
+	for (int i=0;i<int(G.size());++i){
+	  int Gi=G[i];
+	  if (resmod[Gi].coord.empty())
+	    convert(res[Gi],resmod[Gi]);
+	}
+	polymod<tdeg_t,modint_t> TMP1(order,dim),TMP2(order,dim);
+	zpolymod<tdeg_t,modint_t> TMP;
+	paire bk;
+        if (coeffsmodptr){
+#if 0
+          // find smallest logz, disabled, slower for cyclic6 with coeffs
+          int logzpos=0,logz=Blogz[smallposv.front()];
+          for (int i=1;i<smallposv.size();++i){
+            if (Blogz[smallposv[i]]<logz){
+              logzpos=i;
+              logz=Blogz[smallposv[i]];
+            }
+          }
+          bk=B[smallposv[logzpos]]; B.erase(B.begin()+smallposv[logzpos]);
+#else
+          bk=B[smallposv.front()]; B.erase(B.begin()+smallposv.front());
+#endif
+        }
+        else {
+          bk=B[smallposv.back()];
+          B.erase(B.begin()+smallposv.back());
+        }
+	if (!learning && pairs_reducing_to_zero && learned_position<pairs_reducing_to_zero->size() && bk==(*pairs_reducing_to_zero)[learned_position]){
+	  if (debug_infolevel>2)
+	    CERR << bk << " learned " << learned_position << '\n';
+	  ++learned_position;
+	  continue;
+	}
+	if (debug_infolevel>2)
+	  CERR << bk << " not learned " << learned_position << '\n';
+	if (resmod[bk.first].coord.empty())
+	  convert(res[bk.first],resmod[bk.first]);
+	if (resmod[bk.second].coord.empty())
+	  convert(res[bk.second],resmod[bk.second]);
+	modint_t d=spolymod<tdeg_t,modint_t>(resmod[bk.first],resmod[bk.second],TMP1,TMP2,env);
+	vectpolymod<tdeg_t,modint_t> newcoeffs;
+	if (coeffsmodptr){ 
+          if (learning || !multimodular){
+            polymod<tdeg_t,modint_t> TMP3(TMP1);
+            reducesmallmod(TMP3,resmod,G,-1,env,TMP2,true,0,true);
+            if (TMP3.coord.empty()){
+              if (learning && pairs_reducing_to_zero){
+                if (debug_infolevel>2)
+                  CERR << "learning " << bk << '\n';
+                pairs_reducing_to_zero->push_back(bk);
+              }
+              continue;
+            }
+          }
+	  vector< vectpolymod<tdeg_t,modint_t> > & v = *coeffsmodptr;
+	  int s=v.front().size();
+	  newcoeffs.resize(s);
+	  int i1=bk.first,i2=bk.second;
+	  const polymod<tdeg_t,modint_t> &p=resmod[i1];
+	  const polymod<tdeg_t,modint_t> &q=resmod[i2];
+	  if (p.coord.empty() || q.coord.empty())
+	    return false;
+	  modint_t a=p.coord.front().g,b=q.coord.front().g;
+	  modint_t c=smod(extend(a)*invmod(b,env),env);
+	  const tdeg_t & pi = p.coord.front().u;
+	  const tdeg_t & qi = q.coord.front().u;
+	  tdeg_t lcm;
+	  index_lcm(pi,qi,lcm,p.order);
+	  tdeg_t pshift=lcm-pi;
+	  tdeg_t qshift=lcm-qi;
+	  polymod<tdeg_t,modint_t> _TMP1(order,dim),_TMP2(order,dim),_TMP3(order,dim);
+          vectpolymod<tdeg_t,modint_t> & curfirst=v[i1];
+          vectpolymod<tdeg_t,modint_t> & cursecond=v[i2];
+	  for (size_t k=0;k<s;k++){
+	    _TMP1=curfirst[k];
+	    _TMP2=cursecond[k];
+	    smallshift(_TMP1.coord,pshift,_TMP1.coord);
+	    smallmultsubmodshift(_TMP1,0,c,_TMP2,qshift,_TMP3,env);
+	    smallmultmod(d,_TMP3,env);
+	    newcoeffs[k]=_TMP3;
+	  }
+          // debug
+          if (0){ // check resmodorig=resmod at function begin
+            _TMP1=TMP1; 
+            for (size_t k=0;k<s;k++){ // - sum(newcoeffs[k]*resmodorig[k])
+              for (size_t l=0;l<newcoeffs[k].coord.size();++l){
+                smallmultsubmodshift(_TMP1,0,newcoeffs[k].coord[l].g,resmodorig[k],newcoeffs[k].coord[l].u,_TMP2,env);
+                _TMP1.coord.swap(_TMP2.coord);
+              }
+            }
+            // should be 0
+            if (_TMP1.coord.size())
+              CERR << "zgbasis spoly coeff error " << _TMP1 << "\n";
+          }
+	} // end coeffsmodptr
+	if (debug_infolevel>1){
+	  CERR << CLOCK()*1e-6 << " mod reduce begin, pair " << bk << " spoly size " << TMP1.coord.size() << " totdeg deg " << TMP1.coord.front().u.total_degree(order) << " degree " << TMP1.coord.front().u << ", pair degree " << resmod[bk.first].coord.front().u << resmod[bk.second].coord.front().u << '\n';
+	}
+#if 1
+	reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,true,&newcoeffs,coeffsmodptr);
+	// insure that new basis element has positive coord, required by zf4mod
+	typename vector< T_unsigned<modint_t,tdeg_t> >::iterator it=TMP1.coord.begin(),itend=TMP1.coord.end();
+	for (;it!=itend;++it){
+	  // if (it->g<0) it->g += env;
+          it->g += ((it->g>>31)&env);
+	}
+	// reducemod(TMP1,resmod,G,-1,TMP1,env,true);
+#else // should be adapted if coeffsmodptr is true
+	polymod<tdeg_t,modint_t> TMP3(TMP1);
+	reducemod(TMP1,resmod,G,-1,TMP1,env,true);
+	reducesmallmod(TMP3,resmod,G,-1,env,TMP2,true,0,true);
+	typename vector< T_unsigned<modint_t,tdeg_t> >::iterator it=TMP3.coord.begin(),itend=TMP3.coord.end();
+	for (;it!=itend;++it){
+	  if (it->g<0)
+	    it->g += env;
+	}
+	if (TMP3.coord!=TMP1.coord){
+	  CERR << "Bug" << '\n';
+	}
+#endif
+	if (debug_infolevel>1){
+	  if (debug_infolevel>3){ CERR << TMP1 << '\n'; }
+	  CERR << CLOCK()*1e-6 << " mod reduce end, remainder degree " << TMP1.coord.front().u << " size " << TMP1.coord.size() << " begin gbasis update" << '\n';
+	}
+	if (!TMP1.coord.empty()){
+	  resmod.push_back(TMP1);
+          reduceAF(newcoeffs,resmodorig,env,order);
+	  if (coeffsmodptr){
+	    coeffsmodptr->push_back(newcoeffs);
+	    // if coeffsmodptr, we need TMP and res only to run zgbasis_updatemod, maybe we could run gbasis_updatemod without zpolymod with reduce=false argument
+	  }
+	  Rbuchberger.push_back(vector<tdeg_t>(TMP1.coord.size()));
+	  vector<tdeg_t> & R0=Rbuchberger.back();
+	  for (unsigned l=0;l<unsigned(TMP1.coord.size());++l)
+	    R0[l]=TMP1.coord[l].u;
+	  convert(TMP1,TMP,R0);
+	  zincrease(res);
+	  if (ressize==res.size())
+	    res.push_back(zpolymod<tdeg_t,modint_t>(order,dim,TMP.ldeg));
+	  res[ressize].expo=TMP.expo;
+	  swap(res[ressize].coord,TMP.coord);
+	  ++ressize;
+	  zgbasis_updatemod(G,B,res,ressize-1,oldG,multimodular);
+	  if (debug_infolevel>3)
+	    CERR << CLOCK()*1e-6 << " mod basis indexes " << G << " pairs indexes " << B << '\n';
+	}
+	else {
+	  if (learning && pairs_reducing_to_zero){
+	    if (debug_infolevel>2)
+	      CERR << "learning " << bk << '\n';
+	    pairs_reducing_to_zero->push_back(bk);
+	  }
+	}
+	continue;
+      } // end if smallposp.size() small (<=GBASISF4_BUCHBERGER)
+#endif
       unsigned np=smallposv.size();
       if (np==B.size() && np<=max_pairs_by_iteration){
 	swap(smallposp,B);
