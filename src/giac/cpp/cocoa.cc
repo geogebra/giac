@@ -14214,6 +14214,32 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       }
       if (debug_infolevel>3)
 	CERR << "pairs reduced " << B << " indices " << smallposv << '\n';
+      if (coeffsmodptr && learned_position==pairs_reducing_to_zero->size()){
+        // make a "dry" F4 run, not computing coefficients
+        // and update pairs_reducing_to_zero
+        vectzpolymod<tdeg_t,modint_t> new_res(res);
+        int np=smallposv.size(); // number of s-pairs
+        smallposp.clear();
+        for (int count=0;count<np;++count){
+          smallposp.push_back(B[smallposv[count]]);
+        }
+        const vector<unsigned> * permuBptr=0;
+        vectzpolymod<tdeg_t,modint_t> f4buchbergerv; // collect all spolys
+        unsigned int new_learned_position(learned_position);
+        int f4res=-1;
+        f4res=zf4mod<tdeg_t,modint_t,modint_t2>(new_res,G,env,smallposp,permuBptr,f4buchbergerv,true /* learning*/,new_learned_position,pairs_reducing_to_zero,f4buchberger_info,f4buchberger_info_position,recomputeR,age,multimodular,parallel,0);
+        if (f4res==-1)
+          return false;
+        if (permuBptr){
+          for (unsigned i=0;i<f4buchbergerv.size();++i){
+            if (f4buchbergerv[i].coord.empty()){
+              if (debug_infolevel>2)
+                CERR << "learning f4buchberger " << smallposp[(*permuBptr)[i]] << '\n';
+              pairs_reducing_to_zero->push_back(smallposp[(*permuBptr)[i]]);
+            }
+          }
+        }
+      }
       if (// 1 ||  // FIXME comment 1 || 
 	  coeffsmodptr || (order.o!=_REVLEX_ORDER && smallposv.size()<=GBASISF4_BUCHBERGER)){ 
 	// pairs not handled by f4
@@ -14228,141 +14254,119 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	polymod<tdeg_t,modint_t> TMP1(order,dim),TMP2(order,dim);
 	zpolymod<tdeg_t,modint_t> TMP;
 	paire bk;
-        if (coeffsmodptr){
-#if 0
-          // find smallest logz, disabled, slower for cyclic6 with coeffs
-          int logzpos=0,logz=Blogz[smallposv.front()];
-          for (int i=1;i<smallposv.size();++i){
-            if (Blogz[smallposv[i]]<logz){
-              logzpos=i;
-              logz=Blogz[smallposv[i]];
-            }
+        int np=smallposv.size(); // number of s-pairs
+        smallposp.clear();
+        for (int count=0;count<np;++count){
+          smallposp.push_back(B[smallposv[count]]);
+        }
+	// remove selected pairs from B
+	for (int i=int(np)-1;i>=0;--i)
+	  B.erase(B.begin()+smallposv[i]);
+        for (int count=0;count<smallposv.size();++count){
+          bk=smallposp[count];
+          if ( (!learning || coeffsmodptr) && pairs_reducing_to_zero && learned_position<pairs_reducing_to_zero->size() && bk==(*pairs_reducing_to_zero)[learned_position]){
+            if (debug_infolevel>2)
+              CERR << bk << " learned " << learned_position << '\n';
+            ++learned_position;
+            continue;
           }
-          bk=B[smallposv[logzpos]]; B.erase(B.begin()+smallposv[logzpos]);
-#else
-          bk=B[smallposv.front()]; B.erase(B.begin()+smallposv.front());
-#endif
-        }
-        else {
-          bk=B[smallposv.back()];
-          B.erase(B.begin()+smallposv.back());
-        }
-	if (!learning && pairs_reducing_to_zero && learned_position<pairs_reducing_to_zero->size() && bk==(*pairs_reducing_to_zero)[learned_position]){
-	  if (debug_infolevel>2)
-	    CERR << bk << " learned " << learned_position << '\n';
-	  ++learned_position;
-	  continue;
-	}
-	if (debug_infolevel>2)
-	  CERR << bk << " not learned " << learned_position << '\n';
-	if (resmod[bk.first].coord.empty())
-	  convert(res[bk.first],resmod[bk.first]);
-	if (resmod[bk.second].coord.empty())
-	  convert(res[bk.second],resmod[bk.second]);
-	modint_t d=spolymod<tdeg_t,modint_t>(resmod[bk.first],resmod[bk.second],TMP1,TMP2,env);
-	vectpolymod<tdeg_t,modint_t> newcoeffs;
-	if (coeffsmodptr){
-	  vector< vectpolymod<tdeg_t,modint_t> > & v = *coeffsmodptr;
-	  int s=v.front().size();
-	  newcoeffs.resize(s);
-	  int i1=bk.first,i2=bk.second;
-	  const polymod<tdeg_t,modint_t> &p=resmod[i1];
-	  const polymod<tdeg_t,modint_t> &q=resmod[i2];
-	  if (p.coord.empty() || q.coord.empty())
-	    return false;
-	  modint_t a=p.coord.front().g,b=q.coord.front().g;
-	  modint_t c=smod(extend(a)*invmod(b,env),env);
-	  const tdeg_t & pi = p.coord.front().u;
-	  const tdeg_t & qi = q.coord.front().u;
-	  tdeg_t lcm;
-	  index_lcm(pi,qi,lcm,p.order);
-	  tdeg_t pshift=lcm-pi;
-	  tdeg_t qshift=lcm-qi;
-	  polymod<tdeg_t,modint_t> _TMP1(order,dim),_TMP2(order,dim),_TMP3(order,dim);
-          vectpolymod<tdeg_t,modint_t> & curfirst=v[i1];
-          vectpolymod<tdeg_t,modint_t> & cursecond=v[i2];
-	  for (size_t k=0;k<s;k++){
-	    _TMP1=curfirst[k];
-	    _TMP2=cursecond[k];
-	    smallshift(_TMP1.coord,pshift,_TMP1.coord);
-	    smallmultsubmodshift(_TMP1,0,c,_TMP2,qshift,_TMP3,env);
-	    smallmultmod(d,_TMP3,env);
-	    newcoeffs[k]=_TMP3;
-	  }
-          // debug
-          if (0){ // check resmodorig=resmod at function begin
-            _TMP1=TMP1; 
-            for (size_t k=0;k<s;k++){ // - sum(newcoeffs[k]*resmodorig[k])
-              for (size_t l=0;l<newcoeffs[k].coord.size();++l){
-                smallmultsubmodshift(_TMP1,0,newcoeffs[k].coord[l].g,resmodorig[k],newcoeffs[k].coord[l].u,_TMP2,env);
-                _TMP1.coord.swap(_TMP2.coord);
+          if (debug_infolevel>2)
+            CERR << bk << " not learned " << learned_position << '\n';
+          if (resmod[bk.first].coord.empty())
+            convert(res[bk.first],resmod[bk.first]);
+          if (resmod[bk.second].coord.empty())
+            convert(res[bk.second],resmod[bk.second]);
+          modint_t d=spolymod<tdeg_t,modint_t>(resmod[bk.first],resmod[bk.second],TMP1,TMP2,env);
+          vectpolymod<tdeg_t,modint_t> newcoeffs;
+          if (coeffsmodptr){
+            vector< vectpolymod<tdeg_t,modint_t> > & v = *coeffsmodptr;
+            int s=v.front().size();
+            newcoeffs.resize(s);
+            int i1=bk.first,i2=bk.second;
+            const polymod<tdeg_t,modint_t> &p=resmod[i1];
+            const polymod<tdeg_t,modint_t> &q=resmod[i2];
+            if (p.coord.empty() || q.coord.empty())
+              return false;
+            modint_t a=p.coord.front().g,b=q.coord.front().g;
+            modint_t c=smod(extend(a)*invmod(b,env),env);
+            const tdeg_t & pi = p.coord.front().u;
+            const tdeg_t & qi = q.coord.front().u;
+            tdeg_t lcm;
+            index_lcm(pi,qi,lcm,p.order);
+            tdeg_t pshift=lcm-pi;
+            tdeg_t qshift=lcm-qi;
+            polymod<tdeg_t,modint_t> _TMP1(order,dim),_TMP2(order,dim),_TMP3(order,dim);
+            vectpolymod<tdeg_t,modint_t> & curfirst=v[i1];
+            vectpolymod<tdeg_t,modint_t> & cursecond=v[i2];
+            for (size_t k=0;k<s;k++){
+              _TMP1=curfirst[k];
+              _TMP2=cursecond[k];
+              smallshift(_TMP1.coord,pshift,_TMP1.coord);
+              smallmultsubmodshift(_TMP1,0,c,_TMP2,qshift,_TMP3,env);
+              smallmultmod(d,_TMP3,env);
+              newcoeffs[k]=_TMP3;
+            }
+            // debug
+            if (0){ // check resmodorig=resmod at function begin
+              _TMP1=TMP1; 
+              for (size_t k=0;k<s;k++){ // - sum(newcoeffs[k]*resmodorig[k])
+                for (size_t l=0;l<newcoeffs[k].coord.size();++l){
+                  smallmultsubmodshift(_TMP1,0,newcoeffs[k].coord[l].g,resmodorig[k],newcoeffs[k].coord[l].u,_TMP2,env);
+                  _TMP1.coord.swap(_TMP2.coord);
+                }
               }
+              // should be 0
+              if (_TMP1.coord.size())
+                CERR << "zgbasis spoly coeff error " << _TMP1 << "\n";
             }
-            // should be 0
-            if (_TMP1.coord.size())
-              CERR << "zgbasis spoly coeff error " << _TMP1 << "\n";
           }
-	}
-	if (debug_infolevel>1){
-	  CERR << CLOCK()*1e-6 << " mod reduce begin, pair " << bk << " spoly size " << TMP1.coord.size() << " totdeg deg " << TMP1.coord.front().u.total_degree(order) << " degree " << TMP1.coord.front().u << ", pair degree " << resmod[bk.first].coord.front().u << resmod[bk.second].coord.front().u << '\n';
-	}
-#if 1
-	reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,true,&newcoeffs,coeffsmodptr);
-	// insure that new basis element has positive coord, required by zf4mod
-	typename vector< T_unsigned<modint_t,tdeg_t> >::iterator it=TMP1.coord.begin(),itend=TMP1.coord.end();
-	for (;it!=itend;++it){
-	  // if (it->g<0) it->g += env;
-          it->g += ((it->g>>31)&env);
-	}
-	// reducemod(TMP1,resmod,G,-1,TMP1,env,true);
-#else // should be adapted if coeffsmodptr is true
-	polymod<tdeg_t,modint_t> TMP3(TMP1);
-	reducemod(TMP1,resmod,G,-1,TMP1,env,true);
-	reducesmallmod(TMP3,resmod,G,-1,env,TMP2,true,0,true);
-	typename vector< T_unsigned<modint_t,tdeg_t> >::iterator it=TMP3.coord.begin(),itend=TMP3.coord.end();
-	for (;it!=itend;++it){
-	  if (it->g<0)
-	    it->g += env;
-	}
-	if (TMP3.coord!=TMP1.coord){
-	  CERR << "Bug" << '\n';
-	}
-#endif
-	if (debug_infolevel>1){
-	  if (debug_infolevel>3){ CERR << TMP1 << '\n'; }
-	  CERR << CLOCK()*1e-6 << " mod reduce end, remainder degree " << TMP1.coord.front().u << " size " << TMP1.coord.size() << " begin gbasis update" << '\n';
-	}
-	if (!TMP1.coord.empty()){
-	  resmod.push_back(TMP1);
-          reduceAF(newcoeffs,resmodorig,env,order);
-	  if (coeffsmodptr){
-	    coeffsmodptr->push_back(newcoeffs);
-	    // if coeffsmodptr, we need TMP and res only to run zgbasis_updatemod, maybe we could run gbasis_updatemod without zpolymod with reduce=false argument
-	  }
-	  Rbuchberger.push_back(vector<tdeg_t>(TMP1.coord.size()));
-	  vector<tdeg_t> & R0=Rbuchberger.back();
-	  for (unsigned l=0;l<unsigned(TMP1.coord.size());++l)
-	    R0[l]=TMP1.coord[l].u;
-	  convert(TMP1,TMP,R0);
-	  zincrease(res);
-	  if (ressize==res.size())
-	    res.push_back(zpolymod<tdeg_t,modint_t>(order,dim,TMP.ldeg));
-	  res[ressize].expo=TMP.expo;
-	  swap(res[ressize].coord,TMP.coord);
-	  ++ressize;
-	  zgbasis_updatemod(G,B,res,ressize-1,oldG,multimodular);
-	  if (debug_infolevel>3)
-	    CERR << CLOCK()*1e-6 << " mod basis indexes " << G << " pairs indexes " << B << '\n';
-	}
-	else {
-	  if (learning && pairs_reducing_to_zero){
-	    if (debug_infolevel>2)
-	      CERR << "learning " << bk << '\n';
-	    pairs_reducing_to_zero->push_back(bk);
-	  }
-	}
-	continue;
-      } // end if smallposp.size() small (<=GBASISF4_BUCHBERGER)
+          if (debug_infolevel>1){
+            CERR << CLOCK()*1e-6 << " mod reduce begin, pair " << bk << " spoly size " << TMP1.coord.size() << " totdeg deg " << TMP1.coord.front().u.total_degree(order) << " degree " << TMP1.coord.front().u << ", pair degree " << resmod[bk.first].coord.front().u << resmod[bk.second].coord.front().u << '\n';
+          }
+          reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,true,&newcoeffs,coeffsmodptr);
+          // insure that new basis element has positive coord, required by zf4mod
+          typename vector< T_unsigned<modint_t,tdeg_t> >::iterator it=TMP1.coord.begin(),itend=TMP1.coord.end();
+          for (;it!=itend;++it){
+            // if (it->g<0) it->g += env;
+            it->g += ((it->g>>31)&env);
+          }
+          // reducemod(TMP1,resmod,G,-1,TMP1,env,true);
+          if (debug_infolevel>1){
+            if (debug_infolevel>3){ CERR << TMP1 << '\n'; }
+            CERR << CLOCK()*1e-6 << " mod reduce end, remainder degree " << TMP1.coord.front().u << " size " << TMP1.coord.size() << " begin gbasis update" << '\n';
+          }
+          if (!TMP1.coord.empty()){
+            resmod.push_back(TMP1);
+            reduceAF(newcoeffs,resmodorig,env,order);
+            if (coeffsmodptr){
+              coeffsmodptr->push_back(newcoeffs);
+              // if coeffsmodptr, we need TMP and res only to run zgbasis_updatemod, maybe we could run gbasis_updatemod without zpolymod with reduce=false argument
+            }
+            Rbuchberger.push_back(vector<tdeg_t>(TMP1.coord.size()));
+            vector<tdeg_t> & R0=Rbuchberger.back();
+            for (unsigned l=0;l<unsigned(TMP1.coord.size());++l)
+              R0[l]=TMP1.coord[l].u;
+            convert(TMP1,TMP,R0);
+            zincrease(res);
+            if (ressize==res.size())
+              res.push_back(zpolymod<tdeg_t,modint_t>(order,dim,TMP.ldeg));
+            res[ressize].expo=TMP.expo;
+            swap(res[ressize].coord,TMP.coord);
+            ++ressize;
+            zgbasis_updatemod(G,B,res,ressize-1,oldG,multimodular);
+            if (debug_infolevel>3)
+              CERR << CLOCK()*1e-6 << " mod basis indexes " << G << " pairs indexes " << B << '\n';
+          }
+          else {
+            if (learning && !coeffsmodptr && pairs_reducing_to_zero){
+              if (debug_infolevel>2)
+                CERR << "learning " << bk << '\n';
+              pairs_reducing_to_zero->push_back(bk);
+            }
+          }
+        } // end for loop on all spairs
+        continue;
+      } // end coeffsmodptr or smallposp.size() small (<=GBASISF4_BUCHBERGER)
       unsigned np=smallposv.size();
       if (np==B.size() && np<=max_pairs_by_iteration){
 	swap(smallposp,B);
