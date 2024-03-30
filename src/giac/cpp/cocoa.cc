@@ -14412,7 +14412,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	zpolymod<tdeg_t,modint_t> TMP;
 	paire bk;
         if (coeffsmodptr){
-#if 0
+#if 1
           // find smallest coeffs degree sum
           int sumdegpos=0; double sumdeg=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,B[smallposv.front()]);
           for (int i=1;i<smallposv.size();++i){
