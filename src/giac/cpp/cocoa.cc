@@ -4783,9 +4783,12 @@ namespace giac {
   }
 
   template <class tdeg_t,class modint_t>
-  double sumdegcoeffs2(const vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr,const order_t & o,const paire & bk){
-    if (!coeffsmodptr) return 0;
-    return sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o)+sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o);
+  double sumtermscoeffs(const vectpolymod<tdeg_t,modint_t> & V){
+    double res=0;
+    for (size_t j=0;j<V.size();++j){
+      res += V[j].coord.size();
+    }
+    return res;
   }
 
   template<class tdeg_t,class modint_t>
@@ -14000,6 +14003,24 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       smod(resmod[i],env);
   }
 
+  template <class tdeg_t,class modint_t>
+  double sumdegcoeffs2(const vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr,const order_t & o,vectzpolymod<tdeg_t,modint_t> &res,const paire & bk){
+    if (!coeffsmodptr) return 0;
+    int pn=res[bk.first].coord.size();
+    int qn=res[bk.second].coord.size();
+    if (pn==0 || qn==0)
+      return 0;
+    const tdeg_t & pi = res[bk.first].coord.front().u;
+    const tdeg_t & qi = res[bk.second].coord.front().u;
+    tdeg_t lcm;
+    index_lcm(pi,qi,lcm,o);
+    tdeg_t pshift=lcm-pi;
+    tdeg_t qshift=lcm-qi;
+    double a=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o)+pshift.total_degree(o),b=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o)+qshift.total_degree(o);
+    double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
+    return a*A+b*B;
+  }
+
   template<class tdeg_t,class modint_t,class modint_t2>
   bool in_zgbasis(vectpolymod<tdeg_t,modint_t> &resmod,unsigned ressize,vector<unsigned> & G,modint_t env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool eliminate_flag,bool multimodular,int parallel,bool interred,bool rawcoeffs,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr){
     vectpolymod<tdeg_t,modint_t> resmodorig(resmod); resmodorig.resize(ressize);
@@ -14414,9 +14435,9 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
         if (coeffsmodptr){
 #if 1
           // find smallest coeffs degree sum
-          int sumdegpos=0; double sumdeg=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,B[smallposv.front()]);
+          int sumdegpos=0; double sumdeg=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,res,B[smallposv.front()]);
           for (int i=1;i<smallposv.size();++i){
-            double cur=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,B[smallposv[i]]);
+            double cur=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,res,B[smallposv[i]]);
             if (cur<sumdeg){
               sumdegpos=i;
               sumdeg=cur;
