@@ -14696,7 +14696,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
                 continue;
               while (!coeffsk[i].coord.empty() && coeffsk[i].coord.front().u!=resmodorig[j].coord.front().u && tdeg_t_all_greater(coeffsk[i].coord.front().u,resmodorig[j].coord.front().u,order)){
                 tdeg_t du(coeffsk[i].coord.front().u-resmodorig[j].coord.front().u);
-                modint a(coeffsk[i].coord.front().g),b(resmodorig[j].coord.front().g),c(smod(a*extend(invmod(b,env)),env));
+                modint_t a(coeffsk[i].coord.front().g),b(resmodorig[j].coord.front().g),c(smod(a*extend(invmod(b,env)),env));
                 smallmultsubmodshift(coeffsk[i],0,c,resmodorig[j],du,TMP1,env);
                 coeffsk[i].swap(TMP1);
                 smallmultsubmodshift(coeffsk[j],0,-c,resmodorig[i],du,TMP1,env);
