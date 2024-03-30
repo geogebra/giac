@@ -4773,6 +4773,21 @@ namespace giac {
     }
   }
 
+  template <class tdeg_t,class modint_t>
+  double sumdegcoeffs(const vectpolymod<tdeg_t,modint_t> & V,const order_t & o){
+    double res=0;
+    for (size_t j=0;j<V.size();++j){
+      res += V[j].coord.empty()?0:V[j].coord.front().u.total_degree(o);
+    }
+    return res;
+  }
+
+  template <class tdeg_t,class modint_t>
+  double sumdegcoeffs2(const vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr,const order_t & o,const paire & bk){
+    if (!coeffsmodptr) return 0;
+    return sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o)+sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o);
+  }
+
   template<class tdeg_t,class modint_t>
   void reducesmallmod(polymod<tdeg_t,modint_t> & rem,const vectpolymod<tdeg_t,modint_t> & res,const vector<unsigned> & G,unsigned excluded,modint_t env,polymod<tdeg_t,modint_t> & TMP1,bool normalize,int start_index=0,bool topreduceonly=false,vectpolymod<tdeg_t,modint_t>*remcoeffsptr=0,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr=0){
     if (debug_infolevel>1000){
@@ -4808,10 +4823,7 @@ namespace giac {
       const polymod<tdeg_t,modint_t> & cur=res[Gi];
       zsymb_data<tdeg_t> tmp={(unsigned)Gi,cur.coord.empty()?0:cur.coord.front().u,o,(unsigned)cur.coord.size(),0,0.0};
       if (coeffsmodptr){
-        vectpolymod<tdeg_t,modint_t> & V=(*coeffsmodptr)[Gi];
-        for (size_t j=0;j<V.size();++j){
-          tmp.coeffs += V[j].coord.empty()?0:V[j].coord.front().u.total_degree(o);
-        }
+        tmp.coeffs = sumdegcoeffs((*coeffsmodptr)[Gi],o);
       }
       zsGi[i]=tmp;
     }
@@ -14401,15 +14413,16 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	paire bk;
         if (coeffsmodptr){
 #if 0
-          // find smallest logz, disabled, slower for cyclic6 with coeffs
-          int logzpos=0,logz=Blogz[smallposv.front()];
+          // find smallest coeffs degree sum
+          int sumdegpos=0; double sumdeg=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,B[smallposv.front()]);
           for (int i=1;i<smallposv.size();++i){
-            if (Blogz[smallposv[i]]<logz){
-              logzpos=i;
-              logz=Blogz[smallposv[i]];
+            double cur=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,B[smallposv[i]]);
+            if (cur<sumdeg){
+              sumdegpos=i;
+              sumdeg=cur;
             }
           }
-          bk=B[smallposv[logzpos]]; B.erase(B.begin()+smallposv[logzpos]);
+          bk=B[smallposv[sumdegpos]]; B.erase(B.begin()+smallposv[sumdegpos]);
 #else
           bk=B[smallposv.front()]; B.erase(B.begin()+smallposv.front());
 #endif
