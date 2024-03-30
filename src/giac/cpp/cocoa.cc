@@ -14251,10 +14251,11 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       }
       if (debug_infolevel>3)
 	CERR << "pairs reduced " << B << " indices " << smallposv << '\n';
-#if F4COEFFS // too slow for I0:=[2*v7-v3-v1,2*v8-v4-v2,2*v9-v5-v1,2*v10-v6-v2,-v12+v10-v5+v1,-v11+v9+v6-v2,-v14+v8+v3-v1,-v13+v7-v4+v2,v15*v12-v16*v11-v15*v10+v11*v10+v16*v9-v12*v9,v15*v14-v16*v13-v15*v8+v13*v8+v16*v7-v14*v7,v17*v14-v18*v13-v17*v8+v13*v8+v18*v7-v14*v7,-v18^2-v17^2+2*v18*v16+2*v17*v15-2*v16*v2+v2^2-2*v15*v1+v1^2,v19*v12-v20*v11-v19*v10+v11*v10+v20*v9-v12*v9,-v20^2-v19^2+2*v20*v16+2*v19*v15-2*v16*v2+v2^2-2*v15*v1+v1^2,-v21*v4+v22*v3+v21*v2-v3*v2-v22*v1+v4*v1,v21*v20-v22*v19-v21*v18+v19*v18+v22*v17-v20*v17,v23*v6-v24*v5-v23*v2+v5*v2+v24*v1-v6*v1,v23*v20-v24*v19-v23*v18+v19*v18+v24*v17-v20*v17,-1+v27*v24^2+v27*v23^2-v27*v22^2-v27*v21^2-2*v27*v24*v2+2*v27*v22*v2-2*v27*v23*v1+2*v27*v21*v1,-1+v28*v6^2-2*v28*v6^3+v28*v6^4+v28*v5^2-2*v28*v6*v5^2+2*v28*v6^2*v5^2+v28*v5^4]:;I1:=subst(I0,[v4=1,v3=0,v2=0,v1=0]):;v:=[v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v27,v28,v1,v2,v3,v4,v5,v6]:;G,M:=gbasis(I1,v,coeffs):;
+#if 0
+      // note that this is too slow for I0:=[2*v7-v3-v1,2*v8-v4-v2,2*v9-v5-v1,2*v10-v6-v2,-v12+v10-v5+v1,-v11+v9+v6-v2,-v14+v8+v3-v1,-v13+v7-v4+v2,v15*v12-v16*v11-v15*v10+v11*v10+v16*v9-v12*v9,v15*v14-v16*v13-v15*v8+v13*v8+v16*v7-v14*v7,v17*v14-v18*v13-v17*v8+v13*v8+v18*v7-v14*v7,-v18^2-v17^2+2*v18*v16+2*v17*v15-2*v16*v2+v2^2-2*v15*v1+v1^2,v19*v12-v20*v11-v19*v10+v11*v10+v20*v9-v12*v9,-v20^2-v19^2+2*v20*v16+2*v19*v15-2*v16*v2+v2^2-2*v15*v1+v1^2,-v21*v4+v22*v3+v21*v2-v3*v2-v22*v1+v4*v1,v21*v20-v22*v19-v21*v18+v19*v18+v22*v17-v20*v17,v23*v6-v24*v5-v23*v2+v5*v2+v24*v1-v6*v1,v23*v20-v24*v19-v23*v18+v19*v18+v24*v17-v20*v17,-1+v27*v24^2+v27*v23^2-v27*v22^2-v27*v21^2-2*v27*v24*v2+2*v27*v22*v2-2*v27*v23*v1+2*v27*v21*v1,-1+v28*v6^2-2*v28*v6^3+v28*v6^4+v28*v5^2-2*v28*v6*v5^2+2*v28*v6^2*v5^2+v28*v5^4]:;I1:=subst(I0,[v4=1,v3=0,v2=0,v1=0]):;v:=[v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v27,v28,v1,v2,v3,v4,v5,v6]:;G,M:=gbasis(I1,v,coeffs):;
       vector< paire > coeffszeropairs;
       const vector<unsigned> * coeffpermuBptr=0;
-      if (coeffsmodptr){
+      if (coeffsmodptr && gparam.buchberger_select_strategy==2){
         if (learned_position==pairs_reducing_to_zero->size()){
           // make a "dry" F4 run, not computing coefficients
           // and update pairs_reducing_to_zero
@@ -14273,7 +14274,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           if (coeffpermuBptr){
             for (unsigned i=0;i<f4buchbergerv.size();++i){
               if (f4buchbergerv[i].coord.empty()){
-                if (debug_infolevel>=1)
+                if (debug_infolevel>1)
                   CERR << "learning f4buchberger " << smallposp[(*coeffpermuBptr)[i]] << '\n';
                 coeffszeropairs.push_back(smallposp[(*coeffpermuBptr)[i]]);
               }
@@ -14282,8 +14283,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           }
         }
       }
-      if (// 1 ||  // FIXME comment 1 || 
-	  coeffsmodptr || (order.o!=_REVLEX_ORDER && smallposv.size()<=GBASISF4_BUCHBERGER)){ 
+      if (// 1 ||  // FIXME comment 1 ||
+          gparam.buchberger_select_strategy==2 &&
+          (coeffsmodptr || (order.o!=_REVLEX_ORDER && smallposv.size()<=GBASISF4_BUCHBERGER) )
+          ){ 
 	// pairs not handled by f4
 	int modsize=int(resmod.size());
 	if (modsize<res.size())
@@ -14308,14 +14311,14 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           bk=smallposp[count];
           if (coeffsmodptr && binary_search(coeffszeropairs.begin(),coeffszeropairs.end(),bk)){
             if (learning && pairs_reducing_to_zero){
-              if (debug_infolevel>2)
+              if (debug_infolevel>1)
                 CERR << "learning " << bk << '\n';
               pairs_reducing_to_zero->push_back(bk);
             }
             continue;
           }
           if (!learning  && pairs_reducing_to_zero && learned_position<pairs_reducing_to_zero->size() && bk==(*pairs_reducing_to_zero)[learned_position]){
-            if (debug_infolevel>=1)
+            if (debug_infolevel>1)
               CERR << bk << " learned " << learned_position << '\n';
             ++learned_position;
             continue;
@@ -14416,10 +14419,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           }
         } // end for loop on all spairs
         continue;
-      } // end coeffsmodptr or smallposp.size() small (<=GBASISF4_BUCHBERGER)
-#else
+      } // end strategy==2 && coeffsmodptr or smallposp.size() small (<=GBASISF4_BUCHBERGER)
+#endif
       if (// 1 ||  // FIXME comment 1 || 
-	  coeffsmodptr || (order.o!=_REVLEX_ORDER && smallposv.size()<=GBASISF4_BUCHBERGER)){ 
+	  coeffsmodptr || (order.o!=_REVLEX_ORDER && smallposv.size()<=GBASISF4_BUCHBERGER) || gparam.buchberger_select_strategy){ 
 	// pairs not handled by f4
 	int modsize=int(resmod.size());
 	if (modsize<res.size())
@@ -14433,7 +14436,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	zpolymod<tdeg_t,modint_t> TMP;
 	paire bk;
         if (coeffsmodptr){
-          if (gparam.buchberger_select_first){
+          if (gparam.buchberger_select_strategy==1){
             bk=B[smallposv.front()]; B.erase(B.begin()+smallposv.front());
           } else {
             // find smallest coeffs degree sum
@@ -14580,7 +14583,6 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	}
 	continue;
       } // end if smallposp.size() small (<=GBASISF4_BUCHBERGER)
-#endif
       unsigned np=smallposv.size();
       if (np==B.size() && np<=max_pairs_by_iteration){
 	swap(smallposp,B);
