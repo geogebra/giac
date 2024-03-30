@@ -108,6 +108,7 @@ namespace giac {
     bool interred;
     bool gbasis; // for rur return gbasis too
     bool rawcoeffs; // if true keep raw coeffs in transform matrix, if false try to reduce the degree
+    bool buchberger_select_first; // select first spair in Buchberger algo
     std::vector<int> initsep; // separating variable (integer coeffs of monomials)
   };
   extern int rur_separate_max_tries;
