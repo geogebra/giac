@@ -19570,6 +19570,8 @@ void G_idn(vector<unsigned> & G,size_t s){
 
 bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * env,bool modularalgo,bool modularcheck,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param,vector<vectpoly> * coeffsptr){
     bool & eliminate_flag=gbasis_param.eliminate_flag;
+    if (gbasis_param.buchberger_select_strategy==-1 && !v.empty())
+      gbasis_param.buchberger_select_strategy=(coeffsptr && v.front().dim<=8)?1:0;
     bool interred=gbasis_param.interred;
     int parallel=1;
 #ifdef HAVE_LIBPTHREAD
