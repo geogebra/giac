@@ -89,6 +89,9 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 using namespace std;
+#ifdef ATOMIC // attempt to make tdeg_t64 ref counter threadsafe, but fails
+#include <atomic>
+#endif
 
 #include <iostream>
 //#include <fstream>
@@ -1059,17 +1062,35 @@ namespace giac {
       }
     }
     ~tdeg_t64(){
-      if (tab[0]%2){
-	--(*ui);
-	if (*ui==0)
+      if (tab[0]%2 && ui){
+#ifdef ATOMIC
+	if (atomic_fetch_add((atomic<longlong> *) ui,-1)==0){
 	  free(ui);
+          ui=0;
+        }
+#else
+        --(*ui);
+	if (*ui==0){
+	  free(ui);
+          ui=0;
+        }
+#endif
       }
     }
     tdeg_t64 & operator = (const tdeg_t64 & a){
-      if (tab[0] % 2){
-	--(*ui);
-	if (*ui==0)
+      if (tab[0]%2 && ui){
+#ifdef ATOMIC
+	if (atomic_fetch_add((atomic<longlong> *) ui,-1)==0){
 	  free(ui);
+          ui=0;
+        }
+#else
+        --(*ui);
+	if (*ui==0){
+	  free(ui);
+          ui=0;
+        }
+#endif
 	if (a.tab[0] % 2){
 	  tdeg=a.tdeg;
 	  tdeg2=a.tdeg2;
@@ -1081,13 +1102,21 @@ namespace giac {
 #ifdef GIAC_ELIM
 	  elim=a.elim;
 #endif
-	  ++(*ui);
+#ifdef ATOMIC
+          atomic_fetch_add((atomic<longlong> *) ui,1);
+#else
+          ++(*ui);
+#endif
 	  return *this;
 	}
       }
       else {
 	if (a.tab[0]%2){
-	  ++(*a.ui);
+#ifdef ATOMIC
+          atomic_fetch_add((atomic<longlong> *) a.ui,1);
+#else
+          ++(*a.ui);
+#endif
 	}
       }
       longlong * ptr = (longlong *) tab;
@@ -16721,17 +16750,21 @@ void G_idn(vector<unsigned> & G,size_t s){
     double eps=proba_epsilon(contextptr); int rechecked=0;
     order_t order={0,0};
     bool multithread_enabled=true;
-    // multithread disabled for more than 14 vars because otherwise
+    // multithread was disabled for more than 14 vars because otherwise
     // threads:=2; n:=9;P:=mul(1+x[j]*t,j=0..n-1);
     // X:=[seq(x[j],j=0..n-1)];
     // S:=seq(p[j]-coeff(P,t,j), j=1..n-1);
     //  N:=sum(x[j]^(n-1),j=0..n-1);
     // I:=[N,S]:;eliminate(I,X)
-    // segfaults and valgrind does not help...
+    // segfaults and valgrind does not help... seems to work now but not z8
     for (unsigned i=0;i<res.size();++i){
       const poly8<tdeg_t> & P=res[i];
-      if (multithread_enabled && !P.coord.empty())
+      if (multithread_enabled && !P.coord.empty()){
+#ifdef ATOMIC
+#else
 	multithread_enabled=!P.coord.front().u.vars64();
+#endif
+      }
       order=P.order;
       for (unsigned j=0;j<P.coord.size();++j){
 	if (!is_integer(P.coord[j].g)) // improve: accept complex numbers
