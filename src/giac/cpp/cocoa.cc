@@ -4826,7 +4826,9 @@ namespace giac {
       const polymod<tdeg_t,modint_t> & cur=res[Gi];
       zsymb_data<tdeg_t> tmp={(unsigned)Gi,cur.coord.empty()?0:cur.coord.front().u,o,(unsigned)cur.coord.size(),0,0.0};
       if (coeffsmodptr){
-        tmp.coeffs = sumdegcoeffs((*coeffsmodptr)[Gi],o);
+        double d1=sumdegcoeffs((*coeffsmodptr)[Gi],o); //,d2=sumtermscoeffs((*coeffsmodptr)[Gi]);
+        //tmp.coeffs = d1*d1+d2;
+        tmp.coeffs = d1;
       }
       zsGi[i]=tmp;
     }
@@ -14004,7 +14006,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
   }
 
   template <class tdeg_t,class modint_t>
-  double sumdegcoeffs2(const vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr,const order_t & o,vectzpolymod<tdeg_t,modint_t> &res,const paire & bk){
+  double sumdegcoeffs2(const vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr,const order_t & o,vectzpolymod<tdeg_t,modint_t> &res,const paire & bk,int strategy){
     if (!coeffsmodptr) return 0;
     int pn=res[bk.first].coord.size();
     int qn=res[bk.second].coord.size();
@@ -14016,8 +14018,43 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     index_lcm(pi,qi,lcm,o);
     tdeg_t pshift=lcm-pi;
     tdeg_t qshift=lcm-qi;
-    double a=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o)+pshift.total_degree(o),b=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o)+qshift.total_degree(o);
-    double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
+    int N=(*coeffsmodptr)[bk.first].size();
+    if (strategy==11)
+      return pn+qn;
+    if (strategy==10){
+      double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
+      return pn*B+qn*A;
+    }
+    if (strategy==9){
+      double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
+      return N*pn+A+N*qn+B;
+    }
+    if (strategy==8){
+      double a=pshift.total_degree(o),b=qshift.total_degree(o);
+      double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
+      return a*(N*pn+A)+b*(N*qn+B);
+    }
+    if (strategy==7){
+      double a=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o)*pshift.total_degree(o),b=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o)*qshift.total_degree(o);
+      double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
+      return a*(N*pn+A)+b*(N*qn+B);
+    }
+    if (strategy==0 || strategy==6){
+      double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
+      return pn*A+qn*B;
+    }
+    if (strategy==5){
+      double a=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o)*pshift.total_degree(o),b=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o)*qshift.total_degree(o);
+      double A=sumtermscoeffs((*coeffsmodptr)[bk.first])*pn,B=sumtermscoeffs((*coeffsmodptr)[bk.second])*qn;
+      return a*A+b*B;
+    }
+    if (strategy==4){
+      double a=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o),b=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o);
+      double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
+      return pn*(a*A)+qn*(b*B);
+    }
+    double a=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o)+N*pshift.total_degree(o),b=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o)+N*qshift.total_degree(o);
+    double A=sumtermscoeffs((*coeffsmodptr)[bk.first])+N*pn,B=sumtermscoeffs((*coeffsmodptr)[bk.second])+N*qn;
     return a*A+b*B;
   }
 
@@ -14251,7 +14288,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       }
       if (debug_infolevel>3)
 	CERR << "pairs reduced " << B << " indices " << smallposv << '\n';
-#if 0
+#if 1
       // note that this is too slow for I0:=[2*v7-v3-v1,2*v8-v4-v2,2*v9-v5-v1,2*v10-v6-v2,-v12+v10-v5+v1,-v11+v9+v6-v2,-v14+v8+v3-v1,-v13+v7-v4+v2,v15*v12-v16*v11-v15*v10+v11*v10+v16*v9-v12*v9,v15*v14-v16*v13-v15*v8+v13*v8+v16*v7-v14*v7,v17*v14-v18*v13-v17*v8+v13*v8+v18*v7-v14*v7,-v18^2-v17^2+2*v18*v16+2*v17*v15-2*v16*v2+v2^2-2*v15*v1+v1^2,v19*v12-v20*v11-v19*v10+v11*v10+v20*v9-v12*v9,-v20^2-v19^2+2*v20*v16+2*v19*v15-2*v16*v2+v2^2-2*v15*v1+v1^2,-v21*v4+v22*v3+v21*v2-v3*v2-v22*v1+v4*v1,v21*v20-v22*v19-v21*v18+v19*v18+v22*v17-v20*v17,v23*v6-v24*v5-v23*v2+v5*v2+v24*v1-v6*v1,v23*v20-v24*v19-v23*v18+v19*v18+v24*v17-v20*v17,-1+v27*v24^2+v27*v23^2-v27*v22^2-v27*v21^2-2*v27*v24*v2+2*v27*v22*v2-2*v27*v23*v1+2*v27*v21*v1,-1+v28*v6^2-2*v28*v6^3+v28*v6^4+v28*v5^2-2*v28*v6*v5^2+2*v28*v6^2*v5^2+v28*v5^4]:;I1:=subst(I0,[v4=1,v3=0,v2=0,v1=0]):;v:=[v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v27,v28,v1,v2,v3,v4,v5,v6]:;G,M:=gbasis(I1,v,coeffs):;
       vector< paire > coeffszeropairs;
       const vector<unsigned> * coeffpermuBptr=0;
@@ -14323,7 +14360,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
             ++learned_position;
             continue;
           }
-          if (debug_infolevel>2)
+          if (debug_infolevel>1)
             CERR << bk << " not learned " << learned_position << '\n';
           if (resmod[bk.first].coord.empty())
             convert(res[bk.first],resmod[bk.first]);
@@ -14373,7 +14410,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
                 CERR << "zgbasis spoly coeff error " << _TMP1 << "\n";
             }
           }
-          if (debug_infolevel>1){
+          if (debug_infolevel>2){
             CERR << CLOCK()*1e-6 << " mod reduce begin, pair " << bk << " spoly size " << TMP1.coord.size() << " totdeg deg " << TMP1.coord.front().u.total_degree(order) << " degree " << TMP1.coord.front().u << ", pair degree " << resmod[bk.first].coord.front().u << resmod[bk.second].coord.front().u << '\n';
           }
           reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,true,&newcoeffs,coeffsmodptr);
@@ -14384,7 +14421,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
             it->g += ((it->g>>31)&env);
           }
           // reducemod(TMP1,resmod,G,-1,TMP1,env,true);
-          if (debug_infolevel>1){
+          if (debug_infolevel>2){
             if (debug_infolevel>3){ CERR << TMP1 << '\n'; }
             CERR << CLOCK()*1e-6 << " mod reduce end, remainder degree " << (TMP1.coord.empty()?0:TMP1.coord.front().u) << " size " << TMP1.coord.size() << " begin gbasis update" << '\n';
           }
@@ -14406,7 +14443,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
             res[ressize].expo=TMP.expo;
             swap(res[ressize].coord,TMP.coord);
             ++ressize;
-            zgbasis_updatemod(G,B,res,ressize-1,oldG,multimodular);
+            zgbasis_updatemod(G,B,res,ressize-1,G,multimodular);
             if (debug_infolevel>3)
               CERR << CLOCK()*1e-6 << " mod basis indexes " << G << " pairs indexes " << B << '\n';
           }
@@ -14440,9 +14477,9 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
             bk=B[smallposv.front()]; B.erase(B.begin()+smallposv.front());
           } else {
             // find smallest coeffs degree sum
-            int sumdegpos=0; double sumdeg=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,res,B[smallposv.front()]);
+            int sumdegpos=0; double sumdeg=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,res,B[smallposv.front()],gparam.buchberger_select_strategy);
             for (int i=1;i<smallposv.size();++i){
-              double cur=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,res,B[smallposv[i]]);
+              double cur=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,res,B[smallposv[i]],gparam.buchberger_select_strategy);
               if (cur<sumdeg){
                 sumdegpos=i;
                 sumdeg=cur;
@@ -14523,7 +14560,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
               CERR << "zgbasis spoly coeff error " << _TMP1 << "\n";
           }
 	} // end coeffsmodptr
-	if (debug_infolevel>1){
+	if (debug_infolevel>2){
 	  CERR << CLOCK()*1e-6 << " mod reduce begin, pair " << bk << " spoly size " << TMP1.coord.size() << " totdeg deg " << TMP1.coord.front().u.total_degree(order) << " degree " << TMP1.coord.front().u << ", pair degree " << resmod[bk.first].coord.front().u << resmod[bk.second].coord.front().u << '\n';
 	}
 #if 1
@@ -14548,9 +14585,9 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  CERR << "Bug" << '\n';
 	}
 #endif
-	if (debug_infolevel>1){
+	if (debug_infolevel>2){
 	  if (debug_infolevel>3){ CERR << TMP1 << '\n'; }
-	  CERR << CLOCK()*1e-6 << " mod reduce end, remainder degree " << TMP1.coord.front().u << " size " << TMP1.coord.size() << " begin gbasis update" << '\n';
+	  CERR << CLOCK()*1e-6 << " mod reduce end, remainder degree " << (TMP1.coord.empty()?0:TMP1.coord.front().u) << " size " << TMP1.coord.size() << " begin gbasis update" << '\n';
 	}
 	if (!TMP1.coord.empty()){
 	  resmod.push_back(TMP1);
@@ -14570,7 +14607,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  res[ressize].expo=TMP.expo;
 	  swap(res[ressize].coord,TMP.coord);
 	  ++ressize;
-	  zgbasis_updatemod(G,B,res,ressize-1,oldG,multimodular);
+	  zgbasis_updatemod(G,B,res,ressize-1,G,multimodular);
 	  if (debug_infolevel>3)
 	    CERR << CLOCK()*1e-6 << " mod basis indexes " << G << " pairs indexes " << B << '\n';
 	}
@@ -19570,8 +19607,13 @@ void G_idn(vector<unsigned> & G,size_t s){
 
 bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * env,bool modularalgo,bool modularcheck,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param,vector<vectpoly> * coeffsptr){
     bool & eliminate_flag=gbasis_param.eliminate_flag;
-    if (gbasis_param.buchberger_select_strategy==-1 && !v.empty())
-      gbasis_param.buchberger_select_strategy=(coeffsptr && v.front().dim<=8)?1:0;
+    if (gbasis_param.buchberger_select_strategy==-1 && !v.empty()){
+      if (GBASIS_COEFF_STRATEGY)
+        gbasis_param.buchberger_select_strategy=GBASIS_COEFF_STRATEGY;
+      else
+        gbasis_param.buchberger_select_strategy=(coeffsptr && v.front().dim<=8)?1:0;
+      if (debug_infolevel)
+        CERR << "strategy " << gbasis_param.buchberger_select_strategy << "\n";     }
     bool interred=gbasis_param.interred;
     int parallel=1;
 #ifdef HAVE_LIBPTHREAD

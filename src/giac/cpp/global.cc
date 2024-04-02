@@ -3783,6 +3783,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int SOLVER_MAX_ITERATE=25;
   int MAX_PRINTABLE_ZINT=10000;
   int MAX_RECURSION_LEVEL=9;
+  int GBASIS_COEFF_STRATEGY=0;
   int GBASIS_DETERMINISTIC=20;
   int GBASISF4_MAX_TOTALDEG=1024;
   int GBASISF4_MAXITER=256;
@@ -3836,6 +3837,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int SOLVER_MAX_ITERATE=25;
   int MAX_PRINTABLE_ZINT=1000000;
   int MAX_RECURSION_LEVEL=100;
+  int GBASIS_COEFF_STRATEGY=0;
   int GBASIS_DETERMINISTIC=50;
   int GBASISF4_MAX_TOTALDEG=16384;
   int GBASISF4_MAXITER=1024;
@@ -5407,6 +5409,10 @@ NULL,NULL,SW_SHOWNORMAL);
     if (getenv("GIAC_DEBUG")){
       debug_infolevel=atoi(getenv("GIAC_DEBUG"));
       CERR << "// Setting debug_infolevel to " << debug_infolevel << '\n';
+    }
+    if (getenv("GBASIS_COEFF_STRATEGY")){
+      GBASIS_COEFF_STRATEGY=atoi(getenv("GBASIS_COEFF_STRATEGY"));
+      CERR << "// Setting gbasis_coeff_strategy to " << GBASIS_COEFF_STRATEGY << '\n';
     }
     if (getenv("GIAC_PRINTPROG")){ 
       // force print of prog at parse, 256 for python compat mode print

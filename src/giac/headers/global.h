@@ -407,6 +407,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   extern int GBASIS_DETERMINISTIC;
   extern int GBASISF4_MAX_TOTALDEG;
   extern int GBASISF4_MAXITER;
+  extern int GBASIS_COEFF_STRATEGY;
   extern int RUR_PARAM_MAX_DEG;
   // extern int GBASISF4_BUCHBERGER;
   extern unsigned max_pairs_by_iteration; 
