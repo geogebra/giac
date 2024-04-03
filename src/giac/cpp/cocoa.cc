@@ -4821,7 +4821,9 @@ namespace giac {
   }
 
   template<class tdeg_t,class modint_t>
-  void reducesmallmod(polymod<tdeg_t,modint_t> & rem,const vectpolymod<tdeg_t,modint_t> & res,const vector<unsigned> & G,unsigned excluded,modint_t env,polymod<tdeg_t,modint_t> & TMP1,bool normalize,int start_index=0,bool topreduceonly=false,vectpolymod<tdeg_t,modint_t>*remcoeffsptr=0,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr=0){
+  void reducesmallmod(polymod<tdeg_t,modint_t> & rem,const vectpolymod<tdeg_t,modint_t> & res,const vector<unsigned> & G,unsigned excluded,modint_t env,polymod<tdeg_t,modint_t> & TMP1,bool normalize,int start_index=0,bool topreduceonly=false,vectpolymod<tdeg_t,modint_t>*remcoeffsptr=0,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr=0,int strategy=0){
+    strategy /= 1000;
+    if (strategy==0) strategy=1;
     if (debug_infolevel>1000){
       rem.dbgprint();
       if (!rem.coord.empty()) rem.coord.front().u.dbgprint();
@@ -4855,9 +4857,27 @@ namespace giac {
       const polymod<tdeg_t,modint_t> & cur=res[Gi];
       zsymb_data<tdeg_t> tmp={(unsigned)Gi,cur.coord.empty()?0:cur.coord.front().u,o,(unsigned)cur.coord.size(),0,0.0};
       if (coeffsmodptr){
-        double d1=sumdegcoeffs((*coeffsmodptr)[Gi],o); //,d2=sumtermscoeffs((*coeffsmodptr)[Gi]);
-        //tmp.coeffs = d1*d1+d2;
-        tmp.coeffs = d1;
+        double D=sumdegcoeffs((*coeffsmodptr)[Gi],o),T=sumtermscoeffs((*coeffsmodptr)[Gi]),N=(*coeffsmodptr)[Gi].size(),d=cur.coord.front().u.total_degree(o),t=cur.coord.size();
+        if (strategy==1)
+          tmp.coeffs = D;
+        else if (strategy==2)
+          tmp.coeffs = D*T;
+        else if (strategy==3)
+          tmp.coeffs = (N*d+D)*(N*t+T);
+        else if (strategy==4)
+          tmp.coeffs = N*d+D;
+        else if (strategy==5)
+          tmp.coeffs = N*t+T;
+        else if (strategy==6)
+          tmp.coeffs = T;
+        else if (strategy==7)
+          tmp.coeffs = D*t;
+        else if (strategy==8)
+          tmp.coeffs = D*(N*t+T);
+        else if (strategy==9)
+          tmp.coeffs = D*t*T;
+        else if (strategy==10)
+          tmp.coeffs = D*d*t*T;
       }
       zsGi[i]=tmp;
     }
@@ -14037,9 +14057,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
   template <class tdeg_t,class modint_t>
   double sumdegcoeffs2(const vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr,const order_t & o,vectzpolymod<tdeg_t,modint_t> &res,const paire & bk,int strategy){
     if (!coeffsmodptr) return 0;
-    int pn=res[bk.first].coord.size();
-    int qn=res[bk.second].coord.size();
-    if (pn==0 || qn==0)
+    strategy %= 1000;
+    int t1=res[bk.first].coord.size();
+    int t2=res[bk.second].coord.size();
+    if (t1==0 || t2==0)
       return 0;
     const tdeg_t & pi = res[bk.first].coord.front().u;
     const tdeg_t & qi = res[bk.second].coord.front().u;
@@ -14048,47 +14069,33 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     tdeg_t pshift=lcm-pi;
     tdeg_t qshift=lcm-qi;
     int N=(*coeffsmodptr)[bk.first].size();
+    double T1=sumtermscoeffs((*coeffsmodptr)[bk.first]),T2=sumtermscoeffs((*coeffsmodptr)[bk.second]);
+    double d1=pshift.total_degree(o),d2=qshift.total_degree(o);
     if (strategy==11)
-      return pn+qn;
-    if (strategy==10){
-      double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
-      return pn*B+qn*A;
-    }
-    if (strategy==9){
-      double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
-      return N*pn+A+N*qn+B;
-    }
-    if (strategy==8){
-      double a=pshift.total_degree(o),b=qshift.total_degree(o);
-      double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
-      return a*(N*pn+A)+b*(N*qn+B);
-    }
-    if (strategy==7){
-      double a=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o)*pshift.total_degree(o),b=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o)*qshift.total_degree(o);
-      double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
-      return a*(N*pn+A)+b*(N*qn+B);
-    }
-    if (strategy==0 || strategy==6){
-      double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
-      return pn*A+qn*B;
-    }
-    if (strategy==5){
-      double a=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o)*pshift.total_degree(o),b=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o)*qshift.total_degree(o);
-      double A=sumtermscoeffs((*coeffsmodptr)[bk.first])*pn,B=sumtermscoeffs((*coeffsmodptr)[bk.second])*qn;
-      return a*A+b*B;
-    }
-    if (strategy==4){
-      double a=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o),b=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o);
-      double A=sumtermscoeffs((*coeffsmodptr)[bk.first]),B=sumtermscoeffs((*coeffsmodptr)[bk.second]);
-      return pn*(a*A)+qn*(b*B);
-    }
-    double a=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o)+N*pshift.total_degree(o),b=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o)+N*qshift.total_degree(o);
-    double A=sumtermscoeffs((*coeffsmodptr)[bk.first])+N*pn,B=sumtermscoeffs((*coeffsmodptr)[bk.second])+N*qn;
-    return a*A+b*B;
+      return t1+t2;
+    if (strategy==9)
+      return N*t1+T1+N*t2+T2;
+    if (strategy==8)
+      return d1*(N*t1+T1)+d2*(N*t2+T2);
+    double D1=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o),D2=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o);
+    if (strategy==10)
+      return t1*T1*d1*D1+t2*T2*d2*D2;
+    if (strategy==7)
+      return (D1+N*d1)*(N*t1+T1)+(D2+N*d2)*(N*t2+T2);
+    if (//strategy==0 ||
+        strategy==6)
+      return t1*T1+t2*T2;
+    if (strategy==5)
+      return D1*T1+D2*T2;
+    if (strategy==4)
+      return t1*(D1+N*d1)*T1+t2*(D2+N*d2)*T2;
+    // default (strategy==0?)
+    return (D1+N*d1)*(T1+N*t1)+(D2+N*d2)*(T2+N*t2);
   }
 
   template<class tdeg_t,class modint_t,class modint_t2>
   bool in_zgbasis(vectpolymod<tdeg_t,modint_t> &resmod,unsigned ressize,vector<unsigned> & G,modint_t env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool eliminate_flag,bool multimodular,int parallel,bool interred,const gbasis_param_t & gparam,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr){
+    int strategy=gparam.buchberger_select_strategy;
     vectpolymod<tdeg_t,modint_t> resmodorig(resmod); resmodorig.resize(ressize);
     unsigned generators=ressize;
     bool seldeg=true; int sel1=0;
@@ -14321,7 +14328,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       // note that this is too slow for I0:=[2*v7-v3-v1,2*v8-v4-v2,2*v9-v5-v1,2*v10-v6-v2,-v12+v10-v5+v1,-v11+v9+v6-v2,-v14+v8+v3-v1,-v13+v7-v4+v2,v15*v12-v16*v11-v15*v10+v11*v10+v16*v9-v12*v9,v15*v14-v16*v13-v15*v8+v13*v8+v16*v7-v14*v7,v17*v14-v18*v13-v17*v8+v13*v8+v18*v7-v14*v7,-v18^2-v17^2+2*v18*v16+2*v17*v15-2*v16*v2+v2^2-2*v15*v1+v1^2,v19*v12-v20*v11-v19*v10+v11*v10+v20*v9-v12*v9,-v20^2-v19^2+2*v20*v16+2*v19*v15-2*v16*v2+v2^2-2*v15*v1+v1^2,-v21*v4+v22*v3+v21*v2-v3*v2-v22*v1+v4*v1,v21*v20-v22*v19-v21*v18+v19*v18+v22*v17-v20*v17,v23*v6-v24*v5-v23*v2+v5*v2+v24*v1-v6*v1,v23*v20-v24*v19-v23*v18+v19*v18+v24*v17-v20*v17,-1+v27*v24^2+v27*v23^2-v27*v22^2-v27*v21^2-2*v27*v24*v2+2*v27*v22*v2-2*v27*v23*v1+2*v27*v21*v1,-1+v28*v6^2-2*v28*v6^3+v28*v6^4+v28*v5^2-2*v28*v6*v5^2+2*v28*v6^2*v5^2+v28*v5^4]:;I1:=subst(I0,[v4=1,v3=0,v2=0,v1=0]):;v:=[v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v27,v28,v1,v2,v3,v4,v5,v6]:;G,M:=gbasis(I1,v,coeffs):;
       vector< paire > coeffszeropairs;
       const vector<unsigned> * coeffpermuBptr=0;
-      if (coeffsmodptr && gparam.buchberger_select_strategy==2){
+      if (coeffsmodptr && (strategy%1000==2)){
         if (learned_position==pairs_reducing_to_zero->size()){
           // make a "dry" F4 run, not computing coefficients
           // and update pairs_reducing_to_zero
@@ -14350,7 +14357,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
         }
       }
       if (// 1 ||  // FIXME comment 1 ||
-          gparam.buchberger_select_strategy==2 &&
+          (strategy % 1000 ==2) &&
           (coeffsmodptr || (order.o!=_REVLEX_ORDER && smallposv.size()<=GBASISF4_BUCHBERGER) )
           ){ 
 	// pairs not handled by f4
@@ -14442,7 +14449,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           if (debug_infolevel>2){
             CERR << CLOCK()*1e-6 << " mod reduce begin, pair " << bk << " spoly size " << TMP1.coord.size() << " totdeg deg " << TMP1.coord.front().u.total_degree(order) << " degree " << TMP1.coord.front().u << ", pair degree " << resmod[bk.first].coord.front().u << resmod[bk.second].coord.front().u << '\n';
           }
-          reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,true,&newcoeffs,coeffsmodptr);
+          reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,true,&newcoeffs,coeffsmodptr,strategy);
           // insure that new basis element has positive coord, required by zf4mod
           typename vector< T_unsigned<modint_t,tdeg_t> >::iterator it=TMP1.coord.begin(),itend=TMP1.coord.end();
           for (;it!=itend;++it){
@@ -14485,10 +14492,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           }
         } // end for loop on all spairs
         continue;
-      } // end strategy==2 && coeffsmodptr or smallposp.size() small (<=GBASISF4_BUCHBERGER)
+      } // end strategy%1000==2 && coeffsmodptr or smallposp.size() small (<=GBASISF4_BUCHBERGER)
 #endif
       if (// 1 ||  // FIXME comment 1 || 
-	  coeffsmodptr || (order.o!=_REVLEX_ORDER && smallposv.size()<=GBASISF4_BUCHBERGER) || gparam.buchberger_select_strategy){ 
+	  coeffsmodptr || (order.o!=_REVLEX_ORDER && smallposv.size()<=GBASISF4_BUCHBERGER) || (strategy%1000)){ 
 	// pairs not handled by f4
 	int modsize=int(resmod.size());
 	if (modsize<res.size())
@@ -14502,13 +14509,13 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	zpolymod<tdeg_t,modint_t> TMP;
 	paire bk;
         if (coeffsmodptr){
-          if (gparam.buchberger_select_strategy==1){
+          if (strategy % 1000==1){
             bk=B[smallposv.front()]; B.erase(B.begin()+smallposv.front());
           } else {
             // find smallest coeffs degree sum
-            int sumdegpos=0; double sumdeg=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,res,B[smallposv.front()],gparam.buchberger_select_strategy);
+            int sumdegpos=0; double sumdeg=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,res,B[smallposv.front()],strategy);
             for (int i=1;i<smallposv.size();++i){
-              double cur=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,res,B[smallposv[i]],gparam.buchberger_select_strategy);
+              double cur=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,res,B[smallposv[i]],strategy);
               if (cur<sumdeg){
                 sumdegpos=i;
                 sumdeg=cur;
@@ -14592,8 +14599,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	if (debug_infolevel>2){
 	  CERR << CLOCK()*1e-6 << " mod reduce begin, pair " << bk << " spoly size " << TMP1.coord.size() << " totdeg deg " << TMP1.coord.front().u.total_degree(order) << " degree " << TMP1.coord.front().u << ", pair degree " << resmod[bk.first].coord.front().u << resmod[bk.second].coord.front().u << '\n';
 	}
-#if 1
-	reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,true,&newcoeffs,coeffsmodptr);
+	reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,true,&newcoeffs,coeffsmodptr,strategy);
 	// insure that new basis element has positive coord, required by zf4mod
 	typename vector< T_unsigned<modint_t,tdeg_t> >::iterator it=TMP1.coord.begin(),itend=TMP1.coord.end();
 	for (;it!=itend;++it){
@@ -14601,19 +14607,6 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           it->g += ((it->g>>31)&env);
 	}
 	// reducemod(TMP1,resmod,G,-1,TMP1,env,true);
-#else // should be adapted if coeffsmodptr is true
-	polymod<tdeg_t,modint_t> TMP3(TMP1);
-	reducemod(TMP1,resmod,G,-1,TMP1,env,true);
-	reducesmallmod(TMP3,resmod,G,-1,env,TMP2,true,0,true);
-	typename vector< T_unsigned<modint_t,tdeg_t> >::iterator it=TMP3.coord.begin(),itend=TMP3.coord.end();
-	for (;it!=itend;++it){
-	  if (it->g<0)
-	    it->g += env;
-	}
-	if (TMP3.coord!=TMP1.coord){
-	  CERR << "Bug" << '\n';
-	}
-#endif
 	if (debug_infolevel>2){
 	  if (debug_infolevel>3){ CERR << TMP1 << '\n'; }
 	  CERR << CLOCK()*1e-6 << " mod reduce end, remainder degree " << (TMP1.coord.empty()?0:TMP1.coord.front().u) << " size " << TMP1.coord.size() << " begin gbasis update" << '\n';
