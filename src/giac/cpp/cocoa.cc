@@ -14070,27 +14070,36 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     tdeg_t qshift=lcm-qi;
     int N=(*coeffsmodptr)[bk.first].size();
     double T1=sumtermscoeffs((*coeffsmodptr)[bk.first]),T2=sumtermscoeffs((*coeffsmodptr)[bk.second]);
+    double D1=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o),D2=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o);
     double d1=pshift.total_degree(o),d2=qshift.total_degree(o);
+    if (strategy==17)
+      return (N*t1+T1)*d1*D1+(N*t2+T2)*d2*D2;
+    if (strategy==16)
+      return t1*T1*d1+t2*T2*d2;
+    if (strategy==15)
+      return t1*T1*D1+t2*T2*D2;
+    if (strategy==14)
+      return (D1+N*d1)*T1+(D2+N*d2)*T2;
+    if (strategy==13)
+      return d1*T1+d2*T2;
+    if (strategy==12)
+      return D1*T1+D2*T2;
     if (strategy==11)
       return t1+t2;
     if (strategy==9)
       return N*t1+T1+N*t2+T2;
     if (strategy==8)
       return d1*(N*t1+T1)+d2*(N*t2+T2);
-    double D1=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o),D2=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o);
     if (strategy==10)
       return t1*T1*d1*D1+t2*T2*d2*D2;
     if (strategy==7)
       return (D1+N*d1)*(N*t1+T1)+(D2+N*d2)*(N*t2+T2);
-    if (//strategy==0 ||
-        strategy==6)
+    if (strategy==6 || strategy==0)
       return t1*T1+t2*T2;
     if (strategy==5)
       return D1*T1+D2*T2;
-    if (strategy==4)
+    // if (strategy==4)
       return t1*(D1+N*d1)*T1+t2*(D2+N*d2)*T2;
-    // default (strategy==0?)
-    return (D1+N*d1)*(T1+N*t1)+(D2+N*d2)*(T2+N*t2);
   }
 
   template<class tdeg_t,class modint_t,class modint_t2>

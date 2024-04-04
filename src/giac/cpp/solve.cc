@@ -8593,8 +8593,10 @@ namespace giac {
         if (a==at_select)
           gbasis_param.buchberger_select_strategy=b.val;
       }
-      if (v[i]==at_coeffs)
+      if (v[i]==at_coeffs){
         gbasis_param.interred=false;
+        gbasis_param.rawcoeffs=true;
+      }
       if (v[i]==at_coeffs || v[i]==at_matrix)
 	ret=true;
       if (v[i]==at_irem || v[i]==at_chinrem){
