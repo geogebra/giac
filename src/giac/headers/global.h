@@ -379,6 +379,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   extern int DEFAULT_EVAL_LEVEL;
   extern int PARENTHESIS_NWAIT;
   extern int MAX_PROD_EXPAND_SIZE;
+  extern int MAX_SIMPLIFIER_VECTSIZE;
 
   extern int TEST_PROBAB_PRIME; // probabilistic primality tests
   extern int GCDHEU_MAXTRY; // maximal number of retry for heuristic algorithms

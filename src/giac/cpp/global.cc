@@ -3746,6 +3746,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   unsigned short int GIAC_PADIC=50;
   const char cas_suffixe[]=".cas";
   int MAX_PROD_EXPAND_SIZE=4096;
+  int MAX_SIMPLIFIER_VECTSIZE=256;
   int ABERTH_NMAX=25;
   int ABERTH_NBITSMAX=8192;
   int LAZY_ALG_EXT=0;

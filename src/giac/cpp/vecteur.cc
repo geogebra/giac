@@ -3239,12 +3239,18 @@ namespace giac {
       if (a.front()._VECTptr->size()!=b.size())
 	return gendimerr(gettext("dotvecteur"));
       multmatvecteur(a,b,res);
-      return _simplifier(res,contextptr);
+      if (taille(res,MAX_SIMPLIFIER_VECTSIZE)<MAX_SIMPLIFIER_VECTSIZE)
+        return _simplifier(res,contextptr);
+      else
+        return res;
     }
     if (ckmatrix(b)){
       vecteur res;
       multvecteurmat(a,b,res);
-      return _simplifier(res,contextptr);
+      if (taille(res,MAX_SIMPLIFIER_VECTSIZE)<MAX_SIMPLIFIER_VECTSIZE)
+        return _simplifier(res,contextptr);
+      else
+        return res;
     }
     if (xcas_mode(contextptr)==3 || calc_mode(contextptr)==1)
       return apply(a,b,prod);
