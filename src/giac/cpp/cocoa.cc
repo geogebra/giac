@@ -1,6 +1,6 @@
 /* -*- mode:C++ ; compile-command: "g++ -I.. -I../include -I.. -g -c -fno-strict-aliasing -DGIAC_GENERIC_CONSTANTS -DHAVE_CONFIG_H -DIN_GIAC -Wall cocoa.cc" -*- */
 // Thanks to Zoltan Kovacs for motivating this work, in order to improve geogebra theorem proving
-// Special thanks to Anna M. Bigatti from CoCoA team for insightfull discussions on how to choose an order for elimination
+// Special thanks to Anna M. Bigatti from CoCoA team for insightfull discussions on how to choose an order for elimination. This file name is kept to remind that the first versions of giac were using CoCoA for Groebner basis computations, before a standalone implementation.
 #include "giacPCH.h"
 //#define EMCC
 // vector class version 1 by Agner Fog https://github.com/vectorclass
@@ -4523,6 +4523,38 @@ namespace giac {
   }
 
   template<class tdeg_t,class modint_t>
+  void smalladd(polymod<tdeg_t,modint_t> & p,polymod<tdeg_t,modint_t> & q,polymod<tdeg_t,modint_t> & r,modint_t env){
+    if (p.coord.empty()){
+      swap(q.coord,r.coord);
+      return;
+    }
+    if (q.coord.empty()){
+      swap(p.coord,r.coord);
+      return;
+    }
+    r.coord.clear();
+    r.coord.reserve(p.coord.size()+q.coord.size());
+    typename vector< T_unsigned<modint_t,tdeg_t> >::const_iterator it=p.coord.begin(),itend=p.coord.end(),jt=q.coord.begin(),jtend=q.coord.end();
+    for (;jt!=jtend;++jt){
+      const tdeg_t & v=jt->u;
+      for (;it!=itend && tdeg_t_strictly_greater(it->u,v,p.order);++it){
+	r.coord.push_back(*it);
+      }
+      if (it!=itend && it->u==jt->u){
+        modint_t s=(it->g+extend(jt->g))%env;
+        if (!is_zero(s))
+          r.coord.push_back(T_unsigned<modint_t,tdeg_t>(s,it->u));
+        ++it;
+      }
+      else
+        r.coord.push_back(*jt);
+    }
+    for (;it!=itend;++it){
+      r.coord.push_back(*it);
+    }
+  }
+
+  template<class tdeg_t,class modint_t>
   void reducemod(const polymod<tdeg_t,modint_t> & p,const vectpolymod<tdeg_t,modint_t> & res,const vector<unsigned> & G,unsigned excluded,polymod<tdeg_t,modint_t> & rem,modint_t env,bool topreduceonly=false){
     if (&p!=&rem)
       rem=p;
@@ -4822,8 +4854,8 @@ namespace giac {
 
   template<class tdeg_t,class modint_t>
   void reducesmallmod(polymod<tdeg_t,modint_t> & rem,const vectpolymod<tdeg_t,modint_t> & res,const vector<unsigned> & G,unsigned excluded,modint_t env,polymod<tdeg_t,modint_t> & TMP1,bool normalize,int start_index=0,bool topreduceonly=false,vectpolymod<tdeg_t,modint_t>*remcoeffsptr=0,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr=0,int strategy=0){
+    vector< polymod<tdeg_t,modint_t> > addtoremcoeffs(remcoeffsptr?remcoeffsptr->size():0);
     strategy /= 1000;
-    if (strategy==0) strategy=1;
     if (debug_infolevel>1000){
       rem.dbgprint();
       if (!rem.coord.empty()) rem.coord.front().u.dbgprint();
@@ -4858,7 +4890,7 @@ namespace giac {
       zsymb_data<tdeg_t> tmp={(unsigned)Gi,cur.coord.empty()?0:cur.coord.front().u,o,(unsigned)cur.coord.size(),0,0.0};
       if (coeffsmodptr){
         double D=sumdegcoeffs((*coeffsmodptr)[Gi],o),T=sumtermscoeffs((*coeffsmodptr)[Gi]),N=(*coeffsmodptr)[Gi].size(),d=cur.coord.front().u.total_degree(o),t=cur.coord.size();
-        if (strategy==1)
+        if (strategy==1 || strategy==0)
           tmp.coeffs = D;
         else if (strategy==2)
           tmp.coeffs = D*T;
@@ -4965,13 +4997,29 @@ namespace giac {
       swap(rem.coord,TMP1.coord);
       if (remcoeffsptr){
 	// reflect linear combination on remcoeffs
-	vectpolymod<tdeg_t,modint_t> & remcoeffs=*remcoeffsptr;
-	for (size_t k=0;k<remcoeffs.size();++k){
-	  smallmultsubmodshift(remcoeffs[k],0,c,(*coeffsmodptr)[Gi][k],du,TMP1,env);
-	  swap(remcoeffs[k].coord,TMP1.coord);
+        vectpolymod<tdeg_t,modint_t> & remcoeffs=*remcoeffsptr;
+	for (size_t k=0;k<addtoremcoeffs.size();++k){
+          addtoremcoeffs[k].order=o;
+	  smallmultsubmodshift(addtoremcoeffs[k],0,c,(*coeffsmodptr)[Gi][k],du,TMP1,env);
+	  swap(addtoremcoeffs[k].coord,TMP1.coord);
+          if (addtoremcoeffs[k].coord.size()>remcoeffs[k].coord.size()){
+            smalladd(remcoeffs[k],addtoremcoeffs[k],TMP1,env);
+            swap(remcoeffs[k].coord,TMP1.coord);
+            addtoremcoeffs[k].coord.clear();
+          }
 	}
       }
       continue;
+    }
+    if (remcoeffsptr){
+      // reflect linear combination on remcoeffs
+      vectpolymod<tdeg_t,modint_t> & remcoeffs=*remcoeffsptr;
+      for (size_t k=0;k<remcoeffs.size();++k){
+        if (!addtoremcoeffs[k].coord.empty()){
+          smalladd(remcoeffs[k],addtoremcoeffs[k],TMP1,env);
+          swap(remcoeffs[k].coord,TMP1.coord);
+        }
+      }
     }
     if (normalize && !rem.coord.empty()
 #if 1 // ndef GBASIS_4PRIMES
@@ -14071,7 +14119,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
     int N=(*coeffsmodptr)[bk.first].size();
     double T1=sumtermscoeffs((*coeffsmodptr)[bk.first]),T2=sumtermscoeffs((*coeffsmodptr)[bk.second]);
     double D1=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.first],o),D2=sumdegcoeffs<tdeg_t,modint_t>((*coeffsmodptr)[bk.second],o);
-    double d1=pshift.total_degree(o),d2=qshift.total_degree(o);
+    double d1=pshift.total_degree(o)+1,d2=qshift.total_degree(o)+1;
     if (strategy==17)
       return (N*t1+T1)*d1*D1+(N*t2+T2)*d2*D2;
     if (strategy==16)
@@ -14100,6 +14148,42 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       return D1*T1+D2*T2;
     // if (strategy==4)
       return t1*(D1+N*d1)*T1+t2*(D2+N*d2)*T2;
+  }
+
+  template<class tdeg_t,class modint_t>
+  void reduce_syzygy(vector< vectpolymod<tdeg_t,modint_t> > & coeffs,const vectpolymod<tdeg_t,modint_t> & resmodorig,modint_t env){
+    if (resmodorig.empty()) return;
+    int dim=resmodorig[0].dim;
+    order_t order=resmodorig[0].order;
+    // try to reduce coeffs degrees using the identity f_i*f_j-f_j*f_i=0
+    // assumes that the initial generator are sorted wrt the monomial order
+    // resmod is the gbasis, let coeffs=*coeffsmodptr, f_j=resmodorig[j]
+    // we have
+    // resmod[k] = sum(coeffs[k][j]*f_j,j,0,resmod.size()-1)
+    // f is sorted by decreasing order
+    // if i<j then f_i<f_j for this order, let quo=coeffs[i] by f_j
+    // and set coeffs[k][i] -= quo*f_j, coeffs[k][j] += quo*f_i
+    int N=resmodorig.size(); // ==coeffs.size()
+    polymod<tdeg_t,modint_t> TMP1;
+    TMP1.dim=dim, TMP1.order=order;
+    for (int k=0;k<coeffs.size();++k){
+      vectpolymod<tdeg_t,modint_t> & coeffsk=coeffs[k];
+      for (int i=N-2;i>=0;--i){
+        // we will modify coeffsk[i]
+        for (int j=i+1;j<N;++j){
+          if (resmodorig[j].coord.front().u.total_degree(order)==resmodorig[i].coord.front().u.total_degree(order))
+            continue;
+          while (!coeffsk[i].coord.empty() && coeffsk[i].coord.front().u!=resmodorig[j].coord.front().u && tdeg_t_all_greater(coeffsk[i].coord.front().u,resmodorig[j].coord.front().u,order)){
+            tdeg_t du(coeffsk[i].coord.front().u-resmodorig[j].coord.front().u);
+            modint_t a(coeffsk[i].coord.front().g),b(resmodorig[j].coord.front().g),c(smod(a*extend(invmod(b,env)),env));
+            smallmultsubmodshift(coeffsk[i],0,c,resmodorig[j],du,TMP1,env);
+            coeffsk[i].swap(TMP1);
+            smallmultsubmodshift(coeffsk[j],0,-c,resmodorig[i],du,TMP1,env);
+            coeffsk[j].swap(TMP1);
+          }
+        }
+      }
+    }
   }
 
   template<class tdeg_t,class modint_t,class modint_t2>
@@ -14516,13 +14600,14 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	}
 	polymod<tdeg_t,modint_t> TMP1(order,dim),TMP2(order,dim);
 	zpolymod<tdeg_t,modint_t> TMP;
-	paire bk;
+	paire bk; int curlogz=1; double sumdeg=0;
         if (coeffsmodptr){
           if (strategy % 1000==1){
             bk=B[smallposv.front()]; B.erase(B.begin()+smallposv.front());
-          } else {
-            // find smallest coeffs degree sum
-            int sumdegpos=0; double sumdeg=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,res,B[smallposv.front()],strategy);
+            curlogz=Blogz[smallposv.front()];
+          }  else {
+            // find best(?) pair
+            int sumdegpos=0; sumdeg=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,res,B[smallposv.front()],strategy);
             for (int i=1;i<smallposv.size();++i){
               double cur=sumdegcoeffs2<tdeg_t,modint_t>(coeffsmodptr,order,res,B[smallposv[i]],strategy);
               if (cur<sumdeg){
@@ -14531,12 +14616,16 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
               }
             }
             bk=B[smallposv[sumdegpos]]; B.erase(B.begin()+smallposv[sumdegpos]);
+            curlogz=Blogz[smallposv[sumdegpos]];
           }
         }
         else {
           bk=B[smallposv.back()];
+          curlogz=Blogz[smallposv.back()];
           B.erase(B.begin()+smallposv.back());
         }
+        if (debug_infolevel>=2)
+          CERR << CLOCK()*1e-6 << " cur pair " << bk << ",logz=" << curlogz << ", deg/terms=" << sumdeg << " (strategy=" << strategy << ")\n";
 	if (!learning && pairs_reducing_to_zero && learned_position<pairs_reducing_to_zero->size() && bk==(*pairs_reducing_to_zero)[learned_position]){
 	  if (debug_infolevel>2)
 	    CERR << bk << " learned " << learned_position << '\n';
@@ -14555,6 +14644,8 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           if (learning || !multimodular){
             polymod<tdeg_t,modint_t> TMP3(TMP1);
             reducesmallmod(TMP3,resmod,G,-1,env,TMP2,true,0,true);
+            if (debug_infolevel>=2)
+              CERR << CLOCK()*1e-6 << " dry reduction " << bk << " remsize=" << TMP3.coord.size() << "\n";
             if (TMP3.coord.empty()){
               if (learning && pairs_reducing_to_zero){
                 if (debug_infolevel>2)
@@ -14626,6 +14717,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  if (coeffsmodptr){
 	    coeffsmodptr->push_back(newcoeffs);
 	    // if coeffsmodptr, we need TMP and res only to run zgbasis_updatemod, maybe we could run gbasis_updatemod without zpolymod with reduce=false argument
+            // if (!gparam.rawcoeffs) reduce_syzygy(*coeffsmodptr,resmodorig,env);
 	  }
 	  Rbuchberger.push_back(vector<tdeg_t>(TMP1.coord.size()));
 	  vector<tdeg_t> & R0=Rbuchberger.back();
@@ -14636,6 +14728,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	  if (ressize==res.size())
 	    res.push_back(zpolymod<tdeg_t,modint_t>(order,dim,TMP.ldeg));
 	  res[ressize].expo=TMP.expo;
+          res[ressize].fromleft=bk.first;
+          res[ressize].fromright=bk.second;
+          res[ressize].logz=curlogz;
+          res[ressize].age=age;
 	  swap(res[ressize].coord,TMP.coord);
 	  ++ressize;
 	  zgbasis_updatemod(G,B,res,ressize-1,G,multimodular);
@@ -14765,38 +14861,8 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 #endif
     if (coeffsmodptr){
       // FIXME gbasis is not interreduced. This might be too costly on Q
-      if (!gparam.rawcoeffs){
-        // try to reduce coeffs degrees using the identity f_i*f_j-f_j*f_i=0
-        // assumes that the initial generator are sorted wrt the monomial order
-        // resmod is the gbasis, let coeffs=*coeffsmodptr, f_j=resmodorig[j]
-        // we have
-        // resmod[k] = sum(coeffs[k][j]*f_j,j,0,resmod.size()-1)
-        // f is sorted by decreasing order
-        // if i<j then f_i<f_j for this order, let quo=coeffs[i] by f_j
-        // and set coeffs[k][i] -= quo*f_j, coeffs[k][j] += quo*f_i
-        vector< vectpolymod<tdeg_t,modint_t> > & coeffs=*coeffsmodptr;
-        int N=resmodorig.size(); // ==coeffs.size()
-	polymod<tdeg_t,modint_t> TMP1;
-        TMP1.dim=dim, TMP1.order=order;
-        for (int k=0;k<coeffs.size();++k){
-          vectpolymod<tdeg_t,modint_t> & coeffsk=coeffs[k];
-          for (int i=N-2;i>=0;--i){
-            // we will modify coeffsk[i]
-            for (int j=i+1;j<N;++j){
-              if (resmodorig[j].coord.front().u.total_degree(order)==resmodorig[i].coord.front().u.total_degree(order))
-                continue;
-              while (!coeffsk[i].coord.empty() && coeffsk[i].coord.front().u!=resmodorig[j].coord.front().u && tdeg_t_all_greater(coeffsk[i].coord.front().u,resmodorig[j].coord.front().u,order)){
-                tdeg_t du(coeffsk[i].coord.front().u-resmodorig[j].coord.front().u);
-                modint_t a(coeffsk[i].coord.front().g),b(resmodorig[j].coord.front().g),c(smod(a*extend(invmod(b,env)),env));
-                smallmultsubmodshift(coeffsk[i],0,c,resmodorig[j],du,TMP1,env);
-                coeffsk[i].swap(TMP1);
-                smallmultsubmodshift(coeffsk[j],0,-c,resmodorig[i],du,TMP1,env);
-                coeffsk[j].swap(TMP1);
-              }
-            }
-          }
-        }
-      }
+      if (!gparam.rawcoeffs)
+        reduce_syzygy(*coeffsmodptr,resmodorig,env);
     }
     // convert back zpolymod<tdeg_t,modint_t> to polymod<tdeg_t,modint_t_t>
     // if eliminate_flag is true, keep only basis element that do not depend
