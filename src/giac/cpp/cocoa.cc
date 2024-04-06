@@ -2438,6 +2438,10 @@ namespace giac {
 #ifdef GIAC_64VARS
     if (x_.tab[0]%2){
       idx.resize(dim);
+      if (dim && sizeof(degtype)==sizeof(idx.front())){
+        memcpy(&idx.front(),x_.ui+1,dim*sizeof(degtype));
+        return;
+      }
       const degtype * ptr=(degtype *)(x_.ui+1),*ptrend=ptr+x_.order_.dim;
       index_t::iterator target=idx.begin();
       for (;ptr!=ptrend;++target,++ptr)
@@ -19706,7 +19710,7 @@ void G_idn(vector<unsigned> & G,size_t s){
     }
   }
 
-bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * env,bool modularalgo,bool modularcheck,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param,vector<vectpoly> * coeffsptr){
+  bool gbasis8(const vectpoly & v,order_t & order,vectpoly & newres,environment * env,bool modularalgo,bool modularcheck,int & rur,GIAC_CONTEXT,gbasis_param_t gbasis_param,vector<vectpoly> * coeffsptr){
     bool & eliminate_flag=gbasis_param.eliminate_flag;
     if (gbasis_param.buchberger_select_strategy==-1 && !v.empty()){
       if (GBASIS_COEFF_STRATEGY)

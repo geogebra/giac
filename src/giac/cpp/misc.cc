@@ -982,6 +982,13 @@ namespace giac {
 	  deg -= total_degree(*aad._POLYptr,int(x._VECTptr->size()));
 	if (aan.type==_POLY)
 	  deg += total_degree(*aan._POLYptr,int(x._VECTptr->size()));
+        else if (aan.type==_VECT){
+          vecteur & aav=*aan._VECTptr;
+          for (int i=0;i<aav.size();++i){
+            if (aav[i].type==_POLY)
+              deg = giacmax(deg,total_degree(*aav[i]._POLYptr,int(x._VECTptr->size())));
+          }
+        }
 	return deg;
       }
       int s=int(x._VECTptr->size());

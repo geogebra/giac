@@ -2100,7 +2100,15 @@ namespace giac {
 	res->v.push_back(e);
     }
     for (;it!=itend;++it,++l_it){
-      if ((*it))
+      if (!*it)
+        continue;
+      if (*it==1){
+        res->v.push_back(*l_it);
+        continue;
+      }
+      if (l_it->type==_IDNT)
+        res->v.push_back(new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(*l_it,*it),_SEQ__VECT))));  
+      else 
 	res->v.push_back(pow(*l_it,*it,contextptr)); // change for normal(abs(z)^2), was pow(*l_it,*it)
     }
     if (res->v.empty()){

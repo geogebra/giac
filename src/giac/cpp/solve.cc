@@ -8933,6 +8933,8 @@ namespace giac {
       change_monomial_order(eqp,abs(order,contextptr));
     int rur=0;
     vectpoly eqpr(gbasis(eqp,order,with_cocoa,with_cocoa?with_f5:modular,&env,rur,contextptr,gbasis_param,coeffsptr));
+    if (debug_infolevel)
+      CERR << CLOCK()*1e-6 << " gbasis symbolic conversion begin\n";
     vecteur res,coeffs;
     vectpoly::const_iterator it=eqpr.begin(),itend=eqpr.end();
     res.reserve(itend-it);
@@ -8949,6 +8951,8 @@ namespace giac {
         coeffs.push_back(ligne);
       }
     }
+    if (debug_infolevel)
+      CERR << CLOCK()*1e-6 << " gbasis symbolic conversion end\n";
     if (order.val<0 && rur){
       // subst l[0] by another variable name to avoid confusion in res[2..]?
       if (res[0].type==_IDNT && l.front().type==_VECT && !l.front()._VECTptr->empty()){
