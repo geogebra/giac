@@ -14147,7 +14147,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       return t1*T1*d1*D1+t2*T2*d2*D2;
     if (strategy==7)
       return (D1+N*d1)*(N*t1+T1)+(D2+N*d2)*(N*t2+T2);
-    if (strategy==6 || strategy==0)
+    if (strategy==6)// || strategy==0) was default with topreduceonly=true
       return t1*T1+t2*T2;
     if (strategy==5)
       return D1*T1+D2*T2;
