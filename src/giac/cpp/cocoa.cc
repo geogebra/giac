@@ -4903,6 +4903,8 @@ namespace giac {
         double D=sumdegcoeffs((*coeffsmodptr)[Gi],o),T=sumtermscoeffs((*coeffsmodptr)[Gi]),N=(*coeffsmodptr)[Gi].size(),d=cur.coord.front().u.total_degree(o),t=cur.coord.size();
         if (strategy==1 || strategy==0)
           tmp.coeffs = D;
+        else if (strategy==11)
+          tmp.coeffs = t;
         else if (strategy==2)
           tmp.coeffs = D*T;
         else if (strategy==3)
@@ -5006,6 +5008,8 @@ namespace giac {
       // smallmultsub(rem,rempos,smod(a*invmod(b,env->modulo),env->modulo).val,res[G[i]],pt->u-res[G[i]].coord.front().u,TMP2,env->modulo.val);
       // rempos=0; // since we have removed the beginning of rem (copied in TMP1)
       swap(rem.coord,TMP1.coord);
+      if (debug_infolevel>3)
+        CERR << "du=" << du << "\n";
       if (remcoeffsptr){
 	// reflect linear combination on remcoeffs
         vectpolymod<tdeg_t,modint_t> & remcoeffs=*remcoeffsptr;
@@ -14478,7 +14482,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	// remove selected pairs from B
 	for (int i=int(np)-1;i>=0;--i)
 	  B.erase(B.begin()+smallposv[i]);
-        if (usef4 && coeffsmodptr && learning || !multimodular){
+        if (usef4 && coeffsmodptr && (learning || !multimodular)){
           // make a "dry" F4 run, not computing coefficients
           // and update pairs_reducing_to_zero
           vectzpolymod<tdeg_t,modint_t> new_res(res);
@@ -14591,7 +14595,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           if (debug_infolevel>2){
             CERR << CLOCK()*1e-6 << " mod reduce begin, pair " << bk << " spoly size " << TMP1.coord.size() << " totdeg deg " << TMP1.coord.front().u.total_degree(order) << " degree " << TMP1.coord.front().u << ", pair degree " << resmod[bk.first].coord.front().u << resmod[bk.second].coord.front().u << '\n';
           }
-          reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,topreduceonly,&newcoeffs,coeffsmodptr,strategy); // strategy==2
+          reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,topreduceonly,&newcoeffs,coeffsmodptr,2); // strategy or 11 or 2?
           // insure that new basis element has positive coord, required by zf4mod
           typename vector< T_unsigned<modint_t,tdeg_t> >::iterator it=TMP1.coord.begin(),itend=TMP1.coord.end();
           for (;it!=itend;++it){
