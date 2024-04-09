@@ -4904,7 +4904,7 @@ namespace giac {
         if (strategy==1 || strategy==0)
           tmp.coeffs = D;
         else if (strategy==11)
-          tmp.coeffs = t;
+          tmp.coeffs = T*t*double(d);
         else if (strategy==2)
           tmp.coeffs = D*T;
         else if (strategy==3)
@@ -14468,20 +14468,33 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
             V[count].second=sumdegcoeffs2(coeffsmodptr,order,res,B[smallposv[count]],0);
           }
           sort(V.begin(),V.end(),tripair);
+          double logV0=GBASIS_COEFF_MAXLOGRATIO*std::log(V.front().second);
           smallposp.clear();
+          vector<int> toremove;
           for (int count=0;count<np;++count){
-            smallposp.push_back(B[smallposv[V[count].first]]);
+            double curlog=std::log(V[count].second);
+            if (count && curlog>=logV0)
+              break;
+            int pos=smallposv[V[count].first];
+            smallposp.push_back(B[pos]);
+            toremove.push_back(pos);
           }
+          sort(toremove.begin(),toremove.end());
+          if (debug_infolevel>1)
+            CERR << CLOCK()*1e-6 << "Reducing " << toremove.size() << " pairs, from " << np << " pairs of minimal degree\n";
+          // remove selected pairs from B
+          for (int i=int(toremove.size())-1;i>=0;--i)
+            B.erase(B.begin()+toremove[i]);
         }
         else {
           smallposp.clear();
           for (int count=0;count<np;++count){
             smallposp.push_back(B[smallposv[count]]);
           }
+          // remove selected pairs from B
+          for (int i=int(np)-1;i>=0;--i)
+            B.erase(B.begin()+smallposv[i]);
         }
-	// remove selected pairs from B
-	for (int i=int(np)-1;i>=0;--i)
-	  B.erase(B.begin()+smallposv[i]);
         if (usef4 && coeffsmodptr && (learning || !multimodular)){
           // make a "dry" F4 run, not computing coefficients
           // and update pairs_reducing_to_zero
@@ -14508,7 +14521,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           }
         } // end usef4
         
-        for (int count=0;count<smallposv.size();++count){
+        for (int count=0;count<smallposp.size();++count){
           bk=smallposp[count];//coeffpermuBptr?smallposp[(*coeffpermuBptr)[count]]:smallposp[count];
           if (coeffsmodptr && !coeffszeropairs.empty() && binary_search(coeffszeropairs.begin(),coeffszeropairs.end(),bk)){
             if (learning && pairs_reducing_to_zero){
@@ -14538,7 +14551,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
                 CERR << CLOCK()*1e-6 << " to ";
               reducesmallmod(TMP3,resmod,G,-1,env,TMP2,true,0,true);
               if (debug_infolevel>1)
-                CERR << CLOCK()*1e-6 << " dry reduction " << bk << " remsize=" << TMP3.coord.size() << "\n";
+                CERR << CLOCK()*1e-6 << " dry reduction " << bk << " remsize=" << TMP3.coord.size() << " pairs " << B.size() << " basis " << G.size() << "\n";
               if (TMP3.coord.empty()){
                 if (learning && pairs_reducing_to_zero){
                   if (debug_infolevel>2)
@@ -14595,7 +14608,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           if (debug_infolevel>2){
             CERR << CLOCK()*1e-6 << " mod reduce begin, pair " << bk << " spoly size " << TMP1.coord.size() << " totdeg deg " << TMP1.coord.front().u.total_degree(order) << " degree " << TMP1.coord.front().u << ", pair degree " << resmod[bk.first].coord.front().u << resmod[bk.second].coord.front().u << '\n';
           }
-          reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,topreduceonly,&newcoeffs,coeffsmodptr,2); // strategy or 11 or 2?
+          reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,topreduceonly,&newcoeffs,coeffsmodptr,11); // strategy or 11 or 2?
           // insure that new basis element has positive coord, required by zf4mod
           typename vector< T_unsigned<modint_t,tdeg_t> >::iterator it=TMP1.coord.begin(),itend=TMP1.coord.end();
           for (;it!=itend;++it){
@@ -14623,6 +14636,8 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
             if (ressize==res.size())
               res.push_back(zpolymod<tdeg_t,modint_t>(order,dim,TMP.ldeg));
             res[ressize].expo=TMP.expo;
+            res[ressize].age=age;
+            res[ressize].logz=res[bk.first].logz+res[bk.second].logz;
             swap(res[ressize].coord,TMP.coord);
             ++ressize;
             zgbasis_updatemod(G,B,res,ressize-1,oldG,multimodular);
@@ -14672,9 +14687,23 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	}
 	polymod<tdeg_t,modint_t> TMP1(order,dim),TMP2(order,dim);
 	zpolymod<tdeg_t,modint_t> TMP;
-	paire bk; int curlogz=1; double sumdeg=0;
+	paire bk; int curlogz=1; double sumdeg=0; 
         if (coeffsmodptr){
-          if (strategy % 1000==1){
+          if (strategy % 1000==999){
+            int lcmpos=smallposv[0]; 
+            tdeg_t deg(Blcm[lcmpos]);
+            for (int i=1;i<smallposv.size();++i){
+              int cur=smallposv[i];
+              if (tdeg_t_greater(deg,Blcm[cur],order)){
+                lcmpos=i;
+                deg=Blcm[cur];
+              }
+            }
+            bk=B[lcmpos];
+            B.erase(B.begin()+lcmpos);
+            curlogz=Blogz[lcmpos];
+          }
+          else if (strategy % 1000==1){
             bk=B[smallposv.front()]; B.erase(B.begin()+smallposv.front());
             curlogz=Blogz[smallposv.front()];
           }  else {
@@ -17761,7 +17790,7 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  }
 	  ++rechecked;
           double tend=CLOCK()*1e-6 ;
-	  if (debug_infolevel || tend>5)
+	  if (debug_infolevel || tend-t_0>5)
 	    *logptr(contextptr) << "// Groebner basis computation time=" << clock_realtime()-init_time << " memory " << memory_usage()*1e-6 << "M" << (chk_initial_generator?": end rational reconstruction ":": end additional prime check") << '\n';
 	  efft=effth; // avoid unlucky prime messages
 	  // now check if W[i] is a Groebner basis over Q, if so it's the answer
