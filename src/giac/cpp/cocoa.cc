@@ -14608,7 +14608,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           if (debug_infolevel>2){
             CERR << CLOCK()*1e-6 << " mod reduce begin, pair " << bk << " spoly size " << TMP1.coord.size() << " totdeg deg " << TMP1.coord.front().u.total_degree(order) << " degree " << TMP1.coord.front().u << ", pair degree " << resmod[bk.first].coord.front().u << resmod[bk.second].coord.front().u << '\n';
           }
-          reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,topreduceonly,&newcoeffs,coeffsmodptr,11); // strategy or 11 or 2?
+          reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,topreduceonly,&newcoeffs,coeffsmodptr,strategy); // strategy or 11000 or 2000?
           // insure that new basis element has positive coord, required by zf4mod
           typename vector< T_unsigned<modint_t,tdeg_t> >::iterator it=TMP1.coord.begin(),itend=TMP1.coord.end();
           for (;it!=itend;++it){
@@ -14659,16 +14659,18 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
               reducesmallmod(resmod[G[i]],resmod,G,i,env,TMP2,true,0,false,coeffsmodptr?&(*coeffsmodptr)[G[i]]:0,coeffsmodptr,2); // strategy==2
             }
           }
-          // update res
-          TMP2.coord.clear();
-          collect(resmod,TMP2);
-          Rbuchberger.resize(Rbuchbergersize);
-          Rbuchberger.push_back(vector<tdeg_t>(TMP2.coord.size()));
-          vector<tdeg_t> & R0=Rbuchberger.back();
-          for (unsigned l=0;l<unsigned(TMP2.coord.size());++l)
-            R0[l]=TMP2.coord[l].u;
-          for (int i=0;i<G.size();++i){
-            convert(resmod[G[i]],res[G[i]],R0);
+          // update res: keep only 1 monomial pointee
+          if (Rbuchberger.size()>Rbuchbergersize+1){
+            TMP2.coord.clear();
+            collect(resmod,TMP2);
+            Rbuchberger.resize(Rbuchbergersize);
+            Rbuchberger.push_back(vector<tdeg_t>(TMP2.coord.size()));
+            vector<tdeg_t> & R0=Rbuchberger.back();
+            for (unsigned l=0;l<unsigned(TMP2.coord.size());++l)
+              R0[l]=TMP2.coord[l].u;
+            for (int i=0;i<G.size();++i){
+              convert(resmod[G[i]],res[G[i]],R0);
+            }
           }
         }
         continue;
@@ -19813,7 +19815,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       if (GBASIS_COEFF_STRATEGY)
         gbasis_param.buchberger_select_strategy=GBASIS_COEFF_STRATEGY;
       else {
-        gbasis_param.buchberger_select_strategy=(coeffsptr && v.front().dim<=10)?2/* topreduceonly=true */:0;
+        gbasis_param.buchberger_select_strategy=(coeffsptr && v.front().dim<=10)?2/* topreduceonly=true */:11000;
         // gbasis_param.buchberger_select_strategy=(coeffsptr && v.front().dim<=8)?1000001/* topreduceonly=true */:0;
       }
       if (debug_infolevel)
