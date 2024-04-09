@@ -7948,6 +7948,20 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
     return res;
   }
 
+  string replace(const string & s,char c1,const string & c2){
+    string res;
+    int l=s.size();
+    res.reserve(l);
+    const char * ch=s.c_str();
+    for (int i=0;i<l;++i,++ch){
+      if (*ch==c1)
+        res += c2;
+      else
+        res += *ch;
+    }
+    return res;
+  }
+
   static string remove_comment(const string & s,const string &pattern,bool rep){
     string res(s);
     for (;;){
@@ -8326,6 +8340,12 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
     res=remove_comment(res,"\"\"\"",true);
     res=remove_comment(res,"'''",true);
     res=glue_lines_backslash(res);
+    first=res.find('\t');
+    if (first>=0 && first<res.size()){
+      // replace all tabs by n spaces, n==4
+      string reptab(4,' ');
+      res=replace(res,'\t',reptab);
+    }
     vector<int_string> stack;
     string s,cur; 
     s.reserve(res.capacity());
@@ -8554,7 +8574,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
       }
       if (instring){
 	*logptr(contextptr) << "Warning: multi-line strings can not be converted from Python like syntax"<<'\n';
-	return s_orig;
+	return cur+'"';
       }
       // detect : at end of line
       for (pos=int(cur.size())-1;pos>=0;--pos){
