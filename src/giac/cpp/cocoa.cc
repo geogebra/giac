@@ -4963,7 +4963,7 @@ This will be performed only in case of success (i.e. the leading will be reduced
   void reducesmallmod(polymod<tdeg_t,modint_t> & rem,const vectpolymod<tdeg_t,modint_t> & res,const vector<unsigned> & G,unsigned excluded,modint_t env,polymod<tdeg_t,modint_t> & TMP1,bool normalize,int start_index=0,bool topreduceonly=false,vectpolymod<tdeg_t,modint_t>*remcoeffsptr=0,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr=0,int strategy=0){
     vector< polymod<tdeg_t,modint_t> > addtoremcoeffs(remcoeffsptr?remcoeffsptr->size():0);
     bool usemap=strategy/10000000;
-    vector< map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t>> > mapremcoeffs;
+    vector< map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> > > mapremcoeffs;
     if (remcoeffsptr && usemap){
       tdeg_t_sort_t<tdeg_t> obj(rem.order);
       map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> > m(obj);
