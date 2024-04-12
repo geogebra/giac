@@ -16469,9 +16469,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  msg+="Xcas";
 	else {
 	  if (i==1)
-	    msg+="Py ^=**";
+	    msg+="CasPy ^=**";
 	  else
-	    msg+="Py ^=xor";
+	    msg+="CasPy ^=xor";
 	}
       }
     }

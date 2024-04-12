@@ -14,6 +14,7 @@
 #endif
 #endif
 
+
 // if GIAC_SHORTSHIFTTYPE is defined, sparse matrix is using shift index
 // coded on 2 bytes 
 #define GIAC_SHORTSHIFTTYPE 16
@@ -1917,9 +1918,26 @@ namespace giac {
       it1beg=x.ui;
       it1=x.ui+(x.order_.dim+degratiom1)/degratio;
       it2=y.ui+(y.order_.dim+degratiom1)/degratio;
-#if 0 // def GIAC_ELIM
-      --it1; --it2; // first test already done with elim field
-#endif
+      it1beg += 3;
+      for (;it1>it1beg;){
+	a=*it1-*it2;
+	if (a)
+	  return a<=0?1:0;
+        --it2;--it1;
+	a=*it1-*it2;
+	if (a)
+	  return a<=0?1:0;
+        --it2;--it1;
+	a=*it1-*it2;
+	if (a)
+	  return a<=0?1:0;
+        --it2;--it1;
+	a=*it1-*it2;
+	if (a)
+	  return a<=0?1:0;
+        --it2;--it1;
+      }
+      it1beg -= 3;
       for (;it1!=it1beg;--it2,--it1){
 	a=*it1-*it2;
 	if (a)
@@ -2155,36 +2173,32 @@ namespace giac {
       if (x.hash<y.hash)
 	return false;
 #endif
-#if 0
-      const degtype * it1=(degtype *)(x.ui+1),*it1end=it1+x.order_.dim,*it2=(degtype *)(y.ui+1);
+      const longlong * it1=x.ui+1,*it1end=it1+(x.order_.dim+degratiom1)/degratio,*it2=y.ui+1;
+#ifdef GIAC_CHARDEGTYPE
       for (;it1!=it1end;++it2,++it1){
-	if (*it1<*it2)
+	if ((*it1-*it2) & 0x8080808080808080ULL)
 	  return false;
       }
 #else
-      const longlong * it1=x.ui+1,*it1end=it1+(x.order_.dim+degratiom1)/degratio,*it2=y.ui+1;
-#ifndef GIAC_CHARDEGTYPE
-      if ((*it1-*it2) & 0x8000800080008000ULL)
-	return false;
-      ++it2; ++it1;
-      if ((*it1-*it2) & 0x8000800080008000ULL)
-	return false;
-      ++it2; ++it1;
-      if ((*it1-*it2) & 0x8000800080008000ULL)
-	return false;
-      ++it2; ++it1;
-      if ((*it1-*it2) & 0x8000800080008000ULL)
-	return false;
-      ++it2; ++it1;
-#endif
+      it1end -=4;
+      for (;it1<=it1end;){
+        if ((*it1-*it2) & 0x8000800080008000ULL)
+          return false;
+        ++it2; ++it1;
+        if ((*it1-*it2) & 0x8000800080008000ULL)
+          return false;
+        ++it2; ++it1;
+        if ((*it1-*it2) & 0x8000800080008000ULL)
+          return false;
+        ++it2; ++it1;
+        if ((*it1-*it2) & 0x8000800080008000ULL)
+          return false;
+        ++it2; ++it1;
+      }
+      it1end+=4;
       for (;it1!=it1end;++it2,++it1){
-#ifdef GIAC_CHARDEGTYPE
-	if ((*it1-*it2) & 0x8080808080808080ULL)
-	  return false;
-#else
 	if ((*it1-*it2) & 0x8000800080008000ULL)
 	  return false;
-#endif
       }
 #endif
       // if (debug) CERR << x << " " << y << '\n' << x.elim << " " << y.elim << " " << x.tdeg << " " << y.tdeg << '\n';
@@ -3935,6 +3949,7 @@ namespace giac {
     bool operator ()(const T_unsigned<modint,tdeg_t> & a,const T_unsigned<modint,tdeg_t> & b) const {return !tdeg_t_greater(b.u,a.u,order);}
     bool operator ()(const T_unsigned<mod4int,tdeg_t> & a,const T_unsigned<mod4int,tdeg_t> & b) const {return !tdeg_t_greater(b.u,a.u,order);}
     bool operator ()(const T_unsigned<gen,tdeg_t> & a,const T_unsigned<gen,tdeg_t> & b) const {return !tdeg_t_greater(b.u,a.u,order);}
+    bool operator ()(const tdeg_t & a,const tdeg_t & b) const {return !tdeg_t_greater(b,a,order);}
   };
 
   template<class tdeg_t,class modint_t>
@@ -4477,6 +4492,45 @@ namespace giac {
     }
   }
 
+  // p -= a*q shifted mod m -> r
+  template<class tdeg_t,class modint_t>
+  void mapmultsubmodshift(map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> > & p,modint_t a,const polymod<tdeg_t,modint_t> & q,const tdeg_t & shift,modint_t m){
+    typename vector< T_unsigned<modint_t,tdeg_t> >::const_iterator jt=q.coord.begin(),jtend=q.coord.end();
+    // for (;it0!=it;++it0){ r.coord.push_back(*it0); }
+    tdeg_t v=shift+shift; // new memory slot
+    int dim=q.dim;
+    for (;jt!=jtend;++jt){
+      //CERR << "dbg " << jt->u << " " << shift << "\n";
+      add(jt->u,shift,v,dim);
+      typename map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> >::iterator it=p.find(v),itend=p.end();
+      if (it!=itend){
+	modint_t tmp=(it->second-extend(a)*jt->g)%m;
+        it->second=tmp;
+      }
+      else {
+	modint_t tmp=(-extend(a)*jt->g)%m;
+        p[v]=tmp;
+      }
+    }
+  }
+
+  template<class tdeg_t,class modint_t>
+  void poly2map(const polymod<tdeg_t,modint_t> & p,map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> > & m){
+    typename std::vector< T_unsigned<modint_t,tdeg_t> >::const_iterator it=p.coord.begin(),itend=p.coord.end();
+    for (;it!=itend;++it)
+      m[it->u]=it->g;
+  }
+
+  template<class tdeg_t,class modint_t>
+  void map2poly(const map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> > & m,polymod<tdeg_t,modint_t> & p){
+    p.coord.clear();
+    typename map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> >::const_iterator it=m.begin(),itend=m.end();
+    for (;it!=itend;++it){
+      if (!is_zero(it->second))
+        p.coord.push_back(T_unsigned<modint_t,tdeg_t>(it->second,it->first));
+    }
+  }
+
   // p - a*q mod m -> r
   template<class tdeg_t,class modint_t>
   void smallmultsubmod(const polymod<tdeg_t,modint_t> & p,modint_t a,const polymod<tdeg_t,modint_t> & q,polymod<tdeg_t,modint_t> & r,modint_t m){
@@ -4533,11 +4587,11 @@ namespace giac {
   template<class tdeg_t,class modint_t>
   void smalladd(polymod<tdeg_t,modint_t> & p,polymod<tdeg_t,modint_t> & q,polymod<tdeg_t,modint_t> & r,modint_t env){
     if (p.coord.empty()){
-      swap(q.coord,r.coord);
+      q.coord.swap(r.coord);
       return;
     }
     if (q.coord.empty()){
-      swap(p.coord,r.coord);
+      p.coord.swap(r.coord);
       return;
     }
     r.coord.clear();
@@ -4860,9 +4914,64 @@ namespace giac {
     return res;
   }
 
+/* 
+strategy=6999?
+Singular uses different heuristics for the sorting, dependently on the ideal (homogeneous or not) and the ordering (block/lex vs degree).
+
+When issuing test(55), it is shown which decisions for the selected Gröbner basis computation will be made.
+
+This is it:
+
+  lift   7> list l=lift(i,1);
+  red: redLiftstd
+  posInT: posInT_EcartpLength
+  posInL: posInL15
+  enterS: enterSBba
+  initEcart: initEcartBBA
+  initEcartPair: initEcartPairMora
+  homog=0, LazyDegree=1, LazyPass=2, ak=15,
+  honey=1, sugarCrit=0, Gebauer=0, noTailReduction=0, use_buckets=1
+  chainCrit: chainCritNormal
+  posInLDependsOnLength=0
+  //options: redTail redThrough intStrategy redefine usage prompt 53 55
+  LDeg: pLDegb / pLDegb
+  currRing->pFDeg: ? (7f04a96862a0)
+   syzring:1, syzComp(strat):1 limit:1
+
+Here:
+ T: is the set of reductors, sorted by length(number of monomials), then Ecart
+ L: the set of pairs, sorted by deg(leading term)+Ecart, then by monomial order
+ S: the Gröbner basis (subset of T)
+ redLiftstd: the reduction of S-Polynomial s:
+   chosen first element p from T such that divides
+
+Bis hierhin ist "Polynom" das eigentliche Polynom und (als hintere
+Terme) die Herleitung (das geht insbesonderer in die Laenge mit ein).
+Fuer die Reduktion wird es jedoch wieder geteilt und mit den
+"Herleitungsteil" nur eine "lazy computation" durchgefuehrt.
+Nur bei Erfolg (d.h. der Anfang redziert nicht zu 0)
+wird dieese ausgefuehrt (siehe redLiftstd)
+
+Until this point "Polynom" is the actual polynomial and (as terms behind)
+the coefficients (this is very important for the length).
+For reduction it will be, however, divided again, and with the "coefficients part"
+there will be only a "lazy computation" done.
+This will be performed only in case of success (i.e. the leading will be reduced not to 0)
+(see redLiftstd).
+ */
   template<class tdeg_t,class modint_t>
   void reducesmallmod(polymod<tdeg_t,modint_t> & rem,const vectpolymod<tdeg_t,modint_t> & res,const vector<unsigned> & G,unsigned excluded,modint_t env,polymod<tdeg_t,modint_t> & TMP1,bool normalize,int start_index=0,bool topreduceonly=false,vectpolymod<tdeg_t,modint_t>*remcoeffsptr=0,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr=0,int strategy=0){
     vector< polymod<tdeg_t,modint_t> > addtoremcoeffs(remcoeffsptr?remcoeffsptr->size():0);
+    bool usemap=strategy/10000000;
+    vector< map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t>> > mapremcoeffs;
+    if (remcoeffsptr && usemap){
+      tdeg_t_sort_t<tdeg_t> obj(rem.order);
+      map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> > m(obj);
+      mapremcoeffs=vector< map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> > >(remcoeffsptr->size(),m);
+      for (size_t k=0;k<remcoeffsptr->size();++k){
+        poly2map((*remcoeffsptr)[k],mapremcoeffs[k]);
+      }      
+    }
     if (strategy>=0){
       strategy /= 1000;
       strategy %= 1000;
@@ -5012,27 +5121,42 @@ namespace giac {
         CERR << "du=" << du << "\n";
       if (remcoeffsptr){
 	// reflect linear combination on remcoeffs
-        vectpolymod<tdeg_t,modint_t> & remcoeffs=*remcoeffsptr;
-	for (size_t k=0;k<addtoremcoeffs.size();++k){
-          addtoremcoeffs[k].order=o;
-	  smallmultsubmodshift(addtoremcoeffs[k],0,c,(*coeffsmodptr)[Gi][k],du,TMP1,env);
-	  swap(addtoremcoeffs[k].coord,TMP1.coord);
-          if (addtoremcoeffs[k].coord.size()>remcoeffs[k].coord.size()){
-            smalladd(remcoeffs[k],addtoremcoeffs[k],TMP1,env);
-            swap(remcoeffs[k].coord,TMP1.coord);
-            addtoremcoeffs[k].coord.clear();
+        if (usemap){
+          for (size_t k=0;k<mapremcoeffs.size();++k){
+            if ((*coeffsmodptr)[Gi][k].coord.size())
+              mapmultsubmodshift<tdeg_t,modint_t>(mapremcoeffs[k],c,(*coeffsmodptr)[Gi][k],du,env);
+          }        
+        }
+        else {
+          vectpolymod<tdeg_t,modint_t> & remcoeffs=*remcoeffsptr;
+          for (size_t k=0;k<addtoremcoeffs.size();++k){
+            addtoremcoeffs[k].order=o;
+            smallmultsubmodshift(addtoremcoeffs[k],0,c,(*coeffsmodptr)[Gi][k],du,TMP1,env);
+            swap(addtoremcoeffs[k].coord,TMP1.coord);
+            if (addtoremcoeffs[k].coord.size()>remcoeffs[k].coord.size()){
+              smalladd(remcoeffs[k],addtoremcoeffs[k],TMP1,env);
+              swap(remcoeffs[k].coord,TMP1.coord);
+              addtoremcoeffs[k].coord.clear();
+            }
           }
-	}
+        } // end else usemap
       }
       continue;
     }
     if (remcoeffsptr){
       // reflect linear combination on remcoeffs
       vectpolymod<tdeg_t,modint_t> & remcoeffs=*remcoeffsptr;
-      for (size_t k=0;k<remcoeffs.size();++k){
-        if (!addtoremcoeffs[k].coord.empty()){
-          smalladd(remcoeffs[k],addtoremcoeffs[k],TMP1,env);
-          swap(remcoeffs[k].coord,TMP1.coord);
+      if (usemap){
+        for (size_t k=0;k<remcoeffs.size();++k){
+          map2poly(mapremcoeffs[k],remcoeffs[k]);
+        }
+      }
+      else {
+        for (size_t k=0;k<remcoeffs.size();++k){
+          if (!addtoremcoeffs[k].coord.empty()){
+            smalladd(remcoeffs[k],addtoremcoeffs[k],TMP1,env);
+            swap(remcoeffs[k].coord,TMP1.coord);
+          }
         }
       }
     }
@@ -14204,6 +14328,12 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
   template<class tdeg_t,class modint_t,class modint_t2>
   bool in_zgbasis(vectpolymod<tdeg_t,modint_t> &resmod,unsigned ressize,vector<unsigned> & G,modint_t env,bool totdeg,vector< paire > * pairs_reducing_to_zero,vector< zinfo_t<tdeg_t> > & f4buchberger_info,bool recomputeR,bool eliminate_flag,bool multimodular,int parallel,bool interred,const gbasis_param_t & gparam,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr){
     int strategy=gparam.buchberger_select_strategy;
+    if (0 && multimodular && strategy>=0){ // safe multimodular strategies
+      int s1=strategy/1000000,s2=(strategy/1000)%1000,s3=strategy%1000;
+      if (s2==0 || s2==1 || s2==4) ; else s2=0;
+      if (s3==999 || s3==1 || s3==2) ; else s3=0;
+      strategy=s1*1000000+s2*1000+s3;
+    }
     bool topreduceonly=strategy/1000000;
     vectpolymod<tdeg_t,modint_t> resmodorig(resmod); resmodorig.resize(ressize);
     unsigned generators=ressize;
@@ -14608,7 +14738,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           if (debug_infolevel>2){
             CERR << CLOCK()*1e-6 << " mod reduce begin, pair " << bk << " spoly size " << TMP1.coord.size() << " totdeg deg " << TMP1.coord.front().u.total_degree(order) << " degree " << TMP1.coord.front().u << ", pair degree " << resmod[bk.first].coord.front().u << resmod[bk.second].coord.front().u << '\n';
           }
-          reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,topreduceonly,&newcoeffs,coeffsmodptr,strategy); // strategy or 11000 or 2000?
+          reducesmallmod(TMP1,resmod,G,-1,env,TMP2,true,0,topreduceonly,&newcoeffs,coeffsmodptr,strategy); // strategy might be modified to usemap=true if previous reducesmallmod returned a large size remainder (in that case it is expected that the computation is large)
           // insure that new basis element has positive coord, required by zf4mod
           typename vector< T_unsigned<modint_t,tdeg_t> >::iterator it=TMP1.coord.begin(),itend=TMP1.coord.end();
           for (;it!=itend;++it){
@@ -14653,10 +14783,10 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
           }
         } // end for loop on all spairs
         if (1 && coeffsmodptr){
-          if (0){
+          if (0 && usef4){
             // upper interreduction
             for (int i=G.size()-2;i>=0;--i){
-              reducesmallmod(resmod[G[i]],resmod,G,i,env,TMP2,true,0,false,coeffsmodptr?&(*coeffsmodptr)[G[i]]:0,coeffsmodptr,2); // strategy==2
+              reducesmallmod(resmod[G[i]],resmod,G,i,env,TMP2,true,0,false,coeffsmodptr?&(*coeffsmodptr)[G[i]]:0,coeffsmodptr,strategy); // strategy==2
             }
           }
           // update res: keep only 1 monomial pointee
@@ -14668,8 +14798,9 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
             vector<tdeg_t> & R0=Rbuchberger.back();
             for (unsigned l=0;l<unsigned(TMP2.coord.size());++l)
               R0[l]=TMP2.coord[l].u;
-            for (int i=0;i<G.size();++i){
-              convert(resmod[G[i]],res[G[i]],R0);
+            for (int i=0;i<resmod.size();++i){
+              // doing that for G[i] is not enough, there are pairs with first or second elements not in G
+              convert(resmod[i],res[i],R0);
             }
           }
         }
