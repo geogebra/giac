@@ -3950,6 +3950,7 @@ namespace giac {
     bool operator ()(const T_unsigned<mod4int,tdeg_t> & a,const T_unsigned<mod4int,tdeg_t> & b) const {return !tdeg_t_greater(b.u,a.u,order);}
     bool operator ()(const T_unsigned<gen,tdeg_t> & a,const T_unsigned<gen,tdeg_t> & b) const {return !tdeg_t_greater(b.u,a.u,order);}
     bool operator ()(const tdeg_t & a,const tdeg_t & b) const {return !tdeg_t_greater(b,a,order);}
+    bool operator ()(const pair<int,tdeg_t> & a,const pair<int,tdeg_t> & b) const {return !tdeg_t_greater(b.second,a.second,order);}
   };
 
   template<class tdeg_t,class modint_t>
@@ -4492,6 +4493,49 @@ namespace giac {
     }
   }
 
+#ifdef HASH_MAP_NAMESPACE
+  // p -= a*q shifted mod m -> r
+  template<class tdeg_t,class modint_t>
+  void mapmultsubmodshift(HASH_MAP_NAMESPACE::hash_map<tdeg_t,modint_t> & p,modint_t a,const polymod<tdeg_t,modint_t> & q,const tdeg_t & shift,modint_t m){
+    typename vector< T_unsigned<modint_t,tdeg_t> >::const_iterator jt=q.coord.begin(),jtend=q.coord.end();
+    // for (;it0!=it;++it0){ r.coord.push_back(*it0); }
+    tdeg_t v=shift+shift; // new memory slot
+    int dim=q.dim;
+    for (;jt!=jtend;++jt){
+      //CERR << "dbg " << jt->u << " " << shift << "\n";
+      add(jt->u,shift,v,dim);
+      typename HASH_MAP_NAMESPACE::hash_map<tdeg_t,modint_t>::iterator it=p.find(v),itend=p.end();
+      if (it!=itend){
+	modint_t tmp=(it->second-extend(a)*jt->g)%m;
+        it->second=tmp;
+      }
+      else {
+	modint_t tmp=(-extend(a)*jt->g)%m;
+        p[v]=tmp;
+      }
+    }
+  }
+
+  template<class tdeg_t,class modint_t>
+  void poly2map(const polymod<tdeg_t,modint_t> & p,HASH_MAP_NAMESPACE::hash_map<tdeg_t,modint_t> & m){
+    typename std::vector< T_unsigned<modint_t,tdeg_t> >::const_iterator it=p.coord.begin(),itend=p.coord.end();
+    for (;it!=itend;++it)
+      m[it->u]=it->g;
+  }
+
+  template<class tdeg_t,class modint_t>
+  void map2poly(const HASH_MAP_NAMESPACE::hash_map<tdeg_t,modint_t> & m,polymod<tdeg_t,modint_t> & p){
+    p.coord.clear();
+    typename HASH_MAP_NAMESPACE::hash_map<tdeg_t,modint_t>::const_iterator it=m.begin(),itend=m.end();
+    for (;it!=itend;++it){
+      if (!is_zero(it->second))
+        p.coord.push_back(T_unsigned<modint_t,tdeg_t>(it->second,it->first));
+    }
+    sort(p.coord.begin(),p.coord.end(),tdeg_t_sort_t<tdeg_t>(p.order));
+  }
+
+#endif
+
   // p -= a*q shifted mod m -> r
   template<class tdeg_t,class modint_t>
   void mapmultsubmodshift(map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> > & p,modint_t a,const polymod<tdeg_t,modint_t> & q,const tdeg_t & shift,modint_t m){
@@ -4963,7 +5007,17 @@ This will be performed only in case of success (i.e. the leading will be reduced
   void reducesmallmod(polymod<tdeg_t,modint_t> & rem,const vectpolymod<tdeg_t,modint_t> & res,const vector<unsigned> & G,unsigned excluded,modint_t env,polymod<tdeg_t,modint_t> & TMP1,bool normalize,int start_index=0,bool topreduceonly=false,vectpolymod<tdeg_t,modint_t>*remcoeffsptr=0,vector< vectpolymod<tdeg_t,modint_t> > * coeffsmodptr=0,int strategy=0){
     vector< polymod<tdeg_t,modint_t> > addtoremcoeffs(remcoeffsptr?remcoeffsptr->size():0);
     bool usemap=strategy/10000000;
-    vector< map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> > > mapremcoeffs;
+#ifdef HASHMAP_NAMESPACE
+    vector< map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t>> > mapremcoeffs;
+    if (remcoeffsptr && usemap){
+      HASHMAP_NAMESPACE::hash_map<tdeg_t,modint_t> m(obj);
+      mapremcoeffs=vector< HASHMAP_NAMESPACE::hash_map<tdeg_t,modint_t> >(remcoeffsptr->size(),m);
+      for (size_t k=0;k<remcoeffsptr->size();++k){
+        poly2map((*remcoeffsptr)[k],mapremcoeffs[k]);
+      }      
+    }
+#else
+    vector< map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t>> > mapremcoeffs;
     if (remcoeffsptr && usemap){
       tdeg_t_sort_t<tdeg_t> obj(rem.order);
       map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> > m(obj);
@@ -4972,6 +5026,7 @@ This will be performed only in case of success (i.e. the leading will be reduced
         poly2map((*remcoeffsptr)[k],mapremcoeffs[k]);
       }      
     }
+#endif
     if (strategy>=0){
       strategy /= 1000;
       strategy %= 1000;
@@ -14572,7 +14627,7 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
       // dry run with F4 is not optimal, probably because it discards
       // some pairs that would be nice reducers instead of other
       if (// 1 ||  // FIXME comment 1 ||
-          (strategy % 1000 ==2) && 
+          (strategy % 1000 ==2 || strategy % 1000 ==99) && 
           (coeffsmodptr || (order.o!=_REVLEX_ORDER && smallposv.size()<=GBASISF4_BUCHBERGER) )
           ){
         int Rbuchbergersize=Rbuchberger.size();
@@ -14591,30 +14646,47 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
 	paire bk;
         int np=smallposv.size(); // number of s-pairs
         if (coeffsmodptr){
-          // sort pairs ?
-          vector< pair<int,double> > V(np);
-          for (int count=0;count<np;++count){
-            V[count].first=count;
-            V[count].second=sumdegcoeffs2(coeffsmodptr,order,res,B[smallposv[count]],0);
+          if (strategy%1000==99){
+            vector< pair<int,tdeg_t> > V(np);
+            for (int count=0;count<np;++count){
+              V[count].first=count;
+              V[count].second=Blcm[smallposv[count]];
+            }
+            sort(V.begin(),V.end(),tdeg_t_sort_t<tdeg_t>(order));
+            reverse(V.begin(),V.end());
+            for (int count=0;count<np;++count){
+              int pos=smallposv[V[count].first];
+              smallposp.push_back(B[pos]);            
+            }
+            for (int i=int(np)-1;i>=0;--i)
+              B.erase(B.begin()+smallposv[i]);
           }
-          sort(V.begin(),V.end(),tripair);
-          double logV0=GBASIS_COEFF_MAXLOGRATIO*std::log(V.front().second);
-          smallposp.clear();
-          vector<int> toremove;
-          for (int count=0;count<np;++count){
-            double curlog=std::log(V[count].second);
-            if (count && curlog>=logV0)
-              break;
-            int pos=smallposv[V[count].first];
-            smallposp.push_back(B[pos]);
-            toremove.push_back(pos);
+          else {
+            // sort pairs ?
+            vector< pair<int,double> > V(np);
+            for (int count=0;count<np;++count){
+              V[count].first=count;
+              V[count].second=sumdegcoeffs2(coeffsmodptr,order,res,B[smallposv[count]],0);
+            }
+            sort(V.begin(),V.end(),tripair);
+            double logV0=GBASIS_COEFF_MAXLOGRATIO*std::log(V.front().second);
+            smallposp.clear();
+            vector<int> toremove;
+            for (int count=0;count<np;++count){
+              double curlog=std::log(V[count].second);
+              if (count && curlog>=logV0)
+                break;
+              int pos=smallposv[V[count].first];
+              smallposp.push_back(B[pos]);
+              toremove.push_back(pos);
+            }
+            sort(toremove.begin(),toremove.end());
+            if (debug_infolevel>1)
+              CERR << CLOCK()*1e-6 << "Reducing " << toremove.size() << " pairs, from " << np << " pairs of minimal degree\n";
+            // remove selected pairs from B
+            for (int i=int(toremove.size())-1;i>=0;--i)
+              B.erase(B.begin()+toremove[i]);
           }
-          sort(toremove.begin(),toremove.end());
-          if (debug_infolevel>1)
-            CERR << CLOCK()*1e-6 << "Reducing " << toremove.size() << " pairs, from " << np << " pairs of minimal degree\n";
-          // remove selected pairs from B
-          for (int i=int(toremove.size())-1;i>=0;--i)
-            B.erase(B.begin()+toremove[i]);
         }
         else {
           smallposp.clear();
