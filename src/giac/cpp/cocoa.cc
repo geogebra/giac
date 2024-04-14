@@ -5017,7 +5017,7 @@ This will be performed only in case of success (i.e. the leading will be reduced
       }      
     }
 #else
-    vector< map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t>> > mapremcoeffs;
+    vector< map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> > > mapremcoeffs;
     if (remcoeffsptr && usemap){
       tdeg_t_sort_t<tdeg_t> obj(rem.order);
       map<tdeg_t,modint_t,tdeg_t_sort_t<tdeg_t> > m(obj);
