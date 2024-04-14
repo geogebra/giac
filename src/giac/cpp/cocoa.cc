@@ -14720,6 +14720,16 @@ Let {f1, ..., fr} be a set of polynomials. The Gebauer-Moller Criteria are as fo
             if (debug_infolevel>1)
               CERR << "]\n"; 
             sort(coeffszeropairs.begin(),coeffszeropairs.end());
+            // sort pairs using remsize
+            int S=f4buchbergerv.size();
+            vector< pair<unsigned,unsigned> > usef4v(S);
+            for (int i=0;i<S;++i){
+              usef4v[i]=pair<unsigned,unsigned>(f4buchbergerv[i].coord.size(),(*coeffpermuBptr)[i]);
+            }
+            sort(usef4v.begin(),usef4v.end());
+            vector<paire> P(smallposp); smallposp.clear();
+            for (int i=0;i<S;++i)
+              smallposp.push_back(P[usef4v[i].second]);
           }
         } // end usef4
         

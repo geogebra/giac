@@ -8772,6 +8772,37 @@ namespace giac {
     return res;
   }
 
+  vecteur gbasis_vars(const vecteur & args,GIAC_CONTEXT){
+    vecteur l(lvar(args));
+    vector<double> pideg(l.size(),1.0);
+    for (int i=0;i<args.size();++i){
+      gen g=args[i];
+      g=_degree(makesequence(g,l),contextptr);
+      if (g.type!=_VECT || g._VECTptr->size()!=l.size())
+        return l;
+      vecteur & v= *g._VECTptr;
+      for (int j=0;j<v.size();++j)
+        pideg[j] *= (v[j].val+1);
+    }
+    vector< pair<double,int> > w(l.size());
+    for (int i=0;i<l.size();++i)
+      w[i]=pair<double,int>(pideg[i],i);
+    sort(w.begin(),w.end());
+    vecteur L(l);
+    for (int i=0;i<l.size();++i)
+      L[i]=l[w[i].second];
+    return L;
+  }
+
+  gen _gbasis_vars(const gen & args,GIAC_CONTEXT){
+    if (args.type!=_VECT)
+      return vecteur(0);
+    return gbasis_vars(*args._VECTptr,contextptr);
+  }
+  static const char _gbasis_vars_s []="gbasis_vars";
+  static define_unary_function_eval (__gbasis_vars,&_gbasis_vars,_gbasis_vars_s);
+  define_unary_function_ptr5( at_gbasis_vars ,alias_at_gbasis_vars,&__gbasis_vars,0,true);
+
   // gbasis([Pi],[vars]) -> [Pi']
   gen _gbasis(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
