@@ -8803,19 +8803,53 @@ namespace giac {
   static define_unary_function_eval (__gbasis_vars,&_gbasis_vars,_gbasis_vars_s);
   define_unary_function_ptr5( at_gbasis_vars ,alias_at_gbasis_vars,&__gbasis_vars,0,true);
 
+  gen _syzygy(const gen & args,GIAC_CONTEXT){
+    if (args.type!=_VECT)
+      return vecteur(0);
+    // compute a gbasis to reduce syzygyies of [f1,..,fk] 
+    // compute gbasis for all pairs 1<=i<j<=k [0...0,-fj,0..0,fi,0..0] 
+    vecteur & v = *args._VECTptr;
+    int d=v.size();
+    vecteur L; L.reserve(d*(d-1)/2); vecteur D(d);
+    for (int i=0;i<d;++i){
+      for (int j=i+1;j<d;++j){
+        D.clear(); D.resize(d);
+        D[i]=-v[j]; D[j]=v[i];
+        L.push_back(D);
+      }
+    }
+    gen G=_gbasis(L,contextptr);
+    gen V=eval(gen("lastv",contextptr),1,contextptr);
+    return makesequence(G,V);
+  }
+  static const char _syzygy_s []="syzygy";
+  static define_unary_function_eval (__syzygy,&_syzygy,_syzygy_s);
+  define_unary_function_ptr5( at_syzygy ,alias_at_syzygy,&__syzygy,0,true);
+
   // gbasis([Pi],[vars]) -> [Pi']
   gen _gbasis(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
-    if (args.type!=_VECT)
-      return symbolic(at_gbasis,args);
-    vecteur v = *args._VECTptr;
+    vecteur v;
+    if (args.type==_VECT && args.subtype==_SEQ__VECT){
+      v=*args._VECTptr;
+      if (v.size()>=2 && v[1].type!=_VECT)
+        v=vecteur(1,change_subtype(args,0));
+    }
+    else
+      v=vecteur(1,args);
     int s=int(v.size());
-    if (s<2)
-      return gentoofewargs("gbasis");
+    if (s==0)
+      return args;
+    if (v[0].type!=_VECT)
+      return gensizeerr(contextptr);
+    if (s<2 || v[1].type!=_VECT){
+      v.insert(v.begin()+1,gbasis_vars(*v[0]._VECTptr,contextptr));
+      sto(v[1],gen("lastv",contextptr),contextptr); // save variables 
+      *logptr(contextptr) << "Variables saved in lastv " << v[1] << "\n";
+      s++;
+    }
     if (debug_infolevel)
       CERR << CLOCK()*1e-6 << " gbasis begin :" << memory_usage()*1e-6 << '\n';
-    if ( (v[0].type!=_VECT) || (v[1].type!=_VECT) )
-      return gensizeerr(contextptr);
     v[0]=remove_equal(v[0]);
     gen order=_REVLEX_ORDER; // 0 assumes plex and 0-dimension ideal so that FGLM applies
     // v[2] will serve for ordering
@@ -8914,10 +8948,55 @@ namespace giac {
     }
     l0=lidnt_with_at(makevecteur(l,l0)); // this sorts l0 with l variables first
     int faken=revlex_parametrize(l,l0,order.val),lsize=int(l.size());
+    gen v0=v[0];
+    if (ckmatrix(v0)){
+      // gbasis for a module
+      // "naive" computation, add dim variables s1,..,sd
+      // then every element [p1,...,pk] is mapped to p1*s1+...+pk*sk
+      // then compute gbasis(mapped elements union all pairs si*sj)
+      vecteur w=*v0._VECTptr,S;
+      gen w0=w[0]; int dim=w0._VECTptr->size();
+      // find unused char root variable in A..Z
+      short tab[256]={0};
+      char rootvar=0;
+      for (int i=0;i<l.size();++i){
+        tab[l[i].print(contextptr)[0]]++;
+      }
+      for (int i=65;i<65+26;++i){
+        if (tab[i]==0){
+          rootvar=i;
+          break;
+        }
+        if (tab[i+32]==0){
+          rootvar=i+32;
+          break;
+        }
+      }
+      if (rootvar==0){
+        return gensizeerr("Please rename some variables");
+      }
+      // generate additional variables
+      for (int i=0;i<dim;++i){
+        gen si(rootvar+print_INT_(i),contextptr);
+        S.push_back(si);
+      }
+      l=mergevecteur(S,l);
+      sto(l,gen("lastv",contextptr),contextptr); // save variables       
+      for (int i=0;i<v0._VECTptr->size();++i){
+        w[i]=dotvecteur(w[i],S,contextptr);
+      }
+      for (int i=0;i<dim;++i){
+        for (int j=i;j<dim;++j){
+          w.push_back(S[i]*S[j]);
+        }
+      }
+      v0=w;
+    }
     l=vecteur(1,l);
     if (s>2 && v[2].type==_VECT)
       alg_lvar(v[2],l); // ordering for remaining variables
-    alg_lvar(v[0],l);
+    alg_lvar(v0,l);
+    
     // if (l.front()._VECTptr->size()==15 && order.val==11) l.front()._VECTptr->insert(l.front()._VECTptr->begin()+11,0);
     // convert eq to polynomial
     if (debug_infolevel)
@@ -8925,7 +9004,7 @@ namespace giac {
     vectpoly eqp;
     {
       // all negative integers will be duplicated in e2r, adding about 50% mem
-      gen eqtmp=e2r(v[0],l,contextptr);
+      gen eqtmp=e2r(v0,l,contextptr);
       const vecteur & eq_in=*eqtmp._VECTptr;
       if (debug_infolevel)
 	CERR << CLOCK()*1e-6 << " after convert :" << memory_usage()*1e-6 << "M\n";
@@ -8994,8 +9073,13 @@ namespace giac {
     }
     return coeffsptr?makevecteur(res,coeffs):res;
   }
+  gen _gbasis_(const gen & args,GIAC_CONTEXT){
+    gen res=_gbasis(args,contextptr);
+    sto(res,gen("lastgb",contextptr),contextptr);
+    return res;
+  }
   static const char _gbasis_s []="gbasis";
-  static define_unary_function_eval (__gbasis,&_gbasis,_gbasis_s);
+  static define_unary_function_eval (__gbasis,&_gbasis_,_gbasis_s);
   define_unary_function_ptr5( at_gbasis ,alias_at_gbasis,&__gbasis,0,true);
   
   gen _gbasis_max_pairs(const gen & g,GIAC_CONTEXT){
@@ -9206,7 +9290,7 @@ namespace giac {
     if (!quoptr && greduce8(red_in,eqp,order_,red_out,&env,contextptr)){
       vecteur red_out_;
       for (int i=0;i<int(red_out.size());++i)
-	red_out_.push_back(r2e(red_out[i],l,contextptr));
+	red_out_.push_back(r2e(red_out[i],l,contextptr)/r2e(deno[i],l,contextptr));
       if (v[0].type==_VECT || red_out_.size()!=1)
 	return red_out_;
       return red_out_.front();
