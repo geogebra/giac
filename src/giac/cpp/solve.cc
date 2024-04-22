@@ -5500,6 +5500,7 @@ namespace giac {
       gen b11=(*B[1]._VECTptr)[1];
       b11=simplify(b11,contextptr);
       (*B[1]._VECTptr)[1]=b11;
+      (*B[1]._VECTptr)[2]=simplify((*B[1]._VECTptr)[2],contextptr);
       if (!is_zero(b11)){
 	B=makevecteur(subvecteur(multvecteur(b11,*B[0]._VECTptr),multvecteur(B[0][1],*B[1]._VECTptr)),B[1]);
 	(*B[0]._VECTptr)[1]=0;
@@ -8819,8 +8820,12 @@ namespace giac {
       }
     }
     gen G=_gbasis(L,contextptr);
-    gen V=eval(gen("lastv",contextptr),1,contextptr);
-    return makesequence(G,V);
+    vecteur V=gen2vecteur(eval(gen("lastv",contextptr),1,contextptr));
+    if (V.size()<d)
+      return makesequence(G,V,string2gen("syzygy internal bug",false));
+    vecteur A=vecteur(V.begin(),V.begin()+d);
+    vecteur X=vecteur(V.begin()+d,V.end());
+    return makesequence(G,V,A,X);
   }
   static const char _syzygy_s []="syzygy";
   static define_unary_function_eval (__syzygy,&_syzygy,_syzygy_s);

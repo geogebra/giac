@@ -6294,6 +6294,11 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     if (v[0].is_symb_of_sommet(at_curve))
       return gensizeerr(contextptr);
     if (s>3){
+      if (v[s-1]==at_rectangle){
+        *logptr(contextptr) << gettext("Using left_rectangle\n");
+        v[s-1]=_RECTANGLE_GAUCHE;
+        v[s-1].subtype=_INT_SOLVER;
+      }
       for (int i=0;i<s;++i){
 	if (v[i].type==_INT_ && v[i].subtype==_INT_SOLVER){
 	  int method=v[i].val,n;
