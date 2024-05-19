@@ -90,7 +90,7 @@
 #include "permu.h"
 #include "input_parser.h"    
 
-#if defined(RTOS_THREADX) || defined(__MINGW_H) || defined NSPIRE || defined MS_SMART || defined(FREERTOS)
+#if defined(RTOS_THREADX) || (defined(__MINGW_H) && !defined(KHICAS)) || defined NSPIRE || defined MS_SMART || defined(FREERTOS)
   int isatty (int ){ return 0; }
 #endif
 

@@ -1,4 +1,12 @@
 /* -*- compile-command: "g++-3.4 -I.. -g -c global.cc  -DHAVE_CONFIG_H -DIN_GIAC" -*- */
+#ifdef WIN32
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+#ifdef __MINGW_H
+#include <windows.h>
+#endif
+#endif
 
 #include "giacPCH.h"
 
@@ -1185,7 +1193,7 @@ int dfu_exec(const char * s_){
   s="/Applications/usr/bin/"+s;
   if (giac::is_file_available(s.c_str()))
     return giac::system_no_deprecation(s.c_str());
-  s=s_; s="/usr/bin/"+s;
+  s=s_; s="/opt/homebrew/bin/"+s;
   return giac::system_no_deprecation(s.c_str());
 #else
   return system(s_);
@@ -4856,8 +4864,11 @@ extern "C" void Sleep(unsigned int miliSecond);
 #if defined MINGW32 && defined GIAC_GGB
     return true;
 #else
-    if (access(ch,R_OK))
-      return false;
+    FILE * f =fopen(ch,"r");
+    if (f)
+      fclose(f);
+    return !f;
+    //if (access(ch,R_OK)) return false;
 #endif
 #endif
     return true;
@@ -7777,7 +7788,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 #if !defined NSPIRE_NEWLIB || defined KHICAS
 	  res=0;
 	  int pos=int(p.first-builtin_lexer_functions_begin());
-#if defined KHICAS && !defined x86_64
+#if defined KHICAS && !defined x86_64 && !defined __ARM_ARCH_ISA_A64 && !defined __MINGW_H
 	  const unary_function_ptr * at_val=*builtin_lexer_functions_[pos];
 #else
 	  size_t val=builtin_lexer_functions_[pos];

@@ -258,7 +258,7 @@ extern "C" {
   void reset_gc();  
 #endif
 
-  extern int (*shutdown)(); // function called after 2 hours of idle
+  extern int (*khicas_shutdown)(); // function called after 2 hours of idle
   extern short int shutdown_state;
   inline void Bdisp_PutDisp_DD(void){ sync_screen(); }
   inline void sprint_int(char * c,int i){ sprintf(c,"%d",i);}

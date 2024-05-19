@@ -773,7 +773,7 @@ namespace giac {
   // FIXME: aide_cas may end with synonyms (# cmd synonym1 ...)
   void readhelp(vector<aide> & v,const char * f_name,int & count,bool warn){
     count=0;
-#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38
+#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38 && !defined KHICAS
     if (access(f_name,R_OK)){
       if (warn)
 	std::cerr << "Help file " << f_name << " not found" << endl;

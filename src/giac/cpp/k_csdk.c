@@ -1,5 +1,5 @@
 // implementation of the minimal C SDK for KhiCAS
-int (*shutdown)()=0;
+int (*khicas_shutdown)()=0;
 
 short shutdown_state=0;
 short exam_mode=0,nspire_exam_mode=0;

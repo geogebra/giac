@@ -105,6 +105,7 @@ const int C20=20;
 unsigned short mmind_col[]={COLOR_BLUE,COLOR_RED,COLOR_MAGENTA,COLOR_GREEN,COLOR_CYAN,COLOR_YELLOW};
 #endif
 
+#ifndef NUMWORKS_SLOTB
 void mastermind_disp(const vector<int> & solution,const vector< vector<int> > & essais,const vector<int> & essai,bool fulldisp,GIAC_CONTEXT){
   int x0=C20*3/2,y0=C20/2;
   if (fulldisp)
@@ -246,7 +247,6 @@ int do_mastermind(GIAC_CONTEXT){
   }
   return 0;
 }
-
 #ifdef HP39
 int mastermind(GIAC_CONTEXT){
   int k=khicas_1bpp;
@@ -262,11 +262,14 @@ int mastermind(GIAC_CONTEXT){
 }
 #endif
 
+#endif // NUMWORKS_SLOTB
+
+
 // Newton iteration for polynomial
 // with simult Horner evaluation of p and p' at x
-complex<double> horner_newton(const vector<std::complex<double>> & p,const std::complex<double> &x){
+complex<double> horner_newton(const vector<std::complex<double> > & p,const std::complex<double> &x){
   complex<double> num,den;
-  vector<std::complex<double>>::const_iterator it=p.begin(),itend=p.end();
+  vector<std::complex<double> >::const_iterator it=p.begin(),itend=p.end();
   int n=itend-it-1; 
   for (;n;--n,++it){
     num *= x;
@@ -306,7 +309,7 @@ int do_fractale(GIAC_CONTEXT){
 #endif
     Nmax=16,Nmaxmin=5,Nmaxmax=50;
   bool mandel=do_confirm("EXE: Mandelbrot, Back: bassins racines");
-  vecteur P; vector<complex<double>> p,Z;
+  vecteur P; vector<complex<double> > p,Z;
   double np=0; complex<double> na;
   // if the polynomial is x^np+a=0
   // Newton iteration is x-(x^n+a)/(n*x^(n-1))=((n-1)*x-a)/(n*x^(n-1))
@@ -688,9 +691,15 @@ int khicas_addins_menu(GIAC_CONTEXT){
   smallmenuitems[3].text = (char*)((lang==1)?"Pret":"Mortgage");
   smallmenuitems[4].text = (char*)((lang==1)?"Epargne":"TVM");
   smallmenuitems[5].text = (char*)((lang==1)?"Table caracteres":"Char table");
+#ifdef NUMWORKS_SLOTB
+  smallmenuitems[6].text = (char*)"Not in short version";
+  smallmenuitems[7].text = (char*)"Not in short version";
+  smallmenuitems[8].text = (char*)"Not in short version";
+#else
   smallmenuitems[6].text = (char*)((lang==1)?"Exemple simple: Syracuse":"Simple example; Syracuse");
   smallmenuitems[7].text = (char*)((lang==1)?"Exemple de jeu: Mastermind":"Game example: Mastermind");
   smallmenuitems[8].text = (char*)((lang==1)?"Exemples de fractales":"Fractals examples");
+#endif
   // smallmenuitems[8].text = (char*)"Mon application"; // adjust numitem !
   // smallmenuitems[9].text = (char*)"Autre application";
   // smallmenuitems[10].text = (char*)"Encore une autre";
@@ -773,6 +782,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
 	}
 	break;
       }
+#ifndef NUMWORKS_SLOTB
       if (smallmenu.selection==7){
 	// Exemple simple d'application tierce: la suite de Syracuse
 	// on entre la valeur de u0
@@ -806,6 +816,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
       if (smallmenu.selection==9){
         fractale(contextptr);
       }
+#endif
     } // end sres==menu_selection
     Console_Disp(1,contextptr);
     break;
@@ -2004,8 +2015,9 @@ giac::gen sheet(GIAC_CONTEXT){
     case KEY_CTRL_R:
       copy_right(t,contextptr);
       continue;
+    case KEY_CTRL_CATALOG:
 #endif
-    case KEY_CTRL_CATALOG: case KEY_BOOK: case '\t':
+    case KEY_BOOK: case '\t':
       {
 	if (t.cmd_pos>=0)
 	  sheet_help_insert(t,0,contextptr);
@@ -2142,11 +2154,12 @@ int geoapp(GIAC_CONTEXT){
       text->filename=fign[0];
     }
     else {
-      const char * tab[figs.size()+3]={0};
+      const char * tab[figs.size()+3];
       for (int i=0;i<figs.size();++i)
 	tab[i]=fign[i].c_str();
       tab[figs.size()]=lang==1?"Nouvelle figure 2d":"New 2d figure";
       tab[figs.size()+1]=lang==1?"Nouvelle figure 3d":"New 3d figure";
+      tab[figs.size()+2]=0;
       int s=select_item(tab,lang==1?"Choisir figure":"Choose figure",true);
       if (s>=0 && s<sizeof(tab)/sizeof(char *) && tab[s]){
 	text->elements.clear();

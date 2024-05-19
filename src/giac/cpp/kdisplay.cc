@@ -29,7 +29,9 @@
 #include <syscall.h>
 #include "sha256.h"
 #endif
+#ifdef HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
 #ifndef is_cx2
 #define is_cx2 false
 #endif
@@ -76,7 +78,7 @@ const char * flash_buf=(const char *)0x90200000;
 #endif
 #endif
 
-#if defined NUMWORKS && !defined DEVICE //ndef NSPIRE_NEWLIB
+#if defined NUMWORKS && !defined DEVICE && !defined KHICAS //ndef NSPIRE_NEWLIB
 extern "C" {
   short int nspire_exam_mode=0;
 }
@@ -6161,7 +6163,7 @@ namespace xcas {
     gr.XYZ2ij(double3(x,y,z),i,j);
   }
 
-  const int4 tabcolorcplx[]={
+  const int4bis tabcolorcplx[]={
 {63488,47104,30720,14336},
 {63489,47105,30720,14336},
 {63491,47106,30721,14336},
@@ -6443,7 +6445,11 @@ namespace xcas {
     if (h>9) h=9; if (h<1) h=1;
     // save zmin/zmax on the stack (4K required)
     const int jmintabsize=512;
+#ifdef HAVE_ALLOCA_H
     short int *jmintab=(short int *)alloca(jmintabsize*sizeof(short int)), * jmaxtab=(short int *)alloca(jmintabsize*sizeof(short int)); // assumes LCD_WIDTH_PX<=jmintabsize
+#else
+    short int jmintab[jmintabsize], jmaxtab[jmintabsize];
+#endif
     for (int i=0;i<jmintabsize;++i){
       jmintab[i]=LCD_HEIGHT_PX;
       jmaxtab[i]=0;
@@ -6649,7 +6655,7 @@ namespace xcas {
 		if (idx<0 || idx >=sizeof(tabcolorcplx)/(sizeof(int4)))
 		  idx = 0;
 		//CERR << idx << " ";
-		res.colorptr=&tabcolorcplx[idx];
+		res.colorptr=&((const int4*)tabcolorcplx)[idx];
 	      }
 	      else
 		res.colorptr=&hyp_color[k];
@@ -8651,7 +8657,8 @@ namespace xcas {
 	    if (is3d){
 	      find_xyz(i,j,current_depth,x,y,z);
 	      round_xy(x,y); round3(z,window_zmin,window_zmax);
-	      sprintf(s+pos," %s,%s,%s",print_DOUBLE_(x,3).c_str(),print_DOUBLE_(y,3).c_str(),print_DOUBLE_(z,3));
+              const char * xs=print_DOUBLE_(x,3).c_str(),*ys=print_DOUBLE_(y,3).c_str(),*zs=print_DOUBLE_(z,3).c_str();
+	      sprintf(s+pos," %s,%s,%s",xs,ys,zs);
 	    }
 	    else {
 	      find_xy(i,j,x,y);
@@ -8917,7 +8924,7 @@ namespace xcas {
         drawLine(Gi,Gj,Hi,Hj,COLOR_CYAN | 0x800000);
         // current_depth
         if (hp){
-          vector<int2> polyg; int2 IJmin={RAND_MAX,RAND_MAX};
+          vector<int2> polyg; int2 IJmin(RAND_MAX,RAND_MAX);
           // x: A3-C3, B3-D3; E3-G3,F3-H3
           adddepth(polyg,A3,C3,IJmin);
           adddepth(polyg,B3,D3,IJmin);
@@ -8963,7 +8970,7 @@ namespace xcas {
             double x0=m[0]._DOUBLE_val,y0=m[1]._DOUBLE_val,z0=m[2]._DOUBLE_val;
             // a*(x-x0)+b*(y-y0)+c*(z-z0)=0
             // replace 2 coordinates of M with window_xyzminmax and find last coord
-            vector<int2> polyg; int2 IJmin={RAND_MAX,RAND_MAX};
+            vector<int2> polyg; int2 IJmin(RAND_MAX,RAND_MAX);
             // x
             if (a!=0){
               double x=x0-1/a*(b*(window_ymin-y0)+c*(window_zmin-z0));
@@ -9792,6 +9799,24 @@ namespace xcas {
       return g.print();
     return giac::print_DOUBLE_(g._DOUBLE_val,n);
   }
+  const int tracemaxdepth=10; // protection against too many embedded derivatives for curve study
+  int symb_depth(const gen & g,int curdepth,int maxdepth){
+    if (g.type==_VECT){
+      vecteur & v =*g._VECTptr;
+      for (int i=0;i<v.size();++i){
+        curdepth=symb_depth(v[i],curdepth,maxdepth);
+        if (curdepth>maxdepth)
+          return curdepth;
+      }
+    }
+    if (g.type!=_SYMB)
+      return curdepth;
+    if (curdepth==maxdepth)
+      return maxdepth+1;
+    return symb_depth(g._SYMBptr->feuille,curdepth+1,maxdepth);
+  }
+
+
   void Graph2d::tracemode_set(int operation){
     if (plot_instructions.empty())
       plot_instructions=gen2vecteur(g);
@@ -9849,7 +9874,7 @@ namespace xcas {
     string curve_infos1,curve_infos2;
     gen parameq,x,y,t,tmin,tmax,tstep;
     // extract position at tracemode_i
-    if (G.is_symb_of_sommet(at_curve)){
+    if (G.is_symb_of_sommet(at_curve)&& symb_depth(G._SYMBptr->feuille[0][0],0,tracemaxdepth)<tracemaxdepth){
       gen c=G._SYMBptr->feuille[0];
       parameq=c[0];
       // simple expand for i*ln(x)
@@ -20793,7 +20818,7 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 #endif
     python_heap=0;
     sheetptr=0;
-    shutdown=do_shutdown;
+    khicas_shutdown=do_shutdown;
 #ifdef NSPIRE_NEWLIB
     unsigned osid=0,osidcx52noncasnont=0x1040E4D0;
     osid=* (unsigned *) 0x10000020;

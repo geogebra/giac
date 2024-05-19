@@ -1,3 +1,6 @@
+#if 1 // def __ARM_ARCH_ISA_A64// __APPLE__
+#include "pari.cc.old"
+#else
 /* -*- mode:C++ ; compile-command: "g++-3.4 -I.. -g -c pari.cc" -*- */
 #include "giacPCH.h"
 
@@ -460,7 +463,7 @@ namespace giac {
       res= "Mod("+pariprint(*e._MODptr,varnum,contextptr)+","+pariprint(*(e._MODptr+1),varnum,contextptr)+")";
       break;
     case _FRAC:
-      res= pariprint(*e._FRACptr,varnum,contextptr)+"/("+pariprint(*(e._FRACptr+1),varnum,contextptr)+")";
+      res= pariprint(e._FRACptr->num,varnum,contextptr)+"/("+pariprint(e._FRACptr->den,varnum,contextptr)+")";
       break;
     default: // _SYMB with printsommetasoperator, _DOUBLE_, _REAL, _IDNT
       res=e.print(contextptr);
@@ -804,18 +807,18 @@ namespace giac {
       avma = av;
       parse_all=true;
     }
-#ifdef EMCC
+#if defined EMCC || defined __APPLE__
     parse_all=true;
     // otherwise fibonacci or lngamma do not work, probably because of the 'L'
     // conversion (long argument expected) or precision (same)
 #endif
+    if (v[0].type==_STRNG && vs==1)
+      return symbolic(at_pari,args);
     if (!parse_all && v[0].type==_STRNG) {
       string vstr=*v[0]._STRNGptr;
       if (vstr!="") {
 	void * save_pari_stack_limit = PARI_stack_limit;
 	PARI_stack_limit=0; // required since the stack changed
-	if (vs==1)
-	  return symbolic(at_pari,args);
 	map<string,entree *>::const_iterator i = pari_function_table.find(vstr);
 	// look at function prototype for return value
 	// and call code, from anal.c line around 1990
@@ -1223,3 +1226,4 @@ namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
 #endif // HAVE_LIBPARI
+#endif // __APPLE__

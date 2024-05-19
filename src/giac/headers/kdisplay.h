@@ -282,6 +282,9 @@ namespace xcas {
     int4(int u_,int d_,int du_,int dd_):u(u_),d(d_),du(du_),dd(dd_) {}
   };
   
+  struct int4bis {
+    int u,d,du,dd;
+  };
   // quaternion struct for more intuitive rotations
   struct quaternion_double {
     double w,x,y,z;
@@ -304,6 +307,7 @@ namespace xcas {
     int2(int i_,int j_):i(i_),j(j_) {}
     int2(): i(0),j(0) {}
   };
+
   inline bool operator < (const int2 & a,const int2 & b){ if (a.i!=b.i) return a.i<b.i; return a.j<b.j;}
   inline bool operator == (const int2 & a,const int2 & b){ return a.i==b.i && a.j==b.j;}
 

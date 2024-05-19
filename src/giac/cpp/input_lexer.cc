@@ -1677,7 +1677,7 @@ static const flex_int16_t yy_chk[2185] =
 #include "permu.h"
 #include "input_parser.h"    
 
-#if defined(RTOS_THREADX) || defined(__MINGW_H) || defined NSPIRE || defined MS_SMART || defined(FREERTOS)
+#if defined(RTOS_THREADX) || (defined(__MINGW_H) && !defined(KHICAS)) || defined NSPIRE || defined MS_SMART || defined(FREERTOS)
   int isatty (int ){ return 0; }
 #endif
 
