@@ -17740,7 +17740,8 @@ void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONT
     // if (strcmp(filename,"session.xw")){ console_output(hf,8); return true; }
     if (!hf) return false;
     string str;
-    if (strncmp(hf,"#xwaspy\n",8)==0){
+    bool xwaspy=strncmp(hf,"#xwaspy\n",8)==0;
+    if (xwaspy){
       hf+=8;
       const char * source=hf;
       for (;*source;source+=4){
@@ -17779,34 +17780,35 @@ void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONT
     dconsole_mode=1;
     // read script
     L=Bfile_ReadFile_OS4(hf);
-    if (L>0){
-      char bufscript[L+1];
+    char bufscript[L+1];
+    if (L>0)
       Bfile_ReadFile_OS(hf,bufscript,L);
-      bufscript[L]=0;
-      if (edptr==0)
-	edptr=new textArea;
-      if (edptr){
-	edptr->elements.clear();
-	edptr->clipline=-1;
-	edptr->filename=remove_path(giac::remove_extension(filename))+".py";
-	//cout << "script " << edptr->filename << "\n";
-	edptr->editable=true;
-	edptr->changed=false;
-	edptr->python=python_compat(contextptr);
-	edptr->elements.clear();
+    bufscript[L]=0;
+    if ( (L>0 || xwaspy) && edptr==0)
+      edptr=new textArea;    
+    if (edptr && (L>0 || xwaspy)){
+      edptr->elements.clear();
+      edptr->clipline=-1;
+      edptr->filename=remove_path(giac::remove_extension(filename))+".py";
+      if (edptr->filename==remove_path(filename))
+        edptr->filename=giac::remove_extension(filename)+"_py.py";
+      //cout << "script " << edptr->filename << "\n";
+      edptr->editable=true;
+      edptr->changed=false;
+      edptr->python=python_compat(contextptr);
+      edptr->elements.clear();
 #ifdef HP39
-  edptr->y = 12;
-  edptr->lineHeight=14;
-  edptr->longlinescut=false;
+      edptr->y = 12;
+      edptr->lineHeight=14;
+      edptr->longlinescut=false;
 #else  
-	edptr->y=0;
+      edptr->y=0;
 #endif
-	add(edptr,bufscript);
-	edptr->line=0;
-	//edptr->line=edptr->elements.size()-1;
-	edptr->pos=0;
-      }    
-    }
+      add(edptr,L?bufscript:"def f(x):\n  return x");
+      edptr->line=0;
+      //edptr->line=edptr->elements.size()-1;
+      edptr->pos=0;
+    }    
     // read console state
     // insure parse messages are cleared
     Console_Init(contextptr);
@@ -18764,6 +18766,8 @@ void numworks_certify_internal(){
     else {
       if ((filename.size()<2 || filename.substr(filename.size()-2,2)!="xw") && file_exists((filename+".py").c_str()))
 	return restore_script(filename,true,contextptr);
+      if (filename.substr(filename.size()-3,3)=="_xw")
+        filename += ".py";
     }
 #endif
     if (!load_console_state_smem(filename.c_str(),contextptr)){
@@ -19373,8 +19377,12 @@ void numworks_certify_internal(){
 		save(buf,true,contextptr);
 		string fname(remove_path(giac::remove_extension(buf)));
 		strcpy(session_filename,fname.c_str());
-		if (edptr)
-		  edptr->filename=fname+".py";
+		if (edptr){
+                  if (fname==remove_path(buf))
+                    edptr->filename=fname+"_py.py";
+                  else
+                    edptr->filename=fname+".py";
+                }
 	      }
 	      break;
 	    }

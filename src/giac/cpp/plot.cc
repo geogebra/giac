@@ -6200,7 +6200,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
         bool loop=true;
         if (res.type==_VECT && res.subtype==_POINT__VECT)
           loop=false;
-        else if (res.type<_IDNT)
+        else if (res.type<_IDNT || res.type==_FRAC)
           loop=false;
         else if (res.type==_SYMB && has_i(res))
           loop=false;

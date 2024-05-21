@@ -887,7 +887,7 @@ const char * tar_loadfile(const char * buffer,const char * filename,size_t * len
       if (len)
 	*len=f.size;
       else
-        return "";
+        ;//return "";
       return buffer+f.header_offset+512;
     }
   }
@@ -4865,13 +4865,15 @@ extern "C" void Sleep(unsigned int miliSecond);
     return true;
 #else
     FILE * f =fopen(ch,"r");
-    if (f)
+    if (f){
       fclose(f);
-    return !f;
+      return true;
+    }
+    return false;
     //if (access(ch,R_OK)) return false;
 #endif
 #endif
-    return true;
+    return false;
   }
 
   bool file_not_available(const char * ch){

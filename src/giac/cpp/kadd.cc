@@ -941,13 +941,20 @@ void flash_info(const char * buf,size_t & first_modif,bool modif,GIAC_CONTEXT){
   flash_info(buf,v,first_modif,modif,initpos,contextptr);
 }
 
+extern "C" int filesize(const char *);
 // copy text file from ram scriptstore
 int flash_from_ram(const char * buf,const char * ext,size_t & first_modif,GIAC_CONTEXT){
   char filename[MAX_FILENAME_SIZE+1];
   int n=giac_filebrowser(filename,ext,(lang==1?"Choisir fichier a copier":"Select file to copy"),0);
   if (n==0) return 0;
   const char * data=read_file(filename);
-  n=flash_adddata(buf,filename,data,strlen(data),0);
+#ifdef DEVICE
+  int l=strlen(data);
+#else
+  int l=filesize(filename);
+#endif
+  if (l)
+    n=flash_adddata(buf,filename,data,l,0);
   return n;
 }
 
