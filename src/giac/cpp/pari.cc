@@ -1,4 +1,4 @@
-#if 1 // def __ARM_ARCH_ISA_A64// __APPLE__
+#ifndef GIAC_GGB // def __ARM_ARCH_ISA_A64// __APPLE__
 #include "pari.cc.old"
 #else
 /* -*- mode:C++ ; compile-command: "g++-3.4 -I.. -g -c pari.cc" -*- */
