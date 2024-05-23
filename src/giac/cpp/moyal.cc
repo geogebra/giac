@@ -4238,6 +4238,10 @@ namespace giac {
   complex<double> LambertW(complex<double> z,int n){
     // n!=0 is not implemented yet
     if (z==0) return z;
+    if (is_undef(z))
+      return z;
+    if (is_inf(z.real()) && z.real()>0)
+      return 703.217754008;
     complex<double> w; 
     // initial guess
     w=2.0*(M_E*z+1.0);
@@ -4301,8 +4305,9 @@ namespace giac {
       nbits=mpfr_get_prec(z._CPLXptr->_REALptr->inf);
     // initial guess
     gen w=evalf_double(z,1,context0);
-    if (w.type==_DOUBLE_)
+    if (w.type==_DOUBLE_){
       w=LambertW(complex<double>(w._DOUBLE_val,0),n);
+    }
     else {
       if (w.type!=_CPLX || w.subtype!=3)
 	return gensizeerr("Unable to convert to float");

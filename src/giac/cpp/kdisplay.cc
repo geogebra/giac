@@ -66,7 +66,28 @@ extern "C" void sync_screen();//{}
 
 char * freeptr=0;
 #ifndef DEVICE
-const char * flash_buf=file_gettar_aligned("apps.tar",freeptr);
+const char * flash_filename(){
+#ifdef __APPLE__
+  static string s="";
+  char ptr[256]={0};
+  if (getcwd(ptr,256)){
+    s=ptr;
+    if (s=="/"){
+      if (getenv("HOME")){
+        s=getenv("HOME");
+        s+="/Documents/";
+      }
+    }
+    if (s.size()==0 || s[s.size()-1]!='/')
+      s += '/';
+    s+="scripts.tar";
+    cout << "User flash filename " << s << "\n";
+    return s.c_str();
+  }
+#endif
+  return "scripts.tar";
+}
+const char * flash_buf=file_gettar_aligned(flash_filename(),freeptr);
 extern "C" const char * flash_read(const char * filename){
   return tar_loadfile(flash_buf,filename,0);
 }

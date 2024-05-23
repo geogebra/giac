@@ -3124,7 +3124,7 @@ namespace giac {
     // quick check if back substitution returns undef
     const_iterateur it=_res.begin(),itend=_res.end();
     for (;it!=itend;++it){
-      if (is_inequation(*it) || it->is_symb_of_sommet(at_ou) || it->is_symb_of_sommet(at_and)){
+      if (is_inequation(*it) || it->is_symb_of_sommet(at_ou) || it->is_symb_of_sommet(at_and) || has_op(*it,*at_LambertW)){
 	res.push_back(*it);
 	continue;
       }
