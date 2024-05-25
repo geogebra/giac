@@ -5495,16 +5495,21 @@ namespace giac {
       if (is_zero(a00,contextptr))
 	B=makevecteur(A[1],A[0]);
       else 
-	B=makevecteur(A[0],subvecteur(multvecteur(a00,*A[1]._VECTptr),multvecteur(A[1][0],*A[0]._VECTptr)));
+	B=makevecteur(A[0],subvecteur(multvecteur(A[0][0],*A[1]._VECTptr),multvecteur(A[1][0],*A[0]._VECTptr)));
       B[1]._VECTptr->front()=0;
       gen b11=(*B[1]._VECTptr)[1];
       b11=simplify(b11,contextptr);
-      (*B[1]._VECTptr)[1]=b11;
-      (*B[1]._VECTptr)[2]=simplify((*B[1]._VECTptr)[2],contextptr);
       if (!is_zero(b11)){
+        gen y=-B[1][2]/B[1][1];
+        // B[0][0]*x=-(B[0][1]*y+B[0][2])
+        gen x=-(B[0][1]*y+B[0][2])/B[0][0];
+        return makevecteur(x,y);
 	B=makevecteur(subvecteur(multvecteur(b11,*B[0]._VECTptr),multvecteur(B[0][1],*B[1]._VECTptr)),B[1]);
 	(*B[0]._VECTptr)[1]=0;
       }
+      (*B[1]._VECTptr)[1]=b11;
+      gen b12=simplify((*B[1]._VECTptr)[2],contextptr);
+      (*B[1]._VECTptr)[2]=b12;
     }
     else
       B=mrref(A,contextptr);
