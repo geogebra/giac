@@ -17023,6 +17023,9 @@ const char * nws_caseval(const char * s){
   string & S=*sptr;
   static context * contextptr=0;
   if (!contextptr) contextptr=new context;
+  int pc=python_compat(contextptr);
+  python_compat(0,contextptr);
+  logptr(0,contextptr);
   calc_mode(110,contextptr); // print pi, don't use 38 (breaks Poincare)
   gen g(s,contextptr);
   g=equaltosto(g,contextptr);
@@ -17030,6 +17033,14 @@ const char * nws_caseval(const char * s){
     gen ff=g._SYMBptr->feuille; // skip regroup()
     if (ff.type==_SYMB){
       gen f=ff._SYMBptr->feuille; // workaround for args of command in matrix
+      if (f.type==_VECT && f._VECTptr->size()==2){
+	vecteur v=*f._VECTptr;
+        if (v.front().type==_FUNC){
+	  ff=symbolic(*v.front()._FUNCptr,v[1]);
+	  f=ff._SYMBptr->feuille;
+	  g=symbolic(g._SYMBptr->sommet,ff);
+	}
+      }
       if (f.type==_VECT && f._VECTptr->size()==1){
         f=f._VECTptr->front();
         if (f.type==_VECT){
@@ -17107,6 +17118,7 @@ const char * nws_caseval(const char * s){
         S += (char) 0xe2; S+= (char) 0x86; S+= (char) 0x92;
         S += name.print(contextptr);
         S +="(x)";
+        python_compat(pc,contextptr);
         return S.c_str();
       }
     }
@@ -17123,6 +17135,7 @@ const char * nws_caseval(const char * s){
       }
       S += ']';
       //confirm("matrix",S);
+      python_compat(pc,contextptr);
       return S.c_str();
     }
     else {
@@ -17152,6 +17165,7 @@ const char * nws_caseval(const char * s){
     S += name.print(contextptr);
   }    
   // confirm("evaled",S.c_str());
+  python_compat(pc,contextptr);
   return S.c_str();
 }
 

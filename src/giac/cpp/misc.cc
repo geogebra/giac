@@ -9023,7 +9023,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	v.erase(v.begin()+i);
 	--s; --i; continue;
       }
-      if (v[i].is_symb_of_sommet(at_equation)){
+      if (v[i].is_symb_of_sommet(at_equal)){
 	gen & f=v[i]._SYMBptr->feuille;
 	if (f.type==_VECT && f._VECTptr->size()==2 && f._VECTptr->front()==at_derive){
 	  if (f._VECTptr->back()==2)
