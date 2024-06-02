@@ -1,6 +1,6 @@
 // -*- mode:C++ ; compile-command: "g++ -I.. -I../include -DHAVE_CONFIG_H -DIN_GIAC -DGIAC_GENERIC_CONSTANTS -fno-strict-aliasing -g -c gen.cc -Wall" -*-
 #include "giacPCH.h"
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
 #include "kdisplay.h"
 #if defined DEVICE && !defined NUMWORKS_SLOTAB && !defined NUMWORKS_SLOTB && !defined NSPIRE_NEWLIB 
 size_t stackptr=0x20036000;
@@ -85,6 +85,7 @@ extern "C" uint32_t mainThreadStack[];
 #endif
 
 #if (defined EMCC || defined EMCC2) && !defined GIAC_GGB
+#include "kdisplay.h"
 
 #if 0 // def EMCC_GLUT
 #include <GL/glut.h>
@@ -16673,7 +16674,14 @@ void sprint_double(char * s,double d){
       warn_symb_program_sto=true;
       return "warn on";
     }
-#ifdef KHICAS
+#ifdef SDL_KHICAS
+    if (!strcmp(s,"*")){
+      int res=xcas::console_main(contextptr);
+      S=printint(res);
+      return S.c_str();
+    }
+#endif
+#if defined KHICAS || defined SDL_KHICAS
     if (!turtleptr){
       turtle();
       _efface_logo(vecteur(0),contextptr);
@@ -17026,6 +17034,10 @@ const char * nws_caseval(const char * s){
   int pc=python_compat(contextptr);
   python_compat(0,contextptr);
   logptr(0,contextptr);
+#if defined KHICAS || defined SDL_KHICAS
+  int dc=xcas::dconsole_mode;
+  xcas::dconsole_mode=0;
+#endif
   calc_mode(110,contextptr); // print pi, don't use 38 (breaks Poincare)
   gen g(s,contextptr);
   g=equaltosto(g,contextptr);
@@ -17119,6 +17131,9 @@ const char * nws_caseval(const char * s){
         S += name.print(contextptr);
         S +="(x)";
         python_compat(pc,contextptr);
+#if defined KHICAS || defined SDL_KHICAS
+        xcas::dconsole_mode=dc;
+#endif
         return S.c_str();
       }
     }
@@ -17136,6 +17151,9 @@ const char * nws_caseval(const char * s){
       S += ']';
       //confirm("matrix",S);
       python_compat(pc,contextptr);
+#if defined KHICAS || defined SDL_KHICAS      
+      xcas::dconsole_mode=dc;
+#endif
       return S.c_str();
     }
     else {
@@ -17166,6 +17184,9 @@ const char * nws_caseval(const char * s){
   }    
   // confirm("evaled",S.c_str());
   python_compat(pc,contextptr);
+#if defined KHICAS || defined SDL_KHICAS
+  xcas::dconsole_mode=dc;
+#endif
   return S.c_str();
 }
 

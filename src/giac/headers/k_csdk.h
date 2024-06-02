@@ -272,6 +272,42 @@ extern "C" {
 #endif
   inline void Bdisp_AllClr_VRAM(void){ clear_screen(); }
   
+inline int do_getkey(){
+  os_wait_1ms(50);
+  return getkey(0);
+}
+
+inline void dtext(int x,int y,int fg,const char * s){
+  os_draw_string_medium(x,y,fg,SDK_WHITE,s);
+}
+
+inline void dclear(int c){
+  os_fill_rect(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,c);
+}
+
+inline void dupdate(){
+  sync_screen();
+}
+#define C_WHITE SDK_WHITE
+#define C_BLACK SDK_BLACK
+#define C_RED (31<<11)
+#define C_BLUE 31
+#define KEY_EXIT KEY_CTRL_EXIT
+#define KEY_MENU KEY_CTRL_MENU
+#define KEY_OPTN KEY_CTRL_OPTN
+#define KEY_EXE KEY_CTRL_EXE
+#define KEY_LEFT KEY_CTRL_LEFT
+#define KEY_RIGHT KEY_CTRL_RIGHT
+#define KEY_UP KEY_CTRL_UP
+#define KEY_DOWN KEY_CTRL_DOWN
+#define KEY_DEL KEY_CTRL_DEL
+#define KEY_STORE KEY_CHAR_STORE
+#define KEY_PLUS KEY_CHAR_PLUS
+#define KEY_MINUS KEY_CHAR_MINUS
+#define KEY_DIV KEY_CHAR_DIV
+#define KEY_1 KEY_CHAR_1
+#define KEY_9 KEY_CHAR_9
+
 #ifdef __cplusplus
 }
 #endif

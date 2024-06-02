@@ -34,7 +34,7 @@
 #include "giacPCH.h"
 
 using namespace std;
-#if !defined NSPIRE && !defined FXCG && !defined KHICAS
+#if !defined NSPIRE && !defined FXCG && !defined KHICAS 
 #ifdef VISUALC13
 #undef clock
 #undef clock_t
@@ -101,7 +101,7 @@ extern "C" {
 #include "lin.h"
 #include "quater.h"
 #include "giacintl.h"
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS 
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
 #else
 #include "signalprocessing.h"
 #endif
@@ -131,7 +131,7 @@ extern "C" {
 #include <sys/wait.h>
 #endif
 
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
 inline bool is_graphe(const giac::gen &g){ return false; }
 inline giac::gen _graph_vertices(const giac::gen &g,const giac::context *){ return g;}
 inline giac::gen _is_planar(const giac::gen &g,const giac::context *){ return g;}
@@ -171,7 +171,7 @@ namespace giac {
   double global_window_xmin(gnuplot_xmin),global_window_xmax(gnuplot_xmax),global_window_ymin(gnuplot_ymin),global_window_ymax(gnuplot_ymax);
   double x_tick(1.0),y_tick(1.0);
   double class_minimum(0.0),class_size(1.0);
-#if defined RTOS_THREADX || defined EMCC || defined EMCC2 || defined KHICAS
+#if defined RTOS_THREADX || defined EMCC || defined EMCC2 || defined KHICAS || defined SDL_KHICAS
   int gnuplot_pixels_per_eval=128;
 #else
   int gnuplot_pixels_per_eval=401;
@@ -1065,7 +1065,7 @@ namespace giac {
 
   string print_DOUBLE_(double d,unsigned ndigits){
     char s[256];
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
     sprint_double(s,d);
     // search for a decimal point in s
     int l=strlen(s),i;
@@ -1098,7 +1098,8 @@ namespace giac {
     return s;
   }
 
-#if defined KHICAS || defined GIAC_HAS_STO_38
+#if defined KHICAS || defined SDL_KHICAS || defined GIAC_HAS_STO_38
+#ifndef SDL_KHICAS
   void arc_en_ciel(int k,int & r,int & g,int & b){
     k += 21;
     k %= 126;
@@ -1127,6 +1128,7 @@ namespace giac {
       }
     }
   }
+#endif
 
   static const int arc_en_ciel_colors=15;
   int density(double z,double fmin,double fmax,int pal){
@@ -1179,7 +1181,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       gen D(x,ymin);
       int rgb;
       int r,g,b,c;
-#if defined KHICAS || defined POCKETCAS
+#if defined KHICAS || defined SDL_KHICAS || defined POCKETCAS
       arc_en_ciel(i*double(126.0)/n,r,g,b);
       rgb=(((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
       vecteur attrib(1,rgb+_FILL_POLYGON+(i?_QUADRANT4:_QUADRANT3));
@@ -1329,7 +1331,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 #endif
         {
         for (int i=0;i<arc_en_ciel_colors;++i){
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
           int r,g,b;
           arc_en_ciel(126.0/(arc_en_ciel_colors-1)*i,r,g,b);
           attr[i]=_FILL_POLYGON + (((r*32)/256)<<11) | (((g*64)/256)<<5) | (b*32/256);
@@ -1715,7 +1717,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 	nu=int(std::sqrt(double(nstep)));
 	nv=int(std::sqrt(double(nstep)));
       }
-#if defined KHICAS || defined GIAC_HAS_STO_38
+#if defined KHICAS || defined SDL_KHICAS || defined GIAC_HAS_STO_38
       if (nu*nv>900 && densityplot!=2){
 #if 1 // def DEVICE
 	nu=nv=30;
@@ -1835,7 +1837,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 	    if (fval._DOUBLE_val>fmax)
 	      fmax=fval._DOUBLE_val;
 	  }
-#if defined KHICAS || defined GIAC_HAS_STO_38 // || defined HYPERSURFACE3 FIXME format is not translatable, etc.
+#if defined KHICAS || defined SDL_KHICAS || defined GIAC_HAS_STO_38 // || defined HYPERSURFACE3 FIXME format is not translatable, etc.
 	  if (!densityplot){
 	    tmp.push_back(x); tmp.push_back(y); tmp.push_back(fval);
 	  } 
@@ -3528,7 +3530,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     gen ee(e);
     ee.subtype=gnuplot_show_pnt(e,contextptr);
     history_plot(contextptr).push_back(ee);
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
     if (io_graph(contextptr))
       __interactive.op(ee,contextptr);
 #endif
@@ -3545,7 +3547,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     gen ee(e);
     ee.subtype=gnuplot_show_pnt(*e._SYMBptr,contextptr);
     history_plot(contextptr).push_back(ee);
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
     if (io_graph(contextptr))
       __interactive.op(ee,contextptr);
 #endif
@@ -3559,7 +3561,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 #else
     ee.subtype=-1;
 #endif
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
     history_plot(contextptr).push_back(ee);
     if (io_graph(contextptr))
       __interactive.op(ee,contextptr);
@@ -11340,7 +11342,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 
   gen _couleur(const gen & a,GIAC_CONTEXT){
     if (is_undef(a)) return a;
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined EMCC || defined EMCC2
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS ||defined KHICAS || defined SDL_KHICAS || defined EMCC || defined EMCC2
 #else    
     /* display image, addition by L. Marohnić */
     rgba_image *img;
@@ -11408,7 +11410,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     v[1]=c;
     gen e=symbolic(at_pnt,gen(v,_PNT__VECT));
     history_plot(contextptr).push_back(e);
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
     if (io_graph(contextptr))
       __interactive.op(e,contextptr);    
 #endif
@@ -11492,7 +11494,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     read_tmintmaxtstep(v,t,3,tmin,tmax,tstep,tminmax_defined,tstep_defined,contextptr);
     if (tmin>tmax || tstep<=0)
       return gensizeerr(gettext("Time"));
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
     int maxstep=80;
 #else
     int maxstep=500;
@@ -14376,7 +14378,7 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
       return g.print(context0);
   }
 
-#if !defined KHICAS // in kdisplay.cc
+#if !defined KHICAS && !defined SDL_KHICAS // in kdisplay.cc
 #if defined NSPIRE || defined FXCG
   logo_turtle vecteur2turtle(const vecteur & v){
     return logo_turtle();

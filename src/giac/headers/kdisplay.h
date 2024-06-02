@@ -3,7 +3,7 @@
 #define _KDISPLAY_H
 #include "config.h"
 #include "giacPCH.h"
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
 #include "misc.h"
 
 #include <exception>

@@ -67,7 +67,7 @@ extern "C" {
 #include "csturm.h"
 #include "sparse.h"
 #include "giacintl.h"
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
 #else
 #include "signalprocessing.h"
 #endif
@@ -106,7 +106,7 @@ extern "C" uint32_t mainThreadStack[];
 #include <emscripten.h>
 #endif
 
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
 #include "kdisplay.h"
 #endif
 
@@ -6422,7 +6422,7 @@ namespace giac {
 	  ans=ans.substr(0,ans.size()-1);
 	g=gen(ans,contextptr);
 	if (first_error_line(contextptr)>0) g=string2gen(ans.empty()?"Done":ans,false);
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
 	if (freezeturtle || turt || islogo(g) || ans=="Logo_turtle"){
 	  // copy caseval turtle to this context
 	  turtle(contextptr)=turtle(cascontextptr);
@@ -8645,7 +8645,7 @@ namespace giac {
     }
     if (args.type!=_STRNG)
       return symbolic(at_write,args);
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
     if (turtle_stack(contextptr).size()>1)
       return _ecris(args,contextptr);
 #endif
@@ -10157,7 +10157,7 @@ namespace giac {
 #endif
   define_unary_function_ptr5( at_keyboard ,alias_at_keyboard,&__keyboard,0,true);
 
-#ifndef KHICAS // see kadd.cc
+#if !defined KHICAS && !defined SDL_KHICAS // see kadd.cc
   gen current_sheet(const gen & g,GIAC_CONTEXT){
 #if (defined EMCC || defined EMCC2 ) && !defined GIAC_GGB
     if (ckmatrix(g,true)){
@@ -13466,7 +13466,7 @@ const mksa_unit __lambda0_unit={1.239841984e-6,1,0,0,0,0,0,0}; // inverse meter-
   gen _piecewise(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
     // evaluate couples of condition/expression, like in a case
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
 #else
     // change by L. Marohnić: convert g to piecewise
     gen gg=unquote(g,contextptr);

@@ -578,7 +578,7 @@ namespace giac {
   extern const unary_function_ptr * const  at_widget_size;
 
   gen current_sheet(const gen & g,GIAC_CONTEXT);
-#if !defined RTOS_THREADX && !defined NSPIRE && !defined FXCG && !defined KHICAS
+#if !defined RTOS_THREADX && !defined NSPIRE && !defined FXCG && !defined KHICAS && !defined SDL_KHICAS
   extern unary_function_eval __current_sheet;
 #endif
   extern const unary_function_ptr * const  at_current_sheet;

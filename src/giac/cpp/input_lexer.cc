@@ -5820,8 +5820,12 @@ void yyfree (void * ptr , yyscan_t yyscanner)
 	      s[i]='*';
 	      s[i+1]=' ';
 	    }
-#if defined NUMWORKS || defined NSPIRE || defined FXCG
-	    if (s[i]==']' && s[i+1]=='[')
+#if defined NUMWORKS || defined NSPIRE || defined FXCG || defined EMCC
+	    if (s[i]==']' && s[i+1]=='['
+#ifdef EMCC
+                && calc_mode(contextptr)==110
+#endif
+                )
 	      s.insert(s.begin()+i+1,',');
 #endif
 	  }

@@ -174,7 +174,7 @@ extern "C" int firvsprintf(char*,const char*, va_list);
 extern "C" int KeyPressed( void );
 #endif
 
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
 #include "kdisplay.h"
 #endif
 
@@ -1149,7 +1149,7 @@ int file_savetar(const char * filename,char * buffer,size_t buffersize){
   fclose(f);
   return 1;
 }
-#if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38// 
+#if !defined KHICAS && !defined SDL_KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38// 
 
 #ifdef HAVE_LIBDFU
 extern "C" { 
@@ -1612,7 +1612,7 @@ namespace giac {
       }
       return makevecteur(res1,res2,res3,res4);
     }
-#if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
+#if !defined KHICAS && !defined SDL_KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
     if (g.type==_INT_){
       if (g.val==1){
 	char * buf= numworks_gettar(tar_first_modified_offset);
@@ -1629,7 +1629,7 @@ namespace giac {
 	if (!buf) return 0;
 	if (s==2 && v[1].type==_STRNG)
 	  return file_savetar(v[1]._STRNGptr->c_str(),buf,0);
-#if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
+#if !defined KHICAS && !defined SDL_KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
 	if (s==2 && v[1].type==_INT_){
 	  if (v[1].val==1)
 	    return numworks_sendtar(buf,0,tar_first_modified_offset);
@@ -1676,7 +1676,7 @@ namespace giac {
   }
   
 
-#if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
+#if !defined KHICAS && !defined SDL_KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
   bool scriptstore2map(const char * fname,nws_map & m){
     FILE * f=fopen(fname,"rb");
     if (!f)
@@ -1753,7 +1753,7 @@ namespace giac {
 
   
 
-#if !defined KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
+#if !defined KHICAS && !defined SDL_KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
   const unsigned char rsa_n_tab[]=
     {
       0xf2,0x0e,0xd4,0x9d,0x44,0x04,0xc4,0xc8,0x6a,0x5b,0xc6,0x9a,0xd6,0xdf,
@@ -2017,7 +2017,7 @@ namespace giac {
   int caseval_n=0,caseval_mod=0,caseval_unitialized=-123454321;
 #if !defined POCKETCAS
   void control_c(){
-#if defined NSPIRE || defined KHICAS
+#if defined NSPIRE || defined KHICAS || defined SDL_KHICAS
     if (
 #if defined NSPIRE || defined NSPIRE_NEWLIB
 	on_key_enabled && on_key_pressed()
@@ -2056,7 +2056,7 @@ namespace giac {
 #endif // POCKETCAS
 #endif // TIMEOUT
 
-#if defined KHICAS
+#if defined KHICAS || defined SDL_KHICAS
   void usleep(int t){
     os_wait_1ms(t/1000);
   }
@@ -3677,7 +3677,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       return _turtle_();
   }
 
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
   // protect turtle access by a lock
   // turtle changes are mutually exclusive even in different contexts
 #ifdef HAVE_LIBPTHREAD
@@ -6119,7 +6119,7 @@ NULL,NULL,SW_SHOWNORMAL);
 #endif
   { 
     _pl._i_sqrt_minus1_=1;
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
     _turtle_stack_.push_back(_turtle_);
 #endif
     _debug_ptr=new debug_struct;
@@ -6203,7 +6203,7 @@ NULL,NULL,SW_SHOWNORMAL);
      _max_sum_sqrt_=g._max_sum_sqrt_;
      _max_sum_add_=g._max_sum_add_;
      _turtle_=g._turtle_;
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
      _turtle_stack_=g._turtle_stack_;
 #endif
      _autoname_=g._autoname_;
@@ -8515,7 +8515,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 	      posmatplotlib=cur.find("pylab");
 	    int cs=int(cur.size());
 	    pythonmode=true;
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
 	    if (
 		(posturtle<0 || posturtle>=cs) && 
 		(poscmath<0 || poscmath>=cs) && 

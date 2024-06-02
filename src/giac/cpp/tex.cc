@@ -1522,7 +1522,7 @@ namespace giac {
     else
       fprintf(file,"\\begin{pspicture}(%.4f,%.4f)(%.4f,%.4f)\n\\psset{unit=%.4fcm}\n\\psset{linewidth=.5pt}\n\\psset{arrowsize=2pt 4}\n", X1*xunit, Y1*xunit, X2*xunit, Y2*xunit,xunit);
     fprintf(file,"\\psset{linecolor=black}\n");
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
     if (logo){
       // fprintf(file,"\\psframe[fillstyle=solid,fillcolor=gray](%.4f,%.4f)(%.4f,%.4f)\n",X1,Y1,X2,Y2);
       vector<logo_turtle> w=vecteur2turtlevect(v);

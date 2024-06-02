@@ -1,6 +1,6 @@
 #include "config.h"
 #include "giacPCH.h"
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
 #include "kdisplay.h"
 #include <string.h>
 #include <stdio.h>

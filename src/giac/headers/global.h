@@ -655,7 +655,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
   };
   std::string gen2string(const gen & g);
   const int turtle_length=10;
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
   struct logo_turtle {
     double x,y;
     double theta; // theta is given in degrees or radians dep. on angle_mode
@@ -787,7 +787,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     std::string _autosimplify_;
     std::string _lastprog_name_;
     const char * _currently_scanned_;
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
     std::vector<logo_turtle> _turtle_stack_; 
 #endif
     double _total_time_;
@@ -976,7 +976,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
   std::string lastprog_name(GIAC_CONTEXT);
   std::string lastprog_name(const std::string & b,GIAC_CONTEXT);
 
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
   logo_turtle & turtle();
   std::vector<logo_turtle> & turtle_stack();
 #else

@@ -56,7 +56,8 @@ int shell_x=0,shell_y=0,shell_fontw=12,shell_fonth=18;
 // soit par extinction des leds (marche avec OS 5.2)
 // soit comme sur la CX si l'ecriture en flash NAND marche un jour
 
-#ifdef KHICAS
+
+#if defined KHICAS || defined SDL_KHICAS
 #include "qrcodegen.h"
 
 #ifdef NUMWORKS
@@ -66,6 +67,9 @@ extern "C" void sync_screen();//{}
 
 char * freeptr=0;
 #ifndef DEVICE
+#ifdef __APPLE__
+#include <sys/stat.h>
+#endif
 const char * flash_filename(){
 #ifdef __APPLE__
   static string s="";
@@ -75,7 +79,12 @@ const char * flash_filename(){
     if (s=="/"){
       if (getenv("HOME")){
         s=getenv("HOME");
-        s+="/Documents/";
+        string s1 = s+"/Library/Application\ Support/Upsilon/";
+        mkdir(s1.c_str(),0755); // ignore error if dir exists
+        if (is_file_available((s1+"scripts.tar").c_str()))
+          s=s1;
+        else
+          s+="/Documents/";
       }
     }
     if (s.size()==0 || s[s.size()-1]!='/')
@@ -99,7 +108,7 @@ const char * flash_buf=(const char *)0x90200000;
 #endif
 #endif
 
-#if defined NUMWORKS && !defined DEVICE && !defined KHICAS //ndef NSPIRE_NEWLIB
+#if defined NUMWORKS && !defined DEVICE && !defined KHICAS && !defined SDL_KHICAS //ndef NSPIRE_NEWLIB
 extern "C" {
   short int nspire_exam_mode=0;
 }
@@ -3113,7 +3122,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 #endif
     }
     gen res=turtle_state(contextptr);
-#if defined EMCC || defined (EMCC2) // should directly interact with canvas
+#if !defined SDL_KHICAS && (defined EMCC || defined (EMCC2) ) // should directly interact with canvas
     return gen(turtlevect2vecteur(turtle_stack()),_LOGO__VECT);
 #endif
     return res;
@@ -21370,12 +21379,16 @@ void drawAtom(uint8_t id) {
 } // namespace xcas
 #endif // ndef NO_NAMESPACE_XCAS
 
+#if defined MICROPY_LIB && defined SDL_KHICAS
+// FIXME, already defined in mphalport.c libmicropy
+#else
 void console_output(const char * s,int l){
   char buf[l+1];
   strncpy(buf,s,l);
   buf[l]=0;
   xcas::dConsolePut(buf);
 }
+#endif
 
 const char * console_input(const char * msg1,const char * msg2,bool numeric,int ypos){
   static string str;
