@@ -89,7 +89,7 @@ namespace giac {
       return gen(v,f0.subtype);
     }
     gen t(s),pt;
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS 
 #else
     // addition by L.Marohnić: support for transforming periodic functions
     if (laplace_periodic(f0,x,s,pt,contextptr))
@@ -363,7 +363,7 @@ namespace giac {
       return gensizeerr(contextptr);
     if (has_num_coeff(f))
       return ilaplace(exact(f,contextptr),x,s,contextptr);
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS 
 #else
     // addition by L.Marohnić: support for periodic summation
     gen orig;

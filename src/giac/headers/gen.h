@@ -17,7 +17,7 @@
  */
 #ifndef _GIAC_GEN_H
 #define _GIAC_GEN_H
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
 extern size_t stackptr;
 #endif
 
@@ -1313,7 +1313,7 @@ namespace giac {
   std::string print_the_type(int val,GIAC_CONTEXT);
 
   // I/O
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
   stdostream & operator << (stdostream & os,const gen & a);
 #endif
 #ifdef NSPIRE
@@ -1415,7 +1415,7 @@ namespace giac {
   // Terminal data for EQW display
   struct eqwdata {
     gen g; 
-#if defined KHICAS || defined FXCG
+#if defined KHICAS || defined SDL_KHICAS || defined FXCG
     short int x,y,dx,dy;
     short int baseline;
 #else

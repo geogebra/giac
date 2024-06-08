@@ -6144,7 +6144,7 @@ namespace giac {
       }
     }
 #ifndef RTOS_THREADX
-#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined KHICAS
+#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined KHICAS && !defined SDL_KHICAS
 #ifdef HAVE_LIBPTHREAD
     pthread_mutex_lock(&context_list_mutex);
 #endif
@@ -6513,7 +6513,7 @@ namespace giac {
 	      }
 	      else { // other user directory
 		current=current.substr(1,current.size()-1);
-#if !defined HAVE_NO_PWD_H && !defined NSPIRE_NEWLIB && !defined KHICAS
+#if !defined HAVE_NO_PWD_H && !defined NSPIRE_NEWLIB && !defined KHICAS && !defined SDL_KHICAS
 		passwd * p=getpwnam(current.c_str());
 		if (!p)
 		  return gensizeerr(gettext("No such user ")+current);

@@ -48,7 +48,7 @@ using namespace std;
 #include "modfactor.h"
 #include "quater.h"
 #include "giacintl.h"
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
 #else
 #include "signalprocessing.h"
 #endif
@@ -3447,7 +3447,7 @@ namespace giac {
     res.resize(c);
     // find begin of each row
 #if defined( VISUALC ) || defined( BESTA_OS ) || defined(EMCC) || defined EMCC2 || defined(__clang__)
-    vector<int>::const_iterator * itr=(vector<int>::const_iterator *)alloca(ncolres*sizeof(vector<int>::const_iterator));
+    vector<int>::const_iterator * itr=(vector<int>::const_iterator *)malloc(ncolres*sizeof(vector<int>::const_iterator));
 #else
     vector<int>::const_iterator itr[ncolres];
 #endif
@@ -3466,6 +3466,9 @@ namespace giac {
 	++(*itrcur);
       }
     }
+#if defined( VISUALC ) || defined( BESTA_OS ) || defined(EMCC) || defined EMCC2 || defined(__clang__)
+    free(itr);
+#endif
   }
 #endif
 
@@ -15553,7 +15556,7 @@ namespace giac {
 
   // adapted by L. Marohnić for image loading and creation
   gen _image(const gen & a,GIAC_CONTEXT){
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined EMCC || defined EMCC2
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS || defined EMCC || defined EMCC2
     if ( a.type==_STRNG && a.subtype==-1) return  a;
 #else
     if (a.type==_STRNG) {
@@ -15754,7 +15757,7 @@ namespace giac {
   }
   gen _size(const gen &args,GIAC_CONTEXT){
     if (args.type==_STRNG && args.subtype==-1) return args;
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined EMCC || defined EMCC2
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS|| defined EMCC || defined EMCC2
 #else
     /* size of image or audio clip, addition by L. Marohnić */
     audio_clip *clip=audio_clip::from_gen(args);
@@ -16568,7 +16571,7 @@ namespace giac {
     return true;
   }
 
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS 
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
 #else
   bool log_output_redirect::has_warning() const {
     return buffer.str().find(gettext("warning"))!=std::string::npos ||
@@ -16608,7 +16611,7 @@ namespace giac {
         mat_type=2; // real numeric
     }
     bool sing;
-#if !defined KHICAS && !defined GIAC_HAS_STO_38
+#if !defined KHICAS && !defined SDL_KHICAS && !defined GIAC_HAS_STO_38
     log_output_redirect lor(contextptr);
 #endif
     if (!ldl(a,perm,mat_type,sing,0,contextptr))

@@ -4373,6 +4373,10 @@ extern "C" {
   int do_file(const char *file){
     return 0;
   }
+#ifdef SDL_KHICAS
+  char * micropy_init(int stack_size,int heap_size);
+  int micropy_eval(const char * line);
+#else
   char * mp_js_init(int heap_size);
   char * micropy_init(int stack_size,int heap_size){
     return mp_js_init(heap_size);
@@ -4381,6 +4385,7 @@ extern "C" {
   int micropy_eval(const char * line){
     return mp_js_do_str(line);
   }
+#endif
   void  mp_deinit();
   void mp_stack_ctrl_init();
   extern int parser_errorline,parser_errorcol;

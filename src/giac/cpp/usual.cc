@@ -3423,7 +3423,7 @@ namespace giac {
 	  return ret;
 	}
 #ifndef RTOS_THREADX
-#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined KHICAS
+#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined KHICAS && !defined SDL_KHICAS
 #ifdef HAVE_LIBPTHREAD
 	pthread_mutex_lock(&context_list_mutex);
 #endif
@@ -8320,7 +8320,7 @@ namespace giac {
       return x;
     if (is_inf(x))
       return undef;
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
     if (x.type==_FLOAT_)
       return fgamma(x._FLOAT_val);
 #endif
@@ -11586,7 +11586,7 @@ namespace giac {
 #endif
   }
 
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
 #else
   // additions by L. Marohnić:
   string to_unix_path(const string &path) {

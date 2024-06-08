@@ -837,7 +837,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
   extern pthread_mutex_t context_list_mutex;
 #endif
   
-#if !defined(RTOS_THREADX) && !defined(BESTA_OS) && !defined(NSPIRE) && !defined(FXCG) && !defined KHICAS
+#if !defined(RTOS_THREADX) && !defined(BESTA_OS) && !defined(NSPIRE) && !defined(FXCG) && !defined KHICAS && !defined SDL_KHICAS
   extern std::map<std::string,context *> * context_names ;
 #endif
 

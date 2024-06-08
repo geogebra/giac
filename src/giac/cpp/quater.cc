@@ -417,7 +417,7 @@ namespace giac {
     if (a.type==_INT_){
       int ai=a.val;
       if (!ai)
-	return "0";
+	return '('+makemod(0,p).print(contextptr)+')';;
       // if (ai==1) return "1";
       A=char2_uncoerce(a);
     }
@@ -513,10 +513,19 @@ namespace giac {
     if (!is_undef(a)){
 #if 1 // compact representation of GF(2,n) for n<=30
       if (p.type==_INT_ && p.val==2){
-	if (P.type==_VECT && P._VECTptr->size()<=30)
+        int n;
+	if (P.type==_VECT && (n=P._VECTptr->size())<=30)
 	  P=horner(P,2);
-	if (P.type==_INT_ && a.type==_VECT)
+	if (P.type==_INT_ && a.type==_VECT){
 	  a=horner(a,2);
+          if (!is_integer(a)){
+#ifdef GIAC_HAS_STO38
+            *logptr(context0) << gettext("Invalid GF(2,")+print_INT_(n-1)+gettext(") element ")+x[1].print()+"("+a.print()+gettext("): unable to reduce to an integer \n");
+#else            
+            gensizeerr(gettext("Invalid GF(2,")+print_INT_(n-1)+gettext(") element ")+x[1].print()+"("+a.print()+gettext("): unable to reduce to an integer "));
+#endif
+          }
+        }
 	return;
       }
 #endif

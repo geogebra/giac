@@ -124,6 +124,7 @@ extern "C" {
   void numworks_redraw();
   void numworks_wait_1ms(int ms);
   // access to Numworks OS, defined in port.cpp (or modkandinsky.cpp)
+#ifndef SDL_KHICAS
   inline void os_set_pixel(int x,int y,int c){
     numworks_set_pixel(x,y,c);
   }
@@ -142,9 +143,10 @@ extern "C" {
   inline void os_shaw_graph(){ return numworks_show_graph(); }
   inline void os_hide_graph(){ return numworks_hide_graph(); }
   inline void os_redraw(){ return numworks_redraw(); }
+#endif
   inline void os_wait_1ms(int ms) { numworks_wait_1ms(ms); }
   int getkey_raw(int allow_suspend); // Numworks scan code
-#if defined NUMWORKS_SLOTB || defined NUMWORKS_SLOTAB
+#if defined NUMWORKS_SLOTB || defined NUMWORKS_SLOTAB || defined SDL_KHICAS
   void sync_screen();
 #else
   inline void sync_screen(){}

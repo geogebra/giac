@@ -3089,7 +3089,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 #ifdef FXCG
   static ostream * _logptr_=0;
 #else
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
   stdostream os_cerr;
   static my_ostream * _logptr_=&os_cerr;
 #else
@@ -3102,13 +3102,13 @@ extern "C" void Sleep(unsigned int miliSecond);
       res=contextptr->globalptr->_logptr_;
     else
       res= _logptr_;
-#if defined(EMCC) || defined(EMCC2)
+#if (defined(EMCC) || defined(EMCC2)) && !defined SDL_KHICAS
     return res?res:&COUT;
 #else
 #ifdef FXCG
     return 0;
 #else
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
     return res?res:&os_cerr;
 #else
     return res?res:&CERR;
@@ -3727,7 +3727,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int debug_infolevel=0;
 #endif
   int printprog=0;
-#if defined __APPLE__ || defined VISUALC || defined __MINGW_H || defined BESTA_OS || defined NSPIRE || defined FXCG || defined NSPIRE_NEWLIB || defined KHICAS
+#if defined __APPLE__ || defined VISUALC || defined __MINGW_H || defined BESTA_OS || defined NSPIRE || defined FXCG || defined NSPIRE_NEWLIB || defined KHICAS || defined SDL_KHICAS
 #ifdef _WIN32
   int threads=atoi(getenv("NUMBER_OF_PROCESSORS"));
 #else
@@ -3759,7 +3759,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int ABERTH_NBITSMAX=8192;
   int LAZY_ALG_EXT=0;
   int ALG_EXT_DIGITS=180;
-#if defined RTOS_THREADX || defined BESTA_OS || defined(KHICAS)
+#if defined RTOS_THREADX || defined BESTA_OS || defined(KHICAS) || defined SDL_KHICAS
 #ifdef BESTA_OS
   int LIST_SIZE_LIMIT = 100000 ;
   int FACTORIAL_SIZE_LIMIT = 1000 ;
@@ -3899,7 +3899,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 
   void ctrl_c_signal_handler(int signum){
     ctrl_c=true;
-#if !defined KHICAS && !defined NSPIRE_NEWLIB && !defined WIN32 && !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined POCKETCAS && !defined __MINGW_H
+#if !defined KHICAS && !defined SDL_KHICAS && !defined NSPIRE_NEWLIB && !defined WIN32 && !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined POCKETCAS && !defined __MINGW_H
     if (child_id)
       kill(child_id,SIGINT);
 #endif
@@ -5286,7 +5286,7 @@ NULL,NULL,SW_SHOWNORMAL);
 	    }
 	  }
 	}
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
 	CERR << "Added " << vector_aide_ptr()->size()-s << " synonyms" << '\n';
 #endif
 	sort(vector_aide_ptr()->begin(),vector_aide_ptr()->end(),alpha_order);
@@ -5361,7 +5361,7 @@ NULL,NULL,SW_SHOWNORMAL);
     language(i,contextptr);
     add_language(i,contextptr);
 #endif
-#if defined KHICAS && !defined NUMWORKS_SLOTBFR
+#if (defined KHICAS || defined SDL_KHICAS) && !defined NUMWORKS_SLOTBFR
     lang=i;
 #endif
     return find_doc_prefix(i);
@@ -5532,7 +5532,7 @@ NULL,NULL,SW_SHOWNORMAL);
   }
 
 #ifndef RTOS_THREADX
-#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined(KHICAS)
+#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined(KHICAS) && !defined SDL_KHICAS
   std::map<std::string,context *> * context_names = new std::map<std::string,context *> ;
 
   context::context(const string & name) { 
@@ -5714,7 +5714,7 @@ NULL,NULL,SW_SHOWNORMAL);
 	}
       }
 #ifndef RTOS_THREADX
-#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined(KHICAS)
+#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined(KHICAS) && !defined SDL_KHICAS
       if (context_names){
 	map<string,context *>::iterator it=context_names->begin(),itend=context_names->end();
 	for (;it!=itend;++it){
@@ -5872,7 +5872,7 @@ NULL,NULL,SW_SHOWNORMAL);
       cleanup_context(contextptr);
       if (tp.f)
 	tp.f(string2gen("Aborted",false),tp.f_param);
-#if !defined __MINGW_H && !defined KHICAS
+#if !defined __MINGW_H && !defined KHICAS && !defined SDL_KHICAS
       *logptr(contextptr) << gettext("Thread ") << tp.eval_thread << " has been cancelled" << '\n';
 #endif
 #ifdef NO_STDEXCEPT
@@ -5942,7 +5942,7 @@ NULL,NULL,SW_SHOWNORMAL);
 	  kill_thread(false,contextptr);
 	  clear_prog_status(contextptr);
 	  cleanup_context(contextptr);
-#if !defined __MINGW_H && !defined KHICAS
+#if !defined __MINGW_H && !defined KHICAS && !defined SDL_KHICAS
 	  *logptr(contextptr) << gettext("Cancel thread ") << eval_thread << '\n';
 #endif
 #ifdef NO_STDEXCEPT
@@ -6096,13 +6096,13 @@ NULL,NULL,SW_SHOWNORMAL);
 		     _python_compat_(false),
 #endif
 		     _angle_mode_(0), _bounded_function_no_(0), _series_flags_(0x3),_step_infolevel_(0),_default_color_(FL_BLACK), _epsilon_(1e-12), _proba_epsilon_(1e-15),  _show_axes_(1),_spread_Row_ (-1), _spread_Col_ (-1), 
-#if defined(EMCC) || defined(EMCC2)
+#if (defined(EMCC) || defined(EMCC2)) && !defined SDL_KHICAS
 		     _logptr_(&COUT), 
 #else
 #ifdef FXCG
 		     _logptr_(0),
 #else
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
 		     _logptr_(&os_cerr),
 #else
 		     _logptr_(&CERR),
@@ -7501,8 +7501,8 @@ unsigned int ConvertUTF8toUTF162 (
   // moved from input_lexer.ll for easier debug
   const char invalid_name[]="Invalid name";
 
-#if defined USTL || defined GIAC_HAS_STO_38 || (defined KHICAS && !defined(SIMU))
-#if defined GIAC_HAS_STO_38 || defined KHICAS
+#if defined USTL || defined GIAC_HAS_STO_38 || (defined KHICAS && !defined(SIMU)) || defined SDL_KHICAS
+#if defined GIAC_HAS_STO_38 || defined KHICAS || defined SDL_KHICAS
 void update_lexer_localization(const std::vector<int> & v,std::map<std::string,std::string> &lexer_map,std::multimap<std::string,localized_string> &back_lexer_map,GIAC_CONTEXT){}
 #endif
 #else
@@ -7695,7 +7695,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
       return ok;
     }
 
-#ifdef EMCC
+#if defined EMCC || defined EMCC2 || defined SIMU
   bool cas_builtin(const char * s,GIAC_CONTEXT){
     std::pair<charptr_gen *,charptr_gen *> p=std::equal_range(builtin_lexer_functions_begin(),builtin_lexer_functions_end(),std::pair<const char *,gen>(s,0),tri);
     bool res=p.first!=p.second && p.first!=builtin_lexer_functions_end();
@@ -7790,7 +7790,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
 #if !defined NSPIRE_NEWLIB || defined KHICAS
 	  res=0;
 	  int pos=int(p.first-builtin_lexer_functions_begin());
-#if defined KHICAS && !defined x86_64 && !defined __ARM_ARCH_ISA_A64 && !defined __MINGW_H
+#if defined KHICAS && !defined SDL_KHICAS && !defined x86_64 && !defined __ARM_ARCH_ISA_A64 && !defined __MINGW_H
 	  const unary_function_ptr * at_val=*builtin_lexer_functions_[pos];
 #else
 	  size_t val=builtin_lexer_functions_[pos];
@@ -8134,7 +8134,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
     if (posturtle>=0 && posturtle<cs){
       // add python turtle shortcuts
       static bool alertturtle=true;
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
       cur += "fd:=forward:;bk:=backward:; rt:=right:; lt:=left:; pos:=position:; seth:=heading:;setheading:=heading:; ";
 #else
       cur += "pu:=penup:;up:=penup:; pd:=pendown:;down:=pendown:; fd:=forward:;bk:=backward:; rt:=right:; lt:=left:; pos:=position:; seth:=heading:;setheading:=heading:; reset:=efface:;";

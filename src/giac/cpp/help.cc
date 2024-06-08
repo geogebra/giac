@@ -36,7 +36,7 @@ using namespace std;
 extern "C" int mp_token(const char * line);
 #endif
 
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
 #include "kdisplay.h" // for select_item,
 #if defined MICROPY_LIB || defined HAVE_LIBMICROPYTHON
 extern "C" int xcas_python_eval;
@@ -342,7 +342,7 @@ namespace giac {
     if (l==0) return false;
     if ( (l>2) && (s[0]=='\'') && (s[l-1]=='\'') )
       s=s.substr(1,l-2);
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
     static string res;
     int pos=0,kk,ks=s.size();
     for (;pos<static_help_size;++pos){
@@ -436,7 +436,7 @@ namespace giac {
 	examples=nullstring;
       return true;
     }
-#if defined EMCC || defined EMCC2
+#if (defined EMCC || defined EMCC2) && !defined SDL_KHICAS
     // Find closest string
     syntax=nullstring;
     related=nullstring;
@@ -773,7 +773,7 @@ namespace giac {
   // FIXME: aide_cas may end with synonyms (# cmd synonym1 ...)
   void readhelp(vector<aide> & v,const char * f_name,int & count,bool warn){
     count=0;
-#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38 && !defined KHICAS
+#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38 && !defined KHICAS && !defined SDL_KHICAS
     if (access(f_name,R_OK)){
       if (warn)
 	std::cerr << "Help file " << f_name << " not found" << endl;
@@ -1238,7 +1238,7 @@ namespace giac {
     return 0;
   }
 
-#if ! (defined VISUALC || defined BESTA_OS || defined FREERTOS || defined NSPIRE || defined FXCG || defined NSPIRE_NEWLIB || defined(KHICAS)) 
+#if ! (defined VISUALC || defined BESTA_OS || defined FREERTOS || defined NSPIRE || defined FXCG || defined NSPIRE_NEWLIB || defined(KHICAS) || defined SDL_KHICAS) 
 #if defined WIN32 || !defined DT_DIR
   static int dir_select (const struct dirent *d){
     string s(d->d_name);
@@ -1388,7 +1388,7 @@ alphasort (const struct dirent **a, const struct dirent **b)
 #endif
 
   void find_all_index(const std::string & subdir,multimap<std::string,std::string> & mtt,multimap<std::string,std::string> & mall){
-#if defined GNUWINCE || defined __ANDROID__ || defined EMCC|| defined EMCC2 || defined NSPIRE_NEWLIB || defined FXCG || defined KHICAS
+#if defined GNUWINCE || defined __ANDROID__ || defined EMCC|| defined EMCC2 || defined NSPIRE_NEWLIB || defined FXCG || defined KHICAS || defined SDL_KHICAS
     return;
 #else
     // cerr << "HTML help Scanning " << subdir << endl;

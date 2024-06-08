@@ -115,7 +115,7 @@ clock_t times (struct tms *__buffer) {
 #include <gsl/gsl_fft_real.h>
 #include <gsl/gsl_spline.h>
 #endif
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
 #else
 #include "signalprocessing.h"
 #endif
@@ -172,6 +172,14 @@ extern "C" double millis();
 
 #if (defined(EMCC) || defined (EMCC2)) && !defined(PNACL)
 extern "C" double emcctime();
+extern "C" double emcctime(){
+  double res;
+  res=EM_ASM_DOUBLE_V({
+      var hw=Date.now();
+      return hw;
+    });
+  return res;
+}
 // definition of emcctime should be added in emscripten directory src/library.js
 // search for _time definition, and return only Date.now() for _emcctime
 // otherwise time() will not work
@@ -287,7 +295,7 @@ namespace giac {
 
   gen _about(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
 #else
     /* Displaying audio/image properties, addition by L. Marohnić */
     audio_clip *clip=audio_clip::from_gen(g);
@@ -1266,7 +1274,7 @@ namespace giac {
   // open a file, returns a FD
   gen _open(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG && g.subtype==-1) return  g;
-#if defined(VISUALC) || defined(__MINGW_H) || defined (FIR) || defined(FXCG) || defined(NSPIRE) || defined(__ANDROID__) || defined(NSPIRE_NEWLIB) || defined(EMCC) || defined (EMCC2) || defined(GIAC_GGB) || defined KHICAS
+#if defined(VISUALC) || defined(__MINGW_H) || defined (FIR) || defined(FXCG) || defined(NSPIRE) || defined(__ANDROID__) || defined(NSPIRE_NEWLIB) || defined(EMCC) || defined (EMCC2) || defined(GIAC_GGB) || defined KHICAS || defined SDL_KHICAS
     return gensizeerr(gettext("not implemented"));
 #else
     gen tmp=check_secure();
@@ -1774,7 +1782,7 @@ namespace giac {
     const vecteur &args=*g._VECTptr;
     if (args.size()<2)
       return gendimerr(contextptr);
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
     return _lagrange(g,contextptr);
 #else
     const gen &a=args[0],&b=args[1];
@@ -2191,7 +2199,7 @@ namespace giac {
     }
   }
 
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
   bool read_audio(vecteur & v,int & channels,int & sample_rate,int & bits_per_sample,unsigned int & data_size){
     convert_double_int(v);
     if (v.size()>1 && v[1].type!=_VECT)
@@ -2330,6 +2338,8 @@ namespace giac {
 #else
 #if !defined GIAC_GGB && (defined EMCC || defined (EMCC2))// must have EM_ASM code javascript inlined (emscripten 1.30.4 at least?)
 #include <emscripten.h>
+  gen _readwav(const gen & g,GIAC_CONTEXT);
+  gen _writewav(const gen & g,GIAC_CONTEXT);
   gen _playsnd(const gen & args,GIAC_CONTEXT){
     if (args.type==_STRNG){
       if (args.subtype==-1) return  args;
@@ -2799,7 +2809,7 @@ namespace giac {
     if (g.type!=_VECT || g.subtype!=_SEQ__VECT || g._VECTptr->size()!=2 || g._VECTptr->front().type!=_STRNG)
       return gensizeerr(contextptr);
     vecteur v(gen2vecteur(g));
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined EMCC || defined EMCC2
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS || defined EMCC || defined EMCC2
 #else
     rgba_image *img=rgba_image::from_gen(v[1]);
     if (img!=NULL) {

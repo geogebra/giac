@@ -96,7 +96,7 @@ using namespace std;
 
 #include <iostream>
 //#include <fstream>
-#if !defined FXCG && !defined KHICAS
+#if !defined FXCG && !defined KHICAS && !defined SDL_KHICAS
 #include <iomanip>
 #endif
 #include "cocoa.h"
@@ -523,7 +523,7 @@ namespace giac {
     return a.second<b.second;
   }
   
-#if !defined CAS38_DISABLED && !defined FXCG && !defined KHICAS
+#if !defined CAS38_DISABLED && !defined FXCG && !defined KHICAS && !defined SDL_KHICAS
   //#define GBASIS_SELECT_TOTAL_DEGREE
 #if GROEBNER_VARS!=15 && !defined BIGENDIAN // double revlex ordering is not compatible with indices swapping for tdeg_t64
 #define GBASIS_SWAP 
@@ -17038,7 +17038,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       if (!zdata) current=current_gbasis;
       G.clear();
       double t_0=CLOCK()*1e-6;
-#ifndef KHICAS
+#if !defined KHICAS && !defined SDL_KHICAS
       if (debug_infolevel)
 	CERR << std::setprecision(15) << clock_realtime() << " begin computing basis modulo " << p_qmodint << " batch/threads " << th+1 << "/" << parallel << '\n';
 #endif

@@ -55,6 +55,18 @@ int shell_x=0,shell_y=0,shell_fontw=12,shell_fonth=18;
 // pour le mode examen cx2, il y a 2 endroits ou is_cx2 est utilise dans smallmenu.selection==1
 // soit par extinction des leds (marche avec OS 5.2)
 // soit comme sur la CX si l'ecriture en flash NAND marche un jour
+#ifdef SDL_KHICAS
+#include <emscripten.h>
+extern "C" void console_log(const char * s){
+  EM_ASM({
+      var value = UTF8ToString($0);
+      console.log(value);
+    },s);
+}  
+#else
+extern "C" void console_log(const char *){}
+#endif
+
 
 
 #if defined KHICAS || defined SDL_KHICAS
@@ -130,6 +142,11 @@ const int xwaspy_shift=33; // must be between 32 and 63, reflect in xcas.js and 
   }
 #else
   void py_ck_ctrl_c(){}
+#endif
+
+#ifdef SDL_KHICAS
+#define COLOR_BLACK 0
+#define COLOR_WHITE 65535
 #endif
 
 //giac::context * contextptr=0;
@@ -251,10 +268,12 @@ int get_free_memory(){
 }
 #endif
 
-#if defined NUMWORKS // || (defined NSPIRE_NEWLIB && !defined BW) 
+#if defined NUMWORKS  // || (defined NSPIRE_NEWLIB && !defined BW)
+#if !defined SIMU && !defined SDL_KHICAS
   int GetSetupSetting(int mode){
     return 0;
   }
+#endif
 
   void SetSetupSetting(int mode,int){
   }
@@ -503,12 +522,12 @@ namespace giac {
     return strlen(s); // FIXME for UTF8
   }
 
-  void PrintXY(int x,int y,const char * s,int mode,int c=giac::_BLACK,int bg=giac::_WHITE){
+  void PrintXY(int x,int y,const char * s,int mode,int c=SDK_BLACK,int bg=SDK_WHITE){
     if (mode==TEXT_MODE_NORMAL)
       os_draw_string(x,y,c,bg,s);
     else {
 #ifndef HP39
-      if (c==giac::_BLACK && bg==giac::_WHITE)
+      if (c==SDK_BLACK && bg==SDK_WHITE)
 	os_draw_string(x,y,c,color_gris,s);
       else
 #endif
@@ -516,31 +535,44 @@ namespace giac {
     }
   }
 
-  int PrintMiniMini(int x,int y,const char * s,int mode,int c=giac::_BLACK,int bg=giac::_WHITE,bool fake=false){
+  int PrintMiniMini(int x,int y,const char * s,int mode,int c=SDK_BLACK,int bg=SDK_WHITE,bool fake=false){
+#ifdef SDL_KHICAS
+    // console_log(("printminimini "+string(s)+" "+print_INT_(x)+","+print_INT_(y)+" mode="+print_INT_(mode)+" c="+print_INT_(c)+" bg="+print_INT_(bg)+(fake?"fake":"")).c_str());
+    if (mode==TEXT_MODE_NORMAL)
+      return numworks_draw_string_small(x,y,c,bg,s,fake);
+    else 
+      return numworks_draw_string_small(x,y,bg,c,s,fake);
+#else
     if (mode==TEXT_MODE_NORMAL)
       return os_draw_string_small(x,y,c,bg,s,fake);
     else {
 #ifndef HP39      
-      if (c==giac::_BLACK && bg==giac::_WHITE)
+      if (c==SDK_BLACK && bg==SDK_WHITE)
 	return os_draw_string_small(x,y,c,color_gris,s,fake);
       else
 #endif
 	return os_draw_string_small(x,y,bg,c,s,fake);	
     }
+#endif
   }
 
   
-  int PrintMini(int x,int y,const char * s,int mode,int c=giac::_BLACK,int bg=giac::_WHITE,bool fake=false){
+  int PrintMini7(int x,int y,const char * s,int mode,int c,int bg,bool fake){
+    //console_log(("printmini7 "+string(s)+" "+print_INT_(x)+","+print_INT_(y)+" mode="+print_INT_(mode)+" c="+print_INT_(c)+" bg="+print_INT_(bg)+(fake?"fake":"")).c_str());
     if (mode==TEXT_MODE_NORMAL)
       return os_draw_string_medium(x,y,c,bg,s,fake);
     else {
 #ifndef HP39
-      if (c==giac::_BLACK && bg==giac::_WHITE)
+      if (c==SDK_BLACK && bg==SDK_WHITE)
         return os_draw_string_medium(x,y,c,color_gris,s,fake);
       else
 #endif
         return os_draw_string_medium(x,y,bg,c,s,fake);
     }
+  }
+  
+  int PrintMini(int x,int y,const char * s,int mode){
+    return PrintMini7(x,y,s,mode,SDK_BLACK,SDK_WHITE,false);
   }
 
 #ifndef BW
@@ -632,7 +664,7 @@ namespace giac {
                 int textY = curitem*C24+itemsStartY*C24-menu->scroll*C24-C24+C10;
                 clearLine(menu->startX, curitem+itemsStartY-menu->scroll, (menu->selection == curitem+1 ? textColorToFullColor(menu->items[curitem].color) : COLOR_WHITE));
                 drawLine(textX, textY+C24-4, LCD_WIDTH_PX-2, textY+C24-4, COLOR_GRAY);
-                PrintMini(&textX, &textY, (unsigned char*)menuitem, 0, 0xFFFFFFFF, 0, 0, (menu->selection == curitem+1 ? COLOR_WHITE : textColorToFullColor(menu->items[curitem].color)), (menu->selection == curitem+1 ? textColorToFullColor(menu->items[curitem].color) : COLOR_WHITE), 1, 0);*/
+                PrintMini7(&textX, &textY, (unsigned char*)menuitem, 0, 0xFFFFFFFF, 0, 0, (menu->selection == curitem+1 ? COLOR_WHITE : textColorToFullColor(menu->items[curitem].color)), (menu->selection == curitem+1 ? textColorToFullColor(menu->items[curitem].color) : COLOR_WHITE), 1, 0);*/
             }
             // deal with menu items of type MENUITEM_CHECKBOX
             if(menu->items[curitem].type == MENUITEM_CHECKBOX) {
@@ -2249,14 +2281,14 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
       menu.height = MENUHEIGHT-1;
       while(1) {
 #ifdef HP39
-	drawRectangle(0,114,LCD_WIDTH_PX,14,giac::_WHITE);
+	drawRectangle(0,114,LCD_WIDTH_PX,14,SDK_WHITE);
 	PrintMini(0,114,"input | ex1 | ex2 |     |     | help  ",4);
 #else
-	drawRectangle(0,200,LCD_WIDTH_PX,22,giac::_WHITE);
+	drawRectangle(0,200,LCD_WIDTH_PX,22,SDK_WHITE);
 #ifdef NSPIRE_NEWLIB
-	PrintMini(0,200,(category==CAT_CATEGORY_ALL?"menu: help | ret: ex1 | tab: ex2":"menu: help | ret ex1 | tab ex2"),4,33333,giac::_WHITE);
+	PrintMini7(0,200,(category==CAT_CATEGORY_ALL?"menu: help | ret: ex1 | tab: ex2":"menu: help | ret ex1 | tab ex2"),4,33333,SDK_WHITE,false);
 #else
-	PrintMini(0,200,(category==CAT_CATEGORY_ALL?"Toolbox help | Ans ex1 | EXE  ex2":"Toolbox help | EXE ex1 | Ans ex2"),4,33333,giac::_WHITE);
+	PrintMini7(0,200,(category==CAT_CATEGORY_ALL?"Toolbox help | Ans ex1 | EXE  ex2":"Toolbox help | EXE ex1 | Ans ex2"),4,33333,SDK_WHITE,false);
 #endif
 #endif
 	int sres = 0;
@@ -2643,7 +2675,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 	vector<int> vi(9);
 	tailles(w,vi);
 	total += vi[8];
-	if (vi[8]<w.is_symb_of_sommet(at_pnt)?1500:500)
+	if (vi[8]<(w.is_symb_of_sommet(at_pnt)?1500:500))
 	  vs[i]+=":="+pnt2string(w,contextptr);
 	else {
 	  vs[i] += " ~";
@@ -3834,6 +3866,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
 namespace xcas {
 #endif // ndef NO_NAMESPACE_XCAS
   void drawRectangle(int x,int y,int w,int h,int c){
+    //console_log(("drawRectangle "+print_INT_(x)+","+print_INT_(y)+" w="+print_INT_(w)+" h="+print_INT_(h)+" c="+print_INT_(c)).c_str());
 #ifdef BW
     draw_rectangle(x,y,w,h,c);
 #else
@@ -12256,12 +12289,12 @@ namespace xcas {
       menu += string(menu_f2);
 #ifdef HP39
       menu += "| undo| edit| +- | approx";
-      drawRectangle(0,114,LCD_WIDTH_PX,14,giac::_BLACK);
+      drawRectangle(0,114,LCD_WIDTH_PX,14,SDK_BLACK);
       PrintMini(0,114,menu.c_str(),4);
 #else
       menu += "|3 undo|4 edt|5 +-|6 approx";
       drawRectangle(0,205,LCD_WIDTH_PX,17,22222);
-      PrintMiniMini(0,205,menu.c_str(),0,giac::_BLACK,22222);
+      PrintMiniMini(0,205,menu.c_str(),0,SDK_BLACK,22222);
 #endif
       //draw_menu(2);
       clip_ymin=save_clip_ymin;
@@ -14060,7 +14093,7 @@ namespace xcas {
       if (minimini || color == 2016 || color == 4) // comment in small font
         PrintMiniMini(X, Y, buf, revert ? 4 : 0,COLOR_BLACK,COLOR_WHITE);
       else {
-        PrintMini(X, Y, buf, revert ? 4 : 0,COLOR_BLACK,COLOR_WHITE);
+        PrintMini7(X, Y, buf, revert ? 4 : 0,COLOR_BLACK,COLOR_WHITE,false);
         // overline/underline style according to color
         if (!revert){
           if (color == 3){ 
@@ -14089,7 +14122,7 @@ namespace xcas {
     if(minimini) 
       X=PrintMiniMini(X, Y, buf, revert?4:0, color, COLOR_WHITE,fake);
     else
-      X=PrintMini(X, Y, buf, revert?4:0, color, COLOR_WHITE, fake);
+      X=PrintMini7(X, Y, buf, revert?4:0, color, COLOR_WHITE, fake);
 #ifdef BW
     if (!revert){
       int dy=15;
@@ -14598,7 +14631,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n) {
 
 void draw_editor_menu(bool textgr,bool textpython){
 #ifdef HP39
-    drawRectangle(0,114,LCD_WIDTH_PX,14,giac::_BLACK);
+    drawRectangle(0,114,LCD_WIDTH_PX,14,SDK_BLACK);
     if (textgr)
       PrintMini(0,114,"pnts | lines| undo| cmds| A<>a | File",4);
     else
@@ -14607,7 +14640,7 @@ void draw_editor_menu(bool textgr,bool textpython){
     waitforvblank();
     drawRectangle(0,205,LCD_WIDTH_PX,17,44444);
     if (textgr)
-      PrintMiniMini(0,205,"shift-1 pnts|2 lines|3 undo|4 disp|5 +-|6 curves|7 triangle|8 polygon|9 solid",4,giac::_CYAN,giac::_BLACK);
+      PrintMiniMini(0,205,"shift-1 pnts|2 lines|3 undo|4 disp|5 +-|6 curves|7 triangle|8 polygon|9 solid",4,giac::_CYAN,SDK_BLACK);
     else
       PrintMiniMini(0,205,
 #if defined NUMWORKS_SLOTB || defined NUMWORKS_SLOTAB
@@ -14615,7 +14648,7 @@ void draw_editor_menu(bool textgr,bool textpython){
 #else
                     textpython>0?"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 lin|8 list|9arit":"shift-1 test|2 loop|3 undo|4 misc|5 +-|6 logo|7 matr|8 cplx",
 #endif
-                    4,44444,giac::_BLACK);
+                    4,44444,SDK_BLACK);
     //draw_menu(1);
 #endif
   }
@@ -15258,7 +15291,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	print(temptextX,temptextY,singleword,couleur,false,/*fake*/true,minimini);
 	if(temptextX<text->width && temptextX + textX > text->width-6) {
 	  if (editable)
-	    textX=PrintMini(textX, textY, ">", 4, COLOR_MAGENTA, COLOR_WHITE);	  
+	    textX=PrintMini7(textX, textY, ">", 4, COLOR_MAGENTA, COLOR_WHITE,false); 
 	  //time for a new line
 	  textX=text->x+deltax;
 	  textY=textY+text->lineHeight+v[cur].lineSpacing;
@@ -16498,7 +16531,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
   }  
 
   console_line * Line=0;//[_LINE_MAX];//={data_line};
-  char menu_f1[8]={0},menu_f2[8]={0},menu_f3[8]={0},menu_f4[8]={0},menu_f5[8]={0},menu_f6[8];
+  char menu_f1[8]={32,0},menu_f2[8]={32,0},menu_f3[8]={32,0},menu_f4[8]={32,0},menu_f5[8]={32,0},menu_f6[8]={32,0};
   char session_filename[MAX_FILENAME_SIZE+1]="session";
   char * FMenu_entries_name[6]={menu_f1,menu_f2,menu_f3,menu_f4,menu_f5,menu_f6};
   location Cursor;
@@ -17254,13 +17287,19 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
   }
 
   void * console_malloc(unsigned s){
+#ifdef SDL_KHICAS
+    return malloc(s);
+#else
     return new char [s];
-    // return malloc(s);
+#endif
   }
 
   void console_free(void * ptr){
+#ifdef SDL_KHICAS
+    free(ptr);
+#else
     delete [] (char *) ptr;
-    // free(ptr);
+#endif
   }
 
   void cleanup(std::string & s){
@@ -17388,6 +17427,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
   }
 
   int run_session(int start,GIAC_CONTEXT){
+#ifdef MICROPY_LIB
+    micropy_ck_eval("1"); // insure initialization
+#endif
     std::vector<std::string> v;
     for (int i=start;i<Last_Line;++i){
       if (Line[i].type==LINE_TYPE_INPUT)
@@ -17575,11 +17617,6 @@ static void do_QRdisp(const uint8_t qrcode[]) {
       }
     }
   }
-  while (1) {
-    int key; ck_getkey(&key);
-    if (key==KEY_CTRL_OK || key==KEY_CTRL_EXIT)
-      break;
-  }
 }
 
 bool QRdisp(const char * text){
@@ -17591,8 +17628,14 @@ bool QRdisp(const char * text){
   uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
   bool ok = qrcodegen_encodeText(text, tempBuffer, qrcode, errCorLvl,
                                  qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
-  if (ok)
-    do_QRdisp(qrcode);
+  if (ok){
+    while (1) {
+      do_QRdisp(qrcode);
+      int key; ck_getkey(&key);
+      if (key==KEY_CTRL_OK || key==KEY_CTRL_EXIT)
+	break;
+    }
+  }
   return ok;
 }
 
@@ -17649,7 +17692,8 @@ void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONT
     Bfile_WriteFile_OS(hFile, script.c_str(), scriptsize);
     // save console state
     int pos=1;
-    string qrs=lang?"https://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasfr.html#":"https://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasen.html#";//"https://xcas.univ-grenoble-alpes.fr/xcasjs/#";
+    // string qrs=lang?"https://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasfr.html#":"https://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasen.html#";//"https://xcas.univ-grenoble-alpes.fr/xcasjs/#";
+    string qrs="https://www-fourier.univ-grenoble-alpes.fr/~parisse/kcasfr.html#";
     qrs += "filename=";
     qrs += filename;
     qrs += '&';
@@ -17741,6 +17785,218 @@ void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONT
     }
     else {
       write_file(filename,savebuf,len);
+    }
+  }
+
+int char2int(char c){
+  if (c>='0' && c<='9')
+    return c-'0';
+  if (c>='A' && c<='F')
+    return c-'A'+10;
+  if (c>='a' && c<='f')
+    return c-'a'+10;
+  return -1;
+}
+
+  extern "C" int save_link(const char * s,const char * filename,int mode);
+
+  // convert URL link to xw or xw.py session
+  // mode==0 save only link.nws, mode==1 save as xw session
+  int save_link(const char * s,const char * filename,int mode){
+    string Filename(filename);
+    int xcas_mode=0;
+    vector<string> Line; vector<unsigned char> Type;
+    string script,state;
+    // parse s to script,state, Line and Type
+    for (;*s;++s){
+      if (*s=='&')
+	break;
+    }
+    if (!*s) // no & found
+      return -1;
+    for (;*s;){
+      string cur;
+      for (++s;*s;++s){
+	if (*s=='&')
+	  break;
+	if (*s=='%' && s[1] && s[2]){
+	  int c1=char2int(s[1]),c2=char2int(s[2]);
+	  if (c1<0 || c2<0)
+	    return -2;
+	  cur += c1*16+c2;
+          s+=2;
+	}
+	else
+	  cur += *s;
+      }
+      int pos=cur.find('=');
+      if (pos<0 || pos>=cur.size())
+	continue; // ignored
+      string cmd=cur.substr(0,pos);
+      string value=cur.substr(pos+1,cur.size()-pos-1);
+      if (cmd=="filename"){
+        if (value[0]=='@')
+          value=value.substr(1,value.size()-1);
+        if (value.size()<4 || value.substr(3,value.size()-3)!=".xw")
+          value += ".xw";
+	Filename=value;
+	continue;
+      }
+      if (cmd=="radian"){
+	state += "angle_radian:="+value+";";
+	continue;
+      }
+      if (cmd=="python"){
+	state += "python_mode("+value+");";
+	continue;
+      }
+      if (cmd=="xcas" || cmd=="cas" || cmd=="py" || cmd=="micropy"){
+	// skip position x,y,
+	pos=0;
+	for (;pos<value.size();++pos){
+	  if (value[pos]==',')
+	    break;
+	}
+	for (++pos;pos<value.size();++pos){
+	  if (value[pos]==',')
+	    break;
+	}
+	++pos;
+	value=value.substr(pos,value.size()-pos);
+	if (value.size()==0)
+	  continue;
+	if ( (cmd=="xcas" || cmd=="cas") && xcas_mode!=0){
+	  Line.push_back("xcas");
+	  Type.push_back(0);
+	  xcas_mode=0;
+	}
+	if ((cmd=="py" || cmd=="micropy") && xcas_mode==0){
+	  Line.push_back("python");
+	  Type.push_back(0);
+	  xcas_mode=4;
+	}
+	pos=value.find('\n');
+	if (pos>=0 && pos<value.size())
+	  script += value + "\n\n";
+	else {
+	  Line.push_back(value);
+	  Type.push_back(0);
+	}
+	continue;
+      }
+    }
+    int statesize=state.size(),scriptsize=script.size();
+    //
+    int size=2*sizeof(int)+statesize+scriptsize;
+    int n=Line.size(); // number of cmdlines in s
+    for (int i=0;i<n;++i){
+      size += 2*sizeof(short)+2*sizeof(char)+Line[i].size()+1;
+    }
+    char savebuf[size+4];
+#ifdef NUMWORKS
+    char * hFile=savebuf+1;
+#else
+    char * hFile=savebuf;
+#endif
+    // save variables and modes
+    Bfile_WriteFile_OS4(hFile, statesize);
+    Bfile_WriteFile_OS(hFile, state.c_str(), statesize);
+    // save script
+    Bfile_WriteFile_OS4(hFile, scriptsize);
+    Bfile_WriteFile_OS(hFile, script.c_str(), scriptsize);
+    // save console state
+    int pos=1;
+    // save console state
+    for (int i=0;i<n;++i){
+      const char * cur=Line[i].c_str();
+      unsigned short l=strlen(cur);
+      Bfile_WriteFile_OS2(hFile, l);
+      unsigned short s=0; // cursor position
+      Bfile_WriteFile_OS2(hFile, s);
+      unsigned char c=Type[i]; // cur.type;
+      Bfile_WriteFile_OS(hFile, &c, sizeof(c));
+      c=1;//cur.readonly;
+      Bfile_WriteFile_OS(hFile, &c, sizeof(c));
+      unsigned char buf[l+1];
+      buf[l]=0;
+      strcpy((char *)buf,(const char*)cur); 
+      unsigned char *ptr=buf,*strend=ptr+l;
+      for (;ptr<strend;++ptr){
+        if (*ptr==0x9c)
+          *ptr='\n';
+      }
+      Bfile_WriteFile_OS(hFile, buf, l);
+    }
+    char BUF[2]={0,0};
+    Bfile_WriteFile_OS(hFile, BUF, sizeof(BUF));
+#ifdef NUMWORKS
+    savebuf[0]=1;
+#endif
+    int len=hFile-savebuf;
+    if (
+#ifdef XWASPY
+        len<8192
+#else
+        0
+#endif
+        ){
+      // save as an ascii file beginning with #xwaspy
+#ifdef NUMWORKS 
+      --len;
+      char * buf=savebuf+1;
+      int newlen=4*(len+2)/3+11; // 4/3 oldlen + 8(#swaspy\n) +1 + 2 for ending  zeros
+      char tmpbuf[]={(char)0xBA,(char)0xDD,(char)0x0B,(char)0xEE,0,0,'l','i','n','k','.','p','y',0};
+      char newbuf_[newlen+17];
+      memcpy(newbuf_,tmpbuf,sizeof(tmpbuf));
+      char * newbuf=newbuf_+14;
+      strcpy(newbuf,"##xwaspy\n");
+      newbuf[0]=1;
+      hFile=newbuf+9;
+#else
+      char * buf=savebuf;
+      int newlen=4*(len+2)/3+10;
+      char newbuf[newlen];
+      strcpy(newbuf,"#xwaspy\n");
+      hFile=newbuf+8;
+#endif
+      for (int i=0;i<len;i+=3,hFile+=4){
+        // keep space \n and a..z chars
+        char c;
+        while (i<len && ((c=buf[i])==' ' || c=='\n' || c=='{' || c==')' || c==';' || c==':' || c=='\n' || (c>='a' && c<='z')) ){
+          if (c==')')
+            c='}';
+          if (c==':')
+            c='~';
+          if (c==';')
+            c='|';
+          *hFile=c;
+          ++hFile;
+          ++i;
+        }
+        unsigned char a=buf[i],b=i+1<len?buf[i+1]:0,C=i+2<len?buf[i+2]:0;
+        hFile[0]=xwaspy_shift+(a>>2);
+        hFile[1]=xwaspy_shift+(((a&3)<<4)|(b>>4));
+        hFile[2]=xwaspy_shift+(((b&0xf)<<2)|(C>>6));
+        hFile[3]=xwaspy_shift+(C&0x3f);
+      }
+      //*hFile=0; ++hFile; 
+      //*hFile=0; ++hFile;      
+      int totalsize=hFile-newbuf;
+      if (mode==1 && filename!=Filename)
+        write_file(filename,newbuf,totalsize);
+      // create link.nws
+      // header BA DD 0B EE, length 2 bytes then content then 00 00
+      newbuf_[5]=(totalsize+11)/256;
+      newbuf_[4]=(totalsize+11)%256;
+      hFile[0]=0; hFile[1]=0; hFile[2]=0;
+      if (mode==1)
+        write_file(Filename.c_str(),newbuf,totalsize);
+      return write_file("link.nws",newbuf_,totalsize+17);
+    }
+    else {
+      if (filename!=Filename)
+        write_file(filename,savebuf,len);
+      return write_file(Filename.c_str(),savebuf,len);
     }
   }
 
@@ -17843,16 +18099,22 @@ void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONT
     // insure parse messages are cleared
     Console_Init(contextptr);
     Console_Clear_EditLine();
+    bool parse_py=false;
+    bool execafter=true; // if console has only inputs, propose to exec session
     for (int pos=0;;++pos){
       unsigned short int l,curs;
       unsigned char type,readonly;
       if ( (l=Bfile_ReadFile_OS2(hf))==0) break;
       curs=Bfile_ReadFile_OS2(hf);
       type = *hf; ++hf;
+      if (type)
+	execafter=false;
       readonly=*hf; ++hf;
       char buf[l+1];
       Bfile_ReadFile_OS(hf,buf,l);
       buf[l]=0;
+      if (pos==0 && execafter && !strcmp(buf,"python"))
+	parse_py=true;
       // ok line ready in buf
       while (Line[Current_Line].readonly)
 	Console_MoveCursor(CURSOR_DOWN);
@@ -17868,19 +18130,38 @@ void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONT
 #endif
     }
     console_changed=0;
-    int p=python_compat(contextptr);
-    if (p>=0 && p&4){
-      xcas_python_eval=1;
+    console_log(parse_py?"parse py":"parse xcas");
+    if (execafter){
+      console_log("exec after");
+      console_log(edptr?"edptr":"no edptr");
       if (edptr){
-	check_parse(edptr,edptr->elements,python_compat(contextptr),contextptr);
+	if (parse_py){
+	  string tmp=merge_area(edptr->elements);
+	  console_log("micropy");
+	  console_log(tmp.c_str());
+	  micropy_ck_eval(tmp.c_str());
+	}
+	else
+	  check_parse(edptr,edptr->elements,python_compat(contextptr),contextptr);
       }
+      if (do_confirm("Run session?"))
+        run_session(0,contextptr);
     }
-    else
-      xcas_python_eval=p<0?-1:0;
-    if (p==-1){
-      //js_ck_eval("1",&global_js_context);
-      if (edptr)
-	check_parse(edptr,edptr->elements,-1,contextptr);
+    else {
+      int p=python_compat(contextptr);
+      if (p>=0 && (p&4)){
+        xcas_python_eval=1;
+        if (edptr){
+          check_parse(edptr,edptr->elements,python_compat(contextptr),contextptr);
+        }
+      }
+      else
+        xcas_python_eval=p<0?-1:0;
+      if (p==-1){
+        //js_ck_eval("1",&global_js_context);
+        if (edptr)
+          check_parse(edptr,edptr->elements,-1,contextptr);
+      }
     }
     Console_FMenu_Init(contextptr); // insure the menus are sync-ed
     return true;
@@ -18616,7 +18897,7 @@ void numworks_certify_internal(){
       Bdisp_AllClr_VRAM();
       return;
     }
-    PrintMini(0,0,lang==1?"Amorcage non certifie.":"Boot sector not certified.",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+    PrintMini7(0,0,lang==1?"Amorcage non certifie.":"Boot sector not certified.",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
     std::vector<fileinfo_t> v=tar_fileinfo(flash_buf,0);
     int i=0;
     for (;i<v.size();++i){
@@ -18629,9 +18910,9 @@ void numworks_certify_internal(){
     if (i<v.size() && !bootloader_sha256_check(romaddr))
       i=v.size();
     if (i==v.size()){
-      PrintMini(0,18,lang==1?"Pour mettre a jour:":"Please upgrade from:",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
-      PrintMini(0,36,"www-fourier.univ-grenoble-alpes.fr",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
-      PrintMini(0,54,"/~parisse/nw",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini7(0,18,lang==1?"Pour mettre a jour:":"Please upgrade from:",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
+      PrintMini7(0,36,"www-fourier.univ-grenoble-alpes.fr",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
+      PrintMini7(0,54,"/~parisse/nw",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
       int key; GetKey(&key);
     }
     else {
@@ -18651,6 +18932,7 @@ void numworks_certify_internal(){
 
 
   int restore_session(const char * fname,GIAC_CONTEXT){
+    console_log("restore session");
     //confirm("restore session",fname); 
     string filename(remove_path(remove_extension(fname)));
 #ifdef NSPIRE_NEWLIB
@@ -18673,26 +18955,26 @@ void numworks_certify_internal(){
       numworks_certify_internal();
       Bdisp_AllClr_VRAM();
       int x=0,y=0;
-      PrintMini(x,y,"KhiCAS 1.9 (c) 2024 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE);
+      PrintMini7(x,y,"KhiCAS 1.9 (c) 2024 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE,false);
       y +=18;
-      PrintMini(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini7(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
       y += 18;
 #ifdef NSPIRE_NEWLIB
-      PrintMini(x,y,((lang==1)?"Taper menu plusieurs fois":"Type menu several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini7(x,y,((lang==1)?"Taper menu plusieurs fois":"Type menu several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
 #else
 #if defined NUMWORKS_SLOTB || defined NUMWORKS_SLOTAB
-      PrintMini(x,y,((lang==1)?"Taper shift-EXE":"Type shift-EXE"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini7(x,y,((lang==1)?"Taper shift-EXE":"Type shift-EXE"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
 #else
-      PrintMini(x,y,((lang==1)?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini7(x,y,((lang==1)?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
 #endif
 #endif
       y += 18;
-      PrintMini(x,y,((lang==1)?"pour quitter KhiCAS.":"to leave KhiCAS."),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini7(x,y,((lang==1)?"pour quitter KhiCAS.":"to leave KhiCAS."),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
       y += 18;
-      PrintMini(x,y,(lang==1)?"Si le calcul formel est interdit":"If CAS is forbidden!",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      PrintMini7(x,y,(lang==1)?"Si le calcul formel est interdit":"If CAS is forbidden!",TEXT_MODE_NORMAL, _red, COLOR_WHITE,false);
       y += 18;
 #ifdef NSPIRE_NEWLIB
-      PrintMini(x,y,(lang==1)?"quittez Khicas (menu menu menu)":"Leave Khicas (menu menu menu)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      PrintMini7(x,y,(lang==1)?"quittez Khicas (menu menu menu)":"Leave Khicas (menu menu menu)",TEXT_MODE_NORMAL, _red, COLOR_WHITE,false);
       if (confirm("Interpreter? enter: Xcas, esc: MicroPython",(lang==1?"Peut se modifier depuis menu configuration":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
 	python_compat(4,contextptr);
 	xcas_python_eval=1;
@@ -18700,14 +18982,16 @@ void numworks_certify_internal(){
 	Console_FMenu_Init(contextptr);
       }
       else {
+	console_log("restore session Xcas");
 	python_compat(1,contextptr);
 	*logptr(contextptr) << "Xcas interpreter, Python compatible mode\n";
+	console_log("restore session 2");
       }
 #else
 #if defined NUMWORKS_SLOTB || defined NUMWORKS_SLOTAB
-      PrintMini(x,y,(lang==1)?"quittez Khicas (HOME)":"Leave Khicas (HOME)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      PrintMini7(x,y,(lang==1)?"quittez Khicas (HOME)":"Leave Khicas (HOME)",TEXT_MODE_NORMAL, _red, COLOR_WHITE,false);
 #else
-      PrintMini(x,y,(lang==1)?"quittez Khicas (HOME HOME HOME)":"Leave Khicas (HOME HOME HOME)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      PrintMini7(x,y,(lang==1)?"quittez Khicas (HOME HOME HOME)":"Leave Khicas (HOME HOME HOME)",TEXT_MODE_NORMAL, _red, COLOR_WHITE,false);
 #endif
       if (confirm("Interpreter? OK: Xcas, Back: MicroPython",(lang==1?"Peut se modifier depuis menu configuration":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
 	python_compat(4,contextptr);
@@ -18770,6 +19054,7 @@ void numworks_certify_internal(){
 #else // NUMWORKS && DEVICE
 
   int restore_session(const char * fname,GIAC_CONTEXT){
+    console_log("restore session");
     // cout << "0" << fname << "\n"; Console_Disp(1); GetKey(&key);
     string filename(fname); //filename="mandel.py.tns";
     if (filename.size()>4 && filename.substr(filename.size()-4,4)==".tns")
@@ -18802,26 +19087,26 @@ void numworks_certify_internal(){
 #endif
     if (!load_console_state_smem(filename.c_str(),contextptr)){
       int x=0,y=0;
-      PrintMini(x,y,"KhiCAS 1.9 (c) 2024 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE);
+      PrintMini7(x,y,"KhiCAS 1.9 (c) 2024 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE,false);
       y +=18;
-      PrintMini(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini7(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
       y += 18;
 #ifdef NSPIRE_NEWLIB
-      PrintMini(x,y,((lang==1)?"Taper menu plusieurs fois":"Type menu several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini7(x,y,((lang==1)?"Taper menu plusieurs fois":"Type menu several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
 #else
 #if defined NUMWORKS_SLOTB || defined NUMWORKS_SLOTAB
-      PrintMini(x,y,((lang==1)?"Taper HOME":"Type HOME"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini7(x,y,((lang==1)?"Taper HOME":"Type HOME"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
 #else
-      PrintMini(x,y,((lang==1)?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini7(x,y,((lang==1)?"Taper HOME plusieurs fois":"Type HOME several times"),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
 #endif
 #endif
       y += 18;
-      PrintMini(x,y,((lang==1)?"pour quitter KhiCAS.":"to leave KhiCAS."),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE);
+      PrintMini7(x,y,((lang==1)?"pour quitter KhiCAS.":"to leave KhiCAS."),TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
       y += 18;
-      PrintMini(x,y,(lang==1)?"Si le calcul formel est interdit":"If CAS is forbidden!",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      PrintMini7(x,y,(lang==1)?"Si le calcul formel est interdit":"If CAS is forbidden!",TEXT_MODE_NORMAL, _red, COLOR_WHITE,false);
       y += 18;
 #ifdef NSPIRE_NEWLIB
-      PrintMini(x,y,(lang==1)?"quittez Khicas (doc doc doc)":"Leave Khicas (doc doc doc)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      PrintMini7(x,y,(lang==1)?"quittez Khicas (doc doc doc)":"Leave Khicas (doc doc doc)",TEXT_MODE_NORMAL, _red, COLOR_WHITE,false);
       if (confirm("Interpreter? enter: Xcas, esc: MicroPython",(lang==1?"Peut se modifier depuis menu configuration":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
 	python_compat(4,contextptr);
 	xcas_python_eval=1;
@@ -18829,14 +19114,15 @@ void numworks_certify_internal(){
 	Console_FMenu_Init(contextptr);
       }
       else {
+	console_log("restore session 1");
 	python_compat(1,contextptr);
 	*logptr(contextptr) << "Xcas interpreter, Python compatible mode\n";
       }
 #else
 #if defined NUMWORKS_SLOTB || defined NUMWORKS_SLOTAB
-      PrintMini(x,y,(lang==1)?"quittez Khicas (HOME)":"Leave Khicas (HOME)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      PrintMini7(x,y,(lang==1)?"quittez Khicas (HOME)":"Leave Khicas (HOME)",TEXT_MODE_NORMAL, _red, COLOR_WHITE,false);
 #else
-      PrintMini(x,y,(lang==1)?"quittez Khicas (HOME HOME HOME)":"Leave Khicas (HOME HOME HOME)",TEXT_MODE_NORMAL, _red, COLOR_WHITE);
+      PrintMini7(x,y,(lang==1)?"quittez Khicas (HOME HOME HOME)":"Leave Khicas (HOME HOME HOME)",TEXT_MODE_NORMAL, _red, COLOR_WHITE,false);
 #endif
       if (confirm("Interpreter? OK: Xcas, Back: MicroPython",(lang==1?"Peut se modifier depuis menu configuration":"May be changed later from menu configuration"),false,130)==KEY_CTRL_F6){
 	python_compat(4,contextptr);
@@ -18845,12 +19131,15 @@ void numworks_certify_internal(){
 	Console_FMenu_Init(contextptr);
       }
       else {
+	console_log("restore session 1");
 	python_compat(1,contextptr);
 	// fake lexer required to initialize color syntax
 	gen g("abs",contextptr);
+	console_log("restore session 2");
 	*logptr(contextptr) << "Xcas interpreter, Python compatible mode\n";
       }
 #endif
+      console_log("restore session 3");
       Bdisp_AllClr_VRAM();
 #if defined GIAC_SHOWTIME || defined NSPIRE_NEWLIB
       Console_Output("Reglage de l'heure, exemple");
@@ -18858,6 +19147,7 @@ void numworks_certify_internal(){
       Console_Output("12,37=>,");
       Console_NewLine(LINE_TYPE_OUTPUT, 1);
 #endif
+      console_log("restore session 4");
       //menu_about();
       return 0;
     }
@@ -19939,7 +20229,7 @@ const char *Console_Draw_FMenu(int key, struct FMenu *menu, char *cfg, int activ
 #ifdef BW
     os_draw_string_medium(x,y,COLOR_BLACK,mode?color_gris:COLOR_WHITE,s);
 #else
-    PrintMini(x,y,(char *)s,mode,COLOR_BLACK, COLOR_WHITE);
+    PrintMini7(x,y,(const char *)s,mode,COLOR_BLACK, COLOR_WHITE,false);
 #endif
   }
 
@@ -20282,6 +20572,10 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 
   // redraw_mode=1 clear area
   int Console_Disp(int redraw_mode,GIAC_CONTEXT){
+#ifdef SDL_KHICAS
+    redraw_mode |= 1;
+    Bdisp_AllClr_VRAM();
+#endif
 #ifdef HP39
     int istatus=1;
 #else
@@ -20554,20 +20848,20 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
       menu += string(menu_f3);
 #ifdef HP39
       menu += " |cmds |A<>a |Fich";
-      drawRectangle(0,C205,LCD_WIDTH_PX,17,giac::_BLACK);
+      drawRectangle(0,C205,LCD_WIDTH_PX,17,SDK_BLACK);
       PrintMini(0,C205,menu.c_str(),4);
 #else
       menu += xcas_python_eval==1?"|4 edt|5 2d|6 logo|7 lin|8 matr|9arit|0 plt":"|4 edt|5 2d|6 regr|7 matr|8 cplx|9 arit|0 rand";
       int xcas_color=65055,python_color=52832,js_color=63048;
       int interp_color=xcas_python_eval==-1?js_color:(xcas_python_eval==1?python_color:xcas_color);
       drawRectangle(0,C205,LCD_WIDTH_PX,17,interp_color);
-      PrintMiniMini(0,C205,menu.c_str(),0,giac::_BLACK,interp_color);
+      PrintMiniMini(0,C205,menu.c_str(),0,SDK_BLACK,interp_color);
 #endif
     }
     
     // status, clock,
 #ifdef HP39
-    drawRectangle(0,0,LCD_WIDTH_PX,shell_fonth,giac::_WHITE);
+    drawRectangle(0,0,LCD_WIDTH_PX,shell_fonth,SDK_WHITE);
 #endif
     console_disp_status(contextptr);
     return CONSOLE_SUCCEEDED;
@@ -20834,8 +21128,8 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
   extern "C" void mp_stack_set_limit(size_t);
 #endif // NUMWORKS
 
-
   int console_main(GIAC_CONTEXT,const char * sessionname){
+    console_log("console main 0");
 #if defined NUMWORKS && defined DEVICE
     os_set_pixel(0, 0, 0x7ff); 
     // insure value not too high (_heap_size depends on launcher firmware)
@@ -20845,12 +21139,14 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 #if defined MICROPY_LIB
     mp_stack_ctrl_init();
 #endif
+    console_log("console main 1");
     //volatile int stackTop;
     //mp_stack_set_top((void *)(&stackTop));
     //mp_stack_set_limit(24*1024);
 #ifdef QUICKJS
     quickjs_ck_eval("0");
 #endif
+    console_log("console main 2");
 #if defined MICROPY_LIB && !defined BW
     giac::micropy_ptr=micropy_ck_eval;
 #endif
@@ -20912,16 +21208,21 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
     bool b=nspire_fr();
     lang=b?1:0;
 #endif
+    console_log("console main 3");
     // SetQuitHandler(save_session); // automatically save session when exiting
     int key;
     Console_Init(contextptr);
+    console_log("console main 4");
     if (!turtleptr){
       turtle();
       _efface_logo(vecteur(0),contextptr);
     }
+    console_log("console main 5");
     caseval("floor"); // init xcas parser for Python syntax coloration (!)
+    console_log("console main 6");
     Bdisp_AllClr_VRAM();
     rand_seed(millis(),contextptr);
+    console_log("console main 7");
     if (nspire_exam_mode){ // disabled: save LED state for restoration at end
       // set_exam_mode(2,contextptr);
       exam_mode=0;
@@ -20936,9 +21237,11 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
     giac::set_language(lang,contextptr);
 #endif
     giac::angle_radian(os_get_angle_unit()==0,contextptr);
+    console_log("before disp");
     //GetKey(&key);
     Console_Disp(1,contextptr);
     // GetKey(&key);
+    console_log("after disp");
     char *expr=0;
 #ifndef NO_STDEXCEPT
     try {
@@ -21379,7 +21682,7 @@ void drawAtom(uint8_t id) {
 } // namespace xcas
 #endif // ndef NO_NAMESPACE_XCAS
 
-#if defined MICROPY_LIB && defined SDL_KHICAS
+#if defined MICROPY_LIB && !defined SDL_KHICAS && !defined SIMU
 // FIXME, already defined in mphalport.c libmicropy
 #else
 void console_output(const char * s,int l){

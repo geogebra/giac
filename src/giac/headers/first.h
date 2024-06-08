@@ -29,7 +29,7 @@
 #undef _GLIBCXX_ASSERTIONS
 #endif
 
-#ifdef NUMWORKS
+#if defined NUMWORKS && !defined SDL_KHICAS
 #define KHICAS 1
 #ifdef NUMWORKS_SLOTBFR
 #define NUMWORKS_SLOTB
@@ -198,7 +198,7 @@ int my_sprintf(char * s, const char * format, ...);
 #ifdef WITH_MYOSTREAM
 #include "myostream.h"
 #else
-#if defined KHICAS //&& defined STATIC_BUILTIN_LEXER_FUNCTION
+#if defined KHICAS || defined SDL_KHICAS //&& defined STATIC_BUILTIN_LEXER_FUNCTION
 #include "stdstream"
 #define my_ostream stdostream
 #else

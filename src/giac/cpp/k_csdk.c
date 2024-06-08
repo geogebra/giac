@@ -763,14 +763,14 @@ int write_file(const char * filename,const char * s,int len){
        strcmp(filename,"session.py.tns")!=0 
        )
       )
-    return false;
-  FILE * f=fopen(filename,"w");
+    return 0;
+  FILE * f=fopen(filename,"wb");
   if (!f) return false;
   if (!len) len=strlen(s);
   for (int i=0;i<len;++i)
     fputc(s[i],f);
   fclose(f);
-  return true;
+  return 1;
 }
 
 #define FILENAME_MAXRECORDS 64

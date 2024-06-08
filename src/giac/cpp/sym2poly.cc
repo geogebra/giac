@@ -6095,7 +6095,7 @@ namespace giac {
   gen _factor(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (is_integer(args)){
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
       return _ifactor(args,contextptr);
 #else
       *logptr(contextptr) << "Run ifactor(" << args << ") for integer factorization." << "\n";

@@ -67,7 +67,8 @@ using namespace std;
 #include "solve.h"
 #include "csturm.h"
 #include "sparse.h"
-#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS
+#include "quater.h"
+#if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
 inline bool is_graphe(const giac::gen &g){ return false; }
 #else
 #include "graphtheory.h"
@@ -4501,6 +4502,20 @@ namespace giac {
   }
 
   gen chkmod(const gen& a,const gen & b){
+#ifndef NO_RTTI
+    if (is_integer(a) && b.type==_USER){
+      if (galois_field * ptr=dynamic_cast<galois_field *>(b._USERptr)){
+#if 1
+        return makemodquoted(a,ptr->p);
+#else
+        galois_field res=*ptr;
+        res.a=a;
+        res.reduce();
+        return res;
+#endif
+      }
+    }
+#endif
     if  ( (b.type!=_MOD) || ((a.type==_MOD) && (*(a._MODptr+1)==*(b._MODptr+1)) ))
       return a;
     return makemodquoted(a,*(b._MODptr+1));
@@ -12532,7 +12547,8 @@ namespace giac {
 #ifdef HAVE_SSTREAM
     ostringstream warnstream;
 #endif // HAVE_SSTREAM
-#ifndef NSPIRE
+
+#if !defined NSPIRE && !defined SDL_KHICAS
     my_ostream * oldptr = logptr(contextptr);
 #ifdef WITH_MYOSTREAM
     my_ostream newptr(&warnstream);
@@ -12562,7 +12578,7 @@ namespace giac {
 #endif
       type=_STRNG;
     }
-#ifndef NSPIRE
+#if !defined NSPIRE && !defined SDL_KHICAS
     logptr(oldptr,contextptr);
 #endif
 #if !defined HAVE_SSTREAM || defined NSPIRE
@@ -14333,7 +14349,7 @@ void sprint_double(char * s,double d){
   }
 
   string print_FLOAT_(const giac_float & f,GIAC_CONTEXT){
-    char ch[64];
+    char ch[1024];
 #ifdef BCD
 #ifndef CAS38_DISABLED
     int i=get_int(f);
@@ -14580,7 +14596,7 @@ void sprint_double(char * s,double d){
 #endif
 #endif
 
-#ifdef KHICAS
+#if defined KHICAS || defined SDL_KHICAS
  stdostream & operator << (stdostream & os,const gen & a){
    return os << a.print(context0); 
  }
@@ -16893,7 +16909,7 @@ void sprint_double(char * s,double d){
       return S.c_str();
     }
     if (calc_mode(&C)!=1 && (last.is_symb_of_sommet(at_pnt) || last.is_symb_of_sommet(at_pixon))){
-#if !defined(GIAC_GGB) && (defined(EMCC) || defined EMCC2)
+#if !defined(GIAC_GGB) && (defined(EMCC) || defined EMCC2) && !defined SDL_KHICAS
       if (is3d(last)){
 	int worker=0;
 	worker=EM_ASM_INT_V({
