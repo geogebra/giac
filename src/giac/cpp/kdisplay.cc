@@ -169,6 +169,7 @@ bool xthetat=false;
 #ifdef BW
 bool freezeturtle=false;
 #endif
+bool nws_freezeturtle=false;
 bool global_show_axes=true;
 int esc_flag=0;
 int xcas_python_eval=0;
@@ -17365,7 +17366,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       return 0;
     }
     if (xcas_python_eval==1){
-      freezeturtle=false;
+      nws_freezeturtle=freezeturtle=false;
       micropy_ck_eval(s);
     }
     else 
@@ -23159,6 +23160,11 @@ const char * gettext(const char * s) {
 }
 
   void process_freeze(){
+    if (nws_freezeturtle){
+      int key; GetKey(&key);
+      nws_freezeturtle=false;
+      return;
+    }
     if (freezeturtle){
       xcas::displaylogo();
       freezeturtle=false;

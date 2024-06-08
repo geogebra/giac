@@ -124,13 +124,7 @@ extern "C" {
   void numworks_redraw();
   void numworks_wait_1ms(int ms);
   // access to Numworks OS, defined in port.cpp (or modkandinsky.cpp)
-#ifndef SDL_KHICAS
-  inline void os_set_pixel(int x,int y,int c){
-    numworks_set_pixel(x,y,c);
-  }
-  inline int os_get_pixel(int x,int y){
-    return numworks_get_pixel(x,y);
-  }
+#if !defined SDL_KHICAS 
   inline void os_fill_rect(int x,int y,int w,int h,int c){
     numworks_fill_rect(x,y,w,h,c);
   }
@@ -140,9 +134,17 @@ extern "C" {
   inline int os_draw_string_small(int x,int y,int c,int bg,const char * s,int fake){
     return numworks_draw_string_small(x,y,c,bg,s,fake);
   }
-  inline void os_shaw_graph(){ return numworks_show_graph(); }
+#ifndef __MINGW_H
+  inline int os_get_pixel(int x,int y){
+    return numworks_get_pixel(x,y);
+  }
+  inline void os_set_pixel(int x,int y,int c){
+    numworks_set_pixel(x,y,c);
+  }
+  inline void os_show_graph(){ return numworks_show_graph(); }
   inline void os_hide_graph(){ return numworks_hide_graph(); }
   inline void os_redraw(){ return numworks_redraw(); }
+#endif
 #endif
   inline void os_wait_1ms(int ms) { numworks_wait_1ms(ms); }
   int getkey_raw(int allow_suspend); // Numworks scan code
@@ -193,13 +195,13 @@ extern "C" {
   inline int os_draw_string_small_(int x,int y,const char * s){ return os_draw_string_small(x,y,SDK_BLACK,SDK_WHITE,s,0);}
   
 #ifdef __cplusplus
-#ifdef NUMWORKS
+#if defined NUMWORKS && !defined __MINGW_H
   inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake=0){ return os_draw_string(x,y,c,bg,s,fake);}
 #else
   int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake=0);
 #endif
 #else
-#ifdef NUMWORKS
+#if defined NUMWORKS && !defined __MINGW_H
   inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake){ return os_draw_string(x,y,c,bg,s,fake);}
 #else
   int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake);
@@ -238,7 +240,7 @@ extern "C" {
   void statusline(int mode);
 #endif
   void statusflags(void);
-#ifdef NUMWORKS
+#if defined NUMWORKS && !defined __MINGW_H
   inline int iskeydown(int key){ return getkey(key | 0x80000000); }
 #else
   int iskeydown(int key);

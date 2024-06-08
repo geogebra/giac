@@ -67,7 +67,6 @@ using namespace std;
 #include "solve.h"
 #include "csturm.h"
 #include "sparse.h"
-#include "quater.h"
 #if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
 inline bool is_graphe(const giac::gen &g){ return false; }
 #else
@@ -4502,20 +4501,6 @@ namespace giac {
   }
 
   gen chkmod(const gen& a,const gen & b){
-#ifndef NO_RTTI
-    if (is_integer(a) && b.type==_USER){
-      if (galois_field * ptr=dynamic_cast<galois_field *>(b._USERptr)){
-#if 1
-        return makemodquoted(a,ptr->p);
-#else
-        galois_field res=*ptr;
-        res.a=a;
-        res.reduce();
-        return res;
-#endif
-      }
-    }
-#endif
     if  ( (b.type!=_MOD) || ((a.type==_MOD) && (*(a._MODptr+1)==*(b._MODptr+1)) ))
       return a;
     return makemodquoted(a,*(b._MODptr+1));
@@ -14349,7 +14334,7 @@ void sprint_double(char * s,double d){
   }
 
   string print_FLOAT_(const giac_float & f,GIAC_CONTEXT){
-    char ch[1024];
+    char ch[64];
 #ifdef BCD
 #ifndef CAS38_DISABLED
     int i=get_int(f);
@@ -16894,7 +16879,7 @@ void sprint_double(char * s,double d){
       // COUT << "hout " << g << '\n';
     }
 #endif
-#if defined(EMCC) || defined(EMCC2)
+#if (defined(EMCC) || defined(EMCC2)) && !defined SDL_KHICAS
     // compile with -s LEGACY_GL_EMULATION=1
     gen last=g;
     while (last.type==_VECT && last.subtype!=_LOGO__VECT && !last._VECTptr->empty()){
@@ -16949,7 +16934,7 @@ void sprint_double(char * s,double d){
 	else
 	  last=tmp;
       }
-#ifdef KHICAS // replace ],[ by ][
+#if defined KHICAS || defined SDL_KHICAS // replace ],[ by ][
       if (last.is_symb_of_sommet(at_pnt)){
 	if (os_shell || nspirelua)
 	  xcas::displaygraph(g,gp,&C);

@@ -59,6 +59,7 @@ extern "C" {
   void mp_stack_ctrl_init();
   extern int parser_errorline,parser_errorcol;
   void python_free();
+  extern bool nws_freezeturtle;
 }
 int micropy_ck_eval(const char *line);
 #endif
