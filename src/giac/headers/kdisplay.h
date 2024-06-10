@@ -3,6 +3,8 @@
 #define _KDISPLAY_H
 #include "config.h"
 #include "giacPCH.h"
+extern "C" void copy_to_xcas_clipboard(const char * s);
+extern "C" const char * get_xcas_clipboard();
 #if defined KHICAS || defined SDL_KHICAS
 #include "misc.h"
 
@@ -25,6 +27,7 @@ extern const char * flash_buf;
 extern "C" const char * flash_read(const char * filename);
 extern "C" int flash_filebrowser(const char ** filenames,int maxrecords,const char * extension);
 #endif
+
 class autoshutdown : public std::exception{
   const char * what () const throw ()
   {

@@ -1645,12 +1645,12 @@ namespace giac {
     if (is_integer(g)){
       if (char2){
 	if (g.type==_ZINT?modulo(*g._ZINTptr,2)==0:g%2==0) 
-	  return 0;
+	  return makemod(0,p);
 	return *this;
       }
       gen tmp=smod(g,p);
       if (is_exactly_zero(tmp))
-	return zero;
+	return makemod(0,p);
       return galois_field(p,P,x,g*a);
     }
     if (g.type==_MOD){

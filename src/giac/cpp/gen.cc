@@ -5227,9 +5227,9 @@ namespace giac {
       return chkmod(zero,a);
     if (a.is_symb_of_sommet(at_neg) && b==a._SYMBptr->feuille)
       return chkmod(zero,b);
-    if (is_exactly_zero(a))
+    if (is_exactly_zero(a) && !(a.type==_MOD && b.type==_INT_))
       return b;
-    if (is_exactly_zero(b))
+    if (is_exactly_zero(b) && !(b.type==_MOD && a.type==_INT_))
       return a;
     if (a.type==_STRNG)
       return string2gen(*a._STRNGptr+b.print(context0),false);
@@ -7737,7 +7737,7 @@ namespace giac {
 	  return midn(int(base._VECTptr->size()));
 	if (base.type==_USER)
 	  return base*inv(base,context0);
-	return 1;
+	return base.type==_MOD?makemod(1,*(base._MODptr+1)):1;
       }
       inpow(base,exponent,res);
       return(res);
@@ -16675,6 +16675,12 @@ void sprint_double(char * s,double d){
       warn_symb_program_sto=true;
       return "warn on";
     }
+#if defined KHICAS || defined SDL_KHICAS
+    if (!strcmp(s,"save session")){
+      xcas::save_session(contextptr);
+      return "Done";
+    }
+#endif
 #ifdef SDL_KHICAS
     if (!strcmp(s,"*")){
       int res=xcas::console_main(contextptr);

@@ -909,7 +909,8 @@ bool match(const char * filename,const char * extension){
 }
 
 int tar_filebrowser(const char * buf,const char ** filenames,int maxrecords,const char * extension){
-  vector<fileinfo_t> finfo=tar_fileinfo(buf,0);
+  static vector<fileinfo_t> finfo;
+  finfo=tar_fileinfo(buf,0);
   int s=finfo.size();
   if (s==0) return 0;
   int j=0;

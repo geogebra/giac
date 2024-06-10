@@ -93,7 +93,7 @@ const char * flash_filename(){
         s=getenv("HOME");
         string s1 = s+"/Library/Application\ Support/Upsilon/";
         mkdir(s1.c_str(),0755); // ignore error if dir exists
-        if (is_file_available((s1+"scripts.tar").c_str()))
+        if (giac::is_file_available((s1+"scripts.tar").c_str()))
           s=s1;
         else
           s+="/Documents/";
@@ -135,6 +135,8 @@ const int xwaspy_shift=33; // must be between 32 and 63, reflect in xcas.js and 
 #include <ctype.h>
 #include "input_lexer.h"
 #include "input_parser.h"
+  
+
 #if defined NUMWORKS && defined DEVICE
   void py_ck_ctrl_c(){
     if (giac::ctrl_c || giac::interrupted)
@@ -395,7 +397,7 @@ namespace giac {
       ptr=new string;
     return ptr;
   }
-  
+
   void copy_clipboard(const string & s,bool status){
     dbgprintf("clip %s\n",s.c_str());
 #if defined NUMWORKS && defined DEVICE && !defined NUMWORKS_SLOTB && !defined NUMWORKS_SLOTAB
@@ -15459,7 +15461,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
   void save_script(const char * filename,const string & s){
     if (nspire_exam_mode==2)
       return;
+    int l=s.size()+1;
 #ifdef NUMWORKS
+    ++l;
     char buf[s.size()+2];
     buf[0]=1;
     strcpy(buf+1,s.c_str());
@@ -15473,9 +15477,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     int l=strlen(filenametns);
     if (l<4 || strncmp(filename+l-4,".tns",4))
       strcpy(filenametns+strlen(filename),".tns");
-    write_file(filenametns,buf);
+    write_file(filenametns,buf,l);
 #else
-    write_file(filename,buf);
+    write_file(filename,buf,l);
 #endif
   }
 
@@ -23274,4 +23278,11 @@ int kcas_main(int isAppli, unsigned short OptionNum)
 
 #endif // hp39
 
+void copy_to_xcas_clipboard(const char * s){
+  giac::copy_clipboard(s,false);
+}
+
+const char * get_xcas_clipboard(){
+  return giac::clipboard()->c_str();
+}
 #endif // KHICAS
