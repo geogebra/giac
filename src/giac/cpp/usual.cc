@@ -9132,7 +9132,7 @@ namespace giac {
     }
     if (b.type==_MOD){
       if (warnmod){
-#ifdef GIAC_HAS_STO38
+#ifdef GIAC_HAS_STO_38
 	*logptr(contextptr) << "// Warning: a %% b returns the class of a in Z/bZ. Use irem(a,b) for remainder" << '\n';
 #else
 	*logptr(contextptr) << "// Warning: a % b returns the class of a in Z/bZ. Use irem(a,b) for remainder" << '\n';
