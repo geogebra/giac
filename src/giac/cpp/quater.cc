@@ -1642,7 +1642,7 @@ namespace giac {
 
   gen galois_field::operator * (const gen & g) const {
     if (g.type==_FRAC)
-      g=g._FRACptr->num*invmod(g._FRACptr->den,p);
+      return (*this)*(g._FRACptr->num*invmod(g._FRACptr->den,p));
     bool char2=p.type==_INT_ && p.val==2 && a.type==_INT_;
     if (is_integer(g)){
       if (char2){
