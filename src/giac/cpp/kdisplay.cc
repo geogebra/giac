@@ -15,6 +15,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#define MAX_DISP_RADIUS 2048 // max displayable circle radius in pixels 
 #include "config.h"
 #include "giacPCH.h"
 #if defined HAVE_UNISTD_H && !defined NUMWORKS && !defined HP39
@@ -8084,11 +8085,39 @@ namespace xcas {
     double dx=x1-x0,dy=y1-y0;
     double n=sqrt(dx*dx+dy*dy);
     dx/=n; dy/=n;
+#if 1
+    if (dx==0){
+      if (y0>y1) swapint(y0,y1);
+      int h=y1-y0;
+      fill_rect(x0-fl_line_width/2,y0,fl_line_width,h,c);
+    } else if (dy==0){
+      if (x0>x1) swapint(x0,x1);
+      int w=x1-x0;
+      fill_rect(x0,y0-fl_line_width/2,w,fl_line_width,c);      
+    } else {
+      vector< vector<int> > v;
+      vector<int> w(2);
+      w[0]=int(x0-fl_line_width*dy/2+.5);
+      w[1]=int(y0+fl_line_width*dx/2+.5);
+      v.push_back(w);
+      w[0]=int(x0+fl_line_width*dy/2+.5);
+      w[1]=int(y0-fl_line_width*dx/2+.5);
+      v.push_back(w);
+      w[0]=int(x1+fl_line_width*dy/2+.5);
+      w[1]=int(y1-fl_line_width*dx/2+.5);
+      v.push_back(w);
+      w[0]=int(x1-fl_line_width*dy/2+.5);
+      w[1]=int(y1+fl_line_width*dx/2+.5);
+      v.push_back(w);
+      draw_filled_polygon(v,0,LCD_WIDTH_PX,0,LCD_HEIGHT_PX,c,Calc->ct);
+    }
+#else
     for (int d=-fl_line_width/2;d<=(fl_line_width+1)/2;++d){
       draw_line(x0-d*dy,y0+d*dx,x1-d*dy,y1+d*dx,c);
     }
-    draw_filled_circle(x0,y0,(fl_line_width-1)/2,c,true,true);
-    draw_filled_circle(x1,y1,(fl_line_width-1)/2,c,true,true);
+#endif
+    draw_filled_circle(x0,y0,(fl_line_width)/2,c,true,true);
+    draw_filled_circle(x1,y1,(fl_line_width)/2,c,true,true);
   }
 
   inline void fl_polygon(int x0,int y0,int x1,int y1,int x2,int y2,int c){
@@ -8344,6 +8373,8 @@ namespace xcas {
 	  if ( (diam.type==_DOUBLE_) && (a1.type==_DOUBLE_) && (a2.type==_DOUBLE_) ){
 	    i1=diam._DOUBLE_val*x_scale/2.0;
 	    j1=diam._DOUBLE_val*y_scale/2.0;
+            if (i1>MAX_DISP_RADIUS || j1>MAX_DISP_RADIUS)
+              return;
 	    double a1d=a1._DOUBLE_val,a2d=a2._DOUBLE_val,angled=angle._DOUBLE_val;
 	    bool changer_sens=a1d>a2d;
 	    if (changer_sens){
@@ -9968,13 +9999,19 @@ namespace xcas {
       if (tmax._DOUBLE_val<tracemode_mark)
 	tracemode_mark=tmax._DOUBLE_val;
       G=G._SYMBptr->feuille[1];
-      if (G.type==_VECT){
+      if (G.type==_VECT && !G._VECTptr->empty()){
 	vecteur &Gv=*G._VECTptr;
+        tmin=re(Gv.front(),contextptr);
+        tmax=re(Gv.back(),contextptr);
 	tstep=(tmax-tmin)/(Gv.size()-1);
+        if (tracemode_mark<tmin._DOUBLE_val)
+          tracemode_mark=tmin._DOUBLE_val;
+        if (tracemode_mark>tmax._DOUBLE_val)
+          tracemode_mark=tmax._DOUBLE_val;
       }
       double eps=1e-6; // epsilon(contextptr)
       double curt=(tmin+tracemode_i*tstep)._DOUBLE_val;
-      if (abs(curt-tracemode_mark)<tstep._DOUBLE_val)
+      if (abs(curt-tracemode_mark)<0.999*tstep._DOUBLE_val)
 	curt=tracemode_mark;
       if (operation==-1){
 	gen A,B,C,R; // detect ellipse/hyperbola
@@ -18817,7 +18854,7 @@ int char2int(char c){
 #else
     string filename(remove_path(remove_extension(fname)));
 #if defined NUMWORKS && defined XWASPY
-    bool xwaspy=filename!="session"; // xw will be saved as a fake .py file
+    bool xwaspy=true;//filename!="session"; // xw will be saved as a fake .py file
 #else
     bool xwaspy=false;
 #endif
@@ -18843,6 +18880,8 @@ int char2int(char c){
     // it's not a session, but a script, restore last session settings and load script
 #ifdef NSPIRE_NEWLIB
     const char sessionname[]="session.xw.tns";
+#elif defined NUMWORKS
+    const char sessionname[]="session_xw.py";
 #else
     const char sessionname[]="session.xw";
 #endif 
@@ -18940,6 +18979,10 @@ void numworks_certify_internal(){
     console_log("restore session");
     //confirm("restore session",fname); 
     string filename(remove_path(remove_extension(fname)));
+#ifdef NUMWORKS
+      if (filename=="session")
+        filename += "_xw";
+#endif
 #ifdef NSPIRE_NEWLIB
     if (file_exists((filename+".xw.tns").c_str()))
       filename += ".xw.tns";

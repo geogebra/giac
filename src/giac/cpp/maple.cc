@@ -822,7 +822,7 @@ namespace giac {
     int s=int(v.size());
     if (s!=3 && s!=4)
       return gensizeerr();
-    if (!ckmatrix(v.front()) || v[1].type!=_INT_ || v[2].type!=_INT_)
+    if (!ckmatrix(v.front()) || !is_integral(v[1]) || !is_integral(v[2]))
       return gentypeerr();
     matrice m=*v.front()._VECTptr;
     int ml,mc;
@@ -837,7 +837,7 @@ namespace giac {
       return gensizeerr();
     gen p=m[l][c];
     int l1=0,l2=ml-1;
-    if (s==4 && v[3].type==_INT_){
+    if (s==4 && is_integral(v[3])){
       int lmin=v[3].val;
       if (lmin<0){
 	l1 = -lmin;
@@ -850,8 +850,12 @@ namespace giac {
       }
     }
     for (;l1<=l2;++l1){
-      if (l1!=l && !is_zero(m[l1][c]))
-	linear_combination(p,*m[l1]._VECTptr,-m[l1][c],*m[l]._VECTptr,plus_one,1,*m[l1]._VECTptr,epsilon(contextptr));
+      if (l1!=l && !is_zero(m[l1][c])){
+        if (abs_calc_mode(contextptr)==38)
+          linear_combination(p,*m[l1]._VECTptr,-m[l1][c],*m[l]._VECTptr,p,1,*m[l1]._VECTptr,epsilon(contextptr));
+        else
+          linear_combination(p,*m[l1]._VECTptr,-m[l1][c],*m[l]._VECTptr,plus_one,1,*m[l1]._VECTptr,epsilon(contextptr));
+      }
     }
     return m;
   }
@@ -2706,6 +2710,19 @@ namespace giac {
 
 #ifdef HAVE_LIBPNG
   int write_png(const char *file_name, void *rows_, int w, int h, int colortype, int bitdepth){
+#ifdef __APPLE__
+    if (file_name[0]!='/'){
+      // detect relative path to /, redirect to Documents
+      char * path=getcwd(0,0);
+      if (!strcmp(path,"/") && getenv("HOME")){
+        string p(getenv("HOME")); p+="/Pictures/";
+        free(path);
+        p+=file_name;
+        return write_png(p.c_str(),rows_,w,h,colortype,bitdepth);
+      }
+      free(path);
+    }
+#endif
     png_bytep * rows=(png_bytep *) rows_;
     png_structp png_ptr;
     png_infop info_ptr;

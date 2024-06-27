@@ -264,9 +264,15 @@ namespace giac {
   gen _galois_field(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     vecteur v;
+    if (args.type==_DOUBLE_)
+      return gensizeerr(gettext("GF expects an integer, not a float. Hint: check that you are in exact mode."));
     if (is_integer(args)){ // must be a power of a prime
       if (_isprime(args,contextptr)!=0){
+#ifdef GIAC_HAS_STO_38
+	return gensizeerr(gettext("GF is used for non-prime finite field. Use %% or mod for prime fields, e.g. 1 % ")+args.print(contextptr)+'.');
+#else
 	return gensizeerr(gettext("GF is used for non-prime finite field. Use % or mod for prime fields, e.g. 1 % ")+args.print(contextptr)+'.');
+#endif
       }
       v.push_back(args);
     }
@@ -430,8 +436,9 @@ namespace giac {
 	  gen tmp=symb_horner(*A._VECTptr,x._VECTptr->back());
 	  if (tmp.is_symb_of_sommet(at_plus))
 	    return '('+tmp.print(contextptr)+')';
-	  else
-	    return tmp.print(contextptr);
+	  if (tmp.type==_INT_)
+            return '('+makemod(tmp,p).print(contextptr)+')';
+          return tmp.print(contextptr);
 	}
 	return x._VECTptr->back().print()+"("+r2e(A,xid,contextptr).print()+")";      
       }

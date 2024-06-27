@@ -13499,7 +13499,10 @@ const mksa_unit __lambda0_unit={1.239841984e-6,1,0,0,0,0,0,0}; // inverse meter-
 	return symbolic(at_piecewise,g.eval(eval_level(contextptr),contextptr));
       if (is_zero(test))
 	continue;
-      return v[2*i+1].eval(eval_level(contextptr),contextptr);
+      if (2*i+1<s)
+        return v[2*i+1].eval(eval_level(contextptr),contextptr);
+      else
+        return gensizeerr(gettext("No case applies"));
     }
     if (s%2)
       return v[s-1].eval(eval_level(contextptr),contextptr);

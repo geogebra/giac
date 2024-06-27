@@ -3412,7 +3412,7 @@ namespace giac {
       reim(f,r,i,contextptr);
       return;
     }
-    if ( (u==at_re) || (u==at_im) || (u==at_abs) || (u==at_surd) || (u==at_NTHROOT) || (u==at_innertln)){
+    if ( (u==at_re) || (u==at_im) || (u==at_abs) || (u==at_surd) || (u==at_NTHROOT) || (u==at_innertln) || (u==at_LambertW && !do_lnabs(contextptr))){
       r=s;
       i=0;
       return;
@@ -4530,7 +4530,7 @@ namespace giac {
     if (is_exactly_zero(b)) 
       return a;
     if (a.type==_DOUBLE_ || a.type==_REAL || a.type==_FLOAT_)
-      return gensizeerr(context0);
+      return gensizeerr(gettext("Mod expects integers not floats. Hint: check that you are in exact mode."));
     gen res=makemodquoted(0,0);
     if ( (b.type==_INT_) || (b.type==_ZINT) )
       *res._MODptr=smod(a,b);
@@ -7342,6 +7342,8 @@ namespace giac {
     if (is_one(b) && ((b.type!=_MOD) || (a.type==_MOD) ))
       return a;
     if ((a.type==_SYMB) && equalposcomp(plot_sommets,a._SYMBptr->sommet)){
+      if (a._SYMBptr->sommet==at_curve)
+        return gensizeerr(gettext("Unable to multiply two graphic objects"));
       gen tmp=remove_at_pnt(a);
       if (tmp.type==_VECT && tmp.subtype==_VECTOR__VECT){
 	if (b.type==_SYMB && equalposcomp(plot_sommets,b._SYMBptr->sommet)){
@@ -7351,6 +7353,8 @@ namespace giac {
 	return _vector(vector2vecteur(*tmp._VECTptr)*b,contextptr);
       }
       if ((b.type==_SYMB) && equalposcomp(plot_sommets,b._SYMBptr->sommet)){
+        if (b._SYMBptr->sommet==at_curve)
+          return gensizeerr(gettext("Unable to multiply two graphic objects"));
 	gen tmpb=complex2vecteur(remove_at_pnt(b),contextptr);
 	tmp=complex2vecteur(tmp,contextptr);
 	if (tmpb._VECTptr->size()==tmp._VECTptr->size())
@@ -12730,7 +12734,7 @@ void sprint_double(char * s,double d){
 	return "undef";
       if (my_isinf(d))
 	return "infinity";
-      char s[256];
+      char s[512];
       string f2=string("%.")+forme.substr(1,forme.size()-1)+ch;
       sprintfdouble(s,f2.c_str(),d);
       return s;

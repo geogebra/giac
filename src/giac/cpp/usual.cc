@@ -6672,6 +6672,8 @@ namespace giac {
 
   // symbolic symb_iquo(const gen & a,const gen & b){ return symbolic(at_iquo,makevecteur(a,b));  }
   bool is_integral(gen & indice){
+    if (indice.is_symb_of_sommet(at_neg))
+      indice=-indice._SYMBptr->feuille;
     if (is_cinteger(indice))
       return true;
     if (indice.type==_FLOAT_){
@@ -10878,6 +10880,8 @@ namespace giac {
     if (args==0) return 1;
     gen w=_LambertW(args,contextptr);
     // return inv(args+exp(w,contextptr),contextptr);
+    if (args.type==_VECT)
+      return w/args[0]/(1+w);
     return w/args/(1+w);
   }
   define_partial_derivative_onearg_genop( D_at_LambertW," D_at_LambertW",&d_LambertW);

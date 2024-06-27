@@ -1192,7 +1192,7 @@ namespace giac {
 
   const char * identificateur::print(GIAC_CONTEXT) const{
     if (!strcmp(id_name,string_pi)){
-#ifdef NUMWORKS
+#if defined NUMWORKS || defined HP39
       return string_pi;
 #endif
 #if !defined KHICAS 

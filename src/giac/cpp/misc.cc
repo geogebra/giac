@@ -9753,8 +9753,10 @@ void sync_screen(){}
   void draw_filled_polygon(vector< vector<int> > &L,int xmin,int xmax,int ymin,int ymax,int color,GIAC_CONTEXT){
     int n=L.size();
     // close polygon if it is open
-    if (!(L[n-1]==L[0]))
-      L.push_back(L[0]);
+    if (!(L[n-1]==L[0])){
+      vector<int> L0(L[0]);
+      L.push_back(L0);
+    }
     else
       n--;
     // ordered list of ymin,x,index (ordered by ascending ymin)

@@ -5810,6 +5810,8 @@ namespace giac {
   }
 
   gen ratfactor(const gen & ee,bool with_sqrt,GIAC_CONTEXT){
+    if (has_num_coeff(ee))
+      return ee;
     gen e(normalize_sqrt(ee,contextptr));
     if (has_num_coeff(ee))
       e=e.evalf(1,contextptr);

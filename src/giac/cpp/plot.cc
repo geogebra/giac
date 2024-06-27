@@ -5538,9 +5538,15 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
   static define_unary_function_eval (__barycentre,&_barycentre,_barycentre_s);
   define_unary_function_ptr5( at_barycentre ,alias_at_barycentre,&__barycentre,0,true);
 
+  void unvect(gen & a){
+    if (a.type==_VECT && a.subtype==_VECTOR__VECT && a._VECTptr->size()==2)
+      a=a._VECTptr->back()-a._VECTptr->front();
+  }
+
   gen scalar_product(const gen & a0,const gen & b0,GIAC_CONTEXT){
     gen a=remove_at_pnt(a0);
     gen b=remove_at_pnt(b0);
+    unvect(a); unvect(b);
     if (a.type==_VECT && b.type==_VECT)
       return scalarproduct(*a._VECTptr,*b._VECTptr,contextptr);
     gen ax,ay; reim(a,ax,ay,contextptr);
@@ -6261,11 +6267,24 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       return 0; // so that a single point has area 0
     vecteur v=*g._VECTptr;
     int s=int(v.size());
+    if (s==3 && v[0].type==_VECT  && !v[0]._VECTptr->empty() && remove_at_pnt(v[0]._VECTptr->front()).is_symb_of_sommet(at_curve))
+      v[0]=v[0]._VECTptr->front();
     v[0]=remove_at_pnt(v[0]);
     if (s==3 && v[0].is_symb_of_sommet(at_curve)){
       v[1]=symb_interval(v[1],v[2]);
       v.pop_back();
       --s;
+    }
+    if (s==3 && v[0].type==_VECT && v[0]._VECTptr->size()==2 && !v[1].is_symb_of_sommet(at_pnt) && v[1].type!=_VECT && !v[2].is_symb_of_sommet(at_pnt) && v[2].type!=_VECT){ // segment,x1,x2, workaround for e.g. area(plotfunc(x),1,2)
+      gen A=v[0][0],B=v[0][1],Ax,Ay,Bx,By,x1=v[1],x2=v[2];
+      if (A.type!=_VECT && !A.is_symb_of_sommet(at_pnt) && B.type!=_VECT && !B.is_symb_of_sommet(at_pnt)){
+        reim(A,Ax,Ay,contextptr);
+        reim(B,Bx,By,contextptr);
+        gen m=(By-Ay)/(Bx-Ax);
+        gen b=Ay-m*Ax;
+        // y=m*x+b -> 1/2*m*x^2+b*x
+        return m/2*(x2*x2-x1*x1)+b*(x2-x1);
+      }
     }
     // search for a numeric integration method
     if (s==2 && (v[1].is_symb_of_sommet(at_equal) || v[1].is_symb_of_sommet(at_interval)) ){
@@ -6458,25 +6477,33 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 	res=angle(nf,ne,contextptr);	
       }
       else {
-	if (e.type!=_VECT || e._VECTptr->size()!=2)
+	if (e.type!=_VECT || e._VECTptr->size()!=2){
+          angle_mode(mode,contextptr);
 	  return gensizeerr(gettext("angle plan with unknown"));
+        }
 	gen de=e._VECTptr->back()-e._VECTptr->front();
-	if (de.type!=_VECT)
+	if (de.type!=_VECT){
+          angle_mode(mode,contextptr);
 	  return gensizeerr(contextptr);
+        }
 	res=angle(nf,*de._VECTptr,contextptr);
       }
     }
     else {
       if (e.type==_VECT && e._VECTptr->size()!=3){
-	if ((e._VECTptr->size()!=2) || (f._VECTptr->size()!=2))
+	if ((e._VECTptr->size()!=2) || (f._VECTptr->size()!=2)){
+          angle_mode(mode,contextptr);
 	  return gensizeerr(gettext("angle"));
+        }
 	if (e._VECTptr->front().type==_VECT 
 	    // check added 12/8/2014 for angle(droite(y=x),droite(y=1-x),"") 
 	    || (e.subtype==_LINE__VECT || e.subtype==_HALFLINE__VECT)
 	    ){	
 	  vecteur w=inter(v.front(),v[1],0); // context does not apply for lines
-	  if (w.empty())
+	  if (w.empty()){
+            angle_mode(mode,contextptr);
 	    return gensizeerr(gettext("Lines must intersect"));
+          }
 	  gen w0=remove_at_pnt(w.front());
 	  g=f._VECTptr->back();
 	  if (g==w0)
@@ -6494,8 +6521,10 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       }
       else {
 	if (f.type==_VECT && f._VECTptr->size()!=3){
-	  if (f._VECTptr->size()!=2)
+	  if (f._VECTptr->size()!=2){
+            angle_mode(mode,contextptr);
 	    return gensizeerr(gettext("angle"));
+          }
 	  if (v.size()==3){
 	    f=e+f._VECTptr->back()-f._VECTptr->front();
 	    g=remove_at_pnt(v[2]);
@@ -6508,8 +6537,10 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 	  }
 	}
 	else {
-	  if (v.size()!=3)
+	  if (v.size()!=3){
+            angle_mode(mode,contextptr);
 	    return gensizeerr(gettext("angle"));
+          }
 	  g=remove_at_pnt(v[2]);
 	  if (g.type==_VECT && g._VECTptr->size()==2)
 	    g=e+g._VECTptr->back()-g._VECTptr->front();
@@ -9706,6 +9737,12 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 	  // return _resultant(makevecteur(xt-x,yt-y,v[1]),contextptr);
 	  return symbolic(at_equal,makesequence(rationalparam2equation(v[0],v[1],x,y,contextptr),0));
 	}
+        if (v[1]==x || v[1]==y){
+          gen t(t__IDNT_e);
+          xt=subst(xt,v[1],t,0,contextptr);
+          yt=subst(yt,v[1],t,0,contextptr);
+          v[1]=t;
+        }
 	vecteur w(solve(xt-x,v[1],0,contextptr));
 	if (w.empty())
 	  return gensizeerr(gettext("Can't isolate"));
@@ -13369,12 +13406,13 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
       return gensizeerr(gettext("Variables must be free"));
     gen a,b,c,d;
     if (cklinear && is_linear_wrt(f_orig,y,a,b,contextptr) && a!=0){
-      if (is_linear_wrt(b,x,c,d,contextptr)){
+      if (is_linear_wrt(b,x,c,d,contextptr) && is_constant_wrt(a,x,contextptr)){
 	// a*y+c*x+d=0 -> droite(-d/a*i,1+(-d-c)/a*i)
-	gen A=-d/a*cst_i,B=A+1-c/a*cst_i;
-	return _droite(makesequence(A,B),contextptr);
+	gen A=-d/a*cst_i,B=A+1-c/a*cst_i; return _droite(makesequence(A,B),contextptr);
       }
       // y=-b/a
+      if (nxstep>1024)
+        nxstep=1024;
       return plotfunc(-b/a,x,attributs,0,xmin,xmax,ymin,ymax,-5,5,nxstep,0,false,contextptr);
     }
     if (cklinear && is_linear_wrt(f_orig,x,a,b,contextptr) && a!=0){
@@ -13384,6 +13422,8 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
       }
       // x=-b/a
       gen d=_droite(makesequence(0,1+cst_i),contextptr);
+      if (nxstep>1024)
+        nxstep=1024;
       return symetrie(d,plotfunc(-b/a,y,attributs,0,xmin,xmax,ymin,ymax,-5,5,nxstep,0,false,contextptr),contextptr);
     }
     bool cplx=complex_mode(contextptr);
@@ -15420,7 +15460,7 @@ gen _vers(const gen & g,GIAC_CONTEXT){
       _avance(gy,contextptr);
       _tourne_droite(-90,contextptr);
     }
-    return _polygone_rempli(-8,contextptr);
+    return _polygone_rempli(-4,contextptr);
   }
   static const char _rectangle_plein_s []="rectangle_plein";
   static define_unary_function_eval2 (__rectangle_plein,&_rectangle_plein,_rectangle_plein_s,&printastifunction);
