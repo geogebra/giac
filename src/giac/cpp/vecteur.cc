@@ -1,5 +1,22 @@
 // -*- mode:C++ ; compile-command: "g++ -I. -I.. -I../include -g -c vecteur.cc -fno-strict-aliasing -DGIAC_GENERIC_CONSTANTS -DHAVE_CONFIG_H -DIN_GIAC" -*-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#if defined HAVE_VCL2_VECTORCLASS_H 
+// https://github.com/vectorclass, compile with -mavx2 -mfma 
+#include <vcl2/vectorclass.h>
+#ifdef __AVX2__
+#define CPU_SIMD
+#endif
+#endif
+
+#include "modint.h"
+
 #include "giacPCH.h"
+// vector class version 1 by Agner Fog https://github.com/vectorclass
+// this might be faster for CPU with AVX512DQ instruction set
+// (fast multiplication of Vec4q)
 /*
  *  Copyright (C) 2000,14 B. Parisse, Institut Fourier, 38402 St Martin d'Heres
  *
@@ -61,16 +78,6 @@ using namespace std;
 #include <mps/mps.h>
 #endif
 
-// vector class version 1 by Agner Fog https://github.com/vectorclass
-// this might be faster for CPU with AVX512DQ instruction set
-// (fast multiplication of Vec4q)
-#if defined HAVE_VCL2_VECTORCLASS_H 
-// https://github.com/vectorclass, compile with -mavx2 -mfma 
-#include <vcl2/vectorclass.h>
-#ifdef __AVX2__
-#define CPU_SIMD
-#endif
-#endif
 
 // Apple has the Accelerate framework for lapack if you did not install Atlas/lapack
 // (link with -framewrok Accelerate)
@@ -8119,12 +8126,13 @@ namespace giac {
   }
   */
 
-  void makepositive(vector< vector<int> > & N,int l,int lmax,int c,int cmax,int modulo){
+  template<class modint_t>
+  void makepositive(vector< vector<modint_t> > & N,int l,int lmax,int c,int cmax,modint_t modulo){
     for (int L=l;L<lmax;++L){
-      vector<int> & NL=N[L];
+      vector<modint_t> & NL=N[L];
       if (NL.empty()) continue;
       for (int C=c+(L-l);C<cmax;++C){
-	int & i=NL[C];
+	modint_t & i=NL[C];
 	i -= (i>>31)*modulo;
       }
     }
@@ -8175,7 +8183,7 @@ namespace giac {
 	  longlong * bufend=&buffer[0]+cmax-8;
 	  const int * nline=&Nline[C];
 	  for (;buf<=bufend;buf+=8,nline+=8){
-#ifdef CPU_SIMD
+#ifdef CPU_SIMD // N.B. for >>63 use += with & and -= with *
 	    Vec4q x,n; Vec4i nn;
 	    x.load(buf); nn.load(nline); n=extend(nn);
 	    x -= coeff*n;
@@ -8391,22 +8399,6 @@ namespace giac {
       pivots.pop_back();
   }
   
-  void free_null_lines(vector< vector<int> > & N,int l,int lmax,int c,int cmax){
-    if (c==0){
-      for (int L=lmax-1;L>=l;--L){
-	vector<int> & NL=N[L];
-	if (NL.empty()) continue;
-	if (NL.size()!=cmax) break;
-	int C;
-	for (C=cmax-1;C>=c;--C){
-	  if (NL[C]) break;
-	}
-	if (C>=c) break;
-	NL.clear();
-      }
-    }
-  }
-
   // finish full row reduction to echelon form if N is upper triangular
   // this is done from lmax-1 to l
   void smallmodrref_upper(vector< vector<int> > & N,int l,int lmax,int c,int cmax,int modulo){
@@ -8542,6 +8534,112 @@ namespace giac {
 #endif
   }
 
+  // finish full row reduction to echelon form if N is upper triangular
+  // this is done from lmax-1 to l *** code not tested ***
+  bool smallmodrref_upper(vector< vector<mod4int> > & N,int l,int lmax,int c,int cmax,mod4int modulo){
+    // desalloc null lines
+    free_null_lines(N,l,lmax,c,cmax);
+    mod4int2 modulo2=modulo*extend(modulo);
+    bool convertpos= double(modulo2.tab[0])*(lmax-l) >= 9.22e18;
+    if (convertpos){
+      makepositive(N,l,lmax,c,cmax,modulo);
+    }
+    vector< pair<int,int> > pivots;
+    vector<mod4int2> buffer(cmax);
+    for (int L=lmax-1;L>=l;--L){
+      vector<mod4int> & NL=N[L];
+      if (NL.empty()) continue;
+      if (debug_infolevel>1){
+	if (L%10==9){ CERR << "+"; CERR.flush();}
+	if (L%500==499){ CERR << CLOCK()*1e-6 << " remaining " << l-L << '\n'; }
+      }
+      if (!pivots.empty()){
+	// reduce line N[L]
+	// copy line to a 64 bits buffer
+	for (int C=c;C<cmax;++C)
+	  buffer[C]=extend(NL[C]);
+	// subtract lines in pivots[k].first from column pivots[k].second to cmax
+	int ps=int(pivots.size());
+	for (int k=0;k<ps;++k){
+	  int line=pivots[k].first;
+	  const vector<mod4int> & Nline=N[line];
+	  int col=pivots[k].second;
+	  mod4int2 coeff=extend(NL[col]); // or buffer[col]
+	  if (is_zero(coeff)) continue;
+	  buffer[col]=mkmod4int2(0);
+	  // we could skip pivots columns here, but if they are not contiguous
+	  // this would take too much time
+	  if (convertpos){
+	    int C=col+1;
+	    mod4int2 * ptr= &buffer[C],*ptrend=&buffer[0]+cmax-4;
+	    const mod4int *ptrN=&Nline[C];
+	    for (;ptr<ptrend;ptrN+=4,ptr+=4){
+	      mod4int2 x = *ptr;
+	      x -= coeff*(*ptrN);   
+	      x += (x>>63)&modulo2;
+	      *ptr = x;
+	      x = ptr[1];
+	      x -= coeff*(ptrN[1]);   
+	      x += (x>>63)&modulo2;
+	      ptr[1] = x;
+	      x = ptr[2];
+	      x -= coeff*(ptrN[2]);   
+	      x += (x>>63)&modulo2;
+	      ptr[2] = x;
+	      x = ptr[3];
+	      x -= coeff*(ptrN[3]);   
+	      x += (x>>63)&modulo2;
+	      ptr[3] = x;
+	    }
+	    C += ptr-&buffer[C];
+	    for (;C<cmax;++C){
+	      mod4int2 & b=buffer[C] ;
+	      mod4int2 x = b;
+	      x -= coeff*Nline[C];   
+	      x += (x>>63)&modulo2;
+	      b=x;
+	    }
+	  }
+	  else {
+	    int C=col+1;
+	    mod4int2 * ptr= &buffer[C],*ptrend=&buffer[0]+cmax-4;
+	    const mod4int *ptrN=&Nline[C];
+	    for (;ptr<ptrend;ptrN+=4,ptr+=4){
+	      *ptr -= coeff*(*ptrN);
+	      ptr[1] -= coeff*(ptrN[1]);
+	      ptr[2] -= coeff*(ptrN[2]);
+	      ptr[3] -= coeff*(ptrN[3]);
+	    }
+	    C += ptr-&buffer[C];
+	    for (;C<cmax;++C){
+	      buffer[C] -= coeff*Nline[C];   
+	    }
+	  }
+	}
+	// copy back buffer to N[l]
+	for (int C=c;C<cmax;++C){
+	  mod4int2 x=buffer[C];
+	  if (!is_zero(x)) 
+	    NL[C]=x % modulo;
+	  else
+	    NL[C]=mkmod4int(0);
+	}
+      } // end if pivots.empty()
+      // search pivot in N[L] starting column c+L-l to cmax
+      for (int C=c+(L-l);C<cmax;++C){
+	if (!is_zero(NL[C])){
+	  if (!is_one(NL[C])){
+	    CERR << "rref_upper Bad matrix "<< lmax << "x" << cmax << '\n';
+            return false;
+          }
+	  pivots.push_back(pair<int,int>(L,C));
+	  break;
+	}
+      }
+    }
+    return true;
+  }
+
   int smallmodrref_lastpivotcol(const vector< vector<int> > & K,int lmax){
     // first find the column of the last pivot
     int pivotcol=-1;
@@ -8631,6 +8729,14 @@ namespace giac {
 	    longlong * b=&buffer[C] ;
 	    const int * Nlineptr=&Nline[C],*Nlineend=&Nline[cmax]-4;
 	    for (;Nlineptr<Nlineend;){
+#ifdef CPU_SIMD
+	      Vec4q x,n; Vec4i nn;
+	      x.load(b); nn.load(Nlineptr); n=extend(nn);
+	      x -= coeff*n;
+	      x += ((x>>63) & modulo2);
+	      x.store(b);
+	      b+=4; Nlineptr+=4;
+#else
 	      longlong x;
 	      x = *b-coeff* *Nlineptr;   
 	      x -= (x>>63)*modulo2;
@@ -8648,6 +8754,7 @@ namespace giac {
 	      x -= (x>>63)*modulo2;
 	      *b=x;
  	      ++b; ++Nlineptr;
+#endif
 	    }
 	    for (Nlineend+=4;Nlineptr<Nlineend;){
 	      longlong x;

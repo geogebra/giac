@@ -14403,6 +14403,8 @@ void sprint_double(char * s,double d){
 	return hexa_print_ZINT(*_ZINTptr);
       case 8:
 	return octal_print_ZINT(*_ZINTptr);
+      case 2:
+	return binary_print_ZINT(*_ZINTptr);
       default:
 	return print_ZINT(*_ZINTptr);
       }

@@ -17,6 +17,7 @@
  */
 #ifndef _GIAC_VECTEUR_H
 #define _GIAC_VECTEUR_H
+struct mod4int;
 #include "first.h"
 #include "index.h"
 #include <complex>
@@ -310,13 +311,32 @@ namespace giac {
   // finish full row reduction to echelon form if N is upper triangular
   // this is done from lmax-1 to l
   void smallmodrref_upper(std::vector< std::vector<int> > & N,int l,int lmax,int c,int cmax,int modulo);
+  bool smallmodrref_upper(vector< vector<mod4int> > & N,int l,int lmax,int c,int cmax,mod4int modulo);
   // finish row reduction for matrices with much more columns than rows
   // version adapted for threads parallelization
   // assumes that all columns are reduced in parallel, pivots are searched
   // starting at column 0
   void in_thread_smallmodrref_upper(std::vector< std::vector<int> > & N,int l,int lpivot,int lmax,int c,int cmax,int modulo,int parallel);
   void thread_smallmodrref_upper(std::vector< std::vector<int> > & N,int l,int lmax,int c,int cmax,int modulo,int parallel);
-  void free_null_lines(std::vector< std::vector<int> > & N,int l,int lmax,int c,int cmax);
+  
+  template<class T>
+  void free_null_lines(vector< vector<T> > & N,int l,int lmax,int c,int cmax){
+    if (c==0){
+      for (int L=lmax-1;L>=l;--L){
+	vector<T> & NL=N[L];
+	if (NL.empty()) continue;
+	if (NL.size()!=cmax) break;
+	int C;
+	for (C=cmax-1;C>=c;--C){
+	  if (NL[C]!=0) break;
+	}
+	if (C>=c) break;
+	NL.clear();
+      }
+    }
+  }
+  
+  // void free_null_lines(std::vector< std::vector<int> > & N,int l,int lmax,int c,int cmax);
   int smallmodrref_lastpivotcol(const std::vector< std::vector<int> > & K,int lmax);
 
   void smallmodrref(int nthreads,std::vector< std::vector<int> > & N,vecteur & pivots,std::vector<int> & permutation,std::vector<int> & maxrankcols,longlong & idet,int l, int lmax, int c,int cmax,int fullreduction,int dont_swap_below,int modulo,int rref_or_det_or_lu,bool reset,smallmodrref_temp_t * workptr,bool allow_block,int carac);

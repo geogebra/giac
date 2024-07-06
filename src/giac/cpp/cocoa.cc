@@ -1,9 +1,11 @@
 /* -*- mode:C++ ; compile-command: "g++ -I.. -I../include -I.. -g -c -fno-strict-aliasing -DGIAC_GENERIC_CONSTANTS -DHAVE_CONFIG_H -DIN_GIAC -Wall cocoa.cc" -*- */
 // Thanks to Zoltan Kovacs for motivating this work, in order to improve geogebra theorem proving
 // Special thanks to Anna M. Bigatti from CoCoA team for insightfull discussions on how to choose an order for elimination. This file name is kept to remind that the first versions of giac were using CoCoA for Groebner basis computations, before a standalone implementation.
-#include "giacPCH.h"
-//#define EMCC
-// vector class version 1 by Agner Fog https://github.com/vectorclass
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+// vector class by Agner Fog https://github.com/vectorclass
 // this might be faster for CPU with AVX512DQ instruction set
 // (fast multiplication of Vec4q)
 #if defined HAVE_VCL2_VECTORCLASS_H 
@@ -13,6 +15,11 @@
 #define CPU_SIMD
 #endif
 #endif
+
+#include "modint.h"
+
+#include "giacPCH.h"
+//#define EMCC
 
 
 // if GIAC_SHORTSHIFTTYPE is defined, sparse matrix is using shift index
@@ -117,11 +124,6 @@ using namespace std;
 #undef x86_64
 #endif
 
-#include "modint.h"
-inline mod4int smod(const mod4int2 & a,const mod4int & b){
-  mod4int res={giac::smod(a.tab[0],b.tab[0]),giac::smod(a.tab[1],b.tab[1]),giac::smod(a.tab[2],b.tab[2]),giac::smod(a.tab[3],b.tab[3])};
-  return res;  
-}
 inline mod4int modulo(mpz_t & z,const mod4int & m){
   mod4int res={giac::modulo(z,m.tab[0]),giac::modulo(z,m.tab[1]),giac::modulo(z,m.tab[2]),giac::modulo(z,m.tab[3])};
   return res;
@@ -8234,12 +8236,13 @@ This will be performed only in case of success (i.e. the leading will be reduced
 
   // create matrix from list of coefficients and bitmap of non-zero positions
   // M must already have been created with the right number of rows
-  void create_matrix(const vector<modint> & lescoeffs,const unsigned * bitmap,unsigned bitmapcols,const vector<used_t> & used,vector< vector<modint> > & M){
+  template<class modint_t>
+  void create_matrix(const vector<modint_t> & lescoeffs,const unsigned * bitmap,unsigned bitmapcols,const vector<used_t> & used,vector< vector<modint_t> > & M){
     unsigned nrows=unsigned(M.size());
     int ncols=0;
     vector<used_t>::const_iterator ut=used.begin(),utend=used.end();
     unsigned jend=unsigned(utend-ut);
-    vector<modint>::const_iterator it=lescoeffs.begin();
+    typename vector<modint_t>::const_iterator it=lescoeffs.begin();
     for (;ut!=utend;++ut){
       ncols += *ut;
     }
@@ -8248,7 +8251,7 @@ This will be performed only in case of success (i.e. the leading will be reduced
       M[i].resize(ncols);
     for (unsigned i=0;i<nrows;++i){
       const unsigned * bitmapi = bitmap + i*bitmapcols;
-      vector<modint>::iterator mi=M[i].begin();
+      typename vector<modint_t>::iterator mi=M[i].begin();
       unsigned j=0;
       for (;j<jend;++j){
 	if (!used[j])
@@ -8262,7 +8265,8 @@ This will be performed only in case of success (i.e. the leading will be reduced
     }
   }
 
-  unsigned create_matrix(const unsigned * bitmap,unsigned bitmapcols,const vector<used_t> & used,vector< vector<modint> > & M){
+  template<class modint_t>
+  unsigned create_matrix(const unsigned * bitmap,unsigned bitmapcols,const vector<used_t> & used,vector< vector<modint_t> > & M){
     unsigned nrows=unsigned(M.size()),zeros=0;
     int ncols=0;
     vector<used_t>::const_iterator ut=used.begin(),utend=used.end();
@@ -8270,14 +8274,14 @@ This will be performed only in case of success (i.e. the leading will be reduced
     for (;ut!=utend;++ut){
       ncols += *ut;
     }
-    vector<modint> tmp;
+    vector<modint_t> tmp;
     for (unsigned i=0;i<nrows;++i){
       if (M[i].empty()){ ++zeros; continue; }
       const unsigned * bitmapi = bitmap + i*bitmapcols;
       tmp.clear();
       tmp.resize(ncols);
       tmp.swap(M[i]);
-      vector<modint>::iterator mi=M[i].begin(),it=tmp.begin();
+      typename vector<modint_t>::iterator mi=M[i].begin(),it=tmp.begin();
       unsigned j=0;
       for (;j<jend;++j){
 	if (!used[j])
@@ -13073,8 +13077,8 @@ template<class tdeg_t,class modint_t>
 #endif
   } // end parallelization
 
-  template<class tdeg_t>
-  int zf4denselinalg(vector<unsigned> & lebitmap,vector< vector<modint> > & K,modint env,vectzpolymod<tdeg_t,modint> & f4buchbergerv,zinfo_t<tdeg_t> * info_ptr,vector<unsigned> & Rtoremv,unsigned N,unsigned Bs,unsigned nrows,vector<used_t> &used,unsigned usedcount,double mem,const order_t &order,int dim,int age,bool learning,bool multimodular,int parallel,int interreduce){
+  template<class tdeg_t,class modint_t>
+  int zf4denselinalg(vector<unsigned> & lebitmap,vector< vector<modint_t> > & K,modint_t env,vectzpolymod<tdeg_t,modint_t> & f4buchbergerv,zinfo_t<tdeg_t> * info_ptr,vector<unsigned> & Rtoremv,unsigned N,unsigned Bs,unsigned nrows,vector<used_t> &used,unsigned usedcount,double mem,const order_t &order,int dim,int age,bool learning,bool multimodular,int parallel,int interreduce){
     //parallel=1;
     // create dense matrix K 
     unsigned * bitmap=&lebitmap.front();
@@ -13085,19 +13089,20 @@ template<class tdeg_t,class modint_t>
       CERR << CLOCK()*1e-6 << " nthreads=" << parallel << " dense_rref " << K.size()-zeros << "(" << K.size() << ")" << "x" << usedcount << " ncoeffs=" << double(K.size()-zeros)*usedcount*1e-6 << "*1e6\n";
       double nz=0,nzrow=0;
       for (unsigned i=0;i<K.size();++i){
-	vector<int> & Ki=K[i];
+	vector<modint_t> & Ki=K[i];
 	if (!Ki.size())
 	  continue;
 	nzrow+=usedcount;
 	for (unsigned j=0;j<Ki.size();++j){
-	  if (Ki[j]) ++nz;
+	  if (Ki[j]!=0)
+	    ++nz;
 	}
       }
       CERR << "non-0 percentage " << nz/nzrow << '\n';
     }
     if (0 && !learning && info_ptr->permu.size()==Bs){
       vector<int> permutation=info_ptr->permu;
-      vector< vector<modint> > K1(Bs);
+      vector< vector<modint_t> > K1(Bs);
       for (unsigned i=0;i<Bs;++i){
 	swap(K1[i],K[permutation[i]]);
       }
@@ -13131,9 +13136,9 @@ template<class tdeg_t,class modint_t>
     unsigned first0 = unsigned(pivots.size());
     int i;
     if (!interreduce && first0<K.size() && learning){
-      vector<modint> & tmpv=K[first0];
+      vector<modint_t> & tmpv=K[first0];
       for (i=0;i<tmpv.size();++i){
-	if (tmpv[i])
+	if (tmpv[i]!=0)
 	  break;
       }
       if (i==tmpv.size()){
@@ -13172,16 +13177,16 @@ template<class tdeg_t,class modint_t>
       f4buchbergerv[pi].order=order;
       f4buchbergerv[pi].dim=dim;
       f4buchbergerv[pi].age=age;
-      vector<  T_unsigned<modint,unsigned>  > & Pcoord=f4buchbergerv[pi].coord;
+      vector<  T_unsigned<modint_t,unsigned>  > & Pcoord=f4buchbergerv[pi].coord;
       Pcoord.clear();
-      vector<modint> & v =K[i];
+      vector<modint_t> & v =K[i];
       if (v.empty()){
 	continue;
       }
       unsigned vcount=0;
-      typename vector<modint>::const_iterator vt=v.begin(),vtend=v.end();
+      typename vector<modint_t>::const_iterator vt=v.begin(),vtend=v.end();
       for (;vt!=vtend;++vt){
-	if (*vt)
+	if (*vt!=0)
 	  ++vcount;
       }
       Pcoord.reserve(vcount);
@@ -13190,10 +13195,10 @@ template<class tdeg_t,class modint_t>
       for (vt=v.begin();pos<N;++ut,++pos){
 	if (!*ut)
 	  continue;
-	modint coeff=*vt;
+	modint_t coeff=*vt;
 	++vt;
 	if (coeff!=0)
-	  Pcoord.push_back( T_unsigned<modint,unsigned> (coeff,Rtoremv[pos]));
+	  Pcoord.push_back( T_unsigned<modint_t,unsigned> (coeff,Rtoremv[pos]));
       }
       if (!Pcoord.empty())
 	f4buchbergerv[pi].ldeg=(*f4buchbergerv[pi].expo)[Pcoord.front().u];
@@ -13203,7 +13208,7 @@ template<class tdeg_t,class modint_t>
       }
       bool freemem=mem>4e7; // should depend on real memory available
       if (freemem){
-	vector<modint> tmp; tmp.swap(v);
+	vector<modint_t> tmp; tmp.swap(v);
       }
     }
     if (debug_infolevel>1)
@@ -13223,6 +13228,7 @@ template<class tdeg_t,class modint_t>
     }
   }
 
+#if 1
   template<class tdeg_t>
   int zf4denselinalg(vector<unsigned> & lebitmap,vector< vector<mod4int> > & K4,mod4int env,vectzpolymod<tdeg_t,mod4int> & f4buchbergerv,zinfo_t<tdeg_t> * info_ptr,vector<unsigned> & Rtoremv,unsigned N,unsigned Bs,unsigned nrows,vector<used_t> &used,unsigned usedcount,double mem,const order_t &order,int dim,int age,bool learning,bool multimodular,int parallel,int interreduce){
     unsigned * bitmap=&lebitmap.front();
@@ -13386,6 +13392,8 @@ template<class tdeg_t,class modint_t>
       CERR << CLOCK()*1e-6 << " f4buchbergerv stored" << '\n';
     return 1;
   }
+#endif
+
   // interreduce==0 normal F4 algo reduction, ==1 final gb auto-interreduction
   // to be done ==2 reduction of res[G.size()...] by gbasis in res, 
   // G should be identity, res[0] to res[G.size()-1] the gbasis

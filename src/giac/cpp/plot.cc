@@ -8026,7 +8026,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 	}
 	if (bf1v.size()==6)
 	  bf1v.pop_back();
-	bf1v[0]=symetrie_droite(w,v[0],bf1v[0],contextptr);
+	bf1v[0]=ratnormal(symetrie_droite(w,v[0],bf1v[0],contextptr),contextptr);
 	bf1=gen(bf1v,bf1.subtype);
       }
       if (bf2.type==_VECT){

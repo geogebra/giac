@@ -269,7 +269,7 @@ namespace giac {
     if (is_integer(args)){ // must be a power of a prime
       if (_isprime(args,contextptr)!=0){
 #ifdef GIAC_HAS_STO_38
-	return gensizeerr(gettext("GF is used for non-prime finite field. Use %% or mod for prime fields, e.g. 1 % ")+args.print(contextptr)+'.');
+	return gensizeerr(gettext("GF is used for non-prime finite field. Use %% or mod for prime fields, e.g. 1 %% ")+args.print(contextptr)+'.');
 #else
 	return gensizeerr(gettext("GF is used for non-prime finite field. Use % or mod for prime fields, e.g. 1 % ")+args.print(contextptr)+'.');
 #endif

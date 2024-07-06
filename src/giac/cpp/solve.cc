@@ -1859,7 +1859,7 @@ namespace giac {
 	rlvarx(expr,listvars[i],vtmp);
 	// IMPROVE: maybe a function applied to expr is rationnal
 	if (vtmp.size()!=1)
-	  setsizeerr(gettext("Solve with fractional power:")+expr.print(contextptr)+gettext(" is not rationnal w.r.t. ")+listvars[i].print(contextptr));
+	  setsizeerr(gettext("Solve with fractional power:")+expr.print(contextptr)+gettext(" is not rational w.r.t. ")+listvars[i].print(contextptr));
 	if (!is_zero(derive(expr,listvars[i],contextptr),contextptr)){
 	  expr=_resultant(makevecteur(expr,equations[i-1],listvars[i]),contextptr);
 	  if (is_zero(expr))

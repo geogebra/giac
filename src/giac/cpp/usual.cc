@@ -7967,7 +7967,7 @@ namespace giac {
   gen _version(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
     if (abs_calc_mode(contextptr)==38)
-      return string2gen(gettext("Powered by Giac 1.9, (c) B. Parisse and R. De Graeve, Institut Fourier, Universite Grenoble Alpes, France. Optimization, signalprocessing, graph theory (c) Luka Marohnić."),false);
+      return string2gen(gettext("Powered by Giac 1.9, (c) B. Parisse and R. De Graeve, Institut Fourier, Universite Grenoble Alpes, France."),false); // note: not avail on the Prime: Optimization, signalprocessing, graph theory (c) Luka Marohnić.
     return string2gen(version(),false);
   }
   static const char _version_s []="version";
@@ -11397,7 +11397,7 @@ namespace giac {
 
 #endif // GIAC_GENERIC_CONSTANTS
 
-  const alias_type reim_op_alias[]={(alias_type)&__inv,(alias_type)&__exp,(alias_type)&__cos,(alias_type)&__sin,(alias_type)&__tan,(alias_type)&__cosh,(alias_type)&__sinh,(alias_type)&__tanh,(alias_type)&__atan,(alias_type)&__lnGamma_minus,(alias_type)&__Gamma,(alias_type)&__Psi_minus_ln,(alias_type)&__Psi,(alias_type)&__Zeta,(alias_type)&__Eta,(alias_type)&__sign,(alias_type)&__erf,(alias_type) & __of,0};
+  const alias_type reim_op_alias[]={(alias_type)&__inv,(alias_type)&__exp,(alias_type)&__cos,(alias_type)&__sin,(alias_type)&__tan,(alias_type)&__cosh,(alias_type)&__sinh,(alias_type)&__tanh,(alias_type)&__atan,(alias_type)&__lnGamma_minus,(alias_type)&__Gamma,(alias_type)&__Psi_minus_ln,(alias_type)&__Psi,(alias_type)&__Zeta,(alias_type)&__Eta,(alias_type)&__sign,(alias_type)&__erf,(alias_type) & __of,(alias_type) & __factorial,0};
   const unary_function_ptr * const reim_op=(const unary_function_ptr * const)reim_op_alias;
   // for subst.cc
   const alias_type sincostan_tab_alias[]={(alias_type)&__sin,(alias_type)&__cos,(alias_type)&__tan,0};

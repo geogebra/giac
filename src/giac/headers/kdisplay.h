@@ -484,6 +484,7 @@ namespace xcas {
   void save_session(const giac::context * );
 #if 1
 #define MAX_FILENAME_SIZE 270
+  bool QRdisp(const char * text,const char *msg);
   void save_console_state_smem(const char * filename,bool xwaspy,bool qr,const giac::context *);
   bool load_console_state_smem(const char * filename,const giac::context *);
 
