@@ -856,7 +856,7 @@ namespace giac {
       case KEY_CTRL_F3:
       case KEY_CTRL_F4:
       case KEY_CTRL_F5:
-      case KEY_CTRL_F6: case KEY_CTRL_CATALOG: case KEY_BOOK: case '\t': case KEY_CHAR_EXPN10:
+      case KEY_CTRL_F6: case KEY_CTRL_CATALOG: case KEY_BOOK: case '\t': case KEY_CHAR_EXPN10: case KEY_CTRL_SETUP:
       case KEY_CHAR_ANS: 
 	if (menu->type == MENUTYPE_FKEYS || menu->type==MENUTYPE_NO_NUMBER || menu->type==MENUTYPE_MULTISELECT) return key; // MULTISELECT also returns on Fkeys
 	break;
@@ -4764,7 +4764,7 @@ string longhelp(const char * s){
       }
       exec=doTextArea(&text,contextptr);
 #ifdef QRHELP
-      if (exec==KEY_CHAR_EXPN10){
+      if (exec==KEY_CHAR_EXPN10 || exec==KEY_CTRL_SETUP){
         string url=fourier_url;
         url += "giac/doc";
         url += (lang==1?"/fr/cascmd_fr/":"en/cascmd_en/")+longhelp(elem[0].s.c_str());
@@ -4908,7 +4908,7 @@ string longhelp(const char * s){
 #else
 	drawRectangle(0,200,LCD_WIDTH_PX,22,SDK_WHITE);
 #ifdef NSPIRE_NEWLIB
-	PrintMini7(0,200,(category==CAT_CATEGORY_ALL?"menu: help | ret: ex1 | tab: ex2":"menu: help | ret ex1 | tab ex2"),4,33333,SDK_WHITE,false);
+	PrintMini7(0,200,(category==CAT_CATEGORY_ALL?"menu: help | ret: ex1 | tab: ex2 | calc: QRcode":"menu: help | ret: ex1 | tab: ex2 | calc: QRcode"),4,33333,SDK_WHITE,false);
 #else
 	PrintMini7(0,200,(category==CAT_CATEGORY_ALL?"Tool help|10^ QR|Ans ex1|EXE ex2":"Tool help|10^ QR|Ans ex1|EXE ex2"),4,33333,SDK_WHITE,false);
 #endif
@@ -4932,7 +4932,7 @@ string longhelp(const char * s){
 	}
 	int index=menuitems[menu.selection-1].isfolder;
 #ifdef QRHELP
-        if (sres==KEY_CHAR_EXPN10){
+        if (sres==KEY_CHAR_EXPN10 || sres==KEY_CTRL_SETUP){
           const char * fcmdname=menuitems[menu.selection-1].text;
           string url=fourier_url;
           url += "giac/doc";
@@ -5053,7 +5053,7 @@ string longhelp(const char * s){
 	  }
 	  sres=doTextArea(&text,contextptr);
 #ifdef QRHELP
-          if (sres==KEY_CHAR_EXPN10){
+          if (sres==KEY_CHAR_EXPN10 || sres==KEY_CTRL_SETUP){
             string url=fourier_url;
             url += "giac/doc";
             url += (lang==1?"/fr/cascmd_fr/":"en/cascmd_en/")+longhelp(elem[0].s.c_str());
@@ -13061,10 +13061,10 @@ namespace xcas {
         // function curve: set nearest intersection as mark/position
         if (t==x && !is_zero(tstep)){
           gen Ix,Iy;
-          reim(remove_at_pnt(I1),Ix,Iy,contextptr);
-          tracemode_mark=Ix._DOUBLE_val;
-          reim(remove_at_pnt(I2),Ix,Iy,contextptr);
-          tracemode_i=((Ix-tmin)/tstep)._DOUBLE_val;
+	  reim(remove_at_pnt(I1),Ix,Iy,contextptr);
+	  tracemode_mark=evalf_double(Ix,1,contextptr)._DOUBLE_val;
+	  reim(remove_at_pnt(I2),Ix,Iy,contextptr);
+	  tracemode_i=((evalf_double(Ix,1,contextptr)-tmin)/tstep)._DOUBLE_val;
         }
       }
     } // end intersect
@@ -18764,7 +18764,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       if (key==KEY_CTRL_F3) // Numworks has no UNDO key
 	key=KEY_CTRL_UNDO;
 #if 1
-      if (key == KEY_CTRL_SETUP) {
+      if (key == KEY_CTRL_SETUP && editable) {
 	menu_setup(contextptr);
 	continue;
       }
@@ -18783,7 +18783,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       int & textpos=text->pos;
       if (key==KEY_CTRL_CUT && clipline<0) // if no selection, CUT -> pixel menu
 	key=KEY_CTRL_F3;
-      if (!editable && (key==KEY_CHAR_ANS || key==KEY_BOOK || key=='\t' || key==KEY_CTRL_EXE || key==KEY_CHAR_EXPN10))
+      if (!editable && (key==KEY_CHAR_ANS || key==KEY_BOOK || key=='\t' || key==KEY_CTRL_EXE || key==KEY_CHAR_EXPN10 || key==KEY_CTRL_SETUP))
 	return key;
       if (editable){
 	if (key=='\t'){
@@ -22746,9 +22746,13 @@ void numworks_certify_internal(){
 	    if (smallmenu.selection==13 || smallmenu.selection==16 ) {
               if (smallmenu.selection==16){
                 string url(fourier_url);
+#ifdef NSPIRE_NEWLIB
+                url += "ti/khicasti";
+#else
                 url += "numworks/khicasnw";
                 if (lang!=1)
                   url += "en";
+#endif
                 url += ".html";
                 QRdisp(url.c_str(),"KhiCAS doc qrcode");
               }
@@ -24110,7 +24114,11 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 #endif
     python_heap=0;
     sheetptr=0;
+#ifdef NSPIRE_NEWLIB
+    shutdown=do_shutdown;
+#else
     khicas_shutdown=do_shutdown;
+#endif
 #ifdef NSPIRE_NEWLIB
     unsigned osid=0,osidcx52noncasnont=0x1040E4D0;
     osid=* (unsigned *) 0x10000020;
