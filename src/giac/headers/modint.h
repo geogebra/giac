@@ -19,6 +19,11 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef MODINT_H
+#define MODINT_H
+namespace giac {
+  int smod(int r,int m);
+}
 typedef int modint;
 typedef long long modint2;
 inline long long extend(int n){ return n;}
@@ -27,6 +32,13 @@ inline int shrink(int n){ return n;}
 
 struct mod4int {
   int tab[4];
+  inline mod4int operator = (int b){
+    tab[0]=b;
+    tab[1]=b;
+    tab[2]=b;
+    tab[3]=b;
+    return *this;  
+  }
 };
 inline bool operator <(const mod4int & a,int b){
   return a.tab[0]<b && a.tab[1]<b && a.tab[2]<b && a.tab[3]<b;
@@ -50,9 +62,9 @@ inline bool operator !=(const mod4int & a,int  b){
 
 template<class modint_t> modint_t create(int n);
 inline mod4int mkmod4int(int n){ mod4int res={n,n,n,n}; return res; }
-template<> mod4int create(int n){ return mkmod4int(n);}
-template<> modint create(int n){ return n;}
-template<> modint2 create(int n){ return n;}
+template<> inline mod4int create(int n){ return mkmod4int(n);}
+template<> inline modint create(int n){ return n;}
+template<> inline modint2 create(int n){ return n;}
 
 inline mod4int operator + (const mod4int & a,const mod4int & b){
   mod4int res={a.tab[0]+b.tab[0],a.tab[1]+b.tab[1],a.tab[2]+b.tab[2],a.tab[3]+b.tab[3]};
@@ -141,11 +153,15 @@ inline bool is_zero(mod4int u){
   return u.tab[0]==0 && u.tab[1]==0 && u.tab[2]==0 && u.tab[3]==0;
 }
 
+inline bool is_one(mod4int u){
+  return u.tab[0]==1 && u.tab[1]==1 && u.tab[2]==1 && u.tab[3]==1;
+}
+
 struct mod4int2 {
   long long tab[4];
 };
 inline mod4int2 mkmod4int2(int n){ mod4int2 res={n,n,n,n}; return res; }
-template<> mod4int2 create(int n){ return mkmod4int2(n);}
+template<> inline mod4int2 create(int n){ return mkmod4int2(n);}
 inline mod4int2 extend(const mod4int & a){
   mod4int2 res={a.tab[0],a.tab[1],a.tab[2],a.tab[3]};
   return res;
@@ -284,4 +300,10 @@ inline mod4int operator % (const mod4int2 & a,const modint & b){
   return res;  
 }
 
+inline mod4int smod(const mod4int2 & a,const mod4int & b){
+  mod4int res={giac::smod(a.tab[0],b.tab[0]),giac::smod(a.tab[1],b.tab[1]),giac::smod(a.tab[2],b.tab[2]),giac::smod(a.tab[3],b.tab[3])};
+  return res;  
+}
 
+
+#endif // MODINT_H
