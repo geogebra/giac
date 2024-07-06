@@ -1347,7 +1347,7 @@ int getkey(int allow_suspend){
       for (int n=0;!on_key_pressed();++n){
 	loopsleep(100);
 	idle();
-	if (!exam_mode && nspire_exam_mode!=2 && shutdown
+	if (!exam_mode && nspire_exam_mode!=2 && khicas_shutdown
 	    // && n&0xff==0
 	    ){
 	  unsigned curtime=* (volatile unsigned *) NSPIRE_RTC_ADDR;
@@ -1373,7 +1373,7 @@ int getkey(int allow_suspend){
 	      idle();
 	    }
 	    if (m==mmax){
-	      if (shutdown())
+	      if (khicas_shutdown())
 		return KEY_SHUTDOWN;
 	    }
 	    else {

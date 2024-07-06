@@ -18383,7 +18383,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 #ifdef NSPIRE_NEWLIB
     char filenametns[strlen(filename)+5];
     strcpy(filenametns,filename);
-    int l=strlen(filenametns);
+    l=strlen(filenametns);
     if (l<4 || strncmp(filename+l-4,".tns",4))
       strcpy(filenametns+strlen(filename),".tns");
     write_file(filenametns,buf,l);
@@ -20916,14 +20916,20 @@ int char2int(char c){
       int totalsize=hFile-newbuf;
       if (mode==1 && filename!=Filename)
         write_file(filename,newbuf,totalsize);
+#ifdef NUMWORKS 
       // create link.nws
       // header BA DD 0B EE, length 2 bytes then content then 00 00
       newbuf_[5]=(totalsize+11)/256;
       newbuf_[4]=(totalsize+11)%256;
+#endif
       hFile[0]=0; hFile[1]=0; hFile[2]=0;
+#ifdef NUMWORKS 
       if (mode==1)
         write_file(Filename.c_str(),newbuf,totalsize);
       return write_file("link.nws",newbuf_,totalsize+17);
+#else
+      write_file(Filename.c_str(),newbuf,totalsize);
+#endif
     }
     else {
       if (filename!=Filename)
@@ -24634,7 +24640,7 @@ void drawAtom(uint8_t id) {
 } // namespace xcas
 #endif // ndef NO_NAMESPACE_XCAS
 
-#if defined MICROPY_LIB && !defined SDL_KHICAS && !defined NUMWORKS
+#if defined MICROPY_LIB && !defined SDL_KHICAS && !defined NUMWORKS && !defined NSPIRE_NEWLIB
 // FIXME, already defined in mphalport.c libmicropy
 #else
 void console_output(const char * s,int l){

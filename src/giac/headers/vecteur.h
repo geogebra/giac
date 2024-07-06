@@ -311,7 +311,7 @@ namespace giac {
   // finish full row reduction to echelon form if N is upper triangular
   // this is done from lmax-1 to l
   void smallmodrref_upper(std::vector< std::vector<int> > & N,int l,int lmax,int c,int cmax,int modulo);
-  bool smallmodrref_upper(vector< vector<mod4int> > & N,int l,int lmax,int c,int cmax,mod4int modulo);
+  bool smallmodrref_upper(std::vector< std::vector<mod4int> > & N,int l,int lmax,int c,int cmax,mod4int modulo);
   // finish row reduction for matrices with much more columns than rows
   // version adapted for threads parallelization
   // assumes that all columns are reduced in parallel, pivots are searched
@@ -320,10 +320,10 @@ namespace giac {
   void thread_smallmodrref_upper(std::vector< std::vector<int> > & N,int l,int lmax,int c,int cmax,int modulo,int parallel);
   
   template<class T>
-  void free_null_lines(vector< vector<T> > & N,int l,int lmax,int c,int cmax){
+  void free_null_lines(std::vector< std::vector<T> > & N,int l,int lmax,int c,int cmax){
     if (c==0){
       for (int L=lmax-1;L>=l;--L){
-	vector<T> & NL=N[L];
+        std::vector<T> & NL=N[L];
 	if (NL.empty()) continue;
 	if (NL.size()!=cmax) break;
 	int C;
