@@ -15513,7 +15513,8 @@ void G_idn(vector<unsigned> & G,size_t s){
     }
   }
 
-  // s*coordinates reduced as a linear combination of the lines of M
+  // s*each dim coordinates reduced as a linear combination of the lines of M
+  // (called with s==1)
   template<class tdeg_t,class modint_t>
   bool rur_linsolve(const vectpolymod<tdeg_t,modint_t> & gbmod,const polymod<tdeg_t,modint_t> & lm,const polymod<tdeg_t,modint_t> & s,const matrice & M,modint_t p,matrice & res){
     int S=int(lm.coord.size()),dim=lm.dim;
@@ -15782,6 +15783,11 @@ void G_idn(vector<unsigned> & G,size_t s){
   }
 
   // Compute minimal polynomial of s
+  // If it has max degree, then M will contain
+  //   M[0] = ? (minpoly if Hankel successful)
+  //   M[j], j=1..dim the j-th coordinate
+  // Otherwise M might be empty or
+  //   i-th row of M : coordinates of s^i reduced/gbmod in terms of lm
   template<class tdeg_t,class modint_t,class modint_t2>
   bool rur_minpoly(const vectpolymod<tdeg_t,modint_t> & gbmod,const polymod<tdeg_t,modint_t> & lm,const polymod<tdeg_t,modint_t> & s,modint_t p,vecteur & m,matrice & M){
     int S=int(lm.coord.size()),dim=lm.dim;
@@ -15795,6 +15801,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       if (debug_infolevel)
 	CERR << CLOCK()*1e-6 << " rur separate " << s << " * monomial matrix computation " << S << '\n';
       // matrix of multiplication by s of all monomials in lm
+      // stored as a partially sparse matrix in mults/multv
       polymod<tdeg_t,modint_t> cur(order,dim);
       vector<int> tmp(S),tmp1;
       vecteur tmpv(S);
@@ -15877,10 +15884,15 @@ void G_idn(vector<unsigned> & G,size_t s){
       }
       mults.resize(multspos);
       tran_vect_vector_int(mults,tmpm); tmpm.swap(mults);  
-#if 1
       if (debug_infolevel)
 	CERR << CLOCK()*1e-6 << " missed " << miss << ", rur * xi" << '\n';
       // s^i is obtained by multiplying mults by the coordinates of s^[i-1]
+      // tmpm rows are the coordinates of s*lm[i] if multv[i]==-1
+      // mults is the transposed sparse
+#if 1
+      // For each coordinate, reduce x[i], i<dimension
+      // coordinates of x[i] reduced in terms of lm is stored in Kxi
+      // Code below is probably wrong for non_zero count
       int d=rur_dim(dim,order);
       vector< vector<int> > Kxi(d,vector<int>(S)); Kxi.reserve(d);
       polymod<tdeg_t,modint_t> si(order,dim);
@@ -16220,11 +16232,8 @@ void G_idn(vector<unsigned> & G,size_t s){
   // if true, then separating element is s
   // and s has m as minimal polynomial,
   // M is the list of rows coordinates of powers of s in lm
-  // This will not work if the ideal is not a radical ideal
-  // In that case, if we get a minimal pol of degree M > lm.size()/2 for one coord.
-  // we search for each coordinate a relation polynomial1*coordinate-polynomial2=0
-  // where degree(polynomial2)<M and degree(polynomial1) <= lm.size()-M
-  // then we must consider particular values of t that cancel gcd(polynomial1,minpoly)
+  // or is already the rur (computed by using Hankel matrices)
+  // (cf. rur_linsolve)
   template<class tdeg_t,class modint_t,class modint_t2>
   bool rur_separate(vectpolymod<tdeg_t,modint_t> & gbmod,polymod<tdeg_t,modint_t> & lm,modint_t p,polymod<tdeg_t,modint_t> & s,vector<int> * initsep,vecteur & m,matrice & M,int radical){
     order_t order=lm.order;
@@ -16386,6 +16395,62 @@ void G_idn(vector<unsigned> & G,size_t s){
   // m the minimal polynomial of s as a polymod<tdeg_t,modint_t> wrt the 1st var
   // and for each coordinate (sqrfree part of m) * coordinate
   // expressed as a polynomial in s (stored in a polymod<tdeg_t,modint_t> wrt 1st var)
+  // Current method (not optimal if there are multiplicities)
+  // Try each coordinate as a separating form s, then random linear combination
+  // If minpoly of s is squarefree and max degree, the ideal is cyclic
+  // If minpoly of s is not squarefree, shrink the ideal by adding
+  // the squarefree part of the minpoly of s to the ideal
+  // This will make the ideal radical but may be too costly.
+  //
+  // Improvement to be implemented
+  // F. Rouillier et al: https://arxiv.org/pdf/2402.07141 (Maple code zds.mpl)
+  //
+  // check if s is separating on bivariate ideals
+  // requires computing minpoly of s, and lex gbasis of bivariate ideals
+  // for all coordinates X=X[1] to X[j], find polynomials in s and X in ideal
+  // gbasis=(minpoly(s),sum(a[k,i](s)*X^i,i=0..k))
+  // gbasis contains may 0 polynomial, so that degree(gbasis[k])==k if non 0
+  //
+  // Algo 2: check separating for X=X[j]
+  // f[0]=sqrfree(minpoly of s)
+  // for k=1 to sizeof(gbasis)
+  //   if (gbasis[k]==0) continue;
+  //   f[k]=f[k-1]/gcd(f[k-1],lcoeff(gbasis[k]))
+  //   for i=0 to k-1
+  //     if (k*(k-i)/(i+1)*a[k,k]*a[k,i] != a[k,k-1]*a[k,i+1] mod f[k])
+  //        return false;
+  //     end_if
+  //   end_for
+  // end_for
+  //
+  // Algo 3: find bivariate parametrization (for all coord X=X[1]to X[k])
+  // n=0, d=0, rho=1, f[0]=sqrfree(f)
+  // for k from 1 to sizeof(gbasis)
+  //   if (gbasis[k]==0) continue;
+  //   f[k] = f[k-1]/gcd(f[k-1],lcoeff(gbasis[k]))
+  //   rho *= f[k]
+  //   d += k*a[k,k]*rho mod f[0]
+  //   n += a[k,k-1]*rho mod f[0]
+  // end_for
+  //
+  // Algo 4: check a candidate separating form and return rur
+  // arg: do_check (if false we don't check), s (separating form), gbasis
+  // find minpoly(s) and store the list of rref-ed s^k for later computations
+  // for each coordinate X[j]
+  //   compute a lex gbasis for algo2, using the list above (FGLM algo)
+  //   if (do_check) check with algo2, if not return failure and coordinate #
+  //   compute rational parametrization then rur for this coordinate
+  // return rur
+  //
+  // Algo 6: run algo 4 first on coordinates, then on a linear combination
+  // constructed using the previous candidate and modifying the coeff
+  // of the coordinate number that returns the failure
+  // if coeff<0 change sign, if coeff>=0 replace by -coeff-1
+  //
+  // Algo 1: from rational param to rur
+  // Arg=(f(s)==0 not necessarily sqrfree, d[k](s)*X[k]+n[k](s)
+  // compute F=sqrfree(f), F1=diff(F)
+  // for k=1 to dim to rur[k]=-n[k]*inv(d[k] mod F)*F1 mod F
   template<class tdeg_t>
   bool rur_compute(vectpolymod<tdeg_t,modint> & gbmod,polymod<tdeg_t,modint> & lm,polymod<tdeg_t,modint> & lmmodradical,int p,polymod<tdeg_t,modint> & s,vector<int> * initsep,vectpolymod<tdeg_t,modint> & rur){
     vecteur m,M,res;

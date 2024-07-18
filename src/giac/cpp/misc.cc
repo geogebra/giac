@@ -9804,8 +9804,10 @@ void sync_screen(){}
 	  if (impair[k]){
 	    int x1=giacmax(xmin,int(lxj[k][0]+.5));
 	    int x2=k==lxjs-1?xmax:giacmin(xmax,int(lxj[k+1][0]+.5));
-#ifdef NUMWORKS
+#if defined NUMWORKS 
 	    os_fill_rect(x1,y,x2-x1+1,1,color);
+#elif defined GIAC_HAS_STO_38
+	    c_fill_rect(x1,y,x2-x1+1,1,color);
 #else
 	    for (;x1<=x2;++x1)
 	      set_pixel(x1,y,color,contextptr);
@@ -10221,7 +10223,7 @@ void sync_screen(){}
 
   gen _draw_string(const gen & a_,GIAC_CONTEXT){
     freeze=true;
-#ifdef GIAC_HAS_STO_38
+#if 0 // def GIAC_HAS_STO_38
     static gen PIXEL(identificateur("TEXTOUT_P"));
     return _of(makesequence(PIXEL,a_),contextptr);
 #else // HP
@@ -10241,8 +10243,12 @@ void sync_screen(){}
     if (v[0].type!=_STRNG || !is_integral(v[1]) || !is_integral(v[2]))
       return gensizeerr(contextptr);
     gen s=v[0];
-#if defined KHICAS || defined SDL_KHICAS
-    os_draw_string(v[1].val,v[2].val,v.size()>3?remove_at_display(v[3],contextptr).val:_BLACK,v.size()>4?remove_at_display(v[4],contextptr).val:_WHITE,s._STRNGptr->c_str());
+#if defined KHICAS || defined GIAC_HAS_STO_38
+    os_draw_string(v[1].val,v[2].val,v.size()>3?remove_at_display(v[3],contextptr).val:_BLACK,v.size()>4?remove_at_display(v[4],contextptr).val:_WHITE,s._STRNGptr->c_str()
+#ifdef GIAC_HAS_STO_38
+                   ,false
+#endif
+                   );
     return 1;
 #else
     v.erase(v.begin());

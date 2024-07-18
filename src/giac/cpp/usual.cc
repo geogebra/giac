@@ -6672,7 +6672,7 @@ namespace giac {
 
   // symbolic symb_iquo(const gen & a,const gen & b){ return symbolic(at_iquo,makevecteur(a,b));  }
   bool is_integral(gen & indice){
-    if (indice.is_symb_of_sommet(at_neg))
+    if (indice.is_symb_of_sommet(at_neg) && !is_inf(indice))
       indice=-indice._SYMBptr->feuille;
     if (is_cinteger(indice))
       return true;
@@ -6979,7 +6979,7 @@ namespace giac {
       if (//l[i].type==_IDNT || lidnt(l[i]).empty()
           has_evalf(l[i],tmp,1,contextptr)
           ){
-	lnew[i]=tmp;
+	lnew[i]=tmp;//evalf(l[i],1,contextptr);
 #ifdef HAVE_LIBMPFR
 	if (lnew[i].type==_DOUBLE_){
           tmp=accurate_evalf(eval(l[i],1,contextptr),100);
@@ -7822,6 +7822,7 @@ namespace giac {
       if (a2.type==_INT_)
         return a1.eval(a2.val,contextptr);
       a1=eval(a1,eval_level(contextptr),contextptr);
+#ifndef GIAC_HAS_STO_38
       if (a1.type==_STRNG){
         for (size_t i=1;i<a._VECTptr->size();++i){
           a2=(*a._VECTptr)[i];
@@ -7836,6 +7837,7 @@ namespace giac {
           }
         }
       }
+#endif
       return _subst(gen(makevecteur(a1,a2),_SEQ__VECT),contextptr);
     }
     return a.eval(1,contextptr).eval(eval_level(contextptr),contextptr);

@@ -2111,7 +2111,12 @@ namespace giac {
       }
     }
     if ( (approx_mode(contextptr) || has_num_coeff(e)) && lidnt(e)==makevecteur(x)){
-      vecteur vtmp=makevecteur(e,x);
+      vecteur vtmp=makevecteur(e,x),w;
+      int fr=find_range(x,w,contextptr);
+      if (w.size()==1)
+        w=gen2vecteur(w.back());
+      if (w.size()==2 && !is_inf(w.front()) && !is_inf(w.back()))
+        vtmp[1]=symb_equal(x,symb_interval(w.front(),w.back()));
       vecteur res=gen2vecteur(in_fsolve(vtmp,contextptr));
       solve_ckrange(x,res,isolate_mode,contextptr);
       return res;
@@ -2703,6 +2708,12 @@ namespace giac {
     return symbolic(at_quote,symbolic(at_superieur_egal,eval(g,eval_level(contextptr),contextptr)));
   }
 
+  static gen quote_different(const gen & g,GIAC_CONTEXT){
+    vecteur v=gen2vecteur(g);
+    gen d=eval(v[0]-v[1],eval_level(contextptr),contextptr);
+    return symbolic(at_quote,symbolic(at_superieur_strict,makesequence(symb_pow(d,2),0)));
+  }
+
   static gen quote_conj(const gen & g,GIAC_CONTEXT){
     return symbolic(at_quote,symbolic(at_conj,eval(g,eval_level(contextptr),contextptr)));
   }
@@ -2761,6 +2772,7 @@ namespace giac {
     quote_inf.push_back(at_inferieur_egal);
     quote_inf.push_back(at_superieur_strict);
     quote_inf.push_back(at_superieur_egal);
+    quote_inf.push_back(at_different);
     if (complexmode){
       quote_inf.push_back(at_conj);
       quote_inf.push_back(at_re);
@@ -2771,6 +2783,7 @@ namespace giac {
     quote_inf_v.push_back(quote_inferieur_egal);
     quote_inf_v.push_back(quote_superieur_strict);
     quote_inf_v.push_back(quote_superieur_egal);
+    quote_inf_v.push_back(quote_different);
     if (complexmode){
       quote_inf_v.push_back(quote_conj);
       quote_inf_v.push_back(quote_re);

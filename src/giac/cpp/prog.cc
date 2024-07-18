@@ -6627,6 +6627,8 @@ namespace giac {
 	return p;
       }
     }
+    if (args.type==_VECT && args._VECTptr->empty())
+      return p;
     if (args.type!=_INT_)
       return gensizeerr(contextptr);
     python_compat(args.val,contextptr) ;
@@ -6723,6 +6725,9 @@ namespace giac {
   static define_unary_function_eval2 (__ntl_on,&_ntl_on,_ntl_on_s,&printasDigits);
   define_unary_function_ptr( at_ntl_on ,alias_at_ntl_on ,&__ntl_on);
 
+#ifdef GIAC_HAS_STO_38
+  gen aspen_HComplex(int i);
+#endif  
   gen _complex_mode(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
     gen args(g);
@@ -6731,6 +6736,9 @@ namespace giac {
     if (args.type!=_INT_)
       return complex_mode(contextptr);
     complex_mode((args.val)!=0,contextptr);
+#ifdef GIAC_HAS_STO_38
+    aspen_HComplex(args.val);
+#endif      
     parent_cas_setup(contextptr);
     return args;
   }
@@ -6800,6 +6808,9 @@ namespace giac {
   static define_unary_function_eval (__convert_rootof,&_convert_rootof,_convert_rootof_s);
   define_unary_function_ptr5( at_convert_rootof ,alias_at_convert_rootof ,&__convert_rootof,0,true);
 
+#ifdef GIAC_HAS_STO_38
+  gen aspen_HAngle(int i);
+#endif
   gen _angle_radian(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
     gen args(g);
@@ -6807,8 +6818,7 @@ namespace giac {
       args=int(g._DOUBLE_val);
     //grad
     //since this is a programming command, not sure what you want done here exactly..., will return 1 for radian, 0 for degree, and 2 for grads to match prior behavior
-    if (args.type!=_INT_)
-    {
+    if (args.type!=_INT_){
       if(angle_radian(contextptr))
         return 1;
       else if(angle_degree(contextptr))
@@ -6824,7 +6834,9 @@ namespace giac {
       angle_mode(2, contextptr); //set to grads if 2
     else
       angle_mode(0, contextptr); //set to radians for anything but those two
-
+#ifdef GIAC_HAS_STO_38
+    aspen_HAngle(val==0?1:0);
+#endif
     parent_cas_setup(contextptr);
     return args;
   }

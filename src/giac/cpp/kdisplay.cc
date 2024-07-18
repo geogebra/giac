@@ -76,7 +76,7 @@ extern "C" void console_log(const char *){}
 #include "qrcodegen.h"
 
 #ifdef NUMWORKS
-#if defined NUMWORKS_SLOTAB || defined SDL_KHICAS || defined SIMU
+#if !defined NUMWORKS_SLOTB // || defined SDL_KHICAS || defined SIMU
 #define QRHELP
 #endif
 
@@ -4572,7 +4572,12 @@ string longhelp(const char * s){
   int pos=longhelp_pos(cmd.c_str());
   if (pos==-1)
     return "index.html";
-  return string(lang==1?"cascmd_fr":"cascmd_en")+print_INT_(pos)+".html";
+  string pos_s=print_INT_(pos);
+  if (pos_s.size()==1)
+    pos_s="00"+pos_s;
+  else if (pos_s.size()==2)
+    pos_s="0"+pos_s;    
+  return string((lang==1)?"cascmd_fr":"cascmd_en")+pos_s+".html";
 }
 #endif
   
@@ -9139,6 +9144,21 @@ namespace xcas {
     return n;
   }
 
+  bool discard(Graph2d * gr,double x,double y,double z){
+    double X,Y,Z,f=0.1;
+    do_transform(gr->invtransform,x,y,z,X,Y,Z);
+    double dX=f*(gr->window_xmax-gr->window_xmin);
+    if (X<gr->window_xmin-dX || X>gr->window_xmax+dX)
+      return true;
+    double dY=f*(gr->window_ymax-gr->window_ymin);
+    if (Y<gr->window_ymin-dY || Y>gr->window_ymax+dY)
+      return true;
+    double dZ=f*(gr->window_zmax-gr->window_zmin);
+    if (Z<gr->window_zmin-dZ || Z>gr->window_zmax+dZ)
+      return true;
+    return false;
+  }
+
   // hpersurface encoded as a matrix
   // with lines containing 3 coordinates per point
   bool Graph2d::glsurface(int w,int h,int lcdz,GIAC_CONTEXT,
@@ -9341,6 +9361,8 @@ namespace xcas {
 	    }
 	    yx1=y1-x1; yx2=y2-x2; yx3=y3-x3; yx4=y4-x4;
 #ifdef HYPERQUAD
+            if (discard(this,x1,y1,z1) || discard(this,x2,y2,z2) || discard(this,x3,y3,z3))
+              continue;
 	    tri[0]=double3(x1,y1,z1);
 	    tri[1]=double3(x2,y2,z2);
 	    tri[2]=double3(x4,y4,z4);
@@ -19246,10 +19268,12 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	      text.editable=false;
 	      text.clipline=-1;
 	      text.title = smallmenuitems[sres-1].text;
-	      add(&text,smallmenu.selection==10?((lang==1)?shortcuts_fr_string:shortcuts_en_string):
+	      add(&text,smallmenu.selection==10?
 #ifdef QRHELP
+                  ((lang==1)?shortcuts_fr_string:shortcuts_en_string):
                   ((lang==1)?apropos_fr_string:apropos_en_string)
 #else
+                  shortcuts_en_string:
                   apropos_en_string
 #endif
                   );
@@ -20197,10 +20221,12 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  text.editable=false;
 	  text.clipline=-1;
 	  text.title = smallmenuitems[smallmenu.selection-1].text;
-	  add(&text,smallmenu.selection==10?((lang==1)?shortcuts_fr_string:shortcuts_en_string):
+	  add(&text,smallmenu.selection==10?
 #ifdef QRHELP
+              ((lang==1)?shortcuts_fr_string:shortcuts_en_string):
               ((lang==1)?apropos_fr_string:apropos_en_string)
 #else
+              shortcuts_en_string:
               apropos_en_string
 #endif
               );
@@ -20520,6 +20546,31 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     buf[1]= n & 0xff;
     buf += 2;
   }
+
+static void qrlicense(bool force){
+  static bool done=false;
+  if (!force && done) return;
+  done=true;
+  c_fill_rect(0,0,LCD_WIDTH_PX,LCD_HEIGHT_PX,0xffffff);
+  DefineStatusMessage("QRCode Generator (c). Press any key",0,0,0);
+  int y=18,dy=16;
+  os_draw_string_small(0,y,0,0xffff,"Copyright 2024 Project Nayuki. (MIT License)    ",false); y+=dy;
+  os_draw_string_small(0,y,0,0xffff,"/www.nayuki.io/page/qr-code-generator-library",false); y+=dy;
+  os_draw_string_small(0,y,0,0xffff,"Permission is hereby granted, free of charge",false); y+=dy;
+  os_draw_string_small(0,y,0,0xffff,"to any person obtaining a copy of this software and",false); y+=dy;
+  os_draw_string_small(0,y,0,0xffff,"associated documentation files (the 'Software')",false); y+=dy;
+  os_draw_string_small(0,y,0,0xffff,"to deal in the Software without restriction,",false); y+=dy;
+  os_draw_string_small(0,y,0,0xffff,"including without limitation the rights to use, copy,",false); y+=dy;
+  os_draw_string_small(0,y,0,0xffff,"modify, merge, publish, distribute, sublicense, ",false); y+=dy;
+  os_draw_string_small(0,y,0,0xffff,"and/or sell copies of the Software and to permit",false); y+=dy;
+  os_draw_string_small(0,y,0,0xffff,"persons to whom Software is furnished to do so",false); y+=dy;
+  os_draw_string_small(0,y,0,0xffff,"subject to conditions. The Software is provided",false); y+=dy;
+  os_draw_string_small(0,y,0,0xffff,"'as is', without warranty of any kind...",false); y+=dy;
+  os_draw_string_small(0,y,0,0xffff,"The above copyright and this permission notice shall",false); y+=dy;
+  os_draw_string_small(0,y,0,0xffff,"be included in all copies or substantial portions...",false); y+=dy;
+  int key; GetKey(&key);
+}  
+
 
 // QR code 
 static void do_QRdisp(const uint8_t qrcode[],const char * msg) {
@@ -22760,10 +22811,12 @@ void numworks_certify_internal(){
 	      text.editable=false;
 	      text.clipline=-1;
 	      text.title = smallmenuitems[smallmenu.selection-1].text;
-	      add(&text,smallmenu.selection==13?((lang==1)?shortcuts_fr_string:shortcuts_en_string):
+	      add(&text,smallmenu.selection==13?
 #ifdef QRHELP
+                  ((lang==1)?shortcuts_fr_string:shortcuts_en_string):
                   ((lang==1)?apropos_fr_string:apropos_en_string)
 #else
+                  shortcuts_en_string:
                   apropos_en_string
 #endif
                   );
