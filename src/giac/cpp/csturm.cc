@@ -3869,7 +3869,7 @@ bool chk_isol(vdbl & z,bool realpoly,int isolate,const vdbl & rz,double eps,vect
     if (zi_done[i] && realpoly && zi.type==_CPLX){
       dbl I=*(zi._CPLXptr+1);
       dbl c=conj(zi,contextptr);
-      bool maybereal=is_positive(rzi-I,contextptr);
+      bool maybereal=is_positive(rzi-abs(I,contextptr),contextptr);
       int nconj=0; // 0 after loop if root is real
       bool unique=true;
       for (int j=i+1;j<deg;++j){
