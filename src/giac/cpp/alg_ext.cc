@@ -1944,6 +1944,8 @@ namespace giac {
       return fastsign(g,contextptr);
     gen v0(v[0]);
     for (int i=0;i<s;++i){ // replace by first idnt with an assumption
+      if (v[i]==cst_pi || v[i]==cst_euler_gamma)
+        continue;
       if (v[i].type==_IDNT && v[i]._IDNTptr->eval(1,v[i],contextptr).type!=_IDNT){
 	v0=v[i];
       }
