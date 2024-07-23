@@ -441,7 +441,11 @@ namespace giac {
   public:
     bool operator () (const gen & a,const gen & b) const;
   };
+#ifdef CPP11
+  typedef std::map<gen,gen,const std::function<bool(const gen &, const gen &)> > gen_map;
+#else
   typedef std::map<gen,gen,comparegen> gen_map;
+#endif
 #else
   typedef std::map<gen,gen,const std::pointer_to_binary_function < const gen &, const gen &, bool> > gen_map;
 #endif
@@ -902,7 +906,11 @@ namespace giac {
 #if 1 // def NSPIRE
     ref_gen_map(): ref_count(1),m() {}
 #else
+#ifdef CPP11
+     ref_gen_map(const std::function<bool(const gen &, const gen &)> & p): ref_count(1),m(p) {}
+#else
     ref_gen_map(const std::pointer_to_binary_function < const gen &, const gen &, bool> & p): ref_count(1),m(p) {}
+#endif // CPP11
 #endif
     ref_gen_map(const gen_map & M):ref_count(1),m(M) {}
   };

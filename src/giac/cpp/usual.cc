@@ -5950,7 +5950,11 @@ namespace giac {
 #if 1 // def NSPIRE
     gen_map m;
 #else
+#ifdef CPP11
+    gen_map m(islesscomplexthanf);
+#else
     gen_map m(ptr_fun(islesscomplexthanf));
+#endif
 #endif
     for (;it!=itend;++it){
       if (is_equal(*it) || it->is_symb_of_sommet(at_deuxpoints)){

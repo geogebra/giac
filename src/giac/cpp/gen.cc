@@ -1127,7 +1127,11 @@ namespace giac {
 #if 1 // def NSPIRE
       g.__MAPptr = new ref_gen_map;
 #else
+#ifdef CPP11
+    g.__MAPptr = new ref_gen_map(islesscomplexthanf);
+#else      
     g.__MAPptr = new ref_gen_map(ptr_fun(islesscomplexthanf));
+#endif // CPP11
 #endif
 #endif
     g.type=_MAP;

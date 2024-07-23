@@ -11886,7 +11886,11 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 #if 1 // def NSPIRE
     gen_map m;
 #else
+#ifdef CPP11
+    gen_map m(islesscomplexthanf);
+#else
     gen_map m(ptr_fun(islesscomplexthanf));
+#endif
 #endif
     int taille;
     is >> taille;

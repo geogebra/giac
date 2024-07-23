@@ -3169,23 +3169,24 @@ namespace giac {
           other.push_back(res[i]);
       }
       if (resineq.size()>1){
-        gen xval=assumeeval(v[1],contextptr);
-        gen a0(assumesymbolic(resineq[0],0,contextptr));
+        context * cptr=contextptr->globalcontextptr;
+        gen xval=assumeeval(v[1],cptr);
+        gen a0(assumesymbolic(resineq[0],0,cptr));
         gen a0about=undef;
         // merge inequation intervals
         vecteur merged;
         if (a0==v[1]){
-          a0about=a0._IDNTptr->eval(1,a0,contextptr);
+          a0about=a0._IDNTptr->eval(1,a0,cptr);
           if (a0about.type==_VECT){
             merged=*a0about._VECTptr;
             int i=1;
             for (;i<resineq.size();++i){
-              restorepurge(xval,v[1],contextptr);
-              gen a1=assumesymbolic(resineq[i],0,contextptr);
+              restorepurge(xval,v[1],cptr);
+              gen a1=assumesymbolic(resineq[i],0,cptr);
               gen a1about=undef;
               if (a1!=v[1])
                 break;
-              a1about=a1._IDNTptr->eval(1,a1,contextptr);
+              a1about=a1._IDNTptr->eval(1,a1,cptr);
               if (a1about.type!=_VECT)
                 break;
               vecteur oldmerged(merged);
@@ -3212,7 +3213,7 @@ namespace giac {
             }
           } // end a0about of type vect
         } // end a0==v[1]
-        restorepurge(xval,v[1],contextptr);
+        restorepurge(xval,v[1],cptr);
       } // end if resineq.size()>1
     }
     if (!postprocess)
@@ -8697,39 +8698,75 @@ namespace giac {
     switch (order.val){
     case _PLEX_ORDER: 
       p.is_strictly_greater=i_lex_is_strictly_greater;
+#ifdef CPP11
+      p.m_is_strictly_greater=m_lex_is_strictly_greater<gen>;
+#else
       p.m_is_strictly_greater=std::ptr_fun(m_lex_is_strictly_greater<gen>);
+#endif
       break;
     case _REVLEX_ORDER: 
       p.is_strictly_greater=i_total_revlex_is_strictly_greater;
+#ifdef CPP11
+      p.m_is_strictly_greater=m_total_revlex_is_strictly_greater<gen>;
+#else
       p.m_is_strictly_greater=std::ptr_fun(m_total_revlex_is_strictly_greater<gen>);
+#endif
       break;
     case _TDEG_ORDER:
       p.is_strictly_greater=i_total_lex_is_strictly_greater;
+#ifdef CPP11
+      p.m_is_strictly_greater=m_total_lex_is_strictly_greater<gen>;
+#else
       p.m_is_strictly_greater=std::ptr_fun(m_total_lex_is_strictly_greater<gen>);
+#endif
       break;
     case _3VAR_ORDER:
       p.is_strictly_greater=i_3var_is_strictly_greater;
+#ifdef CPP11
+      p.m_is_strictly_greater=m_3var_is_strictly_greater<gen>;
+#else
       p.m_is_strictly_greater=std::ptr_fun(m_3var_is_strictly_greater<gen>);
+#endif
       break;      
     case _7VAR_ORDER:
       p.is_strictly_greater=i_7var_is_strictly_greater;
+#ifdef CPP11
+      p.m_is_strictly_greater=m_7var_is_strictly_greater<gen>;
+#else
       p.m_is_strictly_greater=std::ptr_fun(m_7var_is_strictly_greater<gen>);
+#endif
       break;      
     case _11VAR_ORDER:
       p.is_strictly_greater=i_11var_is_strictly_greater;
+#ifdef CPP11
+      p.m_is_strictly_greater=m_11var_is_strictly_greater<gen>;
+#else
       p.m_is_strictly_greater=std::ptr_fun(m_11var_is_strictly_greater<gen>);
+#endif
       break;      
     case _16VAR_ORDER:
       p.is_strictly_greater=i_16var_is_strictly_greater;
+#ifdef CPP11
+      p.m_is_strictly_greater=m_16var_is_strictly_greater<gen>;
+#else
       p.m_is_strictly_greater=std::ptr_fun(m_16var_is_strictly_greater<gen>);
+#endif
       break;      
     case _32VAR_ORDER:
       p.is_strictly_greater=i_32var_is_strictly_greater;
+#ifdef CPP11
+      p.m_is_strictly_greater=m_32var_is_strictly_greater<gen>;
+#else
       p.m_is_strictly_greater=std::ptr_fun(m_32var_is_strictly_greater<gen>);
+#endif
       break;      
     case _64VAR_ORDER:
       p.is_strictly_greater=i_64var_is_strictly_greater;
+#ifdef CPP11
+      p.m_is_strictly_greater=m_64var_is_strictly_greater<gen>;
+#else
       p.m_is_strictly_greater=std::ptr_fun(m_64var_is_strictly_greater<gen>);
+#endif
       break;      
     }
     p.tsort();

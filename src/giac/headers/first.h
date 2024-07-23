@@ -21,6 +21,11 @@
 #ifndef _GIAC_FIRST_H_
 #define _GIAC_FIRST_H_
 
+#if __cplusplus >= 201103L
+// post-c++ functional headers changes, thanks to George Huebner
+//#define CPP11
+#endif
+  
 // register is deprecated in c++17
 #define register 
 

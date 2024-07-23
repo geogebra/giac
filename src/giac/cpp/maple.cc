@@ -3630,7 +3630,11 @@ namespace giac {
 #if 1 // def NSPIRE
     gen_map m;
 #else
+#ifdef CPP11
+    gen_map m(islessthanf);
+#else
     gen_map m(ptr_fun(islessthanf));
+#endif
 #endif
     int s=int(args.size());
     vector<int> indexbegin,indexsize;

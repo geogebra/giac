@@ -40,23 +40,47 @@ namespace giac {
     // T zero;
     // functional object sorting function for monomial ordering
     bool (* is_strictly_greater)( const index_m &, const index_m &);
+#ifdef CPP11
+    std::function<bool(const monomial<T> &, const monomial<T> &)> m_is_strictly_greater ;
+#else
     std::pointer_to_binary_function < const monomial<T> &, const monomial<T> &, bool> m_is_strictly_greater ;
+#endif
     // constructors
     tensor(const tensor<T> & t) : dim(t.dim), coord(t.coord), is_strictly_greater(t.is_strictly_greater), m_is_strictly_greater(t.m_is_strictly_greater) { }
     tensor(const tensor<T> & t, const std::vector< monomial<T> > & v) : dim(t.dim), coord(v), is_strictly_greater(t.is_strictly_greater), m_is_strictly_greater(t.m_is_strictly_greater) { }
     // warning: this constructor prohibits construction of tensor from a value
     // of type T if this value is an int, except by using tensor<T>(T(int))
+#ifdef CPP11
+    // DANGER
+    tensor() : dim(0), is_strictly_greater(i_lex_is_strictly_greater), m_is_strictly_greater(m_lex_is_strictly_greater<T>) { }
+    explicit tensor(int d) : dim(d), is_strictly_greater(i_lex_is_strictly_greater), m_is_strictly_greater(m_lex_is_strictly_greater<T>) { }
+#else
     tensor() : dim(0), is_strictly_greater(i_lex_is_strictly_greater), m_is_strictly_greater(std::ptr_fun<const monomial<T> &, const monomial<T> &, bool>(m_lex_is_strictly_greater<T>)) { }
     explicit tensor(int d) : dim(d), is_strictly_greater(i_lex_is_strictly_greater), m_is_strictly_greater(std::ptr_fun<const monomial<T> &, const monomial<T> &, bool>(m_lex_is_strictly_greater<T>)) { }
+#endif
     explicit tensor(int d,const tensor<T> & t) : dim(d),is_strictly_greater(t.is_strictly_greater), m_is_strictly_greater(t.m_is_strictly_greater)  { }
-    tensor(const monomial<T> & v) : dim(int(v.index.size())), is_strictly_greater(i_lex_is_strictly_greater), m_is_strictly_greater(std::ptr_fun<const monomial<T> &, const monomial<T> &, bool>(m_lex_is_strictly_greater<T>)) { 
+#ifdef CPP11
+    tensor(const monomial<T> & v) : dim(int(v.index.size())), is_strictly_greater(i_lex_is_strictly_greater), m_is_strictly_greater(m_lex_is_strictly_greater<T>)
+#else
+    tensor(const monomial<T> & v) : dim(int(v.index.size())), is_strictly_greater(i_lex_is_strictly_greater), m_is_strictly_greater(std::ptr_fun<const monomial<T> &, const monomial<T> &, bool>(m_lex_is_strictly_greater<T>))
+#endif
+    {
       coord.push_back(v);
     }
-    tensor(const T & v, int d) : dim(d), is_strictly_greater(i_lex_is_strictly_greater), m_is_strictly_greater(std::ptr_fun<const monomial<T> &, const monomial<T> &, bool>(m_lex_is_strictly_greater<T>)) {
+#ifdef CPP11
+    tensor(const T & v, int d) : dim(d), is_strictly_greater(i_lex_is_strictly_greater), m_is_strictly_greater(m_lex_is_strictly_greater<T>)
+#else
+    tensor(const T & v, int d) : dim(d), is_strictly_greater(i_lex_is_strictly_greater), m_is_strictly_greater(std::ptr_fun<const monomial<T> &, const monomial<T> &, bool>(m_lex_is_strictly_greater<T>))
+#endif
+    {
       if (!is_zero(v))
 	coord.push_back(monomial<T>(v,0,d));
     }
+#ifdef CPP11
+    tensor(int d,const std::vector< monomial<T> > & c) : dim(d), coord(c), is_strictly_greater(i_lex_is_strictly_greater),m_is_strictly_greater(m_lex_is_strictly_greater<T>) { }
+#else
     tensor(int d,const std::vector< monomial<T> > & c) : dim(d), coord(c), is_strictly_greater(i_lex_is_strictly_greater),m_is_strictly_greater(std::ptr_fun<const monomial<T> &, const monomial<T> &, bool>(m_lex_is_strictly_greater<T>)) { }
+#endif
     ~tensor() { coord.clear(); }
     // member functions
     // ordering monomials in the tensor
@@ -519,10 +543,18 @@ namespace giac {
   template <class T>
   void lexsort(std::vector < monomial<T> > & v){
 #if 1 // def NSPIRE
+#ifdef CPP11
+    sort_helper<T> M(m_lex_is_strictly_greater<T>);
+#else
     sort_helper<T> M(std::ptr_fun<const monomial<T> &, const monomial<T> &, bool>(m_lex_is_strictly_greater<T>));
+#endif
     sort(v.begin(),v.end(),M);
 #else
+#ifdef CPP11
+    sort(v.begin(),v.end(),m_lex_is_strictly_greater<T>);
+#else
     sort(v.begin(),v.end(),std::ptr_fun<const monomial<T> &, const monomial<T> &, bool>(m_lex_is_strictly_greater<T>));
+#endif
 #endif
   }
 
