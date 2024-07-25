@@ -2639,12 +2639,14 @@ namespace giac {
 	  for (;jt!=jtend;++jt){
 	    if (is_inequation(*jt) ||
 		jt->is_symb_of_sommet(at_and)){
-	      assumesymbolic(*jt,0,contextptr); // assume and solve next equation
+              gen xval=assumeeval(x,contextptr);
+              assumesymbolic(*jt,0,contextptr); // assume and solve next equation
               // temp. increase proot default precision, otherwise roots are discarded
               epsilon(muleps*eps,contextptr); decimal_digits(N+addN,contextptr);
 	      newres=mergevecteur(newres,solve(*it,*x._IDNTptr,isolate_mode,contextptr));
               epsilon(eps,contextptr); decimal_digits(N,contextptr);
-	      purgenoassume(x,contextptr);
+              restorepurge(xval,x,contextptr);
+	      // purgenoassume(x,contextptr);
 	    }
 	    else { 
 	      gen tst=subst(eq,x,*jt,true,contextptr);
@@ -3169,7 +3171,7 @@ namespace giac {
           other.push_back(res[i]);
       }
       if (resineq.size()>1){
-        context * cptr=contextptr->globalcontextptr;
+        const context * cptr=contextptr; // contextptr?contextptr->globalcontextptr:contextptr;
         gen xval=assumeeval(v[1],cptr);
         gen a0(assumesymbolic(resineq[0],0,cptr));
         gen a0about=undef;

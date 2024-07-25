@@ -3598,6 +3598,7 @@ namespace giac {
   }
 
   gen assumeeval(const gen & x,GIAC_CONTEXT){
+    // if (contextptr && contextptr->globalcontextptr!=contextptr) return assumeeval(x,contextptr->globalcontextptr); 
     if (x.type!=_IDNT)
       return x.eval(1,contextptr);
     gen evaled;
@@ -3607,6 +3608,7 @@ namespace giac {
   }
 
   void restorepurge(const gen & xval,const gen & x,GIAC_CONTEXT){
+    // if (contextptr && contextptr->globalcontextptr!=contextptr) restorepurge(xval,x,contextptr->globalcontextptr);
     if (xval==x 
 	// || (xval.type==_VECT && xval.subtype==_ASSUME__VECT && xval._VECTptr->size()==1 && xval._VECTptr->front().val==_SYMB)
 	)

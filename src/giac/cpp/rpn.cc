@@ -882,8 +882,13 @@ namespace giac {
     }
     // purge a global variable
     sym_tab::iterator it=contextptr->tabptr->find(ch),itend=contextptr->tabptr->end();
-    if (it==itend)
+    if (it==itend){
+#if 1 //def GIAC_HAS_STO_38
+      if (contextptr && contextptr->previous!=contextptr)
+        return purgenoassume(args,contextptr->previous);
+#endif
       return string2gen("No such variable "+args.print(contextptr),false);
+    }
     gen res=it->second;
     if (it->second.type==_POINTER_ && it->second.subtype==_THREAD_POINTER)
       return gentypeerr(args.print(contextptr)+" is locked by thread "+it->second.print(contextptr));
@@ -1009,7 +1014,8 @@ namespace giac {
       return res;
     }
     else
-      return string2gen(args.print(contextptr)+" not assigned",false);
+      return string2gen("No such variable "+args.print(contextptr),false);
+    //return string2gen(args.print(contextptr)+" not assigned",false);
   }
   static const char _purge_s []="purge";
   static define_unary_function_eval_quoted (__purge,&_purge,_purge_s);

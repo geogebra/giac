@@ -4774,6 +4774,7 @@ namespace giac {
   // returns the assumed idnt name
   // used if assumptions are in OR conjonction
   gen assumesymbolic(const gen & a,gen idnt_must_be,GIAC_CONTEXT){
+    // if (contextptr && contextptr->globalcontextptr!=contextptr) return assumesymbolic(a,idnt_must_be,contextptr->globalcontextptr);
 #ifndef NO_STDEXCEPT
     try {
 #endif
