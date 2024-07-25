@@ -14,19 +14,19 @@ else
 fi
 
 # Replace build.gradle file
-cp "$folder_name/build.gradle" "./build.gradle"
+yes | cp -f "$folder_path/build.gradle" "./build.gradle"
 echo "Replaced build.gradle file."
 
 # Replace config.h file
-cp "$folder_name/config.h" "./src/giac/headers/config.h"
+yes | cp -f "$folder_path/config.h" "./src/giac/headers/config.h"
 echo "Replaced config.h file."
 
 # Replace simpleInterface folder
-cp -R "$folder_path/simpleInterface" "./src/"
+cp -r -R "$folder_path/simpleInterface" "./src/"
 echo "Replaced simpleInterface folder."
 
 # Replace TomMath folder
-cp -R "$folder_path/tommath" "./src/"
+cp -r -R "$folder_path/tommath" "./src/"
 echo "Replaced tommath folder."
 
 # Remove ./build folder
