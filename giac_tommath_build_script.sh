@@ -37,4 +37,7 @@ fi
 # Call the Gradle task to create iOS XCFramework
 ./gradlew createIosXcframework
 
+# reset the local folder to make sure -> don't upload any file to public repo.
+git reset --hard
+
 echo "Finished creating iOS XCFramework. Please copy the generated XCFramework in ./build/libs/framework/Giac.xcframework to your iOS project."
