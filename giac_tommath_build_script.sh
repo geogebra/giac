@@ -29,6 +29,11 @@ echo "Replaced simpleInterface folder."
 cp -R "$folder_path/tommath" "./src/"
 echo "Replaced tommath folder."
 
+# Remove ./build folder
+if [ -d "./build" ]; then
+   rm -rf "./build"
+fi
+
 # Call the Gradle task to create iOS XCFramework
 ./gradlew createIosXcframework
 
