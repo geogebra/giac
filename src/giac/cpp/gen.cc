@@ -7841,6 +7841,7 @@ namespace giac {
       return e;
     }
 #endif
+    mpz_set_si(e->z,base);
     mpz_ui_pow_ui(e->z,base,exponent);
     return e;
   }

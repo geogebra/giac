@@ -5170,6 +5170,9 @@ namespace giac {
 
   // detect if e is in an algebraic extension of Q, simplifies
   bool algnum_normal(gen & e,GIAC_CONTEXT){
+#ifdef USE_GMP_REPLACEMENTS
+    return false;
+#endif
     e=normalize_sqrt(e,contextptr); 
     gen E,G;
     vecteur syst,vars,v,varapprox;

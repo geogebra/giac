@@ -1098,7 +1098,7 @@ namespace giac {
     return s;
   }
 
-#if defined KHICAS || defined SDL_KHICAS || defined GIAC_HAS_STO_38
+#if defined KHICAS || defined SDL_KHICAS || defined GIAC_HAS_STO_38 || defined USE_GMP_REPLACEMENTS
 #ifndef SDL_KHICAS
   void arc_en_ciel(int k,int & r,int & g,int & b){
     k += 21;
