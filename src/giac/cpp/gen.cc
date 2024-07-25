@@ -17221,7 +17221,15 @@ const char * nws_caseval(const char * s){
     emscripten::function("caseval",&caseval,emscripten::allow_raw_pointers());
   }
 #endif
-  
+
+#ifdef TIMEOUT
+  void gen::resetTimeout() {
+    ctrl_c=false;
+    interrupted=false;
+    caseval_begin=time(0);  
+  }
+#endif
+
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac
 #endif // ndef NO_NAMESPACE_GIAC
