@@ -1021,6 +1021,7 @@ namespace giac {
   bool is_array_index(const gen & m,const gen & i,GIAC_CONTEXT);
 
   gen _autosimplify(const gen & g,GIAC_CONTEXT);
+  extern const unary_function_ptr * const  at_autosimplify ;
   extern const unary_function_ptr * const  at_struct_dot ;
   gen _struct_dot(const gen & g,GIAC_CONTEXT);
   // replace := by = in builtin commands (for Python compatible mode)
