@@ -4798,6 +4798,11 @@ namespace giac {
       arg0=arg1;
       arg1=tmp;
     }
+    if (s==at_different){
+      gen tmp1=symbolic(at_inferieur_strict,makesequence(arg0,arg1));
+      gen tmp2=symbolic(at_superieur_strict,makesequence(arg0,arg1));
+      return assumesymbolic(symbolic(at_ou,makesequence(tmp1,tmp2)),0,contextptr);
+    }
     if (s==at_and || s==at_et){
       gen tmpg=assumesymbolic(arg0,0,contextptr);
       if (is_undef(tmpg)) return tmpg;
@@ -4946,7 +4951,7 @@ namespace giac {
     }
     gen a_;
     if (a.type==_SYMB){
-      if (a._SYMBptr->sommet==at_and || a._SYMBptr->sommet==at_et || a._SYMBptr->sommet==at_ou || a._SYMBptr->sommet==at_oufr || a._SYMBptr->sommet==at_inferieur_strict || a._SYMBptr->sommet==at_inferieur_egal || a._SYMBptr->sommet==at_superieur_egal || a._SYMBptr->sommet==at_superieur_strict || a._SYMBptr->sommet==at_equal) 
+      if (a._SYMBptr->sommet==at_and || a._SYMBptr->sommet==at_et || a._SYMBptr->sommet==at_ou || a._SYMBptr->sommet==at_oufr || a._SYMBptr->sommet==at_inferieur_strict || a._SYMBptr->sommet==at_inferieur_egal || a._SYMBptr->sommet==at_superieur_egal || a._SYMBptr->sommet==at_superieur_strict || a._SYMBptr->sommet==at_equal || a._SYMBptr->sommet==at_different) 
 	a_=a;
       else
 	a_=eval(a,1,contextptr);

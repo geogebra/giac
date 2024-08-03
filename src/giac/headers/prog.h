@@ -203,6 +203,8 @@ namespace giac {
 
   gen _intersect(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_intersect;
+  gen _symmetric_difference(const gen & args,GIAC_CONTEXT);
+  extern const unary_function_ptr * const  at_symmetric_difference;
   gen _inter(const gen & args,GIAC_CONTEXT);
   extern const alias_type alias_at_inter;
   extern const unary_function_ptr * const  at_inter;
@@ -1013,6 +1015,8 @@ namespace giac {
   gen symb_intersect(const gen & args);
   gen symb_union(const gen & args);
   gen symb_minus(const gen & args);
+  void chk_set(vecteur & av);
+  void chk_set(gen & g);
   gen symb_compose(const gen & args);
 
   // test if m(i) is an array index: that will not be the case if

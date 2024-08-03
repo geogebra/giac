@@ -2751,6 +2751,11 @@ namespace giac {
 	gprintf(step_funclinear,gettext("Integrate %gen: function %gen applied to a linear expression u=%gen, result %gen"),makevecteur(e,primitive_tab_op[s-1],a*gen_x+b,primitive_tab_primitive[s-1](a*gen_x+b,contextptr)/a),contextptr);      
       return rdiv(primitive_tab_primitive[s-1](f,contextptr),a,contextptr);
     }
+    if (u==at_of && f.type==_VECT && f._VECTptr->size()==2 && is_linear_wrt(f._VECTptr->back(),gen_x,a,b,contextptr)){
+      gen f0=f[0];
+      if (f0.is_symb_of_sommet(at_function_diff) && f0._SYMBptr->feuille.type!=_VECT)
+        return symb_of(f0._SYMBptr->feuille,f[1])/a;
+    }
     // Step2: detection of f(u)*u' 
     vecteur v(1,gen_x);
     rlvarx(e,gen_x,v);
@@ -4511,9 +4516,10 @@ namespace giac {
       else if (args.type==_SYMB || args.type==_IDNT)
 	ass=autoassume(args,vx_var,contextptr);
     }
-    if (!ass.empty())
+    if (!ass.empty()){
       *logptr(contextptr) << "Run purge(" << ass << "); or purge(unquote(assumptions)) to clear auto-assumptions\n" ;
-    sto(ass,identificateur("assumptions"),contextptr);
+      sto(ass,identificateur("assumptions"),contextptr);
+    }
     gen res=_integrate_(args,contextptr);
     if (0){
       for (int i=0;i<ass.size();++i){

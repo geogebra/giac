@@ -695,6 +695,7 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 "subsop"		if (xcas_mode(yyextra)==1) (*yylval) = gen(at_maple_subsop,2); else (*yylval) = gen(at_subsop,2); index_status(yyextra)=0; return T_UNARY_OP;
 "'union'"                  index_status(yyextra)=0; (*yylval)=gen(at_union,2); return T_QUOTED_BINARY;
 "_union"                  index_status(yyextra)=0; (*yylval)=gen(at_union,2); return T_QUOTED_BINARY;
+"'symmetric_difference'"                  index_status(yyextra)=0; (*yylval)=gen(at_symmetric_difference,2); return T_QUOTED_BINARY;
 "virgule"               (*yylval) = gen(at_virgule,2); index_status(yyextra)=0; return T_UNARY_OP;
 "VARS"                  (*yylval) = gen(at_VARS,0); index_status(yyextra)=0; return T_UNARY_OP;
 "while"                 index_status(yyextra)=0; (*yylval)=gen(at_for,4); if (xcas_mode(yyextra)==3) return TI_WHILE; if (xcas_mode(yyextra)!=0) return T_MUPMAP_WHILE; return T_WHILE;

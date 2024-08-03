@@ -4802,16 +4802,34 @@ namespace giac {
     }
 #endif
     if ( (a.type!=_VECT) || (b.type!=_VECT))
-      return gensizeerr(gettext("Union"));
+      return symb_union(args); //gensizeerr(gettext("Union"));
     return gen(mergevecteur(*a._VECTptr,*b._VECTptr),_SET__VECT).eval(1,contextptr);
   }
   static const char _union_s []=" union ";
   static define_unary_function_eval4_index (58,__union,&_union,_union_s,&printsommetasoperator,&texprintsommetasoperator);
   define_unary_function_ptr( at_union ,alias_at_union ,&__union);
 
+  void chk_set(vecteur & av){
+    if (av.empty()) return;
+    islesscomplexthanf_sort(av.begin(),av.end());
+    vecteur res; res.reserve(av.size());
+    gen prec=av[0];
+    res.push_back(prec);
+    for (int i=1;i<av.size();++i){
+      if (av[i]==prec)
+        continue;
+      prec=av[i];
+      res.push_back(prec);
+    }
+    av.swap(res);
+  }    
+
   void chk_set(gen & a){
-    if (a.type==_VECT && a.subtype!=_SET__VECT){
-      vecteur av=*a._VECTptr; comprim(av); a=av;
+    if (a.type==_VECT && a.subtype!=_SET__VECT && !a._VECTptr->empty()){
+      vecteur av=*a._VECTptr;
+      //comprim(av);a=av;
+      chk_set(av);
+      a=gen(av,_SET__VECT);
     }
   }
   gen symb_intersect(const gen & args){
@@ -4866,16 +4884,47 @@ namespace giac {
       vecteur v;
       const_iterateur it=a._VECTptr->begin(),itend=a._VECTptr->end();
       for (;it!=itend;++it){
-	if (equalposcomp(*b._VECTptr,*it))
+	if (findpos(*b._VECTptr,*it))
 	  v.push_back(*it);
       }
       return gen(v,_SET__VECT);
     }
-    return gensizeerr(contextptr);
+    return symb_intersect(args); // gensizeerr(contextptr);
   }
   static const char _intersect_s []=" intersect ";
   static define_unary_function_eval4_index (62,__intersect,&_intersect,_intersect_s,&printsommetasoperator,&texprintsommetasoperator);
   define_unary_function_ptr( at_intersect ,alias_at_intersect ,&__intersect);
+
+  gen symb_symmetric_difference(const gen & args){
+    return symbolic(at_symmetric_difference,args);
+  }
+  gen _symmetric_difference(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+    if ((args.type!=_VECT) || (args._VECTptr->size()!=2))
+      return gensizeerr();
+    gen a=args._VECTptr->front(),b=args._VECTptr->back();
+    if ( a.type==_VECT && b.type==_VECT){
+      chk_set(a);
+      chk_set(b);
+      vecteur v;
+      const_iterateur it=a._VECTptr->begin(),itend=a._VECTptr->end();
+      for (;it!=itend;++it){
+	if (findpos(*b._VECTptr,*it)==0)
+	  v.push_back(*it);
+      }
+      it=b._VECTptr->begin();itend=b._VECTptr->end();
+      for (;it!=itend;++it){
+	if (findpos(*a._VECTptr,*it)==0)
+	  v.push_back(*it);
+      }
+      islesscomplexthanf_sort(v.begin(),v.end());
+      return gen(v,_SET__VECT);
+    }
+    return symb_symmetric_difference(args); // gensizeerr(contextptr);
+  }
+  static const char _symmetric_difference_s []="symmetric_difference";
+  static define_unary_function_eval4_index (178,__symmetric_difference,&_symmetric_difference,_symmetric_difference_s,&printsommetasoperator,&texprintsommetasoperator);
+  define_unary_function_ptr5( at_symmetric_difference ,alias_at_symmetric_difference ,&__symmetric_difference,0,T_UNION);
 
   gen symb_minus(const gen & args){
     return symbolic(at_minus,args);
@@ -4886,13 +4935,13 @@ namespace giac {
       return symb_minus(args);
     gen a=args._VECTptr->front(),b=args._VECTptr->back();
     if ( (a.type!=_VECT) || (b.type!=_VECT))
-      return gensizeerr(gettext("Minus"));
+      return symb_minus(args);//gensizeerr(gettext("Minus"));
     chk_set(a);
     chk_set(b);
     vecteur v;
     const_iterateur it=a._VECTptr->begin(),itend=a._VECTptr->end();
     for (;it!=itend;++it){
-      if (!equalposcomp(*b._VECTptr,*it))
+      if (findpos(*b._VECTptr,*it)==0)
 	v.push_back(*it);
     }
     return gen(v,_SET__VECT);
@@ -6558,7 +6607,7 @@ namespace giac {
 
   gen _scientific_format(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
-#ifndef KHICAS
+#if 0 // ndef KHICAS
     gen tmp=check_secure();
     if (is_undef(tmp)) return tmp;
 #endif
@@ -6576,7 +6625,7 @@ namespace giac {
 
   gen _integer_format(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
-#ifndef KHICAS
+#if 0 // ndef KHICAS
     gen tmp=check_secure(); if (is_undef(tmp)) return tmp;
 #endif
     gen args(g);
@@ -7349,7 +7398,7 @@ namespace giac {
 #if 0 // def NSPIRE
     return g;
 #endif
-    if (g.type!=_SYMB || g._SYMBptr->sommet==at_program || g._SYMBptr->sommet==at_pnt || g._SYMBptr->sommet==at_animation || g._SYMBptr->sommet==at_unit || g._SYMBptr->sommet==at_integrate || g._SYMBptr->sommet==at_superieur_strict || g._SYMBptr->sommet==at_superieur_egal || g._SYMBptr->sommet==at_inferieur_strict || g._SYMBptr->sommet==at_inferieur_egal || g._SYMBptr->sommet==at_and || g._SYMBptr->sommet==at_ou || g._SYMBptr->sommet==at_et || g._SYMBptr->sommet==at_not || g._SYMBptr->sommet==at_xor || g._SYMBptr->sommet==at_piecewise
+    if (g.type!=_SYMB || g._SYMBptr->sommet==at_program || g._SYMBptr->sommet==at_pnt || g._SYMBptr->sommet==at_animation || g._SYMBptr->sommet==at_unit || g._SYMBptr->sommet==at_integrate || g._SYMBptr->sommet==at_superieur_strict || g._SYMBptr->sommet==at_superieur_egal || g._SYMBptr->sommet==at_inferieur_strict || g._SYMBptr->sommet==at_inferieur_egal || g._SYMBptr->sommet==at_and || g._SYMBptr->sommet==at_ou || g._SYMBptr->sommet==at_et || g._SYMBptr->sommet==at_not || g._SYMBptr->sommet==at_xor || g._SYMBptr->sommet==at_piecewise || g._SYMBptr->sommet==at_different
 #ifndef FXCG
 	|| g._SYMBptr->sommet==at_archive
 #endif

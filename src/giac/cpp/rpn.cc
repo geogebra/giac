@@ -751,7 +751,17 @@ namespace giac {
   }
 #endif
 
-  gen _VARS(const gen & args,const context * contextptr) {
+  gen _VARS(const gen & args_,const context * contextptr) {
+    gen args(args_);
+    bool assume=false;
+    if (args.type==_VECT && args._VECTptr->size()==2 && args._VECTptr->back()==at_assume){
+      assume=true;
+      args=args._VECTptr->front();
+    }
+    if (args==at_assume){
+      assume=true;
+      args=gen(vecteur(0),_SEQ__VECT);
+    }
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     bool val=is_one(args);
     bool valonly=args==-2;
@@ -768,6 +778,11 @@ namespace giac {
 	vecteur * keywordsptr=keywords_vecteur_ptr();
 #endif
 	for (;it!=itend;++it){
+          if (assume){
+            gen tmp=it->second;
+            if (tmp.type!=_VECT || tmp.subtype!=_ASSUME__VECT)
+              continue;
+          }
 	  lastprog_name(it->first,contextptr);
 	  gen g=identificateur(it->first);
 	  if (keywordsptr==0 || !equalposcomp(*keywordsptr,g)){

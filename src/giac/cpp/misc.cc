@@ -7715,10 +7715,24 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 #endif
 
   // step by step utilities
+  gen rm_nontrig(const gen &g){
+    if (g.type!=_SYMB || g._SYMBptr->sommet==at_exp || g._SYMBptr->sommet==at_sin || g._SYMBptr->sommet==at_cos || g._SYMBptr->sommet==at_tan)
+      return g;
+    return g._SYMBptr->feuille;
+  }
 
   bool is_periodic(const gen & f,const gen & x,gen & periode,GIAC_CONTEXT){
     periode=0;
     vecteur vx=lvarx(f,x);
+    for (;;){
+      vecteur w(vx);
+      // remove non trig rootnodes up to fixpoint
+      for (unsigned i=0;i<vx.size();++i)
+        vx[i]=rm_nontrig(vx[i]);
+      vx=lvarx(vx,x);
+      if (vx==w)
+        break;
+    }
     for (unsigned i=0;i<vx.size();++i){
       if (vx[i].type!=_SYMB || (vx[i]._SYMBptr->sommet!=at_exp && vx[i]._SYMBptr->sommet!=at_sin && vx[i]._SYMBptr->sommet!=at_cos && vx[i]._SYMBptr->sommet!=at_tan)){
 	if (f.type==_SYMB)
@@ -7726,7 +7740,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	return false;
       }
     }
-    gen g=_lin(trig2exp(f,contextptr),contextptr);
+    gen g=_lin(trig2exp(vx,contextptr),contextptr);
     vecteur v;
     rlvarx(g,x,v);
     islesscomplexthanf_sort(v.begin(),v.end());

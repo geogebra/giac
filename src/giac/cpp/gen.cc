@@ -2007,12 +2007,12 @@ namespace giac {
       if (evaled.type==_VECT && evaled.subtype==_SEQ__VECT){
 	jt=evaled._VECTptr->begin(); jtend=evaled._VECTptr->end();
 	for (;jt!=jtend;++jt){
-	  if ((subtype!=_SET__VECT) || (!equalposcomp(vptr->v,*jt)))
+	  //if ((subtype!=_SET__VECT) || (!equalposcomp(vptr->v,*jt)))
 	    vptr->v.push_back(*jt);
 	}
       }
       else {
-	if ( subtype!=_SET__VECT || (!equalposcomp(vptr->v,evaled)))
+	//if ( subtype!=_SET__VECT || (!equalposcomp(vptr->v,evaled)))
 	  vptr->v.push_back(evaled);
       }
       ++it;
@@ -2025,15 +2025,17 @@ namespace giac {
       if (ansptr->type==_VECT && ansptr->subtype==_SEQ__VECT){
 	jt=ansptr->_VECTptr->begin(); jtend=ansptr->_VECTptr->end();
 	for (;jt!=jtend;++jt){
-	  if ((subtype!=_SET__VECT) || (!equalposcomp(vptr->v,*jt)))
+	  //if ((subtype!=_SET__VECT) || (!equalposcomp(vptr->v,*jt)))
 	    vptr->v.push_back(*jt);
 	}
       }
       else {
-	if ( subtype!=_SET__VECT || (!equalposcomp(vptr->v,*ansptr)))
+	//if ( subtype!=_SET__VECT || (!equalposcomp(vptr->v,*ansptr)))
 	  vptr->v.push_back(*ansptr);
       }
     }
+    if (evaled.type==_VECT && subtype==_SET__VECT)
+      chk_set(*evaled._VECTptr);
     // CERR << "End " << v << " " << w << '\n';
     return true;
   }
