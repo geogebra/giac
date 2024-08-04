@@ -205,6 +205,8 @@ namespace giac {
   extern const unary_function_ptr * const  at_intersect;
   gen _symmetric_difference(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_symmetric_difference;
+  gen complement(const gen & args,GIAC_CONTEXT);
+  extern const unary_function_ptr * const  at_complement;
   gen _inter(const gen & args,GIAC_CONTEXT);
   extern const alias_type alias_at_inter;
   extern const unary_function_ptr * const  at_inter;

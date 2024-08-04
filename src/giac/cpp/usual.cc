@@ -6407,7 +6407,9 @@ namespace giac {
     }
     if (is_undef(res))
       res=operator_equal(af,ab,contextptr);
-    if (res.type==_INT_ && abs_calc_mode(contextptr)!=38)
+    if (res.type==_INT_
+        // && abs_calc_mode(contextptr)!=38 // why is this needed?? let's try to remove
+        )
       res.subtype=_INT_BOOLEAN;
     return res;
   }

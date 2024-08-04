@@ -60,7 +60,9 @@ inline giac::gen _graph_charpoly(const giac::gen &g,const giac::context *){ retu
 #include "graphtheory.h"
 #endif
 
+#if !defined GIAC_HAS_STO_38 && !defined USE_GMP_REPLACEMENTS 
 #define GIAC_LMCHANGES 1 // changes by L. Marohnić // regression checks
+#endif
 
 #if defined KHICAS || defined SDL_KHICAS
 #include "kdisplay.h"
