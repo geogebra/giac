@@ -6799,6 +6799,9 @@ namespace giac {
   }
 
   gen pow(const gen & base,const gen & exponent,GIAC_CONTEXT){
+    if (base.type==_VECT && exponent.type==_VECT && (base.subtype==_SET__VECT || exponent.subtype==_SET__VECT)){
+      return _symmetric_difference(makesequence(base,exponent),contextptr);
+    }
     // if (!( (++control_c_counter) & control_c_counter_mask))
 #ifdef TIMEOUT
     control_c();
@@ -10061,6 +10064,8 @@ namespace giac {
   }
 
   gen operator && (const gen & a,const gen & b){
+    if (a.type==_VECT && b.type==_VECT && (a.subtype==_SET__VECT || b.subtype==_SET__VECT))
+      return _intersect(makesequence(a,b),context0);
     if (is_zero(a,context0)){
       if (b.type==_DOUBLE_)
 	return 0.0;
@@ -10107,6 +10112,8 @@ namespace giac {
   }
 
   gen operator || (const gen & a,const gen & b){
+    if (a.type==_VECT && b.type==_VECT && (a.subtype==_SET__VECT || b.subtype==_SET__VECT))
+      return _union(makesequence(a,b),context0);
     if (is_zero(a,context0))
       return change_subtype(!is_zero(b),_INT_BOOLEAN);
     if (is_zero(b,context0))

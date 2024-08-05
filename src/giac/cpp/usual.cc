@@ -4793,6 +4793,8 @@ namespace giac {
     if (!l)
       return gensizeerr(contextptr);
     gen arg0(v.front()),arg1(v.back()),hyp(undef);
+    if (l>2)
+      arg1=symbolic(a._SYMBptr->sommet,gen(vecteur(v.begin()+1,v.end()),_SEQ__VECT));
     if (s==at_sto){
       gen tmp(arg0);
       arg0=arg1;
@@ -4904,19 +4906,18 @@ namespace giac {
     }
 #endif
   }
-  static void purge_assume(const gen & a,GIAC_CONTEXT){
+  static gen purge_assume(const gen & a,GIAC_CONTEXT){
     if (a.type==_SYMB && (a._SYMBptr->sommet==at_and || a._SYMBptr->sommet==at_et || a._SYMBptr->sommet==at_ou || a._SYMBptr->sommet==at_oufr || a._SYMBptr->sommet==at_inferieur_strict || a._SYMBptr->sommet==at_inferieur_egal || a._SYMBptr->sommet==at_superieur_egal || a._SYMBptr->sommet==at_superieur_strict || a._SYMBptr->sommet==at_equal) ){
-      purge_assume(a._SYMBptr->feuille,contextptr);
-      return;
+      return purge_assume(a._SYMBptr->feuille,contextptr);
     }
     if (a.type==_VECT && !a._VECTptr->empty()){
       if (a._VECTptr->back().type==_IDNT && a._VECTptr->front().type!=_IDNT)
-	purge_assume(a._VECTptr->back(),contextptr);
+	return purge_assume(a._VECTptr->back(),contextptr);
       else
-	purge_assume(a._VECTptr->front(),contextptr);
+	return purge_assume(a._VECTptr->front(),contextptr);
     }
     else
-      purgenoassume(a,contextptr);
+      return purgenoassume(a,contextptr);
   }
   gen giac_assume(const gen & a,GIAC_CONTEXT){
     if ( (a.type==_VECT) && (a._VECTptr->size()==2) ){
@@ -4957,7 +4958,18 @@ namespace giac {
 	a_=eval(a,1,contextptr);
     }
 #ifdef NO_STDEXCEPT
-    purge_assume(a_,contextptr);
+    if (is_undef(purge_assume(a_,contextptr))){
+      vecteur v=lidnt(a_);
+      if (v.size()!=1)
+        return gensizeerr(contextptr);
+      purge_assume(v[0],contextptr);
+      gen w=_solve(makesequence(a_,v[0]),contextptr);
+      vecteur s=gen2vecteur(w);
+      if (s.size()>1)
+        a_=symbolic(at_ou,change_subtype(w,_SEQ__VECT));
+      else
+        a_=s[0];
+    }
 #else
     try {
       purge_assume(a_,contextptr);

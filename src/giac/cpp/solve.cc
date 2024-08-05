@@ -3196,7 +3196,7 @@ namespace giac {
       // collect all inequations
       vecteur resineq,other;
       for (int i=0;i<res.size();++i){
-        if (is_inequation(res[i]))
+        if (is_inequation(res[i]) || res[i].is_symb_of_sommet(at_and))
           resineq.push_back(res[i]);
         else
           other.push_back(res[i]);
