@@ -1019,6 +1019,9 @@ namespace giac {
   gen symb_minus(const gen & args);
   void chk_set(vecteur & av);
   void chk_set(gen & g);
+  bool maybe_set(const gen & g);
+  gen set2logic(const gen & g,GIAC_CONTEXT);
+  gen logic2set(const gen & g,GIAC_CONTEXT);
   gen symb_compose(const gen & args);
 
   // test if m(i) is an array index: that will not be the case if

@@ -3872,6 +3872,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 #endif
   int MODRESULTANT=20;
   int ABS_NBITS_EVALF=1000;
+  int SET_COMPARE_MAXIDNT=20;
 
   // used by WIN32 for the path to the xcas directory
   string & xcasroot(){

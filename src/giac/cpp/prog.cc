@@ -4787,7 +4787,7 @@ namespace giac {
       if (contains(b,a))
 	return b;
       else
-	return _union(makesequence(b,eval(gen(makevecteur(a,a),_INTERVAL__VECT),1,contextptr)),contextptr);
+	return _union(makesequence(a,eval(gen(makevecteur(b,b),_INTERVAL__VECT),1,contextptr)),contextptr);
     }
     if (a.type==_REAL){
       if (contains(a,b))
@@ -4802,9 +4802,22 @@ namespace giac {
 	return _union(makesequence(a,eval(gen(makevecteur(b,b),_INTERVAL__VECT),1,contextptr)),contextptr);
     }
 #endif
-    if ( (a.type!=_VECT) || (b.type!=_VECT))
+    if ( (a.type!=_VECT) || (b.type!=_VECT)){
+      if (a.is_symb_of_sommet(at_union)){
+        vecteur af=gen2vecteur(a._SYMBptr->feuille);
+        if (b.is_symb_of_sommet(at_union))
+          af=mergevecteur(af,gen2vecteur(b._SYMBptr->feuille));
+        else
+          af.push_back(b);
+        return symbolic(at_union,gen(af,_SET__VECT));
+      }
+      if (b.is_symb_of_sommet(at_union)){
+        vecteur bf=gen2vecteur(b._SYMBptr->feuille);
+        bf.insert(bf.begin(),a);
+        return symbolic(at_union,gen(bf,_SET__VECT));
+      }
       return symb_union(args); //gensizeerr(gettext("Union"));
-    {
+    } else {
       chk_set(a);
       chk_set(b);
       vecteur v;
@@ -4880,6 +4893,87 @@ namespace giac {
       return false;
     return maybe_set(g._SYMBptr->feuille);
   }
+
+  // 0 equal, 1 a contains b, 2 b contains a, negative: non comparable, -2 explicit sets, -3 too many idnts
+  int set_compare(const gen & a_,const gen &b_,GIAC_CONTEXT){
+    if (a_==b_)
+      return 0;
+    if (a_.type==_VECT && b_.type==_VECT){
+      vecteur a(*a_._VECTptr); chk_set(a);
+      vecteur b(*b_._VECTptr); chk_set(b);
+      if (a==b)
+        return 0;
+      int as=a.size(),bs=b.size();
+      const_iterateur it,itend,jt,jtend;
+      if (as>bs){
+        it=a.begin();itend=a.end();jt=b.begin();jtend=b.end();
+      } else {
+        it=b.begin();itend=b.end();jt=a.begin();jtend=a.end();
+      }
+      for (;it!=itend && jt!=jtend;){
+        if (*it==*jt){
+          ++it; ++jt;
+          continue;
+        }
+        if (islesscomplexthanf(*jt,*it))
+          return -2;
+        ++it;
+      }
+      return as>bs?1:2;
+    }
+    if ( (a_.type==_IDNT || a_.type==_SYMB) && maybe_set(a_) && (b_.type==_IDNT || b_.type==_SYMB) && maybe_set(b_) ){
+      vecteur l(lidnt(a_));
+      lidnt(b_,l,false);
+      int ls=l.size();
+      if (ls>SET_COMPARE_MAXIDNT)
+        return -3;
+      unsigned ntries=1<<ls;
+      int comp=0;
+      gen a(set2logic(a_,contextptr)),b(set2logic(b_,contextptr));
+      vecteur vals(ls);
+      for (unsigned i=0;i<ntries;++i){
+        unsigned I(i);
+        for (int j=0;j<ls;++j){
+          vals[j]=int(I%2);
+          I/=2;
+        }
+        gen aa=subst(a,l,vals,false,contextptr);
+        aa=eval(aa,1,contextptr);
+        if (aa.type!=_INT_)
+          return -1;
+        gen bb=subst(b,l,vals,false,contextptr);
+        bb=eval(bb,1,contextptr);
+        if (bb.type!=_INT_)
+          return -1;
+        if (aa.val==bb.val)
+          continue;
+        if (aa.val==1){
+          if (comp==2)
+            return -1;
+          comp=1;
+          continue;
+        }
+        if (bb.val==1){
+          if (comp==1)
+            return -1;
+          comp=2;
+          continue;
+        }
+      }
+      return comp;
+    }
+    return -1;
+  }
+  gen _set_compare(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+    if ((args.type!=_VECT) || (args._VECTptr->size()!=2))
+      return gensizeerr();
+    gen a=args._VECTptr->front(),b=args._VECTptr->back();
+    return set_compare(a,b,contextptr);
+  }
+  static const char _set_compare_s []="set_compare";
+  static define_unary_function_eval (__set_compare,&_set_compare,_set_compare_s);
+  define_unary_function_ptr5( at_set_compare ,alias_at_set_compare ,&__set_compare,0,true);
   
   gen symb_intersect(const gen & args){
     return symbolic(at_intersect,args);
@@ -4945,6 +5039,19 @@ namespace giac {
           ++jt;
       }
       return gen(v,_SET__VECT);
+    }
+    if (a.is_symb_of_sommet(at_intersect)){
+      vecteur af=gen2vecteur(a._SYMBptr->feuille);
+      if (b.is_symb_of_sommet(at_intersect))
+        af=mergevecteur(af,gen2vecteur(b._SYMBptr->feuille));
+      else
+        af.push_back(b);
+      return symbolic(at_intersect,gen(af,_SET__VECT));
+    }
+    if (b.is_symb_of_sommet(at_intersect)){
+      vecteur bf=gen2vecteur(b._SYMBptr->feuille);
+      bf.insert(bf.begin(),a);
+      return symbolic(at_intersect,gen(bf,_SET__VECT));
     }
     return symb_intersect(args); // gensizeerr(contextptr);
   }
