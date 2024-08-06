@@ -2353,6 +2353,8 @@ namespace giac {
   gen simplify(const gen & e_orig,GIAC_CONTEXT){
     if (e_orig.type<=_POLY || is_inf(e_orig) || has_num_coeff(e_orig))
       return e_orig;
+    if (maybe_set(e_orig))
+      return set_simplify(e_orig,contextptr);
     gen e=simplifier(e_orig,contextptr);
     if (algnum_normal(e,contextptr))
       return e;

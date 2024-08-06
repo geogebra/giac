@@ -4800,7 +4800,29 @@ namespace giac {
       arg0=arg1;
       arg1=tmp;
     }
-    if (s==at_different){
+    if (s==at_different && arg0.type==_IDNT){
+      gen a0,hyp=arg0._IDNTptr->eval(1,a0,contextptr);
+      vecteur last_hyp;
+      if (hyp.type==_VECT && hyp.subtype==_ASSUME__VECT){
+        last_hyp=*hyp._VECTptr;
+        if (last_hyp.size()==3){
+          vecteur v=mergevecteur(gen2vecteur(last_hyp[2]),gen2vecteur(arg1));
+          comprim(v);
+          last_hyp[2]=v;
+        }
+        else if (last_hyp.size()==2)
+          last_hyp.push_back(gen2vecteur(arg1));
+        else
+          gensizeerr(gettext("Bad hypothesis"));
+      }
+      else
+        last_hyp=makevecteur(vecteur(0),vecteur(1,makevecteur(minus_inf,plus_inf)),gen2vecteur(arg1));
+      hyp=gen(last_hyp,_ASSUME__VECT);
+      sto(hyp,arg0,contextptr);
+      return arg0;
+      // old code
+      if (arg1.type==_VECT)
+        return gensizeerr(contextptr);
       gen tmp1=symbolic(at_inferieur_strict,makesequence(arg0,arg1));
       gen tmp2=symbolic(at_superieur_strict,makesequence(arg0,arg1));
       return assumesymbolic(symbolic(at_ou,makesequence(tmp1,tmp2)),0,contextptr);
@@ -4907,7 +4929,7 @@ namespace giac {
 #endif
   }
   static gen purge_assume(const gen & a,GIAC_CONTEXT){
-    if (a.type==_SYMB && (a._SYMBptr->sommet==at_and || a._SYMBptr->sommet==at_et || a._SYMBptr->sommet==at_ou || a._SYMBptr->sommet==at_oufr || a._SYMBptr->sommet==at_inferieur_strict || a._SYMBptr->sommet==at_inferieur_egal || a._SYMBptr->sommet==at_superieur_egal || a._SYMBptr->sommet==at_superieur_strict || a._SYMBptr->sommet==at_equal) ){
+    if (a.type==_SYMB && (a._SYMBptr->sommet==at_and || a._SYMBptr->sommet==at_et || a._SYMBptr->sommet==at_ou || a._SYMBptr->sommet==at_oufr || a._SYMBptr->sommet==at_inferieur_strict || a._SYMBptr->sommet==at_inferieur_egal || a._SYMBptr->sommet==at_superieur_egal || a._SYMBptr->sommet==at_superieur_strict || a._SYMBptr->sommet==at_equal || a._SYMBptr->sommet==at_different) ){
       return purge_assume(a._SYMBptr->feuille,contextptr);
     }
     if (a.type==_VECT && !a._VECTptr->empty()){

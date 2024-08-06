@@ -4766,8 +4766,10 @@ namespace giac {
       return args;
     if (v.size()==1 && v.front().type==_VECT)
       return gen(v,_SET__VECT).eval(1,contextptr);
+    if (v.size()==1)
+      return v[0];
     if (v.size()!=2)
-      return gensizeerr(contextptr);
+      return symb_union(args);
     gen a=v.front(),b=v.back();
     if (a==b)
       return a;
@@ -4970,6 +4972,72 @@ namespace giac {
       return comp;
     }
     return -1;
+  }
+  gen set_simplify(const gen & g,GIAC_CONTEXT){
+    if (!maybe_set(g))
+      return g;
+    vecteur l(lidnt(g));
+    int ls=l.size();
+    if (ls>SET_COMPARE_MAXIDNT)
+      return g;
+    unsigned ntries=1<<ls;
+    int comp=0;
+    gen a(set2logic(g,contextptr));
+    vecteur vals(ls);
+    vector<bool> res(ntries);
+    for (unsigned i=0;i<ntries;++i){
+      unsigned I(i);
+      for (int j=0;j<ls;++j){
+        vals[j]=int(I%2);
+        I/=2;
+      }
+      gen aa=subst(a,l,vals,false,contextptr);
+      aa=eval(aa,1,contextptr);
+      if (aa.type!=_INT_)
+        return g;
+      res[i]=aa.val;
+    }
+    // check if we can eliminate variables
+    vector<bool> vars_present(ls,true);
+    for (int var=0;var<ls;++var){
+      int V=1<<var,i;
+      // will make each test 2 times, but this is simpler code
+      for (i=0;i<ntries;++i){
+        int i1=i|V; // set bit at position var
+        int i2=i&(~V); // clear bit at position var
+        if (res[i1]!=res[i2]) // compare
+          break;
+      }
+      if (i==ntries){
+        // does not depend on var
+        vars_present[var]=false;
+      }
+    }
+    // generate global union
+    vecteur result; 
+    vecteur inter;
+    for (int i=0;i<ntries;++i){
+      if (!res[i])
+        continue;
+      unsigned I(i);
+      inter.clear();
+      for (int j=0;j<ls;++j,I/=2){
+        if (!vars_present[j])
+          continue;
+        if (I%2)
+          inter.push_back(l[j]);
+        else
+          inter.push_back(symbolic(at_complement,l[j]));
+      }
+      if (inter.empty())
+        continue;
+      if (inter.size()==1)
+        result.push_back(inter[0]);
+      else
+        result.push_back(symbolic(at_intersect,gen(inter,_SEQ__VECT)));
+    }
+    chk_set(result); // sort and eliminate duplicate
+    return symbolic(at_union,result);
   }
   gen _set_compare(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;

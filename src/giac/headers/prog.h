@@ -1023,6 +1023,9 @@ namespace giac {
   gen set2logic(const gen & g,GIAC_CONTEXT);
   gen logic2set(const gen & g,GIAC_CONTEXT);
   gen symb_compose(const gen & args);
+  gen set_simplify(const gen & g,GIAC_CONTEXT);
+  // 0 equal, 1 a contains b, 2 b contains a, negative: non comparable, -2 explicit sets, -3 too many idnts
+  int set_compare(const gen & a_,const gen &b_,GIAC_CONTEXT);
 
   // test if m(i) is an array index: that will not be the case if
   // i is an _IDNT or a list of _IDNT
