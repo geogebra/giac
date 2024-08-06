@@ -9840,7 +9840,7 @@ namespace giac {
     gen z=evalf_double(z0,1,contextptr);
     if (z0.type==_DOUBLE_ && prec>13)
       prec=13;
-#ifdef GIAC_HAS_STO_38
+#if 0 // def GIAC_HAS_STO_38
     if (z.type!=_DOUBLE_)
       return false;
     prec=13;

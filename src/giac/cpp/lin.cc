@@ -717,6 +717,36 @@ namespace giac {
     return union_expand(e._VECTptr->begin(),e._VECTptr->end(),contextptr);
   }
 
+  static gen complement_expand(const gen & e,GIAC_CONTEXT){
+    if (e.type==_VECT){
+      vecteur v(gen2vecteur(*e._VECTptr));
+      if (v.empty())
+        return v;
+      for (int i=0;i<v.size();++i){
+        v[i]=complement_expand(v[i],contextptr);
+      }
+      if (v.size()==1)
+        return v[0];
+      return v;
+    }
+    if (e.type!=_SYMB)
+      return _complement(e,contextptr);
+    unary_function_ptr & u=e._SYMBptr->sommet;
+    gen ee=complement_expand(e._SYMBptr->feuille,contextptr);
+    if (u==at_complement)
+      return ee._SYMBptr->feuille;
+    if (u==at_intersect)
+      return symbolic(at_union,ee);
+    if (u==at_union)
+      return symbolic(at_intersect,ee);
+    if (u==at_symmetric_difference)
+      return symbolic(u,ee);
+    if (u==at_minus && ee.type==_VECT && ee._VECTptr->size()==2){
+      return symbolic(u,makesequence(ee[1],ee[0]));
+    }
+    return gensizeerr(gettext("Unsupported set operation"));
+  }
+
   gen prod_expand(const gen & a,const gen & b,GIAC_CONTEXT){
     bool a_is_plus= (a.type==_SYMB) && (a._SYMBptr->sommet==at_plus);
     bool b_is_plus= (b.type==_SYMB) && (b._SYMBptr->sommet==at_plus);
@@ -2193,10 +2223,10 @@ namespace giac {
     if (maybe_set(e)){
       v.push_back(at_intersect);
       v.push_back(at_union);
-      //v.push_back(at_complement);
+      v.push_back(at_complement);
       w.push_back(&intersect_expand);
       w.push_back(&union_expand);
-      //w.push_back(&complement_expand);
+      w.push_back(&complement_expand);
       gen ef=flatten_set(e);
       return subst(ef,v,w,false,contextptr);
     }

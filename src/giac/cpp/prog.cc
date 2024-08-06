@@ -4751,6 +4751,9 @@ namespace giac {
   static define_unary_function_eval (__throw,&_throw,_throw_s);
   define_unary_function_ptr5( at_throw ,alias_at_throw ,&__throw,0,T_RETURN);
 
+  static string texprintasunion(const gen & g,const char * s,GIAC_CONTEXT){
+    return texprintsommetasoperator(g,"\\cup",contextptr);
+  }
   gen symb_union(const gen & args){
     return symbolic(at_union,args);
   }
@@ -4766,6 +4769,8 @@ namespace giac {
     if (v.size()!=2)
       return gensizeerr(contextptr);
     gen a=v.front(),b=v.back();
+    if (a==b)
+      return a;
 #if defined HAVE_LIBMPFI && !defined NO_RTTI      
     if (a.type==_REAL && b.type==_REAL){
       if (real_interval * aptr=dynamic_cast<real_interval *>(a._REALptr)){
@@ -4809,11 +4814,13 @@ namespace giac {
           af=mergevecteur(af,gen2vecteur(b._SYMBptr->feuille));
         else
           af.push_back(b);
+        chk_set(af);
         return symbolic(at_union,gen(af,_SET__VECT));
       }
       if (b.is_symb_of_sommet(at_union)){
         vecteur bf=gen2vecteur(b._SYMBptr->feuille);
         bf.insert(bf.begin(),a);
+        chk_set(bf);
         return symbolic(at_union,gen(bf,_SET__VECT));
       }
       return symb_union(args); //gensizeerr(gettext("Union"));
@@ -4846,7 +4853,7 @@ namespace giac {
     }
   }
   static const char _union_s []=" union ";
-  static define_unary_function_eval4_index (58,__union,&_union,_union_s,&printsommetasoperator,&texprintsommetasoperator);
+  static define_unary_function_eval4_index (58,__union,&_union,_union_s,&printsommetasoperator,&texprintasunion);
   define_unary_function_ptr( at_union ,alias_at_union ,&__union);
 
   void chk_set(vecteur & av){
@@ -4889,7 +4896,7 @@ namespace giac {
     if (g.type!=_SYMB)
       return false;
     const unary_function_ptr & u=g._SYMBptr->sommet;
-    if (u!=at_intersect && u!=at_union && u!=at_complement && u!=at_symmetric_difference)
+    if (u!=at_intersect && u!=at_union && u!=at_complement && u!=at_symmetric_difference && u!=at_minus)
       return false;
     return maybe_set(g._SYMBptr->feuille);
   }
@@ -4975,6 +4982,9 @@ namespace giac {
   static define_unary_function_eval (__set_compare,&_set_compare,_set_compare_s);
   define_unary_function_ptr5( at_set_compare ,alias_at_set_compare ,&__set_compare,0,true);
   
+  static string texprintasintersect(const gen & g,const char * s,GIAC_CONTEXT){
+    return texprintsommetasoperator(g,"\\cap",contextptr);
+  }
   gen symb_intersect(const gen & args){
     return symbolic(at_intersect,args);
   }
@@ -4983,6 +4993,8 @@ namespace giac {
     if ((args.type!=_VECT) || (args._VECTptr->size()!=2))
       return gensizeerr();
     gen a=args._VECTptr->front(),b=args._VECTptr->back();
+    if (a==b)
+      return a;
 #if defined HAVE_LIBMPFI && !defined NO_RTTI      
     if (a.type==_REAL && b.type==_REAL){
       if (real_interval * aptr=dynamic_cast<real_interval *>(a._REALptr)){
@@ -5046,19 +5058,24 @@ namespace giac {
         af=mergevecteur(af,gen2vecteur(b._SYMBptr->feuille));
       else
         af.push_back(b);
+      chk_set(af);
       return symbolic(at_intersect,gen(af,_SET__VECT));
     }
     if (b.is_symb_of_sommet(at_intersect)){
       vecteur bf=gen2vecteur(b._SYMBptr->feuille);
       bf.insert(bf.begin(),a);
+      chk_set(bf);
       return symbolic(at_intersect,gen(bf,_SET__VECT));
     }
     return symb_intersect(args); // gensizeerr(contextptr);
   }
   static const char _intersect_s []=" intersect ";
-  static define_unary_function_eval4_index (62,__intersect,&_intersect,_intersect_s,&printsommetasoperator,&texprintsommetasoperator);
+  static define_unary_function_eval4_index (62,__intersect,&_intersect,_intersect_s,&printsommetasoperator,&texprintasintersect);
   define_unary_function_ptr( at_intersect ,alias_at_intersect ,&__intersect);
 
+  static string texprintascomplement(const gen & g,const char * s,GIAC_CONTEXT){
+    return "\\stcomp{"+gen2tex(g,contextptr)+"}";
+  }
   gen _complement(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     if (args.is_symb_of_sommet(at_complement)){
@@ -5075,7 +5092,7 @@ namespace giac {
     return symbolic(at_complement,args);
   }
   static const char _complement_s []="complement";
-  static define_unary_function_eval (__complement,&_complement,_complement_s);
+  static define_unary_function_eval4 (__complement,&_complement,_complement_s,0,&texprintascomplement);
   define_unary_function_ptr5( at_complement ,alias_at_complement ,&__complement,0,true);
 
   gen and2intersect(const gen &g,GIAC_CONTEXT){
@@ -5156,6 +5173,9 @@ namespace giac {
   static define_unary_function_eval (__set2logic,&_set2logic,_set2logic_s);
   define_unary_function_ptr5( at_set2logic ,alias_at_set2logic ,&__set2logic,0,true);
 
+  static string texprintassymmdiff(const gen & g,const char * s,GIAC_CONTEXT){
+    return texprintsommetasoperator(g,"\\Delta",contextptr);
+  }
   gen symb_symmetric_difference(const gen & args){
     return symbolic(at_symmetric_difference,args);
   }
@@ -5193,7 +5213,7 @@ namespace giac {
     return symb_symmetric_difference(args); // gensizeerr(contextptr);
   }
   static const char _symmetric_difference_s []="symmetric_difference";
-  static define_unary_function_eval4_index (178,__symmetric_difference,&_symmetric_difference,_symmetric_difference_s,&printsommetasoperator,&texprintsommetasoperator);
+  static define_unary_function_eval4_index (178,__symmetric_difference,&_symmetric_difference,_symmetric_difference_s,&printsommetasoperator,&texprintassymmdiff);
   define_unary_function_ptr5( at_symmetric_difference ,alias_at_symmetric_difference ,&__symmetric_difference,0,T_UNION);
 
   gen symb_minus(const gen & args){
