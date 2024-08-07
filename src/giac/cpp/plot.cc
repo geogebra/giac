@@ -9104,8 +9104,6 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       vars=makevecteur(vars,symbolic(at_equal,makesequence(v__IDNT_e,symbolic(at_interval,makesequence(vmin,vmax)))));
       curve3d=true;
     }
-    if (tstep<0)
-      tstep=(tmax-tmin)/gnuplot_pixels_per_eval;
     if (vars.type==_VECT && vars._VECTptr->size()>=2){
       vecteur v=*vars._VECTptr;
       if (v.size()!=2)
@@ -9121,6 +9119,8 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     }
     if (!readrange(vars,tmin,tmax,vars,tmin,tmax,contextptr))
       return gensizeerr(gettext("2nd arg must be a free variable"));
+    if (tstep<0)
+      tstep=(tmax-tmin)/gnuplot_pixels_per_eval;
     return plotparam(f,vars,attributs,densityplot,xmin,xmax,ymin,ymax,tmin,tmax,tstep,eq,parameq,vparam,contextptr);
   }
   gen _plotparam(const gen & args,const context * contextptr){
