@@ -4771,8 +4771,13 @@ namespace giac {
     if (v.size()!=2)
       return symb_union(args);
     gen a=v.front(),b=v.back();
-    if (a==b)
+    if (a==b){
+      if (a.type==_VECT){
+        if (a.subtype!=_SET__VECT)
+          chk_set(a);
+      }
       return a;
+    }
 #if defined HAVE_LIBMPFI && !defined NO_RTTI      
     if (a.type==_REAL && b.type==_REAL){
       if (real_interval * aptr=dynamic_cast<real_interval *>(a._REALptr)){
@@ -5061,8 +5066,13 @@ namespace giac {
     if ((args.type!=_VECT) || (args._VECTptr->size()!=2))
       return gensizeerr();
     gen a=args._VECTptr->front(),b=args._VECTptr->back();
-    if (a==b)
+    if (a==b){
+      if (a.type==_VECT){
+        if (a.subtype!=_SET__VECT)
+          chk_set(a);
+      }
       return a;
+    }
 #if defined HAVE_LIBMPFI && !defined NO_RTTI      
     if (a.type==_REAL && b.type==_REAL){
       if (real_interval * aptr=dynamic_cast<real_interval *>(a._REALptr)){
