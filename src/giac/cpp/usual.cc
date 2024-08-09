@@ -3656,9 +3656,9 @@ namespace giac {
 	  return ans;
 	}
 	else {
-	  if (b._IDNTptr->value)
+	  if (b._IDNTptr->value && b._IDNTptr->ref_count>0)
 	    delete b._IDNTptr->value;
-	  if (b._IDNTptr->ref_count) 
+	  if (b._IDNTptr->ref_count>0) 
 	    b._IDNTptr->value = new gen(aa);
 #ifdef HAVE_SIGNAL_H_OLD
 	  if (!child_id && signal_store)
@@ -4517,6 +4517,8 @@ namespace giac {
       v_intervalle=*v[1]._VECTptr;
       v_excluded=*v.back()._VECTptr;
     }
+    if (v_intervalle.size()==1 && v_intervalle.front()==makevecteur(minus_inf,plus_inf))
+      v_intervalle.clear();
     gen v0=_DOUBLE_;
     v0.subtype=1;
     if (!v.empty())
