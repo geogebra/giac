@@ -1010,7 +1010,7 @@ namespace giac {
 	return val;
       }
     }
-    if (args._IDNTptr->value){
+    if (args._IDNTptr->value && args._IDNTptr->ref_count>0){
 #if !defined RTOS_THREADX && !defined BESTA_OS && !defined FREERTOS && !defined FXCG
       if (variables_are_files(contextptr))
 	unlink((args._IDNTptr->name()+string(cas_suffixe)).c_str());
