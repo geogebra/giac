@@ -4716,7 +4716,6 @@ int yyparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-
 /*----------.
 | yyparse.  |
 `----------*/
@@ -4745,6 +4744,7 @@ yyparse (scanner)
 {
 /* The lookahead symbol.  */
 int yychar;
+//yydebug=1;
 
 /* The semantic value of the lookahead symbol.  */
 YYSTYPE yylval;

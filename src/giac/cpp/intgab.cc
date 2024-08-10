@@ -634,6 +634,10 @@ namespace giac {
       vecteur rA=singular(A,x,contextptr);
       if (!rA.empty() && is_undef(rA))
 	return false;
+      for (int i=0;i<rA.size();++i){
+        if (is_exactly_zero(re(rA[i],contextptr)))
+          return false;
+      }
       vecteur Pv=factors(P,x,contextptr);
       int Pvs=int(Pv.size()/2);
       for (int Pi=0;Pi<Pvs;++Pi){

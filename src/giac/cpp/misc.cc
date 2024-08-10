@@ -7501,12 +7501,12 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       return gensizeerr(contextptr);
     gen a=v.front();
     int pos=0;
+    int shift=array_start(contextptr); //xcas_mode(contextptr)>0 || abs_calc_mode(contextptr)==38;
     if (v.size()==3){
       if (v[2].type!=_INT_)
 	return gensizeerr(contextptr);
-      pos=v[2].val;
+      pos=v[2].val-shift;
     }
-    int shift=array_start(contextptr); //xcas_mode(contextptr)>0 || abs_calc_mode(contextptr)==38;
     bool py=python_compat(contextptr);
     if (a.type==_STRNG && v[1].type!=_VECT){
       if (v[1].type!=_STRNG)
