@@ -1453,7 +1453,7 @@ namespace giac {
 
   class identificateur {
   public:
-    int * ref_count;
+    int * ref_count_ptr;
     gen * value;
     // std::string * name;
     const char * id_name;

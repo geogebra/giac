@@ -4435,7 +4435,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	if (sortie._SYMBptr->sommet==at_sto && sortie._SYMBptr->feuille.type==_VECT){
 	  vecteur & v=*sortie._SYMBptr->feuille._VECTptr;
 	  // cerr << v << '\n';
-	  if ((v.size()==2) && v[1].type==_IDNT && *v[1]._IDNTptr->ref_count>0){
+	  if ((v.size()==2) && v[1].type==_IDNT && *v[1]._IDNTptr->ref_count_ptr>0){
 	    if (v[1]._IDNTptr->value)
 	      delete v[1]._IDNTptr->value;
 	    v[1]._IDNTptr->value = new gen(v[0]);
@@ -4445,7 +4445,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	}
 	if (sortie._SYMBptr->sommet==at_purge){
 	  gen & g=sortie._SYMBptr->feuille;
-	  if (g.type==_IDNT && (g._IDNTptr->value) && *g._IDNTptr->ref_count>0){
+	  if (g.type==_IDNT && (g._IDNTptr->value) && *g._IDNTptr->ref_count_ptr>0){
 	    delete g._IDNTptr->value;
 	    g._IDNTptr->value=0;
 	  }
@@ -7210,7 +7210,7 @@ unsigned int ConvertUTF8toUTF162 (
       sym_string_tab::const_iterator it=syms().begin(),itend=syms().end();
       for (;it!=itend;++it){
 	gen id=it->second;
-	if (id.type==_IDNT && id._IDNTptr->value && *id._IDNTptr->ref_count>0)
+	if (id.type==_IDNT && id._IDNTptr->value && *id._IDNTptr->ref_count_ptr>0)
 	  res.push_back(symb_sto(*id._IDNTptr->value,id));
       }
       unlock_syms_mutex();  

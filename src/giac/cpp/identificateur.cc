@@ -605,7 +605,7 @@ namespace giac {
     char * c = new char[l+1];
     strcpy(c,tmp.c_str());
     ptr->s=c;
-    ref_count = &ptr->i ;
+    ref_count_ptr = &ptr->i ;
     value = NULL;
     quoted = &ptr->b ;
     localvalue = 0;
@@ -635,7 +635,7 @@ namespace giac {
 	*c='_';
     }
 #endif
-    ref_count = &ptr->i ;
+    ref_count_ptr = &ptr->i ;
     value = NULL;
     quoted = &ptr->b ;
     localvalue = 0;
@@ -665,7 +665,7 @@ namespace giac {
 	*c='_';
     }
     #endif */
-    ref_count = &ptr->i ;
+    ref_count_ptr = &ptr->i ;
     quoted = &ptr->b ;
     localvalue = 0;
     id_name = ptr->s ;
@@ -674,7 +674,7 @@ namespace giac {
 
   identificateur::identificateur(const char * s){
     if (strchr(s,' ')){
-      ref_count=0;
+      ref_count_ptr=0;
       string S(s);
 #if defined GIAC_HAS_STO_38 || defined NSPIRE || defined FXCG
       for (unsigned i=0;i<S.size();++i){
@@ -691,7 +691,7 @@ namespace giac {
     ptr->b=0;
     ptr->s=s;
     ptr->s_dynalloc=false;
-    ref_count = &ptr->i ;
+    ref_count_ptr = &ptr->i ;
     value = NULL;
     quoted = &ptr->b ;
     localvalue = 0;
@@ -701,7 +701,7 @@ namespace giac {
 #ifdef GIAC_HAS_STO_38
   identificateur::identificateur(const char * s, bool StringIsNowYours){
     if (strchr(s,' ')){
-      ref_count=0;
+      ref_count_ptr=0;
       string S(s);
       // #ifdef GIAC_HAS_STO_38
       for (unsigned i=0;i<S.size();++i){
@@ -718,7 +718,7 @@ namespace giac {
     ptr->b=0;
     ptr->s=s;
     ptr->s_dynalloc= StringIsNowYours;
-    ref_count = &ptr->i ;
+    ref_count_ptr = &ptr->i ;
     value = NULL;
     quoted = &ptr->b ;
     localvalue = 0;
@@ -728,7 +728,7 @@ namespace giac {
 
   identificateur::identificateur(const char * s,const gen & e){
     if (strchr(s,' ')){
-      ref_count=0;
+      ref_count_ptr=0;
       *this=identificateur(string(s),e);
       return;
     }
@@ -737,7 +737,7 @@ namespace giac {
     ptr->b=0;
     ptr->s=s;
     ptr->s_dynalloc=false;
-    ref_count = &ptr->i ;
+    ref_count_ptr = &ptr->i ;
     quoted = &ptr->b ;
     localvalue = 0;
     id_name = ptr->s ;
@@ -745,9 +745,9 @@ namespace giac {
   }
 
   identificateur::identificateur(const identificateur & s){
-    ref_count=s.ref_count;
-    if (ref_count)
-      ++(*ref_count);
+    ref_count_ptr=s.ref_count_ptr;
+    if (ref_count_ptr)
+      ++(*ref_count_ptr);
     value=s.value;
     quoted=s.quoted;
     localvalue=s.localvalue;
@@ -755,10 +755,10 @@ namespace giac {
   }
 
   identificateur::~identificateur(){
-    if (ref_count){
-      --(*ref_count);
-      if (!(*ref_count)){
-	int_string_shortint_bool * ptr = (int_string_shortint_bool *) ref_count;
+    if (ref_count_ptr){
+      --(*ref_count_ptr);
+      if (!(*ref_count_ptr)){
+	int_string_shortint_bool * ptr = (int_string_shortint_bool *) ref_count_ptr;
 	if (ptr->s_dynalloc)
 	  delete [] ptr->s;
 	delete ptr;
@@ -771,17 +771,17 @@ namespace giac {
   }
 
   void identificateur::MakeCopyOfNameIfNotLocal() {
-    int_string_shortint_bool * ptr = (int_string_shortint_bool *) ref_count;
+    int_string_shortint_bool * ptr = (int_string_shortint_bool *) ref_count_ptr;
     if (ptr->s_dynalloc) return;
     id_name = ptr->s= strdup(ptr->s);
     ptr->s_dynalloc= true;
   }
 
   identificateur & identificateur::operator =(const identificateur & s){
-    if (ref_count){
-      --(*ref_count);
-      if (!(*ref_count)){
-	int_string_shortint_bool * ptr = (int_string_shortint_bool *) ref_count;
+    if (ref_count_ptr){
+      --(*ref_count_ptr);
+      if (!(*ref_count_ptr)){
+	int_string_shortint_bool * ptr = (int_string_shortint_bool *) ref_count_ptr;
 	if (ptr->s_dynalloc)
 	  delete [] ptr->s;
 	delete ptr;
@@ -791,9 +791,9 @@ namespace giac {
 	  delete localvalue;
       }
     }
-    ref_count=s.ref_count;
-    if (ref_count)
-      ++(*ref_count);
+    ref_count_ptr=s.ref_count_ptr;
+    if (ref_count_ptr)
+      ++(*ref_count_ptr);
     value=s.value;
     quoted=s.quoted;
     localvalue=s.localvalue;
@@ -1014,7 +1014,7 @@ namespace giac {
 #endif
 
   gen identificateur::eval(int level,const gen & orig,const context * contextptr) {
-    if (!ref_count && !contextptr)
+    if (!ref_count_ptr && !contextptr)
       return orig;
     gen evaled;
     // cerr << "idnt::eval " << *this << " " << level << '\n';
@@ -1092,7 +1092,7 @@ namespace giac {
   }
 
   bool identificateur::in_eval(int level,const gen & orig,gen & evaled,const context * contextptr, bool No38Lookup) {
-    // if (!ref_count) return false; // does not work for cst ref identificateur
+    // if (!ref_count_ptr) return false; // does not work for cst ref identificateur
     if (contextptr){ // Look for local variables...
       // If 38 is there, let it look at variable priorities, but ONLY looking at local for the moment! We do not want to look as globals as they might need to be quoted...
 #ifndef FXCG
