@@ -4250,6 +4250,8 @@ namespace giac {
 	tmp[i]=at?symbolic(at_at,makesequence(v[1],i)):symb_of(v[1],i+1);
       v[1]=tmp;
     }
+    if (s>=4 && v[3].type==_IDNT)
+      *logptr(contextptr) << gettext("Unknown option ") << v[3] << "\n";
     if (gguess.is_symb_of_sommet(at_interval) && (s<4 || v[3].subtype!=_INT_PLOT)){
       int iszero=-1;
       gen a=gguess._SYMBptr->feuille[0],b=gguess._SYMBptr->feuille[1];

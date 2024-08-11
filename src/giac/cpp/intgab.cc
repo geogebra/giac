@@ -635,7 +635,7 @@ namespace giac {
       if (!rA.empty() && is_undef(rA))
 	return false;
       for (int i=0;i<rA.size();++i){
-        if (is_exactly_zero(re(rA[i],contextptr)))
+        if (is_exactly_zero(im(rA[i],contextptr)))
           return false;
       }
       vecteur Pv=factors(P,x,contextptr);
