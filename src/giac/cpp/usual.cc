@@ -3656,9 +3656,9 @@ namespace giac {
 	  return ans;
 	}
 	else {
-	  if (b._IDNTptr->value && *b._IDNTptr->ref_count_ptr>0)
+	  if (b._IDNTptr->value && b._IDNTptr->ref_count_ptr!=(int *)-1)
 	    delete b._IDNTptr->value;
-	  if (*b._IDNTptr->ref_count_ptr>0) 
+	  if (b._IDNTptr->ref_count_ptr!=(int *)-1) 
 	    b._IDNTptr->value = new gen(aa);
 #ifdef HAVE_SIGNAL_H_OLD
 	  if (!child_id && signal_store)
