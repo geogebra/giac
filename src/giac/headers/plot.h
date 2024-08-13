@@ -280,6 +280,7 @@ namespace giac {
   extern const unary_function_ptr * const  at_innertln;
   extern const unary_function_ptr * const  at_plotfunc;
   extern const unary_function_ptr * const  at_funcplot;
+  extern const unary_function_ptr * const  at_towards;
   // gen _plot(const gen &);
   extern const unary_function_ptr * const  at_plot;
   gen remove_at_pnt(const gen & e);

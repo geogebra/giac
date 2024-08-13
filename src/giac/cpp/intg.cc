@@ -3924,14 +3924,43 @@ namespace giac {
       }
       return res;
     }
-    // handle curve, should also handle segment and arc of circle
-    gen c=remove_at_pnt(curve);
-    c=c[1];
-    gen eq=c[0],t=c[1],tmin(tmin_),tmax(tmax_);
-    if (is_undef(tmin))
-      tmin=c[2];
-    if (is_undef(tmax))
-      tmax=c[3];
+    // handle curve, segment and arc of circle
+    gen c=curve;
+    if (!c.is_symb_of_sommet(at_pnt))
+      c=eval(c,1,contextptr);
+    c=remove_at_pnt(c);
+    gen eq,t,tmin(tmin_),tmax(tmax_);
+    if (c.is_symb_of_sommet(at_curve)){
+      c=c[1];
+      eq=c[0];t=c[1];
+      if (is_undef(tmin))
+        tmin=c[2];
+      if (is_undef(tmax))
+        tmax=c[3];
+    }
+    else {
+      if (c.type==_VECT && c._VECTptr->size()==2){
+        eq=c[0]+vx_var*(c[1]-c[0]);
+        t=vx_var;
+        if (is_undef(tmin))
+          tmin=0;
+        if (is_undef(tmax))
+          tmax=1;
+      }
+      else if (c.is_symb_of_sommet(at_cercle)){
+        vecteur cv=gen2vecteur(c._SYMBptr->feuille);
+        if (cv.size()<3)
+          return undef;
+        if (is_undef(tmin))
+          tmin=cv[1];
+        if (is_undef(tmax))
+          tmax=cv[2];
+        cv=gen2vecteur(cv[0]);
+        eq=(cv[0]+cv[1])/2+(cv[1]-cv[0])/2*symb_exp(cst_i*vx_var);
+        t=vx_var;
+      }
+      else return undef;
+    }
     vecteur vt;
     if (v.size()==2){
       gen xt,yt;
