@@ -1658,7 +1658,7 @@ namespace giac {
 	gen e((*(myfeuille._VECTptr))[i]);
         s += "<mrow>"+gen2mathml(e,contextptr)+"</mrow>";
         if (i!=l-1)
-          s += "<mo>"+op+"</mo>";
+          s += "<mo> "+op+" </mo>";
       }
       return s;
     }

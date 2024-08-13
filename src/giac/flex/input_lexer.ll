@@ -489,6 +489,7 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 "&&"                    index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_AND_OP;
 "&amp;&amp;"                    index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_AND_OP;
 "AND"                   index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_AND_OP;
+"∧"                   index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_AND_OP;
 "'&&'"                  index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_QUOTED_BINARY;
 "'and'"                 index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_QUOTED_BINARY;
 "_and"                 index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_QUOTED_BINARY;
@@ -498,11 +499,16 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 "'or'"                  index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_QUOTED_BINARY;
 "_or"                  index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_QUOTED_BINARY;
 "OR"                    index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_AND_OP;
+"∨"                    index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_AND_OP;
 "^^"                    index_status(yyextra)=0; (*yylval)=gen(at_bitxor,2); return T_AND_OP;
 "xor"                    index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_AND_OP;
+"⊻"                    index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_AND_OP;
 "_xor"                  index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_QUOTED_BINARY;
 "'xor'"                  index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_QUOTED_BINARY;
 "XOR"                    index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_AND_OP;
+"∪"                      index_status(yyextra)=0; (*yylval)=gen(at_union,2); return T_AND_OP;
+"∩"                      index_status(yyextra)=0; (*yylval)=gen(at_intersect,2); return T_AND_OP;
+"Δ"                      index_status(yyextra)=0; (*yylval)=gen(at_symmetric_difference,2); return T_AND_OP;
 ".."                    index_status(yyextra)=0; (*yylval)=gen(at_interval,2); return T_INTERVAL;
 "interval"                    index_status(yyextra)=0; (*yylval)=gen(at_interval,2); return T_UNARY_OP;
 "lim"                    index_status(yyextra)=0; (*yylval)=gen(at_limit,1); return T_UNARY_OP;
