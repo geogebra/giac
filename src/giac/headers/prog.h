@@ -1017,6 +1017,8 @@ namespace giac {
   gen symb_intersect(const gen & args);
   gen symb_union(const gen & args);
   gen symb_minus(const gen & args);
+  // return true if *this is "strictly less complex" than other
+  bool set_sort (const gen & t,const gen & other );
   void chk_set(vecteur & av);
   void chk_set(gen & g);
   bool maybe_set(const gen & g);

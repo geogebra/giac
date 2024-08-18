@@ -3669,6 +3669,73 @@ namespace giac {
   static define_unary_function_eval (__prepend,&_prepend,_prepend_s);
   define_unary_function_ptr5( at_prepend ,alias_at_prepend,&__prepend,0,true);
 
+  static bool compare_VECT(const vecteur & v,const vecteur & w){
+    int s1=int(v.size()),s2=int(w.size());
+    if (s1!=s2)
+      return s1<s2;
+    const_iterateur it=v.begin(),itend=v.end(),jt=w.begin();
+    for (;it!=itend;++it,++jt){
+      if (*it!=*jt){
+	return set_sort(*it,*jt);
+      }
+    }
+    // setsizeerr(); should not happen... commented because it happens!
+    return false;
+  }
+
+  // return true if *this is "strictly less complex" than other
+  bool set_sort (const gen & t,const gen & other ) {
+    if (t.type != other.type)
+      return t.type < other.type;
+    if (t==other)
+      return false;
+    switch (t.type) {
+    case _INT_:
+      return t.val<other.val;
+    case _ZINT:
+      return is_greater(other,t,context0);
+    case _DOUBLE_: case _FLOAT_: case _REAL:
+      return is_greater(other,t,context0);
+    case _CPLX: 
+      if (*t._CPLXptr==*other._CPLXptr)
+        return set_sort(*(t._CPLXptr+1),*(other._CPLXptr+1));
+      return set_sort(*(t._CPLXptr),*(other._CPLXptr));
+    case _IDNT:
+      return strcmp(t._IDNTptr->id_name,other._IDNTptr->id_name)<0;
+    case _POLY:
+      if (t._POLYptr->coord.size()!=other._POLYptr->coord.size())
+	return t._POLYptr->coord.size()<other._POLYptr->coord.size();
+      return set_sort(t._POLYptr->coord.front().value,other._POLYptr->coord.front().value);
+    case _MOD:
+      if (*(t._MODptr+1)!=*(other._MODptr+1)){
+#ifndef NO_STDEXCEPT
+	setsizeerr(gettext("islesscomplexthan mod"));
+#endif
+      }
+      return set_sort(*t._MODptr,*other._MODptr);
+    case _SYMB:
+      if (t._SYMBptr->sommet!=other._SYMBptr->sommet ){
+#ifdef GIAC_HAS_STO_38 // otherwise 1 test of chk_xavier fails, needs to check
+	int c=strcmp(t._SYMBptr->sommet.ptr()->s,other._SYMBptr->sommet.ptr()->s);
+	if (c) return c<0;
+#endif 
+	return (alias_type) t._SYMBptr->sommet.ptr() <(alias_type) other._SYMBptr->sommet.ptr();
+      }
+      return set_sort(t._SYMBptr->feuille,other._SYMBptr->feuille);
+      // return false;
+    case _VECT:
+      return compare_VECT(*t._VECTptr,*other._VECTptr);
+    case _EXT:
+      if (*(t._EXTptr+1)!=*(other._EXTptr+1))
+	return set_sort(*(t._EXTptr+1),*(other._EXTptr+1));
+      return set_sort(*t._EXTptr,*other._EXTptr);
+    case _STRNG:
+      return *t._STRNGptr<*other._STRNGptr;
+    default:
+      return t.print(context0)<other.print(context0); 
+    }
+  }
+
   gen _contains(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     if ( (args.type!=_VECT) || (args._VECTptr->size()!=2))
@@ -3701,9 +3768,9 @@ namespace giac {
       return gensizeerr(contextptr);
     vecteur a(*args._VECTptr->front()._VECTptr);
     vecteur b(*args._VECTptr->back()._VECTptr);
-    islesscomplexthanf_sort(b.begin(),b.end());
+    sort(b.begin(),b.end(),set_sort);
     for (unsigned i=0;i<a.size();++i){
-      if (!binary_search(b.begin(),b.end(),a[i],islesscomplexthanf))
+      if (!binary_search(b.begin(),b.end(),a[i],set_sort))
 	return 0;
     }
     return 1;
@@ -4843,7 +4910,7 @@ namespace giac {
           ++it; ++jt;
           continue;
         }
-        if (islesscomplexthanf(*it,*jt)){
+        if (set_sort(*it,*jt)){
           v.push_back(*it);
           ++it;
         }
@@ -4865,7 +4932,7 @@ namespace giac {
 
   void chk_set(vecteur & av){
     if (av.empty()) return;
-    islesscomplexthanf_sort(av.begin(),av.end());
+    sort(av.begin(),av.end(),set_sort);
     vecteur res; res.reserve(av.size());
     gen prec=av[0];
     res.push_back(prec);
@@ -4929,7 +4996,7 @@ namespace giac {
           ++it; ++jt;
           continue;
         }
-        if (islesscomplexthanf(*jt,*it))
+        if (set_sort(*jt,*it))
           return -2;
         ++it;
       }
@@ -5123,7 +5190,7 @@ namespace giac {
           ++it; ++jt;
           continue;
         }
-        if (islesscomplexthanf(*it,*jt))
+        if (set_sort(*it,*jt))
           ++it;
         else
           ++jt;
@@ -5273,7 +5340,7 @@ namespace giac {
           ++it; ++jt;
           continue;
         }
-        if (islesscomplexthanf(*it,*jt)){
+        if (set_sort(*it,*jt)){
           v.push_back(*it);
           ++it;
         }
@@ -5313,7 +5380,7 @@ namespace giac {
       if (*it==*jt){
         ++it; ++jt;
       }
-      else if (islesscomplexthanf(*it,*jt)){
+      else if (set_sort(*it,*jt)){
         v.push_back(*it);
         ++it;
       }

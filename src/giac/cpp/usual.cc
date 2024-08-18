@@ -7404,6 +7404,8 @@ namespace giac {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (!check_2d_vecteur(args)) return gensizeerr(contextptr);
     gen a=args._VECTptr->front(),b=args._VECTptr->back();
+    if (!is_integral(a) || !is_integral(b))
+      return gensizeerr(contextptr);
     a=_irem(args,contextptr);
     return legendre(a,b);
   }

@@ -308,10 +308,10 @@ exp	: T_NUMBER		{$$ = $1;}
 	// CERR << python_compat(giac_yyget_extra(scanner)) << tmp << '\n';
 	$$ = symbolic(*$1._FUNCptr,tmp);
         const giac::context * contextptr = giac_yyget_extra(scanner);
-	if (*$1._FUNCptr==at_maple_mode ||*$1._FUNCptr==at_xcas_mode ){
+	if ($3.type==_INT_ && (*$1._FUNCptr==at_maple_mode ||*$1._FUNCptr==at_xcas_mode )){
           xcas_mode(contextptr)=$3.val;
         }
-        if (*$1._FUNCptr==at_python_compat)
+        if ($3.type==_INT_ && *$1._FUNCptr==at_python_compat)
           python_compat(contextptr)=$3.val;
 	if (*$1._FUNCptr==at_user_operator){
           user_operator($3,contextptr);
