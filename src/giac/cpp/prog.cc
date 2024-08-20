@@ -3763,11 +3763,22 @@ namespace giac {
 
   // check if a set A is included in a set B
   gen _is_included(const gen & args,GIAC_CONTEXT){
-    if ( args.type==_STRNG &&  args.subtype==-1) return  args;
-    if ( (args.type!=_VECT) || (args._VECTptr->size()!=2) || (args._VECTptr->front().type!=_VECT) || (args._VECTptr->back().type!=_VECT) )
+    if (args.type==_STRNG &&  args.subtype==-1) return  args;
+    if (args.type!=_VECT || args._VECTptr->size()!=2)
       return gensizeerr(contextptr);
-    vecteur a(*args._VECTptr->front()._VECTptr);
-    vecteur b(*args._VECTptr->back()._VECTptr);
+    gen A(args._VECTptr->front()),B(args._VECTptr->back());
+    if (1 || A.type!=_VECT || B.type!=_VECT) {
+      int i=set_compare(A,B,contextptr);
+      if (i==-2) 
+        return 0; 
+      if (i<0)
+        return gensizeerr(contextptr);
+      if (i==0 || i==2)
+        return 1;
+      return 0;
+    }
+    vecteur a(*A._VECTptr);
+    vecteur b(*B._VECTptr);
     sort(b.begin(),b.end(),set_sort);
     for (unsigned i=0;i<a.size();++i){
       if (!binary_search(b.begin(),b.end(),a[i],set_sort))
@@ -4840,7 +4851,7 @@ namespace giac {
     gen a=v.front(),b=v.back();
     if (a==b){
       if (a.type==_VECT){
-        if (a.subtype!=_SET__VECT)
+        if (a.subtype!=_SET__VECT && a.subtype!=_REALSET__VECT)
           chk_set(a);
       }
       return a;
@@ -4881,7 +4892,7 @@ namespace giac {
 	return _union(makesequence(a,eval(gen(makevecteur(b,b),_INTERVAL__VECT),1,contextptr)),contextptr);
     }
 #endif
-    if ( (a.type!=_VECT) || (b.type!=_VECT)){
+    if (a.type!=_VECT || b.type!=_VECT){
       if (a.is_symb_of_sommet(at_union)){
         vecteur af=gen2vecteur(a._SYMBptr->feuille);
         if (b.is_symb_of_sommet(at_union))
@@ -4899,6 +4910,12 @@ namespace giac {
       }
       return symb_union(args); //gensizeerr(gettext("Union"));
     } else {
+      if (a.subtype==_REALSET__VECT && b.subtype==_REALSET__VECT){
+        vecteur w;
+        if (!realset_glue(*a._VECTptr,*b._VECTptr,w,contextptr))
+          return gensizeerr(contextptr);
+        return gen(w,_REALSET__VECT);
+      } 
       chk_set(a);
       chk_set(b);
       vecteur v;
@@ -4975,11 +4992,14 @@ namespace giac {
     return maybe_set(g._SYMBptr->feuille);
   }
 
-  // 0 equal, 1 a contains b, 2 b contains a, negative: non comparable, -2 explicit sets, -3 too many idnts
+  // 0 equal, 1 a contains b, 2 b contains a, negative: non comparable, -2 explicit sets a_ not included in b_ and b_ not included in a_, -3 too many idnts
   int set_compare(const gen & a_,const gen &b_,GIAC_CONTEXT){
     if (a_==b_)
       return 0;
     if (a_.type==_VECT && b_.type==_VECT){
+      if (a_.subtype==_REALSET__VECT && b_.subtype==_REALSET__VECT){
+        
+      } 
       vecteur a(*a_._VECTptr); chk_set(a);
       vecteur b(*b_._VECTptr); chk_set(b);
       if (a==b)
@@ -5135,7 +5155,7 @@ namespace giac {
     gen a=args._VECTptr->front(),b=args._VECTptr->back();
     if (a==b){
       if (a.type==_VECT){
-        if (a.subtype!=_SET__VECT)
+        if (a.subtype!=_SET__VECT && a.subtype!=_REALSET__VECT)
           chk_set(a);
       }
       return a;
@@ -5179,6 +5199,11 @@ namespace giac {
     }
 #endif
     if ( a.type==_VECT && b.type==_VECT){
+      if (a.subtype==_REALSET__VECT && b.subtype==_REALSET__VECT){
+        vecteur w;
+        realset_inter(*a._VECTptr,*b._VECTptr,w,contextptr);
+        return gen(w,_REALSET__VECT);
+      }
       chk_set(a);
       chk_set(b);
       vecteur v;
@@ -8369,6 +8394,10 @@ namespace giac {
     }
     vecteur v=*args._VECTptr;
     int s=int(v.size());
+    if ( (s==2 || (s==3 && v[1].type==_VECT)) && v[0].type==_VECT && v[s-1].subtype==_INT_PLOT && v[s-1].val==_REALSET__VECT){
+      v=makevecteur(vecteur(0),v[0],s==2?vecteur(0):v[1]);
+      return gen(v,_REALSET__VECT);
+    }
     if (s==3 && v[0].type==_INT_ && v[0].subtype==_INT_PLOT && v[0].val==_AXES && v[2].type==_INT_ && v[2].subtype==_INT_PLOT && v[2].val==_SET__VECT){
       // axes.set(xlabel="",ylabel="")
       return v[1].type==_VECT?change_subtype(v[1],_SEQ__VECT):v[1];

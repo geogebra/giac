@@ -397,6 +397,7 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 "folder["      (*yylval) = _FOLDER__VECT; return T_VECT_DISPATCH;
 "polyedre["      (*yylval) = _POLYEDRE__VECT; return T_VECT_DISPATCH;
 "rgba["      (*yylval) = _RGBA__VECT; return T_VECT_DISPATCH;
+"realset["      (*yylval) = _REALSET__VECT; return T_VECT_DISPATCH;
 "â¦" index_status(yyextra)=0; (*yylval) = _LIST__VECT; return T_VECT_DISPATCH;
 "â¦" index_status(yyextra)=1; return T_VECT_END;
 "<"                     index_status(yyextra)=0; (*yylval)=gen(at_inferieur_strict,2);  return T_TEST_EQUAL;

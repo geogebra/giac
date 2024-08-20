@@ -13157,6 +13157,9 @@ void sprint_double(char * s,double d){
     case _ASSUME__VECT:
       s = "assume[";
       break;
+    case _REALSET__VECT:
+      s = "realset[";
+      break;
     case _FOLDER__VECT:
       s = "folder[";
       break;

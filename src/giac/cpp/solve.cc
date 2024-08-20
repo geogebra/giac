@@ -3223,7 +3223,7 @@ namespace giac {
               if (a1about.type!=_VECT)
                 break;
               vecteur oldmerged(merged);
-              glue(oldmerged,*a1about._VECTptr,merged,contextptr);
+              realset_glue(oldmerged,*a1about._VECTptr,merged,contextptr);
             }
             if (i==resineq.size() && merged.size()>=3){
               gen i=merged[1],e=merged[2];

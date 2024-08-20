@@ -4629,12 +4629,67 @@ namespace giac {
     return gen(makevecteur(v0,v_intervalle,v_excluded),_ASSUME__VECT);
   }
 
+  // -1 invalid, 0 not in, 1 in
+  int union_intervals_in(const vecteur & w,const gen & g,GIAC_CONTEXT){
+    for (int i=0;i<w.size();++i){
+      vecteur cur=gen2vecteur(w[i]);
+      if (cur.size()!=2)
+        return -1;
+      if (is_greater(g,cur[0],contextptr) && is_greater(cur[1],g,contextptr))
+        return 1;
+    }
+    return 0;
+  }
+
+  // intersection of real sets in u and v
+  bool realset_inter(const vecteur &u,const vecteur &v,vecteur & w,GIAC_CONTEXT){
+    if (u.size()<2 || v.size()<2)
+      return false;
+    gen ai=u[u.size()-2],bi=v[v.size()-2],aex=u.back(),bex=v.back();
+    if (ai.type!=_VECT || bi.type!=_VECT || aex.type!=_VECT || bex.type!=_VECT)
+      return false;
+    vecteur aint=*ai._VECTptr;
+    vecteur bint=*bi._VECTptr;
+    vecteur cint;cint.clear(); int i=0,j=0;
+    for (;i<aint.size() && j<bint.size();){
+      gen acur=aint[i],bcur=bint[j];
+      if (acur.type!=_VECT || acur._VECTptr->size()!=2 || bcur.type!=_VECT || bcur._VECTptr->size()!=2)
+        return false;
+      gen ainf=acur[0],asup=acur[1],binf=bcur[0],bsup=bcur[1];
+      if (is_greater(binf,asup,contextptr)){
+        ++i;
+        continue;
+      }
+      if (is_greater(ainf,bsup,contextptr)){
+        ++j;
+        continue;
+      }
+      gen cinf=max(ainf,binf,contextptr); // cinf<=min(asup,bsup)
+      if (is_greater(asup,bsup,contextptr)){
+        cint.push_back(gen(makevecteur(cinf,bsup),_LINE__VECT));
+        ++j;
+      }
+      else {
+        cint.push_back(gen(makevecteur(cinf,asup),_LINE__VECT));
+        ++i;
+      }
+    }
+    vecteur excl=gen2vecteur(_union(makesequence(aex,bex),contextptr));
+    vecteur excluded;
+    for (int i=0;i<excl.size();++i){
+      if (union_intervals_in(cint,excl[i],contextptr)==1)
+        excluded.push_back(excl[i]);
+    }
+    w=makevecteur(vecteur(0),cint,excluded);
+    return true;
+  }
+
   // u and v should have 3 elements: first ignored,
   // second list of intervals, 3rd list of excluded values
-  bool glue(const vecteur & u,const vecteur & v,vecteur & w,GIAC_CONTEXT){
-    if (u.size()<3 || v.size()<3)
+  bool realset_glue(const vecteur & u,const vecteur & v,vecteur & w,GIAC_CONTEXT){
+    if (u.size()<2 || v.size()<2)
       return false;
-    gen u1=u[1],v1=v[1],u2=u[2],v2=v[2];
+    gen u1=u[u.size()-2],v1=v[v.size()-2],u2=u.back(),v2=v.back();
     if (u1.type!=_VECT || u2.type!=_VECT || v1.type!=_VECT || v2.type!=_VECT)
       return false;
     // i intervals, e excluded
@@ -4769,7 +4824,7 @@ namespace giac {
     for (;k<i2.size();++k)
       i.push_back(i2[k]);
 #endif
-    w=makevecteur(u[0],i,e);
+    w=makevecteur(u.size()==3?u[0]:vecteur(0),i,e);
     return true;
   }
   
@@ -4849,7 +4904,7 @@ namespace giac {
       if (a0about.type==_VECT && a1about.type==_VECT){
         // merge intervals
         vecteur merged;
-        glue(*a0about._VECTptr,*a1about._VECTptr,merged,contextptr);
+        realset_glue(*a0about._VECTptr,*a1about._VECTptr,merged,contextptr);
         sto(gen(merged,_ASSUME__VECT),a0,contextptr);
       }
       return a0;
