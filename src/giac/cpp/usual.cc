@@ -4817,14 +4817,16 @@ namespace giac {
         if (stop)
           break;
       }
-      i.push_back(makevecteur(m,M));
+      i.push_back(gen(makevecteur(m,M),_LINE__VECT));
     }
     for (;j<i1.size();++j)
       i.push_back(i1[j]);
     for (;k<i2.size();++k)
       i.push_back(i2[k]);
 #endif
-    w=makevecteur(u.size()==3?u[0]:vecteur(0),i,e);
+    w=makevecteur(i,e);
+    if (u.size()==3)
+      w.insert(w.begin(),u[0]);
     return true;
   }
   
@@ -5028,6 +5030,24 @@ namespace giac {
       }
       if (a2==at_additionally)
 	return giac_additionally(a1,contextptr);
+      a2=eval(a2,1,contextptr);
+      if (a2.type==_VECT && a2.subtype==_REALSET__VECT){
+        vecteur v2=*a2._VECTptr;
+        if (v2.size()==2)
+          v2.insert(v2.begin(),vecteur(0));
+        if (v2.size()!=3 || v2[1].type!=_VECT || v2[2].type!=_VECT)
+          return gensizeerr();
+        vecteur w=*v2[1]._VECTptr;
+        if (w.empty())
+          return gensizeerr(contextptr);
+        for (int i=0;i<w.size();++i){
+          if (w[i].type!=_VECT || w[i]._VECTptr->size()!=2)
+            return gensizeerr(contextptr);
+        }
+	gen tmpsto=sto(gen(v2,_ASSUME__VECT),a1,contextptr);
+	if (is_undef(tmpsto)) return tmpsto;
+	return a1;
+      }
     }
     gen a_;
     if (a.type==_SYMB){
@@ -5351,6 +5371,24 @@ namespace giac {
     if (args.type!=_VECT || is_undef(args))
       return args;
     vecteur & v = *args._VECTptr;
+    if (args.subtype==_SET__VECT){
+      if (v.size()>SET_COMPARE_MAXIDNT)
+        return gensizeerr(gettext("pow of a set exceeding max size"));
+      int N=pow(2,v.size()).val;
+      vecteur w;
+      w.reserve(N);
+      vecteur b; b.reserve(v.size());
+      for (int i=0;i<N;++i){
+        b.clear();
+        int I=i;
+        for (int j=0;I;j++,I/=2){
+          if (I%2)
+            b.push_back(v[j]);
+        }
+        w.push_back(gen(b,_SET__VECT));
+      }
+      return gen(w,_SET__VECT);
+    }
     if (v.size()==3)
       return _powmod(args,contextptr); // Python 3 compat
     if (v.size()!=2)

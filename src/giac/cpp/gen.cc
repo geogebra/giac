@@ -14161,6 +14161,8 @@ void sprint_double(char * s,double d){
 	return "list";
       case _SET__VECT:
 	return "set";
+      case _REALSET__VECT:
+	return "realset";
       case _MATRIX__VECT:
 	return "matrix";
       case _POLY1__VECT:

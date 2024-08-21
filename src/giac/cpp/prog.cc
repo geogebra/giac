@@ -3685,8 +3685,12 @@ namespace giac {
 
   // return true if *this is "strictly less complex" than other
   bool set_sort (const gen & t,const gen & other ) {
-    if (t.type != other.type)
+    if (t.type!=other.type){
+      gen t1=evalf_double(t,1,context0),o1=evalf_double(other,1,context0);
+      if (t1.type==_DOUBLE_ && o1.type==_DOUBLE_)
+        return t1._DOUBLE_val<o1._DOUBLE_val;
       return t.type < other.type;
+    }
     if (t==other)
       return false;
     switch (t.type) {
@@ -3736,6 +3740,79 @@ namespace giac {
     }
   }
 
+  bool interval2realset(gen & g){
+    if (!g.is_symb_of_sommet(at_interval))
+      return false;
+    gen tmp=gen(vecteur(1,gen(gen2vecteur(g._SYMBptr->feuille),_LINE__VECT)),_SET__VECT);
+    g=gen(makevecteur(tmp,vecteur(0)),_REALSET__VECT);
+    return true;
+  }
+  // convert list of real to realset
+  bool set2realset(const vecteur & v_,vecteur & w,GIAC_CONTEXT){
+    vecteur v(v_),wint;
+    chk_set(v);
+    for (int i=0;i<v.size();++i){
+      gen cur=v[i];
+      gen g=evalf_double(cur,1,contextptr);
+      if (g.type!=_DOUBLE_)
+        return false;
+      wint.push_back(gen(makevecteur(cur,cur),_LINE__VECT));
+    }
+    //w=makevecteur(vecteur(0),gen(wint,_SET__VECT),gen(vecteur(0),_SET__VECT));
+    w=makevecteur(gen(wint,_SET__VECT),gen(vecteur(0),_SET__VECT));
+    return true;
+  }
+
+  gen vecteur2realset(vecteur & v,GIAC_CONTEXT){
+    int s=v.size();
+    if ((s!=2 && s!=3) || v[s-1].type!=_VECT || v[s-2].type!=_VECT || v[s-2]._VECTptr->empty())
+      return gensizeerr(gettext("Unable to convert to realset"));
+    vecteur v1(*v[s-2]._VECTptr),v2(*v[s-1]._VECTptr);
+    chk_set(v1);
+    chk_set(v2);
+    // glue intervals in v1 if possible
+    gen MA=v1[0][1];
+    for (int i=1;i<v1.size();++i){
+      if (v1[i][0]==MA && !binary_search(v2.begin(),v2.end(),MA,set_sort)){
+        v1[i-1]=gen(makevecteur(v1[i-1][0],v1[i][1]),_LINE__VECT);
+        v1.erase(v1.begin()+i);
+        --i;
+      }
+      MA=v1[i][1];
+    }
+    // split v[1] intervals if necessary (excluded values inside an interval)
+    int j=0; // position in v1
+    gen m=v1[j][0],M=v1[j][1];
+    for (int i=0;i<v2.size();++i){
+      gen cur=v2[i];
+      for (;j<v1.size();){
+        if (is_greater(m,cur,contextptr))
+          break;
+        if (is_strictly_greater(M,cur,contextptr)){
+          v1[j]=gen(makevecteur(m,cur),_LINE__VECT);
+          v1.insert(v1.begin()+j,gen(makevecteur(m,cur),_LINE__VECT));
+          ++j;
+          break;
+        }
+        ++j;
+      }
+    }
+    v[s-2]=v1; v[s-1]=v2;
+    return gen(v,_REALSET__VECT);
+  }
+
+  bool convert_realset(gen & a,GIAC_CONTEXT){
+    if (a.type!=_VECT)
+      return false;
+    if (a.subtype!=_REALSET__VECT){
+      vecteur tmp;
+      if (!set2realset(*a._VECTptr,tmp,contextptr))
+        return false;
+      a=gen(tmp,_REALSET__VECT);
+    }
+    return true;
+  }
+  
   gen _contains(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     if ( (args.type!=_VECT) || (args._VECTptr->size()!=2))
@@ -3754,6 +3831,12 @@ namespace giac {
       if (b==cst_i)
 	return has_i(a);
       return gensizeerr(contextptr);
+    }
+    if (a.subtype==_REALSET__VECT){
+      if (b.type==_VECT)
+        return gensizeerr(contextptr);
+      vecteur tmp(makevecteur(makevecteur(makevecteur(b,b)),vecteur(0)));
+      return realset_in(tmp,*a._VECTptr,contextptr);
     }
     return equalposcomp(*a._VECTptr,b);
   }
@@ -4849,7 +4932,8 @@ namespace giac {
     if (v.size()!=2)
       return symb_union(args);
     gen a=v.front(),b=v.back();
-    if (a==b){
+    interval2realset(a); interval2realset(b);
+    if (a==b && a.subtype!=_REALSET__VECT){
       if (a.type==_VECT){
         if (a.subtype!=_SET__VECT && a.subtype!=_REALSET__VECT)
           chk_set(a);
@@ -4910,11 +4994,13 @@ namespace giac {
       }
       return symb_union(args); //gensizeerr(gettext("Union"));
     } else {
-      if (a.subtype==_REALSET__VECT && b.subtype==_REALSET__VECT){
+      if (a.subtype==_REALSET__VECT || b.subtype==_REALSET__VECT){
+        if (!convert_realset(a,contextptr) || !convert_realset(b,contextptr))
+          return gensizeerr(contextptr);
         vecteur w;
         if (!realset_glue(*a._VECTptr,*b._VECTptr,w,contextptr))
           return gensizeerr(contextptr);
-        return gen(w,_REALSET__VECT);
+        return vecteur2realset(w,contextptr); 
       } 
       chk_set(a);
       chk_set(b);
@@ -4954,7 +5040,11 @@ namespace giac {
     gen prec=av[0];
     res.push_back(prec);
     for (int i=1;i<av.size();++i){
-      if (av[i]==prec)
+      if (prec.type==_VECT && prec.subtype==_LINE__VECT && av[i].type==_VECT && av[i].subtype==_LINE__VECT){
+        if (*prec._VECTptr==*av[i]._VECTptr)
+          continue;
+      }
+      else if (av[i]==prec)
         continue;
       prec=av[i];
       res.push_back(prec);
@@ -4992,13 +5082,67 @@ namespace giac {
     return maybe_set(g._SYMBptr->feuille);
   }
 
+  // search interval in a or value a in the list of intervals in b
+  bool realset_in(const gen & a,const vecteur &b,GIAC_CONTEXT){
+    gen m(a),M(a);
+    if (a.type==_VECT){
+      if (a._VECTptr->size()!=2)
+        return false;
+      m=a._VECTptr->front(),M=a._VECTptr->back();
+    }
+    for (int i=0;i<b.size();++i){
+      gen cur=b[i];
+      if (cur._VECTptr->size()!=2)
+        return false;
+      gen x=cur._VECTptr->front(),y=cur._VECTptr->back();
+      if (is_greater(m,x,contextptr) && is_greater(y,M,contextptr))
+        return true;
+    }
+    return false;
+  }
+
+  // is realset in u contained in realset in v?
+  bool realset_in(const vecteur &u,const vecteur &v,GIAC_CONTEXT){
+    if (u.size()<2 || v.size()<2)
+      return false;
+    gen ai=u[u.size()-2],bi=v[v.size()-2],aex=u.back(),bex=v.back();
+    if (ai.type!=_VECT || bi.type!=_VECT || aex.type!=_VECT || bex.type!=_VECT)
+      return false;
+    vecteur aint=*ai._VECTptr;
+    vecteur bint=*bi._VECTptr;
+    // find an interval of b containing each interval of a
+    for (int i=0;i<aint.size();++i){
+      if (!realset_in(aint[i],bint,contextptr))
+        return false;
+    }
+    // check that excluded values of b are not in a
+    for (int i=0;i<bex._VECTptr->size();++i){
+      gen cur=bex[i];
+      if (realset_in(cur,aint,contextptr)){
+        if (!binary_search(aex._VECTptr->begin(),aex._VECTptr->end(),cur,set_sort))
+          return false;
+      }
+    }
+    return true;
+  }
+
   // 0 equal, 1 a contains b, 2 b contains a, negative: non comparable, -2 explicit sets a_ not included in b_ and b_ not included in a_, -3 too many idnts
   int set_compare(const gen & a_,const gen &b_,GIAC_CONTEXT){
     if (a_==b_)
       return 0;
     if (a_.type==_VECT && b_.type==_VECT){
-      if (a_.subtype==_REALSET__VECT && b_.subtype==_REALSET__VECT){
-        
+      if (a_.subtype==_REALSET__VECT || b_.subtype==_REALSET__VECT){
+        gen a(a_),b(b_);
+        if (!convert_realset(a,contextptr) || !convert_realset(b,contextptr))
+          return -4;
+        bool ainb=realset_in(*a._VECTptr,*b._VECTptr,contextptr),bina=realset_in(*b._VECTptr,*a._VECTptr,contextptr);
+        if (ainb && bina)
+          return 0;
+        if (ainb)
+          return 2;
+        if (bina)
+          return 1;
+        return -2;
       } 
       vecteur a(*a_._VECTptr); chk_set(a);
       vecteur b(*b_._VECTptr); chk_set(b);
@@ -5153,7 +5297,8 @@ namespace giac {
     if ((args.type!=_VECT) || (args._VECTptr->size()!=2))
       return gensizeerr();
     gen a=args._VECTptr->front(),b=args._VECTptr->back();
-    if (a==b){
+    interval2realset(a); interval2realset(b);
+    if (a==b && a.subtype!=_REALSET__VECT){
       if (a.type==_VECT){
         if (a.subtype!=_SET__VECT && a.subtype!=_REALSET__VECT)
           chk_set(a);
@@ -5199,10 +5344,12 @@ namespace giac {
     }
 #endif
     if ( a.type==_VECT && b.type==_VECT){
-      if (a.subtype==_REALSET__VECT && b.subtype==_REALSET__VECT){
+      if (a.subtype==_REALSET__VECT || b.subtype==_REALSET__VECT){
+        if (!convert_realset(a,contextptr) || !convert_realset(b,contextptr))
+          return gensizeerr(contextptr);
         vecteur w;
         realset_inter(*a._VECTptr,*b._VECTptr,w,contextptr);
-        return gen(w,_REALSET__VECT);
+        return vecteur2realset(w,contextptr);
       }
       chk_set(a);
       chk_set(b);
@@ -5243,16 +5390,48 @@ namespace giac {
   static define_unary_function_eval4_index (62,__intersect,&_intersect,_intersect_s,&printsommetasoperator,&texprintasintersect);
   define_unary_function_ptr( at_intersect ,alias_at_intersect ,&__intersect);
 
+  bool realset_complement(const vecteur & u,vecteur & w,GIAC_CONTEXT){
+    if (u.size()<2)
+      return false;
+    gen u1=u[u.size()-2],u2=u.back();
+    if (u1.type!=_VECT || u2.type!=_VECT)
+      return false;
+    vecteur uint(*u1._VECTptr),uex(*u2._VECTptr);
+    vecteur wint,wex;
+    gen g;
+    for (int i=0;i<uint.size();++i){
+      gen cur=uint[i];
+      gen m=cur[0],M=cur[1];
+      if (i!=0 || m!=minus_inf)
+        wint.push_back(gen(makevecteur(g,m),_LINE__VECT));
+      g=M;
+      if (m!=minus_inf && !binary_search(uex.begin(),uex.end(),m,set_sort))
+        wex.push_back(m);
+      if (M!=plus_inf && !binary_search(uex.begin(),uex.end(),M,set_sort))
+        wex.push_back(M);
+    }
+    if (g!=plus_inf)
+      wint.push_back(gen(makevecteur(g,plus_inf),_LINE__VECT));
+    w=makevecteur(wint,wex);
+    return true;
+  }
   static string texprintascomplement(const gen & g,const char * s,GIAC_CONTEXT){
     return "\\stcomp{"+gen2tex(g,contextptr)+"}";
   }
-  gen _complement(const gen & args,GIAC_CONTEXT){
+  gen _complement(const gen & args_,GIAC_CONTEXT){
+    gen args(args_);
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     if (args.is_symb_of_sommet(at_complement)){
       gen f=args._SYMBptr->feuille;
       if (f.type==_VECT && f.subtype==_SEQ__VECT && f._VECTptr->size()==2)
         return f[0];
       return f;
+    }
+    interval2realset(args);
+    if (args.type==_VECT && args.subtype==_REALSET__VECT){
+      vecteur w;
+      realset_complement(*args._VECTptr,w,contextptr);
+      return vecteur2realset(w,contextptr);
     }
     if (args.type==_VECT && args._VECTptr->size()==2 && args.subtype==_SEQ__VECT){
       if (is_exactly_zero(_is_included(args,contextptr)))
@@ -5354,7 +5533,15 @@ namespace giac {
     if ((args.type!=_VECT) || (args._VECTptr->size()!=2))
       return gensizeerr();
     gen a=args._VECTptr->front(),b=args._VECTptr->back();
+    interval2realset(a); interval2realset(b);
     if ( a.type==_VECT && b.type==_VECT){
+      if (a.subtype==_REALSET__VECT || b.subtype==_REALSET__VECT){
+        if (!convert_realset(a,contextptr) || !convert_realset(b,contextptr))
+          return gensizeerr(contextptr);
+        gen u=_union(makesequence(a,b),contextptr);
+        gen i=_intersect(makesequence(a,b),contextptr);
+        return _minus(makesequence(u,i),contextptr);
+      }
       chk_set(a);
       chk_set(b);
       vecteur v;
@@ -5394,8 +5581,15 @@ namespace giac {
     if ((args.type!=_VECT) || (args._VECTptr->size()!=2))
       return symb_minus(args);
     gen a=args._VECTptr->front(),b=args._VECTptr->back();
+    interval2realset(a); interval2realset(b);
     if ( (a.type!=_VECT) || (b.type!=_VECT))
       return symb_minus(args);//gensizeerr(gettext("Minus"));
+    if (a.subtype==_REALSET__VECT || b.subtype==_REALSET__VECT){
+      if (!convert_realset(a,contextptr) || !convert_realset(b,contextptr))
+        return gensizeerr(contextptr);
+      gen bc=_complement(b,contextptr);
+      return _intersect(makesequence(a,bc),contextptr);
+    }
     chk_set(a);
     chk_set(b);
     vecteur v;
@@ -8394,11 +8588,30 @@ namespace giac {
     }
     vecteur v=*args._VECTptr;
     int s=int(v.size());
-    if ( (s==2 || (s==3 && v[1].type==_VECT)) && v[0].type==_VECT && v[s-1].subtype==_INT_PLOT && v[s-1].val==_REALSET__VECT){
-      v=makevecteur(vecteur(0),v[0],s==2?vecteur(0):v[1]);
+    if ( (s==2 || s==3) && interval2realset(v[0]))
+      v[0]=v[0][0];
+    if ( (s==2 || (s==3 && v[1].type==_VECT)) && v[0].type==_VECT && v[s-1].subtype==_INT_MAPLECONVERSION && v[s-1].val==_REALSET__VECT){
+      vecteur w;
+      if (s==3)
+        w=*v[1]._VECTptr;
+      chk_set(w); // reorder
+      vecteur vint(*v[0]._VECTptr);
+      chk_set(vint);
+      // check that vint is valid
+      gen m(minus_inf);
+      for (int i=0;i<vint.size();++i){
+        gen cur=vint[i];
+        if (cur.type!=_VECT || cur._VECTptr->size()!=2)
+          return gensizeerr(contextptr);
+        gen a=cur[0],b=cur[1];
+        if (is_strictly_greater(m,a,contextptr) || is_strictly_greater(a,b,contextptr))
+          return gensizeerr(contextptr);
+        m=b;
+      }
+      v=makevecteur(vecteur(0),gen(vint,_SET__VECT),gen(w,_SET__VECT));
       return gen(v,_REALSET__VECT);
     }
-    if (s==3 && v[0].type==_INT_ && v[0].subtype==_INT_PLOT && v[0].val==_AXES && v[2].type==_INT_ && v[2].subtype==_INT_PLOT && v[2].val==_SET__VECT){
+    if (s==3 && v[0].type==_INT_ && v[0].subtype==_INT_PLOT && v[0].val==_AXES && v[2].type==_INT_ && v[2].subtype==_INT_MAPLECONVERSION && v[2].val==_SET__VECT){
       // axes.set(xlabel="",ylabel="")
       return v[1].type==_VECT?change_subtype(v[1],_SEQ__VECT):v[1];
     }

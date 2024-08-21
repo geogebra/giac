@@ -1028,6 +1028,10 @@ namespace giac {
   gen set_simplify(const gen & g,GIAC_CONTEXT);
   // 0 equal, 1 a contains b, 2 b contains a, negative: non comparable, -2 explicit sets, -3 too many idnts
   int set_compare(const gen & a_,const gen &b_,GIAC_CONTEXT);
+  // search interval in a or value a in the list of intervals in b
+  bool realset_in(const gen & a,const vecteur &b,GIAC_CONTEXT);
+  // is realset in u contained in realset in v?
+  bool realset_in(const vecteur &u,const vecteur &v,GIAC_CONTEXT);
 
   // test if m(i) is an array index: that will not be the case if
   // i is an _IDNT or a list of _IDNT
