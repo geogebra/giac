@@ -5523,6 +5523,12 @@ namespace giac {
     return symbolic(at_xor,g);
   }
   
+  gen minus2andnot(const gen &g,GIAC_CONTEXT){
+    if (g.type!=_VECT || g._VECTptr->size()!=2)
+      return gensizeerr(contextptr);
+    return symbolic(at_and,makesequence(g._VECTptr->front(),symbolic(at_not,g._VECTptr->back())));
+  }
+  
   gen logic2set(const gen & g,GIAC_CONTEXT){
     vector<const unary_function_ptr *> vu;
     vu.push_back(at_and); 
@@ -5543,11 +5549,13 @@ namespace giac {
     vu.push_back(at_union); 
     vu.push_back(at_complement); 
     vu.push_back(at_symmetric_difference); 
+    vu.push_back(at_minus); 
     vector <gen_op_context> vv;
     vv.push_back(intersect2and);
     vv.push_back(union2ou);
     vv.push_back(complement2not);
     vv.push_back(symdiff2xor);
+    vv.push_back(minus2andnot);
     return subst(g,vu,vv,false,contextptr);  
   }
 
