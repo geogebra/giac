@@ -1587,6 +1587,8 @@ namespace giac {
 	return gen2mathml(v[0],contextptr)+string("<mo>→</mo>")+gen2mathml(f,contextptr);
       }
     }
+    if (mysommet==at_complement)
+      return gen2mathml(myfeuille,contextptr)+"<mo>&#x2201;</mo>";
     const unary_function_ptr * andortab[]={at_and,at_et,at_ou,at_xor,at_union,at_intersect,at_symmetric_difference,0};
     const char * andors[]={"&and;","&and;","&or;","&veebar;","&cup;","&cap;","&Delta;"};
     int andorpos=-1;
@@ -1656,7 +1658,14 @@ namespace giac {
       string op=andors[andorpos]; // (g.is_symb_of_sommet(at_xor)?"&veebar;":(g.is_symb_of_sommet(at_ou)?"&or;":"&and;"));
       for (int i=0;i<l;++i){
 	gen e((*(myfeuille._VECTptr))[i]);
-        s += "<mrow>"+gen2mathml(e,contextptr)+"</mrow>";
+        bool needpar=e.type==_SYMB && e._SYMBptr->sommet!=at_complement && e._SYMBptr->sommet!=mysommet;
+        s += "<mrow>";
+        if (needpar)
+          s += "(";
+        s += gen2mathml(e,contextptr);
+        if (needpar)
+          s += ")";
+        s += "</mrow>";
         if (i!=l-1)
           s += "<mo> "+op+" </mo>";
       }

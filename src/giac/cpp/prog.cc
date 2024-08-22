@@ -3684,7 +3684,11 @@ namespace giac {
   }
 
   // return true if *this is "strictly less complex" than other
-  bool set_sort (const gen & t,const gen & other ) {
+  bool set_sort(const gen & t,const gen & other ) {
+    if ( (t==minus_inf || other==plus_inf) && t!=other)
+      return true;
+    if ( (t==plus_inf || other==minus_inf) && t!=other)
+      return false;
     if (t.type!=other.type){
       gen t1=evalf_double(t,1,context0),o1=evalf_double(other,1,context0);
       if (t1.type==_DOUBLE_ && o1.type==_DOUBLE_)
@@ -5287,9 +5291,11 @@ namespace giac {
     // generate global union
     vecteur result; 
     vecteur inter;
+    bool emptyset=true;
     for (int i=0;i<ntries;++i){
       if (!res[i])
         continue;
+      emptyset=false;
       unsigned I(i);
       inter.clear();
       for (int j=0;j<ls;++j,I/=2){
@@ -5308,6 +5314,12 @@ namespace giac {
         result.push_back(symbolic(at_intersect,gen(inter,_SEQ__VECT)));
     }
     chk_set(result); // sort and eliminate duplicate
+    if (result.empty()){
+      gen g(result,_SET__VECT);
+      if (!emptyset)
+        g=symbolic(at_complement,g);
+      return g;
+    }
     return symbolic(at_union,result);
   }
   gen _set_compare(const gen & args,GIAC_CONTEXT){
@@ -5433,7 +5445,7 @@ namespace giac {
       return false;
     vecteur uint(*u1._VECTptr),uex(*u2._VECTptr);
     vecteur wint,wex;
-    gen g;
+    gen g(minus_inf);
     for (int i=0;i<uint.size();++i){
       gen cur=uint[i];
       gen m=cur[0],M=cur[1];
