@@ -191,6 +191,9 @@ namespace giac {
   gen _interval(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_interval;
   gen symb_interval(const gen & a,const gen & b);
+  extern const unary_function_ptr * const  at_leftopen_interval;
+  extern const unary_function_ptr * const  at_rightopen_interval;
+  extern const unary_function_ptr * const  at_leftrightopen_interval;
   
   gen _comment(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_comment;

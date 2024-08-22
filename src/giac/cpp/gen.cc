@@ -13320,6 +13320,29 @@ void sprint_double(char * s,double d){
     }
 #endif
     string s;
+    if (subtype==_REALSET__VECT && v.size()>=2){
+      // print as a union of intervals
+      gen v1=v[v.size()-2],v2=v.back();
+      if (v1.type==_VECT && !v1._VECTptr->empty() && v2.type==_VECT){
+        vecteur & interv=*v1._VECTptr;
+        vecteur & excl=*v2._VECTptr;
+        for (int i=0;i<interv.size();++i){
+          if (i)
+            s += " ∪ ";
+          gen cur=interv[i];
+          gen a=cur[0],b=cur[1];
+          bool lopen=binary_search(excl.begin(),excl.end(),a,set_sort);
+          bool ropen=binary_search(excl.begin(),excl.end(),b,set_sort);
+          s += a.print(contextptr);
+          if (lopen)
+            s += ropen?"!.!":"!!.";
+          else 
+            s += ropen?"..!":"..";
+          s += b.print(contextptr);
+        }
+        return s;
+      }
+    }
     if (subtype==_SPREAD__VECT && !v.empty() && v.front().type==_VECT){
 #if defined(EMCC) || defined(EMCC2)
       bool add_quotes=true;

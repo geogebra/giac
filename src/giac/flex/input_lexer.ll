@@ -511,6 +511,9 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 "∩"                      index_status(yyextra)=0; (*yylval)=gen(at_intersect,2); return T_AND_OP;
 "Δ"                      index_status(yyextra)=0; (*yylval)=gen(at_symmetric_difference,2); return T_AND_OP;
 ".."                    index_status(yyextra)=0; (*yylval)=gen(at_interval,2); return T_INTERVAL;
+"!!."                    index_status(yyextra)=0; (*yylval)=gen(at_leftopen_interval,2); return T_INTERVAL;
+"..!"                    index_status(yyextra)=0; (*yylval)=gen(at_rightopen_interval,2); return T_INTERVAL;
+"!.!"                    index_status(yyextra)=0; (*yylval)=gen(at_leftrightopen_interval,2); return T_INTERVAL;
 "interval"                    index_status(yyextra)=0; (*yylval)=gen(at_interval,2); return T_UNARY_OP;
 "lim"                    index_status(yyextra)=0; (*yylval)=gen(at_limit,1); return T_UNARY_OP;
 "trier"                    index_status(yyextra)=0; (*yylval)=gen(at_sort,1); return T_UNARY_OP;

@@ -3740,11 +3740,16 @@ namespace giac {
     }
   }
 
-  bool interval2realset(gen & g){
+  bool interval2realset(gen & g,bool lopen=false,bool ropen=false){
     if (!g.is_symb_of_sommet(at_interval))
       return false;
     gen tmp=gen(vecteur(1,gen(gen2vecteur(g._SYMBptr->feuille),_LINE__VECT)),_SET__VECT);
-    g=gen(makevecteur(tmp,vecteur(0)),_REALSET__VECT);
+    vecteur excl;
+    if (lopen)
+      excl.push_back(g._SYMBptr->feuille[0]);
+    if (ropen)
+      excl.push_back(g._SYMBptr->feuille[1]);
+    g=gen(makevecteur(tmp,excl),_REALSET__VECT);
     return true;
   }
   // convert list of real to realset
@@ -4871,6 +4876,36 @@ namespace giac {
   static const char _interval_s []=" .. ";
   static define_unary_function_eval4_index (56,__interval,&_interval,_interval_s,&printsommetasoperator,&texprintsommetasoperator);
   define_unary_function_ptr( at_interval ,alias_at_interval ,&__interval);
+
+  gen _leftopen_interval(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+    gen g=symb_interval(args);
+    interval2realset(g,true,false);
+    return g;
+  }
+  static const char _leftopen_interval_s []=" ..! ";
+  static define_unary_function_eval4 (__leftopen_interval,&_leftopen_interval,_leftopen_interval_s,&printsommetasoperator,&texprintsommetasoperator);
+  define_unary_function_ptr( at_leftopen_interval ,alias_at_leftopen_interval ,&__leftopen_interval);
+  
+  gen _rightopen_interval(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+    gen g=symb_interval(args);
+    interval2realset(g,false,true);
+    return g;
+  }
+  static const char _rightopen_interval_s []=" !!. ";
+  static define_unary_function_eval4 (__rightopen_interval,&_rightopen_interval,_rightopen_interval_s,&printsommetasoperator,&texprintsommetasoperator);
+  define_unary_function_ptr( at_rightopen_interval ,alias_at_rightopen_interval ,&__rightopen_interval);
+  
+  gen _leftrightopen_interval(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+    gen g=symb_interval(args);
+    interval2realset(g,true,true);
+    return g;
+  }
+  static const char _leftrightopen_interval_s []=" !.! ";
+  static define_unary_function_eval4 (__leftrightopen_interval,&_leftrightopen_interval,_leftrightopen_interval_s,&printsommetasoperator,&texprintsommetasoperator);
+  define_unary_function_ptr( at_leftrightopen_interval ,alias_at_leftrightopen_interval ,&__leftrightopen_interval);
   
   static string printascomment(const gen & feuille,const char * sommetstr,GIAC_CONTEXT){
     if (feuille.type!=_STRNG)
