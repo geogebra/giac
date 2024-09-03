@@ -3417,6 +3417,8 @@ namespace giac {
 
   // Main series entry point
   gen series(const gen & e_,const identificateur & x,const gen & lim_point,int ordre,int direction,GIAC_CONTEXT){
+    if (lim_point.is_symb_of_sommet(at_interval))
+      return gensizeerr(contextptr);
     gen e(e_);
     int save_series_flags=series_flags(contextptr);
     series_flags(save_series_flags | 8,contextptr);

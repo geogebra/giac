@@ -8895,8 +8895,10 @@ namespace giac {
       return gen(v,b.subtype);
     }
     gen res=symbolic(at_equal,makesequence(a,b));
-    if (a.type==_INT_ && a.subtype==_INT_PLOT && io_graph(contextptr))
+    if (a.type==_INT_ && a.subtype==_INT_PLOT && io_graph(contextptr)){
+      history_plot(contextptr).push_back(res);
       __interactive.op(res,contextptr);
+    }
     return res;
   }
 
