@@ -1363,7 +1363,7 @@ namespace giac {
 	return "\\sqrt{"+gen2tex(v.front(),contextptr)+"}";
       if ( v.back()==minus_one_half || v.back()==fraction(minus_one,plus_two) )
 	return "\\frac{1}{\\sqrt{"+gen2tex(v.front(),contextptr)+"}}";
-      if (v.front().type==_SYMB && equalposcomp(primitive_tab_op,v.front()._SYMBptr->sommet)){
+      if (v.front().type==_SYMB && v.front()._SYMBptr->sommet!=at_exp && equalposcomp(primitive_tab_op,v.front()._SYMBptr->sommet)){
         string res=string("\\")+v.front()._SYMBptr->sommet.ptr()->s+"\\^{";
         res += gen2tex(v.back(),contextptr);
         res += "}";
