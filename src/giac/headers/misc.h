@@ -66,6 +66,8 @@ namespace giac {
   extern const unary_function_ptr * const  at_float ;
   gen _build_complex(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_complex ;
+  extern const unary_function_ptr * const  at_radians ;
+  extern const unary_function_ptr * const  at_subtype ;
 
   gen _tcoeff(const gen & args,GIAC_CONTEXT);
   vecteur sqrfree(const gen & g,const vecteur & l,int mult,GIAC_CONTEXT);

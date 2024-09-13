@@ -262,6 +262,7 @@ namespace giac {
     _TABLE__VECT=30,
     _GRAPH__VECT =31,
     _PRG__VECT=32,
+    _REALSET__VECT=33,
   } ;
 
   enum symb_subtypes {

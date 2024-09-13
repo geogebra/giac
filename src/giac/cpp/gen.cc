@@ -2007,12 +2007,12 @@ namespace giac {
       if (evaled.type==_VECT && evaled.subtype==_SEQ__VECT){
 	jt=evaled._VECTptr->begin(); jtend=evaled._VECTptr->end();
 	for (;jt!=jtend;++jt){
-	  if ((subtype!=_SET__VECT) || (!equalposcomp(vptr->v,*jt)))
+	  //if ((subtype!=_SET__VECT) || (!equalposcomp(vptr->v,*jt)))
 	    vptr->v.push_back(*jt);
 	}
       }
       else {
-	if ( subtype!=_SET__VECT || (!equalposcomp(vptr->v,evaled)))
+	//if ( subtype!=_SET__VECT || (!equalposcomp(vptr->v,evaled)))
 	  vptr->v.push_back(evaled);
       }
       ++it;
@@ -2025,15 +2025,17 @@ namespace giac {
       if (ansptr->type==_VECT && ansptr->subtype==_SEQ__VECT){
 	jt=ansptr->_VECTptr->begin(); jtend=ansptr->_VECTptr->end();
 	for (;jt!=jtend;++jt){
-	  if ((subtype!=_SET__VECT) || (!equalposcomp(vptr->v,*jt)))
+	  //if ((subtype!=_SET__VECT) || (!equalposcomp(vptr->v,*jt)))
 	    vptr->v.push_back(*jt);
 	}
       }
       else {
-	if ( subtype!=_SET__VECT || (!equalposcomp(vptr->v,*ansptr)))
+	//if ( subtype!=_SET__VECT || (!equalposcomp(vptr->v,*ansptr)))
 	  vptr->v.push_back(*ansptr);
       }
     }
+    if (evaled.type==_VECT && subtype==_SET__VECT)
+      chk_set(*evaled._VECTptr);
     // CERR << "End " << v << " " << w << '\n';
     return true;
   }
@@ -6797,6 +6799,9 @@ namespace giac {
   }
 
   gen pow(const gen & base,const gen & exponent,GIAC_CONTEXT){
+    if (base.type==_VECT && exponent.type==_VECT && (base.subtype==_SET__VECT || exponent.subtype==_SET__VECT)){
+      return _symmetric_difference(makesequence(base,exponent),contextptr);
+    }
     // if (!( (++control_c_counter) & control_c_counter_mask))
 #ifdef TIMEOUT
     control_c();
@@ -8890,8 +8895,10 @@ namespace giac {
       return gen(v,b.subtype);
     }
     gen res=symbolic(at_equal,makesequence(a,b));
-    if (a.type==_INT_ && a.subtype==_INT_PLOT && io_graph(contextptr))
+    if (a.type==_INT_ && a.subtype==_INT_PLOT && io_graph(contextptr)){
+      history_plot(contextptr).push_back(res);
       __interactive.op(res,contextptr);
+    }
     return res;
   }
 
@@ -10059,6 +10066,8 @@ namespace giac {
   }
 
   gen operator && (const gen & a,const gen & b){
+    if (a.type==_VECT && b.type==_VECT && (a.subtype==_SET__VECT || b.subtype==_SET__VECT))
+      return _intersect(makesequence(a,b),context0);
     if (is_zero(a,context0)){
       if (b.type==_DOUBLE_)
 	return 0.0;
@@ -10105,6 +10114,8 @@ namespace giac {
   }
 
   gen operator || (const gen & a,const gen & b){
+    if (a.type==_VECT && b.type==_VECT && (a.subtype==_SET__VECT || b.subtype==_SET__VECT))
+      return _union(makesequence(a,b),context0);
     if (is_zero(a,context0))
       return change_subtype(!is_zero(b),_INT_BOOLEAN);
     if (is_zero(b,context0))
@@ -13148,6 +13159,9 @@ void sprint_double(char * s,double d){
     case _ASSUME__VECT:
       s = "assume[";
       break;
+    case _REALSET__VECT:
+      s = "realset[";
+      break;
     case _FOLDER__VECT:
       s = "folder[";
       break;
@@ -13308,6 +13322,29 @@ void sprint_double(char * s,double d){
     }
 #endif
     string s;
+    if (subtype==_REALSET__VECT && v.size()>=2){
+      // print as a union of intervals
+      gen v1=v[v.size()-2],v2=v.back();
+      if (v1.type==_VECT && !v1._VECTptr->empty() && v2.type==_VECT){
+        vecteur & interv=*v1._VECTptr;
+        vecteur & excl=*v2._VECTptr;
+        for (int i=0;i<interv.size();++i){
+          if (i)
+            s += " ∪ ";
+          gen cur=interv[i];
+          gen a=cur[0],b=cur[1];
+          bool lopen=binary_search(excl.begin(),excl.end(),a,set_sort);
+          bool ropen=binary_search(excl.begin(),excl.end(),b,set_sort);
+          s += a.print(contextptr);
+          if (lopen)
+            s += ropen?"!.!":"!!.";
+          else 
+            s += ropen?"..!":"..";
+          s += b.print(contextptr);
+        }
+        return s;
+      }
+    }
     if (subtype==_SPREAD__VECT && !v.empty() && v.front().type==_VECT){
 #if defined(EMCC) || defined(EMCC2)
       bool add_quotes=true;
@@ -14149,6 +14186,8 @@ void sprint_double(char * s,double d){
 	return "list";
       case _SET__VECT:
 	return "set";
+      case _REALSET__VECT:
+	return "realset";
       case _MATRIX__VECT:
 	return "matrix";
       case _POLY1__VECT:

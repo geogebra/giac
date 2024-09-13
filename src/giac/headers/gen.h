@@ -442,7 +442,7 @@ namespace giac {
     bool operator () (const gen & a,const gen & b) const;
   };
 #ifdef CPP11
-  typedef std::map<gen,gen,const std::function<bool(const gen &, const gen &)> > gen_map;
+  typedef std::map<gen,gen,std::function<bool(const gen &, const gen &)> > gen_map;
 #else
   typedef std::map<gen,gen,comparegen> gen_map;
 #endif
@@ -1458,7 +1458,7 @@ namespace giac {
 
   class identificateur {
   public:
-    int * ref_count;
+    int * ref_count_ptr;
     gen * value;
     // std::string * name;
     const char * id_name;

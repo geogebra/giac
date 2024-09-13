@@ -573,6 +573,179 @@ namespace giac {
     return res.front();
   }
   */
+  gen flatten_set(const gen & g){
+    if (g.type==_VECT){
+      vecteur v(*g._VECTptr);
+      iterateur it=v.begin(),itend=v.end();
+      for (;it!=itend;++it)
+	*it=flatten_set(*it);
+      return gen(v,g.subtype);
+    }
+    if (g.type!=_SYMB)
+      return g;
+    unary_function_ptr & u=g._SYMBptr->sommet;
+    gen fe=flatten_set(g._SYMBptr->feuille);
+    if (fe.type!=_VECT || (u!=at_intersect && u!=at_union) )
+      return symbolic(u,fe);
+    const_iterateur it=fe._VECTptr->begin(),itend=fe._VECTptr->end();
+    if (it==itend)
+      return gen(vecteur(0),_SET__VECT);
+    vecteur v;
+    v.reserve(itend-it+1);
+    const gen * f=0;
+    for (;it!=itend;){
+      for (--itend;itend!=it;--itend)
+        v.push_back(*itend);
+      // Check first element of the vector g, if it's not a "u" add it to v and end
+      if (it->type!=_SYMB || it->_SYMBptr->sommet!=u || (f=&it->_SYMBptr->feuille,f->type!=_VECT) ){
+        v.push_back(*it);
+        break;
+      }
+      // first element was a plus, restart with all it's arguments
+      itend=f->_VECTptr->end();
+      it=f->_VECTptr->begin();
+    }
+    reverse(v.begin(),v.end());
+    return gen(new_ref_symbolic(symbolic(u,gen(v,_SEQ__VECT)))).change_subtype(g.subtype);
+  }
+  
+  gen intersect_expand(const gen & a,const gen & b,GIAC_CONTEXT){
+    bool a_is_union= (a.type==_SYMB) && (a._SYMBptr->sommet==at_union);
+    bool b_is_union= (b.type==_SYMB) && (b._SYMBptr->sommet==at_union);
+    if ( (!a_is_union) && (!b_is_union) )
+      return _intersect(makesequence(a,b),contextptr);
+    if (a_is_union){
+      vecteur av(gen2vecteur(a._SYMBptr->feuille));
+      if (b_is_union){
+        vecteur bv(gen2vecteur(b._SYMBptr->feuille));
+        const_iterateur it=av.begin(),itend=av.end(),jt=bv.begin(),jtend=bv.end();
+        vecteur v;
+        v.reserve((itend-it)*(jtend-jt));
+        for (;it!=itend;++it){
+          for (;jt!=jtend;++jt)
+            v.push_back(_intersect(makesequence(*it,*jt),contextptr));
+        }
+        return symbolic(at_union,gen(v,_SEQ__VECT));
+      }
+      const_iterateur it=av.begin(),itend=av.end();
+      vecteur v;
+      v.reserve(itend-it);
+      for (;it!=itend;++it){
+        v.push_back(_intersect(makesequence(*it,b),contextptr));
+      }
+      return symbolic(at_union,gen(v,_SEQ__VECT));
+    }
+    if (b_is_union){
+      vecteur bv(gen2vecteur(b._SYMBptr->feuille));
+      const_iterateur jt=bv.begin(),jtend=bv.end();
+      vecteur v;
+      v.reserve(jtend-jt);
+      for (;jt!=jtend;++jt){
+        v.push_back(_intersect(makesequence(a,*jt),contextptr));
+      }
+      return symbolic(at_union,gen(v,_SEQ__VECT));
+    }
+    return undef; // never reached
+  }
+  
+  static gen intersect_expand(const const_iterateur it,const const_iterateur itend,GIAC_CONTEXT){
+    int s=int(itend-it);
+    if (s==0)
+      return gen(vecteur(0),_SET__VECT);
+    if (s==1)
+      return *it;
+    return intersect_expand(intersect_expand(it,it+s/2,contextptr),intersect_expand(it+s/2,itend,contextptr),contextptr);
+  }
+
+  static gen intersect_expand(const gen & e,GIAC_CONTEXT){
+    if (e.type!=_VECT)
+      return symbolic(at_intersect,e);
+    return intersect_expand(e._VECTptr->begin(),e._VECTptr->end(),contextptr);
+  }
+  
+  gen union_expand(const gen & a,const gen & b,GIAC_CONTEXT){
+    bool a_is_intersect= (a.type==_SYMB) && (a._SYMBptr->sommet==at_intersect);
+    bool b_is_intersect= (b.type==_SYMB) && (b._SYMBptr->sommet==at_intersect);
+    if ( (!a_is_intersect) && (!b_is_intersect) )
+      return _union(makesequence(a,b),contextptr);
+    if (a_is_intersect){
+      vecteur av(gen2vecteur(a._SYMBptr->feuille));
+      if (b_is_intersect){
+        vecteur bv(gen2vecteur(b._SYMBptr->feuille));
+        const_iterateur it=av.begin(),itend=av.end(),jt=bv.begin(),jtend=bv.end();
+        vecteur v;
+        v.reserve((itend-it)*(jtend-jt));
+        for (;it!=itend;++it){
+          for (;jt!=jtend;++jt)
+            v.push_back(_union(makesequence(*it,*jt),contextptr));
+        }
+        return symbolic(at_intersect,gen(v,_SEQ__VECT));
+      }
+      const_iterateur it=av.begin(),itend=av.end();
+      vecteur v;
+      v.reserve(itend-it);
+      for (;it!=itend;++it){
+        v.push_back(_union(makesequence(*it,b),contextptr));
+      }
+      return symbolic(at_intersect,gen(v,_SEQ__VECT));
+    }
+    if (b_is_intersect){
+      vecteur bv(gen2vecteur(b._SYMBptr->feuille));
+      const_iterateur jt=bv.begin(),jtend=bv.end();
+      vecteur v;
+      v.reserve(jtend-jt);
+      for (;jt!=jtend;++jt){
+        v.push_back(_union(makesequence(a,*jt),contextptr));
+      }
+      return symbolic(at_intersect,gen(v,_SEQ__VECT));
+    }
+    return undef; // never reached
+  }
+
+  static gen union_expand(const const_iterateur it,const const_iterateur itend,GIAC_CONTEXT){
+    int s=int(itend-it);
+    if (s==0)
+      return gen(vecteur(0),_SET__VECT);
+    if (s==1)
+      return *it;
+    return union_expand(union_expand(it,it+s/2,contextptr),union_expand(it+s/2,itend,contextptr),contextptr);
+  }
+
+  static gen union_expand(const gen & e,GIAC_CONTEXT){
+    if (e.type!=_VECT)
+      return symbolic(at_union,e);
+    return union_expand(e._VECTptr->begin(),e._VECTptr->end(),contextptr);
+  }
+
+  static gen complement_expand(const gen & e,GIAC_CONTEXT){
+    if (e.type==_VECT){
+      vecteur v(gen2vecteur(*e._VECTptr));
+      if (v.empty())
+        return v;
+      for (int i=0;i<v.size();++i){
+        v[i]=complement_expand(v[i],contextptr);
+      }
+      if (v.size()==1)
+        return v[0];
+      return v;
+    }
+    if (e.type!=_SYMB)
+      return _complement(e,contextptr);
+    unary_function_ptr & u=e._SYMBptr->sommet;
+    gen ee=complement_expand(e._SYMBptr->feuille,contextptr);
+    if (u==at_complement)
+      return ee._SYMBptr->feuille;
+    if (u==at_intersect)
+      return symbolic(at_union,ee);
+    if (u==at_union)
+      return symbolic(at_intersect,ee);
+    if (u==at_symmetric_difference)
+      return symbolic(u,ee);
+    if (u==at_minus && ee.type==_VECT && ee._VECTptr->size()==2){
+      return symbolic(u,makesequence(ee[1],ee[0]));
+    }
+    return gensizeerr(gettext("Unsupported set operation"));
+  }
 
   gen prod_expand(const gen & a,const gen & b,GIAC_CONTEXT){
     bool a_is_plus= (a.type==_SYMB) && (a._SYMBptr->sommet==at_plus);
@@ -2047,6 +2220,16 @@ namespace giac {
     }
     vector<const unary_function_ptr *> v;
     vector< gen_op_context > w;
+    if (maybe_set(e)){
+      v.push_back(at_intersect);
+      v.push_back(at_union);
+      v.push_back(at_complement);
+      w.push_back(&intersect_expand);
+      w.push_back(&union_expand);
+      w.push_back(&complement_expand);
+      gen ef=flatten_set(e);
+      return subst(ef,v,w,false,contextptr);
+    }
     v.push_back(at_prod);
     v.push_back(at_pow);
     v.push_back(at_neg);

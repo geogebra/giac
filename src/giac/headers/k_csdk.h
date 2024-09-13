@@ -134,7 +134,7 @@ extern "C" {
   inline int os_draw_string_small(int x,int y,int c,int bg,const char * s,int fake){
     return numworks_draw_string_small(x,y,c,bg,s,fake);
   }
-#ifndef __MINGW_H
+#if 1 // ndef __MINGW_H
   inline int os_get_pixel(int x,int y){
     return numworks_get_pixel(x,y);
   }
@@ -195,13 +195,13 @@ extern "C" {
   inline int os_draw_string_small_(int x,int y,const char * s){ return os_draw_string_small(x,y,SDK_BLACK,SDK_WHITE,s,0);}
   
 #ifdef __cplusplus
-#if defined NUMWORKS && !defined __MINGW_H
+#if defined NUMWORKS // && !defined __MINGW_H
   inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake=0){ return os_draw_string(x,y,c,bg,s,fake);}
 #else
   int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake=0);
 #endif
 #else
-#if defined NUMWORKS && !defined __MINGW_H
+#if defined NUMWORKS // && !defined __MINGW_H
   inline int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake){ return os_draw_string(x,y,c,bg,s,fake);}
 #else
   int os_draw_string_medium(int x,int y,int c,int bg,const char * s,int fake);
@@ -240,7 +240,7 @@ extern "C" {
   void statusline(int mode);
 #endif
   void statusflags(void);
-#if defined NUMWORKS && !defined __MINGW_H
+#if defined NUMWORKS // && !defined __MINGW_H
   inline int iskeydown(int key){ return getkey(key | 0x80000000); }
 #else
   int iskeydown(int key);

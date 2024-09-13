@@ -751,7 +751,17 @@ namespace giac {
   }
 #endif
 
-  gen _VARS(const gen & args,const context * contextptr) {
+  gen _VARS(const gen & args_,const context * contextptr) {
+    gen args(args_);
+    bool assume=false;
+    if (args.type==_VECT && args._VECTptr->size()==2 && args._VECTptr->back()==at_assume){
+      assume=true;
+      args=args._VECTptr->front();
+    }
+    if (args==at_assume){
+      assume=true;
+      args=gen(vecteur(0),_SEQ__VECT);
+    }
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     bool val=is_one(args);
     bool valonly=args==-2;
@@ -768,6 +778,11 @@ namespace giac {
 	vecteur * keywordsptr=keywords_vecteur_ptr();
 #endif
 	for (;it!=itend;++it){
+          if (assume){
+            gen tmp=it->second;
+            if (tmp.type!=_VECT || tmp.subtype!=_ASSUME__VECT)
+              continue;
+          }
 	  lastprog_name(it->first,contextptr);
 	  gen g=identificateur(it->first);
 	  if (keywordsptr==0 || !equalposcomp(*keywordsptr,g)){
@@ -995,7 +1010,7 @@ namespace giac {
 	return val;
       }
     }
-    if (args._IDNTptr->value){
+    if (args._IDNTptr->value && args._IDNTptr->ref_count_ptr!=(int *)-1){
 #if !defined RTOS_THREADX && !defined BESTA_OS && !defined FREERTOS && !defined FXCG
       if (variables_are_files(contextptr))
 	unlink((args._IDNTptr->name()+string(cas_suffixe)).c_str());

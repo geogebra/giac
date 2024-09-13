@@ -634,6 +634,10 @@ namespace giac {
       vecteur rA=singular(A,x,contextptr);
       if (!rA.empty() && is_undef(rA))
 	return false;
+      for (int i=0;i<rA.size();++i){
+        if (is_exactly_zero(im(rA[i],contextptr)))
+          return false;
+      }
       vecteur Pv=factors(P,x,contextptr);
       int Pvs=int(Pv.size()/2);
       for (int Pi=0;Pi<Pvs;++Pi){
@@ -1799,6 +1803,30 @@ namespace giac {
       // sum_{x=a}^{b} comb(b-a,j*x-j*a)*p^x
       // 
       gen Q=r2sym(q,v,contextptr),R=r2sym(r,v,contextptr),Qa,Qb,Ra,Rb;
+      if (is_inf(a) || is_inf(b)){
+        // gen P=r2sym(p,v,contextptr);
+        // limit |P(x+1)/P(x)*Q/R| must be <=1
+        // for a polynomial limit p(x+1)/p(x) is always 1,
+        // so we have only Q/R in the limit
+        int qs=q.lexsorted_degree(),rs=r.lexsorted_degree();
+        if (qs>rs){
+          res=unsigned_inf; // FIXME: should be more precise!
+          return true;
+        }
+        if (qs==rs){
+          gen l=limit(Q/R,*x._IDNTptr,plus_inf,1,contextptr);
+          l=abs(l,contextptr);
+          gen tst=superieur_egal(1,l,contextptr);
+          if (tst.type==_INT_){
+            if (tst.val==0){
+              res=unsigned_inf;
+              return true;
+            }
+          }
+          else
+            *logptr(contextptr) << gettext("Run assume(") << tst << ") otherwise serie is divergent\n";
+        }
+      }
       if (a.type==_INT_ && b==plus_inf && p.lexsorted_degree()==0 && r.coord.size()==1 && q+r==0 ){
 	// gen coeff=inv(r.coord.front().value,contextptr);
 	int pui=r.lexsorted_degree();

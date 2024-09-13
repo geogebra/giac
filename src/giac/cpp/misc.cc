@@ -60,7 +60,9 @@ inline giac::gen _graph_charpoly(const giac::gen &g,const giac::context *){ retu
 #include "graphtheory.h"
 #endif
 
+#if !defined GIAC_HAS_STO_38 && !defined USE_GMP_REPLACEMENTS 
 #define GIAC_LMCHANGES 1 // changes by L. Marohnić // regression checks
+#endif
 
 #if defined KHICAS || defined SDL_KHICAS
 #include "kdisplay.h"
@@ -7499,12 +7501,12 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       return gensizeerr(contextptr);
     gen a=v.front();
     int pos=0;
+    int shift=array_start(contextptr); //xcas_mode(contextptr)>0 || abs_calc_mode(contextptr)==38;
     if (v.size()==3){
       if (v[2].type!=_INT_)
 	return gensizeerr(contextptr);
-      pos=v[2].val;
+      pos=v[2].val-shift;
     }
-    int shift=array_start(contextptr); //xcas_mode(contextptr)>0 || abs_calc_mode(contextptr)==38;
     bool py=python_compat(contextptr);
     if (a.type==_STRNG && v[1].type!=_VECT){
       if (v[1].type!=_STRNG)
@@ -7715,10 +7717,24 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 #endif
 
   // step by step utilities
+  gen rm_nontrig(const gen &g){
+    if (g.type!=_SYMB || g._SYMBptr->sommet==at_exp || g._SYMBptr->sommet==at_sin || g._SYMBptr->sommet==at_cos || g._SYMBptr->sommet==at_tan)
+      return g;
+    return g._SYMBptr->feuille;
+  }
 
   bool is_periodic(const gen & f,const gen & x,gen & periode,GIAC_CONTEXT){
     periode=0;
     vecteur vx=lvarx(f,x);
+    for (;;){
+      vecteur w(vx);
+      // remove non trig rootnodes up to fixpoint
+      for (unsigned i=0;i<vx.size();++i)
+        vx[i]=rm_nontrig(vx[i]);
+      vx=lvarx(vx,x);
+      if (vx==w)
+        break;
+    }
     for (unsigned i=0;i<vx.size();++i){
       if (vx[i].type!=_SYMB || (vx[i]._SYMBptr->sommet!=at_exp && vx[i]._SYMBptr->sommet!=at_sin && vx[i]._SYMBptr->sommet!=at_cos && vx[i]._SYMBptr->sommet!=at_tan)){
 	if (f.type==_SYMB)
@@ -7726,7 +7742,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 	return false;
       }
     }
-    gen g=_lin(trig2exp(f,contextptr),contextptr);
+    gen g=_lin(trig2exp(vx,contextptr),contextptr);
     vecteur v;
     rlvarx(g,x,v);
     islesscomplexthanf_sort(v.begin(),v.end());

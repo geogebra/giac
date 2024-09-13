@@ -877,7 +877,7 @@ namespace giac {
       return e;
     if (e._SYMBptr->sommet==at_entry || e._SYMBptr->sommet==at_ans)
       return gensizeerr(contextptr);
-    gen arg=subst(e._SYMBptr->feuille,v,w,quotesubst,contextptr);
+    gen arg=subst(e._SYMBptr->feuille,v,w,e._SYMBptr->sommet==at_of?true:quotesubst,contextptr);
     int n=equalposcomp(v,&e._SYMBptr->sommet);
     if (!n){
       if (quotesubst){
@@ -2353,6 +2353,8 @@ namespace giac {
   gen simplify(const gen & e_orig,GIAC_CONTEXT){
     if (e_orig.type<=_POLY || is_inf(e_orig) || has_num_coeff(e_orig))
       return e_orig;
+    if (maybe_set(e_orig))
+      return set_simplify(e_orig,contextptr);
     gen e=simplifier(e_orig,contextptr);
     if (algnum_normal(e,contextptr))
       return e;

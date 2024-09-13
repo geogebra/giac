@@ -2589,10 +2589,28 @@ namespace giac {
       direction=1;
     if (lim_point==minus_inf)
       direction=-1;    
-    // First try substitution
-    if (has_i(lop(e,at_ln)))
-      e=recursive_normal(expln2trig(e,contextptr),contextptr);
     vecteur vsign(loptab(e,sign_floor_ceil_round_tab));
+    // First try substitution
+    if (has_i(lop(e,at_ln))){
+      if (vsign.empty()){
+        gen first_try=subst(e,x,lim_point,false,contextptr);
+        first_try=eval(first_try,1,contextptr);
+        first_try=simplifier(first_try,contextptr);
+        // if (first_try==plus_inf || first_try==minus_inf) return first_try;
+        if (!contains(lidnt(first_try),unsigned_inf)){
+          if (has_num_coeff(first_try))
+            return first_try;
+          gen chknum;
+          bool hasnum=has_evalf(first_try,chknum,1,contextptr);
+          first_try=recursive_ratnormal(first_try,contextptr);
+          gen chk;
+          if (has_evalf(first_try,chk,1,contextptr) && !is_zero(chk) && !is_undef(chk) && !is_inf(chk))
+            return first_try; // avoid 0 because it might be 0/almost 0
+        }
+      }
+      e=recursive_normal(expln2trig(e,contextptr),contextptr);
+      vsign=loptab(e,sign_floor_ceil_round_tab);
+    }
     if (//0 && 
 	direction && !vsign.empty() && !equalposcomp(sign_floor_ceil_round_tab,e._SYMBptr->sommet)){
       // evaluate vsign first
@@ -3399,6 +3417,8 @@ namespace giac {
 
   // Main series entry point
   gen series(const gen & e_,const identificateur & x,const gen & lim_point,int ordre,int direction,GIAC_CONTEXT){
+    if (lim_point.is_symb_of_sommet(at_interval))
+      return gensizeerr(contextptr);
     gen e(e_);
     int save_series_flags=series_flags(contextptr);
     series_flags(save_series_flags | 8,contextptr);

@@ -61,7 +61,7 @@ pipeline {
           }
         }
         stage('Objective C') {
-          agent {label 'mac'}
+          agent {label 'mac-mini'}
           environment {
             MAVEN = credentials('maven-repo')
           }

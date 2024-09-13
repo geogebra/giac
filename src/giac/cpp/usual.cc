@@ -3656,9 +3656,9 @@ namespace giac {
 	  return ans;
 	}
 	else {
-	  if (b._IDNTptr->value)
+	  if (b._IDNTptr->value && b._IDNTptr->ref_count_ptr!=(int *)-1)
 	    delete b._IDNTptr->value;
-	  if (b._IDNTptr->ref_count) 
+	  if (b._IDNTptr->ref_count_ptr!=(int *)-1) 
 	    b._IDNTptr->value = new gen(aa);
 #ifdef HAVE_SIGNAL_H_OLD
 	  if (!child_id && signal_store)
@@ -4517,6 +4517,8 @@ namespace giac {
       v_intervalle=*v[1]._VECTptr;
       v_excluded=*v.back()._VECTptr;
     }
+    if (v_intervalle.size()==1 && v_intervalle.front()==makevecteur(minus_inf,plus_inf))
+      v_intervalle.clear();
     gen v0=_DOUBLE_;
     v0.subtype=1;
     if (!v.empty())
@@ -4627,12 +4629,67 @@ namespace giac {
     return gen(makevecteur(v0,v_intervalle,v_excluded),_ASSUME__VECT);
   }
 
+  // -1 invalid, 0 not in, 1 in
+  int union_intervals_in(const vecteur & w,const gen & g,GIAC_CONTEXT){
+    for (int i=0;i<w.size();++i){
+      vecteur cur=gen2vecteur(w[i]);
+      if (cur.size()!=2)
+        return -1;
+      if (is_greater(g,cur[0],contextptr) && is_greater(cur[1],g,contextptr))
+        return 1;
+    }
+    return 0;
+  }
+
+  // intersection of real sets in u and v
+  bool realset_inter(const vecteur &u,const vecteur &v,vecteur & w,GIAC_CONTEXT){
+    if (u.size()<2 || v.size()<2)
+      return false;
+    gen ai=u[u.size()-2],bi=v[v.size()-2],aex=u.back(),bex=v.back();
+    if (ai.type!=_VECT || bi.type!=_VECT || aex.type!=_VECT || bex.type!=_VECT)
+      return false;
+    vecteur aint=*ai._VECTptr;
+    vecteur bint=*bi._VECTptr;
+    vecteur cint;cint.clear(); int i=0,j=0;
+    for (;i<aint.size() && j<bint.size();){
+      gen acur=aint[i],bcur=bint[j];
+      if (acur.type!=_VECT || acur._VECTptr->size()!=2 || bcur.type!=_VECT || bcur._VECTptr->size()!=2)
+        return false;
+      gen ainf=acur[0],asup=acur[1],binf=bcur[0],bsup=bcur[1];
+      if (is_greater(binf,asup,contextptr)){
+        ++i;
+        continue;
+      }
+      if (is_greater(ainf,bsup,contextptr)){
+        ++j;
+        continue;
+      }
+      gen cinf=max(ainf,binf,contextptr); // cinf<=min(asup,bsup)
+      if (is_greater(asup,bsup,contextptr)){
+        cint.push_back(gen(makevecteur(cinf,bsup),_LINE__VECT));
+        ++j;
+      }
+      else {
+        cint.push_back(gen(makevecteur(cinf,asup),_LINE__VECT));
+        ++i;
+      }
+    }
+    vecteur excl=gen2vecteur(_union(makesequence(aex,bex),contextptr));
+    vecteur excluded;
+    for (int i=0;i<excl.size();++i){
+      if (union_intervals_in(cint,excl[i],contextptr)==1)
+        excluded.push_back(excl[i]);
+    }
+    w=makevecteur(vecteur(0),cint,excluded);
+    return true;
+  }
+
   // u and v should have 3 elements: first ignored,
   // second list of intervals, 3rd list of excluded values
-  bool glue(const vecteur & u,const vecteur & v,vecteur & w,GIAC_CONTEXT){
-    if (u.size()<3 || v.size()<3)
+  bool realset_glue(const vecteur & u,const vecteur & v,vecteur & w,GIAC_CONTEXT){
+    if (u.size()<2 || v.size()<2)
       return false;
-    gen u1=u[1],v1=v[1],u2=u[2],v2=v[2];
+    gen u1=u[u.size()-2],v1=v[v.size()-2],u2=u.back(),v2=v.back();
     if (u1.type!=_VECT || u2.type!=_VECT || v1.type!=_VECT || v2.type!=_VECT)
       return false;
     // i intervals, e excluded
@@ -4760,14 +4817,16 @@ namespace giac {
         if (stop)
           break;
       }
-      i.push_back(makevecteur(m,M));
+      i.push_back(gen(makevecteur(m,M),_LINE__VECT));
     }
     for (;j<i1.size();++j)
       i.push_back(i1[j]);
     for (;k<i2.size();++k)
       i.push_back(i2[k]);
 #endif
-    w=makevecteur(u[0],i,e);
+    w=makevecteur(i,e);
+    if (u.size()==3)
+      w.insert(w.begin(),u[0]);
     return true;
   }
   
@@ -4793,10 +4852,39 @@ namespace giac {
     if (!l)
       return gensizeerr(contextptr);
     gen arg0(v.front()),arg1(v.back()),hyp(undef);
+    if (l>2)
+      arg1=symbolic(a._SYMBptr->sommet,gen(vecteur(v.begin()+1,v.end()),_SEQ__VECT));
     if (s==at_sto){
       gen tmp(arg0);
       arg0=arg1;
       arg1=tmp;
+    }
+    if (s==at_different && arg0.type==_IDNT){
+      gen a0,hyp=arg0._IDNTptr->eval(1,a0,contextptr);
+      vecteur last_hyp;
+      if (hyp.type==_VECT && hyp.subtype==_ASSUME__VECT){
+        last_hyp=*hyp._VECTptr;
+        if (last_hyp.size()==3){
+          vecteur v=mergevecteur(gen2vecteur(last_hyp[2]),gen2vecteur(arg1));
+          comprim(v);
+          last_hyp[2]=v;
+        }
+        else if (last_hyp.size()==2)
+          last_hyp.push_back(gen2vecteur(arg1));
+        else
+          gensizeerr(gettext("Bad hypothesis"));
+      }
+      else
+        last_hyp=makevecteur(vecteur(0),vecteur(1,makevecteur(minus_inf,plus_inf)),gen2vecteur(arg1));
+      hyp=gen(last_hyp,_ASSUME__VECT);
+      sto(hyp,arg0,contextptr);
+      return arg0;
+      // old code
+      if (arg1.type==_VECT)
+        return gensizeerr(contextptr);
+      gen tmp1=symbolic(at_inferieur_strict,makesequence(arg0,arg1));
+      gen tmp2=symbolic(at_superieur_strict,makesequence(arg0,arg1));
+      return assumesymbolic(symbolic(at_ou,makesequence(tmp1,tmp2)),0,contextptr);
     }
     if (s==at_and || s==at_et){
       gen tmpg=assumesymbolic(arg0,0,contextptr);
@@ -4818,7 +4906,7 @@ namespace giac {
       if (a0about.type==_VECT && a1about.type==_VECT){
         // merge intervals
         vecteur merged;
-        glue(*a0about._VECTptr,*a1about._VECTptr,merged,contextptr);
+        realset_glue(*a0about._VECTptr,*a1about._VECTptr,merged,contextptr);
         sto(gen(merged,_ASSUME__VECT),a0,contextptr);
       }
       return a0;
@@ -4899,19 +4987,18 @@ namespace giac {
     }
 #endif
   }
-  static void purge_assume(const gen & a,GIAC_CONTEXT){
-    if (a.type==_SYMB && (a._SYMBptr->sommet==at_and || a._SYMBptr->sommet==at_et || a._SYMBptr->sommet==at_ou || a._SYMBptr->sommet==at_oufr || a._SYMBptr->sommet==at_inferieur_strict || a._SYMBptr->sommet==at_inferieur_egal || a._SYMBptr->sommet==at_superieur_egal || a._SYMBptr->sommet==at_superieur_strict || a._SYMBptr->sommet==at_equal) ){
-      purge_assume(a._SYMBptr->feuille,contextptr);
-      return;
+  static gen purge_assume(const gen & a,GIAC_CONTEXT){
+    if (a.type==_SYMB && (a._SYMBptr->sommet==at_and || a._SYMBptr->sommet==at_et || a._SYMBptr->sommet==at_ou || a._SYMBptr->sommet==at_oufr || a._SYMBptr->sommet==at_inferieur_strict || a._SYMBptr->sommet==at_inferieur_egal || a._SYMBptr->sommet==at_superieur_egal || a._SYMBptr->sommet==at_superieur_strict || a._SYMBptr->sommet==at_equal || a._SYMBptr->sommet==at_different) ){
+      return purge_assume(a._SYMBptr->feuille,contextptr);
     }
     if (a.type==_VECT && !a._VECTptr->empty()){
       if (a._VECTptr->back().type==_IDNT && a._VECTptr->front().type!=_IDNT)
-	purge_assume(a._VECTptr->back(),contextptr);
+	return purge_assume(a._VECTptr->back(),contextptr);
       else
-	purge_assume(a._VECTptr->front(),contextptr);
+	return purge_assume(a._VECTptr->front(),contextptr);
     }
     else
-      purgenoassume(a,contextptr);
+      return purgenoassume(a,contextptr);
   }
   gen giac_assume(const gen & a,GIAC_CONTEXT){
     if ( (a.type==_VECT) && (a._VECTptr->size()==2) ){
@@ -4943,16 +5030,45 @@ namespace giac {
       }
       if (a2==at_additionally)
 	return giac_additionally(a1,contextptr);
+      a2=eval(a2,1,contextptr);
+      if (a2.type==_VECT && a2.subtype==_REALSET__VECT){
+        vecteur v2=*a2._VECTptr;
+        if (v2.size()==2)
+          v2.insert(v2.begin(),vecteur(0));
+        if (v2.size()!=3 || v2[1].type!=_VECT || v2[2].type!=_VECT)
+          return gensizeerr();
+        vecteur w=*v2[1]._VECTptr;
+        if (w.empty())
+          return gensizeerr(contextptr);
+        for (int i=0;i<w.size();++i){
+          if (w[i].type!=_VECT || w[i]._VECTptr->size()!=2)
+            return gensizeerr(contextptr);
+        }
+	gen tmpsto=sto(gen(v2,_ASSUME__VECT),a1,contextptr);
+	if (is_undef(tmpsto)) return tmpsto;
+	return a1;
+      }
     }
     gen a_;
     if (a.type==_SYMB){
-      if (a._SYMBptr->sommet==at_and || a._SYMBptr->sommet==at_et || a._SYMBptr->sommet==at_ou || a._SYMBptr->sommet==at_oufr || a._SYMBptr->sommet==at_inferieur_strict || a._SYMBptr->sommet==at_inferieur_egal || a._SYMBptr->sommet==at_superieur_egal || a._SYMBptr->sommet==at_superieur_strict || a._SYMBptr->sommet==at_equal) 
+      if (a._SYMBptr->sommet==at_and || a._SYMBptr->sommet==at_et || a._SYMBptr->sommet==at_ou || a._SYMBptr->sommet==at_oufr || a._SYMBptr->sommet==at_inferieur_strict || a._SYMBptr->sommet==at_inferieur_egal || a._SYMBptr->sommet==at_superieur_egal || a._SYMBptr->sommet==at_superieur_strict || a._SYMBptr->sommet==at_equal || a._SYMBptr->sommet==at_different) 
 	a_=a;
       else
 	a_=eval(a,1,contextptr);
     }
 #ifdef NO_STDEXCEPT
-    purge_assume(a_,contextptr);
+    if (is_undef(purge_assume(a_,contextptr))){
+      vecteur v=lidnt(a_);
+      if (v.size()!=1)
+        return gensizeerr(contextptr);
+      purge_assume(v[0],contextptr);
+      gen w=_solve(makesequence(a_,v[0]),contextptr);
+      vecteur s=gen2vecteur(w);
+      if (s.size()>1)
+        a_=symbolic(at_ou,change_subtype(w,_SEQ__VECT));
+      else
+        a_=s[0];
+    }
 #else
     try {
       purge_assume(a_,contextptr);
@@ -5255,6 +5371,24 @@ namespace giac {
     if (args.type!=_VECT || is_undef(args))
       return args;
     vecteur & v = *args._VECTptr;
+    if (args.subtype==_SET__VECT){
+      if (v.size()>SET_COMPARE_MAXIDNT)
+        return gensizeerr(gettext("pow of a set exceeding max size"));
+      int N=pow(2,v.size()).val;
+      vecteur w;
+      w.reserve(N);
+      vecteur b; b.reserve(v.size());
+      for (int i=0;i<N;++i){
+        b.clear();
+        int I=i;
+        for (int j=0;I;j++,I/=2){
+          if (I%2)
+            b.push_back(v[j]);
+        }
+        w.push_back(gen(b,_SET__VECT));
+      }
+      return gen(w,_SET__VECT);
+    }
     if (v.size()==3)
       return _powmod(args,contextptr); // Python 3 compat
     if (v.size()!=2)
@@ -5632,7 +5766,7 @@ namespace giac {
     if (b0.type==_VECT && b0.subtype==_SEQ__VECT && b0._VECTptr->size()==1)
       b=b0._VECTptr->front();
     if (a.type==_INT_ && a.subtype==_INT_MAPLECONVERSION && (a.val==_MAPLE_LIST || a== _SET__VECT))
-      return symbolic(at_convert,makesequence(gen2vecteur(b),a));
+      return symbolic(at_convert,makesequence(b.type==_IDNT?b:gen2vecteur(b),a));
     if (a.type<_IDNT || a.type==_FLOAT_){
       if (!warn_implicit(a,b,contextptr))
 	return gensizeerr("Invalid implicit multiplication for ("+ a.print(contextptr)+")(" + b.print(contextptr)+')');
@@ -6402,7 +6536,9 @@ namespace giac {
     }
     if (is_undef(res))
       res=operator_equal(af,ab,contextptr);
-    if (res.type==_INT_ && abs_calc_mode(contextptr)!=38)
+    if (res.type==_INT_
+        // && abs_calc_mode(contextptr)!=38 // why is this needed?? let's try to remove
+        )
       res.subtype=_INT_BOOLEAN;
     return res;
   }
@@ -7361,6 +7497,8 @@ namespace giac {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (!check_2d_vecteur(args)) return gensizeerr(contextptr);
     gen a=args._VECTptr->front(),b=args._VECTptr->back();
+    if (!is_integral(a) || !is_integral(b))
+      return gensizeerr(contextptr);
     a=_irem(args,contextptr);
     return legendre(a,b);
   }
@@ -9821,7 +9959,7 @@ namespace giac {
     gen z=evalf_double(z0,1,contextptr);
     if (z0.type==_DOUBLE_ && prec>13)
       prec=13;
-#ifdef GIAC_HAS_STO_38
+#if 0 // def GIAC_HAS_STO_38
     if (z.type!=_DOUBLE_)
       return false;
     prec=13;

@@ -434,6 +434,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
 #endif
   extern double powlog2float;
   extern int MPZ_MAXLOG2;
+  extern int SET_COMPARE_MAXIDNT;
 
 #ifdef WITH_MYOSTREAM
   // replacement for std::cerr

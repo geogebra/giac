@@ -397,6 +397,7 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 "folder["      (*yylval) = _FOLDER__VECT; return T_VECT_DISPATCH;
 "polyedre["      (*yylval) = _POLYEDRE__VECT; return T_VECT_DISPATCH;
 "rgba["      (*yylval) = _RGBA__VECT; return T_VECT_DISPATCH;
+"realset["      (*yylval) = _REALSET__VECT; return T_VECT_DISPATCH;
 "â¦" index_status(yyextra)=0; (*yylval) = _LIST__VECT; return T_VECT_DISPATCH;
 "â¦" index_status(yyextra)=1; return T_VECT_END;
 "<"                     index_status(yyextra)=0; (*yylval)=gen(at_inferieur_strict,2);  return T_TEST_EQUAL;
@@ -489,6 +490,7 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 "&&"                    index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_AND_OP;
 "&amp;&amp;"                    index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_AND_OP;
 "AND"                   index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_AND_OP;
+"∧"                   index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_AND_OP;
 "'&&'"                  index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_QUOTED_BINARY;
 "'and'"                 index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_QUOTED_BINARY;
 "_and"                 index_status(yyextra)=0; (*yylval)=gen(at_and,2); return T_QUOTED_BINARY;
@@ -498,12 +500,21 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 "'or'"                  index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_QUOTED_BINARY;
 "_or"                  index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_QUOTED_BINARY;
 "OR"                    index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_AND_OP;
+"∨"                    index_status(yyextra)=0; (*yylval)=gen(at_ou,2); return T_AND_OP;
 "^^"                    index_status(yyextra)=0; (*yylval)=gen(at_bitxor,2); return T_AND_OP;
 "xor"                    index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_AND_OP;
+"⊻"                    index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_AND_OP;
 "_xor"                  index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_QUOTED_BINARY;
 "'xor'"                  index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_QUOTED_BINARY;
 "XOR"                    index_status(yyextra)=0; (*yylval)=gen(at_xor,2); return T_AND_OP;
+"∪"                      index_status(yyextra)=0; (*yylval)=gen(at_union,2); return T_AND_OP;
+"∩"                      index_status(yyextra)=0; (*yylval)=gen(at_intersect,2); return T_AND_OP;
+"Δ"                      index_status(yyextra)=0; (*yylval)=gen(at_symmetric_difference,2); return T_AND_OP;
+"∁"                     if (index_status(yyextra)) { (*yylval)=gen(at_complement); return T_FACTORIAL; } else { index_status(yyextra)=0; (*yylval)=gen(at_complement,1); return T_NOT; }
 ".."                    index_status(yyextra)=0; (*yylval)=gen(at_interval,2); return T_INTERVAL;
+"!!."                    index_status(yyextra)=0; (*yylval)=gen(at_leftopen_interval,2); return T_INTERVAL;
+"..!"                    index_status(yyextra)=0; (*yylval)=gen(at_rightopen_interval,2); return T_INTERVAL;
+"!.!"                    index_status(yyextra)=0; (*yylval)=gen(at_leftrightopen_interval,2); return T_INTERVAL;
 "interval"                    index_status(yyextra)=0; (*yylval)=gen(at_interval,2); return T_UNARY_OP;
 "lim"                    index_status(yyextra)=0; (*yylval)=gen(at_limit,1); return T_UNARY_OP;
 "trier"                    index_status(yyextra)=0; (*yylval)=gen(at_sort,1); return T_UNARY_OP;
@@ -695,6 +706,7 @@ AN	[0-9a-zA-Z_~ ?\200-\355\357-\376]
 "subsop"		if (xcas_mode(yyextra)==1) (*yylval) = gen(at_maple_subsop,2); else (*yylval) = gen(at_subsop,2); index_status(yyextra)=0; return T_UNARY_OP;
 "'union'"                  index_status(yyextra)=0; (*yylval)=gen(at_union,2); return T_QUOTED_BINARY;
 "_union"                  index_status(yyextra)=0; (*yylval)=gen(at_union,2); return T_QUOTED_BINARY;
+"'symmetric_difference'"                  index_status(yyextra)=0; (*yylval)=gen(at_symmetric_difference,2); return T_QUOTED_BINARY;
 "virgule"               (*yylval) = gen(at_virgule,2); index_status(yyextra)=0; return T_UNARY_OP;
 "VARS"                  (*yylval) = gen(at_VARS,0); index_status(yyextra)=0; return T_UNARY_OP;
 "while"                 index_status(yyextra)=0; (*yylval)=gen(at_for,4); if (xcas_mode(yyextra)==3) return TI_WHILE; if (xcas_mode(yyextra)!=0) return T_MUPMAP_WHILE; return T_WHILE;

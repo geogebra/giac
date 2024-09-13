@@ -191,6 +191,9 @@ namespace giac {
   gen _interval(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_interval;
   gen symb_interval(const gen & a,const gen & b);
+  extern const unary_function_ptr * const  at_leftopen_interval;
+  extern const unary_function_ptr * const  at_rightopen_interval;
+  extern const unary_function_ptr * const  at_leftrightopen_interval;
   
   gen _comment(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_comment;
@@ -203,6 +206,10 @@ namespace giac {
 
   gen _intersect(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_intersect;
+  gen _symmetric_difference(const gen & args,GIAC_CONTEXT);
+  extern const unary_function_ptr * const  at_symmetric_difference;
+  gen _complement(const gen & args,GIAC_CONTEXT);
+  extern const unary_function_ptr * const  at_complement;
   gen _inter(const gen & args,GIAC_CONTEXT);
   extern const alias_type alias_at_inter;
   extern const unary_function_ptr * const  at_inter;
@@ -1013,7 +1020,21 @@ namespace giac {
   gen symb_intersect(const gen & args);
   gen symb_union(const gen & args);
   gen symb_minus(const gen & args);
+  // return true if *this is "strictly less complex" than other
+  bool set_sort (const gen & t,const gen & other );
+  void chk_set(vecteur & av);
+  void chk_set(gen & g);
+  bool maybe_set(const gen & g);
+  gen set2logic(const gen & g,GIAC_CONTEXT);
+  gen logic2set(const gen & g,GIAC_CONTEXT);
   gen symb_compose(const gen & args);
+  gen set_simplify(const gen & g,GIAC_CONTEXT);
+  // 0 equal, 1 a contains b, 2 b contains a, negative: non comparable, -2 explicit sets, -3 too many idnts
+  int set_compare(const gen & a_,const gen &b_,GIAC_CONTEXT);
+  // search interval in a or value a in the list of intervals in b
+  bool realset_in(const gen & a,const vecteur &b,GIAC_CONTEXT);
+  // is realset in u contained in realset in v?
+  bool realset_in(const vecteur &u,const vecteur &v,GIAC_CONTEXT);
 
   // test if m(i) is an array index: that will not be the case if
   // i is an _IDNT or a list of _IDNT
@@ -1021,6 +1042,7 @@ namespace giac {
   bool is_array_index(const gen & m,const gen & i,GIAC_CONTEXT);
 
   gen _autosimplify(const gen & g,GIAC_CONTEXT);
+  extern const unary_function_ptr * const  at_autosimplify ;
   extern const unary_function_ptr * const  at_struct_dot ;
   gen _struct_dot(const gen & g,GIAC_CONTEXT);
   // replace := by = in builtin commands (for Python compatible mode)

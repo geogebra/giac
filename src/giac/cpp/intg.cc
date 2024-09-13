@@ -2751,6 +2751,11 @@ namespace giac {
 	gprintf(step_funclinear,gettext("Integrate %gen: function %gen applied to a linear expression u=%gen, result %gen"),makevecteur(e,primitive_tab_op[s-1],a*gen_x+b,primitive_tab_primitive[s-1](a*gen_x+b,contextptr)/a),contextptr);      
       return rdiv(primitive_tab_primitive[s-1](f,contextptr),a,contextptr);
     }
+    if (u==at_of && f.type==_VECT && f._VECTptr->size()==2 && is_linear_wrt(f._VECTptr->back(),gen_x,a,b,contextptr)){
+      gen f0=f[0];
+      if (f0.is_symb_of_sommet(at_function_diff) && f0._SYMBptr->feuille.type!=_VECT)
+        return symb_of(f0._SYMBptr->feuille,f[1])/a;
+    }
     // Step2: detection of f(u)*u' 
     vecteur v(1,gen_x);
     rlvarx(e,gen_x,v);
@@ -3907,19 +3912,78 @@ namespace giac {
   }
 
   gen _integrate_(const gen &args,GIAC_CONTEXT);
+  
   // integrate w=[M,N]=Mdx+Ndy along curve, v=[x,y]
-  gen curviligne(const vecteur & w,const vecteur & v,const gen & curve,GIAC_CONTEXT){
-    gen c=remove_at_pnt(curve);
-    c=c[1][1];
-    gen eq=c[0],t=c[1],tmin=c[2],tmax=c[3],xt,yt,V;
-    reim(eq,xt,yt,contextptr);
-    vecteur vt=makevecteur(xt,yt);
-    if (is_potential(w,v,V,contextptr))
+  // or more generally w vector field along curve, v=[x1,..,xdim]
+  gen curviligne(const vecteur & w,const vecteur & v,const gen & curve,const gen & V,const gen & tmin_,const gen & tmax_,GIAC_CONTEXT){
+    if (curve.is_symb_of_sommet(at_union)){
+      vecteur f=gen2vecteur(curve._SYMBptr->feuille);
+      gen res=0;
+      for (int i=0;i<f.size();++i){
+        res += curviligne(w,v,f[i],V,tmin_,tmax_,contextptr);
+      }
+      return res;
+    }
+    // handle curve, segment and arc of circle
+    gen c=curve;
+    if (!c.is_symb_of_sommet(at_pnt))
+      c=eval(c,1,contextptr);
+    c=remove_at_pnt(c);
+    gen eq,t,tmin(tmin_),tmax(tmax_);
+    if (c.is_symb_of_sommet(at_curve)){
+      c=c[1];
+      eq=c[0];t=c[1];
+      if (is_undef(tmin))
+        tmin=c[2];
+      if (is_undef(tmax))
+        tmax=c[3];
+    }
+    else {
+      if (c.type==_VECT && c._VECTptr->size()==2){
+        eq=c[0]+vx_var*(c[1]-c[0]);
+        t=vx_var;
+        if (is_undef(tmin))
+          tmin=0;
+        if (is_undef(tmax))
+          tmax=1;
+      }
+      else if (c.is_symb_of_sommet(at_cercle)){
+        vecteur cv=gen2vecteur(c._SYMBptr->feuille);
+        if (cv.size()<3)
+          return undef;
+        if (is_undef(tmin))
+          tmin=cv[1];
+        if (is_undef(tmax))
+          tmax=cv[2];
+        cv=gen2vecteur(cv[0]);
+        eq=(cv[0]+cv[1])/2+(cv[1]-cv[0])/2*symb_exp(cst_i*vx_var);
+        t=vx_var;
+      }
+      else return undef;
+    }
+    vecteur vt;
+    if (v.size()==2){
+      gen xt,yt;
+      reim(eq,xt,yt,contextptr);
+      vt=makevecteur(xt,yt);
+    }
+    else {
+      if (eq.type!=_VECT || eq._VECTptr->size()!=v.size())
+        return gendimerr(contextptr);
+      vt=*eq._VECTptr;
+    }
+    if (!is_undef(V))
       return subst(V,v,subst(vt,t,tmax,false,contextptr),false,contextptr)-subst(V,v,subst(vt,t,tmin,false,contextptr),false,contextptr);
-    gen M=subst(w[0],v,vt,false,contextptr);
-    gen N=subst(w[1],v,vt,false,contextptr);
-    gen g=M*derive(xt,t,contextptr)+N*derive(yt,t,contextptr);
+    gen M=subst(w,v,vt,false,contextptr);
+    gen g=dotvecteur(M,derive(vt,t,contextptr),contextptr);
     return _integrate_(makesequence(g,t,tmin,tmax),contextptr);
+  }
+
+  gen curviligne(const vecteur & w,const vecteur & v,const gen & curve,const gen & tmin,const gen &tmax,GIAC_CONTEXT){
+    gen V;
+    if (!is_potential(w,v,V,contextptr))
+      V=undef;
+    return curviligne(w,v,curve,V,tmin,tmax,contextptr);
   }
 
   gen _integrate_(const gen &args,GIAC_CONTEXT){
@@ -3970,8 +4034,8 @@ namespace giac {
     }
     if (s==1)
       return gentoofewargs("integrate");
-    if (s==2 && v[0].type==_VECT && v[0]._VECTptr->size()==2 && v[1].is_symb_of_sommet(at_pnt))
-      return curviligne(*v[0]._VECTptr,makevecteur(x__IDNT_e,y__IDNT_e),v[1],contextptr);
+    if (s==2 && v[0].type==_VECT && v[0]._VECTptr->size()==2 && (v[1].is_symb_of_sommet(at_pnt) || v[1].is_symb_of_sommet(at_union))) 
+      return curviligne(*v[0]._VECTptr,makevecteur(x__IDNT_e,y__IDNT_e),v[1],undef,undef,contextptr);
 
     if (s==7){
       for (int i=0;i<s;++i)
@@ -4000,14 +4064,20 @@ namespace giac {
       gen g=M*derive(xt,t,contextptr)+N*derive(yt,t,contextptr);
       return _integrate_(makesequence(g,t,tmin,tmax),contextptr);
     }
-    if (s==3){
-      // integrate([M,N],[x,y],G)
-      if (v[0].type==_VECT && v[0]._VECTptr->size()==2 && v[1].type==_VECT && v[1]._VECTptr->size()==2){
+    if (v.back()!=at_assume && (s==3 || s==5)){
+      if (v[0].type==_IDNT && v[0]!=v[1])
         v[0]=eval(v[0],1,contextptr);
-        v[2]=eval(v[2],1,contextptr);
-        return curviligne(*v[0]._VECTptr,*v[1]._VECTptr,v[2],contextptr);
+      if (v[0].type==_VECT){
+        if (v[1].type==_IDNT)
+          v[1]=eval(v[1],1,contextptr);
+        if (v[1].type==_VECT && v[0]._VECTptr->size()==v[1]._VECTptr->size()){
+          if (v[2].type==_IDNT)
+            v[2]=eval(v[2],1,contextptr);
+          // integrate([M,N],[x,y],G)
+          return curviligne(*v[0]._VECTptr,*v[1]._VECTptr,v[2],s==3?undef:v[3],s==3?undef:v[4],contextptr);
+        }
       }
-      if (calc_mode(contextptr)!=1)
+      if (s==3 && calc_mode(contextptr)!=1)
 	// indefinite integration with constant of integration
 	return _integrate(gen(makevecteur(v[0],v[1]),_SEQ__VECT),contextptr)+v[2];
       v.insert(v.begin()+1,ggb_var(eval(v.front(),1,contextptr)));
@@ -4511,9 +4581,10 @@ namespace giac {
       else if (args.type==_SYMB || args.type==_IDNT)
 	ass=autoassume(args,vx_var,contextptr);
     }
-    if (!ass.empty())
+    if (!ass.empty()){
       *logptr(contextptr) << "Run purge(" << ass << "); or purge(unquote(assumptions)) to clear auto-assumptions\n" ;
-    sto(ass,identificateur("assumptions"),contextptr);
+      sto(ass,identificateur("assumptions"),contextptr);
+    }
     gen res=_integrate_(args,contextptr);
     if (0){
       for (int i=0;i<ass.size();++i){

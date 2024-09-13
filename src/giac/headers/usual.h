@@ -334,8 +334,8 @@ namespace giac {
 
   // inequation utility: u and v should have 3 elements: first ignored,
   // second list of intervals, 3rd list of excluded values
-  bool glue(const vecteur & u,const vecteur & v,vecteur & w,GIAC_CONTEXT);
-  
+  bool realset_glue(const vecteur & u,const vecteur & v,vecteur & w,GIAC_CONTEXT);
+  bool realset_inter(const vecteur &u,const vecteur &v,vecteur & w,GIAC_CONTEXT);  
   bool is_assumed_real(const gen & g,GIAC_CONTEXT);
   bool is_assumed_integer(const gen & g,GIAC_CONTEXT);
   bool is_numericv(const vecteur & v, int withfracint = 0);

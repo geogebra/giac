@@ -1447,7 +1447,16 @@ namespace giac {
     if (has_num_coeff(e0)){
       *logptr(contextptr) << gettext("Unable to solve inequations with approx coeffs ") << '\n';
       e=exact(e0,contextptr);
-    }    
+    }
+    vecteur xrange;
+    if (find_range(x,xrange,contextptr)){
+      gen T;
+      if (xrange==vecteur(1,gen(makevecteur(minus_inf,plus_inf),_LINE__VECT)) && is_periodic(e,x,T,contextptr)){
+        gen hyp=symb_and(symb_superieur_egal(x,0),symb_inferieur_strict(x,T));
+        *logptr(contextptr) << gettext("Inequation on periodic expression without assumptions on variable, adding assumption ") << hyp << "\n";
+        giac_assume(hyp,contextptr);
+      }
+    }
     gen a1=e._SYMBptr->feuille[0];
     gen a2=e._SYMBptr->feuille[1];
     vecteur w=lop(lvarx(makevecteur(a1,a2),x),at_pow);
@@ -2750,7 +2759,29 @@ namespace giac {
   }
 
   vecteur solvepreprocess(const gen & args,bool complexmode,GIAC_CONTEXT){
-    gen g(expand_not(args,contextptr));
+    gen g(args);
+    // change made 2024/08/02 to replace identifiers only in args by value
+    // so that != < > are replaced by innert form before full evaluation
+    if (g.type==_IDNT && g!=vx_var)
+      g=eval(g,1,contextptr);
+    else if (g.type==_VECT && g.subtype==_SEQ__VECT && g._VECTptr->size()>=2) {
+      vecteur v(*g._VECTptr);
+      gen g0=v[0];
+      vecteur v1=gen2vecteur(v[1]);
+      if (g0.type==_IDNT && !equalposcomp(v1,g0))
+        g0=eval(g0,1,contextptr);
+      else if (g0.type==_VECT){
+        vecteur w(*g0._VECTptr);
+        for (int i=0;i<w.size();++i){
+          if (w[i].type==_IDNT && !equalposcomp(v1,w[i]))
+            w[i]=eval(w[i],1,contextptr);
+        }
+        g0=gen(w,g0.subtype);
+      }
+      v[0]=g0;
+      g=gen(v,_SEQ__VECT);
+    }
+    g=expand_not(g,contextptr);
     if (g.is_symb_of_sommet(at_and) && g._SYMBptr->feuille.type==_VECT)
       g=makesequence(expand_not(*g._SYMBptr->feuille._VECTptr,contextptr),vx_var);
     if (g.type==_VECT && !g._VECTptr->empty() && (g._VECTptr->front().is_symb_of_sommet(at_abs))){
@@ -3165,7 +3196,7 @@ namespace giac {
       // collect all inequations
       vecteur resineq,other;
       for (int i=0;i<res.size();++i){
-        if (is_inequation(res[i]))
+        if (is_inequation(res[i]) || res[i].is_symb_of_sommet(at_and))
           resineq.push_back(res[i]);
         else
           other.push_back(res[i]);
@@ -3192,7 +3223,7 @@ namespace giac {
               if (a1about.type!=_VECT)
                 break;
               vecteur oldmerged(merged);
-              glue(oldmerged,*a1about._VECTptr,merged,contextptr);
+              realset_glue(oldmerged,*a1about._VECTptr,merged,contextptr);
             }
             if (i==resineq.size() && merged.size()>=3){
               gen i=merged[1],e=merged[2];
@@ -4219,6 +4250,8 @@ namespace giac {
 	tmp[i]=at?symbolic(at_at,makesequence(v[1],i)):symb_of(v[1],i+1);
       v[1]=tmp;
     }
+    if (s>=4 && v[3].type==_IDNT)
+      *logptr(contextptr) << gettext("Unknown option ") << v[3] << "\n";
     if (gguess.is_symb_of_sommet(at_interval) && (s<4 || v[3].subtype!=_INT_PLOT)){
       int iszero=-1;
       gen a=gguess._SYMBptr->feuille[0],b=gguess._SYMBptr->feuille[1];
