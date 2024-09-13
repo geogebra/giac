@@ -22,11 +22,11 @@ yes | cp -f "$folder_path/config.h" "./src/giac/headers/config.h"
 echo "Replaced config.h file."
 
 # Replace simpleInterface folder
-cp -r -R "$folder_path/simpleInterface" "./src/"
+cp -r -f "$folder_path/simpleInterface" "./src/"
 echo "Replaced simpleInterface folder."
 
 # Replace TomMath folder
-cp -r -R "$folder_path/tommath" "./src/"
+cp -r -f "$folder_path/tommath" "./src/"
 echo "Replaced tommath folder."
 
 # Remove ./build folder
