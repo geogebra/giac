@@ -20,7 +20,7 @@ pipeline {
           }
         }
         stage('Mac') {
-          agent {label 'ios-test'}
+          agent {label 'mac-mini'}
           steps {
             sh "rm src/giac/cpp/kdisplay.cc"
             sh "export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary javagiacOsx_arm64SharedLibrary --info"

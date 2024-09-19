@@ -409,6 +409,9 @@ model {
                 cppCompiler.withArguments { args ->
                     macosCompilerArgs(args, null)
                 }
+                linker.withArguments { args ->
+                    args << '--target=x86_64-apple-macos11'
+                }
             }
             target('osx_arm64') {
                 cppCompiler.executable 'clang'
