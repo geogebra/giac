@@ -8699,9 +8699,41 @@ namespace giac {
     inline bool operator () (const gen & a,const gen &b){ return f(a,b); }
   };
 
+  void my_qsort(iterateur it,iterateur itend,bool (*f)(const gen &a,const gen &b)){
+    if (itend-it<=1)
+      return;
+    int n=(itend-it);
+    iterateur itmid=it+n/2;
+    my_qsort(it,itmid,f);
+    my_qsort(itmid,itend,f);
+    iterateur ita=it,itb=itmid;
+    vecteur res; res.reserve(n);
+    for (;ita!=itmid && itb!=itend;){
+      if (f(*ita,*itb)){
+        res.push_back(*ita);
+        ++ita;
+      }
+      else {
+        res.push_back(*itb);
+        ++itb;
+      }
+    }
+    for (;ita!=itmid;++ita)
+      res.push_back(*ita);
+    for (;itb!=itend;++itb)
+      res.push_back(*itb);
+    iterateur jt=res.begin();
+    for (;it!=itend;++it,++jt)
+      *it=*jt;
+  }
+
   void gen_sort_f(iterateur it,iterateur itend,bool (*f)(const gen &a,const gen &b)){
+#if 0
+    my_qsort(it,itend,f);
+#else
     f_compare m(f);
     sort(it,itend,m);
+#endif
   }
 
 
@@ -10803,6 +10835,37 @@ namespace giac {
     gen acopy(a),bCopy(b),r;
     for (;;){
       if (is_exactly_zero(bCopy)){
+#if 0 
+	complex<double> c=gen2complex_d(acopy);
+	double d=arg(c);
+	int quadrant=int(std::floor((2*d)/M_PI));
+        reim(acopy,bCopy,r,context0);
+        if (!is_positive(-bCopy,context0)){
+          if (is_positive(r,context0)){
+            if (quadrant!=0)
+              CERR << "cplxgcd 0 " << acopy << "\n";
+            return acopy;
+          }
+          if (quadrant!=-1)
+            CERR << "cplxgcd -1 " << acopy << "\n";
+          // re>=0, im<0
+	  return acopy*cst_i;          
+        }
+        else {
+          if (is_positive(-r,context0)){
+            if (is_zero(bCopy))
+              return -r;
+            if (quadrant!=-2 && quadrant!=2)
+              CERR << "cplxgcd 2 " << acopy << "\n";
+            return -acopy;
+          }
+          if (is_zero(bCopy))
+            return r;
+          if (quadrant!=1)
+            CERR << "cplxgcd 1 " << acopy << "\n";
+          return -acopy*cst_i;
+        }
+#else
 	complex<double> c=gen2complex_d(acopy);
 	double d=arg(c);
 	int quadrant=int(std::floor((2*d)/M_PI));
@@ -10818,6 +10881,7 @@ namespace giac {
 	default:
 	  return acopy;
 	}
+#endif
       }
       r=acopy%bCopy;
       acopy=bCopy;

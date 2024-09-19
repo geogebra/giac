@@ -5828,7 +5828,7 @@ namespace giac {
     // is not done inside arguments.
     // Example Ya:=desolve([y'+x*y=0,y(0)=a]); seq(plot(Ya),a,1,3); 
     gen debut=v[2],fin=v[3];
-    if (is_greater(abs(fin-debut),LIST_SIZE_LIMIT,contextptr))
+    if (is_greater(abs(fin-debut),type?max_sum_add(contextptr):LIST_SIZE_LIMIT,contextptr))
       return gendimerr(contextptr);
     vecteur res;
     if (is_strictly_greater(debut,fin,contextptr)){
@@ -5844,8 +5844,18 @@ namespace giac {
 #ifdef RTOS_THREADX
 	tmp=evalf(tmp,1,contextptr);
 #endif
+        if (!res.empty() && res.back().type<_POLY ){
+          if (type==1){
+            res.back() = res.back()*tmp;
+            continue;
+          }
+          if (type==2){
+            res.back() += tmp;
+            continue;
+          }
+        }
 	res.push_back(tmp);
-      }
+      } // for
     }
     else {
       if (!is_greater(fin,debut,contextptr))
@@ -5862,8 +5872,18 @@ namespace giac {
 #ifdef RTOS_THREADX
 	tmp=evalf(tmp,1,contextptr);
 #endif
+        if (!res.empty() && res.back().type<_POLY){
+          if (type==1){
+            res.back() = res.back()*tmp;
+            continue;
+          }
+          if (type==2){
+            res.back() += tmp;
+            continue;
+          }
+        }
 	res.push_back(tmp);
-      }
+      } //for
     }
     if (type==1)
       return _prod(res,contextptr);

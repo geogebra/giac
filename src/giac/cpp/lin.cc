@@ -534,9 +534,13 @@ namespace giac {
 	  arg= arg * (*it);
       }
     }
-    if ( (coeff.type==_INT_) && (coeff.val<0) ){
+    if ( coeff.type==_INT_ && coeff.val<0 ){
       coeff=-coeff;
       arg=-arg;
+    }
+    if (coeff.type==_INT_ && absint(coeff.val)>INT_KARAMUL_SIZE){
+      arg=coeff*arg;
+      coeff=1;
     }
   }
 
