@@ -407,7 +407,7 @@ model {
                 path gccPath, clangMacosxPath
 
                 cppCompiler.withArguments { args ->
-                    macosCompilerArgs(args, null)
+                    macosCompilerArgs(args, 'x86_64-apple-macos11')
                 }
                 linker.withArguments { args ->
                     args << '--target=x86_64-apple-macos11'
