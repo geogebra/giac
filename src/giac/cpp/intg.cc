@@ -419,8 +419,11 @@ namespace giac {
     }
     if (is_zero(b))
       return undef;
-    if (is_inf(a))
+    if (is_inf(a)){
+      if (a==minus_inf && is_integral(b) && b.type==_INT_ && b.val%2)
+        return -pow(plus_inf,inv(b,contextptr),contextptr);
       return pow(a,inv(b,contextptr),contextptr);
+    }
     c=_floor(b,contextptr);
     if (c.type==_FLOAT_)
       c=get_int(c._FLOAT_val);

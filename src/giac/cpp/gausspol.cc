@@ -365,7 +365,7 @@ namespace giac {
     if (fact.type!=_MOD && fact.type!=_USER && !th.coord.empty() && th.coord.front().value.type==_MOD){
       fact = makemod(fact,*(th.coord.front().value._MODptr+1));
     }
-    if (!is_zero(fact)){
+    if (!is_exactly_zero(fact)){
       vector< monomial<gen> >::const_iterator a = th.coord.begin();
       vector< monomial<gen> >::const_iterator a_end = th.coord.end();
       Mul<gen>(a,a_end,fact,res.coord);
