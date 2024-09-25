@@ -5162,8 +5162,11 @@ namespace giac {
       return zero;
     const gen & a=*it;
     ++it;
-    if (itend==it)
+    if (itend==it){
+      if (a.type==_INT_)
+        return a.val; // insure subtype==0
       return a;
+    }
     const gen & b=*it;
     ++it;
     if (it==itend){
