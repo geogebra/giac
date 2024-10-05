@@ -9224,7 +9224,7 @@ namespace giac {
     return !v.empty() && is_undef(v.front());
   }
   bool is_undef(const polynome & p){
-    return !p.coord.empty() && is_undef(p.coord.front());
+    return !p.coord.empty() && is_undef(p.coord.front().value);
   }
   // we are using exponent as undef marker because coeff=undef is used 
   // for Landau notation O(x^exponent)

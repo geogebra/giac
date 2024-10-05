@@ -12886,6 +12886,8 @@ namespace xcas {
           tmax=im(Gv.back(),contextptr);
           doit=true;
         }
+        else
+          tstep=(tmax-tmin)/(Gv.size()-1);
         if (doit){
           tstep=(tmax-tmin)/(Gv.size()-1);
           if (tracemode_mark<tmin._DOUBLE_val)

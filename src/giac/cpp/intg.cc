@@ -5597,7 +5597,8 @@ namespace giac {
       if (v[i].is_symb_of_sommet(at_exp) && !is_linear_wrt(v[i]._SYMBptr->feuille,x,a,b,contextptr))
 	return false;
     }
-    gen ratio=simplify(subst(e,x,x+1,false,contextptr)/e,contextptr);
+    gen ratio=subst(e,x,x+1,false,contextptr)/e;
+    ratio=simplify(ratio,contextptr);
     if (is_undef(ratio))
       return false;
     v=lvarx(makevecteur(ratio,x),x);
