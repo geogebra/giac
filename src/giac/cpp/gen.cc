@@ -110,7 +110,7 @@ extern "C" uint32_t mainThreadStack[];
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
-#if defined FXCG || defined HP39
+#if defined FXCG || defined HP39 //|| defined NUMWORKS_SLOTAB
 #define ALLOCSMALL
 #endif
 
@@ -119,6 +119,13 @@ namespace giac {
   // 32 bytes structure: 4096/32=128 slots of memory
   // ALLOCA  constants must be multiples of 2*32
   const int ALLOC16=8*32; // symbolic
+#ifdef NUMWORKS_SLOTAB
+  const int ALLOC24=8*32; // complex, identificateur, mpz_t
+  static unsigned int freeslot24[ALLOC24/32]={
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+  };
+#else
   const int ALLOC24=16*32; // complex, identificateur, mpz_t
   // #define ALLOC32 3*32 // not used
   // unsigned os_python_heap=0x88068000; // free memory area, used by Python heap
@@ -129,6 +136,7 @@ namespace giac {
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
     0xffffffff, 0xffffffff,0xffffffff, 0xffffffff, 
   };
+#endif
   static unsigned int freeslot16[ALLOC16/32]={
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
     0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,

@@ -17339,8 +17339,10 @@ namespace giac {
       svl.push_back(di);
       d[i]=vi;
     }
+#ifndef GIAC_HAS_STO_38 // otherwise G1 crashes
      if (smallsvl)
-       *logptr(contextptr) << "Warning, ill-conditionned matrix, " << smallsvl << " small singular values were replaced by 0. Result is probably wrong." << '\n';    
+       *logptr(contextptr) << "Warning, ill-conditionned matrix, " << smallsvl << " small singular values were replaced by 0. Result is probably wrong." << '\n';
+#endif
     if (method==-2){
       if (transposed){
 	int add0=int(M.size()-M.front()._VECTptr->size());

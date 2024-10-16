@@ -1973,7 +1973,9 @@ namespace giac {
   define_unary_function_ptr5( at_INT ,alias_at_INT,&__INT,0,T_UNARY_OP_38);
 
   static int taylorxn=0;
+  gen exactify_pow(const gen & g);
   static void hp38_eval(vecteur & v,gen & x,gen& newx,GIAC_CONTEXT){
+    v[0]=exactify_pow(v[0]);
     x=v[1];
     if (is_equal(x))
       x=x._SYMBptr->feuille[0];

@@ -89,6 +89,9 @@ int ext_main(){
 }
 #else
 int ext_main(){
+  //tab16=(four_int *) malloc(sizeof(four_int)*8*32);
+  //tab24=(six_int*) malloc(sizeof(six_int)*8*32);
+  //tab48=(twelve_int*) malloc(sizeof(twelve_int)*8*32);
   caseval("*");
   return 0;
 }

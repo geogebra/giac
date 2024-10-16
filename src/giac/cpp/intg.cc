@@ -4573,8 +4573,33 @@ namespace giac {
     }
     return ck_int_numerically(v0orig,x,aorig,borig,res,contextptr);
   }
+
+  // for inputs like integrate(sqrt(x^2.),x,-1,0);
+  gen exactify_pow(const gen & g){
+    if (g.type==_VECT){
+      vecteur v=*g._VECTptr;
+      for (int i=0;i<v.size();++i)
+        v[i]=exactify_pow(v[i]);
+      return gen(v,g.subtype);
+    }
+    if (g.type!=_SYMB)
+      return g;
+    gen f=exactify_pow(g._SYMBptr->feuille);
+    if (g._SYMBptr->sommet!=at_pow)
+      return symbolic(g._SYMBptr->sommet,f);
+    if (f.type!=_VECT || f._VECTptr->size()!=2)
+      return symbolic(at_pow,f);
+    gen f1=f._VECTptr->back();
+    if (f1.type==_DOUBLE_ && f1._DOUBLE_val==int(f1._DOUBLE_val))
+      f1=int(f1._DOUBLE_val);
+    else if (f1.type==_FLOAT_ && f1._FLOAT_val==int(get_double(f1._FLOAT_val)))
+      f1=int(get_double(f1._FLOAT_val));
+    else return symbolic(at_pow,f);;
+    return symbolic(at_pow,makesequence(f._VECTptr->front(),f1));
+  }
   // "unary" version
-  gen _integrate(const gen & args,GIAC_CONTEXT){
+  gen _integrate(const gen & args_,GIAC_CONTEXT){
+    gen args(exactify_pow(args_));
     if (complex_variables(contextptr))
       *logptr(contextptr) << gettext("Warning, complex variables is set, this can lead to fairly complex answers. It is recommended to switch off complex variables in the settings or by complex_variables:=0; and declare individual variables to be complex by e.g. assume(a,complex).") << '\n';
     vecteur ass;
