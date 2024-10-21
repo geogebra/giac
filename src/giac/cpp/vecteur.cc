@@ -15889,10 +15889,11 @@ namespace giac {
       return 1;
     int s=(int) args._VECTptr->size();
     if (args.subtype==_SEQ__VECT){
-      if (0 && s==2){
-	if (args._VECTptr->back()==-1)
+      if (s>=2 && args[1]==at_size){
+        gen b=args._VECTptr->back();
+	if (b==-1)
 	  return tailles(args._VECTptr->front());
-	return int(taille(args._VECTptr->front(),0));
+	return int(taille(args._VECTptr->front(),b.type==_INT_?giacmax(0,b.val):0));
       }
 #if 0 //def KHICAS
       if (s==0)
