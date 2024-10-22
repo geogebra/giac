@@ -13,14 +13,14 @@ dependencies {
 
 compileJava.options.sourcepath = files(processResources.destinationDir).builtBy(processResources)
 
-task prepareJs(type:Copy, dependsOn: project.getParent().createGiacWasmJs) {
+task prepareJs(type: Copy, dependsOn: project.getParent().createGiacWasmJs) {
     from "${project.getParent().buildDir}/binaries/giacggb.wasm"
     into file("src/main/resources/fr/grenoble/ujf/giac")
     include "giac.wasm.js"
 }
 
 task sourcesJar(type: Jar, dependsOn: "classes") {
-    classifier = 'sources'
+    archiveClassifier.set('sources')  // Updated to use 'archiveClassifier.set'
     from sourceSets.main.allSource
     from files(file("build/generated/sources/annotationProcessor/java/main/"))
 }
@@ -37,7 +37,7 @@ publishing {
             artifact sourcesJar
             pom {
                 name = 'Giac for GWT'
-                description = 'GWT bining for giac.wasm.js'
+                description = 'GWT binding for giac.wasm.js'
             }
         }
     }

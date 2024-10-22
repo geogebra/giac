@@ -5,17 +5,6 @@
 // Agoston Suto <suto.agoston@yahoo.com>.
 // Based on Bernard Parisse's original Makefiles and other scripts.
 
-buildscript {
-    repositories {
-        google()  // Google repository for Android Gradle Plugin and other Google libraries
-        mavenCentral()  // Maven Central for additional dependencies
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:8.7.0'  // Example of AGP 8.7.0
-    }
-}
-
-
 plugins {
     id 'visual-studio'
     id 'cpp'
@@ -150,6 +139,7 @@ def iphoneosSdk = exec_("xcrun", "--sdk", "iphoneos", "--show-sdk-path")
 def iphonesimulatorSdk = exec_("xcrun", "--sdk", "iphonesimulator", "--show-sdk-path")
 def iphoneosPlatform = exec_("xcrun", "--sdk", "iphoneos", "--show-sdk-platform-path")
 def minIosVersion = '9.0'
+
 
 def simulatorPostfix = "-simulator"
 def catalystPostfix = "-macabi"

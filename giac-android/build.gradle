@@ -1,36 +1,53 @@
 buildscript {
     repositories {
         google()
+        mavenCentral()  // Include mavenCentral if needed for additional dependencies
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.6.0'
+        classpath 'com.android.tools.build:gradle:8.7.0'
     }
 }
+
 plugins {
     id 'maven-publish'
 }
+
 apply plugin: 'com.android.library'
 
 repositories {
-   mavenCentral()
-   google()
+    mavenCentral()
+    google()
 }
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion "28.0.3"
+    namespace "org.geogebra.giacandroid"  // Define the namespace here
+    compileSdkVersion 33
+    buildToolsVersion "33.0.2"
 
     defaultConfig {
-        minSdkVersion 8
-        targetSdkVersion 27
+        minSdkVersion 21
+        targetSdkVersion 33
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    publishing {
+        singleVariant("release")
     }
 }
 
 def jniLibsDir = "src/main/jniLibs"
-def abiSplits = ["armeabi-v7a": "/../arm-linux-androideabi/lib/",
-                 "x86"        : "/../i686-linux-android/lib/",
-                 "x86_64"     : "/../x86_64-linux-android/lib/",
-                 "arm64-v8a"  : "/../aarch64-linux-android/lib/"]
+def abiSplits = [
+    "armeabi-v7a": "/../arm-linux-androideabi/lib/",
+    "x86"        : "/../i686-linux-android/lib/",
+    "x86_64"     : "/../x86_64-linux-android/lib/",
+    "arm64-v8a"  : "/../aarch64-linux-android/lib/"
+]
 
 task copyCrystaxSo {
     group 'android'
@@ -43,8 +60,12 @@ task copyCrystaxSo {
                 def libdirArch = d + libDirSuffix 
                 if (file(libdirArch + so).exists()) {
                     println " Found $arch .so in $d"
-                    missing --
-                    copy { from libdirArch include so into "$jniLibsDir/$arch" }
+                    missing--
+                    copy { 
+                        from libdirArch 
+                        include so 
+                        into "$jniLibsDir/$arch"
+                    }
                 }
             }
         }
@@ -55,21 +76,33 @@ task copyCrystaxSo {
 }
 
 afterEvaluate {
-tasks['preBuild'].dependsOn(['copyCrystaxSo', ':androidCopyEabiLibjavagiacSo',
-        ':androidCopyX86LibjavagiacSo', ':androidCopyX86_64LibjavagiacSo', ':androidCopyArm64LibjavagiacSo'])
-publishing {
-    publications {
-        release(MavenPublication) {
-            artifactId = 'giac-android'
-            groupId = 'org.geogebra'
-            version = project.getParent().ggrev
-            from components.release
-            pom {
-                name = 'Giac for Android'
-                description = 'Android Giac library'
+    tasks['preBuild'].dependsOn(['copyCrystaxSo', ':androidCopyEabiLibjavagiacSo', ':androidCopyX86LibjavagiacSo', ':androidCopyX86_64LibjavagiacSo', ':androidCopyArm64LibjavagiacSo'])
+
+    publishing {
+        publications {
+            release(MavenPublication) {
+                artifactId = 'giac-android'
+                groupId = 'org.geogebra'
+                version = project.getParent().ggrev ?: "1.0.0"
+
+                from components["release"]  // Correct reference to the release component
+
+                pom {
+                    name = 'Giac for Android'
+                    description = 'Android Giac library'
+                }
             }
+        }
+
+        repositories {
+            maven {
+                url = uri("path_to_your_maven_repo")  // Replace with your Maven repository URL
+                credentials {
+                    username = project.findProperty("repoUser") ?: "your_maven_username"
+                    password = project.findProperty("repoPassword") ?: "your_maven_password"
+                }
+            }
+ 
         }
     }
 }
-}
-
