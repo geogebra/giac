@@ -444,7 +444,7 @@ namespace giac {
       new_coord.reserve(a_end - a );
       for (;a!=a_end;++a){
 	T tmp=((*a).value) * fact;
-	if (!is_zero(tmp))
+	if (!is_exactly_zero(tmp))
 	  new_coord.push_back(monomial<T>( tmp , (*a).index) );
       }
     }

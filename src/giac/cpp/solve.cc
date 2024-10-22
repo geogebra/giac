@@ -6051,6 +6051,9 @@ namespace giac {
 	    d=linsolve(evalf(subst(invdf,x,a,false,contextptr),1,contextptr),-subst(f,x,a,false,contextptr),contextptr);
 	  else
 	    d=-evalf(subst(invdf,x,a,false,contextptr)*subst(f,x,a,false,contextptr),1,contextptr);
+	  if (is_undef(d) || (d.type==_VECT &&d._VECTptr->empty()) || !lidnt(d).empty()){
+	    return gensizeerr(gettext("Unable to solve numerically, perhaps a multiple root?"));             
+          }          
 	  a=a+d;
 	  if (is_positive(epsg2-_l2norm(d,contextptr)/max(1,abs(a,contextptr),contextptr),contextptr))
 	    break;

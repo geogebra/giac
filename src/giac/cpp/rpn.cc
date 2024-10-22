@@ -1011,6 +1011,7 @@ namespace giac {
       }
     }
     if (args._IDNTptr->value && args._IDNTptr->ref_count_ptr!=(int *)-1){
+      *logptr(contextptr) << "Purging " << args <<  " refs " << *(args._IDNTptr->ref_count_ptr) << "\n";
 #if !defined RTOS_THREADX && !defined BESTA_OS && !defined FREERTOS && !defined FXCG
       if (variables_are_files(contextptr))
 	unlink((args._IDNTptr->name()+string(cas_suffixe)).c_str());
@@ -1972,7 +1973,9 @@ namespace giac {
   define_unary_function_ptr5( at_INT ,alias_at_INT,&__INT,0,T_UNARY_OP_38);
 
   static int taylorxn=0;
+  gen exactify_pow(const gen & g);
   static void hp38_eval(vecteur & v,gen & x,gen& newx,GIAC_CONTEXT){
+    v[0]=exactify_pow(v[0]);
     x=v[1];
     if (is_equal(x))
       x=x._SYMBptr->feuille[0];

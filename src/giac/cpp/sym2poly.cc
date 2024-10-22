@@ -2844,7 +2844,7 @@ namespace giac {
     vecteur w(v);
     for (unsigned i=0;i<v.size();++i){
       gen r=ratnormal(v[i]._SYMBptr->feuille/g,contextptr);
-      if (r.type==_INT_ && r.val!=1)
+      if (r.type==_INT_ && r.val!=1 && absint(r.val)<=INT_KARAMUL_SIZE)
 	w[i]=symbolic(at_pow,makesequence(symb_exp(g),r));
     }
     return v==w?e:subst(e,v,w,false,contextptr);

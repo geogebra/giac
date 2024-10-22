@@ -441,7 +441,7 @@ namespace giac {
   public:
     bool operator () (const gen & a,const gen & b) const;
   };
-#ifdef CPP11
+#if 0 //def CPP11 // otherwise crash on A[1,1]:=1; A[1,2]:=2;
   typedef std::map<gen,gen,std::function<bool(const gen &, const gen &)> > gen_map;
 #else
   typedef std::map<gen,gen,comparegen> gen_map;

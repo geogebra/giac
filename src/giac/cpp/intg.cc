@@ -419,8 +419,11 @@ namespace giac {
     }
     if (is_zero(b))
       return undef;
-    if (is_inf(a))
+    if (is_inf(a)){
+      if (a==minus_inf && is_integral(b) && b.type==_INT_ && b.val%2)
+        return -pow(plus_inf,inv(b,contextptr),contextptr);
       return pow(a,inv(b,contextptr),contextptr);
+    }
     c=_floor(b,contextptr);
     if (c.type==_FLOAT_)
       c=get_int(c._FLOAT_val);
@@ -4570,8 +4573,33 @@ namespace giac {
     }
     return ck_int_numerically(v0orig,x,aorig,borig,res,contextptr);
   }
+
+  // for inputs like integrate(sqrt(x^2.),x,-1,0);
+  gen exactify_pow(const gen & g){
+    if (g.type==_VECT){
+      vecteur v=*g._VECTptr;
+      for (int i=0;i<v.size();++i)
+        v[i]=exactify_pow(v[i]);
+      return gen(v,g.subtype);
+    }
+    if (g.type!=_SYMB)
+      return g;
+    gen f=exactify_pow(g._SYMBptr->feuille);
+    if (g._SYMBptr->sommet!=at_pow)
+      return symbolic(g._SYMBptr->sommet,f);
+    if (f.type!=_VECT || f._VECTptr->size()!=2)
+      return symbolic(at_pow,f);
+    gen f1=f._VECTptr->back();
+    if (f1.type==_DOUBLE_ && f1._DOUBLE_val==int(f1._DOUBLE_val))
+      f1=int(f1._DOUBLE_val);
+    else if (f1.type==_FLOAT_ && f1._FLOAT_val==int(get_double(f1._FLOAT_val)))
+      f1=int(get_double(f1._FLOAT_val));
+    else return symbolic(at_pow,f);;
+    return symbolic(at_pow,makesequence(f._VECTptr->front(),f1));
+  }
   // "unary" version
-  gen _integrate(const gen & args,GIAC_CONTEXT){
+  gen _integrate(const gen & args_,GIAC_CONTEXT){
+    gen args(exactify_pow(args_));
     if (complex_variables(contextptr))
       *logptr(contextptr) << gettext("Warning, complex variables is set, this can lead to fairly complex answers. It is recommended to switch off complex variables in the settings or by complex_variables:=0; and declare individual variables to be complex by e.g. assume(a,complex).") << '\n';
     vecteur ass;
@@ -5594,7 +5622,8 @@ namespace giac {
       if (v[i].is_symb_of_sommet(at_exp) && !is_linear_wrt(v[i]._SYMBptr->feuille,x,a,b,contextptr))
 	return false;
     }
-    gen ratio=simplify(subst(e,x,x+1,false,contextptr)/e,contextptr);
+    gen ratio=subst(e,x,x+1,false,contextptr)/e;
+    ratio=simplify(ratio,contextptr);
     if (is_undef(ratio))
       return false;
     v=lvarx(makevecteur(ratio,x),x);
@@ -5828,7 +5857,7 @@ namespace giac {
     // is not done inside arguments.
     // Example Ya:=desolve([y'+x*y=0,y(0)=a]); seq(plot(Ya),a,1,3); 
     gen debut=v[2],fin=v[3];
-    if (is_greater(abs(fin-debut),LIST_SIZE_LIMIT,contextptr))
+    if (is_greater(abs(fin-debut),type?max_sum_add(contextptr):LIST_SIZE_LIMIT,contextptr))
       return gendimerr(contextptr);
     vecteur res;
     if (is_strictly_greater(debut,fin,contextptr)){
@@ -5844,8 +5873,18 @@ namespace giac {
 #ifdef RTOS_THREADX
 	tmp=evalf(tmp,1,contextptr);
 #endif
+        if (!res.empty() && res.back().type<_POLY ){
+          if (type==1){
+            res.back() = res.back()*tmp;
+            continue;
+          }
+          if (type==2){
+            res.back() += tmp;
+            continue;
+          }
+        }
 	res.push_back(tmp);
-      }
+      } // for
     }
     else {
       if (!is_greater(fin,debut,contextptr))
@@ -5862,8 +5901,18 @@ namespace giac {
 #ifdef RTOS_THREADX
 	tmp=evalf(tmp,1,contextptr);
 #endif
+        if (!res.empty() && res.back().type<_POLY){
+          if (type==1){
+            res.back() = res.back()*tmp;
+            continue;
+          }
+          if (type==2){
+            res.back() += tmp;
+            continue;
+          }
+        }
 	res.push_back(tmp);
-      }
+      } //for
     }
     if (type==1)
       return _prod(res,contextptr);
