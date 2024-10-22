@@ -13,18 +13,18 @@ def ggbGiacJsDir = file("$distDir/giac.js/")
 // Unsure if this is needed or not. Otherwise there is no .pom file for Java Giac (which is probably a problem).
 task javagiacPomJar (type: Jar) {
     description 'Creates empty .jar package for the Java Giac library.'
-    baseName = 'javagiac'
-    destinationDir = javagiacDir
+    archiveBaseName.set('javagiac')  // Use archiveBaseName
+    destinationDirectory.set(javagiacDir)  // Use destinationDirectory
 }
 
 task javagiacWin64JarClang (type: Jar) {
     description 'Create the Windows 64 bit .jar package for the Java Giac library (via clang).'
-    baseName = 'javagiac-win64'
-    destinationDir = javagiacDir
+    archiveBaseName.set('javagiac-win64')  // Use archiveBaseName
+    destinationDirectory.set(javagiacDir)  // Use destinationDirectory
     from "cbuild64" // Make sure the DLL is compiled and put into this folder first.
     include '*.dll'
     rename 'libjavagiac.dll', 'javagiac64.dll'
-    classifier 'natives-windows-amd64'
+    archiveClassifier.set('natives-windows-amd64')
 }
 
 task testJavagiacWin64 (dependsOn: 'javagiacWin64JarClang') {
@@ -33,12 +33,12 @@ task testJavagiacWin64 (dependsOn: 'javagiacWin64JarClang') {
 
 task javagiacLinux64Jar (dependsOn: 'javagiacLinux64SharedLibrary', type: Jar) {
     description 'Creates the Linux 64 bit .jar package for the Java Giac library.'
-    baseName = 'javagiac-linux64'
-    destinationDir = javagiacDir
+    archiveBaseName.set('javagiac-linux64')  // Use archiveBaseName
+    destinationDirectory.set(javagiacDir)  // Use destinationDirectory
     from "${buildDir}/libs/javagiac/shared/linux64"
     include '*.so'
     rename 'libjavagiac.so', 'libjavagiac64.so'
-    classifier 'natives-linux-amd64'
+    archiveClassifier.set('natives-linux-amd64')
 }
 
 task testJavagiacLinux64 (dependsOn: 'javagiacLinux64Jar') {
@@ -46,9 +46,9 @@ task testJavagiacLinux64 (dependsOn: 'javagiacLinux64Jar') {
 }
 
 task javagiacMacJar (type: Jar) {
-    description 'Creates the Linux 32 bit .jar package for the Java Giac library.'
-    baseName = 'javagiac-mac'
-    destinationDir = javagiacDir
+    description 'Creates the Mac .jar package for the Java Giac library.'
+    archiveBaseName.set('javagiac-mac')  // Use archiveBaseName
+    destinationDirectory.set(javagiacDir)  // Use destinationDirectory
     from("${buildDir}/binaries/javagiacSharedLibrary/osx_x86-64") { // FIXME: unify
         include '*.jnilib'
     }
@@ -56,7 +56,7 @@ task javagiacMacJar (type: Jar) {
         include '*.jnilib'
         rename 'libjavagiac.jnilib', 'libjavagiac-arm64.jnilib'
     }
-    classifier 'natives-macosx-universal'
+    archiveClassifier.set('natives-macosx-universal')
 }
 
 task testJavagiacMac (dependsOn: 'javagiacMacJar') {
@@ -151,10 +151,6 @@ task updateNodegiacWebCommit (dependsOn: 'updateNodegiacVersion') {
     description 'Commits changes of package.json to the SVN repository.'
     doLast {
         exec {
-            // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
-            // you may need to manually connect to the SVN server first by running this task manually.
-            // Jenkins' home folder is by default in /var/lib/jenkins and its workspace is
-            // in jobs/*/workspace which is actually a standard SVN checkout folder.
             commandLine 'svn', 'commit', '--username', System.env.MAVEN_USR,
                     '--password', System.env.MAVEN_PSW,
                     '-m', "Automatically update package.json to r$ggrev",

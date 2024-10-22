@@ -5,6 +5,16 @@
 // Agoston Suto <suto.agoston@yahoo.com>.
 // Based on Bernard Parisse's original Makefiles and other scripts.
 
+buildscript {
+    repositories {
+        google()  // Google repository for Android Gradle Plugin and other Google libraries
+        mavenCentral()  // Maven Central for additional dependencies
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.7.0'  // Example of AGP 8.7.0
+    }
+}
+
 
 plugins {
     id 'visual-studio'
@@ -13,6 +23,12 @@ plugins {
     id 'maven-publish'
 }
 
+allprojects {
+    repositories {
+        google()  // Google repository for Android-specific dependencies
+        mavenCentral()  // Maven Central for additional dependencies
+    }
+}
 
 apply from: 'repositories.gradle'
 
@@ -843,11 +859,11 @@ task createPodspec() {
 }
 
 task cocoapodsZip(dependsOn: createIosXcframework, type: Zip) {
-    baseName 'Giac'
+    archiveBaseName.set('Giac')
     from ("${buildDir}/libs/framework/Giac.xcframework") {
         into "Frameworks/Giac.xcframework"
     }
-    destinationDir = file("${buildDir}/cocoapods/")
+    destinationDirectory.set(file("${buildDir}/cocoapods/"))  // Corrected property
 }
 
 task publishPodspec(dependsOn: ['installGems', 'createPodspec', 'publishMavenZipPublicationToMavenRepository'], type: Exec) {
