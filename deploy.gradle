@@ -151,6 +151,10 @@ task updateNodegiacWebCommit (dependsOn: 'updateNodegiacVersion') {
     description 'Commits changes of package.json to the SVN repository.'
     doLast {
         exec {
+            // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
+            // you may need to manually connect to the SVN server first by running this task manually.
+            // Jenkins' home folder is by default in /var/lib/jenkins and its workspace is
+            // in jobs/*/workspace which is actually a standard SVN checkout folder.
             commandLine 'svn', 'commit', '--username', System.env.MAVEN_USR,
                     '--password', System.env.MAVEN_PSW,
                     '-m', "Automatically update package.json to r$ggrev",

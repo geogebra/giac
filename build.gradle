@@ -5,6 +5,7 @@
 // Agoston Suto <suto.agoston@yahoo.com>.
 // Based on Bernard Parisse's original Makefiles and other scripts.
 
+
 plugins {
     id 'visual-studio'
     id 'cpp'
@@ -12,12 +13,6 @@ plugins {
     id 'maven-publish'
 }
 
-allprojects {
-    repositories {
-        google()  // Google repository for Android-specific dependencies
-        mavenCentral()  // Maven Central for additional dependencies
-    }
-}
 
 apply from: 'repositories.gradle'
 
@@ -932,23 +927,50 @@ task createMaccatalystFramework(dependsOn: createFatIosStaticLibrary, type: Copy
 task createIosXcframework(dependsOn: [createIosFramework, createIphonesimulatorFramework, createMaccatalystFramework], type: Copy) {
     description "Creates XCFramework"
     
-    from("${buildDir}/libs/framework/iphonesimulator") {
-        into "ios-arm64_x86_64-simulator"
+    ant.copy(todir: "${buildDir}/libs/framework/Giac.xcframework/ios-arm64_x86_64-simulator", preservelastmodified: true, failonerror: true) {
+        fileset(dir: "${buildDir}/libs/framework/iphonesimulator", followsymlinks: false)
     }
-    from("${buildDir}/libs/framework/ios") {
-        into "ios-arm64"
+    ant.copy(todir: "${buildDir}/libs/framework/Giac.xcframework/ios-arm64", preservelastmodified: true, failonerror: true) {
+        fileset(dir: "${buildDir}/libs/framework/ios", followsymlinks: false)
     }
-    from("${buildDir}/libs/framework/maccatalyst") {
-        into "ios-arm64_x86_64-maccatalyst"
+    ant.copy(todir: "${buildDir}/libs/framework/Giac.xcframework/ios-arm64_x86_64-maccatalyst", preservelastmodified: true, failonerror: true) {
+        fileset(dir: "${buildDir}/libs/framework/maccatalyst", followsymlinks: false)
     }
-    from("src/simpleInterface/framework") {
-        include "xcframework.plist"
-        rename "xcframework.plist", "Info.plist"
-    }
+    ant.copy(file: "src/simpleInterface/framework/xcframework.plist", tofile: "${buildDir}/libs/framework/Giac.xcframework/Info.plist")
+
+    copySymlinks("${buildDir}/libs/framework/iphonesimulator", "${buildDir}/libs/framework/Giac.xcframework/ios-arm64_x86_64-simulator")
+    copySymlinks("${buildDir}/libs/framework/ios", "${buildDir}/libs/framework/Giac.xcframework/ios-arm64")
+    copySymlinks("${buildDir}/libs/framework/maccatalyst", "${buildDir}/libs/framework/Giac.xcframework/ios-arm64_x86_64-maccatalyst")
+
 
     destinationDir = file("${buildDir}/libs/framework/Giac.xcframework")
 }
 
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.Path
+
+def copySymlinks(sourceDir, destDir) {
+    def srcDir = new File(sourceDir)
+    srcDir.eachFileRecurse { file ->
+        Path filePath = file.toPath()
+        if (Files.isSymbolicLink(filePath)) {
+            def relPath = srcDir.toPath().relativize(filePath)
+            def targetLink = new File(destDir, relPath.toString())
+
+            // Ensure the parent directories exist in the destination
+            targetLink.parentFile.mkdirs()
+
+            // Get the target of the symlink
+            Path target = Files.readSymbolicLink(filePath)
+
+            // Create the symlink in the destination
+            exec {
+                commandLine 'ln', '-sf', target.toString(), targetLink.absolutePath
+            }
+        }
+    }
+}
 
 task createPodspec() {
     inputs.file "src/simpleInterface/pod/Giac.podspec"

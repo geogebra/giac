@@ -117,7 +117,7 @@ inline int mpz_gcd_ui(mpz_t * c,const mpz_t & a,unsigned B){
   mp_clear(&b);
   return gcdint(B,res);
 }
-inline int mpz_set_str(mpz_t &  z,char * s,int base){return mp_read_radix(&z,s,base);}
+inline int mpz_set_str(mpz_t &  z,const char * s,int base){return mp_read_radix(&z,s,base);}
 inline int mpz_get_str(char * s,int base,const mpz_t &  z){return mp_toradix((mp_int *)&z,s,base);}
 inline double mpz_get_d(const mpz_t & z){ 
   if (mp_count_bits((mp_int *)&z)>1023) {

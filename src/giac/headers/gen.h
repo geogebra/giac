@@ -862,6 +862,11 @@ namespace giac {
     inline eqwdata * ref_EQWptr() const ;
     inline grob * ref_GROBptr() const ;
     inline void * ref_POINTER_val() const ;
+  
+    // Define reset func for timeout
+#ifdef TIMEOUT
+    void resetTimeout();
+#endif
   };
 
   bool ref_mpz_t2gen(ref_mpz_t * mptr,gen & g); // return true if mptr used in g

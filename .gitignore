@@ -3,3 +3,6 @@
 .idea
 .gems
 build
+src/tommath
+giacbuilt_tommath_additions
+src/simpleInterface
