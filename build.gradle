@@ -234,6 +234,7 @@ def giacSpecificSettings(cppCompiler, linker, targetPlatform) {
 
 
         cppCompiler.define 'HAVE_UNISTD_H'
+        cppCompiler.define 'SIZEOF_VOID_P', '8'
 
         cppCompiler.args '-I', file('src/jni/jdkHeaders/linux').toString()
         cppCompiler.args '-fno-strict-aliasing' // maybe not needed
