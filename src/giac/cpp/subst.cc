@@ -473,7 +473,35 @@ namespace giac {
       }
       else
 	return false;
-    case _SYMB:
+    case _SYMB: 
+      if (newi.type==_DOUBLE_){ // optimization for the ti83
+        gen & f=e._SYMBptr->feuille;
+        if (f.type!=_VECT){
+          bool b1=has_subst(f,i,newi,newe,quotesubst,contextptr);
+          if (!b1)
+            return false;
+          newe=newe.type<_IDNT?e._SYMBptr->sommet(newe,contextptr):symbolic(e._SYMBptr->sommet,newe);
+          return true;
+        }          
+        int index=archive_function_index(e._SYMBptr->sommet);
+        if (index==1 || index==4 || index==7){
+          if (f.type==_VECT && f._VECTptr->size()==2){
+            gen &f1=f._VECTptr->front();
+            gen &f2=f._VECTptr->back();
+            gen newf1,newf2;
+            bool b1=has_subst(f1,i,newi,newf1,quotesubst,contextptr),b2=has_subst(f2,i,newi,newf2,quotesubst,contextptr);
+            if (!b1 && !b2)
+              return false;
+            if (index==1)
+              newe=(b1?newf1:f1)+(b2?newf2:f2);
+            else if (index==4)
+              newe=(b1?newf1:f1)*(b2?newf2:f2);
+            else if (index==7)
+              newe=pow((b1?newf1:f1),(b2?newf2:f2),contextptr);
+            return true;
+          }
+        }
+      }
       if (e==i){
 	newe=newi;
 	return true;
@@ -527,6 +555,8 @@ namespace giac {
     }
   }
   gen subst(const gen & e,const gen & i,const gen & newi,bool quotesubst,GIAC_CONTEXT){
+    if (e.type<_IDNT || e.type==_FRAC || e.type==_FLOAT_)
+      return e;
     if (is_inequation(newi) || newi.is_symb_of_sommet(at_and) || newi.is_symb_of_sommet(at_ou))
       return gensizeerr(contextptr);
     if (i.type==_VECT){
@@ -3574,7 +3604,7 @@ namespace giac {
     return apply(args,Heavisidetopiecewise,contextptr);
   }
 
-#if defined FXCG || !defined USE_GMP_REPLACEMENTS
+#if 0 // defined FXCG || !defined USE_GMP_REPLACEMENTS
   // find simplest between some trig simplifications, by Luka Marohnić
   gen _trigsimplify(const gen & g,GIAC_CONTEXT) {
     if (g.type==_STRNG && g.subtype==-1) return g;
@@ -3606,10 +3636,49 @@ namespace giac {
     }
     return simplest;
   }
+#else
+  gen _trigsimplify(const gen & g,GIAC_CONTEXT) {
+    if (g.type==_STRNG && g.subtype==-1) return g;
+    gen res(g),cur;
+    vecteur v(lvar(res)),vcur;
+    if (v.empty())
+      return g;
+    int t=taille(g,0),tcur;
+    vecteur tst;
+    tst.push_back(_texpand(g,contextptr));
+    tst.push_back(_tcollect(g,contextptr));
+    int s=tst.size();
+    for (int i=0;i<s;++i){
+      tst.push_back(_trigsin(tst[i],contextptr));
+      tst.push_back(_trigcos(tst[i],contextptr));
+      tst.push_back(_trigtan(tst[i],contextptr));
+      tst.push_back(_tlin(tst[i],contextptr));
+    }
+    tst.push_back(_simplify(g,contextptr));
+    s=tst.size();
+    for (int i=0;i<s;++i){
+      tst.push_back(_tcollect(tst[i],contextptr));
+      if (i!=4 && i!=8) // don't call trigtan twice
+        tst.push_back(_trigtan(tst[i],contextptr));
+    }    
+    for (int i=0;i<tst.size();++i){
+      cur=tst[i];
+      vcur=lvar(cur);
+      tcur=taille(cur,0);
+      if (tcur*vcur.size()>t*v.size())
+        continue;
+      if (tcur*vcur.size()==t*v.size() && tcur>=t)
+        continue;
+      t=tcur;
+      res=cur;
+      v=vcur;
+    }
+    return res;
+  }  
+#endif
   static const char _trigsimplify_s []="trigsimplify";
   static define_unary_function_eval (__trigsimplify,&_trigsimplify,_trigsimplify_s);
   define_unary_function_ptr5(at_trigsimplify,alias_at_trigsimplify,&__trigsimplify,0,true)
-#endif
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac

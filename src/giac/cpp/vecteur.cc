@@ -8534,6 +8534,7 @@ namespace giac {
 #endif
   }
 
+#if 0
   // finish full row reduction to echelon form if N is upper triangular
   // this is done from lmax-1 to l *** code not tested ***
   bool smallmodrref_upper(vector< vector<mod4int> > & N,int l,int lmax,int c,int cmax,mod4int modulo){
@@ -8639,6 +8640,7 @@ namespace giac {
     }
     return true;
   }
+#endif
 
   int smallmodrref_lastpivotcol(const vector< vector<int> > & K,int lmax){
     // first find the column of the last pivot

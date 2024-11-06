@@ -2603,6 +2603,10 @@ namespace giac {
     return symbolic(g._SYMBptr->sommet,solve_revert_inequations(g._SYMBptr->feuille));
   }
 
+  bool taillesort(const gen & a,const gen & b){
+    return taille(a,RAND_MAX)<taille(b,RAND_MAX);
+  }
+
   vecteur solve(const gen & e,const gen & x,int isolate_mode,GIAC_CONTEXT){
     bool complexmode=isolate_mode & 1;
     vecteur res;
@@ -2622,9 +2626,15 @@ namespace giac {
       return res;
     }
     if (e.type==_VECT){
-      if (x.type==_IDNT && lvarx(e,x)==vecteur(1,x))
+      if (x.type==_IDNT &&
+          _is_polynomial(makesequence(e,x),contextptr)!=0
+          // lvarx(e,x)==vecteur(1,x)
+          )
 	return solve(_gcd(e,contextptr),x,isolate_mode,contextptr);
-      const_iterateur it=e._VECTptr->begin(),itend=e._VECTptr->end();
+      // sort e in asc. order of complexity
+      vecteur ev=*e._VECTptr;
+      sort(ev.begin(),ev.end(),taillesort);
+      const_iterateur it=ev.begin(),itend=ev.end();
       gen curx=x._IDNTptr->eval(1,x,contextptr);
       res=vecteur(1,x); // everything is solution up to now
       double eps=epsilon(contextptr);
@@ -9126,7 +9136,10 @@ namespace giac {
     }
     env.moduloon = false;    
     for (unsigned i=0;i<eqp.size();++i){
-      if (coefftype(eqp[i],coeff)==_MOD){
+      int ct=coefftype(eqp[i],coeff);
+      if (ct==_EXT)
+        return gensizeerr(gettext("Non polynomial system"));
+      if (ct==_MOD){
 	with_cocoa = false;
 	env.moduloon = true;
 	env.modulo = *(coeff._MODptr+1);

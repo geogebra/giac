@@ -12770,23 +12770,32 @@ namespace xcas {
       return g.print();
     return giac::print_DOUBLE_(g._DOUBLE_val,n);
   }
-  const int tracemaxdepth=10; // protection against too many embedded derivatives for curve study
-  int symb_depth(const gen & g,int curdepth,int maxdepth){
+  const int tracemaxdepth=9; // protection against too many embedded derivatives for curve study
+  // protection against too complex derivatives for curve study
+  int symb_depth(const gen & g,int curdepth,int maxdepth,bool sum=false){
     if (g.type==_VECT){
       vecteur & v =*g._VECTptr;
+      int curmax=0;
       for (int i=0;i<v.size();++i){
-        curdepth=symb_depth(v[i],curdepth,maxdepth);
-        if (curdepth>maxdepth)
+        int cur=symb_depth(v[i],curdepth,maxdepth);
+        if (cur>maxdepth)
           return curdepth;
+        if (sum){
+          if (cur>curmax)
+            curmax=cur;
+        }
+        else
+          curdepth=cur;
       }
+      if (sum)
+        curdepth=curmax;
     }
     if (g.type!=_SYMB)
       return curdepth;
     if (curdepth==maxdepth)
       return maxdepth+1;
-    return symb_depth(g._SYMBptr->feuille,curdepth+1,maxdepth);
+    return symb_depth(g._SYMBptr->feuille,curdepth+1,maxdepth,g._SYMBptr->sommet==at_plus);
   }
-
 
   void Graph2d::tracemode_set(int operation){
     if (plot_instructions.empty())
@@ -15194,21 +15203,21 @@ namespace xcas {
       gen value;
       if (listormat) // select line l, col c
 	xcas::eqw_select(eq.data,line,col,true,value);
+#define EQW_TAILLE 54
       if (eqdata.dx>LCD_WIDTH_PX){
-	if (dx<-20)
-	  dx=-20;
-	if (dx>eqdata.dx-LCD_WIDTH_PX+20)
-	  dx=eqdata.dx-LCD_WIDTH_PX+20;
+	if (dx<-EQW_TAILLE)
+	  dx=-EQW_TAILLE;
+	if (dx>eqdata.dx-LCD_WIDTH_PX+EQW_TAILLE)
+	  dx=eqdata.dx-LCD_WIDTH_PX+EQW_TAILLE;
       }
-#define EQW_TAILLE 18
-      if (eqdata.dy>LCD_HEIGHT_PX-2*EQW_TAILLE){
-	if (dy-eqdata.y<LCD_HEIGHT_PX-2*EQW_TAILLE)
-	  dy=eqdata.y+LCD_HEIGHT_PX-2*EQW_TAILLE;
-	if (dy-eqdata.y>eqdata.dy+32)
-	  dy=eqdata.y+eqdata.dy+32;
+      if (eqdata.dy>LCD_HEIGHT_PX-EQW_TAILLE){
+	if (dy-eqdata.y<LCD_HEIGHT_PX-EQW_TAILLE)
+	  dy=eqdata.y+LCD_HEIGHT_PX-EQW_TAILLE;
+	if (dy-eqdata.y>eqdata.dy+EQW_TAILLE)
+	  dy=eqdata.y+eqdata.dy+EQW_TAILLE;
       }
       waitforvblank();
-      drawRectangle(0, 0, LCD_WIDTH_PX, 205,COLOR_WHITE);
+      drawRectangle(0, STATUS_AREA_PX, LCD_WIDTH_PX, LCD_HEIGHT_PX-STATUS_AREA_PX,COLOR_WHITE);
       // Bdisp_AllClr_VRAM();
       int save_clip_ymin=clip_ymin;
       clip_ymin=STATUS_AREA_PX;
@@ -15348,7 +15357,7 @@ namespace xcas {
       if (key==KEY_CTRL_CLIP){
 	xcas::Equation_adjust_xy(eq.data,xleft,ytop,xright,ybottom,gsel,gselparent,gselpos,0);
 	if (gsel==0)
-	  gsel==&eq.data;
+	  gsel=&eq.data;
 	// cout << "var " << g << " " << eq.data << "\n";
 	if (xcas::do_select(*gsel,true,value) && value.type==_EQW){
 	  //cout << g << ":=" << value._EQWptr->g << "\n";
@@ -15374,7 +15383,7 @@ namespace xcas {
 	    vector<int> goto_sel;
 	    xcas::Equation_adjust_xy(eq.data,xleft,ytop,xright,ybottom,gsel,gselparent,gselpos,&goto_sel);
 	    if (gsel==0)
-	      gsel==&eq.data;
+	      gsel=&eq.data;
 	    // cout << "var " << g << " " << eq.data << "\n";
 	    if (xcas::do_select(*gsel,true,value) && value.type==_EQW){
 	      //cout << g << ":=" << value._EQWptr->g << "\n";
@@ -15625,6 +15634,8 @@ namespace xcas {
 	    if (doit)
 	      dy += value._EQWptr->dy+eq.attr.fontsize/2;
 	  }
+          else
+            dy += eq.attr.fontsize/2;
 	  continue;
 	}
 	if (key==KEY_CTRL_PAGEUP && doit){
@@ -15635,6 +15646,8 @@ namespace xcas {
 	  if (line<nlines-1 && col>=0 && xcas::eqw_select(eq.data,line,col,false,value)){
 	    if (doit)
 	      dy -= value._EQWptr->dy+eq.attr.fontsize/2;
+            else
+              dy -= eq.attr.fontsize/2;
 	    ++line;
 	    xcas::eqw_select(eq.data,line,col,true,value);
 	  }
