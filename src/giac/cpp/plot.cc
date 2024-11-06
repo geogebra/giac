@@ -9354,7 +9354,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     if (theta.type!=_IDNT)
       return gensizeerr(gettext("2nd arg must be a free variable"));    
     // vargs.front()=symbolic(at_re,rho)*exp(cst_i*degtorad(theta,contextptr),contextptr);
-    vargs.front()=makevecteur(rho*cos(angletorad(theta,contextptr),contextptr),rho*sin(angletorad(theta,contextptr),contextptr));
+    vargs.front()=rho*exp(cst_i*angletorad(theta,contextptr),contextptr); //makevecteur(rho*cos(angletorad(theta,contextptr),contextptr),rho*sin(angletorad(theta,contextptr),contextptr));
     return _plotparam(gen(vargs,_SEQ__VECT),contextptr);
   }
   static const char _plotpolar_s []="plotpolar";
@@ -11559,31 +11559,32 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     }
     if (dim3 && vs>3)
       dim3=(v[3]!=at_plan);
-    vecteur res1v,resv;
+    vecteur res1v;
     gen t0f=evalf_double(t0,1,contextptr);
     double d0=t0f.type==_DOUBLE_?t0f._DOUBLE_val:0;
     if (tmin<d0){
       gen res1=odesolve(t0,tmin,f,y0,tstep,curve,ymin,ymax,maxstep,contextptr);
       if (is_undef(res1)) return res1;
-      res1v=*res1._VECTptr;
+      res1v.swap(*res1._VECTptr);
       std::reverse(res1v.begin(),res1v.end());
     }
     res1v.push_back(makevecteur(t0,y0));
     if (tmax>d0){
       gen res2=odesolve(t0,tmax,f,y0,tstep,curve,ymin,ymax,maxstep,contextptr);
       if (is_undef(res2)) return res2;
-      resv=mergevecteur(res1v,*res2._VECTptr);
+      const vecteur & v=*res2._VECTptr;
+      res1v.reserve(res1v.size()+v.size());
+      for (int i=0;i<v.size();++i)
+        res1v.push_back(v[i]);
     }
-    else
-      resv=res1v;
     // make the curve
-    const_iterateur it=resv.begin(),itend=resv.end();
+    const_iterateur it=res1v.begin(),itend=res1v.end();
     vecteur res;
     res.reserve(itend-it);
     for (;it!=itend;++it){
       if (it->type!=_VECT || it->_VECTptr->empty() || it->_VECTptr->back().type!=_VECT) 
 	continue;
-      vecteur tmp=*it->_VECTptr->back()._VECTptr;
+      const vecteur &tmp=*it->_VECTptr->back()._VECTptr;
       if (tmp.size()!=2 || is_undef(tmp.front()) || is_undef(tmp.back()))
 	continue;
       if (dim3)
@@ -11624,11 +11625,8 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       pthread_mutex_unlock(&interactive_mutex);
 #endif
     }
-    vecteur xy_v;
-    xy_v.push_back(x);
-    xy_v.push_back(y);
-    gen xp_eval,yp_eval,xy(xy_v),origine;
-    vecteur curxcury(2);
+    // vecteur xy_v(makevecteur(x,y)),xy(xy_v),curxcury(2);
+    gen xp_eval,yp_eval,origine;
     vecteur res;
     double echelle,minxstepystep;
     if (xstep<ystep) minxstepystep=xstep; else minxstepystep=ystep;
@@ -11638,12 +11636,14 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     res.reserve(n1*n2+1);
     for (double curx=xmin;curx<=xmax;curx+=scaling*xstep){
       if (ctrl_c || interrupted) break;
-      curxcury[0]=curx;
+      // curxcury[0]=curx;
+      gen xpx(subst(xp,x,curx,false,contextptr));
+      gen ypx(subst(yp,x,curx,false,contextptr));
       for (double cury=ymin;cury<=ymax;cury+=scaling*ystep){
 	if (ctrl_c || interrupted) break;
-	curxcury[1]=cury;
-	xp_eval=subst(xp,xy,curxcury,false,contextptr).evalf2double(eval_level(contextptr),contextptr);
-	yp_eval=subst(yp,xy,curxcury,false,contextptr).evalf2double(eval_level(contextptr),contextptr);
+	// curxcury[1]=cury;
+	xp_eval=subst(xpx,y,cury,false,contextptr).evalf2double(eval_level(contextptr),contextptr);
+	yp_eval=subst(ypx,y,cury,false,contextptr).evalf2double(eval_level(contextptr),contextptr);
 	if ((xp_eval.type==_DOUBLE_) && (yp_eval.type==_DOUBLE_)){
 	  double xpd=xp_eval._DOUBLE_val,ypd=yp_eval._DOUBLE_val;
 	  if (normalize){

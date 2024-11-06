@@ -6,7 +6,7 @@
 #include <string.h>
 // #include <iostream>
 // define IMMEDIATE_VECTOR if you want to use imvector
-#define immvector_max 1 << 30 
+#define immvector_max (1 << 30)
 
 namespace std {
 
@@ -420,7 +420,7 @@ namespace std {
       }
     }
     unsigned max_size() const {
-      return (1 << 30) -1;
+      return immvector_max -1;
     }
     static _Tp &OutOfBoundsDefault() { static _Tp value; value = _Tp(); return value; }
     _Tp & at(size_t n){
@@ -643,7 +643,7 @@ namespace std {
       }
     }
     unsigned max_size() const {
-      return 1 << 30;
+      return immvector_max;
     }
     _Tp & at(size_t n){
       if (n>_end-_begin)

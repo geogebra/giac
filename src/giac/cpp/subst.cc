@@ -474,6 +474,34 @@ namespace giac {
       else
 	return false;
     case _SYMB:
+      if (newi.type==_DOUBLE_){ // optimization for the ti83
+        gen & f=e._SYMBptr->feuille;
+        if (f.type!=_VECT){
+          bool b1=has_subst(f,i,newi,newe,quotesubst,contextptr);
+          if (!b1)
+            return false;
+          newe=newe.type<_IDNT?e._SYMBptr->sommet(newe,contextptr):symbolic(e._SYMBptr->sommet,newe);
+          return true;
+        }          
+        int index=archive_function_index(e._SYMBptr->sommet);
+        if (index==1 || index==4 || index==7){
+          if (f.type==_VECT && f._VECTptr->size()==2){
+            gen &f1=f._VECTptr->front();
+            gen &f2=f._VECTptr->back();
+            gen newf1,newf2;
+            bool b1=has_subst(f1,i,newi,newf1,quotesubst,contextptr),b2=has_subst(f2,i,newi,newf2,quotesubst,contextptr);
+            if (!b1 && !b2)
+              return false;
+            if (index==1)
+              newe=(b1?newf1:f1)+(b2?newf2:f2);
+            else if (index==4)
+              newe=(b1?newf1:f1)*(b2?newf2:f2);
+            else if (index==7)
+              newe=pow((b1?newf1:f1),(b2?newf2:f2),contextptr);
+            return true;
+          }
+        }
+      }
       if (e==i){
 	newe=newi;
 	return true;
@@ -527,6 +555,8 @@ namespace giac {
     }
   }
   gen subst(const gen & e,const gen & i,const gen & newi,bool quotesubst,GIAC_CONTEXT){
+    if (e.type<_IDNT || e.type==_FRAC || e.type==_FLOAT_)
+      return e;
     if (is_inequation(newi) || newi.is_symb_of_sommet(at_and) || newi.is_symb_of_sommet(at_ou))
       return gensizeerr(contextptr);
     if (i.type==_VECT){

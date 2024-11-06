@@ -4,8 +4,3 @@
 ContextBridge::ContextBridge() {
 	c = new giac::context();
 }
-
-
-ContextBridge::~ContextBridge() {
-	delete c;
-}

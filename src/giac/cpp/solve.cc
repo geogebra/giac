@@ -2622,9 +2622,13 @@ namespace giac {
       return res;
     }
     if (e.type==_VECT){
-      if (x.type==_IDNT && lvarx(e,x)==vecteur(1,x))
+      if (x.type==_IDNT &&
+          _is_polynomial(makesequence(e,x),contextptr)!=0
+          )
 	return solve(_gcd(e,contextptr),x,isolate_mode,contextptr);
-      const_iterateur it=e._VECTptr->begin(),itend=e._VECTptr->end();
+      vecteur ev=*e._VECTptr;
+      sort(ev.begin(),ev.end(),taillesort);
+      const_iterateur it=ev.begin(),itend=ev.end();
       gen curx=x._IDNTptr->eval(1,x,contextptr);
       res=vecteur(1,x); // everything is solution up to now
       double eps=epsilon(contextptr);

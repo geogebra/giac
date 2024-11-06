@@ -51,9 +51,7 @@
 	<string>XFWK</string>
 	<key>XCFrameworkFormatVersion</key>
 	<string>1.0</string>
-	<key>MinimumOSVersion</key>
-	<string>16.6</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
 </dict>
 </plist>
+
+

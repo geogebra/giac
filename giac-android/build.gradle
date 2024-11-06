@@ -1,7 +1,7 @@
 buildscript {
     repositories {
         google()
-        mavenCentral()  // Include mavenCentral if needed for additional dependencies
+        mavenCentral()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.7.0'
@@ -20,7 +20,7 @@ repositories {
 }
 
 android {
-    namespace "org.geogebra.giacandroid"  // Define the namespace here
+    namespace "org.geogebra.giacandroid"
     compileSdkVersion 33
     buildToolsVersion "33.0.2"
 
