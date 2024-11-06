@@ -17332,7 +17332,7 @@ const char * nws_caseval(const char * s){
     emscripten::function("caseval",&caseval,emscripten::allow_raw_pointers());
   }
 #endif
-  
+
 #ifdef TIMEOUT
   void gen::resetTimeout() {
     ctrl_c=false;

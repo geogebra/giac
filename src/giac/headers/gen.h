@@ -862,7 +862,7 @@ namespace giac {
     inline eqwdata * ref_EQWptr() const ;
     inline grob * ref_GROBptr() const ;
     inline void * ref_POINTER_val() const ;
-  
+
     // Define reset func for timeout
 #ifdef TIMEOUT
     void resetTimeout();

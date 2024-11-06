@@ -5,17 +5,17 @@ folder_path="./giacbuilt_tommath_additions"
 repository_url="git@github.com:GoodNotes/giacbuilt_tommath_additions.git"
 
 # Check if the folder exists
-#if [ -d "$folder_path" ]; then
-#    echo "Folder '$folder_path' already exists."
-#else
-#    # Clone the repository
-#    git clone "$repository_url"
-#    echo "Cloned '$folder_name' from '$repository_url'."
-#fi
+if [ -d "$folder_path" ]; then
+    echo "Folder '$folder_path' already exists."
+else
+    # Clone the repository
+    git clone "$repository_url"
+    echo "Cloned '$folder_name' from '$repository_url'."
+fi
 
 # Replace build.gradle file
-#yes | cp -f "$folder_path/build.gradle" "./build.gradle"
-#echo "Replaced build.gradle file."
+yes | cp -f "$folder_path/build.gradle" "./build.gradle"
+echo "Replaced build.gradle file."
 
 # Replace config.h file
 yes | cp -f "$folder_path/config.h" "./src/giac/headers/config.h"
