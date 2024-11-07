@@ -25,13 +25,10 @@ echo "Replaced config.h file."
 cp -r -f "$folder_path/simpleInterface" "./src/"
 echo "Replaced simpleInterface folder."
 
-# Replace TomMath folder
-cp -r -f "$folder_path/tommath" "./src/"
-echo "Replaced tommath folder."
-
-# Copy TomMath headers
-cp -r -f "$folder_path/tommath/headers" "./src/giac/headers/"
-echo "Copied tommath headers."
+# Coppy TomMath .c and .h files
+cp -r -f "$folder_path/tommath/cpp/*.c" "./src/giac/cpp/"
+cp -r -f "$folder_path/tommath/headers/*.h" "./src/giac/headers/"
+echo "Copied TomMath sources and headers."
 
 # Remove ./build folder
 if [ -d "./build" ]; then

@@ -187,6 +187,7 @@ namespace giac {
       gen expm1=exponent+gen(-1);
       if (is_zero(dexponent))
 	return exponent*dbase*pow(base,expm1,contextptr);
+      // changed 2024/11/06 for later simplify, was
       // return dexponent*ln(base,contextptr)*s+exponent*dbase*pow(base,expm1,contextptr);
       return (dexponent*ln(base,contextptr)+exponent*dbase/base)*s;
     }

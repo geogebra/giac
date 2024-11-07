@@ -2606,6 +2606,7 @@ namespace giac {
   bool taillesort(const gen & a,const gen & b){
     return taille(a,RAND_MAX)<taille(b,RAND_MAX);
   }
+
   vecteur solve(const gen & e,const gen & x,int isolate_mode,GIAC_CONTEXT){
     bool complexmode=isolate_mode & 1;
     vecteur res;
@@ -2627,8 +2628,10 @@ namespace giac {
     if (e.type==_VECT){
       if (x.type==_IDNT &&
           _is_polynomial(makesequence(e,x),contextptr)!=0
+          // lvarx(e,x)==vecteur(1,x)
           )
 	return solve(_gcd(e,contextptr),x,isolate_mode,contextptr);
+      // sort e in asc. order of complexity
       vecteur ev=*e._VECTptr;
       sort(ev.begin(),ev.end(),taillesort);
       const_iterateur it=ev.begin(),itend=ev.end();

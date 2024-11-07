@@ -473,7 +473,7 @@ namespace giac {
       }
       else
 	return false;
-    case _SYMB:
+    case _SYMB: 
       if (newi.type==_DOUBLE_){ // optimization for the ti83
         gen & f=e._SYMBptr->feuille;
         if (f.type!=_VECT){

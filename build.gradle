@@ -235,6 +235,7 @@ def giacSpecificSettings(cppCompiler, linker, targetPlatform) {
 
 
         cppCompiler.define 'HAVE_UNISTD_H'
+        cppCompiler.define 'SIZEOF_VOID_P', '8'
 
         cppCompiler.args '-I', file('src/jni/jdkHeaders/linux').toString()
         cppCompiler.args '-fno-strict-aliasing' // maybe not needed
@@ -756,112 +757,40 @@ task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'g
 
 task createIosFramework(dependsOn: createFatIosStaticLibrary, type: Copy) {
     description "Creates iOS framework"
-    
     from("${buildDir}/libs/merged/ios") {
         include "Giac.a"
         rename "Giac.a", "Giac"
-        into "Giac.framework/Versions/A"
+        into "Giac.framework"
     }
-    
     from("src/simpleInterface/headers") {
         include "*.hpp"
-        into "Giac.framework/Versions/A/Headers"
+        into "Giac.framework/Headers"
     }
-    
     from("src/simpleInterface/framework") {
-        include "framework_iphone.plist"
-        rename "framework_iphone.plist", "Info.plist"
-        into "Giac.framework/Versions/A"
-    }
-
-    doLast {
-        def frameworkDir = file("${buildDir}/libs/framework/ios/Giac.framework")
-        def versionsDir = new File(frameworkDir, "Versions/A")
-        //versionsDir.mkdirs()   
-        def resourcesDir = new File(versionsDir, "Resources")
-        resourcesDir.mkdirs()
-
-        // Remove existing symlinks if they exist
-        file(new File(frameworkDir, "Giac")).delete()
-        file(new File(frameworkDir, "Headers")).delete()
-        file(new File(frameworkDir, "Resources")).delete()
-        file(new File(frameworkDir, "Versions/Current")).delete()
-
-        // Create symbolic links
-        exec {
-            commandLine 'ln', '-sf', 'A', new File(frameworkDir, "Versions/Current").absolutePath
-        }
-        exec {
-            commandLine 'ln', '-sf', 'Versions/Current/Giac', new File(frameworkDir, "Giac").absolutePath
-        }
-        exec {
-            commandLine 'ln', '-sf', 'Versions/Current/Info.plist', new File(frameworkDir, "Info.plist").absolutePath
-        }
-        exec {
-            commandLine 'ln', '-sf', 'Versions/Current/Headers', new File(frameworkDir, "Headers").absolutePath
-        }
-        exec {
-            commandLine 'ln', '-sf', 'Versions/Current/Resources', new File(frameworkDir, "Resources").absolutePath
-        }
+        include "Info.plist"
+        into "Giac.framework/Resources"
     }
 
     destinationDir = file("${buildDir}/libs/framework/ios")
 }
 
 
+
 task createIphonesimulatorFramework(dependsOn: createFatIosStaticLibrary, type: Copy) {
-    description "Creates iPhone Simulator framework"
-    
+    description "Creates iPhone Simlator framework"
     from("${buildDir}/libs/merged/iphonesimulator") {
         include "Giac.a"
         rename "Giac.a", "Giac"
-        into "Giac.framework/Versions/A"
+        into "Giac.framework"
     }
-    
     from("src/simpleInterface/headers") {
         include "*.hpp"
-        into "Giac.framework/Versions/A/Headers"
+        into "Giac.framework/Headers"
     }
-    
     from("src/simpleInterface/framework") {
         include "framework.plist"
         rename "framework.plist", "Info.plist"
-        into "Giac.framework/Versions/A"
-    }
-
-    doLast {
-        def frameworkDir = file("${buildDir}/libs/framework/iphonesimulator/Giac.framework")
-        
-        // Ensure Versions directory exists
-        def versionsDir = new File(frameworkDir, "Versions/A")
-        //versionsDir.mkdirs()
-
-        // Ensure Resources exists inside Versions/A
-        def resourcesDir = new File(versionsDir, "Resources")
-        resourcesDir.mkdirs()
-
-        // Remove existing symlinks if they exist
-        new File(frameworkDir, "Giac").delete()
-        new File(frameworkDir, "Headers").delete()
-        new File(frameworkDir, "Resources").delete()
-        new File(frameworkDir, "Versions/Current").delete()
-
-        // Create symbolic links pointing to Versions/A
-        exec {
-            commandLine 'ln', '-sf', 'A', new File(frameworkDir, "Versions/Current").absolutePath
-        }
-        exec {
-            commandLine 'ln', '-sf', 'Versions/Current/Giac', new File(frameworkDir, "Giac").absolutePath
-        }
-        exec {
-            commandLine 'ln', '-sf', 'Versions/Current/Info.plist', new File(frameworkDir, "Info.plist").absolutePath
-        }
-        exec {
-            commandLine 'ln', '-sf', 'Versions/Current/Headers', new File(frameworkDir, "Headers").absolutePath
-        }
-        exec {
-            commandLine 'ln', '-sf', 'Versions/Current/Resources', new File(frameworkDir, "Resources").absolutePath
-        }
+        into "Giac.framework/Resources"
     }
 
     destinationDir = file("${buildDir}/libs/framework/iphonesimulator")
