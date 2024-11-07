@@ -2604,6 +2604,11 @@ namespace giac {
   }
 
   bool taillesort(const gen & a,const gen & b){
+    bool ai=is_inequation(a),bi=is_inequation(b);
+    if (ai && !bi)
+      return true;
+    if (!ai &&bi)
+      return false;
     return taille(a,RAND_MAX)<taille(b,RAND_MAX);
   }
 

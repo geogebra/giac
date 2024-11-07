@@ -1020,6 +1020,7 @@ namespace giac {
       // COUT << res << "*" << pcopy << '\n' ;
       if (!pmul(res,pcopy,res,n_truncate,n_valuation,contextptr))
 	return false;
+      // COUT << res << '\n' ;
       if (n_truncate){ // Remove all terms of order > n_valuation
 	sparse_poly1::iterator sit=res.begin(),sitend=res.end();
 	for (;sit!=sitend;++sit){
@@ -1030,10 +1031,10 @@ namespace giac {
 	  }
 	}
       }
-      // COUT << res << '\n';
+      //COUT << res << " + " << *it << " * " << plcmn << '\n';
       if (!is_zero(*it))
 	padd(res,sparse_poly1(1,monome(*it*plcmn)),res,contextptr);
-      // COUT << res << '\n';
+      //COUT << "after " << res << '\n';
     }
     den=vlcm*plcmn;
     // back conversion from res to symbolic form

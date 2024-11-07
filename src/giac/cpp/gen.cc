@@ -7290,6 +7290,10 @@ namespace giac {
 	return minus_inf;
       return unsigned_inf;
     }
+    if (a.is_symb_of_sommet(at_inv) && a._SYMBptr->feuille==b)
+      return 1;
+    if (b.is_symb_of_sommet(at_inv) && b._SYMBptr->feuille==a)
+      return 1;
     if (a.type==_INT_ && a.val==0 )
       return a;
     if (a.type==_DOUBLE_ && a._DOUBLE_val==0 )

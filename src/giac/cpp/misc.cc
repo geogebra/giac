@@ -5233,7 +5233,7 @@ static define_unary_function_eval (__plotlist,&_listplot,_plotlist_s);
     vecteur v(gen2vecteur(g));
     vecteur attr(1,default_color(contextptr));
     int s=read_attributs(v,attr,contextptr);
-    if (s==1 && ckmatrix(v.front()))
+    if (s==1 && v.front().type==_VECT)
       v=*v.front()._VECTptr;
     else
       v=vecteur(v.begin(),v.begin()+s);
@@ -5250,6 +5250,7 @@ static define_unary_function_eval (__plotlist,&_listplot,_plotlist_s);
     unsigned ncol=0;
     const gen & vf=v.front();
     if (vf.type!=_VECT){
+#if 0
       if (polygone)
 	return _listplot(g,contextptr);
       vecteur attributs(1,default_color(contextptr));
@@ -5259,10 +5260,24 @@ static define_unary_function_eval (__plotlist,&_listplot,_plotlist_s);
 	res[i]=symb_pnt(res[i],attributs[0],contextptr);
       }
       return gen(res,_SEQ__VECT);
+#else
+      v=gen2vecteur(g);
+      attr=vecteur(1,default_color(contextptr));
+      s=read_attributs(v,attr,contextptr);
+      vecteur res;
+      if (s==1 && v[0].type==_VECT){
+        v=*v[0]._VECTptr;
+        s=v.size();
+      }
+      for (int i=0;i<s-1;i+=2){
+        res.push_back(makevecteur(v[i],v[i+1]));
+      }
+      v.swap(res);
+#endif
     }
-    if (!ckmatrix(v)||v.empty() || (ncol=unsigned(vf._VECTptr->size()))<2)
+    if (!ckmatrix(v)||v.empty() || (ncol=unsigned(v[0]._VECTptr->size()))<2)
       return gensizeerr(contextptr);
-    if (vf._VECTptr->front().type==_STRNG){
+    if (v[0]._VECTptr->front().type==_STRNG){
       if (attr.size()==1)
 	attr.push_back(vecteur(vf._VECTptr->begin()+1,vf._VECTptr->end()));
       v.erase(v.begin());
@@ -5271,6 +5286,7 @@ static define_unary_function_eval (__plotlist,&_listplot,_plotlist_s);
     bool old_iograph=io_graph(contextptr);
     io_graph(false,contextptr);
 #endif
+    //v=gen2vecteur(_sort(v,contextptr));
     const_iterateur it=v.begin(),itend=v.end();
     stable_sort(v.begin(),v.end(),first_ascend_sort);
     vecteur res;
