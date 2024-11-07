@@ -924,26 +924,25 @@ task createMaccatalystFramework(dependsOn: createFatIosStaticLibrary, type: Copy
 }
 
 
-task createIosXcframework(dependsOn: [createIosFramework, createIphonesimulatorFramework, createMaccatalystFramework], type: Copy) {
+task createIosXcframework(dependsOn: [createIosFramework, createIphonesimulatorFramework, createMaccatalystFramework]) {
     description "Creates XCFramework"
     
-    ant.copy(todir: "${buildDir}/libs/framework/Giac.xcframework/ios-arm64_x86_64-simulator", preservelastmodified: true, failonerror: true) {
-        fileset(dir: "${buildDir}/libs/framework/iphonesimulator", followsymlinks: false)
-    }
-    ant.copy(todir: "${buildDir}/libs/framework/Giac.xcframework/ios-arm64", preservelastmodified: true, failonerror: true) {
-        fileset(dir: "${buildDir}/libs/framework/ios", followsymlinks: false)
-    }
-    ant.copy(todir: "${buildDir}/libs/framework/Giac.xcframework/ios-arm64_x86_64-maccatalyst", preservelastmodified: true, failonerror: true) {
-        fileset(dir: "${buildDir}/libs/framework/maccatalyst", followsymlinks: false)
-    }
-    ant.copy(file: "src/simpleInterface/framework/xcframework.plist", tofile: "${buildDir}/libs/framework/Giac.xcframework/Info.plist")
+    doLast {
+        ant.copy(todir: "${buildDir}/libs/framework/Giac.xcframework/ios-arm64_x86_64-simulator", preservelastmodified: true, failonerror: true) {
+            fileset(dir: "${buildDir}/libs/framework/iphonesimulator", followsymlinks: false)
+        }
+        ant.copy(todir: "${buildDir}/libs/framework/Giac.xcframework/ios-arm64", preservelastmodified: true, failonerror: true) {
+            fileset(dir: "${buildDir}/libs/framework/ios", followsymlinks: false)
+        }
+        ant.copy(todir: "${buildDir}/libs/framework/Giac.xcframework/ios-arm64_x86_64-maccatalyst", preservelastmodified: true, failonerror: true) {
+            fileset(dir: "${buildDir}/libs/framework/maccatalyst", followsymlinks: false)
+        }
+        ant.copy(file: "src/simpleInterface/framework/xcframework.plist", tofile: "${buildDir}/libs/framework/Giac.xcframework/Info.plist")
 
-    copySymlinks("${buildDir}/libs/framework/iphonesimulator", "${buildDir}/libs/framework/Giac.xcframework/ios-arm64_x86_64-simulator")
-    copySymlinks("${buildDir}/libs/framework/ios", "${buildDir}/libs/framework/Giac.xcframework/ios-arm64")
-    copySymlinks("${buildDir}/libs/framework/maccatalyst", "${buildDir}/libs/framework/Giac.xcframework/ios-arm64_x86_64-maccatalyst")
-
-
-    destinationDir = file("${buildDir}/libs/framework/Giac.xcframework")
+        copySymlinks("${buildDir}/libs/framework/iphonesimulator", "${buildDir}/libs/framework/Giac.xcframework/ios-arm64_x86_64-simulator")
+        copySymlinks("${buildDir}/libs/framework/ios", "${buildDir}/libs/framework/Giac.xcframework/ios-arm64")
+        copySymlinks("${buildDir}/libs/framework/maccatalyst", "${buildDir}/libs/framework/Giac.xcframework/ios-arm64_x86_64-maccatalyst")
+    }
 }
 
 import java.nio.file.Files

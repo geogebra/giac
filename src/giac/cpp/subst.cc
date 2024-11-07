@@ -3604,7 +3604,7 @@ namespace giac {
     return apply(args,Heavisidetopiecewise,contextptr);
   }
 
-#if defined FXCG || !defined USE_GMP_REPLACEMENTS
+#if 0 // defined FXCG || !defined USE_GMP_REPLACEMENTS
   // find simplest between some trig simplifications, by Luka Marohnić
   gen _trigsimplify(const gen & g,GIAC_CONTEXT) {
     if (g.type==_STRNG && g.subtype==-1) return g;
@@ -3636,10 +3636,49 @@ namespace giac {
     }
     return simplest;
   }
+#else
+  gen _trigsimplify(const gen & g,GIAC_CONTEXT) {
+    if (g.type==_STRNG && g.subtype==-1) return g;
+    gen res(g),cur;
+    vecteur v(lvar(res)),vcur;
+    if (v.empty())
+      return g;
+    int t=taille(g,0),tcur;
+    vecteur tst;
+    tst.push_back(_texpand(g,contextptr));
+    tst.push_back(_tcollect(g,contextptr));
+    int s=tst.size();
+    for (int i=0;i<s;++i){
+      tst.push_back(_trigsin(tst[i],contextptr));
+      tst.push_back(_trigcos(tst[i],contextptr));
+      tst.push_back(_trigtan(tst[i],contextptr));
+      tst.push_back(_tlin(tst[i],contextptr));
+    }
+    tst.push_back(_simplify(g,contextptr));
+    s=tst.size();
+    for (int i=0;i<s;++i){
+      tst.push_back(_tcollect(tst[i],contextptr));
+      if (i!=4 && i!=8) // don't call trigtan twice
+        tst.push_back(_trigtan(tst[i],contextptr));
+    }    
+    for (int i=0;i<tst.size();++i){
+      cur=tst[i];
+      vcur=lvar(cur);
+      tcur=taille(cur,0);
+      if (tcur*vcur.size()>t*v.size())
+        continue;
+      if (tcur*vcur.size()==t*v.size() && tcur>=t)
+        continue;
+      t=tcur;
+      res=cur;
+      v=vcur;
+    }
+    return res;
+  }  
+#endif
   static const char _trigsimplify_s []="trigsimplify";
   static define_unary_function_eval (__trigsimplify,&_trigsimplify,_trigsimplify_s);
   define_unary_function_ptr5(at_trigsimplify,alias_at_trigsimplify,&__trigsimplify,0,true)
-#endif
 
 #ifndef NO_NAMESPACE_GIAC
 } // namespace giac

@@ -2603,6 +2603,9 @@ namespace giac {
     return symbolic(g._SYMBptr->sommet,solve_revert_inequations(g._SYMBptr->feuille));
   }
 
+  bool taillesort(const gen & a,const gen & b){
+    return taille(a,RAND_MAX)<taille(b,RAND_MAX);
+  }
   vecteur solve(const gen & e,const gen & x,int isolate_mode,GIAC_CONTEXT){
     bool complexmode=isolate_mode & 1;
     vecteur res;
@@ -9130,7 +9133,10 @@ namespace giac {
     }
     env.moduloon = false;    
     for (unsigned i=0;i<eqp.size();++i){
-      if (coefftype(eqp[i],coeff)==_MOD){
+      int ct=coefftype(eqp[i],coeff);
+      if (ct==_EXT)
+        return gensizeerr(gettext("Non polynomial system"));
+      if (ct==_MOD){
 	with_cocoa = false;
 	env.moduloon = true;
 	env.modulo = *(coeff._MODptr+1);

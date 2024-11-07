@@ -7047,7 +7047,7 @@ namespace giac {
 
   gen fourier_an(const gen & f,const gen & x,const gen & T,const gen & n,const gen & a,GIAC_CONTEXT){
     gen primi,iT=inv(T,contextptr);
-    gen omega=2*cst_pi*iT;
+    gen omega=ratnormal(2*cst_pi*iT);
     fourier_assume(n,contextptr);
     primi=_integrate(gen(makevecteur(f*cos(omega*n*x,contextptr),x,a,ratnormal(a+T,contextptr)),_SEQ__VECT),contextptr);
     gen an=iT*primi;

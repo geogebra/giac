@@ -29,6 +29,10 @@ echo "Replaced simpleInterface folder."
 cp -r -f "$folder_path/tommath" "./src/"
 echo "Replaced tommath folder."
 
+# Copy TomMath headers
+cp -r -f "$folder_path/tommath/headers" "./src/giac/headers/"
+echo "Copied tommath headers."
+
 # Remove ./build folder
 if [ -d "./build" ]; then
    rm -rf "./build"
