@@ -26,8 +26,8 @@ cp -r -f "$folder_path/simpleInterface" "./src/"
 echo "Replaced simpleInterface folder."
 
 # Coppy TomMath .c and .h files
-cp -r -f "$folder_path/tommath/cpp/*.c" "./src/giac/cpp/"
-cp -r -f "$folder_path/tommath/headers/*.h" "./src/giac/headers/"
+cp -r -f "$folder_path/tommath" "./src/"
+yes | cp -r -f "./giacbuilt_tommath_additions/tommath/headers/" "./src/giac/headers/"
 echo "Copied TomMath sources and headers."
 
 # Remove ./build folder
