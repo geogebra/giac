@@ -181,6 +181,11 @@ def giacIosDefines(cppCompiler) {
     cppCompiler.define 'OSX_10_9_CXX'
     cppCompiler.define 'HAVE_CONFIG_H'
     cppCompiler.define '_IOS_FIX_'
+    cppCompiler.args '-Os' // standard optimization (default)
+    cppCompiler.args '-I.'
+    cppCompiler.args '-s'
+    cppCompiler.args '-DNDEBUG'
+    cppCompiler.args '-DTIMEOUT'
 }
 
 def giacSpecificSettings(cppCompiler, linker, targetPlatform) {
@@ -281,6 +286,31 @@ def giacSpecificSettings(cppCompiler, linker, targetPlatform) {
     }
 }
 
+def tommathiOSSetting(cppCompiler) {
+    cppCompiler.args '-Os' // standard optimization (default)
+    cppCompiler.args '-I.'
+    cppCompiler.args '-s'
+    cppCompiler.args '-DNDEBUG'
+    cppCompiler.args '-DTIMEOUT'
+}
+def tommathSpecificSetting(cppCompiler, linker, targetPlatform) {
+    cppCompiler.args '-fexceptions'
+    cppCompiler.args '-Os' // standard optimization (default)
+    cppCompiler.args '-I.'
+    cppCompiler.args '-s'
+    if (targetPlatform.operatingSystem.name == 'osx') {
+        cppCompiler.args '-stdlib=libc++'
+        cppCompiler.args '-s'
+        cppCompiler.args '-NDEBUG'
+        linker.args '-Wl,-search_paths_first'
+        linker.args '-stdlib=libc++', '-lc++'
+        linker.args '-lpthread', '-dynamiclib'
+        linker.args '-framework', 'Accelerate'
+        linker.args '-framework', 'CoreFoundation'
+        linker.args '-s' // stripping
+        linker.args '-NDEBUG'
+    }
+}
 def appleCompilerArgs(args) {
     // Gradle is including "sensible default" include paths that are based on the host OS that break cross-compilation
     // The only fix as I see it is to clear out all includes except the ones that point to protos
@@ -501,6 +531,33 @@ model {
     }
 
     components {
+        // tommath static lib
+        tommath(NativeLibrarySpec) {
+            targetPlatform 'ios_arm64'
+            targetPlatform 'iphonesimulator_x86_64'
+            targetPlatform 'iphonesimulator_arm64'
+            targetPlatform 'maccatalyst_x86_64'
+            targetPlatform 'maccatalyst_arm64'
+            if (isMac) {
+                targetPlatform 'osx_amd64'
+                targetPlatform 'osx_arm64'
+            }
+            targetPlatform 'rpi'
+            binaries.all {
+                tommathSpecificSetting(cppCompiler, linker, targetPlatform)
+                if (targetPlatform.operatingSystem.name == 'ios'
+                    || targetPlatform.operatingSystem.name == 'iphonesimulator'
+                    || targetPlatform.operatingSystem.name == 'maccatalyst') {
+                    tommathiOSSetting(cppCompiler)
+                    if (targetPlatform.architecture.name == 'arm-v8') {
+                        cppCompiler.define 'x86_64'
+                    }
+                } else if (targetPlatform.operatingSystem.name == 'osx') {
+                    cppCompiler.define 'NO_GETTEXT'
+                }
+                cppCompiler.args '-fpermissive' // needed for recent G++
+            }
+        }
         // giac static libary
         giac(NativeLibrarySpec) {
             targetPlatform 'linux64'
@@ -708,6 +765,13 @@ task giacIosStaticLibrary(dependsOn: [
     'giacMaccatalyst_arm64StaticLibrary'
 ])
 
+task tommathIosStaticLibrary(dependsOn: [
+    'tommathIos_arm64StaticLibrary',
+    'tommathIphonesimulator_x86_64StaticLibrary',
+    'tommathIphonesimulator_arm64StaticLibrary',
+    'tommathMaccatalyst_x86_64StaticLibrary',
+    'tommathMaccatalyst_arm64StaticLibrary'
+])
 task configBundle(type: Exec) {
     executable 'bundle'
     args 'config', 'set', 'path', './.gems'
@@ -720,7 +784,7 @@ task installGems(type: Exec, dependsOn: 'configBundle') {
     workingDir rootDir
 }
 
-task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'giacIosStaticLibrary']) {
+task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'giacIosStaticLibrary', 'tommathIosStaticLibrary']) {
     doLast {
         def output = "${buildDir}/libs/merged"
         ["arm64"].each {
@@ -728,21 +792,24 @@ task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'g
                 "${buildDir}/libs/giac/static/ios_${it}/libgiac.a",
                 "${buildDir}/libs/simpleInterface/static/ios_${it}/libSimpleInterface.a",
                 "src/jni/prebuilt/ios/${it}/libgmp.a",
-                "src/jni/prebuilt/ios/${it}/libmpfr.a")
+                "src/jni/prebuilt/ios/${it}/libmpfr.a",
+		"${buildDir}/libs/tommath/static/ios_${it}/libtommath.a")
         }
         ["arm64", "x86_64"].each {
             mergeLibraries("Giac", "${output}/iphonesimulator_${it}", clangIphonesimulatorPath,
                 "${buildDir}/libs/giac/static/iphonesimulator_${it}/libgiac.a",
                 "${buildDir}/libs/simpleInterface/static/iphonesimulator_${it}/libSimpleInterface.a",
                 "src/jni/prebuilt/iphonesimulator/${it}/libgmp.a",
-                "src/jni/prebuilt/iphonesimulator/${it}/libmpfr.a")
+                "src/jni/prebuilt/iphonesimulator/${it}/libmpfr.a",
+		"${buildDir}/libs/tommath/static/iphonesimulator_${it}/libtommath.a")
         }
         ["arm64", "x86_64"].each {
             mergeLibraries("Giac", "${output}/maccatalyst_${it}", clangIphonesimulatorPath,
                 "${buildDir}/libs/giac/static/maccatalyst_${it}/libgiac.a",
                 "${buildDir}/libs/simpleInterface/static/maccatalyst_${it}/libSimpleInterface.a",
                 "src/jni/prebuilt/maccatalyst/${it}/libgmp.a",
-                "src/jni/prebuilt/maccatalyst/${it}/libmpfr.a")
+                "src/jni/prebuilt/maccatalyst/${it}/libmpfr.a",
+		"${buildDir}/libs/tommath/static/maccatalyst_${it}/libtommath.a")
         }
 
         lipo("Giac", "${output}/ios", clangIosPath, "${output}/ios_arm64/Giac.a")
@@ -766,9 +833,18 @@ task createIosFramework(dependsOn: createFatIosStaticLibrary, type: Copy) {
         include "*.hpp"
         into "Giac.framework/Headers"
     }
+    from("src/giac/headers") {
+        include "*.h"
+        into "Giac.framework/Headers"
+    }
     from("src/simpleInterface/framework") {
         include "Info.plist"
         into "Giac.framework/Resources"
+    }
+    from("src/simpleInterface/framework") {
+        include "framework_iphone.plist"
+        rename "framework_iphone.plist", "Info.plist"
+        into "Giac.framework"
     }
 
     destinationDir = file("${buildDir}/libs/framework/ios")
@@ -787,10 +863,18 @@ task createIphonesimulatorFramework(dependsOn: createFatIosStaticLibrary, type: 
         include "*.hpp"
         into "Giac.framework/Headers"
     }
+    from("src/giac/headers") {
+        include "*.h"
+        into "Giac.framework/Headers"
+    }
+    from("src/simpleInterface/module") {
+        include "module.modulemap"
+        into "Giac.framework/Modules"
+    }
     from("src/simpleInterface/framework") {
-        include "framework.plist"
-        rename "framework.plist", "Info.plist"
-        into "Giac.framework/Resources"
+        include "framework_simulator.plist"
+        rename "framework_simulator.plist", "Info.plist"
+        into "Giac.framework"
     }
 
     destinationDir = file("${buildDir}/libs/framework/iphonesimulator")
@@ -807,6 +891,14 @@ task createMaccatalystFramework(dependsOn: createFatIosStaticLibrary, type: Copy
     from("src/simpleInterface/headers") {
         include "*.hpp"
         into "Giac.framework/Versions/A/Headers"
+    }
+    from("src/giac/headers") {
+        include "*.h"
+        into "Giac.framework/Versions/A/Headers"
+    }
+    from("src/simpleInterface/module") {
+        include "module.modulemap"
+        into "Giac.framework/Versions/A/Modules"
     }
     from("src/simpleInterface/framework") {
         include "framework_macos.plist"
@@ -845,6 +937,9 @@ task createMaccatalystFramework(dependsOn: createFatIosStaticLibrary, type: Copy
             commandLine 'ln', '-sf', 'Versions/Current/Headers', "${buildDir}/libs/framework/maccatalyst/Giac.framework/Headers"
         }
         exec {
+            commandLine 'ln', '-sf', 'Versions/Current/Modules', "${buildDir}/libs/framework/maccatalyst/Giac.framework/Modules"
+        }
+	exec {
             commandLine 'ln', '-sf', 'Versions/Current/Resources', "${buildDir}/libs/framework/maccatalyst/Giac.framework/Resources"
         }
     }
