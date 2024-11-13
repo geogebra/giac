@@ -732,7 +732,7 @@ namespace giac {
   gen _RCL(const gen & args,const context * contextptr) {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     // stack level 2=condition
-    // level 1=program to execute 
+    // level 1=program to execute
     if (args.type!=_IDNT)
       return symbolic(at_RCL,args);
     return args._IDNTptr->eval(1,args,contextptr);
@@ -1011,7 +1011,6 @@ namespace giac {
       }
     }
     if (args._IDNTptr->value && args._IDNTptr->ref_count_ptr!=(int *)-1){
-      // *logptr(contextptr) << "Purging " << args <<  " refs " << *(args._IDNTptr->ref_count_ptr) << "\n";
 #if !defined RTOS_THREADX && !defined BESTA_OS && !defined FREERTOS && !defined FXCG
       if (variables_are_files(contextptr))
 	unlink((args._IDNTptr->name()+string(cas_suffixe)).c_str());
