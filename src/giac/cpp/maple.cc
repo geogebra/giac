@@ -968,9 +968,26 @@ namespace giac {
   static define_unary_function_eval (__col,&_col,_col_s);
   define_unary_function_ptr5( at_col ,alias_at_col,&__col,0,true);
 
+  int occurences(const gen & f,const gen & x){
+    if (f==x)
+      return 1;
+    if (f.type==_SYMB)
+      return occurences(f._SYMBptr->feuille,x);
+    if (f.type!=_VECT)
+      return 0;
+    int res=0;
+    const_iterateur it=f._VECTptr->begin(),itend=f._VECTptr->end();
+    for (;it!=itend;++it)
+      res += occurences(*it,x);
+    return res;
+  }
+
   static gen count(const gen & f,const gen & v,const context * contextptr,const gen & param){
-    if (v.type!=_VECT)
+    if (v.type!=_VECT){
+      if (param==v) // count occurences of param in f
+        return occurences(f,v);
       return f(v,contextptr);
+    }
     const_iterateur it=v._VECTptr->begin(),itend=v._VECTptr->end();
     if (param==at_row){
       vecteur res;
