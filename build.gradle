@@ -341,25 +341,6 @@ def macosCompilerArgs(args, target) {
 }
 
 model {
-    repositories {
-        libs(PrebuiltLibraries) {
-            mpfr {
-                binaries.withType(StaticLibraryBinary) {
-                    def arch = targetPlatform.architecture.name
-                    def os = targetPlatform.operatingSystem.name
-                    staticLibraryFile = file("src/jni/prebuilt/$os/$arch/libmpfr.a")
-                }
-            }
-            gmp {
-                binaries.withType(StaticLibraryBinary) {
-                    def arch = targetPlatform.architecture.name
-                    def os = targetPlatform.operatingSystem.name
-                    staticLibraryFile = file("src/jni/prebuilt/$os/$arch/libgmp.a")
-                }
-            }
-        }
-    }
-
     platforms {
         win64 {
             architecture 'x64'
@@ -791,25 +772,19 @@ task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'g
             mergeLibraries("Giac", "${output}/ios_${it}", clangIosPath,
                 "${buildDir}/libs/giac/static/ios_${it}/libgiac.a",
                 "${buildDir}/libs/simpleInterface/static/ios_${it}/libSimpleInterface.a",
-                "src/jni/prebuilt/ios/${it}/libgmp.a",
-                "src/jni/prebuilt/ios/${it}/libmpfr.a",
-		"${buildDir}/libs/tommath/static/ios_${it}/libtommath.a")
+        		"${buildDir}/libs/tommath/static/ios_${it}/libtommath.a")
         }
         ["arm64", "x86_64"].each {
             mergeLibraries("Giac", "${output}/iphonesimulator_${it}", clangIphonesimulatorPath,
                 "${buildDir}/libs/giac/static/iphonesimulator_${it}/libgiac.a",
                 "${buildDir}/libs/simpleInterface/static/iphonesimulator_${it}/libSimpleInterface.a",
-                "src/jni/prebuilt/iphonesimulator/${it}/libgmp.a",
-                "src/jni/prebuilt/iphonesimulator/${it}/libmpfr.a",
-		"${buildDir}/libs/tommath/static/iphonesimulator_${it}/libtommath.a")
+                "${buildDir}/libs/tommath/static/iphonesimulator_${it}/libtommath.a")
         }
         ["arm64", "x86_64"].each {
             mergeLibraries("Giac", "${output}/maccatalyst_${it}", clangIphonesimulatorPath,
                 "${buildDir}/libs/giac/static/maccatalyst_${it}/libgiac.a",
                 "${buildDir}/libs/simpleInterface/static/maccatalyst_${it}/libSimpleInterface.a",
-                "src/jni/prebuilt/maccatalyst/${it}/libgmp.a",
-                "src/jni/prebuilt/maccatalyst/${it}/libmpfr.a",
-		"${buildDir}/libs/tommath/static/maccatalyst_${it}/libtommath.a")
+        		"${buildDir}/libs/tommath/static/maccatalyst_${it}/libtommath.a")
         }
 
         lipo("Giac", "${output}/ios", clangIosPath, "${output}/ios_arm64/Giac.a")

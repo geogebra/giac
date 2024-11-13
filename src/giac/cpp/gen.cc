@@ -2889,6 +2889,12 @@ namespace giac {
       return double(g0.val);
     if (g0.type==_DOUBLE_)
       return g0;
+    if (g0.type==_IDNT && contextptr && level){
+      sym_tab::const_iterator it=contextptr->tabptr->find(g0._IDNTptr->id_name);
+      if (it!=contextptr->tabptr->end()){
+        return evalf2double_nock(it->second,level-1,contextptr);
+      }
+    }
     if (g0.is_symb_of_sommet(at_program))
       return g0;
     if (g0.type==_FLOAT_ || g0.type==_FRAC || g0.type==_ZINT || g0.type==_REAL)
@@ -7290,6 +7296,10 @@ namespace giac {
 	return minus_inf;
       return unsigned_inf;
     }
+    if (a.is_symb_of_sommet(at_inv) && a._SYMBptr->feuille==b)
+      return 1;
+    if (b.is_symb_of_sommet(at_inv) && b._SYMBptr->feuille==a)
+      return 1;
     if (a.type==_INT_ && a.val==0 )
       return a;
     if (a.type==_DOUBLE_ && a._DOUBLE_val==0 )
