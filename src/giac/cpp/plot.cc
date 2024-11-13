@@ -1618,7 +1618,9 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 	if (j<function_ymin)
 	  function_ymin=j;
 	if (i!=xmin){
-	  if (fabs(oldj-j)>(function_ymax-function_ymin)/5){ // try middle-pnt
+          double dij=fabs(oldj-j);
+          dij = ldexp(dij,2); // dij*=4
+	  if (dij>(function_ymax-function_ymin)){ // try middle-pnt
 	    if (debug_infolevel)
 	      CERR << y << " checking step at " << i << " " << yy << '\n';
 	    local_sto_double_increment(-step/2,*vars._IDNTptr,newcontextptr);

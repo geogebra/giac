@@ -5906,7 +5906,10 @@ namespace giac {
   }
   
   gen newton(const gen & f0, const gen & x,const gen & guess_,int niter,double eps1, double eps2,bool real,double xmin,double xmax,double rand_xmin,double rand_xmax,double init_prefactor,GIAC_CONTEXT){
-    if (real && (!is_zero(im(f0,contextptr),contextptr) || !is_zero(im(guess_,contextptr),contextptr)) )
+    if (real &&
+        (has_i(f0) || has_i(guess_))
+        // (!is_zero(im(f0,contextptr),contextptr) || !is_zero(im(guess_,contextptr),contextptr))
+        )
       real=false;
     if (abs_calc_mode(contextptr)==38 && x.type==_VECT){
       vecteur AZin,AZout;

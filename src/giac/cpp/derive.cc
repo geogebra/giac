@@ -608,7 +608,9 @@ namespace giac {
       gen ecopie(e),eprime(e);
       int j=1;
       for (;j<=n;++j){
-	eprime=ratnormal(derive(ecopie,vars,contextptr),contextptr);
+	eprime=derive(ecopie,vars,contextptr);
+        // if (n>2)
+          eprime=ratnormal(eprime,contextptr);
 	if (is_undef(eprime))
 	  return eprime;
 	if ( (eprime.type==_SYMB) && (eprime._SYMBptr->sommet==at_derive))
