@@ -873,12 +873,12 @@ task createMaccatalystFramework(dependsOn: createFatIosStaticLibrary, type: Copy
     }
     from("src/simpleInterface/module") {
         include "module.modulemap"
-        into "Giac.framework/Versions/A/Modules"
+        into "Giac.framework/Modules"
     }
     from("src/simpleInterface/framework") {
         include "framework_macos.plist"
         rename "framework_macos.plist", "Info.plist"
-        into "Giac.framework/Versions/A"
+        into "Giac.framework/Versions/A/Resources"
     }
 
     doLast {
@@ -906,13 +906,7 @@ task createMaccatalystFramework(dependsOn: createFatIosStaticLibrary, type: Copy
             commandLine 'ln', '-sf', 'Versions/Current/Giac', "${buildDir}/libs/framework/maccatalyst/Giac.framework/Giac"
         }
         exec {
-            commandLine 'ln', '-sf', 'Versions/Current/Info.plist', new File(frameworkDir, "Info.plist").absolutePath
-        }
-        exec {
             commandLine 'ln', '-sf', 'Versions/Current/Headers', "${buildDir}/libs/framework/maccatalyst/Giac.framework/Headers"
-        }
-        exec {
-            commandLine 'ln', '-sf', 'Versions/Current/Modules', "${buildDir}/libs/framework/maccatalyst/Giac.framework/Modules"
         }
 	exec {
             commandLine 'ln', '-sf', 'Versions/Current/Resources', "${buildDir}/libs/framework/maccatalyst/Giac.framework/Resources"
