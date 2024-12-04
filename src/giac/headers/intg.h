@@ -26,6 +26,7 @@ namespace giac {
   class gen;
   class identificateur;
   struct unary_function_ptr;
+  bool has_undef(const gen & g);
   void restorepurge(const gen & xval,const gen & x,GIAC_CONTEXT);
   gen assumeeval(const gen & x,GIAC_CONTEXT);
   // auto-assumptions assuming g is real-defined

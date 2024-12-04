@@ -7939,6 +7939,13 @@ namespace giac {
 		  else
 		    resk=gensizeerr(contextptr);
 		}
+                // quick check for undef in initial equations
+                for (int k=0;k<res.size();++k){
+                  gen resk=res[k];
+                  gen resval=subst(eq,var,resk,false,contextptr);
+                  if (has_undef(resval))
+                    res.erase(res.begin()+k);
+                }
 		return res;
 	      }
 	      if (eq.size()==2 && var.size()==2 && is_zero(derive(derive(eq,var[j],contextptr),var[j],contextptr))){
