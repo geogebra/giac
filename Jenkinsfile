@@ -2,6 +2,9 @@ def crosscompilers = '/var/lib/jenkins/cross-compilers'
 
 pipeline {
   agent none
+  options {
+      buildDiscarder(logRotator(numToKeepStr: '30'))
+  }
 
   stages {
     stage('Mac, Windows binaries') {
