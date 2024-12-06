@@ -1508,7 +1508,7 @@ namespace giac {
       gen expx=exp(coeff_trig*gen_x+coeff_cst,contextptr);
       if ( (intmode & 2)==0)
 	gprintf(step_backsubst,gettext("Back substitution %gen->%gen in %gen"),makevecteur(gen_x,expx,tmprem),contextptr);
-      remains_to_integrate = inv(coeff_trig,contextptr)*complex_subst(tmprem,gen_x,expx,contextptr);
+      remains_to_integrate = expx*complex_subst(tmprem,gen_x,expx,contextptr);
       return inv(coeff_trig,contextptr)*complex_subst(tmpres,gen_x,expx,contextptr);
     }
     f=halftan(f,contextptr); // now everything depends on tan(x/2)
