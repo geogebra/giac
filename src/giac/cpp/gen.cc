@@ -1693,6 +1693,7 @@ namespace giac {
       delete (ref_polynome *) (* ((ulonglong * ) this) >> 16);
       break;
     case _FRAC:
+      _FRACptr->den=_FRACptr->num=0;
       delete (ref_fraction *) (* ((ulonglong * ) this) >> 16);
       break;
     case _SPOL1:
@@ -12191,8 +12192,8 @@ namespace giac {
 	if (!locked)
 	  pthread_mutex_unlock(&mpfr_mutex);
 #else
-	real_object r;
 	mpfr_set_default_prec(nbits);
+	real_object r;
 	int res=mpfr_set_str(r.inf,s,10,MPFR_RNDN);
 #endif // HAVE_LIBPTHREAD
 #else // LIBMPFR
