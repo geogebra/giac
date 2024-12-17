@@ -7441,13 +7441,15 @@ namespace giac {
       return apply(args,_is_prime,contextptr);
     if (!is_integral(args))
       return gentypeerr(contextptr);
+    if (args.type!=_INT_){
 #ifdef HAVE_LIBPARI
-    gen res=pari_isprime(args,certif);
-    if (res.type!=_STRNG)
-      return res;
+      gen res=pari_isprime(args,certif);
+      if (res.type!=_STRNG)
+        return res;
 #else
-    if (certif) return gensizeerr("Compile with PARI for prime certificate");
+      if (certif) return gensizeerr("Compile with PARI for prime certificate");
 #endif
+    }
     return is_probab_prime_p(args);
   }
   static const char _is_prime_s []="is_prime";
