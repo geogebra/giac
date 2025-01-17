@@ -11772,10 +11772,17 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     ystep=(ymax-ymin)/(jstep?jstep:nstep);
     return true;
   }
+
+  gen lastplotode0,lastplotode1;
   // args=[dx/dt,dy/dt,x,y] or [dy/dx,x,y]
   // or [ [dx/dt,dy/dt], [x,y] ] or [ dy/dx, [x,y]]
   gen _plotfield(const gen & args,const context * contextptr){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
+    if (args.type!=_VECT){
+      vecteur argu(3);
+      argu[0]=lastplotode0; argu[1]=lastplotode1; argu[2]=args;
+      return plotode(argu,contextptr);
+    }
     vecteur attributs;
     gen xp,yp,x,y;
     double xmin,xmax,ymin,ymax,xstep,ystep;
@@ -11784,6 +11791,9 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     if (!read_plotfield_args(args,xp,yp,x,y,xmin,xmax,xstep,ymin,ymax,ystep,attributs,normalize,initcondv,contextptr))
       return gensizeerr(contextptr);
     int s=initcondv.size();
+    if (s>=2){
+      lastplotode0=initcondv[0]; lastplotode1=initcondv[1];
+    }
     double scaling=2;
     if (s>2){
       vecteur res;

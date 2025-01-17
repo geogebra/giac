@@ -40,6 +40,7 @@ namespace giac {
   gen _lin(const gen & e,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_lin ;
   gen lnexpand(const gen & e,GIAC_CONTEXT);
+  gen invexpand(const gen & e,GIAC_CONTEXT);
 
   vecteur tchebycheff(int n,bool first_kind=true);
   gen tunlin(vecteur & v,GIAC_CONTEXT);

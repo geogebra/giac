@@ -3121,7 +3121,21 @@ namespace giac {
     gen res;
     const_iterateur it=v.begin(),itend=v.end();
     for (;it!=itend;it+=2){
-      res = res + (*it) * ln (*(it+1),contextptr);
+#if 0 // works but discarded because it might impact calling CAS func like desolve, will do it separately
+      gen coeff=*it,arg=*(it+1),a,b;
+      vecteur v=lop(coeff,at_ln);
+      if (!v.empty() && is_linear_wrt(inv(coeff,contextptr),v[0],a,b,contextptr) && is_exactly_zero(b)){
+        gen base=v[0]._SYMBptr->feuille;
+        coeff=inv(a,contextptr);
+        if (base==10)
+          res += coeff*symbolic(at_log10,arg);
+        else
+          res += coeff*symbolic(at_logb,makesequence(arg,base));
+      } else
+        res = res + coeff * ln(arg,contextptr);
+#else
+      res = res + (*it) * ln(*(it+1),contextptr);
+#endif
     }
     return res;
   }
@@ -3138,6 +3152,55 @@ namespace giac {
   static define_unary_function_eval (__lncollect,&_lncollect,_lncollect_s);
   define_unary_function_ptr5( at_lncollect ,alias_at_lncollect,&__lncollect,0,true);
 
+  gen lntologb(const gen & args,GIAC_CONTEXT){
+    if (args.type!=_SYMB && args.type!=_VECT)
+      return args;
+    vecteur v=lop(args,at_ln);
+    if (v.size()<2)
+      return args;
+    if (args.type==_VECT)
+      return apply(args,lntologb,contextptr);
+    gen f=invexpand(args._SYMBptr->feuille,contextptr);
+    f=lntologb(f,contextptr);
+    if (args._SYMBptr->sommet!=at_prod || f.type!=_VECT)
+      return symbolic(args._SYMBptr->sommet,f);
+    vecteur & fv=*f._VECTptr;
+    int s=fv.size();
+    vecteur newv; newv.reserve(s);
+    gen lognum=0,base=0;
+    for (int i=0;i<s;++i){
+      if (lognum==0 && fv[i].is_symb_of_sommet(at_ln))
+        lognum=fv[i]._SYMBptr->feuille;
+      else if (base==0 && fv[i].is_symb_of_sommet(at_inv) && fv[i]._SYMBptr->feuille.is_symb_of_sommet(at_ln))
+        base=fv[i]._SYMBptr->feuille._SYMBptr->feuille;
+      else
+        newv.push_back(fv[i]);
+    }
+    if (lognum==0 || base==0)
+      return args;
+    gen coeff=1;
+    if (newv.size()==1)
+      coeff=newv[0];
+    else if (newv.size()>1)
+      coeff=symbolic(at_prod,gen(newv,_SEQ__VECT));
+    if (base==10)
+      return coeff*symbolic(at_log10,lognum);
+    return coeff*symbolic(at_logb,makesequence(lognum,base));
+  }
+
+  gen _lntologb(const gen & args,GIAC_CONTEXT){
+    if ( args.type==_STRNG && args.subtype==-1) return  args;
+    gen var,res;
+    if (is_algebraic_program(args,var,res))
+      return symbolic(at_program,makesequence(var,0,_lntologb(res,contextptr)));
+    if (is_equal(args))
+      return apply_to_equal(args,_lntologb,contextptr);
+    return lntologb(args,contextptr);
+  }
+  static const char _lntologb_s []="lntologb";
+  static define_unary_function_eval (__lntologb,&_lntologb,_lntologb_s);
+  define_unary_function_ptr5( at_lntologb ,alias_at_lntologb,&__lntologb,0,true);
+  
   gen powexpand(const gen & e,GIAC_CONTEXT){
     return subst(e,pow_tab,powexpand_tab,false,contextptr);
   }

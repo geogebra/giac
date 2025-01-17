@@ -6126,8 +6126,10 @@ namespace giac {
 
   gen _debug(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
+#ifndef EMCC2
     if (child_id && thread_eval_status(contextptr)!=1)
       return args;
+#endif
     if (debug_ptr(contextptr)->debug_allowed){
       debug_ptr(contextptr)->debug_mode=true;
       debug_ptr(contextptr)->sst_in_mode=true;
@@ -6526,21 +6528,8 @@ namespace giac {
     progs="debug "+w[0].print(contextptr)+'\n';
     if (w[4].type==_INT_){
       vector<string> ws;
-#if 1
       ws.push_back("");
       debug_print(w[2],ws,contextptr);
-#else
-      int l=s.size();
-      string cur;
-      for (int i=0;i<l;++i){
-	if (s[i]=='\n'){
-	  ws.push_back(cur);
-	  cur="";
-	}
-	else cur+=s[i];
-      }
-      ws.push_back(cur);
-#endif
       int m=giacmax(0,w[4].val-2),M=giacmin(w[4].val+3,ws.size()-1);
       for (int i=m;i<=M;++i){
 	progs += print_INT_(i)+((i==w[4].val)?" => ":"    ")+ws[i]+'\n';
@@ -6572,12 +6561,6 @@ namespace giac {
     *dbgptr->debug_info_ptr=w;
     // dbgptr->debug_refresh=false;
     // need a way to pass w to EM_ASM like environment and call HTML5 prompt
-#if 0
-    EM_ASM_ARGS({
-        var msg = UTF8ToString($0);//Pointer_stringify($0); // Convert message to JS string
-        alert(msg);                      // Use JS version of alert          
-      }, (progs+evals).c_str());
-#else
     while (1){
       int i=EM_ASM_INT({
 	  var msg = UTF8ToString($0);//Pointer_stringify($0); // Convert message to JS string
@@ -6641,7 +6624,6 @@ namespace giac {
 	_rmbreakpoint(makesequence(w[0][0],w[4]),contextptr);
       }
     } // end while(i>0)
-#endif
    }
 #else // EMCC
 
@@ -7098,16 +7080,6 @@ namespace giac {
 
   int (*micropy_ptr) (cstcharptr)=0;
   gen _python(const gen & args,GIAC_CONTEXT){
-#if defined MICROPY_LIB
-    if (micropy_ptr && args.type==_VECT && args._VECTptr->size()==2){
-      gen a=args._VECTptr->front(),b=args._VECTptr->back();
-      if (a.type==_STRNG && b==at_python){
-	const char * ptr=a._STRNGptr->c_str();
-	(*micropy_ptr)(ptr);
-	return string2gen("Done",false);
-      }
-    }
-#endif
 #if defined HAVE_LIBMICROPYTHON
     if (micropy_ptr && args.type==_VECT && args._VECTptr->size()==2){
       gen a=args._VECTptr->front(),b=args._VECTptr->back();
@@ -7141,6 +7113,16 @@ namespace giac {
 	if (python_console()[python_console().size()-1]=='\n')
 	  python_console()=python_console().substr(0,python_console().size()-1);
 	return string2gen(python_console().empty()?"Done":python_console(),false);
+      }
+    }
+#endif
+#if defined MICROPY_LIB
+    if (micropy_ptr && args.type==_VECT && args._VECTptr->size()==2){
+      gen a=args._VECTptr->front(),b=args._VECTptr->back();
+      if (a.type==_STRNG && b==at_python){
+	const char * ptr=a._STRNGptr->c_str();
+	(*micropy_ptr)(ptr);
+	return string2gen("Done",false);
       }
     }
 #endif
@@ -11261,9 +11243,9 @@ namespace giac {
   const define_alias_gen(alias_FF_unit_rom,_IDNT,0,&ref_FF_unit_rom);
   const gen & FF_unit_rom_IDNT_e = * (gen *) & alias_FF_unit_rom;
 
-  static const alias_identificateur alias_identificateur_Faraday__unit_rom={0,0,"_Faraday_",0,0};
+  static const alias_identificateur alias_identificateur_Faraday__unit_rom={0,0,"_F_",0,0};
   const identificateur & _IDNT_id_Faraday__unit_rom=* (const identificateur *) &alias_identificateur_Faraday__unit_rom;
-  const alias_ref_identificateur ref_Faraday__unit_rom={-1,0,0,"_Faraday_",0,0};
+  const alias_ref_identificateur ref_Faraday__unit_rom={-1,0,0,"_F_",0,0};
   const define_alias_gen(alias_Faraday__unit_rom,_IDNT,0,&ref_Faraday__unit_rom);
   const gen & Faraday__unit_rom_IDNT_e = * (gen *) & alias_Faraday__unit_rom;
 
@@ -12348,7 +12330,7 @@ namespace giac {
   gen F_unit_rom_IDNT_e(F_unit_rom_IDNT);
   identificateur FF_unit_rom_IDNT("_FF");
   gen FF_unit_rom_IDNT_e(FF_unit_rom_IDNT);
-  identificateur Faraday__unit_rom_IDNT("_Faraday_");
+  identificateur Faraday__unit_rom_IDNT("_F_");
   gen Faraday__unit_rom_IDNT_e(Faraday__unit_rom_IDNT);
   identificateur G__unit_rom_IDNT("_G_");
   gen G__unit_rom_IDNT_e(G__unit_rom_IDNT);
@@ -13306,7 +13288,7 @@ const mksa_unit __lambda0_unit={1.239841984e-6,1,0,0,0,0,0,0}; // inverse meter-
     "_E",
     "_F",
     "_FF",
-    "_Faraday_",
+    "_F_",
     "_Fdy",
     "_G_",
     "_Gal",
@@ -14109,7 +14091,7 @@ const mksa_unit __lambda0_unit={1.239841984e-6,1,0,0,0,0,0,0}; // inverse meter-
   gen cst_a0(_cst_a0); // a0 .0529177249_nm
   identificateur _cst_Rinfinity("_Rinfinity_",symbolic(at_unit,makevecteur(10973731.534,unitpow(_m_unit,-1))));
   gen cst_Rinfinity(_cst_Rinfinity); // Rinf 10973731.534 m^-1
-  identificateur _cst_Faraday("_Faraday_",symbolic(at_unit,makevecteur(96485.309,_C_unit/_mol_unit)));
+  identificateur _cst_Faraday("_F_",symbolic(at_unit,makevecteur(96485.309,_C_unit/_mol_unit)));
   gen cst_Faraday(_cst_Faraday); // F 96485.309 C/gmol
   identificateur _cst_phi("_phi_",symbolic(at_unit,makevecteur(2.06783461e-15,_Wb_unit)));
   gen cst_phi(_cst_phi); // phi 2.06783461e-15 Wb

@@ -2277,6 +2277,28 @@ namespace giac {
   static define_unary_function_eval (__lnexpand,&lnexpand,_lnexpand_s);
   define_unary_function_ptr5( at_lnexpand ,alias_at_lnexpand,&__lnexpand,0,true);
 
+  static gen inv_expand(const gen & e,GIAC_CONTEXT){
+    if (e.type==_VECT)
+      return apply(e,inv_expand,contextptr);
+    if (e.type!=_SYMB || e._SYMBptr->sommet!=at_prod)
+      return symbolic(at_inv,e);
+    return symbolic(at_prod,apply(e._SYMBptr->feuille,inv_expand,contextptr));
+  }
+  
+  gen invexpand(const gen & e,GIAC_CONTEXT){
+    if (is_equal(e))
+      return apply_to_equal(e,invexpand,contextptr);
+    gen var,res;
+    if (is_algebraic_program(e,var,res))
+      return symbolic(at_program,makesequence(var,0,invexpand(res,contextptr)));
+    vector<const unary_function_ptr *> v(1,at_inv);
+    vector< gen_op_context > w(1,&inv_expand);
+    return subst(e,v,w,false,contextptr);
+  }
+  static const char _invexpand_s []="invexpand";
+  static define_unary_function_eval (__invexpand,&invexpand,_invexpand_s);
+  define_unary_function_ptr5( at_invexpand ,alias_at_invexpand,&__invexpand,0,true);
+
   gen trigexpand(const gen & e,GIAC_CONTEXT){
     if (is_equal(e))
       return apply_to_equal(e,trigexpand,contextptr);

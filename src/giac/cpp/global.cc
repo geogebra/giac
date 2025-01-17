@@ -9,6 +9,9 @@
 #endif
 
 #include "giacPCH.h"
+#if defined(EMCC) || defined(EMCC2)
+#include <emscripten.h>
+#endif
 
 /*  
  *  Copyright (C) 2000,14 B. Parisse, Institut Fourier, 38402 St Martin d'Heres
@@ -4931,7 +4934,7 @@ extern "C" void Sleep(unsigned int miliSecond);
     string file=orig_file;
     string s;
     bool url=false;
-    if (file.substr(0,4)=="http"){
+    if (file.size()>=4 && file.substr(0,4)=="http" || file.substr(0,4)=="mail"){
       url=true;
       s="'"+file+"'";
     }
@@ -5066,12 +5069,18 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   bool system_browser_command(const string & file){
+#ifdef EMCC2
+    EM_ASM_ARGS({
+        window.open(UTF8ToString($0), '_blank').focus();
+      },file.c_str());
+    return true;
+#endif
 #if defined BESTA_OS || defined POCKETCAS
     return false;
 #else
 #ifdef WIN32
     string res=file;
-    if (file.size()>4 && file.substr(0,4)!="http" && file.substr(0,4)!="file"){
+    if (file.size()>4 && file.substr(0,4)!="http" && file.substr(0,4)!="file" && file.substr(0,4)!="mail"){
       if (res[0]!='/')
 	res=giac_aide_dir()+res;
       // Remove # trailing part of URL
@@ -5107,7 +5116,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 #ifdef __MINGW_H
     while (res.size()>=2 && res.substr(0,2)=="./")
       res=res.substr(2,res.size()-2);
-    if (res.size()<4 || res.substr(0,4)!="http")
+    if (res.size()<4 || (res.substr(0,4)!="http" && res.substr(0,4)!="mail"))
       res = "file:///c:/xcaswin/"+res;
     CERR << "running open on " << res << '\n';
     //ShellExecute(NULL,"open","file:///c:/xcaswin/doc/fr/cascmd_fr/index.html",\

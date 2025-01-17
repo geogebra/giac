@@ -21,7 +21,7 @@
 #ifndef _GIAC_FIRST_H_
 #define _GIAC_FIRST_H_
 
-#if __cplusplus >= 201103L
+#if __cplusplus >= 201103L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201103L)
 // post-c++11 functional headers changes, thanks to George Huebner
 #define CPP11
 #endif

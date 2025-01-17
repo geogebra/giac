@@ -999,7 +999,7 @@ namespace giac {
     return result;
   }
 
-#if !defined(NSPIRE_NEWLIB) && !defined(RTOS_THREADX) && !defined(EMCC) && !defined(EMCC2) &&!defined(NSPIRE) && !defined FXCG && !defined(KHICAS) && !defined GIAC_HAS_STO_38
+#if !defined(NSPIRE_NEWLIB) && !defined(RTOS_THREADX) && !defined(EMCC) && !defined(NSPIRE) && !defined FXCG && !defined(KHICAS) && !defined GIAC_HAS_STO_38
   multimap<string,string> html_mtt,html_mall;
   std::vector<std::string> html_vtt,html_vall;
 

@@ -14026,6 +14026,24 @@ namespace xcas {
 
   int Graph2d::ui(){
     Graph2d & gr=*this;
+    if (!hp && 
+        gr.symbolic_instructions.size()==1 &&
+        gr.symbolic_instructions.front().is_symb_of_sommet(at_plotfield)){
+      if (newgeo(contextptr)==0){
+        geoptr->hp->filename="ode.py";
+        if (geoptr!=this){
+          geoptr->symbolic_instructions=symbolic_instructions;
+          geoptr->hp->elements.clear();
+          for (int i=0;i<symbolic_instructions.size();++i){
+            geoptr->hp->set_string_value(i,symbolic_instructions[i].print(contextptr));
+          }
+          // switch to geo2d plotfield mode
+          geoptr->set_mode(at_point,at_plotfield,1,"init_cond");
+          geoloop(geoptr);
+          return 0;
+        }
+      }
+    }
     // UI
     int saveprecision=gr.precision;
     gr.precision += 2; // fast draw first

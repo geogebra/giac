@@ -8,6 +8,19 @@
 #include <string>
 #include <stdio.h>
 
+#ifdef __EMSCRIPTEN__
+extern "C" void deleteAllFilesInPath(const char* pathToRM);
+
+extern "C" int save_link(const char * s,const char * filename,int mode);
+
+extern "C" void save_link_as_session(const char * link);
+
+extern "C" void console_log(const char * s);
+
+extern "C" int init_fs();
+
+#endif
+
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
@@ -235,4 +248,4 @@ namespace giac {
 } // namespace giac
 #endif // ndef NO_NAMESPACE_GIAC
 
-#endif // _GRAPH3D_H
+#endif // _OPENGL_H
