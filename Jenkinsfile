@@ -66,6 +66,7 @@ pipeline {
           agent {label 'mac-mini'}
           environment {
             MAVEN = credentials('maven-repo')
+            RBENV_VERSION = "3.3.5"
           }
           steps {
             sh "rm src/giac/cpp/kdisplay.cc"
