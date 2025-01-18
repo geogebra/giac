@@ -814,7 +814,7 @@ tasks.register('createMaccatalystFramework', Copy) {
 
 
 tasks.register('createIosXcframework', Copy) {
-    dependsOn[createIosFramework, createIphonesimulatorFramework, createMaccatalystFramework]
+    dependsOn = [createIosFramework, createIphonesimulatorFramework, createMaccatalystFramework]
     description "Creates XCFramework"
     from("${buildDir}/libs/framework/iphonesimulator") {
         into "ios-arm64_x86_64-simulator"
@@ -849,7 +849,7 @@ tasks.register('createPodspec') {
 }
 
 tasks.register('cocoapodsZip', Zip) {
-    dependsOn createIosXcframework
+    dependsOn 'createIosXcframework'
     baseName 'Giac'
     from("${buildDir}/libs/framework/Giac.xcframework") {
         into "Frameworks/Giac.xcframework"
@@ -889,7 +889,9 @@ tasks.register('testNodegiacExecutable', Exec) {
     commandLine './regression', '-r', '-n'
 }
 
-tasks.register('testExecutables') { dependsOn['testNodegiacExecutable', 'testMinigiacExecutable'] }
+tasks.register('testExecutables') {
+    dependsOn = ['testNodegiacExecutable', 'testMinigiacExecutable']
+}
 
 
 tasks.register('androidCopyEabiLibjavagiacSo', Copy) {
