@@ -71,6 +71,7 @@ pipeline {
           steps {
             sh "rm src/giac/cpp/kdisplay.cc"
             sh '''
+                export GIT_ASKPASS="/Users/Shared/Jenkins/.local/bin/gitpass"
                 export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
                 ./gradlew clean publishPodspec -Prevision=$SVN_REVISION'''
           }
