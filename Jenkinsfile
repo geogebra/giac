@@ -66,14 +66,13 @@ pipeline {
           agent {label 'mac-mini'}
           environment {
             MAVEN = credentials('maven-repo')
-            RBENV_VERSION = "3.3.5"
           }
           steps {
             sh "rm src/giac/cpp/kdisplay.cc"
             sh '''
                 export GIT_ASKPASS="/Users/Shared/Jenkins/.local/bin/gitpass"
                 export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
-                ./gradlew clean publishPodspec -Prevision=$SVN_REVISION'''
+                ./gradlew clean publishMavenZipPublicationToMavenRepository -Prevision=$SVN_REVISION'''
           }
           post {
             always { deleteDir() }

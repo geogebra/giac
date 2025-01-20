@@ -707,19 +707,6 @@ task giacIosStaticLibrary(dependsOn: [
     'giacMaccatalyst_arm64StaticLibrary'
 ])
 
-tasks.register('configBundle', Exec) {
-    executable 'bundle'
-    args 'config', 'set', 'path', './.gems'
-    workingDir rootDir
-}
-
-tasks.register('installGems', Exec) {
-    dependsOn 'configBundle'
-    executable 'bundle'
-    args 'install'
-    workingDir rootDir
-}
-
 task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'giacIosStaticLibrary']) {
     doLast {
         def output = "${buildDir}/libs/merged"
@@ -833,21 +820,6 @@ tasks.register('createIosXcframework', Copy) {
     destinationDir = file("${buildDir}/libs/framework/Giac.xcframework")
 }
 
-tasks.register('createPodspec') {
-    inputs.file "src/simpleInterface/pod/Giac.podspec"
-    inputs.property "version", ggrev
-    outputs.file "${buildDir}/cocoapods/Giac.podspec"
-    doLast {
-        def posdpec = inputs.files.singleFile
-        def engine = new groovy.text.SimpleTemplateEngine()
-        def binding = [version: ggrev]
-        def template = engine.createTemplate(posdpec).make(binding)
-        def outputFile = outputs.files.singleFile
-        outputFile.parentFile.mkdirs()
-        outputFile.write template.toString()
-    }
-}
-
 tasks.register('cocoapodsZip', Zip) {
     dependsOn 'createIosXcframework'
     baseName 'Giac'
@@ -855,16 +827,6 @@ tasks.register('cocoapodsZip', Zip) {
         into "Frameworks/Giac.xcframework"
     }
     destinationDir = file("${buildDir}/cocoapods/")
-}
-
-tasks.register('publishPodspec', Exec) {
-    dependsOn = ['installGems', 'createPodspec', 'publishMavenZipPublicationToMavenRepository']
-    doFirst {
-        exec {
-            commandLine 'bundle', 'exec', 'pod', 'cache', 'clean', 'Giac'
-        }
-    }
-    commandLine 'bundle', 'exec', 'pod', 'repo', 'push', 'geogebra', "${buildDir}/cocoapods/Giac.podspec", '--allow-warnings'
 }
 
 tasks.register('installMinigiacExecutable') { dependsOn 'installMinigiacLinux64Executable' }
