@@ -156,8 +156,6 @@ set(GIAC_SOURCES
         src/giac/cpp/unary.cc
         src/giac/cpp/usual.cc
         src/giac/cpp/vecteur.cc
-        src/giac/headers/android/gmp.h
-        src/giac/headers/android/mpfr.h
         src/giac/headers/alg_ext.h
         src/giac/headers/cocoa.h
         # src/giac/headers/config.h
