@@ -27,10 +27,10 @@ android {
 }
 
 def jniLibsDir = "src/main/jniLibs"
-def abiSplits = ["armeabi-v7a": "/../arm-linux-androideabi/lib/",
-                 "x86"        : "/../i686-linux-android/lib/",
-                 "x86_64"     : "/../x86_64-linux-android/lib/",
-                 "arm64-v8a"  : "/../aarch64-linux-android/lib/"]
+def abiSplits = ["armeabi-v7a": "/../arm-linux-androideabi/",
+                 "x86"        : "/../i686-linux-android/",
+                 "x86_64"     : "/../x86_64-linux-android/",
+                 "arm64-v8a"  : "/../aarch64-linux-android/"]
 
 task copyLibcShared {
     group 'android'
