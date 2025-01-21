@@ -1,6 +1,7 @@
 /* Definitions for GNU multiple precision functions.   -*- mode: c -*-
 
-Copyright 1991, 1993-1997, 1999-2015 Free Software Foundation, Inc.
+Copyright 1991, 1993-1997, 1999-2016, 2020, 2021 Free Software
+Foundation, Inc.
 
 This file is part of the GNU MP Library.
 
@@ -49,11 +50,8 @@ see https://www.gnu.org/licenses/.  */
 #define GMP_NAIL_MASK     (~ GMP_NUMB_MASK)
 
 
-/* The following (everything under ifndef __GNU_MP__) must be identical in
-   gmp.h and mp.h to allow both to be included in an application or during
-   the library build.  */
 #ifndef __GNU_MP__
-#define __GNU_MP__ 5
+#define __GNU_MP__ 6
 
 #include <stddef.h>    /* for size_t */
 #include <limits.h>
@@ -230,10 +228,10 @@ typedef const __mpf_struct *mpf_srcptr;
 typedef __mpf_struct *mpf_ptr;
 typedef const __mpq_struct *mpq_srcptr;
 typedef __mpq_struct *mpq_ptr;
+typedef __gmp_randstate_struct *gmp_randstate_ptr;
+typedef const __gmp_randstate_struct *gmp_randstate_srcptr;
 
 
-/* This is not wanted in mp.h, so put it outside the __GNU_MP__ common
-   section. */
 #if __GMP_LIBGMP_DLL
 #ifdef __GMP_WITHIN_GMPXX
 /* compiling to go into a DLL libgmpxx */
@@ -268,7 +266,9 @@ typedef __mpq_struct *mpq_ptr;
   || defined (_MSL_STDIO_H)           /* Metrowerks */          \
   || defined (_STDIO_H_INCLUDED)      /* QNX4 */		\
   || defined (_ISO_STDIO_ISO_H)       /* Sun C++ */		\
-  || defined (__STDIO_LOADED)         /* VMS */
+  || defined (__STDIO_LOADED)         /* VMS */			\
+  || defined (_STDIO)                 /* HPE NonStop */         \
+  || defined (__DEFINED_FILE)         /* musl */
 #define _GMP_H_HAVE_FILE 1
 #endif
 
@@ -345,7 +345,11 @@ typedef __mpq_struct *mpq_ptr;
    __GMP_ATTRIBUTE_PURE.  */
 
 #if defined (__cplusplus)
+#if __cplusplus >= 201103L
+#define __GMP_NOTHROW  noexcept
+#else
 #define __GMP_NOTHROW  throw ()
+#endif
 #else
 #define __GMP_NOTHROW
 #endif
@@ -497,37 +501,37 @@ __GMP_DECLSPEC extern const char * const gmp_version;
 
 /* obsolete */
 #define gmp_randinit __gmp_randinit
-__GMP_DECLSPEC void gmp_randinit (gmp_randstate_t, gmp_randalg_t, ...);
+__GMP_DECLSPEC void gmp_randinit (gmp_randstate_ptr, gmp_randalg_t, ...);
 
 #define gmp_randinit_default __gmp_randinit_default
-__GMP_DECLSPEC void gmp_randinit_default (gmp_randstate_t);
+__GMP_DECLSPEC void gmp_randinit_default (gmp_randstate_ptr);
 
 #define gmp_randinit_lc_2exp __gmp_randinit_lc_2exp
-__GMP_DECLSPEC void gmp_randinit_lc_2exp (gmp_randstate_t, mpz_srcptr, unsigned long int, mp_bitcnt_t);
+__GMP_DECLSPEC void gmp_randinit_lc_2exp (gmp_randstate_ptr, mpz_srcptr, unsigned long int, mp_bitcnt_t);
 
 #define gmp_randinit_lc_2exp_size __gmp_randinit_lc_2exp_size
-__GMP_DECLSPEC int gmp_randinit_lc_2exp_size (gmp_randstate_t, mp_bitcnt_t);
+__GMP_DECLSPEC int gmp_randinit_lc_2exp_size (gmp_randstate_ptr, mp_bitcnt_t);
 
 #define gmp_randinit_mt __gmp_randinit_mt
-__GMP_DECLSPEC void gmp_randinit_mt (gmp_randstate_t);
+__GMP_DECLSPEC void gmp_randinit_mt (gmp_randstate_ptr);
 
 #define gmp_randinit_set __gmp_randinit_set
-__GMP_DECLSPEC void gmp_randinit_set (gmp_randstate_t, const __gmp_randstate_struct *);
+__GMP_DECLSPEC void gmp_randinit_set (gmp_randstate_ptr, gmp_randstate_srcptr);
 
 #define gmp_randseed __gmp_randseed
-__GMP_DECLSPEC void gmp_randseed (gmp_randstate_t, mpz_srcptr);
+__GMP_DECLSPEC void gmp_randseed (gmp_randstate_ptr, mpz_srcptr);
 
 #define gmp_randseed_ui __gmp_randseed_ui
-__GMP_DECLSPEC void gmp_randseed_ui (gmp_randstate_t, unsigned long int);
+__GMP_DECLSPEC void gmp_randseed_ui (gmp_randstate_ptr, unsigned long int);
 
 #define gmp_randclear __gmp_randclear
-__GMP_DECLSPEC void gmp_randclear (gmp_randstate_t);
+__GMP_DECLSPEC void gmp_randclear (gmp_randstate_ptr);
 
 #define gmp_urandomb_ui __gmp_urandomb_ui
-__GMP_DECLSPEC unsigned long gmp_urandomb_ui (gmp_randstate_t, unsigned long);
+__GMP_DECLSPEC unsigned long gmp_urandomb_ui (gmp_randstate_ptr, unsigned long);
 
 #define gmp_urandomm_ui __gmp_urandomm_ui
-__GMP_DECLSPEC unsigned long gmp_urandomm_ui (gmp_randstate_t, unsigned long);
+__GMP_DECLSPEC unsigned long gmp_urandomm_ui (gmp_randstate_ptr, unsigned long);
 
 
 /**************** Formatted output routines.  ****************/
@@ -849,13 +853,13 @@ __GMP_DECLSPEC mp_bitcnt_t mpz_hamdist (mpz_srcptr, mpz_srcptr) __GMP_NOTHROW __
 __GMP_DECLSPEC void mpz_import (mpz_ptr, size_t, int, size_t, int, size_t, const void *);
 
 #define mpz_init __gmpz_init
-__GMP_DECLSPEC void mpz_init (mpz_ptr);
+__GMP_DECLSPEC void mpz_init (mpz_ptr) __GMP_NOTHROW;
 
 #define mpz_init2 __gmpz_init2
 __GMP_DECLSPEC void mpz_init2 (mpz_ptr, mp_bitcnt_t);
 
 #define mpz_inits __gmpz_inits
-__GMP_DECLSPEC void mpz_inits (mpz_ptr, ...);
+__GMP_DECLSPEC void mpz_inits (mpz_ptr, ...) __GMP_NOTHROW;
 
 #define mpz_init_set __gmpz_init_set
 __GMP_DECLSPEC void mpz_init_set (mpz_ptr, mpz_srcptr);
@@ -947,6 +951,9 @@ __GMP_DECLSPEC void mpz_neg (mpz_ptr, mpz_srcptr);
 #define mpz_nextprime __gmpz_nextprime
 __GMP_DECLSPEC void mpz_nextprime (mpz_ptr, mpz_srcptr);
 
+#define mpz_prevprime __gmpz_prevprime
+__GMP_DECLSPEC int mpz_prevprime (mpz_ptr, mpz_srcptr);
+
 #define mpz_out_raw __gmpz_out_raw
 #ifdef _GMP_H_HAVE_FILE
 __GMP_DECLSPEC size_t mpz_out_raw (FILE *, mpz_srcptr);
@@ -1004,7 +1011,7 @@ __GMP_DECLSPEC int mpz_root (mpz_ptr, mpz_srcptr, unsigned long int);
 __GMP_DECLSPEC void mpz_rootrem (mpz_ptr, mpz_ptr, mpz_srcptr, unsigned long int);
 
 #define mpz_rrandomb __gmpz_rrandomb
-__GMP_DECLSPEC void mpz_rrandomb (mpz_ptr, gmp_randstate_t, mp_bitcnt_t);
+__GMP_DECLSPEC void mpz_rrandomb (mpz_ptr, gmp_randstate_ptr, mp_bitcnt_t);
 
 #define mpz_scan0 __gmpz_scan0
 __GMP_DECLSPEC mp_bitcnt_t mpz_scan0 (mpz_srcptr, mp_bitcnt_t) __GMP_NOTHROW __GMP_ATTRIBUTE_PURE;
@@ -1104,10 +1111,10 @@ __GMP_DECLSPEC int mpz_tstbit (mpz_srcptr, mp_bitcnt_t) __GMP_NOTHROW __GMP_ATTR
 __GMP_DECLSPEC void mpz_ui_pow_ui (mpz_ptr, unsigned long int, unsigned long int);
 
 #define mpz_urandomb __gmpz_urandomb
-__GMP_DECLSPEC void mpz_urandomb (mpz_ptr, gmp_randstate_t, mp_bitcnt_t);
+__GMP_DECLSPEC void mpz_urandomb (mpz_ptr, gmp_randstate_ptr, mp_bitcnt_t);
 
 #define mpz_urandomm __gmpz_urandomm
-__GMP_DECLSPEC void mpz_urandomm (mpz_ptr, gmp_randstate_t, mpz_srcptr);
+__GMP_DECLSPEC void mpz_urandomm (mpz_ptr, gmp_randstate_ptr, mpz_srcptr);
 
 #define mpz_xor __gmpz_xor
 #define mpz_eor __gmpz_xor
@@ -1453,7 +1460,7 @@ __GMP_DECLSPEC void mpf_ui_div (mpf_ptr, unsigned long int, mpf_srcptr);
 __GMP_DECLSPEC void mpf_ui_sub (mpf_ptr, unsigned long int, mpf_srcptr);
 
 #define mpf_urandomb __gmpf_urandomb
-__GMP_DECLSPEC void mpf_urandomb (mpf_t, gmp_randstate_t, mp_bitcnt_t);
+__GMP_DECLSPEC void mpf_urandomb (mpf_ptr, gmp_randstate_ptr, mp_bitcnt_t);
 
 
 /************ Low level positive-integer (i.e. N) routines.  ************/
@@ -1515,6 +1522,9 @@ __GMP_DECLSPEC mp_limb_t mpn_div_qr_2 (mp_ptr, mp_ptr, mp_srcptr, mp_size_t, mp_
 
 #define mpn_gcd __MPN(gcd)
 __GMP_DECLSPEC mp_size_t mpn_gcd (mp_ptr, mp_ptr, mp_size_t, mp_ptr, mp_size_t);
+
+#define mpn_gcd_11 __MPN(gcd_11)
+__GMP_DECLSPEC mp_limb_t mpn_gcd_11 (mp_limb_t, mp_limb_t) __GMP_ATTRIBUTE_PURE;
 
 #define mpn_gcd_1 __MPN(gcd_1)
 __GMP_DECLSPEC mp_limb_t mpn_gcd_1 (mp_srcptr, mp_size_t, mp_limb_t) __GMP_ATTRIBUTE_PURE;
@@ -1844,7 +1854,7 @@ mpz_popcount (mpz_srcptr __gmp_u) __GMP_NOTHROW
   mp_bitcnt_t    __gmp_result;
 
   __gmp_usize = __gmp_u->_mp_size;
-  __gmp_result = (__gmp_usize < 0 ? ULONG_MAX : 0);
+  __gmp_result = (__gmp_usize < 0 ? ~ __GMP_CAST (mp_bitcnt_t, 0) : __GMP_CAST (mp_bitcnt_t, 0));
   if (__GMP_LIKELY (__gmp_usize > 0))
     __gmp_result =  mpn_popcount (__gmp_u->_mp_d, __gmp_usize);
   return __gmp_result;
@@ -2316,16 +2326,17 @@ enum
   GMP_ERROR_UNSUPPORTED_ARGUMENT = 1,
   GMP_ERROR_DIVISION_BY_ZERO = 2,
   GMP_ERROR_SQRT_OF_NEGATIVE = 4,
-  GMP_ERROR_INVALID_ARGUMENT = 8
+  GMP_ERROR_INVALID_ARGUMENT = 8,
+  GMP_ERROR_MPZ_OVERFLOW = 16
 };
 
 /* Define CC and CFLAGS which were used to build this version of GMP */
-#define __GMP_CC "arm-linux-androideabi-gcc -std=gnu99"
-#define __GMP_CFLAGS "-fPIC"
+#define __GMP_CC "/Users/balazs/Library/Android/sdk/ndk/28.0.12916984/toolchains/llvm/prebuilt/darwin-x86_64/bin/i686-linux-android35-clang"
+#define __GMP_CFLAGS "-m32 -O2 -pedantic -fomit-frame-pointer -mtune=pentiumpro -march=pentiumpro"
 
-/* Major version number is the value of __GNU_MP__ too, above and in mp.h. */
+/* Major version number is the value of __GNU_MP__ too, above. */
 #define __GNU_MP_VERSION            6
-#define __GNU_MP_VERSION_MINOR      1
+#define __GNU_MP_VERSION_MINOR      3
 #define __GNU_MP_VERSION_PATCHLEVEL 0
 #define __GNU_MP_RELEASE (__GNU_MP_VERSION * 10000 + __GNU_MP_VERSION_MINOR * 100 + __GNU_MP_VERSION_PATCHLEVEL)
 

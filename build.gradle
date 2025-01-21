@@ -254,7 +254,7 @@ def giacSpecificSettings(cppCompiler, linker, targetPlatform) {
 
         cppCompiler.args '-I', file('src/jni/jdkHeaders/linux').toString()
         // overwrite standard headers with custom android headers
-        cppCompiler.args '-iquote', file('src/giac/headers/android').toString()
+        cppCompiler.args '-iquote', file("src/giac/headers/android/${targetPlatform.architecture.name}").toString()
         cppCompiler.args '-fno-strict-aliasing' // maybe not needed
         cppCompiler.args '-DPIC' // maybe not needed
         cppCompiler.args '-fPIC' // android 6.0 doesn't load libraries which have text relocations
@@ -479,22 +479,22 @@ model {
 
         }
         // Note: Make sure manually that these executables are on the PATH.
-        android(Gcc) {
+        android(Clang) {
             target('androideabi') {
-                cppCompiler.executable 'arm-linux-androideabi-g++'
-                linker.executable 'arm-linux-androideabi-g++'
+                cppCompiler.executable 'armv7a-linux-androideabi35-clang++'
+                linker.executable 'armv7a-linux-androideabi35-clang++'
             }
             target('androidx86') {
-                cppCompiler.executable 'i686-linux-android-g++'
-                linker.executable 'i686-linux-android-g++'
+                cppCompiler.executable 'i686-linux-android35-clang++'
+                linker.executable 'i686-linux-android35-clang++'
             }
             target('androidx86_64') {
-                cppCompiler.executable 'x86_64-linux-android-g++'
-                linker.executable 'x86_64-linux-android-g++'
+                cppCompiler.executable 'x86_64-linux-android35-clang++'
+                linker.executable 'x86_64-linux-android35-clang++'
             }
             target('androidarm64') {
-                cppCompiler.executable 'aarch64-linux-android-g++'
-                linker.executable 'aarch64-linux-android-g++'
+                cppCompiler.executable 'aarch64-linux-android35-clang++'
+                linker.executable 'aarch64-linux-android35-clang++'
             }
         }
     }
@@ -1104,10 +1104,8 @@ tasks.register('emMakeMpfr') {
     }
 }
 
-tasks.register('androidCopyCrystaxSo') { dependsOn 'giac-android:copyCrystaxSo' }
-
 tasks.register('androidAar') {
-    dependsOn = ['androidCopyCrystaxSo', 'androidCopyEabiLibjavagiacSo',
+    dependsOn = ['giac-android:copyLibcShared', 'androidCopyEabiLibjavagiacSo',
             'androidCopyX86LibjavagiacSo', 'androidCopyX86_64LibjavagiacSo', 'androidCopyArm64LibjavagiacSo', 'giac-android:assemble']
     description 'Creates .aar package'
 }

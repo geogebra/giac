@@ -32,11 +32,11 @@ def abiSplits = ["armeabi-v7a": "/../arm-linux-androideabi/lib/",
                  "x86_64"     : "/../x86_64-linux-android/lib/",
                  "arm64-v8a"  : "/../aarch64-linux-android/lib/"]
 
-task copyCrystaxSo {
+task copyLibcShared {
     group 'android'
-    description 'Copies Crystax .so files to the appropriate folders.'
+    description 'Copies libc++_shared.so files to the appropriate folders.'
     doLast {
-        def so = "libcrystax.so"
+        def so = "libc++_shared.so"
         def missing = abiSplits.size()
         def PATH = System.env['PATH'].split(":").each { d ->
             abiSplits.each { arch, libDirSuffix ->
@@ -55,7 +55,7 @@ task copyCrystaxSo {
 }
 
 afterEvaluate {
-tasks['preBuild'].dependsOn(['copyCrystaxSo', ':androidCopyEabiLibjavagiacSo',
+tasks['preBuild'].dependsOn(['copyLibcShared', ':androidCopyEabiLibjavagiacSo',
         ':androidCopyX86LibjavagiacSo', ':androidCopyX86_64LibjavagiacSo', ':androidCopyArm64LibjavagiacSo'])
 publishing {
     publications {
