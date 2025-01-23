@@ -2313,7 +2313,8 @@ namespace giac {
 
   bool gen::in_eval(int level,gen & evaled,const context * contextptr) const{
 #ifdef TIMEOUT
-    control_c();
+    if (type!=_SYMB || _SYMBptr->sommet!=at_caseval)
+      control_c();
 #endif
     if (ctrl_c || interrupted || !stack_check(contextptr)) { 
       interrupted = true; ctrl_c=false;
