@@ -22,11 +22,22 @@ pipeline {
         }
         stage('Mac') {
           agent {label 'mac-mini'}
-          steps {
-            sh "rm src/giac/cpp/kdisplay.cc"
-            sh "export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary javagiacOsx_arm64SharedLibrary --info"
-            stash name: 'giac-mac', includes: 'build/binaries/javagiacSharedLibrary/osx_x86-64/libjavagiac.jnilib'
-            stash name: 'giac-mac-arm64', includes: 'build/binaries/javagiacSharedLibrary/osx_arm-v8/libjavagiac.jnilib'
+          stages {
+            stage('Mac JNI') {
+              steps {
+                sh "rm src/giac/cpp/kdisplay.cc"
+                sh "export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary javagiacOsx_arm64SharedLibrary --info"
+                stash name: 'giac-mac', includes: 'build/binaries/javagiacSharedLibrary/osx_x86-64/libjavagiac.jnilib'
+                stash name: 'giac-mac-arm64', includes: 'build/binaries/javagiacSharedLibrary/osx_arm-v8/libjavagiac.jnilib'
+              }
+            }
+            stage('Objective C') {
+              steps {
+                sh '''
+                  export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
+                  ./gradlew clean publishMavenZipPublicationToMavenRepository -Prevision=$SVN_REVISION'''
+                }
+            }
           }
           post {
             always { deleteDir() }
@@ -57,22 +68,6 @@ pipeline {
               ./gradlew downloadEmsdk installEmsdk activateEmsdk
               ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --refresh-dependencies
               ./gradlew :updateGiac --no-daemon -Prevision=$SVN_REVISION --info'''
-          }
-          post {
-            always { deleteDir() }
-          }
-        }
-        stage('Objective C') {
-          agent {label 'mac-mini'}
-          environment {
-            MAVEN = credentials('maven-repo')
-          }
-          steps {
-            sh "rm src/giac/cpp/kdisplay.cc"
-            sh '''
-                export GIT_ASKPASS="/Users/Shared/Jenkins/.local/bin/gitpass"
-                export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
-                ./gradlew clean publishMavenZipPublicationToMavenRepository -Prevision=$SVN_REVISION'''
           }
           post {
             always { deleteDir() }
