@@ -22,6 +22,9 @@ pipeline {
         }
         stage('Mac') {
           agent {label 'mac-mini'}
+          environment {
+            MAVEN = credentials('maven-repo')
+          }
           stages {
             stage('Mac JNI') {
               steps {
