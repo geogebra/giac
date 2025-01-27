@@ -980,7 +980,6 @@ tasks.register('emccGiacJsWasm') {
             linkerArgs << '-Oz' << '-v' << '-s' << "EXPORTED_FUNCTIONS=['_caseval']"
             linkerArgs << '-s' << 'EXTRA_EXPORTED_RUNTIME_METHODS=["cwrap"]'
 
-            linkerArgs << '--memory-init-file' << '0'
             linkerArgs << '-s' << 'TOTAL_MEMORY=67108864'
             // consider increasing this if running out of memory on GB computations
             def linkerArgsString = linkerArgs.join(" ")
