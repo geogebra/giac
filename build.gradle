@@ -132,7 +132,6 @@ if (clangIphonesimulatorBin.length() > 0) {
 def macosSdk = exec_("xcrun", "--sdk", "macosx", "--show-sdk-path")
 def iphoneosSdk = exec_("xcrun", "--sdk", "iphoneos", "--show-sdk-path")
 def iphonesimulatorSdk = exec_("xcrun", "--sdk", "iphonesimulator", "--show-sdk-path")
-def iphoneosPlatform = exec_("xcrun", "--sdk", "iphoneos", "--show-sdk-platform-path")
 def minIosVersion = '9.0'
 
 def simulatorPostfix = "-simulator"
@@ -426,26 +425,12 @@ model {
                     args << '--target=arm64-apple-macos11'
                 }
             }
-            target('ios_armv7') {
-                cppCompiler.executable 'clang'
-                cppCompiler.withArguments { args ->
-                    iosClangCompilerArgs(args, iphoneosSdk, "armv7", minIosVersion, iosTarget("armv7", minIosVersion))
-                }
-                path clangIosPath
-            }
             target('ios_arm64') {
                 cppCompiler.executable 'clang'
                 cppCompiler.withArguments { args ->
                     iosClangCompilerArgs(args, iphoneosSdk, "arm64", minIosVersion, iosTarget("arm64", minIosVersion))
                 }
                 path clangIosPath
-            }
-            target('iphonesimulator_i386') {
-                cppCompiler.executable 'clang'
-                cppCompiler.withArguments { args ->
-                    iosClangCompilerArgs(args, iphonesimulatorSdk, "i386", minIosVersion, iosTarget("i386", minIosVersion, simulatorPostfix))
-                }
-                path clangIphonesimulatorPath
             }
             target('iphonesimulator_x86_64') {
                 cppCompiler.executable 'clang'
