@@ -656,7 +656,7 @@ model {
                     cppCompiler.args '-stdlib=libc++'
                     linker.args '-stdlib=libc++', '-lc++'
                     linker.args '-lgmp', '-lmpfr', '-lpthread'
-                    linker.args '-L', file("src/jni/prebuilt/osx/${targetPlatform.architecture.name}").toString(), '-dynamiclib'
+                    linker.args '-L', file("src/jni/prebuilt/maccatalyst/${targetPlatform.architecture.name == "arm-v8" ? "arm64" : "x86_64"}").toString(), '-dynamiclib'
                 }
             }
         }
