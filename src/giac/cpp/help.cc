@@ -1524,6 +1524,7 @@ alphasort (const struct dirent **a, const struct dirent **b)
 	return false;
       }
       multi.insert(pair<string,string>(first,buf));
+#ifndef EMCC2
       if (!(n%100)){ // check every 100 links if link exists
 	first=buf;
 	int l=int(first.size()),j;
@@ -1551,6 +1552,7 @@ alphasort (const struct dirent **a, const struct dirent **b)
 	  return false;
 	}
       }
+#endif
       ++n;
       if_mtt.getline(buf,BUFFER_SIZE,'\n');
     }
@@ -1611,8 +1613,6 @@ alphasort (const struct dirent **a, const struct dirent **b)
     }
     if (access(html_help_dir.c_str(),R_OK) && xcasroot.size()>4 && xcasroot.substr(xcasroot.size()-4,4)=="bin/")
       html_help_dir=xcasroot.substr(0,xcasroot.size()-4)+"share/giac/doc/";
-    if (access(html_help_dir.c_str(),R_OK))      
-      cerr << "Unable to open HTML doc directory " << html_help_dir << endl;
     html_help_dir += find_lang_prefix(language);
 #ifdef WIN32
     string html_help_dir_save=html_help_dir;
@@ -1622,7 +1622,15 @@ alphasort (const struct dirent **a, const struct dirent **b)
     html_mall.clear();
     html_vall.clear();
     // Get indices from file cache if it exists
-    if (!force_rebuild && !access((html_help_dir+"html_mtt").c_str(),R_OK) && !access((html_help_dir+"html_mall").c_str(),R_OK) && !access((html_help_dir+"html_vall").c_str(),R_OK)){
+#ifdef EMCC2
+    int b1=1,b2=1,b3=1;
+    printf("html_help_dir=%s mtt=%i mall=%i vall=%i\n",html_help_dir.c_str(),b1,b2,b3);
+#else
+    int b1=!access((html_help_dir+"html_mtt").c_str(),R_OK), b2=!access((html_help_dir+"html_mall").c_str(),R_OK), b3=!access((html_help_dir+"html_vall").c_str(),R_OK);
+    if (access(html_help_dir.c_str(),R_OK))      
+      cerr << "Unable to open HTML doc directory " << html_help_dir << endl;
+#endif
+    if (!force_rebuild && b1 && b2 && b3){
       if (get_index_from_cache((html_help_dir+"html_mtt").c_str(),html_mtt,verbose)&&
 	  get_index_from_cache((html_help_dir+"html_mall").c_str(),html_mall,verbose)&&
 	  get_index_from_cache((html_help_dir+"html_vall").c_str(),html_vall,verbose) )

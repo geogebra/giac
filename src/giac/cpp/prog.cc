@@ -105,10 +105,23 @@ extern "C" uint32_t mainThreadStack[];
 
 #if defined(EMCC) || defined(EMCC2)
 #include <emscripten.h>
+int emfltkdbg=0; // set to 1 to enable emscripten_loop inside debugger
+// this is much more comfortable, but will only work if called from
+// Xcas main menu, it does not work if called from a commandline
 #endif
 
 #if defined KHICAS || defined SDL_KHICAS
 #include "kdisplay.h"
+#endif
+
+#if defined EMCC2 && defined HAVE_LIBFLTK
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Hold_Browser.H>
+#include <FL/Fl_Return_Button.H>
+#include <FL/Fl_Tooltip.H>
+#include "hist.h"
+#include "Xcas1.h"
+Fl_Group * emdbg_w=0;
 #endif
 
 #ifndef NO_NAMESPACE_GIAC
@@ -6476,7 +6489,9 @@ namespace giac {
       }
     } // end while(1)
   }
+
 #else // KHICAS
+
 #if (defined EMCC || defined EMCC2 ) && !defined GIAC_GGB
   void debug_loop(gen &res,GIAC_CONTEXT){
     if (!debug_ptr(contextptr)->debug_allowed || (!debug_ptr(contextptr)->sst_mode && !equalposcomp(debug_ptr(contextptr)->sst_at,debug_ptr(contextptr)->current_instruction)) )
@@ -6524,22 +6539,83 @@ namespace giac {
       }
     }
     w.push_back(dw);
-    // print debugged program instructions from current-2 to current+3
-    progs="debug "+w[0].print(contextptr)+'\n';
-    if (w[4].type==_INT_){
-      vector<string> ws;
-      ws.push_back("");
-      debug_print(w[2],ws,contextptr);
-      int m=giacmax(0,w[4].val-2),M=giacmin(w[4].val+3,ws.size()-1);
-      for (int i=m;i<=M;++i){
-	progs += print_INT_(i)+((i==w[4].val)?" => ":"    ")+ws[i]+'\n';
+#if defined EMCC2 && defined HAVE_LIBFLTK
+    static  Fl_Hold_Browser * prgsrc_browser=0,*var_browser=0;
+    static Fl_Button * button1=0,*button2=0,*button3=0,*button4=0;
+    if (emfltkdbg){
+      if (emdbg_w==0){
+	Fl_Group::current(xcas::Xcas_Main_Window);
+	int dx=500,dy=400,L=xcas::Xcas_MainTab->labelsize();
+	emdbg_w=new Fl_Group(0,0,dx,dy);
+	prgsrc_browser = new Fl_Hold_Browser(2,2,dx-2,dy/2-(L+4));
+	prgsrc_browser->format_char(0);
+	prgsrc_browser->type(2);
+	prgsrc_browser->label(gettext("Source"));
+	prgsrc_browser->align(FL_ALIGN_TOP);
+	prgsrc_browser->labeltype(FL_NO_LABEL);
+	int ypos=prgsrc_browser->y()+prgsrc_browser->h()+2;
+	button1 = new Fl_Button(2,ypos,dx/4-4,L+2);
+	button1->shortcut(0xff0d);
+	button1->label(gettext("sst"));
+	button1->tooltip(gettext("Click to execute next step"));
+	button2 = new Fl_Button(dx/4,ypos,dx/4-4,L+2);
+	button2->label(gettext("in"));
+	button2->tooltip(gettext("Click to step in function"));
+	button3 = new Fl_Button(2*dx/4+2,ypos,dx/4-4,L+2);
+	button3->label(gettext("cont"));
+	button3->tooltip(gettext("Click to continue non stop"));
+	button4 = new Fl_Button(3*dx/4+2,ypos,dx/4-4,L+2);
+	button4->shortcut(0xff1b);
+	button4->label(gettext("Click to cancel"));
+	ypos += L+4;
+	var_browser = new Fl_Hold_Browser(prgsrc_browser->x(),ypos,prgsrc_browser->w(),prgsrc_browser->h());
+	var_browser->label("Local variables");
+	var_browser->type(2);
+	var_browser->align(FL_ALIGN_TOP);
+	var_browser->labeltype(FL_NO_LABEL);
+	emdbg_w->end();
+	emdbg_w->resizable(emdbg_w);
+	Fl_Group::current(0);
+      }
+      prgsrc_browser->clear();
+      var_browser->clear();
+      if (w[4].type==_INT_){
+	vector<string> ws;
+	ws.push_back("");
+	debug_print(w[2],ws,contextptr);
+	// int m=giacmax(0,w[4].val-2),M=giacmin(w[4].val+3,ws.size()-1);
+	int m=0,M=ws.size()-1;
+	for (int i=m;i<=M;++i){
+	  prgsrc_browser->add((print_INT_(i)+((i==w[4].val)?" => ":"    ")+ws[i]).c_str());
+	}
+	prgsrc_browser->value(w[4].val-m+1);
+      }
+      else {
+	string s=w[2].print(contextptr);
+	progs += "\nprg: "+s+" # "+w[4].print(contextptr);
+	prgsrc_browser->add(progs.c_str());
       }
     }
-    else {
-      string s=w[2].print(contextptr);
-      progs += "\nprg: "+s+" # "+w[4].print(contextptr);
-    }
-    progs += "======\n";
+    else 
+#endif
+      {
+	// print debugged program instructions from current-2 to current+3
+	progs="debug "+w[0].print(contextptr)+'\n';
+	if (w[4].type==_INT_){
+	  vector<string> ws;
+	  ws.push_back("");
+	  debug_print(w[2],ws,contextptr);
+	  int m=giacmax(0,w[4].val-2),M=giacmin(w[4].val+3,ws.size()-1);
+	  for (int i=m;i<=M;++i){
+	    progs += print_INT_(i)+((i==w[4].val)?" => ":"    ")+ws[i]+'\n';
+	  }
+	}
+	else {
+	  string s=w[2].print(contextptr);
+	  progs += "\nprg: "+s+" # "+w[4].print(contextptr);
+	}
+	progs += "======\n";
+      }
     // evaluate watch with debug_ptr(contextptr)->debug_allowed=false
     debug_ptr(contextptr)->debug_allowed=false;
     string evals,breaks;
@@ -6550,62 +6626,70 @@ namespace giac {
       gen tmp=protecteval(*it,1,contextptr);
       string s=tmp.print(contextptr);
       if (s.size()>100) s=s.substr(0,97)+"...";
-      evals += s+",";
-      if (nvars<4 || (nv % 2)==1 || nv==nvars-1)
-	evals += '\n';
-      else
-	evals += "    ";
+      evals += s;
+#if defined EMCC2 && defined HAVE_LIBFLTK
+      if (emfltkdbg){
+	var_browser->add(evals.c_str());
+	evals="";
+      } else
+#endif
+	{
+	  evals += ",";
+	  if (nvars<4 || (nv % 2)==1 || nv==nvars-1)
+	    evals += '\n';
+	  else
+	    evals += "    ";
+	}
     }
     w.push_back(dw);
     debug_ptr(contextptr)->debug_allowed=true;
     *dbgptr->debug_info_ptr=w;
-    // dbgptr->debug_refresh=false;
-    // need a way to pass w to EM_ASM like environment and call HTML5 prompt
-    while (1){
-      int i=EM_ASM_INT({
-	  var msg = UTF8ToString($0);//Pointer_stringify($0); // Convert message to JS string
-	  var tst=prompt(msg,'n');             // Use JS version of alert
-	  if (tst==null) return -4;
-	  if (tst=='next' || tst=='n' || tst=='sst') return -1;
-	  if (tst=='sst_in' || tst=='s' ) return -2;
-	  if (tst=='cont' || tst=='c' ) return -3;
-	  if (tst=='kill' || tst=='k' ) return -4;
-	  if (tst=='break' || tst=='b' ) return -5;
-	  if (tst=='delete' || tst=='d' ) return -6;
-	  return allocate(intArrayFromString(tst), 'i8', ALLOC_NORMAL);
-	}, (progs+breaks+evals+"======\nn: next, s:step in, c:cont, b: break, d:del").c_str());
-      breaks="";
-      if (i>0){
-	char *ptr=(char *)i;
-	gen tmp=gen(ptr,contextptr);
-	free(ptr);
-	if (tmp.is_symb_of_sommet(at_equal)) tmp=equaltosto(tmp,contextptr);
-	evals=(string("eval: ")+ptr)+" => "+protecteval(tmp,1,contextptr).print(contextptr)+'\n';
-	CERR << evals ;
-	iterateur it=dw.begin(),itend=dw.end();
-	for (;it!=itend;++it){
-	  evals += it->print(contextptr)+"=";
-	  gen tmp=protecteval(*it,1,contextptr);
-	  evals += tmp.print(contextptr)+",";
+#if defined EMCC2 && defined HAVE_LIBFLTK
+    if (emfltkdbg){
+      Fl_Window * mainw=xcas::Xcas_Main_Window;
+      if (mainw){
+	int X=xcas::Xcas_MainTab->x(),Y=xcas::Xcas_MainTab->y(),W=xcas::Xcas_MainTab->w(),H=xcas::Xcas_MainTab->h();
+	if (xcas::Xcas_MainTab){
+	  emdbg_w->resize(X,Y,W,H);
+	  xcas::change_group_fontsize(emdbg_w,xcas::Xcas_MainTab->labelsize());
+	  xcas::Xcas_MainTab->hide();
+	  emdbg_w->show();
 	}
       }
-      // CERR << i << '\n';
-      if (i==-1){
+      int r=0;
+      for (;;) {
+	Fl_Widget *o = Fl::readqueue();
+	if (!o){
+	  if (xcas::Xcas_Main_Window)
+	    Xcas_emscripten_main_loop();
+	  else
+	    Fl::wait();
+	}
+	else {
+	  if (o == button1) {r = -1; break;} // sst
+	  if (o == button2) {r = -2; break;} // in
+	  if (o == button3) {r = -3; break;} // cont
+	  if (o == button4) {r = -4; break;} // kill
+	}
+      }
+      if (xcas::Xcas_MainTab) xcas::Xcas_MainTab->show();
+      emdbg_w->hide();
+      if (r==-1){
 	dbgptr->sst_in_mode=false;
 	dbgptr->sst_mode=true;
 	return;
       }
-      if (i==-2){
+      if (r==-2){
 	dbgptr->sst_in_mode=true;
 	dbgptr->sst_mode=true;
 	return;
       }
-      if (i==-3){
+      if (r==-3){
 	dbgptr->sst_in_mode=false;
 	dbgptr->sst_mode=false;
 	return;
       }
-      if (i==-4){
+      if (r==-4){
 	if (!contextptr)
 	  protection_level=0;
 	debug_ptr(contextptr)->debug_mode=false;
@@ -6615,21 +6699,82 @@ namespace giac {
 	ctrl_c=interrupted=true;
 	return;
       }
-      if (i==-5){
-	breaks="break line "+print_INT_(w[4].val)+'\n';
-	_breakpoint(makesequence(w[0][0],w[4]),contextptr);
+      return ; // should never be reached
+    } else
+#endif // EMCC2 && FLTK
+      {
+	// dbgptr->debug_refresh=false;
+	// need a way to pass w to EM_ASM like environment and call HTML5 prompt
+	while (1){
+	  int i=EM_ASM_INT({
+	      var msg = UTF8ToString($0);//Pointer_stringify($0); // Convert message to JS string
+	      var tst=prompt(msg,'n');             // Use JS version of alert
+	      if (tst==null) return -4;
+	      if (tst=='next' || tst=='n' || tst=='sst') return -1;
+	      if (tst=='sst_in' || tst=='s' ) return -2;
+	      if (tst=='cont' || tst=='c' ) return -3;
+	      if (tst=='kill' || tst=='k' ) return -4;
+	      if (tst=='break' || tst=='b' ) return -5;
+	      if (tst=='delete' || tst=='d' ) return -6;
+	      return allocate(intArrayFromString(tst), 'i8', ALLOC_NORMAL);
+	    }, (progs+breaks+evals+"======\nn: next, s:step in, c:cont, b: break, k: kill, d:del").c_str());
+	  breaks="";
+	  if (i>0){
+	    char *ptr=(char *)i;
+	    gen tmp=gen(ptr,contextptr);
+	    free(ptr);
+	    if (tmp.is_symb_of_sommet(at_equal)) tmp=equaltosto(tmp,contextptr);
+	    evals=(string("eval: ")+ptr)+" => "+protecteval(tmp,1,contextptr).print(contextptr)+'\n';
+	    CERR << evals ;
+	    iterateur it=dw.begin(),itend=dw.end();
+	    for (;it!=itend;++it){
+	      evals += it->print(contextptr)+"=";
+	      gen tmp=protecteval(*it,1,contextptr);
+	      evals += tmp.print(contextptr)+",";
+	    }
+	  }
+	  // CERR << i << '\n';
+	  if (i==-1){
+	    dbgptr->sst_in_mode=false;
+	    dbgptr->sst_mode=true;
+	    return;
+	  }
+	  if (i==-2){
+	    dbgptr->sst_in_mode=true;
+	    dbgptr->sst_mode=true;
+	    return;
+	  }
+	  if (i==-3){
+	    dbgptr->sst_in_mode=false;
+	    dbgptr->sst_mode=false;
+	    return;
+	  }
+	  if (i==-4){
+	    if (!contextptr)
+	      protection_level=0;
+	    debug_ptr(contextptr)->debug_mode=false;
+	    debug_ptr(contextptr)->current_instruction_stack.clear();
+	    debug_ptr(contextptr)->sst_at_stack.clear();
+	    debug_ptr(contextptr)->args_stack.clear();
+	    ctrl_c=interrupted=true;
+	    return;
+	  }
+	  if (i==-5){
+	    breaks="break line "+print_INT_(w[4].val)+'\n';
+	    _breakpoint(makesequence(w[0][0],w[4]),contextptr);
+	  }
+	  if (i==-6){
+	    breaks="remove break line "+print_INT_(w[4].val)+'\n';
+	    _rmbreakpoint(makesequence(w[0][0],w[4]),contextptr);
+	  }
+	} // end while(i>0)
       }
-      if (i==-6){
-	breaks="remove break line "+print_INT_(w[4].val)+'\n';
-	_rmbreakpoint(makesequence(w[0][0],w[4]),contextptr);
-      }
-    } // end while(i>0)
-   }
+  }
 #else // EMCC
-
+  
 #ifdef GIAC_HAS_STO_38
   void aspen_debug_loop(gen & res,GIAC_CONTEXT);
-
+  
   void debug_loop(gen &res,GIAC_CONTEXT){
     aspen_debug_loop(res,contextptr);
   }

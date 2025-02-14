@@ -7788,6 +7788,22 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     return !is_zero(periode);
   }
 
+  gen _periode(const gen & a,GIAC_CONTEXT){
+    if (a.type==_STRNG && a.subtype==-1) return  a;
+    vecteur v=gen2vecteur(a);
+    if (v.size()==1)
+      v.push_back(ggb_var(a));
+    if (v.size()!=2)
+      return gensizeerr(contextptr);
+    gen g=v[0],x=v[1],T;
+    if (!is_periodic(g,x,T,contextptr))
+      return undef;
+    return T;
+  }
+  static const char _periode_s []="periode";
+  static define_unary_function_eval (__periode,&_periode,_periode_s);
+  define_unary_function_ptr5( at_periode ,alias_at_periode,&__periode,0,true);
+  
   bool in_domain(const gen & df,const gen &x,const gen & x0,GIAC_CONTEXT){
     if (df==x)
       return true;

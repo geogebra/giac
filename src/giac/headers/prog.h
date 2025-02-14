@@ -22,6 +22,11 @@
 #include <string>
 #include <map>
 #include "gen.h"
+#if defined EMCC2 && defined HAVE_LIBFLTK
+#include <FL/Fl_Group.H>
+extern  int emfltkdbg;
+extern Fl_Group * emdbg_w;
+#endif
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {

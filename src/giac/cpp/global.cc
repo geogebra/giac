@@ -5043,6 +5043,8 @@ extern "C" void Sleep(unsigned int miliSecond);
 	browser="chromium";
       if (!access("/usr/bin/firefox",R_OK))
 	browser="firefox";
+      if (!access("/usr/bin/open",R_OK))
+	browser="open";
 #endif
     }
     // find binary name
@@ -5071,7 +5073,9 @@ extern "C" void Sleep(unsigned int miliSecond);
   bool system_browser_command(const string & file){
 #ifdef EMCC2
     EM_ASM_ARGS({
-        window.open(UTF8ToString($0), '_blank').focus();
+        var url=UTF8ToString($0);
+        console.log('system_browser_command',url);
+        window.open(url, '_blank').focus();
       },file.c_str());
     return true;
 #endif
@@ -8244,6 +8248,10 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
   // elif ...: -> elif ... then [nothing in stack]
   // try: ... except: ...
   std::string python2xcas(const std::string & s_orig,GIAC_CONTEXT){
+    if (strncmp(s_orig.c_str(),"function",8)==0 || strncmp(s_orig.c_str(),"fonction",8)==0){
+      python_compat(contextptr)=0;
+      return s_orig;
+    }
     if (xcas_mode(contextptr)>0 && abs_calc_mode(contextptr)!=38)
       return s_orig;
     if (abs_calc_mode(contextptr)==38){

@@ -956,7 +956,7 @@ namespace giac {
 	} // end c3==0
 	else {
 	  // s3==0, s1!=0, s2!=0, c3!=0
-	  gen tmp=normal(-c1/s1*u-c2/s2*v,contextptr);
+	  gen tmp=normal(subvecteur(multvecteur(-c1/s1,u),multvecteur(c2/s2,v)),contextptr);
 	  if (tmp.type!=_VECT) return false;
 	  gen dred=subst(q,vxyz,*tmp._VECTptr,false,contextptr);
 	  tmp=normal(tmp-dred/(2*c3)*w,contextptr);

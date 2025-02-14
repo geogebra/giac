@@ -182,6 +182,9 @@ namespace giac {
   gen _lncollect(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_lncollect;
 
+  gen _lntologb(const gen & args,GIAC_CONTEXT);
+  extern const unary_function_ptr * const  at_lntologb;
+
   gen _powexpand(const gen & args,GIAC_CONTEXT);
   gen powexpand(const gen & e,GIAC_CONTEXT);
   gen exp2pow(const gen & e,GIAC_CONTEXT);

@@ -208,4 +208,12 @@
 #define KEY_PRGM_MENU 48
 #define KEY_CTRL_SD         39990
 
+// math+
+#define KEY_CTRL_PREVTAB    30075
+#define KEY_CTRL_NEXTTAB    30074
+#define KEY_CTRL_PGUP       30065
+#define KEY_CTRL_PGDOWN     30066
+#define KEY_CTRL_TOOLS      30068
+#define KEY_CTRL_FORMAT2    30067
+
 #endif
