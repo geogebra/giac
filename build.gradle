@@ -9,7 +9,7 @@
 plugins {
     id 'visual-studio'
     id 'cpp'
-    id 'de.undercouch.download' version '3.1.1'
+    id 'de.undercouch.download' version '4.0.3'
     id 'maven-publish'
 }
 
@@ -56,23 +56,14 @@ project.setDescription('Giac CAS for GeoGebra')
  */
 
 // FIXME: Some of these settings are hardcoded at the moment, they need to be more general.
-def externalSourceDir = "/home/autotest/gmp+mpfr-llvm"
+def externalSourceDir = "/data/jenkins/ws"
 // You may need to download and unzip following packages:
-def gmpSourceDir = "$externalSourceDir/gmp-6.0.0"
-def mpfrSourceDir = "$externalSourceDir/mpfr-3.1.2"
-def emgiacSourceDir = "$externalSourceDir/emgiac"
+def gmpSourceDir = "$externalSourceDir/gmp-6.3.0"
+def mpfrSourceDir = "$externalSourceDir/mpfr-4.2.1"
 
 def jsPrebuiltDir = "src/giac.js/prebuilt"
 def LlvmMpfrA = "$jsPrebuiltDir/libmpfr.a"
 def LlvmGmpA = "$jsPrebuiltDir/libgmp.a"
-if (System.env['EXT_GMPMPFR'] != null && System.env['EXT_GMPMPFR'] == "local") {
-    LlvmMpfrA = "$mpfrSourceDir/src/.libs/libmpfr.a"
-    LlvmGmpA = "$gmpSourceDir/.libs/libgmp.a"
-}
-if (System.env['EXT_GMPMPFR'] != null && System.env['EXT_GMPMPFR'] == "emgiac") {
-    LlvmMpfrA = "$emgiacSourceDir/giac/libmpfr.a"
-    LlvmGmpA = "$emgiacSourceDir/giac/libgmp.a"
-}
 
 def emsdkDir = file('emsdk')
 def emsdkRunDir = file("$emsdkDir")
@@ -1062,6 +1053,11 @@ tasks.register('emMakeGmp') {
             commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir}/emmake make"
             workingDir gmpSourceDir
         }
+        copy {
+            from("$gmpSourceDir/.libs/")
+            into(jsPrebuiltDir)
+            include("libgmp.a")
+        }
     }
 }
 
@@ -1084,6 +1080,11 @@ tasks.register('emMakeMpfr') {
         exec {
             commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir}/emmake make"
             workingDir mpfrSourceDir
+        }
+        copy {
+            from("$mpfrSourceDir/src/.libs/")
+            into(jsPrebuiltDir)
+            include("libmpfr.a")
         }
     }
 }
