@@ -84,8 +84,8 @@ endif()
 
 if(APPLE)
     message(STATUS "Using prebuilt gmp/mpfr (Mac)")
-    find_static_library(gmp GMP_STATIC ${PREBUILT_DIR}/osx/x86-64/)
-    find_static_library(mpfr MPFR_STATIC ${PREBUILT_DIR}/osx/x86-64/)
+    find_static_library(gmp GMP_STATIC ${PREBUILT_DIR}/maccatalyst/x86_64/)
+    find_static_library(mpfr MPFR_STATIC ${PREBUILT_DIR}/maccatalyst/x86_64/)
 endif()
 
 if(WIN32)
