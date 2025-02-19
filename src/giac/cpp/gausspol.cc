@@ -5194,6 +5194,16 @@ namespace giac {
       d=p;
       return ;
     }
+    if (p.coord.front().value.type==_MOD && q.coord.front().value.type!=_MOD){
+      polynome qq=p.coord.front().value*q;
+      gcd(p,qq,d);
+      return;
+    }
+    if (p.coord.front().value.type!=_MOD && q.coord.front().value.type==_MOD){
+      polynome pp=q.coord.front().value*p;
+      gcd(pp,q,d);
+      return;
+    }
     /* if (p==q)
        return p; */
     if (p.dim==0){
