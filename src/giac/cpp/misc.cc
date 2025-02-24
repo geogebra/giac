@@ -7733,10 +7733,22 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
 #endif
 
   // step by step utilities
-  gen rm_nontrig(const gen &g){
-    if (g.type!=_SYMB || g._SYMBptr->sommet==at_exp || g._SYMBptr->sommet==at_sin || g._SYMBptr->sommet==at_cos || g._SYMBptr->sommet==at_tan)
+  gen rm_nontrig(const gen &g,const gen &x){
+    if (g.type!=_SYMB)
       return g;
-    return g._SYMBptr->feuille;
+    gen f=g._SYMBptr->feuille;
+    if (g._SYMBptr->sommet==at_exp || g._SYMBptr->sommet==at_sin || g._SYMBptr->sommet==at_cos || g._SYMBptr->sommet==at_tan){
+      vecteur vx=lvarx(f,x);
+      for (int i=0;i<vx.size();++i){
+        if (vx[i].type!=_SYMB)
+          return g;
+        if (vx[i]._SYMBptr->sommet==at_exp || vx[i]._SYMBptr->sommet==at_sin || vx[i]._SYMBptr->sommet==at_cos || vx[i]._SYMBptr->sommet==at_tan)
+          continue;
+        return g;
+      }
+      return f;
+    }
+    return f;
   }
 
   bool is_periodic(const gen & f,const gen & x,gen & periode,GIAC_CONTEXT){
@@ -7746,7 +7758,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
       vecteur w(vx);
       // remove non trig rootnodes up to fixpoint
       for (unsigned i=0;i<vx.size();++i)
-        vx[i]=rm_nontrig(vx[i]);
+        vx[i]=rm_nontrig(vx[i],x);
       vx=lvarx(vx,x);
       if (vx==w)
         break;
