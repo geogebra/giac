@@ -7754,6 +7754,42 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
   bool is_periodic(const gen & f,const gen & x,gen & periode,GIAC_CONTEXT){
     periode=0;
     vecteur vx=lvarx(f,x);
+    if (!lop(vx,at_ceil).empty())
+      return is_periodic(ceil2floor(f,contextptr),x,periode,contextptr);
+    // special code for floor of linear expressions
+    vecteur vf=lop(vx,at_floor);
+    if (!vf.empty()){
+      gen T=0,a,b;
+      vecteur Ti,rep,repT;
+      for (int i=0;i<vf.size();++i){
+        gen vi=vf[i];
+        gen fi=vi._SYMBptr->feuille;
+        if (is_linear_wrt(fi,x,a,b,contextptr)){
+          gen curT=inv(a,contextptr);
+          Ti.push_back(curT);
+          if (T==0)
+            T=curT;
+          else
+            T=lcm(T,curT);
+          rep.push_back(gen("var_floor"+print_INT_(i),contextptr));
+        }
+        else {
+          T=0; break;
+        }
+      }
+      if (T!=0){
+        for (int i=0;i<Ti.size();++i)
+          repT.push_back(rep[i]+T/Ti[i]);
+        gen F=subst(f,vf,rep,false,contextptr);
+        gen FT=subst(F,x,x+T,false,contextptr);
+        FT=subst(FT,rep,repT,false,contextptr);
+        gen FTF=ratnormal(FT-F,contextptr);
+        if (is_zero(FTF)){
+          periode=T;
+          return true;
+        }
+      }
+    }
     for (;;){
       vecteur w(vx);
       // remove non trig rootnodes up to fixpoint
