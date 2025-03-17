@@ -2835,7 +2835,8 @@ namespace giac {
     if (is_equal(args))
       return apply_to_equal(args,_trigsin,contextptr);
     gen g=ratnormal(_tan2sincos(args,contextptr),contextptr);
-    return normal(trigsin(g,contextptr),contextptr);
+    g=trigsin(g,contextptr);
+    return normal(g,contextptr); // recursive_normal required on the fxcg50? same for trigcos/trigtan
   }
   static const char _trigsin_s []="trigsin";
   static define_unary_function_eval (__trigsin,&_trigsin,_trigsin_s);

@@ -924,6 +924,10 @@ namespace giac {
       remsum += rem;
     }
     res = res+risch_lin(remsum,x,remains_to_integrate,contextptr);
+    // change for integrate((3sin(x)-sin(3x))^(1/3));
+    vector<const unary_function_ptr *> vsubstin(1,at_inv);
+    vector<gen_op_context> vsubstout(1,invexptoexpneg);
+    res=subst(res,vsubstin,vsubstout,true,contextptr); 
     if (is_zero(res)){ // perhaps we should derive res and subtract it from e_orig
       remains_to_integrate=e_orig;
     }

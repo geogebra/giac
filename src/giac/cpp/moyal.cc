@@ -4259,7 +4259,17 @@ namespace giac {
 	if (n==-1 && z.real()<0){
 	  double lnw=std::log(-z.real());
 	  double lnlnw=std::log(-lnw);
-	  w=lnw-lnlnw-lnlnw/lnw;
+	  w=lnw-lnlnw+lnlnw/lnw;
+          /* was -lnlnw/lnw, change spotted by A. Chan, confirmed by asymptotic analysis
+             lnw:=ln(-z); lnlnw:=ln(-lnw); w:=lnw-lnlnw+c; c is a o(1) if z->0
+             eq:=subst(texpand(w*exp(w))-z,exp(c),c+1);
+             solve(subst(numer(eq)=0,c^2,0),c);
+             result for c: (-ln(-ln(-z)))/(-ln(-z)+ln(-ln(-z))-1)
+             can also be checked with 
+             w:=lnw-lnlnw-lnlnw/lnw
+             plot(w*exp(w)-z,z=-0.1..-0.001)
+             and compare with  w:=lnw-lnlnw+lnlnw/lnw
+           */
 	}
       }
       else {
