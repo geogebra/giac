@@ -4281,7 +4281,7 @@ namespace giac {
     }
     if (n==0 && std::abs(z - .5)<=.5) 
       w = (0.35173371 * (0.1237166 + 7.061302897 * z)) / (2. + 0.827184 * (1. + 2. * z));// (1,1) Pade approximant for W(z,0)
-    if (n==-1 && std::abs(z - .5)<=.5) 
+    if (n==-1 && std::abs(z - .5)<.5) 
       w = -((complex<double>(2.2591588985 ,4.22096) * (complex<double>(-14.073271 ,-33.767687754) * z - complex<double>(12.7127,-19.071643) * (1. + 2.*z))) / (2. - complex<double>(17.23103,-10.629721) * (1. + 2.*z)));// (1,1) Pade
     if (z.imag()==0 && w.imag()==0){
       double Z=z.real(),W=w.real();
