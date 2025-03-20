@@ -507,6 +507,27 @@ namespace giac {
     _WHITE=7,
 #endif
 #endif // KHICAS
+#ifdef TICE
+    _POINT_LOSANGE= 0,
+    _POINT_PLUS = 0,
+    _POINT_INVISIBLE = 0,
+    _POINT_CARRE = 0,
+    _POINT_TRIANGLE = 0,
+    _POINT_ETOILE = 0,
+    _POINT_POINT = 0,
+    _FILL_POLYGON = 1<<22,
+    _QUADRANT1 = 0,
+    _QUADRANT2 = 0,
+    _QUADRANT3 = 0,
+    _QUADRANT4 = 0,
+    _DASH_LINE = 0,
+    _DOT_LINE = 0,
+    _DASHDOT_LINE = 0,
+    _DASHDOTDOT_LINE = 0,
+    _CAP_FLAT_LINE = 0,
+    _CAP_ROUND_LINE = 0,
+    _CAP_SQUARE_LINE = 0,
+#else
     _POINT_LOSANGE= 1 << 25,
     _POINT_PLUS = 1 << 26,
     _POINT_INVISIBLE = 1 << 27,
@@ -526,6 +547,7 @@ namespace giac {
     _CAP_FLAT_LINE = 5 << 22,
     _CAP_ROUND_LINE = 6 << 22,
     _CAP_SQUARE_LINE = 7 << 22,
+#endif
     _LINE_WIDTH_1 = 0,
     _LINE_WIDTH_2 = 1 << 16,
     _LINE_WIDTH_3 = 2 << 16,
@@ -545,7 +567,11 @@ namespace giac {
 #ifdef BESTA_OS
 #pragma diag_suppress 61
 #endif
-    _HIDDEN_NAME = 1 << 31
+#ifdef TICE
+    _HIDDEN_NAME = 1 << 23,
+#else
+    _HIDDEN_NAME = 1 << 31,
+#endif
   };
 
   enum maple_libs {

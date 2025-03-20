@@ -4664,6 +4664,24 @@ namespace giac {
         if (cplxv)
           base=subst(base,cst_i,x0,true,contextptr);
         syst.push_back(symb_pow(vars[i],d)-pow(base,num,contextptr));
+        // if gg is not irreducible, select the right factor
+        gen vi=_evalf(makesequence(v[i],extpar.digits),contextptr);
+        if (vi.type<_IDNT){
+          gen ggf=_factors(gg,contextptr);
+          if (ggf.type==_VECT && ggf._VECTptr->size()>2){
+            vecteur & ggl=*ggf._VECTptr;
+            gen oldP=ggl[0],oldval=abs(_horner(makesequence(oldP,vi,vx_var),contextptr),contextptr);
+            for (int i=2;i<ggl.size();i+=2){
+              gen curP=ggl[i],curval=abs(_horner(makesequence(curP,vi,vx_var),contextptr),contextptr);
+              if (is_greater(oldval,curval,contextptr)){
+                oldval=curval;
+                oldP=curP;
+              }
+            }
+            gg=oldP;
+            syst.back()=_horner(makesequence(oldP,vars[i],vx_var),contextptr);
+          }
+        }
       }
       else {
         debug_infolevel=dbg;

@@ -21,6 +21,9 @@
 #ifndef _GIAC_FIRST_H_
 #define _GIAC_FIRST_H_
 
+#define INT_MAXSHIFT (sizeof(int)*8-1)
+#define INT_MAXSHIFTM1 (sizeof(int)*8-2)
+
 #if __cplusplus >= 201103L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201103L)
 // post-c++11 functional headers changes, thanks to George Huebner
 #define CPP11
@@ -135,7 +138,7 @@ inline Bidon operator << (Bidon,const char *){return Bidon();}
 #define COUT Bidon(0) //std::cout
 #define CERR Bidon(0) //std::cout
 typedef unsigned pid_t;
-double lgamma(double);
+extern "C" double lgamma(double);
 #else // FXCG
 
 #ifdef NSPIRE
