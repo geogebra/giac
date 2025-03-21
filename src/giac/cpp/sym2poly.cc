@@ -4679,7 +4679,20 @@ namespace giac {
               }
             }
             gg=oldP;
-            syst.back()=_horner(makesequence(oldP,vars[i],vx_var),contextptr);
+            vecteur PV=gen2vecteur(_coeff(makesequence(oldP,vx_var),contextptr));
+            if (PV.size()>=2){
+              int I=1;
+              for (;I<PV.size()-1;++I){
+                if (!is_exactly_zero(PV[I]))
+                  break;
+              }
+              if (I==PV.size()-1)
+                v[i]=pow(-PV[I]/PV[0],inv(I,contextptr),contextptr);
+            }
+            oldP=subst(oldP,vx_var,vars[i],false,contextptr);
+            syst.back()=subst(oldP,V,VARS,false,contextptr);
+            if (cplxv)
+              syst.back()=subst(syst.back(),cst_i,x0,true,contextptr);              
           }
         }
       }
