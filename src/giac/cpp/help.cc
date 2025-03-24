@@ -653,7 +653,7 @@ namespace giac {
   string printint(int i){
     if (!i)
       return string("0");
-    if (i<0)
+    if (i<0 && i!=-i)
       return string("-")+printint(-i);      
     int length = (int) std::floor(std::log10((double) i));
 #if defined VISUALC || defined BESTA_OS

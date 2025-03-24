@@ -9139,7 +9139,7 @@ namespace xcas {
       argcolor=M_PI; return -d;
     }
     double x=g._CPLXptr->_DOUBLE_val,y=(g._CPLXptr+1)->_DOUBLE_val;
-    argcolor=std::atan2(x,y);
+    argcolor=std::atan2(y,x);
     double n=std::sqrt(x*x+y*y); // will be encoded in a float, no overflow care
     return n;
   }
