@@ -6812,7 +6812,7 @@ namespace giac {
 	    return true;
 	}
       }
-      env->complexe=true;
+      env->complexe=true; return false;
     }
     if (env->moduloon && !env->complexe && p.size()>=HGCD && q.size()>=HGCD){
       modpoly rem,quo;
