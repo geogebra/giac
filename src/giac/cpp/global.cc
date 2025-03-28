@@ -8248,6 +8248,8 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
   // elif ...: -> elif ... then [nothing in stack]
   // try: ... except: ...
   std::string python2xcas(const std::string & s_orig,GIAC_CONTEXT){
+    if (strncmp(s_orig.c_str(),"spreadsheet[",12)==0)
+      return s_orig;
     if (strncmp(s_orig.c_str(),"function",8)==0 || strncmp(s_orig.c_str(),"fonction",8)==0){
       python_compat(contextptr)=0;
       return s_orig;

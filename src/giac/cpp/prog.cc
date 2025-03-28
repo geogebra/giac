@@ -6139,7 +6139,11 @@ namespace giac {
 
   gen _debug(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
-#ifndef EMCC2
+#ifdef EMCC2
+#ifdef HAVE_LIBFLTK
+    *logptr(contextptr) << "Hint: run debug from Prg menu for a better user interface\n";
+#endif
+#else
     if (child_id && thread_eval_status(contextptr)!=1)
       return args;
 #endif
