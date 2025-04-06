@@ -5473,6 +5473,8 @@ NULL,NULL,SW_SHOWNORMAL);
       }
 #endif
     }
+    if (debug_infolevel)
+      cout << "LANG " << s << "\n";
     if (s.size()>=2){
       s=s.substr(0,2);
       int i=string2lang(s);

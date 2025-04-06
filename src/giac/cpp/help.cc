@@ -1504,12 +1504,16 @@ alphasort (const struct dirent **a, const struct dirent **b)
     char buf[BUFFER_SIZE];
 #endif
     ifstream if_mtt(filename);
+    if (verbose){
+      bool b=if_mtt && !if_mtt.eof();
+      cout << "get_index_from_cache " << filename << (b?" OK":" BAD") << "\n";
+    }
     int n=0;
     while (if_mtt && !if_mtt.eof()){
       if_mtt.getline(buf,BUFFER_SIZE,char(0xa4)); // was '¤', utf8 not compatible, octal \244
       if (!if_mtt || if_mtt.eof()){
 	if (verbose)
-	  cerr << "// Read " << n << " entries from cache " << filename << endl;
+	  cout << "// Read " << n << " entries from cache " << filename << endl;
 #if defined VISUALC || defined BESTA_OS || defined FREERTOS
 	delete [] buf;
 #endif
@@ -1631,6 +1635,7 @@ alphasort (const struct dirent **a, const struct dirent **b)
       cerr << "Unable to open HTML doc directory " << html_help_dir << endl;
 #endif
     if (!force_rebuild && b1 && b2 && b3){
+      cout << "Reading from cache "<< html_help_dir << "\n";
       if (get_index_from_cache((html_help_dir+"html_mtt").c_str(),html_mtt,verbose)&&
 	  get_index_from_cache((html_help_dir+"html_mall").c_str(),html_mall,verbose)&&
 	  get_index_from_cache((html_help_dir+"html_vall").c_str(),html_vall,verbose) )

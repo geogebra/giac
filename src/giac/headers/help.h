@@ -91,7 +91,7 @@ namespace giac {
   aide helpon(const std::string & demande,const std::vector<aide> & v,int language,int count,bool with_op=true);
   std::string writehelp(const aide & cur_aide,int language);
 
-#if !defined(NSPIRE_NEWLIB) && !defined(RTOS_THREADX) && !defined(EMCC) && !defined(EMCC2) && !defined(NSPIRE) && !defined(FXCG) && !defined KHICAS
+#if !defined(NSPIRE_NEWLIB) && !defined(RTOS_THREADX) && !defined(EMCC) && !defined(NSPIRE) && !defined(FXCG) && !defined KHICAS
   extern std::multimap<std::string,std::string> html_mtt,html_mall;
   extern std::vector<std::string> html_vtt,html_vall;
 

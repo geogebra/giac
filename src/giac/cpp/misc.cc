@@ -11035,7 +11035,7 @@ void sync_screen(){}
 	var req = new XMLHttpRequest();
 	var bufsize=$2;
 	req.open("GET", url, false); // false: synchrone, true: async
-	req.overrideMimeType("text/plain; charset=x-user-defined");
+	req.overrideMimeType("application/octet-stream"); // "text/plain; charset=x-user-defined");
 	req.send(null); 
 	// will not work on different domain, except if 
 	// cross-domain is enabled (firefox CORS extension like Cross Domain)

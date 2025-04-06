@@ -4450,6 +4450,15 @@ extern "C" int write_file(const char * filename,const char * s,int len){
 	  cur += *s;
       }
       fprintf(stdout,"cur=%s\n",cur.c_str());
+#ifdef EMCC2
+      if (cur.size()>=5 && cur.substr(0,4)=="url="){
+	cur=cur.substr(4,cur.size()-4);
+	fprintf(stdout,"fetch %s to %s\n",cur.c_str(),filename);
+	cur=fetch(cur);
+	fprintf(stdout,"got %s\n",cur.c_str());
+	return write_file(filename,cur.c_str(),cur.size());
+      }
+#endif
       if (!cur.empty() && cur[0]=='+'){
 	fprintf(stdout,"script+=%s\n",cur.c_str());
 	script += cur.substr(1,cur.size()-1) +'\n';
@@ -4702,7 +4711,7 @@ int init_fs(){
       let pos=s.search('&');
       if (pos>0){
         console.log("link at",pos);
-        if (confirm('Copy link to session.xw?')){
+        if (1 || confirm('Copy link to session.xw?')){
 	  ccall('save_link_as_session',null,['string'],[s]);
 	  FS.syncfs(true,function (err) {
 	      console.log('syncfs error=',err);

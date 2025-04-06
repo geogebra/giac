@@ -313,7 +313,11 @@ namespace giac {
       r=select_root(*b1._VECTptr,contextptr); 
     if (is_undef(r))
       return algebraic_EXTension(a1,b1);
-    return horner(*a1._VECTptr,r);
+    r=horner(*a1._VECTptr,r);
+    gen rr,ri; reim(r,rr,ri,contextptr);
+    if (!has_i(b) && is_greater(epsilon(contextptr),abs(ri/rr,contextptr),contextptr))
+      r=rr;
+    return r;
   }
 
   gen ext_reduce(const gen & a, const gen & v){
