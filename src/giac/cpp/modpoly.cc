@@ -8082,6 +8082,20 @@ namespace giac {
     if ( (pt!=_INT_ && pt!=_CPLX)
 	 || (qt!=_INT_ && qt!=_CPLX) )
       return false;
+    // changed 2025 April 22 for factor(√(-5*(√(92*x^2-12*x+45)*abs(x)+(-2*√5)*x^2+(-3*√5)*x)/√5/36));
+    // get content of p and q, so that p and q are primitive
+    gen pcont=lgcd(p),qcont=lgcd(q);
+    if (1 && (pcont!=1 || qcont!=1)){
+      bool res=gcd_modular_algo(p/pcont,q/qcont,d,p_simp,q_simp);
+      if (!res) return res;
+      gen g=gcd(pcont,qcont,context0);
+      d=g*d;
+      if (p_simp)
+        *p_simp=(pcont/g)*(*p_simp);
+      if (q_simp)
+        *q_simp=(qcont/g)*(*q_simp);
+      return res;
+    }
     gen gcdfirstcoeff(gcd(p.front(),q.front(),context0));
     int gcddeg= giacmin(int(p.size()),int(q.size()))-1;
     environment env;

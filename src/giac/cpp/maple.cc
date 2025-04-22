@@ -172,10 +172,10 @@ extern "C" double millis();
 
 #if (defined(EMCC) || defined (EMCC2)) && !defined(PNACL)
 extern "C" double emcctime();
-extern "C" double emcctime(){
+extern "C" double emcctime(){ // requires UI.Datestart to be initialized with Date.now() in JS code
   double res;
   res=EM_ASM_DOUBLE_V({
-      var hw=Date.now();
+      var hw=Date.now()-UI.Datestart;
       return hw;
     });
   return res;
@@ -633,7 +633,11 @@ namespace giac {
 #endif // GIAC_GGB
 
 #if (defined(EMCC) || defined (EMCC2)) && !defined(PNACL)
-      return emcctime()/1e6;
+#ifdef EMCC2
+      return emcctime()/1e3;
+#else
+      return emcctime()/1e6; // should be 1e3 if using Date.now()
+#endif
 #endif
       return total_time(contextptr);
     }
@@ -672,7 +676,11 @@ namespace giac {
     // return difftime(t2,t1);
     double t1=emcctime();
     eval(a,level,contextptr);
+#ifdef EMCC2    
+    return (emcctime()-t1)/1e3;
+#else
     return (emcctime()-t1)/1e6;
+#endif
 #endif
 #if !defined GIAC_HAS_STO_38 && (defined VISUALC || defined __MINGW_H)
     struct _timeb timebuffer0,timebuffer1;

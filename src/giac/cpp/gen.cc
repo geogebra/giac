@@ -10956,8 +10956,19 @@ namespace giac {
       // "factor" dd=extension(ua,uv)*extension(u,uv)
       gen dd0(dd.front());
       simplify(b2,dd0);
-      if (is_one(dd0))
-	return res*algebraic_EXTension(ua,*(a._EXTptr+1));
+      if (is_one(dd0)){
+	res=res*algebraic_EXTension(ua,*(a._EXTptr+1));
+        if (0) return res;
+        // changed 2025 April 22 for factor(√(-5*(√(92*x^2-12*x+45)*abs(x)+(-2*√5)*x^2+(-3*√5)*x)/√5/36));
+#ifndef NO_STDEXCEPT
+        try {
+          gen resf=evalf(res,1,contextptr);
+          if (is_positive(-resf,contextptr))
+            res=-res;
+        } catch (std::runtime_error&e){
+        }
+#endif
+      }
       return res;
     }
     if (b.type==_EXT)
