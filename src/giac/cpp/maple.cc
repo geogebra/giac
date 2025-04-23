@@ -174,10 +174,21 @@ extern "C" double millis();
 extern "C" double emcctime();
 extern "C" double emcctime(){ // requires UI.Datestart to be initialized with Date.now() in JS code
   double res;
+#ifdef GIAC_GGB
+  static double datestart=EM_ASM_DOUBLE_V({
+      var hw=Date.now();
+      return hw;
+    });
+  res=EM_ASM_DOUBLE_V({
+      var hw=Date.now();
+      return hw;
+    })-datestart;
+#else
   res=EM_ASM_DOUBLE_V({
       var hw=Date.now()-UI.Datestart;
       return hw;
     });
+#endif
   return res;
 }
 // definition of emcctime should be added in emscripten directory src/library.js
