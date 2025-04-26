@@ -803,7 +803,7 @@ namespace giac {
       }
     }
     ~tdeg_t64(){
-      if (tab[0]%2 && ui){
+      if ((tab[0]%2) && ui){
 #ifdef ATOMIC
 	if (atomic_fetch_add((atomic<longlong> *) ui,-1)==0){
 	  free(ui);
@@ -1226,7 +1226,7 @@ namespace giac {
     return res;
   }
   
-  tdeg_t64 operator + (const tdeg_t64 & x,const tdeg_t64 & y){
+  tdeg_t64 operator + (const tdeg_t64 & x,const tdeg_t64 & y){ // FIXME: if x is 0 and y not 0 with different rep
 #ifdef GIAC_64VARS
     if (x.tab[0]%2){
 #ifdef GIAC_DEBUG_TDEG_T64
@@ -15897,7 +15897,7 @@ void G_idn(vector<unsigned> & G,size_t s){
       vector< vector<int> > Kxi(d,vector<int>(S)); Kxi.reserve(d);
       polymod<tdeg_t,modint_t> si(order,dim);
       polymod<tdeg_t,modint_t> one(order,dim);
-      one.coord.push_back(T_unsigned<modint_t,tdeg_t>(1,0));
+      one.coord.push_back(T_unsigned<modint_t,tdeg_t>(1,tdeg_t(index_m(dim),order)));
       vector<bool> nonzero(S,false); vector<int> posxi(d,-1);
       index_t l(dim);
       for (unsigned i=0;int(i)<d;++i){
