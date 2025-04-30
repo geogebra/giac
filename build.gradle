@@ -25,7 +25,7 @@ project.setDescription('Giac CAS for GeoGebra')
  *
  * Emscripten related settings.
  *
- * Currently we use version 4.0.1, other versions may not work correctly,
+ * Currently we use version 4.0.7, other versions may not work correctly,
  * or may have problems in some Giac commands and results.
  *
  * 1. You will need to download the correct toolchain version by running the tasks downloadEmsdk,
@@ -68,7 +68,7 @@ def LlvmGmpA = "$jsPrebuiltDir/libgmp.a"
 def emsdkDir = file('emsdk')
 def emsdkRunDir = file("$emsdkDir")
 
-def emscriptenVersion = 'tag-4.0.1'
+def emscriptenVersion = 'tag-4.0.7'
 if (System.env['EMSCRIPTEN_VERSION'] != null) {
     emscriptenVersion = System.env['EMSCRIPTEN_VERSION']
 }
