@@ -55,7 +55,7 @@ pipeline {
           environment {
             MAVEN = credentials('maven-repo')
             ANDROID_SDK_ROOT='/var/lib/jenkins/.android-sdk'
-            BINARYEN="${env.WORKSPACE}/emsdk/upstream"
+            EM_BINARYEN_ROOT="${env.WORKSPACE}/emsdk/upstream"
             EMSDK_PYTHON='/usr/bin/python3.10'
             NDK="$ANDROID_SDK_ROOT/ndk/28.0.12916984"
             NDK_TOOLCHAIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64"

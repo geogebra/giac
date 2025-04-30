@@ -954,7 +954,7 @@ tasks.register('emccGiacJsWasm') {
             linkerArgs << '-o' << output
             // linkerArgs << "-s" << "DISABLE_EXCEPTION_CATCHING=0"
             linkerArgs << '-Oz' << '-v' << '-s' << "EXPORTED_FUNCTIONS=['_caseval']"
-            linkerArgs << '-s' << 'EXTRA_EXPORTED_RUNTIME_METHODS=["cwrap"]'
+            linkerArgs << '-s' << 'EXPORTED_RUNTIME_METHODS=["cwrap"]'
 
             linkerArgs << '-s' << 'TOTAL_MEMORY=67108864'
             // consider increasing this if running out of memory on GB computations
