@@ -1,3 +1,7 @@
+def revisionExpression = env.BRANCH_NAME == "master" ?
+ '`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`' :
+  "${env.BUILD_NUMBER}-${env.BRANCH_NAME.replaceAll('[^a-zA-Z]', '')}"
+
 pipeline {
   agent none
   options {
@@ -36,9 +40,9 @@ pipeline {
             }
             stage('Objective C') {
               steps {
-                sh '''
-                  export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
-                  ./gradlew clean publishMavenZipPublicationToMavenRepository -Prevision=$SVN_REVISION'''
+                sh """
+                  export SVN_REVISION=${revisionExpression}
+                  ./gradlew clean publishMavenZipPublicationToMavenRepository -Prevision=\$SVN_REVISION"""
                 }
             }
           }
@@ -66,11 +70,11 @@ pipeline {
             unstash name: 'giac-mac'
             unstash name: 'giac-mac-arm64'
             sh "rm src/giac/cpp/kdisplay.cc"
-            sh '''
-               export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
+            sh """
+               export SVN_REVISION=${revisionExpression}
               ./gradlew downloadEmsdk installEmsdk activateEmsdk
-              ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --refresh-dependencies
-              ./gradlew :updateGiac --no-daemon -Prevision=$SVN_REVISION --info'''
+              ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=\$SVN_REVISION --refresh-dependencies
+              ./gradlew :updateGiac --no-daemon -Prevision=\$SVN_REVISION --info"""
           }
           post {
             always { deleteDir() }
