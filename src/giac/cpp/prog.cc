@@ -68,7 +68,9 @@ extern "C" {
 #include "sparse.h"
 #include "quater.h"
 #include "giacintl.h"
+#ifndef GIAC_GGB
 #include "sha256.h"
+#endif
 #if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
 #else
 #include "signalprocessing.h"
@@ -7460,6 +7462,7 @@ namespace giac {
   static define_unary_function_eval (__cd,&_cd,_cd_s);
   define_unary_function_ptr5( at_cd ,alias_at_cd,&__cd,0,true);
 
+#ifndef GIAC_GGB
   // unix command sha256sum
   gen _sha256(const gen &g_,GIAC_CONTEXT){
     int offset=0;
@@ -7565,7 +7568,8 @@ namespace giac {
   static const char _sha256_s []="sha256";
   static define_unary_function_eval (__sha256,&_sha256,_sha256_s);
   define_unary_function_ptr5( at_sha256 ,alias_at_sha256,&__sha256,0,true);
-
+#endif
+  
   gen _scientific_format(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
 #if 0 // ndef KHICAS
