@@ -303,6 +303,9 @@ namespace giac {
   gen _pwd(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_pwd;
 
+  gen _sha256(const gen & args,GIAC_CONTEXT);
+  extern const unary_function_ptr * const  at_sha256;
+  
   gen _scientific_format(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_scientific_format;
   gen _integer_format(const gen & g,GIAC_CONTEXT);

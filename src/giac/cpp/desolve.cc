@@ -1771,6 +1771,7 @@ namespace giac {
 	  gen res0;
 	  vecteur vnum;
 	  polynome2poly1(it->num,1,vnum);
+          vnum=mergevecteur(vecteur(mult-vnum.size(),0),vnum);
 	  for (int i=0;i<mult;++i){
 	    res0 += r2e(vnum[i],lprime,contextptr)*symbolic(at_Kronecker,s-i); // symb_when(symb_equal(s,i),1,0) will not be handled correctly by ztrans
 	  }

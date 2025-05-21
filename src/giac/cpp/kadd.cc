@@ -529,6 +529,12 @@ int fractale(GIAC_CONTEXT){
 }
 #endif
 
+#if defined NUMWORKS_SLOTB
+int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
+  do_confirm("Not available in short version");
+  return 0;
+}
+#else
 int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
   static double pv=(-mode)*10000;
   static double fv=0;
@@ -669,6 +675,7 @@ int finance(int mode,GIAC_CONTEXT){ // mode==-1 pret, 1 placement
   }
   return 0;
 }
+#endif
 
 int geoapp(GIAC_CONTEXT);
 

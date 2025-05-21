@@ -4986,7 +4986,10 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     }
   }
 
-  gen _polygone(const gen & args,GIAC_CONTEXT){
+  gen _polygone(const gen & args_,GIAC_CONTEXT){
+    gen args(remove_at_pnt(args_));
+    if (args.is_symb_of_sommet(at_curve))
+      args=args_[1][2];
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_VECT)
       return symbolic(at_polygone,args);
@@ -5004,7 +5007,10 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
   static define_unary_function_eval (__polygone,&_polygone,_polygone_s);
   define_unary_function_ptr5( at_polygone ,alias_at_polygone,&__polygone,0,true);
 
-  gen _polygone_ouvert(const gen & args,GIAC_CONTEXT){
+  gen _polygone_ouvert(const gen & args_,GIAC_CONTEXT){
+    gen args(remove_at_pnt(args_));
+    if (args.is_symb_of_sommet(at_curve))
+      args=args_[1][2];
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_VECT)
       return symbolic(at_polygone,args);
@@ -6261,8 +6267,17 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 #endif
 	gen x,y;
 	reim(v[0],x,y,contextptr);
-	y=-y*derive(x,v[1],contextptr);
-	return _integrate(makesequence(y,v[1],v[2],v[3]),contextptr);
+	gen Y=-y*derive(x,v[1],contextptr);
+	gen I1=_integrate(makesequence(Y,v[1],v[2],v[3]),contextptr);
+#ifdef GIAC_GGB
+        return I1;
+#endif
+        // add segment between end points
+        // for plot(f(x),x=x1..x2) this will return the opposite value
+        // of integrate(f(x),x=x1..x2)+trapezoid area
+        // because we are clockwise and not trigo
+        gen I2=(subst(x,v[1],v[3],false,contextptr)-subst(x,v[1],v[2],false,contextptr))*(subst(y,v[1],v[2],false,contextptr)+subst(y,v[1],v[3],false,contextptr))/2;
+        return I1+I2;
       }
     }
     if (g.type!=_VECT || g.subtype==_POINT__VECT || g._VECTptr->empty())
@@ -7711,7 +7726,14 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     return v;
   }
 
-  gen _sommets(const gen & args,GIAC_CONTEXT){
+  gen _sommets(const gen & args_,GIAC_CONTEXT){
+    gen args;
+    if (args_.is_symb_of_sommet(at_pnt))
+      args=remove_at_pnt(args_);
+    if (args.is_symb_of_sommet(at_curve))
+      args=args_[1][2];
+    else
+      args=args_;
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (is_graphe(args))
       return _graph_vertices(args,contextptr);
@@ -12844,17 +12866,31 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
     gen dfx=derive(f_orig,x,contextptr),dfy=derive(f_orig,y,contextptr);
     if (is_undef(dfx) || is_undef(dfy))
       return dfx+dfy;
+    {
+      gen x1("x1",contextptr); sto(-dfy,x1,contextptr);
+      gen y1("y1",contextptr); sto(dfx,y1,contextptr);
+      gen tmp(string2gen("implicit",false));
+      gen x2("x2",contextptr); sto(tmp,x2,contextptr);
+      gen y2("y2",contextptr); sto(tmp,y2,contextptr);
+    }
     vecteur localvar(makevecteur(xloc,yloc));
     context * newcontextptr=(context *) contextptr;
     int protect=giac_bind(makevecteur(xmin,ymin),localvar,newcontextptr);
     vector< vector<bool> > visited(nxstep+2,vector<bool>(nystep+2));
     // vector< vector<bool> > visited(nxstep+2,vector<bool>(nystep+2) );
-    vector< vector<double> > 
-      fxy(nxstep+1,vector<double>(nystep+1)),
-      dfxorig(nxstep+1,vector<double>(nystep+1)),
-      dfyorig(nxstep+1,vector<double>(nystep+1)),
-      dfxyorig_abs(nxstep+1,vector<double>(nystep+1));
-    vector< vector<double> > xorig(nxstep+1,vector<double>(nystep+1)),yorig(nxstep+1,vector<double>(nystep+1));
+    // 6 matrices of size N=(nxstep+1)*(nystep+1) = 48*N bytes, that's a lot
+    // do not alloc x/yorig etc. until it's required
+#if 1
+    typedef float flott;
+#else
+    typedef double flott;
+#endif
+    vector< vector<flott> >
+      fxy(nxstep+1,vector<flott>(nystep+1)),
+      dfxorig(nxstep+1,vector<flott>(0)),
+      dfyorig(nxstep+1,vector<flott>(0)),
+      dfxyorig_abs(nxstep+1,vector<flott>(0)),
+      xorig(nxstep+1,vector<flott>(0)),yorig(nxstep+1,vector<flott>(0));
     gen gtmp;
     // initialize each cell to non visited
     local_sto_double(ymin,yloc,newcontextptr);
@@ -13123,6 +13159,11 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
       } // end if (!pathfound)
       chemin.push_back(gen(xcurrent,ycurrent));
       visited[iorig][jorig]=true;
+      xorig[iorig].resize(nystep+1);
+      yorig[iorig].resize(nystep+1);
+      dfxorig[iorig].resize(nystep+1);
+      dfyorig[iorig].resize(nystep+1);
+      dfxyorig_abs[iorig].resize(nystep+1);
       int icur,jcur,oldi=iorig,oldj=jorig;
       xorig[iorig][jorig]=xcurrent;
       yorig[iorig][jorig]=ycurrent;
@@ -13386,6 +13427,11 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
 	}
 	else {
 	  visited[icur][jcur]=true;
+          xorig[icur].resize(nystep+1);
+          yorig[icur].resize(nystep+1);
+          dfxorig[icur].resize(nystep+1);
+          dfyorig[icur].resize(nystep+1);
+          dfxyorig_abs[icur].resize(nystep+1);
 	  dfxorig[icur][jcur]=dfxcurrent;
 	  dfyorig[icur][jcur]=dfycurrent;
 	  xorig[icur][jcur]=xcurrent;
@@ -13412,6 +13458,12 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
 #endif
     io_graph(old_iograph,contextptr);
 #endif // WIN32
+#if 0
+    double S=0;
+    for (int i=0;i<=nxstep;++i)
+      S += xorig[i].size()+yorig[i].size()+dfxorig[i].size()+dfyorig.size()+dfxyorig_abs[i].size();
+    COUT << "nstep=" << (nxstep+1)*(nystep+1) << ", memory ratio=" << S/(nxstep+1)/(nystep+1) << "\n";
+#endif
     return res; // gen(res,_SEQ__VECT);
     // return zero;
 #endif // RTOS_THREADX
@@ -13460,7 +13512,13 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
   gen _plotimplicit(const gen & args,const context * contextptr){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_VECT)
-      return plotimplicit(remove_equal(args),vx_var,y__IDNT_e,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,20*gnuplot_pixels_per_eval,0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,true,contextptr,3);
+      return plotimplicit(remove_equal(args),vx_var,y__IDNT_e,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,
+#ifdef KHICAS
+                          5*gnuplot_pixels_per_eval,
+#else
+                          20*gnuplot_pixels_per_eval,
+#endif
+                          0,epsilon(contextptr),vecteur(1,default_color(contextptr)),false,true,contextptr,3);
     // vecteur v(plotpreprocess(args));
     vecteur v(*args._VECTptr);
     if (v.size()<2)

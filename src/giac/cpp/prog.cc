@@ -68,6 +68,7 @@ extern "C" {
 #include "sparse.h"
 #include "quater.h"
 #include "giacintl.h"
+#include "sha256.h"
 #if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
 #else
 #include "signalprocessing.h"
@@ -7282,6 +7283,10 @@ namespace giac {
   define_unary_function_ptr5( at_python ,alias_at_python,&__python,_QUOTE_ARGUMENTS,true);
 
   gen _xcas(const gen & args,GIAC_CONTEXT){
+    if (args.type==_VECT && args.subtype==_SEQ__VECT && args._VECTptr->size()==0){
+      giac::system_browser_command("xcas.html");
+      return 1;
+    }
     return python_xcas(args,0,contextptr);
   }
   static const char _xcas_s []="xcas";
@@ -7454,6 +7459,112 @@ namespace giac {
   static const char _cd_s []="cd";
   static define_unary_function_eval (__cd,&_cd,_cd_s);
   define_unary_function_ptr5( at_cd ,alias_at_cd,&__cd,0,true);
+
+  // unix command sha256sum
+  gen _sha256(const gen &g_,GIAC_CONTEXT){
+    int offset=0;
+    gen g(g_);
+    if (g.type==_VECT && g._VECTptr->size()==2 && g._VECTptr->back().type==_INT_){
+      g=g_._VECTptr->front();
+      offset=g_._VECTptr->back().val;
+    }
+    if (offset<0 || g.type!=_STRNG || g._STRNGptr->size()>240)
+      return gensizeerr(contextptr);
+    int bufsize=64*1024;
+    unsigned char * buf=(unsigned char *) malloc(bufsize);
+    if (!buf){
+      *logptr(contextptr)<< "Memory error\n";
+      return -1;
+    }
+    char filename[256]={0};
+#ifdef FXCG
+    strcat(filename,"\\\\fls0\\");
+    strcat(filename,g._STRNGptr->c_str());
+    unsigned short pFile[256];
+    Bfile_StrToName_ncpy(pFile, (const unsigned char *)filename, strlen(filename)+1);
+    int hFile = Bfile_OpenFile_OS(pFile, READWRITE); // Get handle
+    if (hFile<0){
+      *logptr(contextptr) << "File not found\n";
+      return -2;
+    }
+    int size = Bfile_GetFileSize_OS(hFile);
+    if (offset>size){
+      Bfile_CloseFile_OS(hFile);
+      free(buf);
+      return -4;
+    }
+    if (offset){ // skip
+      Bfile_ReadFile_OS(hFile, buf,offset, -1);
+      size -= offset;
+    }
+    SHA256_CTX ctx;
+    sha256_init(&ctx);
+    while (size){
+      int rsize=0,Size=size>bufsize?bufsize:size;
+      rsize = Bfile_ReadFile_OS(hFile, buf,Size, -1);
+      if (rsize!=Size){
+        Bfile_CloseFile_OS(hFile);
+        free(buf);
+        return -3;
+      }
+      sha256_update(&ctx,buf,Size);
+      size -= Size;
+    }
+    Bfile_CloseFile_OS(hFile);
+    free(buf);
+    std::vector<unsigned char> v(SHA256_BLOCK_SIZE);
+    BYTE * hash=&v.front();
+    sha256_final(&ctx,hash);
+    vecteur V;
+    for (int i=0;i<v.size();++i)
+      V.push_back(v[i]);
+    return V;
+#else
+    strcat(filename,g._STRNGptr->c_str());
+    FILE * hFile = fopen(filename,"rb");
+    if (!hFile){
+      *logptr(contextptr) << "File not found\n";
+      return -2;
+    }
+    fseek(hFile, 0, SEEK_END);
+    int size = ftell(hFile);
+    fseek(hFile,0,SEEK_SET);
+    if (offset>size){
+      fclose(hFile);
+      free(buf);
+      return -4;
+    }
+    if (offset){ // skip
+      fread(buf,1,offset,hFile);
+      size -=offset;
+    }
+    SHA256_CTX ctx;
+    sha256_init(&ctx);
+    while (size){
+      int rsize=0,Size=size>bufsize?bufsize:size;
+      rsize = fread(buf,1,Size,hFile); 
+      if (rsize!=Size){
+        fclose(hFile);
+        free(buf);
+        return -3;
+      }
+      sha256_update(&ctx,buf,Size);
+      size -= Size;
+    }
+    fclose(hFile);
+    free(buf);
+    std::vector<unsigned char> v(SHA256_BLOCK_SIZE);
+    BYTE * hash=&v.front();
+    sha256_final(&ctx,hash);
+    vecteur V;
+    for (int i=0;i<v.size();++i)
+      V.push_back(v[i]);
+    return V;
+#endif
+  }
+  static const char _sha256_s []="sha256";
+  static define_unary_function_eval (__sha256,&_sha256,_sha256_s);
+  define_unary_function_ptr5( at_sha256 ,alias_at_sha256,&__sha256,0,true);
 
   gen _scientific_format(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;

@@ -19,6 +19,7 @@ extern "C" void console_log(const char * s);
 
 extern "C" int init_fs();
 
+extern std::string init_filename;
 #endif
 
 #ifndef NO_NAMESPACE_GIAC

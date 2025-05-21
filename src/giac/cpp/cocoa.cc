@@ -1,4 +1,5 @@
 /* -*- mode:C++ ; compile-command: "g++ -I.. -I../include -I.. -g -c -fno-strict-aliasing -DGIAC_GENERIC_CONSTANTS -DHAVE_CONFIG_H -DIN_GIAC -Wall cocoa.cc" -*- */
+// Use GIAC_DEBUG_TDEG_T64 to debug potential memory errors with large number of variables
 // Thanks to Zoltan Kovacs for motivating this work, in order to improve geogebra theorem proving
 // Special thanks to Anna M. Bigatti from CoCoA team for insightfull discussions on how to choose an order for elimination. This file name is kept to remind that the first versions of giac were using CoCoA for Groebner basis computations, before a standalone implementation.
 #ifdef HAVE_CONFIG_H
@@ -1182,6 +1183,12 @@ namespace giac {
 #endif
       return x=x+y;
     }
+#ifdef GIAC_DEBUG_TDEG_T64
+    if ((y.tab[0]%2)){
+      y.dbgprint();
+      COUT << "erreur" << '\n';
+    }
+#endif
 #endif    
 #if 1
     ulonglong *xtab=(ulonglong *)&x,*ytab=(ulonglong *)&y;
@@ -1226,7 +1233,7 @@ namespace giac {
     return res;
   }
   
-  tdeg_t64 operator + (const tdeg_t64 & x,const tdeg_t64 & y){ // FIXME: if x is 0 and y not 0 with different rep
+  tdeg_t64 operator + (const tdeg_t64 & x,const tdeg_t64 & y){ 
 #ifdef GIAC_64VARS
     if (x.tab[0]%2){
 #ifdef GIAC_DEBUG_TDEG_T64
@@ -1236,6 +1243,12 @@ namespace giac {
       return dynamic_plus(x,y);
     }
 #endif    
+#ifdef GIAC_DEBUG_TDEG_T64
+    if (y.tab[0]%2){
+      y.dbgprint();
+      COUT << "erreur" << '\n';
+    }
+#endif
     tdeg_t64 res(x);
     return res += y;
 #if 1
@@ -1332,7 +1345,13 @@ namespace giac {
       res.compute_degs();
       return res;
     }
+#ifdef GIAC_DEBUG_TDEG_T64
+    if ((y.tab[0]%2)){
+      y.dbgprint();
+      COUT << "erreur" << '\n';
+    }
 #endif    
+#endif // GIAC_64VARS   
     tdeg_t64 res;
 #if 1
     ulonglong *xtab=(ulonglong *)&x,*ytab=(ulonglong *)&y,*ztab=(ulonglong *)&res;

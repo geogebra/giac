@@ -233,6 +233,80 @@ namespace giac {
     return true;
   }
 
+#ifdef TICE
+  void add_print_INT_(string & s,int i){
+    char c[sizeof("-8388608")];
+    boot_sprintf(c,"%d",i);
+    s += c;
+  }
+
+  string print_INT_(int i){
+    char c[sizeof("-8388608")];
+    boot_sprintf(c, "%d", i);
+    return c;
+  }
+
+  string hexa_print_INT_(int i){
+    char c[sizeof("0xffffff")];
+    boot_sprintf(c, "0x%x", i);
+    return c;
+  }
+  
+  string octal_print_INT_(int i){
+    char c[sizeof("0o77777777")];
+    boot_sprintf(c, "0o%o", i);
+    return c;
+  }
+
+  string binary_print_INT_(int i){
+    char c[sizeof("0b100010001000100010001000")];
+    c[0] = '0';
+    c[1] = 'b';
+    mpz_t tmp;
+    mpz_init_set_ui(tmp, i);
+    mpz_get_str(&c[2], 2, tmp);
+    mpz_clear(tmp);
+    return c;
+  }
+
+  string print_INT_(const vector<short int> & m) {
+    vector<short int>::const_iterator it=m.begin(),itend=m.end();
+    if (it==itend) {
+      return "";
+    }
+    string s("[");
+    char buf[sizeof("-8388608,")];
+    for (;;) {
+      boot_sprintf(buf, "%d,", *it);
+      s += buf;
+      ++it;
+      if (it==itend){
+        s.back() = ']';
+        return s;
+      }
+    }
+  }
+
+  string print_INT_(const vector<int> & m){
+    vector<int>::const_iterator it=m.begin(),itend=m.end();
+    if (it==itend) {
+      return "";
+    }
+    string s("[");
+    char buf[sizeof("-8388608,")];
+    for (;;) {
+      boot_sprintf(buf, "%d,", *it);
+      s += buf;
+      ++it;
+      if (it==itend){
+        s.back() = ']';
+        return s;
+      }
+    }
+  }
+
+#else // TICE
+  
   void add_print_INT_(string & s,int i){
     char c[256];
     sprint_int(c,i);//my_sprintf(c,"%d",i);
@@ -323,6 +397,7 @@ namespace giac {
 	s += ',';
     }
   }
+#endif // TICE
   
 #ifdef NSPIRE
   template<class T> nio::ios_base<T> & operator << (nio::ios_base<T> & os, const index_t & m ){

@@ -10569,6 +10569,7 @@ namespace giac {
     b=t;
   }
 
+#ifndef TICE
   int absint(int a){
     if (a<0){
       if (a==-2147483648)
@@ -10599,6 +10600,7 @@ namespace giac {
     else
       return a;
   }
+#endif
 
   int invmod(int a,int b){
     if (a==1 || a==-1 || a==1-b)

@@ -750,7 +750,11 @@ namespace giac {
   // category=0 for CATALOG, 1 for OPTN
   // returns 0 on exit, 1 on success
   int doCatalogMenu(char* insertText, const char* title, int category,const giac::context * contextptr);
+#ifdef NUMWORKS_SLOTB
+#define shortcuts_fr_string shortcuts_en_string
+#else
   extern const char shortcuts_fr_string[];
+#endif
   extern const char shortcuts_en_string[];
   extern const char apropos_fr_string[];
   extern const char apropos_en_string[];

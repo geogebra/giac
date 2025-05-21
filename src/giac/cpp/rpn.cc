@@ -3973,7 +3973,73 @@ namespace giac {
     return res;
   }
 
+  // BEWARE: args below are assumed to be positive
+  // n is assumed to be strictly smaller than 2^31
+  // ninv is inverse of n mod R, positive
+  // a is in [0,R*n[
+  // %R and /R should be replaced by shifts or & later
+  int monty_reduce(longlong a,int n,int ninv,longlong R){
+    longlong m=((a%R)*ninv)%R;
+    a -= m*n;
+    int A=a/R;
+    A += (A>>31) & n; // make A positive
+    return A;
+  }
+
+  int to_monty(int a,int n,int ninv,longlong R,longlong R2modn){
+    if (a<0) a+=n;
+    return monty_reduce(a*R2modn,n,ninv,R);
+  }
+
+  int monty_mul(int a,int b,int n,int ninv,longlong R,longlong R2modn){
+    return monty_reduce(a*longlong(b),n,ninv,R);
+  }
+
   gen _tests(const gen & g0,GIAC_CONTEXT){
+    if (g0.type==_VECT){
+      vecteur & v =*g0._VECTptr;
+      if (v.size()>=3){
+        int a=v[0].val; 
+        int b=v[1].val;
+        int n=v[2].val;
+        longlong R=1LL << 32;
+        int Rmodn=R%n;
+        int R2modn=(R*Rmodn) % n;
+        int ninv=invmodll(n,R);
+        if (ninv<0)
+          ninv+=R;
+        if (R==1LL<<32){
+          int A=to_monty2(a,n,ninv,R2modn);
+          int B=to_monty2(b,n,ninv,R2modn);
+          if (v.size()>3){ // used for compared timings
+            int N=v[3].val;
+            bool mod=N<0;
+            if (mod) N=-N;
+            int tmp=0;
+            if (mod){
+              for (int i=0;i<N-1;++i){
+                tmp += (longlong(i)*B)%n;
+              }
+            }
+            for (int i=0;i<N-1;++i){
+              tmp += monty_mul(i,B,n,ninv,R,R2modn);
+            }
+          }
+          int C=monty_mul2(A,B,n,ninv);
+          int c=monty_reduce2(C,n,ninv);
+          return c;
+        }
+        else {
+          int A=to_monty(a,n,ninv,R,R2modn);
+          int B=to_monty(b,n,ninv,R,R2modn);
+          int C=monty_mul(A,B,n,ninv,R,R2modn);
+          int c=monty_reduce(C,n,ninv,R);
+          return c;
+        }
+      }
+    }
+    return undef;
+    /* ******************************************* */
     // return eval_before_diff(g0,vx_var,contextptr);
     if (g0.type==_VECT){
       vecteur expr,vars;

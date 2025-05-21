@@ -202,6 +202,14 @@ int my_sprintf(char * s, const char * format, ...);
 #ifdef GIAC_HAS_STO_38
 //#define WITH_MYOSTREAM
 #endif
+#ifdef TICE
+#if 0 // if we find out that the OS sprintf is faster than nanoprintf, use it instead
+#include <ti/sprintf.h>
+#else
+// fallback
+#define boot_sprintf sprintf
+#endif
+#endif
 
 #ifdef WITH_MYOSTREAM
 #include "myostream.h"

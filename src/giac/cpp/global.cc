@@ -5087,14 +5087,16 @@ extern "C" void Sleep(unsigned int miliSecond);
     if (file.size()>4 && file.substr(0,4)!="http" && file.substr(0,4)!="file" && file.substr(0,4)!="mail"){
       if (res[0]!='/')
 	res=giac_aide_dir()+res;
-      // Remove # trailing part of URL
-      int ss=int(res.size());
-      for (--ss;ss>0;--ss){
-	if (res[ss]=='#' || res[ss]=='.' || res[ss]=='/' )
-	  break;
+      if (file.substr(0,4)!="xcas" && file.substr(0,8)!="doc/xcas"){
+        // Remove # trailing part of URL
+        int ss=int(res.size());
+        for (--ss;ss>0;--ss){
+          if (res[ss]=='#' || res[ss]=='.' || res[ss]=='/' )
+            break;
+        }
+        if (ss && res[ss]!='.')
+          res=res.substr(0,ss);
       }
-      if (ss && res[ss]!='.')
-	res=res.substr(0,ss);
       CERR << res << '\n';
 #if !defined VISUALC && !defined __MINGW_H && !defined NSPIRE && !defined FXCG
       /* If we have a POSIX path list, convert to win32 path list */

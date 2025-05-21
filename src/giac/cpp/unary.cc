@@ -633,6 +633,8 @@ namespace giac {
     if (feuille.type!=_VECT)
       return feuille.print(contextptr);
     string sommetstr(sommetstr_orig);
+    if (sommetstr=="%")
+      sommetstr="\\%";
     vecteur::const_iterator itb=feuille._VECTptr->begin(),itend=feuille._VECTptr->end();
     if (itb==itend)
       return "";

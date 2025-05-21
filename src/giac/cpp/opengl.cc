@@ -4416,13 +4416,14 @@ extern "C" int write_file(const char * filename,const char * s,int len){
   return n;
 }
 
+std::string init_filename;
 // convert URL link to xw or xw.py session
   // mode==0 save only link.nws, mode==1 save as xw session
   int save_link(const char * s,const char * filename,int mode){
     if (!s)
       return -1;
     fprintf(stdout,"link=%s\n",s);
-    string Filename(filename);
+    init_filename=filename;
     int xcas_mode=0;
     vector<string> Line; vector<unsigned char> Type;
     string script,state;
@@ -4453,10 +4454,16 @@ extern "C" int write_file(const char * filename,const char * s,int len){
 #ifdef EMCC2
       if (cur.size()>=5 && cur.substr(0,4)=="url="){
 	cur=cur.substr(4,cur.size()-4);
-	fprintf(stdout,"fetch %s to %s\n",cur.c_str(),filename);
+        init_filename=remove_path(cur);
+	fprintf(stdout,"fetch %s to %s\n",cur.c_str(),init_filename.c_str());
 	cur=fetch(cur);
 	fprintf(stdout,"got %s\n",cur.c_str());
-	return write_file(filename,cur.c_str(),cur.size());
+	return write_file(init_filename.c_str(),cur.c_str(),cur.size());
+      }
+      if (cur.size()>=6 && cur.substr(0,5)=="fltk="){
+	cur=cur.substr(5,cur.size()-5);
+	fprintf(stdout,"fltk %s to %s\n",cur.c_str(),filename);
+	return write_file(init_filename.c_str(),cur.c_str(),cur.size());
       }
 #endif
       if (!cur.empty() && cur[0]=='+'){
@@ -4478,9 +4485,14 @@ extern "C" int write_file(const char * filename,const char * s,int len){
 	      document.getElementById('origin').innerHTML=UTF8ToString($0);
             },value.c_str());
         }
+#ifdef EMCC2
+        if (value.size()<4 || value.substr(3,value.size()-3)!=".xws")
+          value += ".xws";
+#else
         if (value.size()<4 || value.substr(3,value.size()-3)!=".xw")
           value += ".xw";
-	Filename=value;
+#endif
+	init_filename=value;
 	continue;
       }
       if (cmd=="radian"){
@@ -4623,7 +4635,7 @@ extern "C" int write_file(const char * filename,const char * s,int len){
       //*hFile=0; ++hFile; 
       //*hFile=0; ++hFile;      
       int totalsize=hFile-newbuf;
-      if (mode==1 && filename!=Filename)
+      if (mode==1 && filename!=init_filename)
         write_file(filename,newbuf,totalsize);
 #ifdef NUMWORKS 
       // create link.nws
@@ -4634,21 +4646,25 @@ extern "C" int write_file(const char * filename,const char * s,int len){
       hFile[0]=0; hFile[1]=0; hFile[2]=0;
 #ifdef NUMWORKS 
       if (mode==1)
-        write_file(Filename.c_str(),newbuf,totalsize);
+        write_file(init_filename.c_str(),newbuf,totalsize);
       return write_file("link.nws",newbuf_,totalsize+17);
 #else
-      write_file(Filename.c_str(),newbuf,totalsize);
+      write_file(init_filename.c_str(),newbuf,totalsize);
 #endif
     }
     else {
-      if (filename!=Filename)
+      if (filename!=init_filename)
         write_file(filename,savebuf,len);
-      return write_file(Filename.c_str(),savebuf,len);
+      return write_file(init_filename.c_str(),savebuf,len);
     }
   }
 
 void save_link_as_session(const char * link){
+#ifdef EMCC2
+  save_link(link,"session.xws",1);
+#else
   save_link(link,"session.xw",1);
+#endif
   // ext_main(); // does not work
 }
 
@@ -4711,7 +4727,13 @@ int init_fs(){
       let pos=s.search('&');
       if (pos>0){
         console.log("link at",pos);
-        if (1 || confirm('Copy link to session.xw?')){
+        if (1 ||
+#ifdef EMCC2
+            confirm('Copy link to session.xws?')
+#else
+            confirm('Copy link to session.xw?')
+#endif
+            ){
 	  ccall('save_link_as_session',null,['string'],[s]);
 	  FS.syncfs(true,function (err) {
 	      console.log('syncfs error=',err);
