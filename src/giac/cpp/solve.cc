@@ -8096,6 +8096,30 @@ namespace giac {
 	return vecteur(1,gensizeerr(gen(lerr).print(contextptr)+gettext(" is not rational w.r.t. ")+it->print(contextptr)));
       }
     }
+    // extract gcd for systems like eq1:=4*v5*v6^2-6*v6^3-12*v5*v6+23*v6^2-15*v6; eq2:=12*v5^2-10*v5*v6-12*v6^2-9*v5+46*v6-30; solve([eq1,eq2],[v5,v6]);
+    if (1){
+      gen G=0;
+      for (int i=0;i<eq.size();++i){
+        G=gcd(G,eq[i],contextptr);
+        if (G.type!=_SYMB)
+          break;
+      }
+      if (G.type==_SYMB){
+        int i;
+        for (i=0;i<var.size();++i){
+          if (!is_constant_wrt(G,var[i],contextptr))
+            break;
+        }
+        if (i<var.size()){
+          vecteur res=gsolve(vecteur(1,G),var,complexmode,evalf_after,contextptr);
+          for (int i=0;i<eq.size();++i)
+            eq[i]=normal(eq[i]/G,contextptr);
+          vecteur sol=gsolve(eq,var,complexmode,evalf_after,contextptr);
+          res=mergevecteur(res,sol);
+          return res;
+        }
+      }
+    }
     // if one equation factors recurse with each factor
     for (size_t i=0;i<eq.size();++i){
       vecteur vi=factors(eq[i],var[0],contextptr);

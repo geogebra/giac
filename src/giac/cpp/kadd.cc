@@ -958,7 +958,7 @@ int flash_from_ram(const char * buf,const char * ext,size_t & first_modif,GIAC_C
   int n=giac_filebrowser(filename,ext,(lang==1?"Choisir fichier a copier":"Select file to copy"),0);
   if (n==0) return 0;
   const char * data=read_file(filename);
-#ifdef DEVICE
+#if defined DEVICE || defined NUMWORKS
   int l=strlen(data);
 #else
   int l=filesize(filename);
