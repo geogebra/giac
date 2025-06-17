@@ -1084,7 +1084,9 @@ namespace giac {
     {"_PSun_", 0, "puissance du Soleil", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
     {"_Pa", 0, "Pression en Pascal=kg/m/s^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
     {"_REarth_", 0, "Rayon de la Terre", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+#ifndef NUMWORKS_SLOTB
     {"_RSun_", 0, "rayon du Soleil", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+#endif
     {"_R_", 0, "constante des gaz (de Boltzmann par mole)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
     {"_S", 0, "", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
     {"_StdP_", 0, "Pression standard (au niveau de la mer)", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
@@ -1118,7 +1120,9 @@ namespace giac {
     {"_kg", 0, "Masse en kilogramme", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
     {"_l", 0, "Volume en litre", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
     {"_m", 0, "Longueur en metre", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
+#ifndef NUMWORKS_SLOTB
     {"_mEarth_", 0, "masse de la Terre", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
+#endif
     {"_m^2", 0, "Aire en m^2", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
     {"_m^3", 0, "Volume en m^3", 0, 0, CAT_CATEGORY_UNIT | XCAS_ONLY},
     {"_me_", 0, "masse electron", 0, 0, CAT_CATEGORY_PHYS | XCAS_ONLY},
@@ -5414,18 +5418,20 @@ string longhelp(const char * s){
       return "sqrt(";
     case KEY_CHAR_SQUARE:
       return py?"**2":"^2";
-    case KEY_CHAR_CUBEROOT:
-      return py?"**(1/3)":"^(1/3)";
     case KEY_CHAR_POWROOT:
       return py?"**(1/":"^(1/";
     case KEY_CHAR_RECIP:
       return py?"**-1":"^-1";
+#ifndef NUMWORKS
+    case KEY_CHAR_CUBEROOT:
+      return py?"**(1/3)":"^(1/3)";
     case KEY_CHAR_THETA:
       return "arg(";
     case KEY_CHAR_VALR:
       return "abs(";
     case KEY_CHAR_ANGLE:
       return "polar_complex(";
+#endif
     case KEY_CTRL_XTT:
       return xthetat?"t":"x";
     case KEY_CHAR_LN:
@@ -5448,6 +5454,7 @@ string longhelp(const char * s){
       return "acos(";
     case KEY_CHAR_ATAN:
       return "atan(";
+#ifndef NUMWORKS
     case KEY_CTRL_MIXEDFRAC:
       return "limit(";
     case KEY_CTRL_FRACCNVRT:
@@ -5455,6 +5462,7 @@ string longhelp(const char * s){
       // case KEY_CTRL_FORMAT: return "purge(";
     case KEY_CTRL_FD:
       return "approx(";
+#endif
     case KEY_CHAR_STORE:
       // if (keyflag==1) return "inf";
       return "=>";
@@ -13226,30 +13234,32 @@ namespace xcas {
             G=subst(parameq,t,curt,false,contextptr);
 	    gen G1=derive(parameq,t,contextptr);
 	    gen G1t=subst(G1,t,curt,false,contextptr);
-	    gen G1x,G1y; reim(G1t,G1x,G1y,contextptr);
-	    gen m=evalf_double(G1y/G1x,1,contextptr);
-	    if (m.type==_DOUBLE_)
-	      tracemode_add += ", m="+print_DOUBLE_(m._DOUBLE_val,3);
-	    gen T(_vector(makesequence(_point(G,contextptr),_point(G+G1t,contextptr)),contextptr));
-	    tracemode_disp.push_back(T);
-	    gen G2(derive(G1,t,contextptr));
-	    gen G2t=subst(G2,t,curt,false,contextptr);
-	    gen G2x,G2y; reim(G2t,G2x,G2y,contextptr);
-	    gen det(G1x*G2y-G2x*G1y);
-	    gen Tn=sqrt(G1x*G1x+G1y*G1y,contextptr);
-	    gen R=evalf_double(Tn*Tn*Tn/det,1,contextptr);
-	    gen centre=G+R*(-G1y+cst_i*G1x)/Tn;
-	    if (tracemode & 4){
-	      gen N(_vector(makesequence(_point(G,contextptr),_point(centre,contextptr)),contextptr));
-	      tracemode_disp.push_back(N);
-	    }
-	    if (tracemode & 8){
-	      if (R.type==_DOUBLE_)
-		tracemode_add += ", R="+print_DOUBLE_(R._DOUBLE_val,3);
-	      tracemode_disp.push_back(_cercle(makesequence(centre,R),contextptr));
-	    }
-	  }
-	}
+            if (!is_undef(G1t) && !is_inf(G1t)){
+              gen G1x,G1y; reim(G1t,G1x,G1y,contextptr);
+              gen m=evalf_double(G1y/G1x,1,contextptr);
+              if (m.type==_DOUBLE_)
+                tracemode_add += ", m="+print_DOUBLE_(m._DOUBLE_val,3);
+              gen T(_vector(makesequence(_point(G,contextptr),_point(G+G1t,contextptr)),contextptr));
+              tracemode_disp.push_back(T);
+              gen G2(derive(G1,t,contextptr));
+              gen G2t=subst(G2,t,curt,false,contextptr);
+              gen G2x,G2y; reim(G2t,G2x,G2y,contextptr);
+              gen det(G1x*G2y-G2x*G1y);
+              gen Tn=sqrt(G1x*G1x+G1y*G1y,contextptr);
+              gen R=evalf_double(Tn*Tn*Tn/det,1,contextptr);
+              gen centre=G+R*(-G1y+cst_i*G1x)/Tn;
+              if (tracemode & 4){
+                gen N(_vector(makesequence(_point(G,contextptr),_point(centre,contextptr)),contextptr));
+                tracemode_disp.push_back(N);
+              }
+              if (tracemode & 8){
+                if (R.type==_DOUBLE_)
+                  tracemode_add += ", R="+print_DOUBLE_(R._DOUBLE_val,3);
+                tracemode_disp.push_back(_cercle(makesequence(centre,R),contextptr));
+              }
+            }
+          }
+        }
       }
     }
     double x_scale=LCD_WIDTH_PX/(window_xmax-window_xmin);
@@ -15903,6 +15913,9 @@ namespace xcas {
       edptr->python=1;
     if (do_confirm((lang==1)?"Effacer les variables Xcas?":"Clear Xcas variables?"))
       do_restart(contextptr);
+#ifdef MICROPY_LIB
+    micropy_ck_eval("1"); // insure initialization
+#endif
     *logptr(contextptr) << "Micropython interpreter\n";
     Console_FMenu_Init(contextptr);
   }
@@ -19857,6 +19870,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	for (int i=0;i<L/4;++i){
 	  if (ptr[i]!=0xffffffff){ // it's not, format
 	    char * buf=(char *)malloc(L);
+            if (!buf) return false,
 	    memcpy(buf,(char *)backupaddr,L);
 	    erase_sector((const char *)backupaddr);
 	    WriteMemory((char *)backupaddr,buf,L);
@@ -20448,9 +20462,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
   }
 
   int run_session(int start,GIAC_CONTEXT){
-#ifdef MICROPY_LIB
-    micropy_ck_eval("1"); // insure initialization
-#endif
+    //confirm("run_session",print_INT_(start).c_str());
     std::vector<std::string> v;
     for (int i=start;i<Last_Line;++i){
       if (Line[i].type==LINE_TYPE_INPUT)
@@ -20472,6 +20484,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     Cursor.y=start-Start_Line;
     Line[start].str=Edit_Line;
     Edit_Line[0]=0;
+    //confirm("run_session v.size",print_INT_(v.size()).c_str());
     if (v.empty()) return 0;
     //Console_Init(contextptr);
     for (int i=0;i<v.size();++i){
@@ -20480,12 +20493,17 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       Console_NewLine(LINE_TYPE_INPUT, 1);
       // Line[j].type=LINE_TYPE_INPUT;
       Console_Disp(1,contextptr);
-      Bdisp_PutDisp_DD();
       run(v[i].c_str(),6,contextptr); /* show logo and graph but not eqw */
+#ifdef NUMWORKS
+      //confirm(v[i].c_str(),Line[Last_Line].str);
+      //print_msg12(v[i].c_str(),Line[Last_Line].str);
+#endif
+      Bdisp_PutDisp_DD();
       // j=Last_Line;
       Console_NewLine(LINE_TYPE_OUTPUT, 1);    
       // Line[j].type=LINE_TYPE_OUTPUT;
     }
+    //confirm("run session","end0");
     int cl=Current_Line;
     Cursor.y += (Start_Line-savestartline);
     if (Cursor.y<0) Cursor.y=0;
@@ -20502,6 +20520,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     }
     Console_Disp(1,contextptr);
     Bdisp_PutDisp_DD();
+    //confirm("run session","end0");
     return 0;
   }
 
@@ -22019,7 +22038,7 @@ void numworks_certify_internal(){
       numworks_certify_internal();
       Bdisp_AllClr_VRAM();
       int x=0,y=0;
-      PrintMini7(x,y,"KhiCAS 1.9 (c) 2024 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE,false);
+      PrintMini7(x,y,"KhiCAS 2.0 (c) 2025 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE,false);
       y +=18;
       PrintMini7(x,y,"et al, License GPL 2",TEXT_MODE_NORMAL,COLOR_BLACK, COLOR_WHITE,false);
       y += 18;
@@ -22073,13 +22092,14 @@ void numworks_certify_internal(){
 #ifdef NUMWORKS
 #if defined NUMWORKS_SLOTAB || defined NUMWORKS_SLOTB
       if (lang==1){
-	*logptr(contextptr) << "!!! DU CAS POUR TOUS !!!\n";
+	//*logptr(contextptr) << "!!! DU CAS POUR TOUS !!!\n";
 	*logptr(contextptr) << "Le calcul formel est autorise\n";
         *logptr(contextptr) << "aux examens en France.\n";
 	*logptr(contextptr) << "Mobilisez-vous! Numworks peut\n";
 	*logptr(contextptr) << "authentifier et rendre KhiCAS\n";
 	*logptr(contextptr) << "utilisable en mode exam comme\n";
-	*logptr(contextptr) << "sur les calcs CAS plus cheres\n";
+	// *logptr(contextptr) << "sur les calcs CAS plus cheres\n";
+        *logptr(contextptr) << "sur les TI83ce, Casio 90/35e2\n";        
       } else {
 	*logptr(contextptr) << "!!! BEWARE !!!\n";
 	*logptr(contextptr) << "Make sure that CAS is allowed\n";
@@ -22622,7 +22642,8 @@ void numworks_certify_internal(){
 	Console_Disp(1,contextptr);
 	continue;
       }
-#ifndef BW
+#ifndef NUMWORKS
+#ifndef BW 
       if (key==KEY_CTRL_S || key==KEY_CTRL_T){
         giac::gen g=sheet(contextptr);
         if (g.type==_INT_ && g.val==KEY_SHUTDOWN)
@@ -22644,6 +22665,7 @@ void numworks_certify_internal(){
 	Console_Disp(1,contextptr);
 	continue;
       }
+#endif // NUMWORKS
       if (key==KEY_CTRL_MENU){
 #if 1
 	Menu smallmenu;
@@ -23036,6 +23058,7 @@ void numworks_certify_internal(){
         Console_Disp(1,contextptr);
         continue;
       }
+#ifndef NUMWORKS
       if (key==KEY_AFFECT){
 	Console_Input((const char*)":=");
 	Console_Disp(1,contextptr);
@@ -23045,13 +23068,13 @@ void numworks_certify_internal(){
 	Console_Input((const char*)"debug(");
 	Console_Disp(1,contextptr);
 	continue;
-      }	
+      }
       if (key == KEY_CTRL_SETUP) {
 	menu_setup(contextptr);
 	Console_Disp(1,contextptr);
 	continue;
       }
-
+#endif
       if (key == KEY_CTRL_EXE || key==KEY_CTRL_OK){
 	if (Current_Line == Last_Line)
 	  {

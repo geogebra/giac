@@ -9575,9 +9575,13 @@ namespace giac {
     return true;
   }
   gen _read(const gen & args,GIAC_CONTEXT){
+#ifdef NUMWORKS
+    if (inexammode()) return undef;
+#else
 #ifdef KHICAS
     if (exam_mode || nspire_exam_mode)
       return gensizeerr("Exam mode");
+#endif
 #endif
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     size_t addr;
@@ -9607,6 +9611,9 @@ namespace giac {
   define_unary_function_ptr5( at_read ,alias_at_read ,&__read,0,T_RETURN);
 
   gen _read16(const gen & args,GIAC_CONTEXT){
+#ifdef NUMWORKS
+    if (inexammode()) return undef;
+#endif
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     size_t addr;
     if (is_address(args,addr))
@@ -9650,6 +9657,9 @@ namespace giac {
   define_unary_function_ptr5( at_read16 ,alias_at_read16 ,&__read16,0,true);
 
   gen _read32(const gen & args,GIAC_CONTEXT){
+#ifdef NUMWORKS
+    if (inexammode()) return undef;
+#endif
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     size_t addr;
     if (args.type==_VECT && args._VECTptr->size()==2 && args._VECTptr->back().type==_INT_){

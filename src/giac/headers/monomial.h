@@ -251,7 +251,8 @@ namespace giac {
     // truncate topmost index value (decrement by 1 the dimension)
     inline monomial<T> trunc1 () const {
 #ifdef DEBUG_SUPPORT
-      assert(index.begin()!=index.end());
+      if (index.begin()==index.end())
+        assert(0);
 #endif
       return monomial<T>(value,index_m(index.begin()+1,index.end()));
     }

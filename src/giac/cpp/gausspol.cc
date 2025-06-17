@@ -5244,7 +5244,7 @@ namespace giac {
       d=p1;
       u.coord.clear();
       u.dim=p1.dim;
-      u.coord.push_back(monomial<gen>(1,0));
+      u.coord.push_back(monomial<gen>(1,index_t(u.dim)));
       v.dim=p1.dim;
       v.coord.clear();
       return;
@@ -5255,14 +5255,33 @@ namespace giac {
       u.dim=p2.dim;
       v.dim=p2.dim;
       v.coord.clear();
-      v.coord.push_back(monomial<gen>(1,0));
+      v.coord.push_back(monomial<gen>(1,index_t(u.dim)));
       return;
     }
     if (try_hensel_egcd(p1,p2,u,v,d))
       return;
     polynome g=gcd(p1,p2);
     if (g.lexsorted_degree()){
-      egcd(p1/g,p2/g,u,v,d);
+      // if p1 and p2 do not have alg. extensions inside we can divide by g
+      int pt1=p1.coord.front().value.type,pt2=p2.coord.front().value.type;
+      if (pt1<_EXT && pt2<_EXT){
+        egcd(p1/g,p2/g,u,v,d);
+        d=g*d;
+        return;
+      }
+      // in general, let a and A such that a*p1=g*A and b and B / b*p2=g*B
+      // solve bezout for A and B: A*U+B*V=D
+      // multiply by g
+      // p1*(a*U)+p2*(b*V)=d*g
+      polynome a(g.dim),A(g.dim),b(g.dim),B(g.dim),rem(g.dim);
+      if (!p1.TPseudoDivRem(g,A,rem,a) || !rem.coord.empty() ||
+          !p2.TPseudoDivRem(g,B,rem,b) || !rem.coord.empty()){
+        // should not happen
+        gensizeerr("gausspol/egcd error");
+      }
+      egcd(A,B,u,v,d);
+      u=a*u;
+      v=b*v;
       d=g*d;
       return;
     }

@@ -266,6 +266,9 @@ namespace giac {
     }
 #endif
     void * p =  malloc(size);  
+#if defined NUMWORKS || defined KHICAS
+    if (!p) exit(0);
+#endif
 #ifndef NO_STDEXCEPT
     if(!p) {
       std::bad_alloc ba;
@@ -11087,8 +11090,8 @@ namespace giac {
 	  return gensizeerr(gettext("gen.cc:simplify"));
 	egcd(*(d._EXTptr->_VECTptr),*((d._EXTptr+1)->_VECTptr),0,u,v,dd);
         gen tmp=algebraic_EXTension(u,*((d._EXTptr+1)->_VECTptr));
-	if (tmp.type!=_EXT){ 
-	  return gensizeerr(gettext("gen.cc:simplify/tmp.type!=_EXT")); 
+	if (tmp.type!=_EXT){
+          return gensizeerr(gettext("gen.cc:simplify/tmp.type!=_EXT")); 
 	  // return 1;
 	}
 	n=n*tmp;
@@ -12733,6 +12736,10 @@ int sprint_int(char * s,int r){
 
 void sprint_double(char * s,double d){
   char * buf=s;
+  if (my_isnan(d)){
+    strcpy(buf,"nan");
+    return;
+  }
   if (d==0){
     strcpy(buf,"0.0");
     return;
@@ -16883,7 +16890,13 @@ void sprint_double(char * s,double d){
       strcat(filename,".py");
 #endif
       char buf[4096]="def f(x):\n  return x*x\n";
-      if (file_exists(filename)){
+      if (
+#ifdef KHICAS
+          file_exists(filename)
+#else
+          !access(filename,R_OK)
+#endif
+          ){
 	const char * ch=read_file(filename);
 	S=ch;
 	if (S.size()>sizeof(buf))

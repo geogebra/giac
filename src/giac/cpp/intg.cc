@@ -4960,7 +4960,7 @@ namespace giac {
       // could add a minimal number of intervals for integrals like
       // integrate(when(x > 2, 1,2),x,0,2.01) or int(frac(x),x,0,6.01)
       // but one will always find intervals where this would fail
-      if (!is_undef(ERR) && is_greater(eps,ERR/I30ABS,contextptr)) 
+      if (v.size()>=8 && !is_undef(ERR) && is_greater(eps,ERR/I30ABS,contextptr)) 
 	return true;
       // cut interval at maxerrpos in 2 parts
       vecteur & w = *v[maxerrpos]._VECTptr;

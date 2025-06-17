@@ -1065,7 +1065,7 @@ namespace giac {
 
   string print_DOUBLE_(double d,unsigned ndigits){
     char s[256];
-#if defined KHICAS || defined SDL_KHICAS
+#if (defined KHICAS || defined SDL_KHICAS) 
     sprint_double(s,d);
     // search for a decimal point in s
     int l=strlen(s),i;
@@ -12659,8 +12659,11 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 gen plotseq(const gen& f,const gen&x,double x0,double xmin,double xmax,int niter,const vecteur & attributs,const context * contextptr,bool print){
     if (xmin>xmax)
       swapdouble(xmin,xmax);
+    double Xmin=xmin;
+    if (Xmin<0 && xmax>0)
+      Xmin=0;
     vecteur res(2*niter+1);
-    res[0]=gen(x0,xmin);
+    res[0]=gen(x0,Xmin);
     int j=1;
     gen newx0;
     double x1;
@@ -12695,7 +12698,7 @@ gen plotseq(const gen& f,const gen&x,double x0,double xmin,double xmax,int niter
     if (!attributs.empty())
       color = color | (attributs[0].val & 0xffff0000);
     g.push_back(symb_pnt(gen(res,_LINE__VECT),color,contextptr));
-    g.push_back(symb_pnt(gen(makevecteur(gen(x0,x0),gen(x0,xmin)),_VECTOR__VECT), color | _DASH_LINE,contextptr));
+    g.push_back(symb_pnt(gen(makevecteur(gen(x0,x0),gen(x0,Xmin)),_VECTOR__VECT), color | _DASH_LINE,contextptr));
     return g; // gen(g,_SEQ__VECT);
   }
 int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & xmin,double & xmax,int & niter,vecteur & attributs,GIAC_CONTEXT,bool & print){

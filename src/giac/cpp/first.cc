@@ -157,5 +157,29 @@ void operator delete[](void* obj){
 #endif // KHICAS
 #endif // GIAC_CHECK_NEW
 
+#if defined NUMWORKS || defined KHICAS
+void* operator new(std::size_t size){
+  void * p =  std::malloc(size);
+  if (!p)
+    exit(0);
+  return p;
+}
+  
+void* operator new[](std::size_t size){
+  void * p =  std::malloc(size);
+  if (!p)
+    exit(0);
+  return p;
+}
+  
+void operator delete(void* obj){
+  free(obj);
+}
+  
+void operator delete[](void* obj){
+  free(obj);
+}
+#endif
+
 #endif
 
