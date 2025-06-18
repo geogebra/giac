@@ -288,6 +288,10 @@ namespace giac {
   }
 
   gen select_root(const vecteur & v,GIAC_CONTEXT){
+    for (int i=0;i<v.size();++i){
+      if (v[i].type>=_POLY)
+        return undef;
+    }
     int n=decimal_digits(contextptr);
     if (n<12) n=12;
     if (n>307) n=307;
@@ -903,11 +907,36 @@ namespace giac {
     int as=int(a__VECT._VECTptr->size()),bs=int(b__VECT._VECTptr->size());
     if (bs>as) // (innerdima>innerdim || (innerdima==innerdim && bs>as))
       return common_EXT(b,a,l,contextptr);
-    if (as==3 && bs==3 && is_one(a[0]) && is_one(b[0]) && is_zero(a[1]) && is_zero(b[1]) && a[2]==-b[2]){ // sqrt(X) and sqrt(-X)
-      b=algebraic_EXTension(makevecteur(cst_i,0),a);
-      gen tmp=a;
-      a=algebraic_EXTension(makevecteur(1,0),a);
-      return tmp;
+    if (as==3 && bs==3 && is_one(a[0]) && is_one(b[0]) && is_zero(a[1]) && is_zero(b[1])){
+      if (a[2]==-b[2]){// sqrt(X) and sqrt(-X)
+        b=algebraic_EXTension(makevecteur(cst_i,0),a);
+        gen tmp=a;
+        a=algebraic_EXTension(makevecteur(1,0),a);
+        return tmp;
+      }
+      if (a[2].type==_POLY && b[2].type==_POLY){
+        polynome & a2=*a[2]._POLYptr;
+        polynome & b2=*b[2]._POLYptr;
+        if (a2.lexsorted_degree()==b2.lexsorted_degree()){
+          gen a20=a2.coord.front().value;
+          gen b20=b2.coord.front().value;
+          if (is_integer(a20) && is_integer(b20)){
+            gen test=b20*a[2]-a20*b[2];
+            if (is_zero(test)){
+              a=-a[2]; b=-b[2];
+              gen common=-simplify(a,b);
+              if (is_integer(a) && is_integer(b)){
+                a=sym2r(sqrt(a,contextptr),vecteur(0),contextptr);
+                b=sym2r(sqrt(b,contextptr),vecteur(0),contextptr);
+                common=makevecteur(1,0,common);
+                a=algebraic_EXTension(makevecteur(a,0),common);
+                b=algebraic_EXTension(makevecteur(b,0),common);
+                return common;
+              }
+            }
+          }
+        }
+      }
     }
     // special handling if fractional power of the same object
     if (is_one(a__VECT[0]) && is_one(b__VECT[0]) && is_zero(a__VECT[as-1]-b__VECT[bs-1])){

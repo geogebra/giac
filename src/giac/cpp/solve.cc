@@ -8539,6 +8539,7 @@ namespace giac {
 	  vecteur current=*st->_VECTptr;
 	  foundvars=int(st->_VECTptr->size());
 	  gen curg=*curgfit;
+          curg=normalize_sqrt(curg,contextptr);
 	  gen x;
 	  int xpos=0;
 	  // First search in current an identifier curg depends on

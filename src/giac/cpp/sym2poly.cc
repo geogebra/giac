@@ -1009,8 +1009,15 @@ namespace giac {
 	  }
 	}
       }
-      if (!is_one(p1))
-	f.push_back(facteur<polynome>(polynome(p1,1),1));
+      if (!is_one(p1)){
+        if (p1.type==_POLY){
+          factorization fp1=rsqff(*p1._POLYptr);
+          for (int i=0;i<fp1.size();++i)
+            f.push_back(facteur<polynome>(polynome(fp1[i].fact,1),fp1[i].mult));
+        }
+        else
+          f.push_back(facteur<polynome>(polynome(p1,1),1));
+      }
       return f;
     }
     factorization ff(rsqff(s.trunc1()));
@@ -1141,8 +1148,10 @@ namespace giac {
       }
       // Check sign of D
       vecteur Dl(l);
-      if (embeddings && Dl[embeddings].type==_VECT)
-	Dl=*Dl[embeddings]._VECTptr;
+      if (embeddings && Dl[embeddings].type==_VECT){
+        Dl=vecteur(l.begin()+embeddings,l.end());
+	// Dl=*Dl[embeddings]._VECTptr;
+      }
       if (is_positive(r2e(-D,Dl,contextptr),contextptr)){
 	D=-D;
 	if (d%2)
@@ -1828,6 +1837,8 @@ namespace giac {
     iext=makevecteur(1,0,1);
     gen currentext=Extension;
     common_EXT(iext,currentext,0,contextptr);
+    if (iext.type==_VECT)
+      iext=algebraic_EXTension(makevecteur(1,0),iext);
     if (currentext.type==_EXT)
       currentext=*(currentext._EXTptr+1);
     Extension=change_subtype(Extension,_POLY1__VECT);
@@ -5447,8 +5458,11 @@ namespace giac {
 	    tmp=-vtmp.back()/vtmp.front();
 	  *it=pow(base,num.val/den.val,contextptr)*tmp;
 	}
-	else
+	else {
+          // extract from the root
+          // gen fbase=_factors(base,contextptr);
 	  *it= pow(base, num.val /den.val,contextptr) *pow(base,rdiv(num.val%den.val,den),contextptr);
+        }
       }
     }
     if (l!=l_subst) 

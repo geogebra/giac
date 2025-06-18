@@ -10971,6 +10971,7 @@ namespace giac {
           if (is_positive(-resf,contextptr))
             res=-res;
         } catch (std::runtime_error&e){
+          *logptr(contextptr) << "Previous error catched\n";
         }
 #endif
       }
