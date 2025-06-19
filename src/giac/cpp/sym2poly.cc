@@ -5459,9 +5459,29 @@ namespace giac {
 	  *it=pow(base,num.val/den.val,contextptr)*tmp;
 	}
 	else {
-          // extract from the root
-          // gen fbase=_factors(base,contextptr);
-	  *it= pow(base, num.val /den.val,contextptr) *pow(base,rdiv(num.val%den.val,den),contextptr);
+          // extract from the root before pow
+          gen base1=1,base2=1;
+          if (den.val==1)
+            base2=base;
+          else {
+            gen fbase=_factors(base,contextptr);
+            if (fbase.type==_VECT){
+              vecteur v=*fbase._VECTptr;
+              for (int i=0;i<v.size();i+=2){
+                int mult=v[i+1].val;
+                if (mult%den.val==0){
+                  if (den.val%2==0 && is_real(v[i],contextptr))
+                    v[i]=abs(v[i],contextptr);
+                  base1=base1*pow(v[i],mult*num.val/den.val,contextptr);
+                }
+                else
+                  base2=base2*pow(v[i],mult,contextptr);
+              }
+            }
+            else
+              base2=base;
+          }
+          *it= base1*pow(base2,num.val/den.val,contextptr)*pow(base2,rdiv(num.val%den.val,den),contextptr);
         }
       }
     }
