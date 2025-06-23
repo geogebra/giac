@@ -889,7 +889,7 @@ tasks.addRule("Pattern: emccCompileWasm_<FILE>Cc: Compile <FILE>.cc into <FILE>.
                     // Be very careful when changing this: config.h also contains some entries!
                     def specialOptions = ''
                     def commandline = emccCommand
-                    commandline += ' -DIN_GIAC -DGIAC_GENERIC_CONSTANTS -DHAVE_CONFIG_H -DNO_STDEXCEPT -fno-exceptions' // from old Makefile
+                    commandline += ' -DIN_GIAC -DGIAC_GENERIC_CONSTANTS -DHAVE_CONFIG_H -fwasm-exceptions' // from old Makefile
                     commandline += ' -DVERSION=' + giacVersion
                     commandline += " -Dgammaf=tgammaf -s ALLOW_MEMORY_GROWTH=1"
                     commandline += " -s WASM=1 -s NO_EXIT_RUNTIME=1"
@@ -957,6 +957,7 @@ tasks.register('emccGiacJsWasm') {
             linkerArgs << '-s' << 'EXPORTED_RUNTIME_METHODS=["cwrap"]'
 
             linkerArgs << '-s' << 'TOTAL_MEMORY=67108864'
+            linkerArgs << '-fwasm-exceptions'
             // consider increasing this if running out of memory on GB computations
             def linkerArgsString = linkerArgs.join(" ")
             println "Linking: ${emccCommand} ${linkerArgsString}"
