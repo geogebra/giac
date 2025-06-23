@@ -208,9 +208,9 @@ namespace giac {
       return 0;
     }
     f1=_texpand(f1,contextptr);
-    f1=normal(f1,contextptr);
+    f1=normal(recursive_ratnormal(f1,contextptr),contextptr);
     f2=_texpand(f2,contextptr);
-    f2=normal(f2,contextptr);
+    f2=normal(recursive_ratnormal(f2,contextptr),contextptr);
     if (f1==f2)
       return 1;
     if (is_zero(ratnormal(invfracpow(f1+f2,contextptr),contextptr)))
@@ -930,6 +930,13 @@ namespace giac {
     if (is_zero(g0)){
       res=zero;
       return true;
+    }
+    if (is_zero(a+b)){
+      int i=is_even_odd(g0,x,contextptr);
+      if (i==2){
+        res=zero;
+        return true;
+      }
     }
     if (a==unsigned_inf || b==unsigned_inf){
       *logptr(contextptr) << gettext("Please use +infinity or -infinity since infinity is unsigned") << '\n';

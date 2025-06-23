@@ -4157,6 +4157,13 @@ namespace giac {
 	    v[2]=a; v[3]=b;
 	  }
 	  vecteur lv=lop(lvarx(v[0],v[1]),at_pow);
+          for (int i=0;i<lv.size();++i){
+            gen expo=lv[i]._SYMBptr->feuille._VECTptr->back();
+            if (expo.type==_INT_ && expo.val>0){
+              lv.erase(lv.begin()+i);
+              --i;
+            }
+          }
 	  lv=mergevecteur(lv,lop(lvarx(v[0],v[1]),at_surd));
 	  lv=mergevecteur(lv,lop(lvarx(v[0],v[1]),at_NTHROOT));
 	  if (lv.size()==1 && v[1].type==_IDNT){
