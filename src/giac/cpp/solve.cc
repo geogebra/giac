@@ -8528,8 +8528,10 @@ namespace giac {
         tmpg=ratnormal(tmpg,contextptr);
         tmpg=ratnormal(tmpg,contextptr);
         if (tmpg.type!=_SYMB){
-          if (is_zero(tmpg)) // ignore 0==0
+          if (is_zero(tmpg)){ // 0==0 is verified
+            newsols.push_back(*st);
             continue;
+          }
           return vecteur(0); // no solution
         }
 	gen curgf=_factors(tmpg,contextptr);
