@@ -74,7 +74,9 @@ void sha256_init(SHA256_CTX *ctx);
 void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len);
 void sha256_final(SHA256_CTX *ctx, BYTE hash[]);
 #else
+#ifndef EMCC2
 #include "sha256.h"
+#endif
 #endif
 #endif
 #if defined GIAC_HAS_STO_38 || defined NSPIRE || defined NSPIRE_NEWLIB || defined FXCG || defined GIAC_GGB || defined USE_GMP_REPLACEMENTS || defined KHICAS || defined SDL_KHICAS
@@ -7468,7 +7470,7 @@ namespace giac {
   static define_unary_function_eval (__cd,&_cd,_cd_s);
   define_unary_function_ptr5( at_cd ,alias_at_cd,&__cd,0,true);
 
-#if !defined GIAC_GGB && !defined NUMWORKS
+#if !defined GIAC_GGB && !defined NUMWORKS && !defined EMCC2
   // unix command sha256sum
   gen _sha256(const gen &g_,GIAC_CONTEXT){
     int offset=0;

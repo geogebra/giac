@@ -392,6 +392,11 @@ namespace giac {
   bool padic_linsolve_solve(const matrice & a,const gen & p,const std::vector<int> & ranklines,const std::vector<int> & rankcols,const matrice & asub,const matrice & ainv,const vecteur & compat,const vecteur & b,vecteur & sol);
   gen _padic_linsolve(const gen & g,GIAC_CONTEXT);
 
+  bool is_blockmatrix(const matrice & a,std::vector<int> & p);
+  void extract(const matrice & a,const std::vector<int> & p,matrice & a1);
+  void complement(const std::vector<int> & p,int s,std::vector<int> & c);
+  void block_rebuild(const matrice & res1,const std::vector<int> & p1,const matrice & res2,const std::vector<int> & p2,matrice & res);
+  
   matrice minv(const matrice & a,GIAC_CONTEXT);
   gen mdet(const matrice & a,GIAC_CONTEXT);
   gen _det(const gen & a,GIAC_CONTEXT);

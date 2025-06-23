@@ -358,6 +358,8 @@ namespace giac {
       return inv(args,contextptr);
     if (args.subtype==_SEQ__VECT){
       iterateur it=args._VECTptr->begin(), itend=args._VECTptr->end();
+      if (itend-it==2 && (it+1)->subtype==_INT_SOLVER)
+        return inv(args,contextptr);
       gen prod(1);
       for (;it!=itend;++it)
 	prod = prod * (*it);

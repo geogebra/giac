@@ -7269,9 +7269,31 @@ namespace giac {
   // algorithm=0 Gauss-Jordan, 1 guess, 2 Bareiss, 3 modular, 4 p-adic, 5 interp
   // rref_or_det_or_lu = 0 for rref, 1 for det, 2 for lu, 
   // 3 for lu without pemutation
+  // -1 for det only 
   int mrref(const matrice & a, matrice & res, vecteur & pivots, gen & det,int l, int lmax, int c,int cmax,
 	    int fullreduction_,int dont_swap_below,bool convert_internal,int algorithm_,int rref_or_det_or_lu,
 	    GIAC_CONTEXT){
+    if (rref_or_det_or_lu==-1){ /* det only */
+      rref_or_det_or_lu=1;
+      vector<int> p1;
+      if (is_blockmatrix(a,p1)){
+        int s=a.size();
+        matrice a1,a2,res1,res2;
+        extract(a,p1,a1);
+        vector<int> p2; complement(p1,s,p2);
+        extract(a,p2,a2);
+        det=mdet(a1,contextptr);
+        if (is_zero(det))
+          return 1;
+        gen d2=mdet(a2,contextptr);
+        det=det*d2;
+        for (int i=0;i<p2.size();++i){
+          p1.push_back(p2[i]);
+        }
+        det=signature(p1)*det;
+        return 1;
+      }
+    }
     vector<int> permutation(lmax);
     for (int i=0;i<lmax;++i)
       permutation[i]=i;
@@ -11881,7 +11903,110 @@ namespace giac {
   }
 #endif
 
+  // assumes a is a square matrix, search smaller connected components
+  bool is_blockmatrix(const matrice & a,vector<int> & p){
+    int s=a.size();
+    vector<short int> connected(s);
+    connected[0]=1;
+    for (;;){
+      int i=1;
+      // is there still a 0?
+      for (;i<s;++i){
+        if (connected[i]==0)
+          break;
+      }
+      if (i==s)
+        return false;
+      i=0;
+      for (;i<s;++i){
+        if (connected[i]==1)
+          break;
+      }
+      if (i==s){
+        // compute p
+        i=0;
+        for (;i<s;++i){
+          if (connected[i])
+            p.push_back(i);
+        }
+        return true;
+      }
+      connected[i]=2;
+      const vecteur & ai=*a[i]._VECTptr;
+      for (int j=0;j<s;++j){
+        if (connected[j])
+          continue;
+        if (is_zero(ai[j]) && is_zero((*a[j]._VECTptr)[i]))
+          continue;
+        connected[j]=1;
+      }
+    }
+  }
+
+  void extract(const matrice & a,const vector<int> & p,matrice & a1){
+    int s=a.size(),ss=p.size();
+    a1.resize(ss);
+    for (int i=0;i<ss;++i){
+      vecteur & ai=*a[p[i]]._VECTptr;
+      vecteur cur(ss);
+      for (int j=0;j<ss;++j){
+        cur[j]=ai[p[j]];
+      }
+      a1[i]=cur;
+    }
+  }
+
+  void complement(const vector<int> & p,int s,vector<int> & c){
+    int pos=0;
+    for (int i=0;i<s;++i){
+      if (pos<p.size() && i==p[pos])
+        ++pos;
+      else
+        c.push_back(i);
+    }
+  }
+
+  void block_rebuild(const matrice & res1,const vector<int> & p1,const matrice & res2,const vector<int> & p2,matrice & res){
+    int s=p1.size()+p2.size();
+    // build res from res1, res2, p1 and p2
+    res.clear(); res.reserve(s);
+    int pos1=0,pos2=0;
+    for (int i=0;i<s;++i){
+      if (pos1<p1.size() && i==p1[pos1]){
+        vecteur cur(s);
+        const vecteur & res1pos=*res1[pos1]._VECTptr;
+        for (int j=0;j<p1.size();++j){
+          cur[p1[j]]=res1pos[j];
+        }
+        res.push_back(cur);
+        ++pos1;
+      }
+      else {
+        vecteur cur(s);
+        const vecteur & res2pos=*res2[pos2]._VECTptr;
+        for (int j=0;j<p2.size();++j){
+          cur[p2[j]]=res2pos[j];
+        }
+        res.push_back(cur);
+        ++pos2;
+      }
+    }
+  }
+  
   bool minv(const matrice & a,matrice & res,bool convert_internal,int algorithm,GIAC_CONTEXT){
+    vector<int> p1;
+    if (is_blockmatrix(a,p1)){
+      int s=a.size();
+      matrice a1,a2,res1,res2;
+      extract(a,p1,a1);
+      vector<int> p2; complement(p1,s,p2);
+      extract(a,p2,a2);
+      if ( !minv(a1,res1,convert_internal,algorithm,contextptr) ||
+           !minv(a2,res2,convert_internal,algorithm,contextptr) )
+        return false;
+      block_rebuild(res1,p1,res2,p2,res);
+      return true;
+    }
 #ifdef HAVE_LIBLAPACK
     if (is_squarematrix(a) && is_fully_numeric(a) && int(a.size())>=CALL_LAPACK){
       integer N,LDA,INFO,LWORK;
@@ -12077,7 +12202,7 @@ namespace giac {
     gen determinant;
     int s=int(a.size());
     if (!mrref(a,res,pivots,determinant,0,s,0,s,
-	  /* fullreduction */0,0,true,1/* guess algorithm */,1/* determinant */,
+	  /* fullreduction */0,0,true,1/* guess algorithm */,-1/* determinant */,
 	       contextptr))
       return gendimerr(contextptr);
     return determinant;
@@ -12101,7 +12226,7 @@ namespace giac {
     gen determinant;
     int s=int(a.size());
     if (!mrref(a,res,pivots,determinant,0,s,0,s,
-	  /* fullreduction */0,0,convert_internal,algorithm,1/* det */,
+	  /* fullreduction */0,0,convert_internal,algorithm,-1/* det */,
 	       contextptr))
       return gendimerr(contextptr);
     return determinant;
@@ -14730,6 +14855,37 @@ namespace giac {
 	d=m;
       else
 	d=*m.front()._VECTptr;
+      return true;
+    }
+    vector<int> p1;
+    if (is_blockmatrix(m,p1)){
+      int s=m.size();
+      matrice a1,a2,P1,P2,D1,D2;
+      extract(m,p1,a1);
+      vector<int> p2; complement(p1,s,p2);
+      extract(m,p2,a2);
+      if (!egv(a1,P1,D1,contextptr,jordan,rational_jordan_form,eigenvalues_only) ||
+          !egv(a2,P2,D2,contextptr,jordan,rational_jordan_form,eigenvalues_only) )
+        return false;
+      if (jordan)
+        block_rebuild(D1,p1,D2,p2,d);
+      else {
+        int s=p1.size()+p2.size();
+        d.clear(); d.reserve(s);
+        int pos1=0,pos2=0;
+        for (int i=0;i<s;++i){
+          if (pos1<p1.size() && i==p1[pos1]){
+            d.push_back(D1[pos1]);
+            ++pos1;
+          }
+          else {
+            d.push_back(D2[pos2]);
+            ++pos2;
+          }
+        }
+      }
+      if (!eigenvalues_only)
+        block_rebuild(P1,p1,P2,p2,p);
       return true;
     }
     if (has_num_coeff(m)){

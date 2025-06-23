@@ -7677,6 +7677,12 @@ namespace giac {
 	  return new_ref_symbolic(symbolic(at_inv,a));
       }
     case _VECT:
+      if (a.subtype==_SEQ__VECT && a._VECTptr->size()==2 && a._VECTptr->back().subtype==_INT_SOLVER && is_squarematrix(a._VECTptr->front())){
+        matrice res;
+        gen a0=a._VECTptr->front();
+        if (minv(*a0._VECTptr,res,true,a._VECTptr->back().val,contextptr))
+          return res;
+      }
       if (a.subtype==_PNT__VECT)
 	return gen(invfirst(*a._VECTptr),a.subtype);
       if (a.subtype==_POLY1__VECT)
