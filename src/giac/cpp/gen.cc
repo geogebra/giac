@@ -3684,9 +3684,20 @@ namespace giac {
       r=s; i=0; return; 
     }
     if (u==at_inv){
-      gen tmp=inv(pow(ref,2)+pow(imf,2),contextptr);
-      r=ref*tmp;
-      i=-imf*tmp;
+      if (1){ // new version
+        gen g=gcd(ref,imf,contextptr);
+        if (!is_one(g)){
+          ref=ratnormal(ref/g);
+          imf=ratnormal(imf/g);
+        }
+        gen tmp=inv(pow(ref,2)+pow(imf,2),contextptr);
+        r=ref*tmp/g;
+        i=-imf*tmp/g;
+      } else { // old version
+        gen tmp=inv(pow(ref,2)+pow(imf,2),contextptr);
+        r=ref*tmp;
+        i=-imf*tmp;
+      }
       return;
     }
     if (u==at_exp) {
