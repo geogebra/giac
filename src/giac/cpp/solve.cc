@@ -8254,7 +8254,15 @@ namespace giac {
 	  // G[1] separating, G[2]=minpoly, G[3]=derivative, G[4..end]=solution
 	  if (debug_infolevel)
 	    *logptr(contextptr) << "Solutions = substitute roots of " << Gv[2] << " in " << vecteur(Gv.begin()+4,Gv.end()) << "/(" << Gv[3] << ")" << '\n';
-	  S=solve(Gv[2],rurvar,complexmode,contextptr);
+          if (deg>14){
+            // FIXME precision should be adapted for large degrees (and intervals should be used, like above with evalf_after)
+            int d=decimal_digits(contextptr);
+            decimal_digits(d+deg,contextptr);
+            S=solve(Gv[2],rurvar,complexmode,contextptr);
+            decimal_digits(d,contextptr);
+          }
+          else
+            S=solve(Gv[2],rurvar,complexmode,contextptr); 
 	}
 	vecteur res;
 	modpoly minp=gen2poly(_symb2poly(makesequence(Gv[2],rurvar),contextptr));
