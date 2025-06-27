@@ -17516,7 +17516,8 @@ void G_idn(vector<unsigned> & G,size_t s){
 	      mpz_clear(zur);
 	      mpz_clear(zr);
 	      mpz_clear(ztmp);
-	      *logptr(contextptr) << "#Primes " << count <<'\n';	    
+	      if (debug_infolevel)
+                *logptr(contextptr) << "#Primes " << count <<'\n';	    
 	      return 1;
 	    }	    
 	  }
@@ -17605,7 +17606,8 @@ void G_idn(vector<unsigned> & G,size_t s){
 		  mpz_clear(zur);
 		  mpz_clear(zr);
 		  mpz_clear(ztmp);
-		  *logptr(contextptr) << "#Primes " << count <<'\n';	    
+                  if (debug_infolevel)
+                    *logptr(contextptr) << "#Primes " << count <<'\n';	    
 		  return 1;
 		}
 	      } // end jpos==early.size()
@@ -17805,7 +17807,8 @@ void G_idn(vector<unsigned> & G,size_t s){
 	  mpz_clear(zur);
 	  mpz_clear(zr);
 	  mpz_clear(ztmp);
-	  *logptr(contextptr) << "#Primes " << count <<'\n';	    
+          if (debug_infolevel)
+            *logptr(contextptr) << "#Primes " << count <<'\n';	    
 	  return 1;
 	}
 	if (jpos<gbmod.size()){
@@ -17860,7 +17863,8 @@ void G_idn(vector<unsigned> & G,size_t s){
 	    mpz_clear(zur);
 	    mpz_clear(zr);
 	    mpz_clear(ztmp);
-	    *logptr(contextptr) << "#Primes " << count <<'\n';	    
+            if (debug_infolevel)
+              *logptr(contextptr) << "#Primes " << count <<'\n';	    
 	    return 1;
 	  }
           if (coeffsmodptr){

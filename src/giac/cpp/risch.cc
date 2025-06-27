@@ -453,6 +453,17 @@ namespace giac {
     polynome Rr(Tfirstcoeff<gen>(R)),Ss(Tfirstcoeff<gen>(S));
     // compute max possible degree of y: it depends on Z type
     int ydeg=td-sd;
+    if (ydeg==0){ // y might be a constant
+      polynome Tt(Tfirstcoeff<gen>(T));
+      polynome chk=Ss*T-Tt*S;
+      if (chk.coord.empty()){
+        gen ratio=r2sym(fraction(Tt,Ss).normal(),lv,contextptr);
+        if (is_constant_wrt(ratio,x,contextptr)){
+          y=ratio/r2sym(D,lv,contextptr);
+          return true;
+        }
+      }
+    }
     gen expshift=plus_one; // multiplicative change of variable
     if (Z==x){
       ydeg=td-giacmax(rd-1,sd);
@@ -950,7 +961,7 @@ namespace giac {
       res = res+risch_lin(coeff*exp(expo,contextptr),x,rem,contextptr);
       remsum += rem;
     }
-    res = res+risch_lin(remsum,x,remains_to_integrate,contextptr);
+    if (vexp.size()>1) res = res+risch_lin(remsum,x,remains_to_integrate,contextptr); else remains_to_integrate=remsum;
     // change for integrate((3sin(x)-sin(3x))^(1/3));
     vector<const unary_function_ptr *> vsubstin(1,at_inv);
     vector<gen_op_context> vsubstout(1,invexptoexpneg);
