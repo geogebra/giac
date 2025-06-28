@@ -3793,6 +3793,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int MAX_ALG_EXT_ORDER_SIZE = 4;
   int MAX_COMMON_ALG_EXT_ORDER_SIZE = 16;
   int TRY_FU_UPRIME=5;
+  int TRY_FU_UPRIME_MAXLEAFSIZE=128;
   int SOLVER_MAX_ITERATE=25;
   int MAX_PRINTABLE_ZINT=10000;
   int MAX_RECURSION_LEVEL=9;
@@ -3848,6 +3849,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int MAX_COMMON_ALG_EXT_ORDER_SIZE = 64;
 #endif
   int TRY_FU_UPRIME=5;
+  int TRY_FU_UPRIME_MAXLEAFSIZE=128;
   int SOLVER_MAX_ITERATE=25;
   int MAX_PRINTABLE_ZINT=1000000;
   int MAX_RECURSION_LEVEL=100;

@@ -3108,6 +3108,8 @@ namespace giac {
     }
     const_iterateur vt=v.begin(),vtend=v.end();
     for (int i=0;(i<TRY_FU_UPRIME) && (vt!=vtend);++vt,++i){
+      if (taille(*vt,TRY_FU_UPRIME_MAXLEAFSIZE)>=TRY_FU_UPRIME_MAXLEAFSIZE)
+        continue;
       gen tmprem,u=linear_integrate_nostep(*vt,gen_x,tmprem,intmode|2,contextptr);
       if (is_undef(u) || !is_zero(tmprem)){
 	gen tst=*vt;

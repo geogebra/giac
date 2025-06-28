@@ -2857,8 +2857,13 @@ namespace giac {
       gen r=ratnormal(v[i]._SYMBptr->feuille/g,contextptr);
       if (r.type==_INT_ && r.val!=1 && absint(r.val)<=INT_KARAMUL_SIZE)
 	w[i]=symbolic(at_pow,makesequence(symb_exp(g),r));
+      else {
+        v.erase(v.begin()+i);
+        w.erase(w.begin()+i);
+        --i;
+      }
     }
-    return v==w?e:subst(e,v,w,false,contextptr);
+    return (v==w || v.size()==1) ? e : subst(e,v,w,false,contextptr);
   }
 
   static gen in_normalize_sqrt(const gen & e,vecteur & L,bool keep_abs,GIAC_CONTEXT){

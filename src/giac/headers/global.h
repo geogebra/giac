@@ -402,6 +402,7 @@ Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
   extern int ALG_EXT_DIGITS;
   // 0 use a unique algebraic extension, >0: don't search a unique alg ext if degree is >
   extern int TRY_FU_UPRIME;
+  extern int TRY_FU_UPRIME_MAXLEAFSIZE;
   extern int SOLVER_MAX_ITERATE;
   extern int MAX_PRINTABLE_ZINT;
   extern int MAX_RECURSION_LEVEL;
