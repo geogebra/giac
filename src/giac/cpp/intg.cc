@@ -4040,7 +4040,7 @@ namespace giac {
       return gensizeerr(contextptr);
     if (s>=4 && complex_mode(contextptr)){
       complex_mode(false,contextptr);
-      gen res=_integrate(args,contextptr);
+      gen res=_integrate_(args,contextptr);
       complex_mode(true,contextptr);
       return res;
     }
@@ -4619,6 +4619,29 @@ namespace giac {
   }
   // "unary" version
   gen _integrate(const gen & args_,GIAC_CONTEXT){
+    bool setcplx=false;
+    if (!complex_mode(contextptr)){
+      // if there are ln inside, switch to complex mode
+      vecteur v;
+      gen x=vx_var,f=args_;
+      if (args_.type==_VECT && args_._VECTptr->size()>=2){
+        f=(*args_._VECTptr)[0];
+        x=(*args_._VECTptr)[1];
+      }
+      f=eval(f,1,contextptr);
+      rlvarx(f,x,v);
+      for (int i=0;i<v.size();++i){
+        gen g=v[i];
+        if (g.type!=_SYMB)
+          continue;
+        if (g._SYMBptr->sommet==at_ln){
+          gen f=g._SYMBptr->feuille;
+          if (f.type==_SYMB && (f._SYMBptr->sommet==at_exp || f._SYMBptr->sommet==at_abs))
+            continue;    
+          setcplx=true;
+        }
+      }
+    }
     gen args(exactify_pow(args_));
     if (complex_variables(contextptr))
       *logptr(contextptr) << gettext("Warning, complex variables is set, this can lead to fairly complex answers. It is recommended to switch off complex variables in the settings or by complex_variables:=0; and declare individual variables to be complex by e.g. assume(a,complex).") << '\n';
@@ -4633,7 +4656,11 @@ namespace giac {
       *logptr(contextptr) << "Run purge(" << ass << "); or purge(unquote(assumptions)) to clear auto-assumptions\n" ;
       sto(ass,identificateur("assumptions"),contextptr);
     }
+    if (setcplx)
+      complex_mode(true,contextptr);
     gen res=_integrate_(args,contextptr);
+    if (setcplx)
+      complex_mode(false,contextptr);
     if (0){
       for (int i=0;i<ass.size();++i){
 	purgenoassume(ass[i],contextptr);

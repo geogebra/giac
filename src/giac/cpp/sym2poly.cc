@@ -2855,8 +2855,11 @@ namespace giac {
     vecteur w(v);
     for (unsigned i=0;i<v.size();++i){
       gen r=ratnormal(v[i]._SYMBptr->feuille/g,contextptr);
-      if (r.type==_INT_ && r.val!=1 && absint(r.val)<=INT_KARAMUL_SIZE)
-	w[i]=symbolic(at_pow,makesequence(symb_exp(g),r));
+      if (r.type==_INT_ && absint(r.val)<=INT_KARAMUL_SIZE){
+        if (r.val!=1)
+          w[i]=symbolic(at_pow,makesequence(symb_exp(g),r));
+        // if r==1 we keep w[i] unchanged but we do not erase it for the final check list size
+      }
       else {
         v.erase(v.begin()+i);
         w.erase(w.begin()+i);
@@ -4586,6 +4589,7 @@ namespace giac {
           gen p=f._VECTptr->front(),pmin=f._VECTptr->back();
           if (p.type==_VECT && pmin.type==_VECT && p._VECTptr->size()>=pmin._VECTptr->size())
             p=p%pmin;
+          pmin.subtype=_POLY1__VECT;
           wr.push_back(horner(p,symbolic(at_rootof,pmin)));
         }
       }
@@ -4652,6 +4656,8 @@ namespace giac {
         if (g.type!=_VECT || g._VECTptr->size()!=2){
           p=makevecteur(1,0);
           pmin=g;
+          algext_cur = gen2vecteur(pmin).size()-1;
+          algext_order *= algext_cur;
         }
         else {
           p=g[0];
@@ -5215,6 +5221,20 @@ namespace giac {
     return true;
   }
 
+  bool algnum_cleanup(gen & e,GIAC_CONTEXT){
+    if (e.type==_EXT) {
+      e=symb_rootof(*e._EXTptr,*(e._EXTptr+1),contextptr);
+      return true;
+    }
+    if (e.type==_FRAC){
+      if (algnum_cleanup(e._FRACptr->num,contextptr)){
+        e=e._FRACptr->num/e._FRACptr->den;
+        return true;
+      }
+    }
+    return false;
+  }
+
   // detect if e is in an algebraic extension of Q, simplifies
   bool algnum_normal(gen & e,GIAC_CONTEXT){
 #ifdef USE_GMP_REPLACEMENTS
@@ -5254,6 +5274,7 @@ namespace giac {
     }
     if (!algnum_rewritable(E,syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,r,sep,rootofallowed,!rootofallowed/* ckdeg2*/,extpar,e,contextptr))
       return false;
+    algnum_cleanup(e,contextptr);
     return true;
 #else
     G=_gbasis(makesequence(syst,vars,change_subtype(_RUR_REVLEX,_INT_GROEBNER)),contextptr);
@@ -5335,6 +5356,7 @@ namespace giac {
       pmin=horner(pminv,var);
       if (!algnum_rewritable(E,syst,vars,v,varapprox,nums,diffpmin,pminv,pmin,var,ext,r,sep,rootofallowed,true/* ckdeg2*/,e,contextptr))
         return false;
+      algnum_cleaup(e,contextptr);
       return true;
     }
 #endif

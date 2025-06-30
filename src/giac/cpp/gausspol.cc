@@ -4411,6 +4411,7 @@ namespace giac {
 	if (arg!=0){
 	  gen mult=arg>0?(-cst_i):(arg==-1?cst_i:-1);
 	  d *= mult;
+          if (mult.type==_CPLX) mult=-mult;
 	  if (compute_cofactors){
 	    p_simp *= mult;
 	    q_simp *= mult;

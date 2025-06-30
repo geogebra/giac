@@ -650,6 +650,7 @@ namespace giac {
       return emcctime()/1e6; // should be 1e3 if using Date.now()
 #endif
 #endif
+      return CLOCK()*1e-6;
       return total_time(contextptr);
     }
     double delta;
@@ -797,6 +798,13 @@ namespace giac {
   static const char _time_s []="time";
   static define_unary_function_eval_quoted (__time,&_time,_time_s);
   define_unary_function_ptr5( at_time ,alias_at_time,&__time,_QUOTE_ARGUMENTS,true);
+
+  gen _has_i(const gen & g,GIAC_CONTEXT){
+    return has_i(g);
+  }
+  static const char _has_i_s []="has_i";
+  static define_unary_function_eval_quoted (__has_i,&_has_i,_has_i_s);
+  define_unary_function_ptr5( at_has_i ,alias_at_has_i,&__has_i,_QUOTE_ARGUMENTS,true);
 
   static const char _Phi_s []="Phi";
   static define_unary_function_eval (__Phi,&_euler,_Phi_s);

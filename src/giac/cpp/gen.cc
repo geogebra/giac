@@ -4163,6 +4163,7 @@ namespace giac {
       return plus_inf;
     if (is_undef(s))
       return s;
+    // if (contextptr && contextptr->assumedpositive && equalposcomp(*contextptr->assumedpositive,simplifier(s,contextptr))) return s;
     if (!eval_abs(contextptr) || has_num_coeff(s))
       return new_ref_symbolic(symbolic(at_abs,s));
     gen r,i;
@@ -4267,6 +4268,7 @@ namespace giac {
     case _IDNT:
       return idnt_abs(a,contextptr);
     case _SYMB:
+      //if (contextptr && contextptr->assumedpositive && equalposcomp(*contextptr->assumedpositive,simplifier(a,contextptr))) return a;
       if (is_equal(a))
 	return apply_to_equal(a,abs,contextptr);
       if (a.is_symb_of_sommet(at_pnt)){
@@ -6979,6 +6981,7 @@ namespace giac {
 	// (e^a)^b=e^(a*b)
 	// but we keep (e^a)^b if b is integer and e^(a*b) is not simplified
 	// for rational dependance
+        // or inside integration
 	gen res=exp(base._SYMBptr->feuille*exponent,contextptr);
 	if (exponent.type!=_INT_ || !res.is_symb_of_sommet(at_exp))
 	  return res;

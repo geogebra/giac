@@ -1185,6 +1185,8 @@ namespace giac {
     eps=absdouble(eps);
     if (eps>1e-6)
       eps=1e-6;
+    if (eps<=0)
+      eps=1e-12;
     {
       vecteur v,res,vradius;
       bool b;

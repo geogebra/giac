@@ -1965,6 +1965,7 @@ namespace giac {
 
   gen tsimplify_common(const gen & e,GIAC_CONTEXT){
     gen g=pow2expln(e,contextptr);
+    g=hyp2exp(g,contextptr);
     g=gamma2factorial(g,contextptr);
     g=simplifyfactorial(g,contextptr);
     g=simplifypsi(g,contextptr);
@@ -2392,6 +2393,7 @@ namespace giac {
     if (maybe_set(e_orig))
       return set_simplify(e_orig,contextptr);
     gen e=simplifier(e_orig,contextptr);
+    e=hyp2exp(e,contextptr);
     if (algnum_normal(e,contextptr))
       return e;
     if (e.type==_FRAC)
