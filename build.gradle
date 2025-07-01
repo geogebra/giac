@@ -667,23 +667,24 @@ def mergeLibraries(name, output, clangPath, String... libraries) {
     exec_(args as String[])
 }
 
-task simpleInterfaceIosStaticLibrary(dependsOn: [
-    'simpleInterfaceIos_arm64StaticLibrary',
-    'simpleInterfaceIphonesimulator_x86_64StaticLibrary',
-    'simpleInterfaceIphonesimulator_arm64StaticLibrary',
-    'simpleInterfaceMaccatalyst_x86_64StaticLibrary',
-    'simpleInterfaceMaccatalyst_arm64StaticLibrary'
-])
+tasks.register('simpleInterfaceIosStaticLibrary') {
+    dependsOn('simpleInterfaceIos_arm64StaticLibrary',
+            'simpleInterfaceIphonesimulator_x86_64StaticLibrary',
+            'simpleInterfaceIphonesimulator_arm64StaticLibrary',
+            'simpleInterfaceMaccatalyst_x86_64StaticLibrary',
+            'simpleInterfaceMaccatalyst_arm64StaticLibrary')
+}
 
-task giacIosStaticLibrary(dependsOn: [
-    'giacIos_arm64StaticLibrary',
-    'giacIphonesimulator_x86_64StaticLibrary',
-    'giacIphonesimulator_arm64StaticLibrary',
-    'giacMaccatalyst_x86_64StaticLibrary',
-    'giacMaccatalyst_arm64StaticLibrary'
-])
+tasks.register('giacIosStaticLibrary') {
+    dependsOn('giacIos_arm64StaticLibrary',
+            'giacIphonesimulator_x86_64StaticLibrary',
+            'giacIphonesimulator_arm64StaticLibrary',
+            'giacMaccatalyst_x86_64StaticLibrary',
+            'giacMaccatalyst_arm64StaticLibrary')
+}
 
-task createFatIosStaticLibrary(dependsOn: ['simpleInterfaceIosStaticLibrary', 'giacIosStaticLibrary']) {
+tasks.register('createFatIosStaticLibrary') {
+    dependsOn('simpleInterfaceIosStaticLibrary', 'giacIosStaticLibrary')
     doLast {
         def output = "${buildDir}/libs/merged"
         ["arm64"].each {
