@@ -811,6 +811,7 @@ namespace giac {
 #endif
   }
 
+#ifdef THREAD_TIMEOUT
   struct timeout_t {
     gen * g;
     const context * contextptr;
@@ -859,7 +860,7 @@ namespace giac {
   static const char _timeout_s []="timeout";
   static define_unary_function_eval_quoted (__timeout,&_timeout,_timeout_s);
   define_unary_function_ptr5( at_timeout ,alias_at_timeout,&__timeout,_QUOTE_ARGUMENTS,true);
-
+#endif // THREAD_TIMEOUT
   
 #endif // KHICAS
   static const char _time_s []="time";
