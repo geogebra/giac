@@ -662,8 +662,11 @@ namespace giac {
   }
 
   static gen intersect_expand(const gen & e,GIAC_CONTEXT){
-    if (e.type!=_VECT)
+    if (e.type!=_VECT){
+      if (e.type!=_SYMB)
+        return e;
       return symbolic(at_intersect,e);
+    }
     return intersect_expand(e._VECTptr->begin(),e._VECTptr->end(),contextptr);
   }
   
@@ -716,8 +719,11 @@ namespace giac {
   }
 
   static gen union_expand(const gen & e,GIAC_CONTEXT){
-    if (e.type!=_VECT)
+    if (e.type!=_VECT){
+      if (e.type!=_SYMB)
+        return e;
       return symbolic(at_union,e);
+    }
     return union_expand(e._VECTptr->begin(),e._VECTptr->end(),contextptr);
   }
 
@@ -2224,7 +2230,7 @@ namespace giac {
     }
     vector<const unary_function_ptr *> v;
     vector< gen_op_context > w;
-    if (maybe_set(e)){
+    if (maybe_set(e) && e.type!=_IDNT && e.type!=_VECT){
       v.push_back(at_intersect);
       v.push_back(at_union);
       v.push_back(at_complement);
