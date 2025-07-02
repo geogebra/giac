@@ -1,5 +1,19 @@
 // -*- mode:C++ ; compile-command: "g++-3.4 -I.. -I../include -g -c maple.cc  -DIN_GIAC -DHAVE_CONFIG_H" -*-
 #include "giacPCH.h"
+
+#if defined(VISUALC) || defined(__MINGW_H) || defined (FIR) || defined(FXCG) || defined(NSPIRE) || defined(__ANDROID__) || defined(NSPIRE_NEWLIB) || defined(EMCC) || defined (EMCC2) || defined(GIAC_GGB) || defined KHICAS || defined SDL_KHICAS
+#else
+#define THREAD_TIMEOUT
+#endif
+#ifdef THREAD_TIMEOUT
+#include <chrono>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <tuple>
+#include <ctime>
+#endif
+
 /*
  *  Copyright (C) 2000,2014 B. Parisse, Institut Fourier, 38402 St Martin d'Heres
  *
@@ -185,8 +199,11 @@ extern "C" double emcctime(){ // requires UI.Datestart to be initialized with Da
     })-datestart;
 #else
   res=EM_ASM_DOUBLE_V({
-      var hw=Date.now()-UI.Datestart;
-      return hw;
+      if (typeof(UI)!=="undefined"){          
+        var hw=Date.now()-UI.Datestart;
+        return hw;
+      }
+      else return Date.now();
     });
 #endif
   return res;
@@ -793,6 +810,56 @@ namespace giac {
     return (delta/ntimes);
 #endif
   }
+
+  struct timeout_t {
+    gen * g;
+    const context * contextptr;
+    condition_variable * cv;
+  };
+
+  void timeout_f(const timeout_t & T){
+    gen res=*T.g;
+    context * contextptr=clone_context(T.contextptr);
+    if (contextptr){
+      //cout << "timeout eval " << res << "\n";
+      res=eval(res,1,contextptr);
+      //cout << "timeout evaled " << res << "\n";
+      *T.g=res;
+      delete contextptr;
+    }
+    else
+      *T.g=undef;
+  }
+
+  void timeout_F(const timeout_t & T) {        
+    timeout_f(T);
+    T.cv->notify_one();
+  }
+
+  gen _timeout(const gen & args,GIAC_CONTEXT){
+    if (args.type!=_VECT || args._VECTptr->size()!=2)
+      return gensizeerr(contextptr);
+    gen e=args._VECTptr->front();
+    gen tout=evalf(args._VECTptr->back(),1,contextptr);
+    if (tout.type!=_DOUBLE_)
+      return gensizeerr(contextptr);
+    std::mutex m;
+    std::condition_variable cv;
+    timeout_t T={&e,contextptr,&cv};
+    std::thread t(timeout_F,T);
+    t.detach();
+    {
+      std::unique_lock<std::mutex> L(m);
+      if (cv.wait_for(L,tout._DOUBLE_val*1s) == std::cv_status::timeout) {  
+        throw std::runtime_error("Timeout");
+      }
+    }
+    return e;    
+  }
+  static const char _timeout_s []="timeout";
+  static define_unary_function_eval_quoted (__timeout,&_timeout,_timeout_s);
+  define_unary_function_ptr5( at_timeout ,alias_at_timeout,&__timeout,_QUOTE_ARGUMENTS,true);
+
   
 #endif // KHICAS
   static const char _time_s []="time";
