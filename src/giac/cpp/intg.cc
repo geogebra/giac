@@ -4640,6 +4640,12 @@ namespace giac {
             continue;    
           setcplx=true;
         }
+        if (0 && g._SYMBptr->sommet==at_pow){
+          gen f=g._SYMBptr->feuille[0];
+          if (f.type==_SYMB && (f._SYMBptr->sommet==at_exp || f._SYMBptr->sommet==at_abs))
+            continue;    
+          setcplx=true;
+        }
       }
     }
     gen args(exactify_pow(args_));

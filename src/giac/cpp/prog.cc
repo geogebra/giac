@@ -6125,7 +6125,7 @@ namespace giac {
 	  pthread_mutex_unlock(cptr->globalptr->_mutex_eval_status_ptr);
 	}
       }
-      kill_thread(true,cptr);
+      kill_thread(1,cptr);
       return 1;
     }
 #endif

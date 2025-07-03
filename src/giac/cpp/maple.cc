@@ -818,21 +818,44 @@ namespace giac {
     condition_variable * cv;
   };
 
+  gen deep_freecopy(const gen & g){
+    if (g.type==_VECT){
+      vecteur v(*g._VECTptr);
+      for (int i=0;i<v.size();++i)
+        v[i]=deep_freecopy(v[i]);
+      return gen(v,g.subtype);
+    }
+    if (g.type!=_SYMB)
+      return g;
+    return symbolic(g._SYMBptr->sommet,deep_freecopy(g._SYMBptr->feuille));
+  }
+
   void timeout_f(const timeout_t & T){
-    gen res=*T.g;
-    context * contextptr=clone_context(T.contextptr);
+    gen res=*T.g;//deep_freecopy(*T.g);
+    const context * ptr=T.contextptr;
+    context * contextptr=clone_context(ptr);
     if (contextptr){
       //cout << "timeout eval " << res << "\n";
-      res=eval(res,1,contextptr);
+      try {
+        res=eval(res,1,contextptr);
+        *T.g=res;
+      } catch (std::runtime_error & err){
+        *T.g=undef;
+      }
       //cout << "timeout evaled " << res << "\n";
-      *T.g=res;
+      // commented below because I don't want to see the timeout happen while context is copied, as a consequence don't write timeout(f:=...) but f:=timeout(...)
+      //*ptr->globalptr = *contextptr->globalptr;
+      //*ptr->tabptr = *contextptr->tabptr;
       delete contextptr;
     }
     else
       *T.g=undef;
   }
 
-  void timeout_F(const timeout_t & T) {        
+  void timeout_F(const timeout_t & T) {
+    COUT << "Timeout thread " << pthread_self() << "\n";
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
     timeout_f(T);
     T.cv->notify_one();
   }
@@ -848,11 +871,24 @@ namespace giac {
     std::condition_variable cv;
     timeout_t T={&e,contextptr,&cv};
     std::thread t(timeout_F,T);
+    pthread_t thread=t.native_handle();
+    
     t.detach();
     {
       std::unique_lock<std::mutex> L(m);
-      if (cv.wait_for(L,tout._DOUBLE_val*1s) == std::cv_status::timeout) {  
-        throw std::runtime_error("Timeout");
+      if (cv.wait_for(L,tout._DOUBLE_val*1s)==std::cv_status::timeout) {
+        // try to stop the thread by setting ctrl_c, but protecting the current thread to be cancelled
+        *logptr(contextptr) << "Timeout, Attempt to stop thread " << thread << "\n";
+        kill_thread(2,contextptr);
+        ctrl_c=interrupted=true;
+        if (cv.wait_for(L,1s)==std::cv_status::timeout) {
+          *logptr(contextptr) << "Current thread " << pthread_self() << ". ";
+          *logptr(contextptr) << "Cancelling thread " << thread << "\n";
+          *logptr(contextptr) << "Result (0 ok): " << pthread_cancel(thread) << "\n";
+        }
+        ctrl_c=interrupted=false;
+        kill_thread(0,contextptr);
+        return string2gen("timeout",false);
       }
     }
     return e;    
