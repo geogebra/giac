@@ -143,7 +143,7 @@ def iosClangCompilerArgs(args, sdk, arch, minIosVersion, target) {
     args << "-target"
     args << target
     args << "-miphoneos-version-min=${minIosVersion}"
-    args << "-std=gnu++98"
+    args << "-std=c++11"
     args << "-stdlib=libc++"
     args << "-fembed-bitcode"
     args << "-O0"
@@ -161,6 +161,7 @@ def giacCommonDefines(cppCompiler) {
     cppCompiler.define "TIMEOUT"
     cppCompiler.define 'HAVE_SYS_TIMES_H'
     cppCompiler.define 'HAVE_SYS_TIME_H'
+    cppCompiler.args << "-std=c++11"
 }
 
 def giacIosDefines(cppCompiler) {
@@ -899,6 +900,7 @@ tasks.addRule("Pattern: emccCompileWasm_<FILE>Cc: Compile <FILE>.cc into <FILE>.
                     commandline += ' -DGIAC_GGB' // from old Makefile
                     commandline += ' -DTIMEOUT -DEMCC2 ' // from old config.h
                     commandline += " -Isrc/giac/headers -c $input -o $output"
+                    commandLine += " -std=c++11"
                     println "Compiling: ${commandline}"
                     commandLine commandline.split()
                 }
