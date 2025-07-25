@@ -402,6 +402,7 @@ model {
                 }
                 linker.withArguments { args ->
                     args << '--target=x86_64-apple-macos11'
+                    args << '-std=c++11'
                 }
             }
             target('osx_arm64') {

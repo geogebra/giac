@@ -9509,6 +9509,7 @@ namespace giac {
     file inf(fichier.c_str(),"r");
 #else
     const char * ptr=fichier.c_str(); // N.B. lexer/parser added a space before ..
+#ifndef HAVE_NO_CWD
     if (ptr[0]==' ' && ptr[1]=='.' && ptr[2]=='.' && ptr[3]=='/'){
       string cur=getcwd(0,0);
       ++ptr;
@@ -9523,6 +9524,7 @@ namespace giac {
       }
       fichier=cur+"/"+ptr;
     }
+#endif
     ifstream inf(fichier.c_str());
 #endif
     if (!inf)
