@@ -263,7 +263,7 @@ def giacSpecificSettings(cppCompiler, linker, targetPlatform) {
         linker.args '-Wl,-search_paths_first'
         linker.args '-L', file("src/jni/prebuilt/osx/${targetPlatform.architecture.name}").toString()
 
-        linker.args '-stdlib=libc++', '-std=c++11'
+        linker.args '-stdlib=libc++', '-lc++'
         linker.args '-lgmp', '-lmpfr', '-lpthread', '-dynamiclib'
         linker.args '-framework', 'Accelerate'
         linker.args '-framework', 'CoreFoundation'
@@ -293,7 +293,7 @@ def macosCompilerArgs(args, target) {
     args << "-isysroot"
     args << '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk'
     args << '-stdlib=libc++'
-    args << '-lc++'
+    args << '-std=c++11'
     args << '-I/System/Library/Frameworks/CoreFoundation.framework/Headers'
     args << '-I'
     args << file('src/jni/jdkHeaders/darwin').toString()
