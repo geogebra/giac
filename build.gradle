@@ -143,7 +143,7 @@ def iosClangCompilerArgs(args, sdk, arch, minIosVersion, target) {
     args << "-target"
     args << target
     args << "-miphoneos-version-min=${minIosVersion}"
-    args << "-std=gnu++98"
+    args << "-std=gnu++11"
     args << "-stdlib=libc++"
     args << "-fembed-bitcode"
     args << "-O0"
