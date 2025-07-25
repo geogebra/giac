@@ -293,6 +293,7 @@ namespace giac {
   extern const unary_function_ptr * const  at_python_list;
   extern const unary_function_ptr * const  at_show;
   extern const unary_function_ptr * const  at_diagrammebatons ;
+  extern const unary_function_ptr * const  at_diagramme_batons ;
   extern const unary_function_ptr * const  at_pop;
   extern const unary_function_ptr * const  at_coth ;
   extern const unary_function_ptr * const  at_atan2 ;

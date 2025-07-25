@@ -1200,6 +1200,7 @@ namespace giac {
     {"desolve(equation,t,y)", 0, "Resolution exacte d'equation differentielle ou de systeme differentiel lineaire a coefficients constants.", "[y'+y=exp(x),y(0)=1]", "[y'=[[1,2],[2,1]]*y+[x,x+1],y(0)=[1,2]]", CAT_CATEGORY_SOLVE | (CAT_CATEGORY_CALCULUS << 8) | XCAS_ONLY},
     {"det(A)", 0, "Determinant de la matrice A.", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX | XCAS_ONLY},
     {"diff(f,var,[n])", 0, "Derivee de l'expression f par rapport a var (a l'ordre n, n=1 par defaut), par exemple diff(sin(x),x) ou diff(x^3,x,2). Pour deriver f par rapport a x, utiliser f' (raccourci F3). Pour le gradient de f, var est la liste des variables.", "sin(x),x", "sin(x^2),x,3", CAT_CATEGORY_CALCULUS | XCAS_ONLY},
+    {"discriminant(p)", 0, "Discriminant du polynome p", "#P:=a*x^2+b*x+c;discriminant(P);", "discriminant(x^2+x+1)", CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
     {"display", "display", "Option d'affichage", "#display=red", 0, CAT_CATEGORY_PROGCMD | XCAS_ONLY},
     {"disque n", "disque ", "Cercle rempli tangent a la tortue, de rayon n. Utiliser disque n,theta pour remplir un morceau de camembert ou disque n,theta,segment pour remplir un segment de disque", "#disque 30", "#disque(30,90)", CAT_CATEGORY_LOGO},
   {"distance(A,B)", 0, "Distance de 2 objets geometriques", "point(1,2,3),point(4,1,2)", 0, CAT_CATEGORY_3D | (CAT_CATEGORY_2D << 8) },
@@ -1626,6 +1627,7 @@ const catalogFunc completeCaten[] = { // list of all functions (including some n
   {"desolve(equation,t,y)", 0, "Exact differential equation solving.", "desolve([y'+y=exp(x),y(0)=1])", "[y'=[[1,2],[2,1]]*y+[x,x+1],y(0)=[1,2]]", CAT_CATEGORY_SOLVE | (CAT_CATEGORY_CALCULUS << 8)},
   {"det(A)", 0, "Determinant of matrix A.", "[[1,2],[3,4]]", 0, CAT_CATEGORY_MATRIX},
   {"diff(f,var,[n])", 0, "Derivative of expression f with respect to var (order n, n=1 by default), for example diff(sin(x),x) or diff(x^3,x,2). For derivation with respect to x, run f' (shortcut F3). For the gradient of f, var is the list of variables.", "sin(x),x", "sin(x^2),x,3", CAT_CATEGORY_CALCULUS},
+  {"discriminant(p)", 0, "Discriminant of a polynomial p", "#P:=a*x^2+b*x+c;discriminant(P);", "discriminant(x^2+x+1)", CAT_CATEGORY_POLYNOMIAL | XCAS_ONLY},
   {"display", "display", "Display option", "#display=red", 0, CAT_CATEGORY_PROGCMD},
   {"disque n", "disque ", "Filled circle tangent to the turtle, radius n. Run disque n,theta for a filled arc of circle, theta in degrees, or disque n,theta,segment for a segment of circle.", "#disque 30", "#disque(30,90)", CAT_CATEGORY_LOGO},
   {"dodecahedron(A,B,C)", 0, "Dodecahedron of edge AB with one face in plane ABC", "[0,0,0],[0,2,sqrt(5)/2+3/2],[0,0,1]", 0, CAT_CATEGORY_3D},
@@ -22272,8 +22274,10 @@ void numworks_certify_internal(){
 #if 1 // def XWASPY
     int n,choix;
     bool isxw=extension && strcmp(extension,"xw")==0,ispy=extension && strcmp(extension,"py")==0;
+    int dbg=0;
     if (isxw || ispy){
       n=os_file_browser(filenames,MAX_NUMBER_OF_FILENAMES,"py",storage);
+      if (dbg) confirm("os_file_browser n",print_INT_(n).c_str());
       if (n==0 && ispy) return 0;
       int N=0;
       // isxw: keep only filenames ending with _xw
@@ -22281,7 +22285,7 @@ void numworks_certify_internal(){
       const char * fnames[MAX_NUMBER_OF_FILENAMES+1];
       for (int i=0;i<n;++i){
 	const char * f=filenames[i];
-	//console_output(f,strlen(f));
+	if (dbg) confirm(f,print_INT_(i).c_str());
 	f+=strlen(f)-6;
 	bool isfxw=strcmp(f,"_xw.py")==0;
 	if (isxw?isfxw:!isfxw){
@@ -22297,6 +22301,7 @@ void numworks_certify_internal(){
 	  fnames[N]=filenames[i];
 	}
       }
+      if (dbg) confirm("giac_file_browser N",print_INT_(N).c_str());
       fnames[N]=0;
       choix=select_item(fnames,title?title:"Scripts");
       if (choix<0 || choix>=N) return 0;

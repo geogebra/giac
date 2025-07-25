@@ -12239,8 +12239,8 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
   }
 
   static ostream & archive_IDNT(ostream & os,const identificateur & i,GIAC_CONTEXT){
-    string s=i.print(contextptr);
-    return os << s.size() << " " << s << " ";
+    const char * s =i.print(contextptr);
+    return os << strlen(s) << " " << s << " ";
   }
 
   ostream & archive(ostream & os,const gen & e,GIAC_CONTEXT){

@@ -4693,7 +4693,7 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
   define_unary_function_ptr5( at_center2interval ,alias_at_center2interval,&__center2interval,0,true);
 
 
-  static gen histogram(const vecteur & v,double class_minimum,double class_size,const vecteur & attributs,GIAC_CONTEXT){
+  static gen histogram(const vecteur & v,double class_minimum,double class_size,const vecteur & attributs,GIAC_CONTEXT,bool normalize_area=true){
 #ifndef WIN32
     bool old_iograph=io_graph(contextptr);
     io_graph(false,contextptr);
@@ -4761,21 +4761,21 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
 	}
 	double height=1/(sup-inf);
 	height=height*evalf_double(it->_VECTptr->back(),1,contextptr)._DOUBLE_val/n;
-  if (height<=0) {
-    last_maxi=undef;
-    continue;
-  }
-  maxh=std::max(maxh,height);
+        if (height<=0) {
+          last_maxi=undef;
+          continue;
+        }
+        maxh=std::max(maxh,height);
 	mini=gen(inf,height);
-  maxi=gen(sup,height);
+        maxi=gen(sup,height);
 	gen rectan(makevecteur(inf,sup,maxi,mini,inf),_LINE__VECT);
 	res.push_back(pnt_attrib(rectan,attributs,contextptr));
 #ifdef GIAC_LMCHANGES // changes by L. Marohnić
 	res.push_back(_segment(makevecteur(inf,mini),contextptr));
 	res.push_back(_segment(makevecteur(mini,maxi),contextptr));
-    if (!is_undef(last_maxi) && is_strictly_greater(im(last_maxi,contextptr),im(mini,contextptr),contextptr))
-      res.push_back(_segment(makevecteur(mini,last_maxi),contextptr));
-    last_maxi=maxi;
+        if (!is_undef(last_maxi) && is_strictly_greater(im(last_maxi,contextptr),im(mini,contextptr),contextptr))
+          res.push_back(_segment(makevecteur(mini,last_maxi),contextptr));
+        last_maxi=maxi;
 	//res.push_back(_segment(makevecteur(inf,sup),contextptr));
 #else
 	// res.push_back(_segment(makevecteur(inf,mini),contextptr));
@@ -4783,13 +4783,13 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
 	// res.push_back(_segment(makevecteur(maxi,sup),contextptr));	    
 #endif
       }
-  if (!is_undef(last_maxi))
-    res.push_back(_segment(makevecteur(sup,maxi),contextptr));
+      if (!is_undef(last_maxi))
+        res.push_back(_segment(makevecteur(sup,maxi),contextptr));
 #ifdef GIAC_LMCHANGES
-  res.insert(res.begin(),symb_equal(change_subtype(_GL_Y,_INT_PLOT),symb_interval(0.0,1.15*maxh)));
+      res.insert(res.begin(),symb_equal(change_subtype(_GL_Y,_INT_PLOT),symb_interval(0.0,1.15*maxh)));
 #endif
 #ifndef WIN32
-    io_graph(old_iograph,contextptr);
+      io_graph(old_iograph,contextptr);
 #endif
       return res;
     }
@@ -4817,7 +4817,8 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
 	if (*it>=max_class)
 	  break;
       }
-      effectif /= s*class_size; // height of the class
+      if (normalize_area)
+        effectif /= s*class_size; // height of the class
       if (effectif<=0) {
         last_maxg=undef;
         continue;
@@ -4860,8 +4861,17 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
     if (g.type!=_VECT)
       return gensizeerr(contextptr);
     vecteur args;
-    if (g.subtype==_SEQ__VECT)
+    bool normalize_area=true;
+    if (g.subtype==_SEQ__VECT){
       args=*g._VECTptr;
+      for (int i=0;i<args.size();++i){
+        if (args[i]==at_diagrammebatons || args[i]==at_diagramme_batons ){
+          normalize_area=false;
+          args.erase(args.begin()+i);
+          break;
+        }
+      }
+    }
 #if defined GIAC_LMCHANGES // changes by L. Marohnić
     vecteur attributs(1,int(FL_DARK1));
     int s=read_attributs(args,attributs,contextptr);
@@ -4905,15 +4915,15 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
       gen y,last_y=undef;
       for (int i=A;i<=B;++i){
 	y=subst(res,vx_var,i,false,contextptr);
-  maxh=max(maxh,y,contextptr);
+        maxh=max(maxh,y,contextptr);
 	vecteur w=makevecteur(i-.5,i+.5,i+.5+cst_i*y,i-.5+cst_i*y);
 	w.push_back(w.front());
 	v.push_back(pnt_attrib(gen(w,_GROUP__VECT),attributs,contextptr));
-  v.push_back(_segment(makevecteur(i-.5,i-.5+cst_i*y),contextptr));
-  v.push_back(_segment(makevecteur(i-.5+cst_i*y,i+.5+cst_i*y),contextptr));
-  if (!is_undef(last_y) && is_strictly_greater(last_y,y,contextptr))
-    v.push_back(_segment(makevecteur(i-.5+cst_i*last_y,i-.5+cst_i*y),contextptr));
-  last_y=y;
+        v.push_back(_segment(makevecteur(i-.5,i-.5+cst_i*y),contextptr));
+        v.push_back(_segment(makevecteur(i-.5+cst_i*y,i+.5+cst_i*y),contextptr));
+        if (!is_undef(last_y) && is_strictly_greater(last_y,y,contextptr))
+          v.push_back(_segment(makevecteur(i-.5+cst_i*last_y,i-.5+cst_i*y),contextptr));
+        last_y=y;
       }
       if (!is_undef(last_y))
         v.push_back(_segment(makevecteur(B+.5,B+.5+cst_i*last_y),contextptr));
@@ -4947,17 +4957,17 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
 	  gen g2=g._SYMBptr->feuille._VECTptr->back();
 	  g2=evalf_double(g2,1,contextptr);
 	  if (g1.type==_DOUBLE_ && g2.type==_DOUBLE_)
-	    return histogram(data,g1._DOUBLE_val,(g2-g1)._DOUBLE_val,attributs,contextptr);
+	    return histogram(data,g1._DOUBLE_val,(g2-g1)._DOUBLE_val,attributs,contextptr,normalize_area);
 	}
-	return histogram(data,0.0,0.0,attributs,contextptr);
+	return histogram(data,0.0,0.0,attributs,contextptr,normalize_area);
       }
       if (s==3){
 	gen arg2=evalf_double(args[2],1,contextptr);
 	if (arg1.type==_DOUBLE_ && arg2.type==_DOUBLE_)
-	  return histogram(data,arg1._DOUBLE_val,arg2._DOUBLE_val,attributs,contextptr);
+	  return histogram(data,arg1._DOUBLE_val,arg2._DOUBLE_val,attributs,contextptr,normalize_area);
       }
       if (s==2 && is_integral(arg1) && arg1.type==_INT_ && arg1.val>0)
-	return histogram(data,arg1.val,0.0,attributs,contextptr);
+	return histogram(data,arg1.val,0.0,attributs,contextptr,normalize_area);
       if (s==2 && args[1].type==_VECT)
 	return _histogram(gen(makevecteur(mtran(args),-1.1e307),_SEQ__VECT),contextptr);
       return gensizeerr(contextptr);
@@ -4976,13 +4986,13 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
 	if (is_undef(data[0]))
 	  return gensizeerr(contextptr);
 	data=mtran(data);
-	return histogram(data,0.0,1e-14,attributs,contextptr);
+	return histogram(data,0.0,1e-14,attributs,contextptr,normalize_area);
       }
     }
-    return histogram(args,class_minimum,class_size,attributs,contextptr);
+    return histogram(args,class_minimum,class_size,attributs,contextptr,normalize_area);
   }
   static const char _histogram_s []="histogram";
-static define_unary_function_eval (__histogram,&_histogram,_histogram_s);
+  static define_unary_function_eval (__histogram,&_histogram,_histogram_s);
   define_unary_function_ptr5( at_histogram ,alias_at_histogram,&__histogram,0,true);
 
   struct xeff {
@@ -10799,8 +10809,12 @@ void sync_screen(){}
 #endif
 #endif // NSPIRE_NEWLIB
 	// *logptr(contextptr) << s << '\n';
-	if (taille==1 || (t>taille && s.substr(t-taille,taille)==ext))
-	  v.push_back(s);
+	if (taille==1 || (t>taille && s.substr(t-taille,taille)==ext)){
+          if (s.size()>2 && s[0]=='.' && s[1]=='/')
+            v.push_back(s.substr(2,s.size()-2));
+          else
+            v.push_back(s);
+        }
       }
       closedir (dp);
     }
@@ -10824,7 +10838,7 @@ void sync_screen(){}
   gen _ls(const gen & args,GIAC_CONTEXT){
     vector<string> v;
     if (args.type==_VECT && args._VECTptr->empty())
-      locate_files("..","",v,false,contextptr);
+      locate_files(".","",v,false,contextptr);
     else {
       if (args.type!=_STRNG)
 	return gensizeerr(contextptr);

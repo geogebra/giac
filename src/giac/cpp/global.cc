@@ -2111,6 +2111,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   bool threads_allowed=true,mpzclass_allowed=true;
 #ifdef HAVE_LIBPTHREAD
   pthread_mutex_t interactive_mutex = PTHREAD_MUTEX_INITIALIZER;
+  pthread_mutex_t fork_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
   std::vector<aide> * & vector_aide_ptr (){
@@ -3938,7 +3939,9 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 #endif
 
-#if defined HAVE_SIGNAL_H_OLD 
+#if (defined HAVE_SIGNAL_H_OLD || defined HAVE_SIGNAL_H ) && !defined NO_STDEXCEPT
+  //#define SIGNALDBG
+  int forkmaxleafsize=2048; // change by fork_timeout(n)
   static bool running_file=false;
   static int run_modif_pos;
   bool synchronize_history=true;
@@ -3965,12 +3968,33 @@ extern "C" void Sleep(unsigned int miliSecond);
   volatile bool child_busy=false,data_ready=false;
   // child sends a SIGUSR1
   void data_signal_handler(int signum){
-          // cerr << "Parent called" << '\n';
+#ifdef SIGNALDBG
+    cerr << "Parent: child signaled data ready" << '\n';
+#endif
+#ifdef HAVE_LIBPTHREAD
+    pthread_mutex_lock(&fork_mutex);
+#endif
+    signal(SIGUSR1,SIG_IGN);
     signal_plot_parent=false;
     child_busy=false;
     data_ready=true;
+#ifdef HAVE_LIBPTHREAD
+    pthread_mutex_unlock(&fork_mutex);
+#endif
   }
 
+  void child_launched_signal_handler(int signum){
+#ifdef SIGNALDBG
+    cerr << "Parent: child launched signaled " << '\n';
+#endif
+#ifdef HAVE_PTHREAD_H
+    pthread_mutex_lock(&fork_mutex);
+    signal_child=true;
+    pthread_mutex_unlock(&fork_mutex);
+#else
+    signal_child=true;
+#endif
+  }
   /*
   void control_c(){
     if (ctrl_c){
@@ -3983,19 +4007,26 @@ extern "C" void Sleep(unsigned int miliSecond);
   */
 
   // child sends a SIGUSR2 (intermediate data)
-  void plot_signal_handler(int signum){
-          // cerr << "Plot_signal_handler Parent called" << '\n';
+  void intermediate_signal_handler(int signum){
+#ifdef SIGNALDBG
+    cerr << "intermediate_signal_handler Parent called" << '\n';
+#endif
     signal_plot_parent=true;
     child_busy=false;
     data_ready=true;
   }
 
   void child_signal_handler(int signum){
-    // cerr << "Child called" << '\n';
+#ifdef SIGNALDBG
+    cerr << "Child called" << '\n';
+#endif
     signal_child=true;
   }
   
-  void child_plot_done(int signum){
+  void child_intermediate_done(int signum){
+#ifdef SIGNALDBG
+    cerr << "Child called for intermediate data" << '\n';
+#endif
     signal_plot_child=true;
   }
   
@@ -4031,184 +4062,144 @@ extern "C" void Sleep(unsigned int miliSecond);
     return res;
   }
 
-  static pid_t make_child(){ // forks and return child id
-#if defined HAVE_NO_SIGNAL_H || defined(DONT_FORK)
-#ifdef DONT_FORK
-	  child_id = 1;
-	  return 1;
-#endif // DONT_FORK
-	return -1;
-#else // HAVE_NO_SIGNAL_H
+  static pid_t make_child(GIAC_CONTEXT){ // forks and return child id
     running_file=false;
-    child_busy=false;
     ctrl_c=false;
+#ifdef HAVE_PTHREAD_H
+    pthread_mutex_lock(&fork_mutex);
+    child_busy=false;
+    pthread_mutex_unlock(&fork_mutex);
+#else
+    child_busy=false;
+#endif
     signal(SIGINT,ctrl_c_signal_handler);
     signal(SIGUSR1,data_signal_handler);
-    signal(SIGUSR2,plot_signal_handler);
-    if (child_id>(pid_t) 0)
+    if (child_id>(pid_t) 1)
       return child_id; // exists
+    signal_child=false;
+    signal(SIGUSR2,child_launched_signal_handler); // don't do anything, just wait for child ready
     child_id=fork();
     if (child_id<(pid_t) 0)
       throw(std::runtime_error("Make_child error: Unable to fork"));
-    if (!child_id){ // child process, redirect input/output
+    if (child_id){ // parent process
+#ifdef HAVE_LIBPTHREAD
+      for (;;){
+        pthread_mutex_lock(&fork_mutex);
+        bool b=signal_child;
+        pthread_mutex_unlock(&fork_mutex);
+        if (b)
+          break;
+        usleep(1);
+      }
+#else
+      signal_child=false;
+      // parent process, wait child ready
+      /* Wait for SIGUSR2. */
+      while (!signal_child)
+        usleep(1);
+#endif
+
+#ifdef SIGNALDBG
+      cerr << "Parent received signal for child ready" << '\n';
+#endif
+      /* OK */
+      signal(SIGUSR2,intermediate_signal_handler);
+    } else {
+#ifdef SIGNALDBG
+      cerr << "Child launched" << '\n';
+#endif
+      // child process, redirect input/output
       sigset_t mask, oldmask;
       sigemptyset (&mask);
       sigaddset (&mask, SIGUSR1);
       signal(SIGUSR1,child_signal_handler);
-      signal(SIGUSR2,child_plot_done);
+      signal(SIGUSR2,child_intermediate_done);
       signal_child=false;
       gen args;
       /* Wait for a signal to arrive. */
       sigprocmask (SIG_BLOCK, &mask, &oldmask);
+      kill(parent_id,SIGUSR2);
       signal_child=false;
-      for (;;){
-	// cerr << "Child ready" << '\n';
+      for (int no=0;;++no){
+#ifdef SIGNALDBG
+        cerr << "Child ready" << '\n';
+#endif
 #ifndef WIN32
 	while (!signal_child)
 	  sigsuspend (&oldmask);
 	sigprocmask (SIG_UNBLOCK, &mask, NULL);
 #endif
+#ifdef SIGNALDBG
+        cerr << "Child reads and eval" << '\n';
+#endif
 	// read and evaluate input
 	CLOCK_T start, end;
 	double elapsed;
 	start = CLOCK();
-        messages_to_print="";
+        string messages_to_print="";
 	ifstream child_in(cas_entree_name().c_str());
 	// Unarchive step
 	try {
-	  child_in >> rpn_mode(context0) >> global_window_ymin >> history_begin_level ;
-	  // cerr << args << '\n';
-	  if (history_begin_level<0){
-	    child_in >> synchronize_history;
-	    args=unarchive(child_in,context0);
-	    if (!synchronize_history){
-	      // cerr << "No sync " << '\n';
-	      history_in(0)[-history_begin_level-1]=args;
-	      history_out(0)=subvect(history_out(0),-history_begin_level-1);
-	    }
-	    else {
-	      // cerr << " Sync " << '\n';
-	      history_in(0)=*args._VECTptr;
-	      args=unarchive(child_in,context0);
-	      history_out(0)=*args._VECTptr;
-	    }
-	  }
-	  else {
-	    args=unarchive(child_in,context0);
-	    // cerr << "Lu1 " << args << '\n';
-	    if (history_begin_level>signed(history_in(context0).size()))
-	      history_begin_level=history_in(context0).size();
-	    history_in(0)=mergevecteur(subvect(history_in(context0),history_begin_level),*args._VECTptr);
-	    args=unarchive(child_in,context0);
-	    // cerr << "Lu2 " << args << '\n';
-	    history_out(0)=mergevecteur(subvect(history_out(context0),history_begin_level),*args._VECTptr);
-	    args=unarchive(child_in,context0);
-	    // cerr << "Lu3 " << args << '\n';
-	    history_in(0).push_back(args);
-	  }
+          args=unarchive(child_in,contextptr);
 	}
 	catch (std::runtime_error & error ){
 	  last_evaled_argptr(contextptr)=NULL;
 	  args = string2gen("Child unarchive error:"+string(error.what()),false);
 	}
+#ifdef SIGNALDBG
+        cerr << "Child reads " << args << '\n';
+#endif
 	child_in.close();
-	// cerr << args << '\n';
-	// output result of evaluation to child_out
-	gen args_evaled;
-	{ // BEGIN of old try block
-	  if (history_begin_level<0){
-	    history_begin_level=-history_begin_level-1;
-	    int s=history_in(context0).size();
-	    block_signal=true;
-	    for (int k=history_begin_level;k<s;++k){
-	      try {
-                if (history_in(context0)[k].is_symb_of_sommet(at_signal) || history_in(context0)[k].is_symb_of_sommet(at_debug))
-		  history_out(context0).push_back(eval(history_in(context0)[k]._SYMBptr->feuille,eval_level(context0),context0));
-                else
-		  history_out(context0).push_back(eval(history_in(context0)[k],eval_level(context0),context0));
-	      }
-	      catch (std::runtime_error & error){
-		last_evaled_argptr(contextptr)=NULL;
-		history_out(context0).push_back(catch_err(error));
-	      }
-	    }
-	    args=vecteur(history_in(context0).begin()+history_begin_level,history_in(context0).end());
-	    args_evaled=vecteur(history_out(context0).begin()+history_begin_level,history_out(context0).end());
-	  }
-	  else {
-	    if ( (args.type!=_VECT) || (args.subtype!=_RUNFILE__VECT) ){
-	      if (debug_infolevel>10)
-		cerr << "Child eval " << args << '\n';
-	      try {
-		args_evaled=args.eval(1,context0);
-	      }
-	      catch (std::runtime_error & error){
-		last_evaled_argptr(contextptr)=NULL;
-		args_evaled=catch_err(error);
-	      }
-	      history_out(context0).push_back(args_evaled);
-	      if (debug_infolevel>10)
-		cerr << "Child result " << args_evaled << '\n';
-	    }
-	    else {
-	      vecteur v;
-	      history_in(context0).pop_back();
-	      const_iterateur it=args._VECTptr->begin(),itend=args._VECTptr->end();
-	      for (;it!=itend;++it){
-		if (it->is_symb_of_sommet(at_signal) ||it->is_symb_of_sommet(at_debug) )
-		  continue;
-		history_in(context0).push_back(*it);
-		try {
-		  if (it->is_symb_of_sommet(at_debug))
-		    args_evaled=it->_SYMBptr->feuille.eval(1,context0);
-		  else
-		    args_evaled=it->eval(1,context0);
-		}
-		catch (std::runtime_error & error){
-		  last_evaled_argptr(contextptr)=NULL;
-		  args_evaled=catch_err(error);
-		}
-		// cerr << args_evaled << '\n';
-		history_out(context0).push_back(args_evaled);
-		v.push_back(args_evaled);
-		ofstream child_out(cas_sortie_name().c_str());
-		archive(child_out,*it,context0);
-		archive(child_out,args_evaled,context0);
-		child_out << messages_to_print << "ÿ" ;
-		child_out.close();
-		// cerr << "Signal reads " << res << '\n';
-		kill_and_wait_sigusr2();
-	      }
-	      // args_evaled=gen(v,args.subtype);
-	      args=0;
-	      args_evaled=0;
-	    }
-	  }
-	} // END of old try/catch block
+        // Clone the context, so that we don't disturb anything
+        context * ptr=clone_context(contextptr);
+        gen args_evaled;
+        if (ptr){
+          try {
+            args_evaled=args.eval(1,ptr);
+          }
+          catch (std::runtime_error & error){
+            last_evaled_argptr(contextptr)=NULL;
+            args_evaled=catch_err(error);
+          }
+          delete ptr;
+        } else args_evaled=string2gen("Unable to clone context",false);
+#ifdef SIGNALDBG
+        cerr << "Child result " << args_evaled << '\n';
+#endif
 	block_signal=false;
 	end = CLOCK();
 	elapsed = ((double) (end - start)) / CLOCKS_PER_SEC;
 	ofstream child_out(cas_sortie_name().c_str());
-	archive(child_out,args,context0) ;
-	archive(child_out,args_evaled,context0) ;
+	archive(child_out,args,contextptr) ;
+        int ta=taille(args_evaled,RAND_MAX);
+        if (ta>=forkmaxleafsize){
+          CERR << "Maxleafsize exceeded " << ta << ">=" << forkmaxleafsize << "\nYou can change maxleafsize by running fork_timeout(n) with a larger value of n\n";
+          archive(child_out,undef,contextptr) ;
+        }
+        else
+          archive(child_out,args_evaled,contextptr) ;
 	child_out << messages_to_print ;
 	int mm=messages_to_print.size();
 	if (mm && (messages_to_print[mm-1]!='\n'))
 	  child_out << '\n';
-	child_out << "Time: " << elapsed << "ÿ" ;
+	child_out << "Time: " << elapsed << char(-65) ;
 	child_out.close();
 	// cerr << "Child sending signal to " << parent_id << '\n';
 	/* Wait for a signal to arrive. */
 	sigprocmask (SIG_BLOCK, &mask, &oldmask);
 	signal_child=false;
 #ifndef WIN32
+#ifdef SIGNALDBG
+        cerr << "Child sends SIGUSR1 to parent" << '\n';
+#endif
 	kill(parent_id,SIGUSR1);
 #endif
       }
     }
-    // cerr << "Forking " << parent_id << " " << child_id << '\n';
+#ifdef SIGNALDBG
+    cerr << "Forked " << parent_id << " to " << child_id << '\n';
+#endif
     return child_id;
-#endif // HAVE_NO_SIGNAL_H
   }
 
   static void archive_write_error(){
@@ -4216,7 +4207,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
   
   // return true if entree has been sent to evalation by child process
-  static bool child_eval(const string & entree,bool numeric,bool is_run_file){
+  static bool child_eval(const string & entree,bool numeric,bool is_run_file,GIAC_CONTEXT){
 #if defined(HAVE_NO_SIGNAL_H) || defined(DONT_FORK)
     return false;
 #else
@@ -4224,9 +4215,9 @@ extern "C" void Sleep(unsigned int miliSecond);
       history_begin_level=0;
     // added signal re-mapping because PARI seems to mess signal on the ipaq
     signal(SIGUSR1,data_signal_handler);
-    signal(SIGUSR2,plot_signal_handler);
+    signal(SIGUSR2,intermediate_signal_handler);
     if (!child_id)
-      child_id=make_child();
+      child_id=make_child(contextptr);
     if (child_busy || data_ready)
       return false;
     gen entr;
@@ -4289,17 +4280,17 @@ extern "C" void Sleep(unsigned int miliSecond);
 #endif /// HAVE_NO_SIGNAL_H
   }
 
-  static bool child_reeval(int history_begin_level){
+  static bool child_reeval(int history_begin_level,GIAC_CONTEXT){
 #if defined(HAVE_NO_SIGNAL_H) || defined(DONT_FORK)
     return false;
 #else
     signal(SIGUSR1,data_signal_handler);
-    signal(SIGUSR2,plot_signal_handler);
+    signal(SIGUSR2,intermediate_signal_handler);
     if (!child_id)
-      child_id=make_child();
+      child_id=make_child(contextptr);
     if (child_busy || data_ready)
       return false;
-    messages_to_print="";
+    string messages_to_print="";
     try {
       ofstream parent_out(cas_entree_name().c_str());
       parent_out << rpn_mode(context0) << " " << global_window_ymin << " " << -1-history_begin_level << " " << synchronize_history << '\n';
@@ -4399,7 +4390,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   static const unary_function_eval * parent_evalonly_sommets_alias[]={*(const unary_function_eval **) &at_widget_size,*(const unary_function_eval **) &at_keyboard,*(const unary_function_eval **) &at_current_sheet,*(const unary_function_eval **) &at_Row,*(const unary_function_eval **) &at_Col,0};
-  static const unary_function_ptr & parent_evalonly_sommets=(const unary_function_ptr *) parent_evalonly_sommets_alias;
+  static const unary_function_ptr * parent_evalonly_sommets=(const unary_function_ptr *) parent_evalonly_sommets_alias;
   static bool update_data(gen & entree,gen & sortie,GIAC_CONTEXT){
     // if (entree.type==_IDNT)
     //   entree=symbolic(at_sto,makevecteur(sortie,entree));
@@ -4487,6 +4478,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	  }
 	}
       }
+#if 0
       if (entree.type==_SYMB && entree._SYMBptr->sommet==at_signal && sortie.type==_SYMB && equalposcomp(parent_evalonly_sommets,sortie._SYMBptr->sommet) ) {
 	gen res=sortie.eval(1,contextptr);
 	ofstream parent_out(cas_entree_name().c_str());
@@ -4495,6 +4487,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 	signal_child_ok();	
 	return false;
       }
+#endif
     } // end signal_plot_parent
     // cerr << "# Parse time" << double(end-start)/CLOCKS_PER_SEC << '\n';
     // see if it's a PICT update
@@ -4512,7 +4505,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       }
       else {
 	if (entree.type==_FUNC){
-	  int s=min(max(entree.subtype,0),(int)history_out(contextptr).size());
+	  int s=giacmin(giacmax(entree.subtype,0),(int)history_out(contextptr).size());
 	  vecteur v(s);
 	  for (int k=s-1;k>=0;--k){
 	    v[k]=history_out(contextptr).back();
@@ -4600,7 +4593,7 @@ extern "C" void Sleep(unsigned int miliSecond);
       entree=unarchive(parent_in,contextptr);
       sortie=unarchive(parent_in,contextptr);
       end = CLOCK();
-      parent_in.getline(buf,BUFFER_SIZE,'¿');
+      parent_in.getline(buf,BUFFER_SIZE,char(-65));
       if (buf[0]=='\n')
 	message += (buf+1);
       else
@@ -4614,7 +4607,148 @@ extern "C" void Sleep(unsigned int miliSecond);
     }
     return update_data(entree,sortie,contextptr);
   }
-#endif // HAVE_SIGNAL_H_OLD
+
+  gen _fork_timeout(const gen & args,GIAC_CONTEXT){
+    signal(SIGUSR1,SIG_IGN);    
+    // cerr << "fork_timeout step 1\n";
+    if (args.type==_INT_){
+      int n=args.val;
+      forkmaxleafsize=giacmin(giacmax(n,16),65536);
+      return forkmaxleafsize;
+    }
+    if (args.type==_VECT && args._VECTptr->empty())
+      return forkmaxleafsize;
+    if (args.type!=_VECT || args._VECTptr->size()<2)
+      return gensizeerr(contextptr);
+    gen entr=args._VECTptr->front();
+    int ta=taille(entr,RAND_MAX);
+    if (ta>=forkmaxleafsize){
+      CERR << "Maxleafsize exceeded " << ta << ">=" << forkmaxleafsize << "\nYou can change maxleafsize by running fork_timeout(n) with a larger value of n\n";
+      return undef;
+    }
+    // cerr << "fork_timeout step 2\n";
+    gen tout=evalf((*args._VECTptr)[1],1,contextptr);
+    bool killchild=false;
+    // fork_timeout(expression,dt,1) will not kill the child if it already exists, this is faster *but* the context/variables from parent are not copied
+    if (args._VECTptr->size()==3)
+      killchild=is_zero(args._VECTptr->back());
+    if (tout.type!=_DOUBLE_)
+      return gensizeerr(contextptr);
+    double dt=tout._DOUBLE_val;
+    if (dt<1e-3)
+      return gensizeerr("Invalid timeout, should be at least 1e-3");
+    // fork every time now, maybe improved by sending context to child
+    if (killchild || child_busy || data_ready){
+      if (child_id>1){
+        kill(child_id,SIGKILL);
+        usleep(1);
+      }
+      child_id=1;
+      child_busy=data_ready=false;
+    }
+    // cerr << "fork_timeout step 3\n";
+    if (child_id<=1)
+      child_id=make_child(contextptr);
+    // signal(SIGUSR2,intermediate_signal_handler);
+    // cerr << "fork_timeout step 4\n";
+    try {
+      ofstream parent_out(cas_entree_name().c_str());
+      archive(parent_out,entr,contextptr);
+      if (!parent_out)
+	setsizeerr();
+      parent_out.close();
+      if (!parent_out)
+	setsizeerr();
+    } catch (std::runtime_error & e){
+      last_evaled_argptr(contextptr)=NULL;
+      archive_write_error();
+      return gensizeerr("Fork_timeout; archive write error");
+    }
+    // cerr << "fork_timeout step 5\n";
+    CLOCK_T start, end;
+    start = CLOCK();
+#ifdef HAVE_LIBPTHREAD
+    pthread_mutex_lock(&fork_mutex);
+    child_busy=true;
+    pthread_mutex_unlock(&fork_mutex);
+#else
+    child_busy=true;
+#endif
+    signal(SIGUSR1,data_signal_handler);    
+#ifdef SIGNALDBG
+    cerr << "Sending SIGUSR1 to " << child_id << '\n';
+#endif
+    kill(child_id,SIGUSR1);
+    // now wait for timeout or signal
+    gen g_in=entr,g_out; string msg; int N=dt/1e-3;
+    double debut=realtime();
+    for (;;){
+#if 0 // def SIGNALDBG
+      CERR << "data_ready " << data_ready << " child_busy " << child_busy << "\n";
+#endif
+#ifdef HAVE_LIBPTHREAD
+      pthread_mutex_lock(&fork_mutex);
+      bool b=!data_ready || child_busy;
+      pthread_mutex_unlock(&fork_mutex);
+#else
+      bool b=!data_ready || child_busy;
+#endif
+      if (b){
+        usleep(1);
+        double cur=realtime()-debut;
+#if 0 // def SIGNALDBG
+        CERR << "Waiting for " << cur << "\n";
+#endif
+        if (cur>dt){
+          CERR << "Timeout\n";
+          kill(child_id,SIGKILL);
+          usleep(10);
+          child_id=1;
+          g_out=string2gen("timeout",false);
+#ifdef HAVE_LIBPTHREAD
+          pthread_mutex_lock(&fork_mutex);
+          child_busy=data_ready=false;
+          pthread_mutex_unlock(&fork_mutex);
+#else
+          child_busy=data_ready=false;
+#endif
+          break;
+        }
+        continue;
+      }
+#ifdef SIGNALDBG
+      CERR << "Data ready\n";
+#endif
+      string message="";
+      try {
+        ifstream parent_in(cas_sortie_name().c_str());
+        if (!parent_in)
+          setsizeerr();
+        g_in=unarchive(parent_in,contextptr);
+        g_out=unarchive(parent_in,contextptr);
+        parent_in.getline(buf,BUFFER_SIZE,char(-65));
+        if (buf[0]=='\n')
+          message += (buf+1);
+        else
+          message += buf;
+        if (!parent_in)
+          setsizeerr();
+        // FIXME: at the end of icas, remove \#cas*
+      } catch (std::runtime_error & err){
+        last_evaled_argptr(contextptr)=NULL;
+        archive_read_error();
+        g_out=string2gen(err.what(),false);
+      }
+      break;
+    }
+    // cerr << "# Save time" << double(end-start)/CLOCKS_PER_SEC << '\n';
+    return g_out;
+  }
+  static const char _fork_timeout_s []="fork_timeout";
+  static define_unary_function_eval_quoted (__fork_timeout,&_fork_timeout,_fork_timeout_s);
+  define_unary_function_ptr5( at_fork_timeout ,alias_at_fork_timeout,&__fork_timeout,_QUOTE_ARGUMENTS,true);
+  
+#endif // HAVE_SIGNAL_H_OLD || HAVE_SIGNAL_H
 
   string home_directory(){
     string s("/");
@@ -4645,24 +4779,44 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
 #ifndef FXCG
+
+#if defined HAVE_SYS_TYPES_H && defined HAVE_UNISTD_H
+  string tmpfs(){
+    static string tmpfs="";
+    if (tmpfs.size()==0){
+      int id=getuid();
+      if (id>0){ // Debian tmpfs
+        tmpfs="/run/user/"+print_INT_(id)+"/";
+        if (!is_file_available(tmpfs.c_str()))
+          tmpfs="/tmp/";
+      }
+      else
+        tmpfs="/tmp/";
+    }
+    return tmpfs;    
+  }
+#else
+  string tmpfs(){
+    return "/tmp/";
+  }
+#endif
+
   string cas_entree_name(){
     if (getenv("XCAS_TMP"))
       return getenv("XCAS_TMP")+("/#cas_entree#"+print_INT_(parent_id));
-#ifdef IPAQ
-    return "/tmp/#cas_entree#"+print_INT_(parent_id);
-#else
-    return home_directory()+"#cas_entree#"+print_INT_(parent_id);
-#endif
+    string tmp=tmpfs();
+    if (tmp=="/tmp/")
+      tmp=home_directory();
+    return tmp+"#cas_entree#"+print_INT_(parent_id);
   }
 
   string cas_sortie_name(){
     if (getenv("XCAS_TMP"))
       return getenv("XCAS_TMP")+("/#cas_sortie#"+print_INT_(parent_id));
-#ifdef IPAQ
-    return "/tmp/#cas_sortie#"+print_INT_(parent_id);
-#else
-    return home_directory()+"#cas_sortie#"+print_INT_(parent_id);
-#endif
+    string tmp=tmpfs();
+    if (tmp=="/tmp/")
+      tmp=home_directory();
+    return tmp+"#cas_sortie#"+print_INT_(parent_id);
   }
 #endif
   

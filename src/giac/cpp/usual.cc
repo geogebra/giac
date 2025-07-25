@@ -9182,7 +9182,7 @@ namespace giac {
   // n-th derivative of digamma function
   gen Psi(const gen & x,int n,GIAC_CONTEXT){
     if (n<-1)
-      return gensizeerr(contextptr);
+      return symbolic(at_Psi,makesequence(x,n)); // gensizeerr(contextptr);
     if (n==-1)
       return ln(Gamma(x,contextptr),contextptr);
     if (n==0)
@@ -9243,7 +9243,7 @@ namespace giac {
       *logptr(contextptr) << "Warning, please use Psi(x,n), not Psi(n,x)" << '\n';
       return Psi(n,x.val,contextptr);
     }
-    return gensizeerr(contextptr);
+    return symbolic(at_Psi,args); // gensizeerr(contextptr);
   }
   static const char _Psi_s []="Psi";
 #ifdef GIAC_HAS_STO_38
@@ -9428,7 +9428,7 @@ namespace giac {
       if (n.type==_DOUBLE_)
 	n=int(n._DOUBLE_val);
       if (n.type!=_INT_)
-	return gentypeerr(contextptr);
+	return symbolic(at_Zeta,x); // gentypeerr(contextptr);
       int ndiff=n.val;
       return Zeta(x._VECTptr->front(),ndiff,contextptr);
     }
@@ -10879,7 +10879,7 @@ namespace giac {
     if (n==1)
       return -Ei(-args,contextptr);
     if (n<2)
-      return gendimerr(contextptr);
+      return symbolic(at_Ei,makesequence(args,n));//gendimerr(contextptr);
     if (is_zero(args,contextptr)){
       if (n==1)
 	return plus_inf;
@@ -10897,8 +10897,12 @@ namespace giac {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type==_VECT){
       if (args.subtype==_SEQ__VECT){
+        if (args._VECTptr->front().type==_INT_ && args._VECTptr->back().type!=_INT_){
+          *logptr(contextptr) << "Exchanging Ei argument order\n";
+          return Ei(args._VECTptr->back(),args._VECTptr->front().val,contextptr);
+        }
 	if (args._VECTptr->size()!=2 || args._VECTptr->back().type!=_INT_)
-	  return gentypeerr(contextptr);
+	  return symbolic(at_Ei,args);//gentypeerr(contextptr);
 	return Ei(args._VECTptr->front(),args._VECTptr->back().val,contextptr);
       }
       return apply(args,_Ei,contextptr);

@@ -1,7 +1,7 @@
 // -*- mode:C++ ; compile-command: "g++-3.4 -I.. -I../include -g -c maple.cc  -DIN_GIAC -DHAVE_CONFIG_H" -*-
 #include "giacPCH.h"
 
-#if defined(VISUALC) || defined(__MINGW_H) || defined (FIR) || defined(FXCG) || defined(NSPIRE) || defined(__ANDROID__) || defined(NSPIRE_NEWLIB) || defined(EMCC) || defined (EMCC2) || defined(GIAC_GGB) || defined KHICAS || defined SDL_KHICAS
+#if defined(VISUALC) || defined(__MINGW_H) || defined (FIR) || defined(FXCG) || defined(NSPIRE) || defined(__ANDROID__) || defined(NSPIRE_NEWLIB) || defined(EMCC) || defined (EMCC2) || defined(GIAC_GGB) || defined KHICAS || defined SDL_KHICAS || defined __APPLE__
 #else
 #define THREAD_TIMEOUT
 #endif
@@ -642,6 +642,8 @@ namespace giac {
 
   gen _time(const gen & a,GIAC_CONTEXT){
     if ( a.type==_STRNG && a.subtype==-1) return  a;
+    if (a.type==_FUNC && *a._FUNCptr==at_real)
+      return realtime();
     if (a.type==_VECT && a.subtype==_SEQ__VECT){
 #if !defined GIAC_HAS_STO_38 && (defined VISUALC || defined __MINGW_H)
     struct _timeb timebuffer;
@@ -853,14 +855,14 @@ namespace giac {
   }
 
   void timeout_F(const timeout_t & T) {
-    COUT << "Timeout thread " << pthread_self() << "\n";
+    //COUT << "Timeout thread " << pthread_self() << "\n";
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
     timeout_f(T);
     T.cv->notify_one();
   }
 
-  gen _timeout(const gen & args,GIAC_CONTEXT){
+  gen _thread_timeout(const gen & args,GIAC_CONTEXT){
     if (args.type!=_VECT || args._VECTptr->size()!=2)
       return gensizeerr(contextptr);
     gen e=args._VECTptr->front();
@@ -872,31 +874,42 @@ namespace giac {
     timeout_t T={&e,contextptr,&cv};
     std::thread t(timeout_F,T);
     pthread_t thread=t.native_handle();
-    
+    if (!thread)
+      return undef;
     t.detach();
-    {
+    try {
       std::unique_lock<std::mutex> L(m);
-      if (cv.wait_for(L,tout._DOUBLE_val*1s)==std::cv_status::timeout) {
+      double dt=tout._DOUBLE_val;
+      if (cv.wait_for(L,dt*1s)==std::cv_status::timeout) {
         // try to stop the thread by setting ctrl_c, but protecting the current thread to be cancelled
         *logptr(contextptr) << "Timeout, Attempt to stop thread " << thread << "\n";
         kill_thread(2,contextptr);
         ctrl_c=interrupted=true;
-        if (cv.wait_for(L,1s)==std::cv_status::timeout) {
+        if (dt>2)
+          dt=dt;
+        else
+          dt=2;
+        if (cv.wait_for(L,dt*1s)==std::cv_status::timeout) {
           *logptr(contextptr) << "Current thread " << pthread_self() << ". ";
           *logptr(contextptr) << "Cancelling thread " << thread << "\n";
           *logptr(contextptr) << "Result (0 ok): " << pthread_cancel(thread) << "\n";
         }
+        else
+          *logptr(contextptr) << "Clean cancellation of thread " << thread << "\n";
         ctrl_c=interrupted=false;
         kill_thread(0,contextptr);
         return string2gen("timeout",false);
       }
+    } catch (...){
+      e=undef;
     }
     return e;    
   }
-  static const char _timeout_s []="timeout";
-  static define_unary_function_eval_quoted (__timeout,&_timeout,_timeout_s);
-  define_unary_function_ptr5( at_timeout ,alias_at_timeout,&__timeout,_QUOTE_ARGUMENTS,true);
+  static const char _thread_timeout_s []="thread_timeout";
+  static define_unary_function_eval_quoted (__thread_timeout,&_thread_timeout,_thread_timeout_s);
+  define_unary_function_ptr5( at_thread_timeout ,alias_at_thread_timeout,&__thread_timeout,_QUOTE_ARGUMENTS,true);
 #endif // THREAD_TIMEOUT
+
   
 #endif // KHICAS
   static const char _time_s []="time";

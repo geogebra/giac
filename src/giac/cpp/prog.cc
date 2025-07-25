@@ -9488,6 +9488,8 @@ namespace giac {
     if (args.type!=_STRNG)
       return symbolic(at_read,args);
     string fichier=*args._STRNGptr;
+    if (fichier.size()>2 && fichier[0]=='.' && fichier[1]=='/')
+      return quote_read(string2gen(fichier.substr(2,fichier.size()-2),false),contextptr);
 #ifdef KHICAS
     const char * s=read_file(fichier.c_str());
     if (!s)
@@ -9506,6 +9508,21 @@ namespace giac {
 #ifdef NSPIRE
     file inf(fichier.c_str(),"r");
 #else
+    const char * ptr=fichier.c_str(); // N.B. lexer/parser added a space before ..
+    if (ptr[0]==' ' && ptr[1]=='.' && ptr[2]=='.' && ptr[3]=='/'){
+      string cur=getcwd(0,0);
+      ++ptr;
+      while (ptr[0]=='.' && ptr[1]=='.' && ptr[2]=='/'){
+        ptr += 3;
+        for (int i=cur.size()-1;i>=0;--i){
+          if (cur[i]=='/'){
+            cur=cur.substr(0,i);
+            break;
+          }
+        }
+      }
+      fichier=cur+"/"+ptr;
+    }
     ifstream inf(fichier.c_str());
 #endif
     if (!inf)
@@ -9585,6 +9602,8 @@ namespace giac {
       return gensizeerr("Exam mode");
 #endif
 #endif
+    if (debug_infolevel)
+      CERR << "read: " << args << "\n";
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     size_t addr;
     if (is_address(args,addr))
