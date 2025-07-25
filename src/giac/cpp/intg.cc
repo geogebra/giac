@@ -3139,10 +3139,31 @@ namespace giac {
 	}
 	continue;
       }
+      // tmprem==0 *vt has a closed form antiderivative
       if (!est_puissance){
 	vecteur vv(v);
 	vv.erase(vv.begin()+i,vv.begin()+i+1);
 	fu=symbolic(at_prod,gen(vv,_SEQ__VECT));
+        // try integration by part if u is simple and fu polynomial
+        if (rvar.size()>1 && !is_zero(_is_polynomial(makesequence(fu,gen_x),contextptr))){
+          vecteur vu; rlvarx(u,gen_x,vu);
+          int ok=0;
+          for (;ok<vu.size();++ok){
+            gen cur=vu[ok];
+            if (cur.type!=_SYMB)
+              continue;
+            vector<unary_function_ptr> auth={*at_exp,*at_pow,*at_sin,*at_cos,*at_tan,*at_sinh,*at_cosh,*at_tanh};
+            if (!equalposcomp(auth,cur._SYMBptr->sommet))
+              break;
+          }
+          if (ok==vu.size()){
+            *logptr(contextptr) << "Trying integration by part\n";
+            // integrate(fu*u')=[fu*u]-integrate(fu'*u)
+            gen res=integrate_id_rem(derive(fu,gen_x,contextptr)*u,gen_x,remains_to_integrate,contextptr,intmode);
+            if (is_zero(remains_to_integrate))
+              return fu*u-res;
+          }
+        }
       }
       gen cst=extract_cst(u,gen_x,contextptr);
       bool recur=rvarsize>2 && gen_x.type==_IDNT && strcmp(gen_x._IDNTptr->id_name,"t_nostep")==0 && u.is_symb_of_sommet(at_pow); // workaround for some stupid integrals like integrate(sin((d*x + c)^(2/3)*b + a)/(f*x + E),x);
