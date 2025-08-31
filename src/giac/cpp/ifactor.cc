@@ -3531,7 +3531,7 @@ namespace giac {
 	return false;
 #endif
       // 11/20 insures that we won't recompute all again from start for ithprime(i+1)
-      N = (N*11)/20; // keep only odd numbers in sieve
+      N = (ulonglong(N)*11)/20; // keep only odd numbers in sieve
       erato=vector<bool>(N+1,true); //erato[i] stands for 2*i+1 <-> n corresponds to erato[n/2]
       for (unsigned p=3;;p+=2){
 	while (!erato[p/2]) // find next prime (first one is p==3)

@@ -7550,7 +7550,7 @@ namespace giac {
       size -=offset;
     }
     SHA256_CTX ctx;
-    sha256_init(&ctx);
+    giac_sha256_init(&ctx);
     while (size){
       int rsize=0,Size=size>bufsize?bufsize:size;
       rsize = fread(buf,1,Size,hFile); 
@@ -7559,14 +7559,14 @@ namespace giac {
         free(buf);
         return -3;
       }
-      sha256_update(&ctx,buf,Size);
+      giac_sha256_update(&ctx,buf,Size);
       size -= Size;
     }
     fclose(hFile);
     free(buf);
     std::vector<unsigned char> v(SHA256_BLOCK_SIZE);
     BYTE * hash=&v.front();
-    sha256_final(&ctx,hash);
+    giac_sha256_final(&ctx,hash);
     vecteur V;
     for (int i=0;i<v.size();++i)
       V.push_back(v[i]);

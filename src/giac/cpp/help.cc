@@ -642,6 +642,69 @@ namespace giac {
     return true;
   }
 
+  static bool output_ia_mcptools(vector<aide> & v,const vecteur & listcmd,int lang){
+    ofstream tools("tools.py");
+    tools << "    async def _handle_tools_list(self, request_id: str) -> Dict[str, Any]:\n";
+    tools << "        \"\"\"Liste des outils disponibles\"\"\"\n";
+    tools << "        tools = [\n";
+    vector<aide>::iterator it=v.begin(),itend=v.end();
+    for (;it!=itend;){
+      gen cmd(it->cmd_name,context0);
+      if (!equalposcomp(listcmd,cmd)){
+        ++it;
+        continue;
+      }
+      tools << "            {\n";      
+      tools << "                \"name\": \"" << output_quote(it->cmd_name) << "\",\n";
+      std::vector<localized_string> & blabla = it->blabla;
+      sort(blabla.begin(),blabla.end());
+      int blablapos=0;
+      tools << "                \"description\": \"" << output_quote(blabla[lang].chaine) << "\",\n";
+      tools << "                \"inputSchema\": {\n";
+      tools << "                    \"type\": \"object\",\n";
+      // parse syntax
+      gen G;
+      try {
+        G=gen(it->syntax,context0);
+      } catch (std::runtime_error & err){
+        G=gen("Expr",context0);
+      }
+      vecteur v(gen2vecteur(G));
+      tools << "                    \"properties\": {\n";
+      string req;
+      for (int i=0;i<v.size();++i){
+        gen g=v[i];
+        if (g.type!=_VECT)
+          req += output_quote(g.print(context0))+",";
+        tools << "                        \"" << output_quote(g.print(context0)) <<"\": {\n";
+        tools << "                            \"type\": \"string\",\n";
+        tools << "                        },\n";
+      }
+      if (req.size())
+        req=req.substr(0,req.size()-1);
+      tools << "                    },\n";
+      tools << "                    \"required\": [\""<< output_quote(req) << "\"]\n";
+      tools << "                }\n";
+      tools << "            }";
+      it++;
+      if (it!=itend)
+        tools << ",";
+      tools << "\n";
+    }    
+    tools << "        ]\n\n";
+    tools << "        return {\n";
+    tools << "            \"jsonrpc\": \"2.0\",\n";
+    tools << "            \"id\": request_id,\n";
+    tools << "            \"result\": {\"tools\": tools}\n";
+    tools << "        }\n\n";
+    tools.close();
+    cout << "Generating tool list for " << listcmd << endl;
+    cout << "List of commands may be changed in help.cc, before the call to output_ia_mcptools\n";
+    cout << "Replace in lmstudio_giacmcp/giac_mcp_server.py\n";
+    cout << "Replace in http_bridge.py, remove space before async def... and remove self in arg list" << endl;
+    return true;
+  }
+  
   bool operator < (const indexed_string & is1,const indexed_string & is2){ 
     if (is1.index!=is2.index) return is1.index<is2.index;
     return (is1.chaine<is2.chaine);
@@ -898,6 +961,11 @@ namespace giac {
       langv.push_back(4);
       langv.push_back(5);
       output_static_help(v,langv);
+    }
+    if (debug_infolevel==-3 || debug_infolevel==-4){
+      vecteur cmd=makevecteur(at_eval,at_subst,at_integrate,at_derive,at_solve,at_csolve,at_plot,at_desolve,at_rsolve);
+      cmd=mergevecteur(cmd,makevecteur(at_simplify,at_normal,at_texpand));
+      output_ia_mcptools(v,cmd,-3-debug_infolevel);
     }
 #endif
   }
