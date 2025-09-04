@@ -1345,6 +1345,8 @@ namespace giac {
     }
     if (e._VECTptr->size()==2 && e._VECTptr->front().type!=_VECT){
       vecteur v=lidnt(e);
+      if (v.empty())
+        return -v.back()/v.front();
       if (v.size()!=1)
 	return gentypeerr(gettext("rootof"));
       return rootof(makesequence(_symb2poly(makesequence(e._VECTptr->front(),v.front()),contextptr),_symb2poly(makesequence(e._VECTptr->back(),v.front()),contextptr)),contextptr);

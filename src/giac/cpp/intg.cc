@@ -3194,7 +3194,19 @@ namespace giac {
             gen cur=vu[ok];
             if (cur.type!=_SYMB)
               continue;
+#ifdef EMCC
+            vector<unary_function_ptr> auth;
+            auth.push_back(*at_exp);
+            auth.push_back(*at_pow);
+            auth.push_back(*at_sin);
+            auth.push_back(*at_cos);
+            auth.push_back(*at_tan);
+            auth.push_back(*at_sinh);
+            auth.push_back(*at_cosh);
+            auth.push_back(*at_tanh);
+#else
             vector<unary_function_ptr> auth={*at_exp,*at_pow,*at_sin,*at_cos,*at_tan,*at_sinh,*at_cosh,*at_tanh};
+#endif
             if (!equalposcomp(auth,cur._SYMBptr->sommet))
               break;
           }
