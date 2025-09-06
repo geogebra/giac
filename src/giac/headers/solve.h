@@ -116,7 +116,7 @@ namespace giac {
   gen remove_equal(const gen & f);
   vecteur remove_equal(const_iterateur it,const_iterateur itend);
   vecteur gsolve(const vecteur & eq_orig,const vecteur & var,bool complexmode,int evalf_after,GIAC_CONTEXT);
-  bool vecteur2vector_polynome(const vecteur & eq_in,const vecteur & l,vectpoly & eqp);
+  bool vecteur2vector_polynome(const vecteur & eq_in,const vecteur & l,vectpoly & eqp,const gen * slackvar=0);
 
   vecteur true_lidnt(const gen & g); // lidnt without looking in int/sum/fsolve
   gen _greduce(const gen & args,GIAC_CONTEXT);

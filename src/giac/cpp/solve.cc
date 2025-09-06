@@ -7773,12 +7773,15 @@ namespace giac {
     return conditions;
   }
 
-  bool vecteur2vector_polynome(const vecteur & eq_in,const vecteur & l,vectpoly & eqp){
+  bool vecteur2vector_polynome(const vecteur & eq_in,const vecteur & l,vectpoly & eqp,const gen * slackvar){
     // remove all denominators
+    gen D=1;
     const_iterateur it=eq_in.begin(),itend=eq_in.end();
     for (;it!=itend;++it){
       gen n,d;
       fxnd(*it,n,d);
+      if (slackvar && d.type==_POLY)
+        D=lcm(D,d); // D=D*d; // lcm?
       if (n.type==_POLY){
 	// should reordre n with total degree+revlex order here
 	eqp.push_back(*n._POLYptr);
@@ -7786,6 +7789,11 @@ namespace giac {
       }
       if (!is_zero(n))
 	return false;
+    }
+    if (slackvar && D.type==_POLY){
+      gen t=sym2r(*slackvar,l,context0);
+      D=D*t-1;
+      if (D.type==_POLY) eqp.push_back(*D._POLYptr);
     }
     return true;
   }
@@ -9711,6 +9719,14 @@ namespace giac {
 	if (!equalposcomp(elim,l[i]))
 	  break;
       }
+      // force a slack variable insertion, for denominators handling
+      gen slackvar;
+      for (int k=0;;++k){
+        slackvar=gen("t"+print_INT_(k),contextptr);
+        if (!equalposcomp(l,slackvar))
+          break;
+      }
+      l.insert(l.begin()+i,slackvar); ++i; 
       if (1 
 	  // ||(l.size()+3-(i%4)<=14)
 	  ){
@@ -9746,7 +9762,7 @@ namespace giac {
 	// convert eq to polynomial
 	vecteur eq_in(*e2r(eqs,l,contextptr)._VECTptr);
 	vectpoly eqp;
-	if (!vecteur2vector_polynome(eq_in,l,eqp)){
+	if (!vecteur2vector_polynome(eq_in,l,eqp,&slackvar)){
 	  for (int i=0;i<int(eq_in.size());++i){
 	    gen tmp=eq_in[i];
 	    if (is_integer(tmp) || tmp.type==_FRAC)
