@@ -9537,8 +9537,27 @@ namespace giac {
     if (args._VECTptr->size()>2 && (*args._VECTptr)[2].type==_VECT)
       lvar((*args._VECTptr)[2],l);
     lvar(eqs,l); // add other vars after vars to eliminate
+    // force a slack variable insertion, for denominators handling
+    gen slackvar; bool doslack=false;
+    // check if there is a denominator
+    vecteur linv(lop(eqs,at_inv));
+    vecteur lpow(lop(eqs,at_pow));
+    for (int i=0;i<lpow.size();++i){
+      gen cur=lpow[i]._SYMBptr->feuille[1];
+      if (cur.type==_INT_ && cur.val<0)
+        linv.push_back(lpow[i]);
+    }
+    for (int i=0;!doslack && i<linv.size();++i){
+      vecteur curidntl(lidnt(linv[i]));
+      for (int j=0;j<curidntl.size();++j){
+        if (equalposcomp(l,curidntl[j])){
+          doslack=true;
+          break;
+        }
+      }
+    }
     vecteur remainvars(l.begin()+elim.size(),l.end());
-    if (!returngb && eqs.size()<=l.size()+3){
+    if (!doslack && !returngb && eqs.size()<=l.size()+3){
       // eliminate variables with linear dependency 
       // (in order to lower the number of vars, since <= 11 vars is handled faster)
       for (unsigned i=0;i<eqs.size();++i){
@@ -9602,7 +9621,7 @@ namespace giac {
 #if 1
     // check if we should eliminate linear dependency with resultant
     // to fit inside 3/11 or 7/7 or 11/3
-    if (returngb==3 && neq>=2 && neq<=l.size()+3){
+    if (!doslack && returngb==3 && neq>=2 && neq<=l.size()+3){
       bool ok=es>=1;
       if (ok){
 	*logptr(contextptr) << "Eliminating with resultant. Original equations may reduce further."<<'\n';
@@ -9719,14 +9738,14 @@ namespace giac {
 	if (!equalposcomp(elim,l[i]))
 	  break;
       }
-      // force a slack variable insertion, for denominators handling
-      gen slackvar;
-      for (int k=0;;++k){
-        slackvar=gen("t"+print_INT_(k),contextptr);
-        if (!equalposcomp(l,slackvar))
-          break;
+      if (doslack){
+        for (int k=0;;++k){
+          slackvar=gen("t"+print_INT_(k),contextptr);
+          if (!equalposcomp(l,slackvar))
+            break;
+        }
+        l.insert(l.begin()+i,slackvar); ++i;
       }
-      l.insert(l.begin()+i,slackvar); ++i; 
       if (1 
 	  // ||(l.size()+3-(i%4)<=14)
 	  ){
@@ -9762,7 +9781,7 @@ namespace giac {
 	// convert eq to polynomial
 	vecteur eq_in(*e2r(eqs,l,contextptr)._VECTptr);
 	vectpoly eqp;
-	if (!vecteur2vector_polynome(eq_in,l,eqp,&slackvar)){
+	if (!vecteur2vector_polynome(eq_in,l,eqp,doslack?&slackvar:0)){
 	  for (int i=0;i<int(eq_in.size());++i){
 	    gen tmp=eq_in[i];
 	    if (is_integer(tmp) || tmp.type==_FRAC)
