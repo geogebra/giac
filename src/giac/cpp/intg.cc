@@ -3194,7 +3194,7 @@ namespace giac {
             gen cur=vu[ok];
             if (cur.type!=_SYMB)
               continue;
-#ifdef EMCC
+#if 1 // def EMCC
             vector<unary_function_ptr> auth;
             auth.push_back(*at_exp);
             auth.push_back(*at_pow);

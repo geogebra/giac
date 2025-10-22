@@ -8529,7 +8529,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     gly.subtype=_INT_PLOT;
     gly=symb_equal(gly,symb_interval(ymin-yscale/2,ymax+yscale/2));
     poi.insert(poi.begin(),gly);
-    gprintf(gettext("Variations (%gen,%gen)\n%gen"),makevecteur(f,g,tvi),1,contextptr);
+    gprintf(-1,gettext("Variations (%gen,%gen)\n%gen"),makevecteur(f,g,tvi),1,contextptr);
 #if !defined(EMCC) && !defined(EMCC2)
     if (printtvi && step_infolevel(contextptr)==0)
       *logptr(contextptr) << tvi << '\n';
@@ -9075,7 +9075,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     gly.subtype=_INT_PLOT;
     gly=symb_equal(gly,symb_interval(ymin-yscale/2,ymax+yscale/2));
     poi.insert(poi.begin(),gly);
-    gprintf(gettext(do_inflex_tabsign==2?"Sign %gen\n%gen":"Variations %gen\n%gen"),makevecteur(f,tvi),1,contextptr);
+    gprintf(-1,gettext(do_inflex_tabsign==2?"Sign %gen\n%gen":"Variations %gen\n%gen"),makevecteur(f,tvi),1,contextptr);
 #if !defined(EMCC) && !defined(EMCC2)
     if (printtvi && step_infolevel(contextptr)==0)
       *logptr(contextptr) << tvi << '\n';

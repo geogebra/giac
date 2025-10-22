@@ -1291,7 +1291,7 @@ namespace giac {
       if ((mys.sommet==at_neg) || (mys.sommet==at_plus)){
 	if (feu.type!=_SYMB) 
 	  return opstring+gen2tex(feu,contextptr) ;
-	if (feu._SYMBptr->sommet==at_inv || !need_parenthesis(feu._SYMBptr->feuille))
+	if (feu._SYMBptr->sommet==at_inv || (feu._SYMBptr->sommet!=at_plus && !need_parenthesis(feu._SYMBptr->feuille)) )
 	  return opstring+gen2tex(feu,contextptr) ;
 	return opstring+string("\\left(") + gen2tex(feu,contextptr) +string("\\right)");
       }
