@@ -127,8 +127,12 @@ namespace giac {
     calc_mode(0,contextptr);
     gen res=_integrate(makesequence(f*exp(-t*x,contextptr),x),contextptr);
     calc_mode(c,contextptr);
-    if (lop(res,at_integrate).empty() && lop(res,at_piecewise).empty() && lop(res,at_sign).empty())
-      res=-_limit(makesequence(res,x,0,1),contextptr);
+    if (lop(res,at_integrate).empty() && lop(res,at_piecewise).empty() && lop(res,at_sign).empty()){
+      gen res0(res);
+      res=-_limit(makesequence(res0,x,0,1),contextptr);
+      if (!lop(res0,at_lower_incomplete_gamma).empty())
+        res += _limit(makesequence(res0,x,plus_inf),contextptr);
+    }
     else
       res=undef;
     if (is_undef(res))

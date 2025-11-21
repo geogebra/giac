@@ -1330,6 +1330,7 @@ bool dfu_send_scriptstore(const char * fname){
   return !dfu_exec(s.c_str());
 } 
 
+// recovery is obtained with make flasher.verbose.bin in Epsilon 15.5
 bool dfu_send_rescue(const char * fname){
   string s=string("dfu-util -i0 -a0 -s 0x20030000:force:leave -D ")+ fname;
   s[dfupos]=dfu_alt();
@@ -3939,7 +3940,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 #endif
 
-#if (defined HAVE_SIGNAL_H_OLD || defined HAVE_SIGNAL_H ) && !defined NO_STDEXCEPT
+#if (defined HAVE_SIGNAL_H_OLD || defined HAVE_SIGNAL_H ) && !defined NO_STDEXCEPT && !defined __MINGW_H
   //#define SIGNALDBG
   int forkmaxleafsize=2048; // change by fork_timeout(n)
   static bool running_file=false;
@@ -4780,7 +4781,7 @@ extern "C" void Sleep(unsigned int miliSecond);
 
 #ifndef FXCG
 
-#if defined HAVE_SYS_TYPES_H && defined HAVE_UNISTD_H
+#if defined HAVE_SYS_TYPES_H && defined HAVE_UNISTD_H && !defined __MINGW_H
   string tmpfs(){
     static string tmpfs="";
     if (tmpfs.size()==0){

@@ -1,7 +1,7 @@
 // -*- mode:C++ ; compile-command: "g++-3.4 -I.. -I../include -g -c maple.cc  -DIN_GIAC -DHAVE_CONFIG_H" -*-
 #include "giacPCH.h"
 
-#if defined(VISUALC) || defined(__MINGW_H) || defined (FIR) || defined(FXCG) || defined(NSPIRE) || defined(__ANDROID__) || defined(NSPIRE_NEWLIB) || defined(EMCC) || defined (EMCC2) || defined(GIAC_GGB) || defined KHICAS || defined SDL_KHICAS || defined __APPLE__
+#if defined(VISUALC) || defined(__MINGW_H) || defined (FIR) || defined(FXCG) || defined(NSPIRE) || defined(__ANDROID__) || defined(NSPIRE_NEWLIB) || defined(EMCC) || defined (EMCC2) || defined(GIAC_GGB) || defined KHICAS || defined SDL_KHICAS || defined __APPLE__ || defined WIN32
 #else
 #define THREAD_TIMEOUT
 #endif

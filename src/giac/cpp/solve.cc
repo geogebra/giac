@@ -4529,6 +4529,13 @@ namespace giac {
     return(A);
   }
 
+  void warn_invalid_var(const vecteur & x,GIAC_CONTEXT){
+    for (int i=0;i<x.size();++i){
+      if (x[i].is_symb_of_sommet(at_exp) || x[i]==cst_pi)
+        *logptr(contextptr) << "Probably invalid variable " << x[i] << "\n"; 
+    }
+  }
+
   // return -2 invalid, -1 (unknown), 0 (no solution), 1 (solution exist)
   int linsolve_ineq(const vecteur & sl,const vecteur & x,vecteur & sol,GIAC_CONTEXT){
     // first extract equations, recursive solve and substitute
@@ -4569,6 +4576,7 @@ namespace giac {
         g=-g;
       SL.push_back(g);
     }
+    warn_invalid_var(x,contextptr);
     matrice A=sxa(SL,x,contextptr);
     int n=x.size();
     // if x is n-dimensional, search n independant inequalities
@@ -7819,6 +7827,7 @@ namespace giac {
   define_unary_function_ptr5( at_rur_separate_max_tries ,alias_at_rur_separate_max_tries ,&__rur_separate_max_tries,0,true);
 
   vecteur gsolve(const vecteur & eq_orig,const vecteur & var_orig,bool complexmode,int evalf_after,GIAC_CONTEXT){
+    warn_invalid_var(var_orig,contextptr);
     // replace variables in var_orig by true identificators
     vecteur var(var_orig);
     if (!lop(eq_orig,*at_unit).empty())
