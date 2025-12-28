@@ -4548,7 +4548,7 @@ namespace giac {
     gen ux=1,uy=ra,vx=0,vy=p,wx,wy; 
     gen m=1;
     while(m!=0){
-      if (is_positive(vx*vx+vy*vy-ux*ux+uy*uy,0)){
+      if (is_positive(vx*vx+vy*vy-ux*ux-uy*uy,0)){
 	//on echange u et v
 	wx=vx;
 	wy=vy;

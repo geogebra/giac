@@ -14,6 +14,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#ifdef __clang__ // _LIBCPP_VERSION
+#define _LIBCPP_HARDENING_MODE _LIBCPP_HARDENING_MODE_NONE
+#endif
 #undef max
 #undef min
 //#define GIAC_VECTOR
@@ -81,6 +84,7 @@
 #define M_LN2 0.69314718055994531
 #define M_1_PI 0.31830988618379067
 #endif
+
 
 #ifdef HP39
 #include <time.h>
