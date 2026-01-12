@@ -8446,11 +8446,24 @@ namespace giac {
     //g_=subst(g_,neg_v,negdistrib_v,false,contextptr);
     return liste2symbolique(symbolique2liste(g_,contextptr));
   }
+  
+  gen apply_to_inequation(const gen & g,gen (* f) (const gen &, GIAC_CONTEXT),GIAC_CONTEXT){
+    if (g.type!=_SYMB || !is_inequation(g) || g._SYMBptr->feuille.type!=_VECT)
+      return f(g,contextptr);
+    vecteur & v=*g._SYMBptr->feuille._VECTptr;
+    if (v.empty())
+      return gensizeerr(gettext("apply_to_inequation"));
+    return symbolic(g._SYMBptr->sommet,gen(makevecteur(f(v.front(),contextptr),f(v.back(),contextptr)),_SEQ__VECT));
+  }
+
   gen _simplifier(const gen & g,GIAC_CONTEXT){
     if ( g.type==_STRNG &&  g.subtype==-1) return  g;
     if (g.type<_IDNT) return g;
     if (is_equal(g))
       return apply_to_equal(g,_simplifier,contextptr);
+    bool b=is_inequation(g);
+    if (b)
+      return apply_to_inequation(g,_simplifier,contextptr);
     if (g.type!=_VECT)
       return simplifier(g,contextptr);
     return apply(g,_simplifier,contextptr);
