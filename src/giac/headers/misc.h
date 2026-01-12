@@ -362,6 +362,8 @@ namespace giac {
   void draw_filled_polygon(std::vector< std::vector<int> > &L,int xmin,int xmax,int ymin,int ymax,int color,GIAC_CONTEXT);
   void draw_line(int x1, int y1, int x2, int y2, int color,GIAC_CONTEXT);
   void set_pixel(int x,int y,int c,GIAC_CONTEXT);
+  int asc_sort_int(const void * vptr,const void *wptr);
+  int asc_sort_double(const void * vptr,const void *wptr);
   extern "C" void set_pixel(int x,int y,int c);
   void draw_circle(int xc,int yc,int r,int color,bool q1,bool q2,bool q3,bool q4,GIAC_CONTEXT);
   void draw_filled_circle(int xc,int yc,int r,int color,bool left,bool right,GIAC_CONTEXT);

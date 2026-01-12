@@ -4739,6 +4739,17 @@ namespace giac {
     }
     if (setcplx)
       complex_mode(true,contextptr);
+    if (args.type==_VECT && args._VECTptr->size()==4){
+      vecteur v = *args._VECTptr;
+      gen x=v[1],a=v[2],b=v[3];
+      if (x.type==_IDNT && a.type!=_DOUBLE_ && b.type!=_DOUBLE_){
+        gen v0=evalf_double(v[0],1,contextptr),resapprox,tmp;
+        vecteur lv=lidnt(v0);
+        if (lv.size()==1 && lv[0]==x && has_evalf(a,tmp,1,contextptr) && has_evalf(b,tmp,1,contextptr) && tegral(v[0],x,a,b,1e-6,(1<<10),resapprox,false,contextptr)){
+          *logptr(contextptr) << "// ∫ ~= " << resapprox << "\n";
+        }
+      }
+    }
     gen res=_integrate_(args,contextptr);
     if (setcplx)
       complex_mode(false,contextptr);

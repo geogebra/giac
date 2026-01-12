@@ -14111,6 +14111,18 @@ void sprint_double(char * s,double d){
 	return "color";
       case _FILLED:
 	return "filled";
+      case _FILLED+_POINT_WIDTH_7:
+	return "filled_1";
+      case _FILLED+_POINT_WIDTH_6:
+	return "filled_2";
+      case _FILLED+_POINT_WIDTH_5:
+	return "filled_3";
+      case _FILLED+_POINT_WIDTH_4:
+	return "filled_4";
+      case _FILLED+_POINT_WIDTH_3:
+	return "filled_5";
+      case _FILLED+_POINT_WIDTH_2:
+	return "filled_6";
       case _FONT:
 	return "font";
       case _LABELS:
