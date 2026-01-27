@@ -10367,7 +10367,7 @@ void sync_screen(){}
     if (v[0].type!=_STRNG || !is_integral(v[1]) || !is_integral(v[2]))
       return gensizeerr(contextptr);
     gen s=v[0];
-#if defined KHICAS || defined GIAC_HAS_STO_38
+#if defined KHICAS  || defined SDL_KHICAS || defined GIAC_HAS_STO_38
     os_draw_string(v[1].val,v[2].val,v.size()>3?remove_at_display(v[3],contextptr).val:_BLACK,v.size()>4?remove_at_display(v[4],contextptr).val:_WHITE,s._STRNGptr->c_str()
 #ifdef GIAC_HAS_STO_38
                    ,false

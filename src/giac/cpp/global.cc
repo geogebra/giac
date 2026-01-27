@@ -159,6 +159,20 @@ int js_token(const char * list,const char * buf){
   return 0;
 }
 
+  int nwstore_skip_sys(const unsigned char * ptr,int nwstoresize){
+    int pos=4; ptr+=4;
+    for (;pos<nwstoresize;){
+      size_t L=ptr[1]*256+ptr[0]; 
+      int l=strlen((const char *) ptr+2);
+      if (l<4 || strcmp((const char *)ptr+2+l-4,".sys")){
+        return pos;
+      }
+      if (L==0) return pos;
+      ptr+=L; pos+=L;
+    }
+    return pos;
+  }
+
 #ifdef HAVE_LIBMICROPYTHON
 std::string & python_console(){
   static std::string * ptr=0;
@@ -190,6 +204,7 @@ extern "C" const char * extapp_fileRead(const char * filename, size_t *len, int 
 extern "C"  bool extapp_erasesector(void *);
 extern "C"  bool extapp_writememory(unsigned char * dest,const unsigned char * data,size_t length);
 #endif
+
 
 #ifdef NUMWORKS
 size_t pythonjs_stack_size=30*1024,
@@ -562,6 +577,13 @@ std::vector<fileinfo_t> tar_fileinfo(const char * buffer,size_t byteLength){
   size_t offset=0,file_size=0;       
   string file_name = "";
   string file_type = "";
+  char star[]={0,'u','s','t','a','r',0};
+  if (memcmp(buffer+0x100,star,6)){
+    offset=0x200000;
+    printf("tar_fileinfo warning: buffer does not point to a tarfile, trying at offset %i\n",offset);
+    if (memcmp(buffer+offset+0x100,star,6))
+      return fileInfo;
+  }
   while (byteLength==0 || offset<byteLength-512){
     file_name = giac_readFileName(buffer,offset); // file name
     if (file_name.size() == 0) 
@@ -1311,29 +1333,65 @@ char dfu_alt(){
   return altdfu;
 }
 
-bool dfu_get_scriptstore(const char * fname){
+int dfu_get_scriptstore(const char * fname){
   unlink(fname);
   size_t start,taille;
   char altdfu;
   if (!dfu_get_scriptstore_addr(start,taille,altdfu)) return false;
   string s="dfu-util -i0 -a0 -U "+string(fname)+" -s "+ giac::print_INT_(start)+":"+giac::print_INT_(taille)+":force";
   s[dfupos]=altdfu;
-  return !dfu_exec(s.c_str());
+  if (dfu_exec(s.c_str()))
+    return 0;
+  return taille;
 }
 
 bool dfu_send_scriptstore(const char * fname){
   size_t start,taille;
   char altdfu;
   if (!dfu_get_scriptstore_addr(start,taille,altdfu)) return false;
-  string s="dfu-util -i0 -a0 -D "+string(fname)+" -s "+ giac::print_INT_(start)+":"+giac::print_INT_(taille)+":force";
-  s[dfupos]=altdfu;
+  string eff_fname(fname);
+  if (taille>32768){
+    FILE * f=fopen(fname,"rb");
+    if (!f)
+      return false;
+    unsigned char buf[24];
+    int i=fread(buf,1,32,f);
+    fclose(f);
+    if (i!=32)
+      return false;
+    if (buf[4]!=0x14 || buf[5]!=0 || strcmp((const char *)buf+6,"pr.sys") || strcmp((const char *)buf+0x1a,"gp.sys")){ // read calc settings
+      char filename[]="__calc.nws";
+      FILE * f=0;
+      if ( (!dfu_get_scriptstore(filename) || !(f=fopen(filename,"rb"))))
+	return false;
+      unsigned char * buf=(unsigned char *) malloc(taille); memset(buf,0,taille);
+      int s=0x2e;
+      i=fread(buf,1,s,f);
+      if (f) fclose(f);
+      if (i!=s) return false;
+      f=fopen(fname,"rb");
+      fread(buf,1,4,f); // read magic
+      // append rest of file
+      for(;!feof(f) && s<taille;++s)
+        buf[s]=fgetc(f);
+      fclose(f);
+      f=fopen(filename,"wb");
+      i=fwrite(buf,1,taille,f);
+      if (i!=taille)
+        return false;
+      fclose(f);
+      eff_fname=filename;
+    }
+  }
+  string s="dfu-util -i0 -a1 -D "+eff_fname+" -s "+ giac::print_INT_(start)+":"+giac::print_INT_(taille)+":force";
+  //s[dfupos]=altdfu;
   return !dfu_exec(s.c_str());
 } 
 
 // recovery is obtained with make flasher.verbose.bin in Epsilon 15.5
 bool dfu_send_rescue(const char * fname){
   string s=string("dfu-util -i0 -a0 -s 0x20030000:force:leave -D ")+ fname;
-  s[dfupos]=dfu_alt();
+  //s[dfupos]=dfu_alt();
   return !dfu_exec(s.c_str());
 }
 
@@ -1507,16 +1565,16 @@ bool dfu_check_apps2(const char * fname){
   return i==n;
 }
 
-bool dfu_get_apps(const char * fname,char & altdfu){
+bool dfu_get_apps(const char * fname,char & altdfu,const char * startaddr,const char* size){
   unlink(fname);
-  string s=string("dfu-util -i0 -a0 -s 0x90200000:0x600000:force -U ")+ fname;
+  string s=string("dfu-util -i0 -a0 -s ")+startaddr+":"+size+":force -U"+fname; // :"0x90200000:0x600000:force -U ")+ fname;
   s[dfupos]=altdfu;
   return !dfu_exec(s.c_str());
 }
 
-bool dfu_get_apps(const char * fname){
+bool dfu_get_apps(const char * fname,const char * startaddr="0x90200000",const char * size="0x600000"){
   char altdfu=dfu_alt();
-  return dfu_get_apps(fname,altdfu);
+  return dfu_get_apps(fname,altdfu,startaddr,size);
 }
 
 
@@ -1528,6 +1586,17 @@ char * numworks_gettar(size_t & tar_first_modif_offset){
   char * buffer=(char *)malloc(numworks_maxtarsize);
   fread(buffer,numworks_maxtarsize,1,f);
   fclose(f);
+  char star[]={0,'u','s','t','a','r',0};
+  unsigned offset=0;
+  if (memcmp(buffer+0x100,star,6)){
+    unsigned offset=0x200000;
+    char * newbuf=(char *) malloc(numworks_maxtarsize-offset);
+    memcpy(newbuf,buffer+offset,numworks_maxtarsize-offset);
+    free(buffer);
+    buffer=newbuf;
+    if (memcmp(buffer+0x100,star,6))
+      return 0;
+  }
   tar_first_modif_offset=tar_totalsize(buffer,numworks_maxtarsize);
   return buffer;
 }
@@ -1563,7 +1632,26 @@ bool dfu_update_khicas(const char * fname){
 }
 
 bool numworks_sendtar(char * buffer,size_t buffersize,size_t tar_first_modif_offset){
-  vector<fileinfo_t> v=tar_fileinfo(buffer,buffersize);
+  char star[]={0,'u','s','t','a','r',0};
+  unsigned buffer_offset=0,calc_offset=0;
+  if (memcmp(buffer+0x100,star,6)){
+    buffer_offset=0x200000;
+    if (memcmp(buffer+buffer_offset+0x100,star,6))
+      return false;
+  }
+  char altdfu='0';
+  if (!dfu_get_apps("__apps",altdfu,"0x90200000","0x200"))
+    return false;
+  FILE * f =fopen("__apps","rb");
+  if (!f)
+    return false;
+  char calcbuf[0x200];
+  int i=fread(calcbuf,1,0x200,f);
+  fclose(f);
+  if (memcmp(calcbuf+0x100,star,6))
+    calc_offset=0x200000;
+  
+  vector<fileinfo_t> v=tar_fileinfo(buffer+buffer_offset,buffersize);
   if (v.empty())
     return false;
   fileinfo_t info=v[v.size()-1];
@@ -1571,13 +1659,13 @@ bool numworks_sendtar(char * buffer,size_t buffersize,size_t tar_first_modif_off
   if (end>numworks_maxtarsize || end<=tar_first_modif_offset) return false;
   for (size_t i=end-1024;i<end;++i)
     buffer[i]=0;
-  FILE * f =fopen("__apps","wb");
+  f =fopen("__apps","wb");
   if (!f)
     return false;
   size_t start=(tar_first_modif_offset/65536)*65536;
-  fwrite(buffer+start,end-start,1,f);
+  fwrite(buffer+buffer_offset+start,end-start,1,f);
   fclose(f);
-  longlong ll=0x90200000LL+start;
+  longlong ll=0x90200000LL+calc_offset+start;
   string s=string("dfu-util -i 0 -a 0 -s ")+giac::gen(ll).print(giac::context0)+" -D __apps" ;
   return !dfu_exec(s.c_str());
 }
@@ -1589,12 +1677,16 @@ namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
   
-  // buf:=tar "file.tar" -> init
+  // buf:=tar("file.tar") -> init
+  // buf:=tar(1 or 2); init from calc 0x90200000
+  // buf:=tar(4); init from calc 0x90400000
   // tar(buf) -> list files
   // tar(buf,0,"filename") -> remove filename
   // tar(buf,1,"filename") -> add filename
-  // tar(buf,2,"filename") -> save filename
-  // tar(buf,"file.tar") -> write tar
+  // tar(1,filename) -> add filename
+  // tar(buf,2) -> save to calc at 0x90200000
+  // tar(buf,4) -> save to calc at 0x90400000
+  // tar(buf,"file.tar") -> write buf to file.tar
   // purge(buf) -> free buffer
   gen _tar(const gen & g_,GIAC_CONTEXT){
     gen g(eval(g_,eval_level(contextptr),contextptr));
@@ -1619,9 +1711,11 @@ namespace giac {
     }
 #if !defined KHICAS && !defined SDL_KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
     if (g.type==_INT_){
-      if (g.val==1){
+      if (g.val==1 || g.val==2 || g.val==4){
 	char * buf= numworks_gettar(tar_first_modified_offset);
 	if (!buf) return 0;
+        if (g.val==4)
+          return gen((void *)(buf+0x200000),_BUFFER_POINTER);
 	return gen((void *)buf,_BUFFER_POINTER);
       }
     }
@@ -1636,7 +1730,7 @@ namespace giac {
 	  return file_savetar(v[1]._STRNGptr->c_str(),buf,0);
 #if !defined KHICAS && !defined SDL_KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
 	if (s==2 && v[1].type==_INT_){
-	  if (v[1].val==1)
+	  if (v[1].val==2)
 	    return numworks_sendtar(buf,0,tar_first_modified_offset);
 	}
 #endif
@@ -1679,15 +1773,18 @@ namespace giac {
     }
     return res;
   }
-  
+
 
 #if !defined KHICAS && !defined SDL_KHICAS && !defined USE_GMP_REPLACEMENTS && !defined GIAC_HAS_STO_38
   bool scriptstore2map(const char * fname,nws_map & m){
     FILE * f=fopen(fname,"rb");
     if (!f)
       return false;
-    unsigned char buf[nwstoresize1];
-    fread(buf,1,nwstoresize1,f);
+    fseek(f, 0, SEEK_END);    // On va à la fin du fichier
+    long nwstoresize = ftell(f);   // On récupère la position actuelle
+    rewind(f);
+    unsigned char buf[65536];
+    fread(buf,1,nwstoresize,f);
     fclose(f);
     unsigned char * ptr=buf;
     // Numworks script store archive
@@ -1700,7 +1797,7 @@ namespace giac {
     if (*((unsigned *)ptr)!=0xee0bddba)  // ba dd 0b ee
       return false; 
     int pos=4; ptr+=4;
-    for (;pos<nwstoresize1;){
+    for (;pos<nwstoresize;){
       size_t L=ptr[1]*256+ptr[0]; 
       ptr+=2; pos+=2;
       if (L==0) break;
@@ -1719,38 +1816,79 @@ namespace giac {
       memcpy(&r.data[0],buf_mode,r.data.size());
       m[name]=r;
     }
-    if (pos>=nwstoresize1)
+    if (pos>=nwstoresize)
       return false;
     return true;
   }
 
-  bool map2scriptstore(const nws_map & m,const char * fname){
-    unsigned char buf[nwstoresize1];
-    for (int i=0;i<nwstoresize1;++i)
-      buf[i]=0;
+  bool map2scriptstore(const nws_map & m,const char * fname,int nwstoresize){
+    unsigned char buf[nwstoresize]; memset(buf,0,sizeof(buf));
     unsigned char * ptr=buf;
     *(unsigned *) ptr= 0xee0bddba;
     ptr += 4;
-    nws_map::const_iterator it=m.begin(),itend=m.end();
-    int total=0;
-    for (;it!=itend;++it){
-      const string & s=it->first;
-      unsigned l1=s.size();
-      unsigned l2=it->second.data.size();
-      short unsigned L=2+l1+1+1+l2+1;
-      total += L;
-      if (total>=nwstoresize1)
-	return false;
-      *ptr=L % 256; ++ptr; *ptr=L/256; ++ptr;
-      memcpy(ptr,s.c_str(),l1+1); ptr += l1+1;
-      *ptr=it->second.type; ++ptr;
-      memcpy(ptr,&it->second.data[0],l2); ptr+=l2;
-      *ptr=0; ++ptr; 
+    nws_map::const_iterator it,itend=m.end();
+    int total=0,sys=2;
+    for (;sys>=0;--sys){
+      if (sys==2){
+        it=m.find("pr.sys");
+        if (it==itend){ // force
+          unsigned char prsys[]={0,0xa,0,0,0,0,0,0,0};
+          string s("pr.sys");
+          unsigned l1=s.size(),l2=sizeof(prsys); // 9
+          short unsigned L=2+l1+1+1+l2+1; // 20=0x14
+          total += L;
+          if (total>=nwstoresize)
+            return false;
+          *ptr=L % 256; ++ptr; *ptr=L/256; ++ptr;
+          memcpy(ptr,s.c_str(),l1+1); ptr += l1+1;
+          *ptr=0; ++ptr;
+          memcpy(ptr,prsys,l2); ptr+=l2;
+          *ptr=0; ++ptr;
+          continue;
+        }
+      }
+      else if (sys==1){
+        it=m.find("gp.sys");
+        if (it==itend){ // force
+          unsigned char gpsys[]={0x78,0,0,0,1,4,1,1,0x30,0x75,0}; // 11
+          string s("gp.sys");
+          unsigned l1=s.size(),l2=sizeof(gpsys);
+          short unsigned L=2+l1+1+1+l2+1; // 22=0x16
+          total += L;
+          if (total>=nwstoresize)
+            return false;
+          *ptr=L % 256; ++ptr; *ptr=L/256; ++ptr;
+          memcpy(ptr,s.c_str(),l1+1); ptr += l1+1;
+          *ptr=1; ++ptr;
+          memcpy(ptr,gpsys,l2); ptr+=l2;
+          *ptr=0; ++ptr;
+          continue;
+        }
+      }
+      else
+        it=m.begin();
+      for (;it!=itend;++it){
+        const string & s=it->first;
+        if (sys==0 && (s=="pr.sys" || s=="gp.sys"))
+          continue;
+        unsigned l1=s.size();
+        unsigned l2=it->second.data.size();
+        short unsigned L=2+l1+1+1+l2+1;
+        total += L;
+        if (total>=nwstoresize)
+          return false;
+        *ptr=L % 256; ++ptr; *ptr=L/256; ++ptr;
+        memcpy(ptr,s.c_str(),l1+1); ptr += l1+1;
+        *ptr=it->second.type; ++ptr;
+        memcpy(ptr,&it->second.data[0],l2); ptr+=l2;
+        *ptr=0; ++ptr;
+        if (sys) break; // only one copy
+      }
     }
     FILE * f=fopen(fname,"wb");
     if (!f)
       return false;
-    fwrite(buf,1,nwstoresize1,f);
+    fwrite(buf,1,total,f);
     fclose(f);
     return true;
   }
@@ -7638,7 +7776,7 @@ unsigned int ConvertUTF8toUTF162 (
     }
     string s;
     int pos=0;
-#if defined(EMCC) || defined(EMCC2)
+#if !defined(UPSILON) && (defined(EMCC) || defined(EMCC2))
     *logptr(contextptr) << char(2) << '\n'; // start mixed text/mathml
 #endif
     for (unsigned i=0;i<v.size();++i){
@@ -7646,7 +7784,7 @@ unsigned int ConvertUTF8toUTF162 (
       if (p<0 || p>=int(format.size()))
 	break;
       newlinestobr(s,format.substr(pos,p-pos));
-#if defined(EMCC) || defined(EMCC2)
+#if !defined(UPSILON) && (defined(EMCC) || defined(EMCC2))
       gen tmp;
       if (v[i].is_symb_of_sommet(at_pnt))
 	tmp=_svg(v[i],contextptr);
@@ -7660,7 +7798,7 @@ unsigned int ConvertUTF8toUTF162 (
     }
     newlinestobr(s,format.substr(pos,format.size()-pos));
     *logptr(contextptr) << s << '\n';
-#if defined(EMCC) || defined(EMCC2)
+#if !defined(UPSILON) && (defined(EMCC) || defined(EMCC2))
     *logptr(contextptr) << char(3) << '\n'; // end mixed text/mathml
     *logptr(contextptr) << '\n';
 #endif

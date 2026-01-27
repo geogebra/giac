@@ -111,16 +111,17 @@ extern "C" void console_print(const char * s);
 extern "C" const char * console_prompt(const char * s);
 
 bool dfu_get_scriptstore_addr(size_t & start,size_t & taille,char & altdfu);
-bool dfu_get_scriptstore(const char * fname);
+int dfu_get_scriptstore(const char * fname); // returns size
 bool dfu_send_scriptstore(const char * fname);
 bool dfu_send_rescue(const char * fname);
 bool dfu_send_bootloader(const char * fname);
-const int nwstoresize1=0x8000,nwstoresize2=0x8014;
 // send to 0x90000000+offset*0x10000
 bool dfu_send_firmware(const char * fname,int offset);
 bool dfu_send_apps(const char * fname);
 bool dfu_send_slotab(const char * fnamea,const char * fnameb1,const char * fnameb2);
 bool dfu_update_khicas(const char * fname); 
+int nwstore_skip_sys(const unsigned char * ptr,int nwstoresize);
+
 
 #if defined HAVE_LIBMICROPYTHON
 #include <string>
@@ -635,7 +636,7 @@ throw(std::runtime_error("Stopped by user interruption.")); \
   typedef std::map<std::string,nwsrec,ltstring> nws_map;
   std::string dos2unix(const std::string & res);
   bool scriptstore2map(const char * fname,nws_map & m);
-  bool map2scriptstore(const nws_map & m,const char * fname);
+  bool map2scriptstore(const nws_map & m,const char * fname,int nwstoresize);
   // check that filename content matches a file content signed in sigfilename
   bool sha256_check(const char * sigfilename,const char * filename);
   bool nws_certify_firmware(bool with_overwrite,GIAC_CONTEXT); // Numworks certification

@@ -642,6 +642,7 @@ namespace giac {
     return true;
   }
 
+#if !defined NSPIRE && !defined FXCG && !defined GIAC_HAS_STO_38 && !defined KHICAS && !defined SDL_KHICAS
   static bool output_ia_mcptools(vector<aide> & v,const vecteur & listcmd,int lang){
     ofstream tools("tools.py");
     tools << "    async def _handle_tools_list(self, request_id: str) -> Dict[str, Any]:\n";
@@ -704,6 +705,7 @@ namespace giac {
     cout << "Replace in http_bridge.py, remove space before async def... and remove self in arg list" << endl;
     return true;
   }
+#endif
   
   bool operator < (const indexed_string & is1,const indexed_string & is2){ 
     if (is1.index!=is2.index) return is1.index<is2.index;
@@ -1705,7 +1707,9 @@ alphasort (const struct dirent **a, const struct dirent **b)
     // Get indices from file cache if it exists
 #ifdef EMCC2
     int b1=1,b2=1,b3=1;
+#ifndef UPSILON
     printf("html_help_dir=%s mtt=%i mall=%i vall=%i\n",html_help_dir.c_str(),b1,b2,b3);
+#endif
 #else
     int b1=!access((html_help_dir+"html_mtt").c_str(),R_OK), b2=!access((html_help_dir+"html_mall").c_str(),R_OK), b3=!access((html_help_dir+"html_vall").c_str(),R_OK);
     if (access(html_help_dir.c_str(),R_OK))      

@@ -20712,6 +20712,13 @@ static void do_QRdisp(const uint8_t qrcode[],const char * msg) {
 }
 
 bool QRdisp(const char * text,const char *msg){
+#if defined EMCC || defined EMCC2 //|| defined KHICAS || defined SDL_KHICAS
+  EM_ASM({
+      var value = UTF8ToString($0);
+      console.log(value);
+      navigator.clipboard.writeText(value);
+    },text);
+#endif
   // confirm("qrdisp",text);
   enum qrcodegen_Ecc errCorLvl = qrcodegen_Ecc_LOW;  // Error correction level
   
@@ -20724,7 +20731,7 @@ bool QRdisp(const char * text,const char *msg){
     while (1) {
       do_QRdisp(qrcode,msg);
       int key; ck_getkey(&key);
-      if (key==KEY_CTRL_OK || key==KEY_CTRL_EXIT)
+      if (key==KEY_CTRL_OK || key==KEY_CTRL_EXIT || key==KEY_CTRL_MENU)
 	break;
     }
   }
@@ -22163,6 +22170,15 @@ void numworks_certify_internal(){
     console_log("restore session");
     // cout << "0" << fname << "\n"; Console_Disp(1); GetKey(&key);
     string filename(fname); //filename="mandel.py.tns";
+#ifdef NUMWORKS
+    if (filename=="session"){
+      if (file_exists("session.xw"))
+	filename = "session.xw";
+      else
+	filename = "session_xw.py";
+      goto label_load;
+    }
+#endif
     if (filename.size()>4 && filename.substr(filename.size()-4,4)==".tns")
       filename=filename.substr(0,filename.size()-4);
     if (filename.size()>3 && filename.substr(filename.size()-3,3)==".py"){
@@ -22191,6 +22207,8 @@ void numworks_certify_internal(){
         filename += ".py";
     }
 #endif
+  label_load:
+    console_log(("effective session "+filename).c_str());
     if (!load_console_state_smem(filename.c_str(),contextptr)){
       int x=0,y=0;
       PrintMini7(x,y,"KhiCAS 1.9 (c) 2024 B. Parisse",TEXT_MODE_NORMAL, COLOR_BLACK, COLOR_WHITE,false);
@@ -22256,6 +22274,11 @@ void numworks_certify_internal(){
       console_log("restore session 4");
       //menu_about();
       return 0;
+    } else {
+#ifdef UPSILON
+      if (filename=="session.xw")
+	erase_file(filename.c_str());
+#endif
     }
     return 1;
   }

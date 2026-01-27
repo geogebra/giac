@@ -12804,7 +12804,6 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
       }
     }
     x0=evalf_double(x0,eval_level(contextptr),contextptr);
-    xmin=gnuplot_xmin;xmax=gnuplot_xmax;
     if (x0.type==_VECT && x0._VECTptr->size()==3){
       vecteur & x0v=*x0._VECTptr;
       if (x0v[1].type!=_DOUBLE_ || x0v[2].type!=_DOUBLE_)
@@ -12813,6 +12812,29 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
       xmax=x0v[2]._DOUBLE_val;
       x0=remove_at_pnt(x0v[0]);
       x0=re(x0,contextptr);
+    }
+    else {
+      double xcur=x0._DOUBLE_val;
+      xmin=xmax=xcur;
+      for (int i=0;i<niter;++i){
+        gen tmp=subst(expr,x,xcur,false,contextptr);
+        if (tmp.type!=_DOUBLE_)
+          break;
+        xcur=tmp._DOUBLE_val;
+        if (xcur<xmin)
+          xmin=xcur;
+        if (xcur>xmax)
+          xmax=xcur;
+      }
+      xcur=xmax-xmin;
+      if (xcur<epsilon(contextptr)){
+        xcur=fabs(xmax)+fabs(xmin);
+        if (xcur<1)
+          xcur=1;
+      }
+      xcur *= 0.1;
+      xmax += xcur;
+      xmin -= xcur;
     }
     if (x0.type!=_DOUBLE_)
       return -4; // 
