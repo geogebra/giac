@@ -12860,6 +12860,7 @@ void sprint_double(char * s,double d){
     // roundoff
     unsigned char * u = (unsigned char *)(&d);
     *u &= 0xe0;
+    *u |= 0x1f; // upper rounding
 #endif
     if (d<0 && calc_mode(contextptr)==38)
       return "−"+print_DOUBLE_(-d,contextptr);
