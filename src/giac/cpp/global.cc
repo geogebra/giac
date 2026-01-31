@@ -438,7 +438,7 @@ const size_t buflen=(1<<16);
 int numworks_maxtarsize=0x200000-0x10000;
 #else
 #ifdef NUMWORKS_SLOTAB
-int numworks_maxtarsize=0x60000;
+int numworks_maxtarsize=0x400000;
 #else
 int numworks_maxtarsize=0x600000-0x10000;
 #endif
@@ -1418,13 +1418,13 @@ bool dfu_send_apps(const char * fname){
   return !dfu_exec(s.c_str());
 }
 
-bool dfu_send_slotab(const char * fnamea,const char * fnameb1,const char * fnameb2){
+bool dfu_send_slotab(const char * fnamea1,const char * fnamea2,const char * fnameb1,const char * fnameb2){
   size_t start,taille; char altdfu;
   if (!dfu_get_scriptstore_addr(start,taille,altdfu))
     return false;
   string s;
-  if (fnamea){
-    s=string("dfu-util -i0 -a0 -s 0x90260000 -D ")+ fnamea;
+  if (fnamea1 && fnamea2){
+    s=string("dfu-util -i0 -a0 -s 0x90260000 -D ")+ (start>=0x24000000?fnamea1:fnamea2);
     if (dfu_exec(s.c_str()))
       return false;
   }
@@ -1457,13 +1457,24 @@ bool dfu_get_slot(const char * fname,int slot){
   case 2:
     s += "0x90180000:0x80000";
     break;
+  case 0:
+    s += "0x90000000:0x200000";
+    break;
+  case 26:
+    s += "0x90260000:0x190000";
+    break;
+  case 40:
+    s += "0x90400000:0x3f0000";
+    break;
   default:
     return false;
-  } 
-  s += " -U ";
+  }
+  s += ":force -U ";
   s += fname;
   if (dfu_exec(s.c_str()))
     return false;
+  if (slot!=1 && slot!=2)
+    return true;
   // exam mode modifies flash sector at offset 0x1000 
   // restore this part to initial values
   FILE * f=fopen(fname,"rb");
@@ -2094,10 +2105,22 @@ namespace giac {
     *logptr(contextptr) << "Verification de signature secteur amorce\n" ;
     if (!sha256_check(sig.c_str(),epsilon,"bootloader.bin")) return false;
 #endif
-    *logptr(contextptr) << "Extraction du firmware externe slot 1\n" ;
-    if (!dfu_get_slot(epsilon,1)) return false;
-    *logptr(contextptr) << "Verification de signature externe slot 1\n" ;
-    if (!sha256_check(sig.c_str(),epsilon,"khi.A.bin")) return false;
+    *logptr(contextptr) << "Extraction du firmware externe slot A\n" ;
+    if (!dfu_get_slot(epsilon,0)) return false;
+    *logptr(contextptr) << "Verification de signature externe slot A\n" ;
+    if (!sha256_check(sig.c_str(),epsilon,"khi.A.bin")){
+      if (!sha256_check(sig.c_str(),epsilon,"epsilona"))
+        return false;
+      // Epsilon >=16 + external apps
+      if (!dfu_get_slot(epsilon,26)) return false;
+      *logptr(contextptr) << "Verification de signature externe KhiCAS A\n" ;
+      if (!sha256_check(sig.c_str(),epsilon,"khi110a")) return false;
+      if (!dfu_get_slot(epsilon,40)) return false;
+      *logptr(contextptr) << "Verification de signature externe KhiCAS B\n" ;
+      if (!sha256_check(sig.c_str(),epsilon,"khi110ab.tar")) return false;
+      return true;
+    }
+    // Khi+Epsilon 15.5
     *logptr(contextptr) << "Extraction du firmware externe slot 2\n" ;
     if (!dfu_get_slot(epsilon,2)) return false;
     *logptr(contextptr) << "Verification de signature externe slot 2\n" ;

@@ -12776,7 +12776,7 @@ int find_plotseq_args(const gen & args,gen & expr,gen & x,double & x0d,double & 
     if (l<2)
       v.push_back(0);
     expr=v[0];
-    niter=30;
+    niter=10;
     gen x0;
     if (l>3){ // expr,var,x0,niter
       x=v[1];

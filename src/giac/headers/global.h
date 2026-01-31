@@ -109,6 +109,8 @@ inline double giac_log(double d){
 extern "C" int ctrl_c_interrupted(int exception);
 extern "C" void console_print(const char * s);
 extern "C" const char * console_prompt(const char * s);
+int giac_readFileSize(const char * buffer,size_t header_offset) ;
+int tar_filesize(int s);
 
 bool dfu_get_scriptstore_addr(size_t & start,size_t & taille,char & altdfu);
 int dfu_get_scriptstore(const char * fname); // returns size
@@ -118,7 +120,7 @@ bool dfu_send_bootloader(const char * fname);
 // send to 0x90000000+offset*0x10000
 bool dfu_send_firmware(const char * fname,int offset);
 bool dfu_send_apps(const char * fname);
-bool dfu_send_slotab(const char * fnamea,const char * fnameb1,const char * fnameb2);
+bool dfu_send_slotab(const char * fnamea1,const char * fnamea2,const char * fnameb1,const char * fnameb2);
 bool dfu_update_khicas(const char * fname); 
 int nwstore_skip_sys(const unsigned char * ptr,int nwstoresize);
 

@@ -139,7 +139,11 @@ extern "C" int flash_filebrowser(const char ** filenames,int maxrecords,const ch
   return tar_filebrowser(flash_buf,filenames,maxrecords,extension);
 }
 #else
+#ifdef NUMWORKS_SLOTAB
+const char * flash_buf=(const char *)0x90400000;
+#else
 const char * flash_buf=(const char *)0x90200000;
+#endif
 #endif
 
 #else // NUMWORKS
