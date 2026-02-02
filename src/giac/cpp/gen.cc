@@ -12861,7 +12861,8 @@ void sprint_double(char * s,double d){
     unsigned char * u = (unsigned char *)(&d);
     *u &= 0xe0;
 #ifdef GIAC_GGB
-    *u |= 0x10; // upper rounding for geogebra
+    if (d!=0)
+      *u |= 0x10; // upper rounding for geogebra
 #endif
 #endif
     if (d<0 && calc_mode(contextptr)==38)
