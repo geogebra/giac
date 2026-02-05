@@ -5999,6 +5999,7 @@ namespace giac {
     if (is_greater(abs(fin-debut),type?max_sum_add(contextptr):LIST_SIZE_LIMIT,contextptr))
       return gendimerr(contextptr);
     vecteur res;
+    double S=0,C=0; bool sumdouble=0; // 1 means adding double
     if (is_strictly_greater(debut,fin,contextptr)){
       if (is_positive(step,contextptr))
 	step=-step;
@@ -6041,12 +6042,39 @@ namespace giac {
 	tmp=evalf(tmp,1,contextptr);
 #endif
         if (!res.empty() && res.back().type<_POLY){
+          if (sumdouble){
+            if (tmp.type==_DOUBLE_){
+              double d=tmp._DOUBLE_val;
+              if (d==0) continue;
+#ifndef DOUBLEVAL
+              unsigned char * u = (unsigned char *)(&d);
+              *u &= 0xe0;
+              *u |= 0x10; // nearest rounding
+#endif
+              double add=S+d;
+              C += S-(add-d); 
+              S = add;
+            }
+            else {
+              sumdouble=false;
+              res.back()=S+C;
+              res.back() += tmp;
+            }
+            continue;
+          }
           if (type==1){
             res.back() = res.back()*tmp;
             continue;
           }
           if (type==2){
             res.back() += tmp;
+#ifndef BIGENDIAN
+            if (res.back().type==_DOUBLE_){
+              sumdouble=true;
+              S=res.back()._DOUBLE_val;
+              C=0;
+            }
+#endif
             continue;
           }
         }
@@ -6055,8 +6083,11 @@ namespace giac {
     }
     if (type==1)
       return _prod(res,contextptr);
-    if (type==2)
+    if (type==2){
+      if (sumdouble)
+        res.back()=S+C;
       return _plus(res,contextptr);
+    }
     return res;// return gen(res,_SEQ__VECT);
   }
 
