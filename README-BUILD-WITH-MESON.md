@@ -98,14 +98,40 @@ for abi in arm arm64 x86 x86_64; do
 done
 ```
 
-Available cross-files:
+#### `configure-cross.sh`
 
-| Cross-file | ABI | Outputs |
+The Android cross-files in `cross/` are **templates** containing `@NDK@` and
+`@NDK_HOST@` placeholders. The `scripts/configure-cross.sh` script replaces
+these placeholders with your actual NDK path and generates ready-to-use files
+in `cross/local/` (which is gitignored).
+
+NDK detection order:
+1. `ANDROID_NDK_HOME` environment variable
+2. Latest version found in `$ANDROID_HOME/ndk/`
+3. Common default locations:
+   - macOS: `~/Library/Android/sdk/ndk/`
+   - Linux: `~/Android/Sdk/ndk/`
+   - CI: `/usr/local/lib/android/sdk/ndk/`
+
+```bash
+# Auto-detect
+./scripts/configure-cross.sh
+
+# Explicit path
+ANDROID_NDK_HOME=/opt/android-ndk-r29 ./scripts/configure-cross.sh
+```
+
+The `build-all.sh` script calls `configure-cross.sh` automatically if
+`cross/local/` does not exist yet.
+
+Available cross-files (templates in `cross/`, generated in `cross/local/`):
+
+| Template | ABI | Outputs |
 |---|---|---|
-| `cross/android-arm.ini` | armeabi-v7a | `libgiac.a`, `libjavagiac.so` |
-| `cross/android-arm64.ini` | arm64-v8a | `libgiac.a`, `libjavagiac.so` |
-| `cross/android-x86.ini` | x86 | `libgiac.a`, `libjavagiac.so` |
-| `cross/android-x86_64.ini` | x86_64 | `libgiac.a`, `libjavagiac.so` |
+| `android-arm.ini` | armeabi-v7a | `libgiac.a`, `libjavagiac.so` |
+| `android-arm64.ini` | arm64-v8a | `libgiac.a`, `libjavagiac.so` |
+| `android-x86.ini` | x86 | `libgiac.a`, `libjavagiac.so` |
+| `android-x86_64.ini` | x86_64 | `libgiac.a`, `libjavagiac.so` |
 
 ### iOS / Mac Catalyst
 
