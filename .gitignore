@@ -5,6 +5,7 @@
 build
 /cbuild64/
 
-# Meson build directories
+# Meson build directories and local cross-files
 builddir*/
 subprojects/
+cross/local/

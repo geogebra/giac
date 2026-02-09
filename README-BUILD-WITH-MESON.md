@@ -77,19 +77,23 @@ Cross-compilation uses prebuilt static GMP/MPFR libraries bundled in
 
 ### Android
 
-Requires the [Android NDK](https://developer.android.com/ndk). Edit the
-cross-file to set your NDK path (the `ndk` constant in `[constants]`).
+Requires the [Android NDK](https://developer.android.com/ndk). The cross-files
+ship with `@NDK@` placeholders — configure them before first use:
 
 ```bash
-# Edit cross/android-arm64.ini and set ndk = '/path/to/your/ndk'
+# Auto-detect NDK from ANDROID_NDK_HOME, ANDROID_HOME, or common locations
+./scripts/configure-cross.sh
 
-# Build for a single ABI
-meson setup builddir-android-arm64 --cross-file cross/android-arm64.ini
+# Or specify explicitly
+ANDROID_NDK_HOME=/path/to/ndk ./scripts/configure-cross.sh
+
+# Build for a single ABI (use generated files from cross/local/)
+meson setup builddir-android-arm64 --cross-file cross/local/android-arm64.ini
 meson compile -C builddir-android-arm64
 
 # Build for all 4 ABIs
 for abi in arm arm64 x86 x86_64; do
-  meson setup builddir-android-$abi --cross-file cross/android-$abi.ini
+  meson setup builddir-android-$abi --cross-file cross/local/android-$abi.ini
   meson compile -C builddir-android-$abi
 done
 ```
@@ -302,6 +306,7 @@ cross/                   # Cross-compilation files
   windows-clang64.ini
 scripts/
   build-all.sh           # Build all platforms
+  configure-cross.sh     # Generate Android cross-files from NDK path
   embed-wasm.sh          # WASM base64 post-processing
   build-xcframework.sh   # iOS xcframework assembly
 ```

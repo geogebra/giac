@@ -178,8 +178,16 @@ fi
 
 if [[ " ${PLATFORMS[*]} " == *" android "* ]]; then
     log_header "Android"
+    # Auto-configure cross-files if cross/local/ doesn't exist yet
+    if [ ! -d cross/local ] || [ ! -f cross/local/android-arm64.ini ]; then
+        echo "  Configuring Android cross-files..."
+        if ! "$SCRIPT_DIR/configure-cross.sh"; then
+            record_result "android (all)" "SKIP" "NDK not found — run: ANDROID_NDK_HOME=/path/to/ndk ./scripts/configure-cross.sh"
+            PLATFORMS=("${PLATFORMS[@]/android/}")
+        fi
+    fi
     for abi in arm arm64 x86 x86_64; do
-        crossfile="cross/android-${abi}.ini"
+        crossfile="cross/local/android-${abi}.ini"
         builddir="builddir-android-${abi}"
         if [ ! -f "$crossfile" ]; then
             record_result "android-${abi}" "SKIP" "cross-file not found"
