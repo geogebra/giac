@@ -84,6 +84,8 @@ common_defines = [
 # ---------- Platform-conditional defines ----------
 
 platform_defines = []
+is_ios = false
+is_catalyst = false
 
 if host_machine.system() == 'linux'
   platform_defines += [
@@ -96,9 +98,12 @@ if host_machine.system() == 'linux'
   ]
 elif host_machine.system() == 'darwin'
   # Check if this is iOS/Catalyst via subsystem (Meson >= 1.2.0)
-  is_ios = false
-  if host_machine.subsystem() == 'ios'
-    is_ios = true
+  # iOS cross-files set subsystem='ios', Catalyst set subsystem='macos'
+  host_subsystem = host_machine.subsystem()
+  is_ios = host_subsystem == 'ios'
+  is_catalyst = meson.is_cross_build() and host_subsystem == 'macos'
+  if is_ios or is_catalyst
+    # iOS and Mac Catalyst share the same defines
     platform_defines += [
       '-DAPPLE_SMART',
       '-DNO_GETTEXT',
@@ -106,11 +111,12 @@ elif host_machine.system() == 'darwin'
       '-DOSX_10_9_CXX',
       '-DHAVE_CONFIG_H',
       '-D_IOS_FIX_',
+      '-DHAVE_UNISTD_H',
       '-DHAVE_SYS_TIMES_H',
       '-DHAVE_SYS_TIME_H',
     ]
   else
-    # macOS desktop
+    # macOS desktop (native build)
     platform_defines += [
       '-DHAVE_UNISTD_H',
       '-DAPPLE_SMART',
@@ -180,13 +186,13 @@ endif
 android_inc = []
 if host_machine.system() == 'android'
   if host_machine.cpu_family() == 'arm'
-    android_inc = [include_directories('src/giac/headers/android/arm')]
+    android_inc = [include_directories('src/giac/headers/android/arm-v7')]
   elif host_machine.cpu_family() == 'aarch64'
-    android_inc = [include_directories('src/giac/headers/android/arm64')]
+    android_inc = [include_directories('src/giac/headers/android/arm-v8')]
   elif host_machine.cpu_family() == 'x86'
     android_inc = [include_directories('src/giac/headers/android/x86')]
   elif host_machine.cpu_family() == 'x86_64'
-    android_inc = [include_directories('src/giac/headers/android/x86_64')]
+    android_inc = [include_directories('src/giac/headers/android/x86-64')]
   endif
 endif
 
@@ -277,9 +283,12 @@ giac_dep = declare_dependency(
 
 # ---------- Target: libjavagiac (shared library, conditional on JNI) ----------
 
-jni_dep = dependency('jni', required : get_option('with_jni'))
+# Use vendored JDK headers from src/jni/jdkHeaders/ instead of Meson's
+# dependency('jni') which requires Java as a project language.
+jni_dep = declare_dependency(include_directories : jdk_inc_dirs)
+build_javagiac = not get_option('with_jni').disabled() and host_machine.system() != 'emscripten' and not is_ios and not is_catalyst
 
-if jni_dep.found() and host_machine.system() != 'emscripten'
+if build_javagiac
   javagiac_link_args = []
   javagiac_deps = [giac_dep, jni_dep]
 

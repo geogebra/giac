@@ -4,3 +4,7 @@
 .gems
 build
 /cbuild64/
+
+# Meson build directories
+builddir*/
+subprojects/
