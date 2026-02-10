@@ -2879,7 +2879,7 @@ void horner2(const vdbl & P,dbl x,dbl & r,dbl & r1){
   r=r*x+P[s];
 }
 
-#ifdef HAVE_LIBMPFR
+#if defined HAVE_LIBMPFR && !defined BF2GMP_H
 // computes an estimate of the number of bits of precision lost
 void add(mpfr_t & rr,mpfr_t & ri,const gen & Pi,int nbits,long & loss,long & size){
   long rr0,rr1,delta=0;
@@ -3043,7 +3043,7 @@ bool convert(const gen & g,longdouble & z){
     z=g._DOUBLE_val;
     return true;
   }
-#ifndef USE_GMP_REPLACEMENTS
+#if !defined USE_GMP_REPLACEMENTS && !defined BF2GMP_H
   if (g.type==_REAL){
 #ifdef HAVE_LIBMPFR
     z=mpfr_get_ld(g._REALptr->inf,MPFR_RNDN);
@@ -3070,7 +3070,7 @@ bool convert(const gen & g,longdouble & z){
   mpz_t zz; mpz_init(zz);
   if (l>64){
     // we have 64 bits of mantissa
-#ifdef USE_GMP_REPLACEMENTS
+#if defined USE_GMP_REPLACEMENTS || defined BF2GMP_H
       mpz_tdiv_q_2exp(zz,*g._ZINTptr,l-64);
 #else
       mpz_div_2exp(zz,*g._ZINTptr,l-64);
@@ -3115,7 +3115,7 @@ void Convert(const vfdbl & fP,vdbl & P){
   int s=fP.size();
   P.clear(); P.reserve(s);
   for (int i=0;i<s;++i){
-#if defined HAVE_LIBMPFR && defined LDBL80
+#if defined HAVE_LIBMPFR && defined LDBL80 && !defined BF2GMP_H
     dbl re,im;
     re=accurate_evalf(re,64); im=accurate_evalf(im,64);
     mpfr_set_ld(re._REALptr->inf,fP[i].real(),MPFR_RNDN);
@@ -3313,7 +3313,7 @@ bool sum_inv_diff(const gen & zi,const vdbl & R,int i,gen & p){
   return true;
 }
 
-#ifdef HAVE_LIBMPFR
+#if defined HAVE_LIBMPFR && !defined BF2GMP_H
 void sub(mpfr_t & rr,mpfr_t & ri,const gen & Pi){
   if (Pi.type==_CPLX){
     // const gen * Pir=Pi._CPLXptr; const gen * Pii=(Pi._CPLXptr+1);
@@ -3636,7 +3636,7 @@ bool aberth_singleprec(const vfdbl & P0,int N,double eps,vfdbl & R,int cluster_s
   }
   vfdbl Prev(P),A,B(R);
   bool firstiterhorner=!secular;
-#ifdef HAVE_LIBMPFR
+#if defined HAVE_LIBMPFR && !defined BF2GMP_H
   if (secular){
     firstiterhorner=true;
     int nbitsP2=3*64; 
@@ -4074,7 +4074,7 @@ bool maybe_zero(const dbl & g){
 
 #endif
 
-#ifdef HAVE_LIBMPFR
+#if defined HAVE_LIBMPFR && !defined BF2GMP_H
 // returns 0 on failure (e.g. division by maybe 0), -1 too many iterations, 1 ok, 2 isolated
 int aberth_mpfr(const vdbl & P0,bool realpoly,int & nbits,int N,double eps,vdbl & A,vdbl & B,vdbl & R,vdbl & rayon,int cluster_start,int cluster_afterend,vector<short int> & zi_done,bool certify_lastiter,int isolate,bool secular,GIAC_CONTEXT){
   int neps=std::ceil(-log2(eps));
@@ -4714,7 +4714,7 @@ bool aberth(const vdbl & P0,vdbl & R,vdbl & rayon,int N,double eps,int isolate,b
   vdbl A,B;
   while (bits<=giac::ABERTH_NBITSMAX){
     //zi_done=vector<short int>(deg,0);
-#ifdef HAVE_LIBMPFR    
+#if defined HAVE_LIBMPFR && !defined BF2GMP_H
     int b=do_exact?aberth_z(P,bits,Nmax,eps,R,0,deg,zi_done,contextptr):aberth_mpfr(P,realpoly,bits,Nmax,eps,A,B,R,rayon,0,P.size()-1,zi_done,true,isolate,true/* secular*/,contextptr);
 #else
     int b=aberth_z(P,bits,Nmax,eps,R,0,deg,zi_done,contextptr);

@@ -705,6 +705,7 @@ $$ = symbolic(*$2._FUNCptr,gen(makevecteur($1,python_compat(giac_yyget_extra(sca
 	;
 
 symbol_for : T_SYMBOL { $$=$1; }
+        | T_SYMBOL T_VIRGULE T_SYMBOL { $$=makesequence($1,$3);}
 	| T_UNARY_OP { $$=$1; } 
 	| T_UNARY_OP_38 { $$=$1; } 
 	;

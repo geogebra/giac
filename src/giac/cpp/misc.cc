@@ -78,6 +78,27 @@ const char * mp_hal_input(const char * prompt) ;
 namespace giac {
 #endif // ndef NO_NAMESPACE_GIAC
 
+  gen _enumerate(const gen & g,GIAC_CONTEXT){
+    if (g.type!=_VECT)
+      return gentypeerr(contextptr);
+    gen gv(g),start(0);
+    if (g.subtype==_SEQ__VECT && g._VECTptr->size()==2){
+      start=g._VECTptr->back();
+      gv=g._VECTptr->front();
+      if (gv.type!=_VECT)
+        return gentypeerr(contextptr);
+    }
+    const vecteur & v =*gv._VECTptr;
+    vecteur res; res.reserve(v.size());
+    for (int i=0;i<v.size();++i){
+      res.push_back(makevecteur(start+i,v[i]));
+    }
+    return res;
+  }
+  static const char _enumerate_s []="enumerate";
+  static define_unary_function_eval (__enumerate,&_enumerate,_enumerate_s);
+  define_unary_function_ptr5( at_enumerate ,alias_at_enumerate,&__enumerate,0,true);
+
   gen _scalar_product(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (args.type!=_VECT || args._VECTptr->size()!=2)
@@ -11017,6 +11038,7 @@ void sync_screen(){}
   static const char _mkdir_s []="mkdir";
   static define_unary_function_eval (__mkdir,&_locate,_mkdir_s);
   define_unary_function_ptr5( at_mkdir ,alias_at_mkdir,&__mkdir,0,true);
+
   
 #endif // UNISTD
 

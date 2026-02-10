@@ -7067,6 +7067,56 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     vecteur attributs(1,default_color(contextptr));
     vecteur v(seq2vecteur(args));
     gen g;
+    if (v.size()==2 && v.back().type==_INT_){
+      int n=v.back().val,dim=0;
+      g=v.front();
+      if (g.type==_VECT && g._VECTptr->size()==2){
+        if (g._VECTptr->back().type!=_INT_)
+          return gentypeerr(contextptr);
+        dim=g._VECTptr->back().val;
+        if (dim<1)
+          return gendimerr(contextptr);
+        g=g._VECTptr->front();
+      }
+      if (g.type==_MOD){
+        gen pg=*(g._MODptr+1);
+        if (pg.type!=_INT_)
+          return gentypeerr(contextptr);
+        int p=pg.val;
+        if (!dim) return makemod(n%p,p);
+        vecteur res; res.reserve(dim);
+        for (int i=0;i<dim;++i){
+          res.push_back(makemod(n%p,p));
+          n/=p;
+        }
+        return res;
+      }
+#ifndef NO_RTTI
+      if (g.type==_USER){
+        if (galois_field * ptr=dynamic_cast<galois_field *>(g._USERptr)){
+          gen pg=ptr->p;
+          gen P=char2_uncoerce(ptr->P);
+          if (pg.type==_INT_ && P.type==_VECT && !P._VECTptr->empty()){
+            int p=pg.val;
+            int d=P._VECTptr->size()-1;
+            int J=dim; if (J==0) J=1;
+            vecteur res(J);
+            for (int j=0;j<J;++j){
+              vecteur a(d);
+              for (int i=0;i<d;++i){
+                a[i]=n%p;
+                n/=p;
+              }
+              trim_inplace(a);
+              res[j]=galois_field(p,P,ptr->x,a);
+            }
+            return dim?res:res.front();
+          }
+        }
+      }
+#endif
+      
+    }
     int s=read_attributs(v,attributs,contextptr);
     if (!s)
       return gendimerr(contextptr);

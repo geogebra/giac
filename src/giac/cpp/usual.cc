@@ -7803,8 +7803,30 @@ namespace giac {
     if ( args.type==_STRNG && args.subtype==-1) return  args;
     if (ckmatrix(args))
       return apply(args._VECTptr->front(),args._VECTptr->back(),perm);
-    if ( (args.type!=_VECT) || (args._VECTptr->size()!=2))
+    if (args.type!=_VECT)
       return gentypeerr(contextptr);
+    int n=args._VECTptr->size();
+    if (n!=2 || args.subtype!=_SEQ__VECT){
+      // enumerate all permutations
+      gen gN=factorial(n);
+      if (gN.type!=_INT_ || gN.val>LIST_SIZE_LIMIT)
+        return gendimerr(contextptr);
+      vecteur res;
+      res.reserve(gN.val);
+      vecteur & v=*args._VECTptr;
+      vector<int> cur(n);
+      for (int i=0;i<n;++i)
+        cur[i]=i;
+      vecteur V(n);
+      for (;;){
+        for (int j=0;j<n;++j)
+          V[j]=v[cur[j]];
+        res.push_back(V);
+        if (!next_permutation(cur.begin(),cur.end()))
+          break;
+      }
+      return res;
+    }
     if ( (args._VECTptr->front().type!=_INT_) || (args._VECTptr->back().type!=_INT_) )
       return _factorial(args._VECTptr->front(),contextptr)/_factorial(args._VECTptr->front()-args._VECTptr->back(),contextptr);
     if (args._VECTptr->front().val<args._VECTptr->back().val)
