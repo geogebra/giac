@@ -32,6 +32,7 @@
  */
 
 #include "giacPCH.h"
+#include "modpoly.h"
 
 using namespace std;
 #if !defined NSPIRE && !defined FXCG && !defined KHICAS 
