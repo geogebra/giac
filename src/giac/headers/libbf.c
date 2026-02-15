@@ -1,3 +1,4 @@
+#ifndef GIAC_JULIA
 /*
  * Tiny arbitrary precision floating point library
  * 
@@ -8478,3 +8479,4 @@ int bf_get_fft_size(int *pdpl, int *pnb_mods, limb_t len)
 }
 
 #endif /* !USE_FFT_MUL */
+#endif // GIAC_JULIA

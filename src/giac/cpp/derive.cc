@@ -585,8 +585,22 @@ namespace giac {
       return symb_equal(derive(e._SYMBptr->feuille[0],vars,contextptr),
 			derive(e._SYMBptr->feuille[1],vars,contextptr));
     switch (vars.type){
-    case _INT_:
+    case _INT_: {
+      if (vars.val>=0 && e.is_symb_of_sommet(at_program)){
+        const gen & f =e._SYMBptr->feuille;
+        if (f.type==_VECT && f._VECTptr->size()==3){
+          gen fvars=f[0];
+          gen fexpr=f[2];
+          if (fvars.type==_VECT && vars.val<fvars._VECTptr->size()){
+            gen x=(*fvars._VECTptr)[vars.val];
+            gen res=derive(fexpr,x,contextptr);
+            res=symb_program(makesequence(fvars,f[1],res));
+            return res;
+          }
+        }
+      }
       return symbolic(at_derive,makesequence(e,vars));
+    }
     case _IDNT:
       return derive(e,*vars._IDNTptr,contextptr);
     case _VECT:

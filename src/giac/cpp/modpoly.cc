@@ -10738,7 +10738,7 @@ namespace giac {
   }
 
   int binary_content(const modpoly & v){
-#if defined USE_GMP_REPLACEMENTS || defined BF2GMP
+#if defined USE_GMP_REPLACEMENTS || defined BF2GMP_H
     return 0;
 #else
     int res=-1;
