@@ -2877,12 +2877,16 @@ namespace giac {
     if (s==2)
       x=v[1];
     gen f(_e2r(gen(makevecteur(v[0],x),_SEQ__VECT),contextptr));
-    gen deno(1);
+    gen deno(1);int shift=0;
     if (f.type==_FRAC){
       deno=f._FRACptr->den;
+      if (deno.type==_VECT){
+        shift=deno._VECTptr->size()-1;
+        deno=deno._VECTptr->front();
+      }
       f=f._FRACptr->num;
     }
-    if (f.type!=_VECT){
+    if (f.type!=_VECT && shift==0){
       switch(service){
       case -1:
 	return makevecteur(f)/deno;
@@ -2899,6 +2903,7 @@ namespace giac {
 	  return f;
       }
     }
+    f=gen2vecteur(f);
     switch (service){
     case -1:
       return f/deno;
@@ -2911,8 +2916,8 @@ namespace giac {
       return _icontent(makesequence(f,lvar(f)),contextptr)/(is_integer(deno)?deno:plus_one);
     }
     vecteur & w=*f._VECTptr;
-    int ss=int(w.size());
-    if (service>=ss)
+    int ss=int(w.size())-shift;
+    if (service>=ss || ss-service-1<0)
       return zero;
     return w[ss-service-1]/deno;
   }
@@ -2964,8 +2969,26 @@ namespace giac {
 	return undef;
       }
       is_integral(v.back());
-      if (v.back().val<0)
+      if (v.back().val<0){
+        if (v.size()==2 || v.size()==3){
+          int n=v.back().val;
+          v.pop_back();
+          gen D=_denom(v.front(),contextptr);
+          gen N=ratnormal(D*v.front(),contextptr);
+          gen x(vx_var);
+          if (v.size()==2)
+            x=v[1];
+          gen deg=_degree(makesequence(D,x),contextptr);
+          if (deg.type==_INT_){
+            int shift=deg.val;
+            if (shift+n>=0){
+              gen DD=_lcoeff(makesequence(D,x),contextptr);
+              return ratnormal(_coeff(makesequence(N,x,shift+n),contextptr)/DD,contextptr);
+            }
+          }
+        }
 	return gendimerr(contextptr);
+      }
       int n=absint(v.back().val);
       v.pop_back();
       if (v.size()==1 && v.front().type==_USER){

@@ -11001,20 +11001,31 @@ namespace giac {
   define_unary_function_ptr5( at_Ei0 ,alias_at_Ei0,&__Ei0,0,true); /* FIXME should not registered */
 
 #if 1
-  // l1:=log(x);l2:=log(l1);ws4:=l1-l2+l2/l1+l2*(-2+l2)/2l1^2+l2*(6-9l2+2l2^2)/6/l1^3+l2*(-12+36l2-22l2^2+3l2^3)/12/l1^4;
+  // l1:=log(x);l2:=log(l1);
+  // ws4:=l1-l2+l2/l1+l2*(-2+l2)/2l1^2+l2*(6-9l2+2l2^2)/6/l1^3+
+  //      l2*(-12+36l2-22l2^2+3l2^3)/12/l1^4+
+  //      horner(poly1[1/5,-25/12,35/6,-5,1,0],l2)/l1^5+
+  //      horner([1/6,-137/60,75/8,-85/6,15/2,-1,0])/l1^6+
+  //      horner([1/7,-49/20,203/15,-245/8,175/6,-21/2,1,0])/l1^7+...
   // Ws=W(log(x))-ws4
   static gen ws4(const gen x,GIAC_CONTEXT){
     gen l1=ln(x,contextptr);
     gen l2=ln(l1,contextptr);
-    return l1-l2+l2/l1+l2*(-2+l2)/2/l1/l1+l2*(6-9*l2+2*l2*l2)/6/l1/l1/l1+l2*(-12+36*l2-22*l2*l2+3*l2*l2*l2)/12/l1/l1/l1/l1;
+    gen l5=horner(makevecteur(12,-125,350,-300,60,0),l2,contextptr)/60;
+    gen l6=horner(makevecteur(20,-274,1125,-1700,900,-120,0),l2,contextptr)/120;
+    gen l7=horner(makevecteur(120,-2058,11368,-25725,24500,-8820,840,0),l2,contextptr)/840;
+    gen l8=horner(makevecteur(315,-6534,45962,-142149,205800,-135240,35280,-2520,0),l2,contextptr)/2520;
+    gen l9=horner(makevecteur(280,-6849,59062,-235494,471429,-476280,229320,-45360,2520,0),l2,contextptr)/2520;
+    return l1-l2+l2/l1+l2*(-2+l2)/2/l1/l1+l2*(6-9*l2+2*l2*l2)/6/l1/l1/l1+l2*(-12+36*l2-22*l2*l2+3*l2*l2*l2)/12/l1/l1/l1/l1
+      +l5/pow(l1,5)+l6/pow(l1,6)+l7/pow(l1,7)+l8/pow(l1,8)+l9/pow(l1,9);
   }
   static gen taylor_LambertWs(const gen & lim_point,const int ordre,const unary_function_ptr & f, int direction,gen & shift_coeff,GIAC_CONTEXT){
     if (ordre<0)
       return 0;
     if (!is_inf(lim_point))
       return taylor(lim_point,ordre,f,0,shift_coeff,contextptr);//gensizeerr(contextptr);
-    shift_coeff=5;
-    if (ordre>5) return undef;
+    shift_coeff=10;
+    if (ordre>10) return undef;
     return vecteur(1,0);
   }
   gen _LambertWs(const gen & g,GIAC_CONTEXT);
