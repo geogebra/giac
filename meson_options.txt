@@ -1,0 +1,10 @@
+option('giac_version', type : 'string', value : '1.2.4',
+       description : 'Giac version string for -DVERSION')
+option('with_jni', type : 'feature', value : 'auto',
+       description : 'Build JNI shared library (auto = build if JDK found)')
+option('with_minigiac', type : 'boolean', value : true,
+       description : 'Build minigiac executable (native desktop only)')
+option('with_simpleinterface', type : 'boolean', value : false,
+       description : 'Build SimpleInterface static library (iOS/Catalyst)')
+option('with_wasm_embed', type : 'boolean', value : true,
+       description : 'Post-process WASM into single embedded JS file')
