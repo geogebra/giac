@@ -419,6 +419,7 @@ namespace giac {
   
   gen _table(const gen & args,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_table;
+  extern const unary_function_ptr * const  at_dict;
   
   // usual multiargs
   // for multiargs we use _name for the corresponding "unary" function

@@ -3490,8 +3490,11 @@ namespace giac {
 	if (name[bl-2]=='_'){
 	  switch (name[bl-1]){
 	  case 'd':
-	    if (a.type!=_INT_ && a.type!=_DOUBLE_ && a.type!=_FRAC)
-	      return gensizeerr(gettext("Unable to convert to float (in sto) ")+a.print(contextptr));
+	    if (a.type!=_INT_ && a.type!=_DOUBLE_ && a.type!=_FRAC){
+              string msg=gettext("Unable to convert to float (in sto) ")+a.print(contextptr);
+              *logptr(contextptr) << "Float typed variable error: " << msg << "\n"; // insure something is reported (error might be catched and hard to debug)
+	      return gensizeerr(msg);
+            }
 	    break;
 	  case 'f':
 	    if (a.type==_FRAC)
@@ -3504,13 +3507,19 @@ namespace giac {
 	      return sto(i,b,in_place,contextptr);
 	    }
 	    if (a.type!=_INT_){
-	      if (a.type!=_ZINT || mpz_sizeinbase(*a._ZINTptr,2)>62)
-		return gensizeerr(gettext("Unable to convert to integer (in sto) ")+a.print(contextptr));
+	      if (a.type!=_ZINT || mpz_sizeinbase(*a._ZINTptr,2)>62){
+		string msg=gettext("Unable to convert to integer (in sto) ")+a.print(contextptr);
+                *logptr(contextptr) << "Integer typed variable error: " << msg << "\n"; // insure something is reported (error might be catched and hard to debug)
+                return gensizeerr(msg);
+              }
 	    }
 	    break;
 	  case 'v':
-	    if (a.type!=_VECT)
-	      return gensizeerr(gettext("Unable to convert to vector (in sto) ")+a.print(contextptr));
+	    if (a.type!=_VECT){
+	      string msg=gettext("Unable to convert to vector (in sto) ")+a.print(contextptr);
+              *logptr(contextptr) << "Vector typed variable error: " << msg << "\n"; // insure something is reported (error might be catched and hard to debug)
+              return gensizeerr(msg);
+            }
 	    break;
 	  case 's':
 	    if (a.type!=_STRNG)
@@ -6117,6 +6126,9 @@ namespace giac {
   static const char _table_s []="table";
   static define_unary_function_eval (__table,&_table,_table_s);
   define_unary_function_ptr5( at_table ,alias_at_table,&__table,0,true);
+  static const char _dict_s []="dict";
+  static define_unary_function_eval (__dict,&_table,_dict_s);
+  define_unary_function_ptr5( at_dict ,alias_at_dict,&__dict,0,true);
 
   string printasand(const gen & feuille,const char * sommetstr,GIAC_CONTEXT){
     if (abs_calc_mode(contextptr)==38)
@@ -7758,6 +7770,13 @@ namespace giac {
   gen comb(const gen & a_orig,const gen &b_orig,GIAC_CONTEXT){
     gen a=double_is_int(a_orig,contextptr);
     gen b=double_is_int(b_orig,contextptr);
+    if ( (a.type!=_INT_ || a.val<0) && b.type==_INT_ && b.val>0){
+      gen c=a;
+      for (int i=1;i<b.val;++i){
+        c=c*(a-i);
+      }
+      return c/factorial(b.val);
+    }
     if (a.type!=_INT_ || b.type!=_INT_)
       return Gamma(a+1,contextptr)/Gamma(b+1,contextptr)/Gamma(a-b+1,contextptr);
     if (a.val<0 || b.val<0){

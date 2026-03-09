@@ -3996,6 +3996,12 @@ namespace giac {
   }
 
   gen _tests(const gen & g0,GIAC_CONTEXT){
+    charptr_gen * beg=builtin_lexer_functions_begin(),*end=builtin_lexer_functions_end() ;
+    vecteur l; l.reserve(end-beg);
+    for (;beg!=end;++beg){
+      l.push_back(string2gen(beg->first,false));
+    }
+    return l;
     if (g0.type==_VECT){
       vecteur & v =*g0._VECTptr;
       if (v.size()>=3){
@@ -4070,6 +4076,32 @@ namespace giac {
   static define_unary_function_eval(__tests,&_tests,_tests_s);
   define_unary_function_ptr5( at_tests ,alias_at_tests,&__tests,0,T_UNARY_OP);
 
+  gen _dir(const gen & g,GIAC_CONTEXT){
+    charptr_gen * beg=builtin_lexer_functions_begin(),*end=builtin_lexer_functions_end() ;
+    vecteur l; 
+    char buf[256]={0};
+    if (g.type==_IDNT)
+      strncpy(buf,g._IDNTptr->name().c_str(),sizeof(buf)-1);
+    if (g.type==_STRNG)
+      strncpy(buf,g._STRNGptr->c_str(),sizeof(buf)-1);
+    int s=strlen(buf);
+    if (s){
+      for (;beg!=end;++beg){
+        if (strncmp(buf,beg->first,s)==0)
+          l.push_back(string2gen(beg->first,false));
+      }
+      return l;
+    }
+    l.reserve(end-beg);
+    for (;beg!=end;++beg){
+      l.push_back(string2gen(beg->first,false));
+    }
+    return l;
+  }
+  static const char _dir_s[]="dir";
+  static define_unary_function_eval(__dir,&_dir,_dir_s);
+  define_unary_function_ptr5( at_dir ,alias_at_dir,&__dir,0,T_UNARY_OP);
+  
   gen _CHOOSE(const gen & args,GIAC_CONTEXT){
     if ( args.type==_STRNG &&  args.subtype==-1) return  args;
     if (args.type!=_VECT || args._VECTptr->size()<3)

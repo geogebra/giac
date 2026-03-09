@@ -9213,7 +9213,7 @@ namespace giac {
 	    return gensizeerr(gettext("Invalid map"));
 	  return res;
 	}
-	if (f==at_table){
+	if (f==at_table || f==at_dict){
 	  g.subtype=0;
 	  return g;
 	}
@@ -9233,7 +9233,7 @@ namespace giac {
 	  g.subtype=_SEQ__VECT;
 	  return g;
 	}
-	if (f==at_table){
+	if (f==at_table || f==at_dict){
 	  const vecteur & m = *g._VECTptr;
 	  // conversion to sparse matrix
 	  gen_map M;
@@ -9989,7 +9989,7 @@ namespace giac {
       }
       args=args._SYMBptr->sommet;
     }
-    string argss=args.print(contextptr);
+    string argss=args.type==_STRNG?*args._STRNGptr:args.print(contextptr);
     // remove space at the end if required
     while (!argss.empty() && argss[argss.size()-1]==' ')
       argss=argss.substr(0,argss.size()-1);
