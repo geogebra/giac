@@ -1392,10 +1392,11 @@ namespace giac {
       return res+"^{"+gen2tex(v.back(),contextptr)+'}';
     }
     s = opstring +"\\left(";
+    s += begin_VECT_string(feu.subtype,true,contextptr);
     for (int i=0;;++i){
       s += gen2tex((*(feu._VECTptr))[i],contextptr);
       if (i==l-1)
-	return s+"\\right)";
+	return s+end_VECT_string(feu.subtype,true,contextptr)+"\\right)";
       s += ',';
     }
   }
@@ -1429,7 +1430,7 @@ namespace giac {
 	return spread2tex(*e._VECTptr,1,contextptr);
       if (!e._VECTptr->empty() && e._VECTptr->back().is_symb_of_sommet(at_pnt) && !is3d(e._VECTptr->back()) )
 	return vectpnt2tex(e,contextptr);
-      if (ckmatrix(*e._VECTptr))
+      if (e.subtype!=_SEQ__VECT && ckmatrix(*e._VECTptr))
 	return matrix2tex(*e._VECTptr,contextptr);
       else
 	return _VECT2tex(*e._VECTptr,e.subtype,contextptr);
@@ -1444,7 +1445,7 @@ namespace giac {
     case _STRNG:
       return idnt2tex(*e._STRNGptr);
     case _FUNC:
-      return idnt2tex(e.print(contextptr));
+      return idnt2tex(e._FUNCptr->ptr()->print(contextptr));// idnt2tex(e.print(contextptr));
     case _USER:
       return e._USERptr->texprint(contextptr);
     case _MOD:

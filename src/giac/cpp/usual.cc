@@ -9356,6 +9356,10 @@ namespace giac {
   static define_unary_function_eval4_index (166,__normalmod,&_normalmod,_normalmod_s,&printsommetasnormalmod,&texprintsommetasoperator);
   define_unary_function_ptr( at_normalmod ,alias_at_normalmod ,&__normalmod);
 
+  static const char _zn_s []="zn";
+  static define_unary_function_eval (__zn,&_normalmod,_zn_s);
+  define_unary_function_ptr5( at_zn ,alias_at_zn,&__zn,0,true);
+  
   // a=expression, x variable, n=number of terms, 
   // compute an approx value of sum((-1)^k*a(k),k,0,+infinity)
   // using Chebychev polynomials

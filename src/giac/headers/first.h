@@ -15,6 +15,9 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #ifdef __clang__ // _LIBCPP_VERSION
+#ifdef _LIBCPP_HARDENING_MODE
+#undef _LIBCPP_HARDENING_MODE
+#endif
 #define _LIBCPP_HARDENING_MODE _LIBCPP_HARDENING_MODE_NONE
 #endif
 #undef max

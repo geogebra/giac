@@ -202,7 +202,7 @@ namespace giac {
     if (!l)
       return string("()");
     int c=m.front()._VECTptr->size();
-    string s("<mrow><mo>(</mo><mtable>");
+    string s("<mrow><mo stretchy='true' symmetric='true'>[</mo><mtable>");
     for (int i=0;i<l;++i){
       s+="<mtr>"; 
       for (int j=0;j<c;++j){
@@ -210,7 +210,7 @@ namespace giac {
       }
       s+= "</mtr>"; 
     }
-    s += "</mtable><mo>)</mo></mrow>";
+    s += "</mtable><mo stretchy='true' symmetric='true'>]</mo></mrow>";
     return s;
   }
 
@@ -750,6 +750,20 @@ namespace giac {
     return false;
   }
 
+  // add a giac-data field to the svg
+  // NB; may require to escape ' inside g.print() 
+  string adddata(const gen & g,const char * buffer){
+    string res=buffer;
+    int l=res.find("<svg");
+    if (l>=0 && l<res.size()){
+      l=res.find(">");
+    }
+    if (l>0 && l<res.size()){
+      res = res.substr(0,l-1)+" data-giac='"+g.print(context0)+"'"+res.substr(l,res.size()-l);
+    }
+    return res;
+  }
+
   // before making a user transformation on the frame, 
   // collect pixon instructions in g
   string svg_preamble_pixel(const gen &g,double svg_width_cm, double svg_height_cm,double xmin,double xmax,double ymin,double ymax,bool ortho,bool xml,int color){
@@ -790,7 +804,7 @@ namespace giac {
       sprintf(pos,"width=\"320\" height=\"240\">\n");
       pos=buffer+strlen(buffer);
       sprintf(pos,"%s",pixons.c_str());
-      return buffer;
+      return adddata(g,buffer);
     }
     if (ortho){
       sprintf(pos,"width=\"%.5gcm\" height=\"%.5gcm\" ",svg_width_cm+2,svg_height_cm+1);
@@ -817,7 +831,7 @@ namespace giac {
     double i_min_y= std::ceil(ymin/dy);
     // check axe=0 inside g
     if (axes_off(g))
-      return buffer;
+      return adddata(g,buffer);
     //grille  
     double x,y;
     double xthickness((xmax-xmin)/svg_epaisseur1/3),ythickness((ymax-ymin)/svg_epaisseur1/3);
@@ -860,7 +874,7 @@ namespace giac {
     pos=buffer+strlen(buffer);
     // sortie<<"<rect stroke=\""<<"black"<<"\"  stroke-width=\""<<2*thickness<<"\" fill=\"none\" x=\""<<xmin<<"\" y=\""<<ymin<<"\" width=\""<<svg_width<<"\" height=\""<<svg_height<<"\" />"<<'\n';  
     // string s=sortie.str();
-    return buffer;
+    return adddata(g,buffer);
   }
 
   string svg_preamble_pixel(const gen &g,double svg_width_cm, double svg_height_cm,bool xml,int color){
@@ -1728,7 +1742,11 @@ namespace giac {
 	   (myfeuille._VECTptr->back()==fraction(minus_one,plus_two) ) )
 	return "<mfrac><mn>1</mn><msqrt>"+gen2mathml(myfeuille._VECTptr->front(),contextptr)+"</msqrt></mfrac>";
       string s0=gen2mathml((*(myfeuille._VECTptr))[0],contextptr),s1=gen2mathml((*(myfeuille._VECTptr))[1],contextptr);
+#if 1
+string s_bra = "<msup><mrow><mo>(</mo><mrow>" + s0 + "</mrow><mo>)</mo></mrow><mrow>" + s1 + "</mrow></msup>";
+#else
       string s_bra="<msup><mfenced open=\"(\" close=\")\"><mrow>("+s0+")</mrow></mfenced><mrow>"+s1+"</mrow></msup>";
+#endif
       string s_no_bra= "<msup><mrow> "+s0+"</mrow><mrow>"+s1+"</mrow></msup>";
       if (myfeuille._VECTptr->front().type==_SYMB){
 

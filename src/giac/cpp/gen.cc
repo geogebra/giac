@@ -5057,7 +5057,7 @@ namespace giac {
     if ( (a.is_symb_of_sommet(at_interval) || adeuxpoints)&& a._SYMBptr->feuille.type==_VECT && a._SYMBptr->feuille._VECTptr->size()==2)
       return symbolic(a._SYMBptr->sommet,makesequence(a._SYMBptr->feuille._VECTptr->front()+b,a._SYMBptr->feuille._VECTptr->back()+b)); // removed +(adeuxpoints?minus_one:zero) otherwise slicing like v[1:4] does not work
     if (a.is_symb_of_sommet(at_unit)){
-      if (is_zero(b))
+      if (is_exactly_zero(b))
 	return a;
       if (equalposcomp(lidnt(b),cst_pi)!=0)
 	return sym_add(a,evalf(b,1,contextptr),contextptr);
@@ -5079,7 +5079,7 @@ namespace giac {
       }
     }
     if (b.is_symb_of_sommet(at_unit)){
-      if (is_zero(a))
+      if (is_exactly_zero(a))
 	return b;
       if (equalposcomp(lidnt(a),cst_pi)!=0)
 	return sym_add(evalf(a,1,contextptr),b,contextptr);
@@ -13411,10 +13411,10 @@ void sprint_double(char * s,double d){
     //COUT << window_xmin << " " << window_xmax << " " << window_ymin << " " << window_ymax << '\n';
     //g=_symetrie(makesequence(_droite(makesequence(0,1),contextptr),g),contextptr);
     //S='"'+svg_preamble(7,7,gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,ortho,false,default_color(contextptr))+gen2svg(g,contextptr)+svg_grid(gnuplot_xmin,gnuplot_xmax,gnuplot_ymin,gnuplot_ymax,default_color(contextptr))+"</svg>\"";
-    S='"'+svg_preamble_pixel(g,gwidth,gwidth*gratio,window_xmin,window_xmax,window_ymin,window_ymax,ortho,false,default_color(contextptr));
+    S = '"'+svg_preamble_pixel(g,gwidth,gwidth*gratio,window_xmin,window_xmax,window_ymin,window_ymax,ortho,false,default_color(contextptr));
     plot_attr P;
     title_legende(g,P);
-    S= S+(gen2svg(g,window_xmin,window_xmax,window_ymin,window_ymax,ratio/gratio,contextptr,false)+(axes?svg_grid(window_xmin,window_xmax,window_ymin,window_ymax,P,default_color(contextptr))+"</svg>\"":""));
+    S = S+(gen2svg(g,window_xmin,window_xmax,window_ymin,window_ymax,ratio/gratio,contextptr,false)+(axes?svg_grid(window_xmin,window_xmax,window_ymin,window_ymax,P,default_color(contextptr))+"</svg>\"":""));
 #endif
     return S.c_str();
   }
@@ -17189,19 +17189,23 @@ void sprint_double(char * s,double d){
 	S=g.print(&C);
 #if !defined GIAC_GGB 
 #if defined EMCC || defined EMCC2
-	double add_evalf=EM_ASM_DOUBLE_V({
-	    if (typeof(UI)!=="undefined" && typeof(UI.add_evalf)!="undefined")
-	      return UI.add_evalf*1.0;
-	    return 1.0;
-	  }),
-	  js_bigint=EM_ASM_DOUBLE_V({
-	      if (typeof(UI)!=="undefined" && typeof(UI.js_bigint)!="undefined")
+      double add_evalf=EM_ASM_DOUBLE_V({
+          if (typeof(UI)!=="undefined" && typeof(UI.add_evalf)!="undefined"){
+            console.log("gen.cc add_evalf",UI.addevalf);
+            return UI.add_evalf*1.0;
+          }
+          return 1.0;
+        }),
+        js_bigint=EM_ASM_DOUBLE_V({
+            if (typeof(UI)!=="undefined" && typeof(UI.js_bigint)!="undefined")
 	      return UI.js_bigint*1.0;
 	    return 0.0;
 	  });
 #else
-	double add_evalf=false,js_bigint=false;
+      double add_evalf=false,js_bigint=false;
 #endif
+      if (strncmp(s,"quote(",6)==0)
+        add_evalf=false;
       if (g.type==_FRAC || g.type==_ZINT){
 	if (add_evalf){
 	  S += "=";	  
