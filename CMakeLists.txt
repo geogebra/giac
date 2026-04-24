@@ -8,7 +8,7 @@
 # ${GMP_STATIC} to gmp and ${MPFR_STATIC} to mpfr.
 #
 # If you use the default setting (the static option),
-# you don't need the prerequisities gmp and mpfr below.
+# you don't need the prerequisites gmp and mpfr below.
 #
 # This build machinery does not use config.h. Instead,
 # all definitions are given explicitly.

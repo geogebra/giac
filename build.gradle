@@ -477,7 +477,7 @@ model {
     }
 
     components {
-        // giac static libary
+        // giac static library
         giac(NativeLibrarySpec) {
             targetPlatform 'linux64'
             targetPlatform 'ios_arm64'
@@ -742,7 +742,7 @@ tasks.register('createIosFramework', Copy) {
 
 tasks.register('createIphonesimulatorFramework', Copy) {
     dependsOn createFatIosStaticLibrary
-    description "Creates iPhone Simlator framework"
+    description "Creates iPhone Simulator framework"
     from("${buildDir}/libs/merged/iphonesimulator") {
         include "Giac.a"
         rename "Giac.a", "Giac"
