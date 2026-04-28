@@ -15,8 +15,8 @@ java {
 
 dependencies {
     api 'org.gwtproject:gwt-user:2.12.1',
-        'org.treblereel.gwt.gwtproject.resources:gwt-resources-api:202408061'
-    annotationProcessor 'org.treblereel.gwt.gwtproject.resources:gwt-resources-processor:202408061'
+        'org.treblereel.gwt.gwtproject.resources:gwt-resources-api:202602114'
+    annotationProcessor 'org.treblereel.gwt.gwtproject.resources:gwt-resources-processor:202602114'
 }
 
 compileJava.options.sourcepath = files(processResources.destinationDir).builtBy(processResources)
@@ -33,7 +33,7 @@ tasks.sourcesJar {
     from files(file("build/generated/sources/annotationProcessor/java/main/"))
 }
 
-compileJava.dependsOn prepareJs
+processResources.dependsOn prepareJs
 
 publishing {
     publications {
