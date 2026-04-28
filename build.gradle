@@ -800,11 +800,11 @@ tasks.register('createIosXcframework', Copy) {
 
 tasks.register('cocoapodsZip', Zip) {
     dependsOn 'createIosXcframework'
-    baseName 'Giac'
+    archiveBaseName = 'Giac'
     from("${buildDir}/libs/framework/Giac.xcframework") {
         into "Frameworks/Giac.xcframework"
     }
-    destinationDir = file("${buildDir}/cocoapods/")
+    destinationDirectory = file("${buildDir}/cocoapods/")
 }
 
 tasks.register('installMinigiacExecutable') { dependsOn 'installMinigiacLinux64Executable' }

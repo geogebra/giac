@@ -3,7 +3,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.0'
+        classpath 'com.android.tools.build:gradle:9.2.0'
     }
 }
 plugins {
@@ -17,12 +17,18 @@ repositories {
 }
 
 android {
+    namespace = "fr.grenoble.ufj.giac"
     compileSdkVersion 30
-    buildToolsVersion "34.0.0"
+    buildToolsVersion "36.0.0"
 
     defaultConfig {
         minSdkVersion 8
         targetSdkVersion 27
+    }
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+        }
     }
 }
 
@@ -57,7 +63,7 @@ task copyLibcShared {
 afterEvaluate {
 tasks['preBuild'].dependsOn(['copyLibcShared', ':androidCopyEabiLibjavagiacSo',
         ':androidCopyX86LibjavagiacSo', ':androidCopyX86_64LibjavagiacSo', ':androidCopyArm64LibjavagiacSo'])
-publishing {
+/*publishing {
     publications {
         release(MavenPublication) {
             artifactId = 'giac-android'
@@ -70,6 +76,6 @@ publishing {
             }
         }
     }
-}
+}*/
 }
 
