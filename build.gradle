@@ -55,6 +55,8 @@ project.setDescription('Giac CAS for GeoGebra')
  *    (as described above).
  */
 
+import javax.inject.Inject
+
 // FIXME: Some of these settings are hardcoded at the moment, they need to be more general.
 def externalSourceDir = "/data/jenkins/ws"
 // You may need to download and unzip following packages:
@@ -84,12 +86,18 @@ println giacVersion
 import org.apache.tools.ant.taskdefs.condition.Os
 def isMac = Os.isFamily(Os.FAMILY_MAC)
 
+interface InjectedExecOps {
+    @Inject //@javax.inject.Inject
+    ExecOperations getExecOps()
+}
+
 def exec_(String... script) {
     if (!Os.isFamily(Os.FAMILY_MAC)) {
         return ""
     }
+    def injected = project.objects.newInstance(InjectedExecOps)
     def retVal
-    exec {
+    injected.execOps.exec {
         commandLine script
         standardOutput = new ByteArrayOutputStream()
         retVal = {
@@ -879,30 +887,27 @@ def binaryJsDir = "build/binaries/giacggb.wasm"
 tasks.addRule("Pattern: emccCompileWasm_<FILE>Cc: Compile <FILE>.cc into <FILE>.o.") { String taskName ->
     if ((taskName.startsWith('emccCompileWasm')) && (taskName.endsWith('Cc'))) {
         def basename = (taskName - 'Cc').substring('emccCompileWasm_'.length())
-        task(taskName) {
+        task(taskName, type: Exec) {
             mustRunAfter 'activateEmsdk'
             def input = "src/giac/cpp/${basename}.cc"
             inputs.file input
             def output = objDir + "/${basename}.o"
             outputs.file output
-            doLast {
+            doFirst {
                 file(objDir+"/").mkdirs()
-                exec {
-                    // Be very careful when changing this: config.h also contains some entries!
-                    def specialOptions = ''
-                    def commandline = emccCommand
-                    commandline += ' -DIN_GIAC -DGIAC_GENERIC_CONSTANTS -DHAVE_CONFIG_H -fwasm-exceptions' // from old Makefile
-                    commandline += ' -DVERSION=' + giacVersion
-                    commandline += " -Dgammaf=tgammaf -s ALLOW_MEMORY_GROWTH=1"
-                    commandline += " -s WASM=1 -s NO_EXIT_RUNTIME=1"
-                    commandline += " -s PRECISE_I64_MATH=1 -Oz" // new setting
-                    commandline += " -DHAVE_UNISTD_H"
-                    commandline += ' -DGIAC_GGB' // from old Makefile
-                    commandline += ' -DTIMEOUT -DEMCC2 ' // from old config.h
-                    commandline += " -Isrc/giac/headers -c $input -o $output"
-                    println "Compiling: ${commandline}"
-                    commandLine commandline.split()
-                }
+                // Be very careful when changing this: config.h also contains some entries!
+                def commandline = emccCommand
+                commandline += ' -DIN_GIAC -DGIAC_GENERIC_CONSTANTS -DHAVE_CONFIG_H -fwasm-exceptions' // from old Makefile
+                commandline += ' -DVERSION=' + giacVersion
+                commandline += " -Dgammaf=tgammaf -s ALLOW_MEMORY_GROWTH=1"
+                commandline += " -s WASM=1 -s NO_EXIT_RUNTIME=1"
+                commandline += " -s PRECISE_I64_MATH=1 -Oz" // new setting
+                commandline += " -DHAVE_UNISTD_H"
+                commandline += ' -DGIAC_GGB' // from old Makefile
+                commandline += ' -DTIMEOUT -DEMCC2 ' // from old config.h
+                commandline += " -Isrc/giac/headers -c $input -o $output"
+                println "Compiling: ${commandline}"
+                commandLine commandline.split()
             }
         }
     }
@@ -927,13 +932,13 @@ tasks.register('emccCompileWasm') {
     dependsOn list
 }
 
-tasks.register('emccGiacJsWasm') {
+tasks.register('emccGiacJsWasm', Exec) {
     dependsOn 'emccCompileWasm'
     description 'Links giac.js.'
     mustRunAfter 'emccCompileWasm'
     def output = binaryJsDir + "/giacggb.js"
     outputs.file output
-    doLast {
+    doFirst {
         def list = []
         def linkerArgs = []
         def inputInclude = []
@@ -947,25 +952,23 @@ tasks.register('emccGiacJsWasm') {
         }
 
         file(binaryJsDir).mkdirs()
-        exec {
-            linkerArgs << LlvmMpfrA // mpfr must precede gmp, see http://www.mpfr.org/faq.html, Q5
-            linkerArgs << LlvmGmpA
-            linkerArgs << '--js-library' << 'src/giac.js/js/time.js'
+        linkerArgs << LlvmMpfrA // mpfr must precede gmp, see http://www.mpfr.org/faq.html, Q5
+        linkerArgs << LlvmGmpA
+        linkerArgs << '--js-library' << 'src/giac.js/js/time.js'
 
-            linkerArgs << '-DGIAC_GGB'
-            linkerArgs << '-o' << output
-            // linkerArgs << "-s" << "DISABLE_EXCEPTION_CATCHING=0"
-            linkerArgs << '-Oz' << '-v' << '-s' << "EXPORTED_FUNCTIONS=['_caseval']"
-            linkerArgs << '-s' << 'EXPORTED_RUNTIME_METHODS=["cwrap"]'
+        linkerArgs << '-DGIAC_GGB'
+        linkerArgs << '-o' << output
+        // linkerArgs << "-s" << "DISABLE_EXCEPTION_CATCHING=0"
+        linkerArgs << '-Oz' << '-v' << '-s' << "EXPORTED_FUNCTIONS=['_caseval']"
+        linkerArgs << '-s' << 'EXPORTED_RUNTIME_METHODS=["cwrap"]'
 
-            linkerArgs << '-s' << 'TOTAL_MEMORY=67108864'
-            linkerArgs << '-fwasm-exceptions'
-            // consider increasing this if running out of memory on GB computations
-            def linkerArgsString = linkerArgs.join(" ")
-            println "Linking: ${emccCommand} ${linkerArgsString}"
-            commandLine emccCommand
-            args linkerArgs
-        }
+        linkerArgs << '-s' << 'TOTAL_MEMORY=67108864'
+        linkerArgs << '-fwasm-exceptions'
+        // consider increasing this if running out of memory on GB computations
+        def linkerArgsString = linkerArgs.join(" ")
+        println "Linking: ${emccCommand} ${linkerArgsString}"
+        commandLine emccCommand
+        setArgs(linkerArgs)
     }
 }
 
@@ -977,14 +980,12 @@ tasks.register('createGiacGgbJsWasm', Copy) {
     include('ggb.html')
 }
 
-tasks.register('createGiacWasmJs') {
+tasks.register('createGiacWasmJs', Exec) {
     dependsOn 'createGiacGgbJsWasm'
     description 'Creates WebAssembly version of Giac which can be embedded into GeoGebraWeb.'
+    commandLine "bash", "-c", "base64 -w0 giacggb.wasm > giacggb.wasm.b64"
+    workingDir binaryJsDir
     doLast {
-        exec {
-            commandLine "bash", "-c", "base64 -w0 giacggb.wasm > giacggb.wasm.b64"
-            workingDir binaryJsDir
-        }
         def wasmBase64 = file("${binaryJsDir}/giacggb.wasm.b64").text
         file("${binaryJsDir}/giac.wasm.js").text = file("${binaryJsDir}/giacggb.js").text
                 .replace('Module', '__ggb__giac').replace('"use asm";', '')
@@ -994,68 +995,56 @@ tasks.register('createGiacWasmJs') {
 
 // Using emsdk
 
-tasks.register('downloadEmsdk') {
+tasks.register('downloadEmsdk', Exec) {
     description 'Downloads emscripten SDK and downloads it.'
     outputs.dir emsdkDir
-    doLast {
+    commandLine 'git clone https://github.com/emscripten-core/emsdk.git'.split()
+    doFirst {
         delete {
             delete emsdkDir
         }
-        exec {
-            commandLine 'git clone https://github.com/emscripten-core/emsdk.git'.split()
-        }
-
+    }
+    doLast {
         ant.symlink(resource: emsdkDir, link: "${emsdkDir}/emsdk-portable")
         mkdir("${emsdkDir}/emscripten")
         ant.symlink(resource: "${emsdkDir}/upstream/emscripten", link: "${emsdkDir}/emscripten/latest")
     }
 }
 
-tasks.register('installEmsdk') {
-    description 'Installs/updates the emscripten SDK.'
+tasks.register('gitPullEmsdk', Exec) {
     mustRunAfter 'downloadEmsdk'
-    doLast {
-        exec {
-            commandLine 'git pull'.split()
-            workingDir emsdkRunDir
-        }
-        // FIXME: If already installed, this results in an error and stops.
-        // Below this may not work with older emscripten versions.
-        exec {
-            commandLine "./emsdk install sdk-${emscriptenVersion}-64bit".split()
-            workingDir emsdkRunDir
-        }
-    }
+    commandLine 'git pull'.split()
+    workingDir emsdkRunDir
 }
 
-tasks.register('activateEmsdk') {
+tasks.register('installEmsdk', Exec) {
+    description 'Installs/updates the emscripten SDK.'
+    dependsOn 'gitPullEmsdk'
+
+    // FIXME: If already installed, this results in an error and stops.
+    // Below this may not work with older emscripten versions.
+    commandLine "./emsdk install sdk-${emscriptenVersion}-64bit".split()
+    workingDir emsdkRunDir
+}
+
+tasks.register('activateEmsdk', Exec) {
     description 'Activates the emscripten SDK.'
     mustRunAfter 'installEmsdk'
-    doLast {
-        exec {
-            commandLine "./emsdk activate sdk-${emscriptenVersion}-64bit".split()
-            workingDir emsdkRunDir
-        }
-    }
+    commandLine "./emsdk activate sdk-${emscriptenVersion}-64bit".split()
+    workingDir emsdkRunDir
 }
 
-tasks.register('emConfigureGmp') {
+tasks.register('emConfigureGmp', Exec) {
     description 'Configures GMP for the emscripten SDK.'
-    doLast {
-        exec {
-            commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir}/emconfigure $gmpSourceDir/configure --build=none --host=none --disable-assembly"
-            workingDir gmpSourceDir
-        }
-    }
+    commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir}/emconfigure $gmpSourceDir/configure --build=none --host=none --disable-assembly"
+    workingDir gmpSourceDir
 }
 
-tasks.register('emMakeGmp') {
+tasks.register('emMakeGmp', Exec) {
     description 'Makes GMP with the emscripten SDK.'
+    commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir}/emmake make"
+    workingDir gmpSourceDir
     doLast {
-        exec {
-            commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir}/emmake make"
-            workingDir gmpSourceDir
-        }
         copy {
             from("$gmpSourceDir/.libs/")
             into(jsPrebuiltDir)
@@ -1064,26 +1053,20 @@ tasks.register('emMakeGmp') {
     }
 }
 
-tasks.register('emConfigureMpfr') {
+tasks.register('emConfigureMpfr', Exec) {
     description 'Configures MPFR for the emscripten SDK.'
-    doLast {
-        exec {
-            commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; " +
-                    "${emscriptenDir}/emconfigure $mpfrSourceDir/configure " +
-                    "--build=none --host=none --disable-assembly " +
-                    "--with-gmp-lib=$gmpSourceDir/.libs --with-gmp-include=$gmpSourceDir"
-            workingDir mpfrSourceDir
-        }
-    }
+    commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; " +
+            "${emscriptenDir}/emconfigure $mpfrSourceDir/configure " +
+            "--build=none --host=none --disable-assembly " +
+            "--with-gmp-lib=$gmpSourceDir/.libs --with-gmp-include=$gmpSourceDir"
+    workingDir mpfrSourceDir
 }
 
-tasks.register('emMakeMpfr') {
+tasks.register('emMakeMpfr', Exec) {
     description 'Makes MPFR with the emscripten SDK.'
+    commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir}/emmake make"
+    workingDir mpfrSourceDir
     doLast {
-        exec {
-            commandLine 'bash', '-c', "source $emsdkRunDir/emsdk_env.sh; ${emscriptenDir}/emmake make"
-            workingDir mpfrSourceDir
-        }
         copy {
             from("$mpfrSourceDir/src/.libs/")
             into(jsPrebuiltDir)

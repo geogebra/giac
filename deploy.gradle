@@ -147,10 +147,9 @@ task updateNodegiacVersion () {
     }
 }
 
-task updateNodegiacWebCommit (dependsOn: 'updateNodegiacVersion') {
+task updateNodegiacWebCommit (dependsOn: 'updateNodegiacVersion', type: Exec) {
     description 'Commits changes of package.json to the SVN repository.'
     doLast {
-        exec {
             // Note that this step may need user interaction on a first run. In such a case, e.g. in Jenkins
             // you may need to manually connect to the SVN server first by running this task manually.
             // Jenkins' home folder is by default in /var/lib/jenkins and its workspace is
@@ -159,17 +158,12 @@ task updateNodegiacWebCommit (dependsOn: 'updateNodegiacVersion') {
                     '--password', System.env.MAVEN_PSW,
                     '-m', "Automatically update package.json to r$ggrev",
                     projectDir
-        }
     }
 }
 
-task publishNodegiac (dependsOn: 'updateNodegiacWebCommit') {
+task publishNodegiac (dependsOn: 'updateNodegiacWebCommit', type: Exec) {
     description 'Publishes Node Giac to npmjs.com'
-    doLast {
-        exec {
-            commandLine 'npm', 'publish'
-        }
-    }
+    commandLine 'npm', 'publish'
 }
 
 // Top level task
