@@ -23,7 +23,7 @@ compileJava.options.sourcepath = files(processResources.destinationDir).builtBy(
 
 tasks.register("prepareJs", Copy) {
     dependsOn project.getParent().createGiacWasmJs
-    from "${project.getParent().buildDir}/binaries/giacggb.wasm"
+    from "${project.getParent().layout.buildDirectory.get()}/binaries/giacggb.wasm"
     into file("src/main/resources/fr/grenoble/ujf/giac")
     include "giac.wasm.js"
 }

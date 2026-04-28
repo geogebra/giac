@@ -694,26 +694,27 @@ tasks.register('giacIosStaticLibrary') {
 
 tasks.register('createFatIosStaticLibrary') {
     dependsOn('simpleInterfaceIosStaticLibrary', 'giacIosStaticLibrary')
+    def build = layout.buildDirectory.get()
     doLast {
-        def output = "${buildDir}/libs/merged"
+        def output = "${build}/libs/merged"
         ["arm64"].each {
             mergeLibraries("Giac", "${output}/ios_${it}", clangIosPath,
-                "${buildDir}/libs/giac/static/ios_${it}/libgiac.a",
-                "${buildDir}/libs/simpleInterface/static/ios_${it}/libSimpleInterface.a",
+                "${build}/libs/giac/static/ios_${it}/libgiac.a",
+                "${build}/libs/simpleInterface/static/ios_${it}/libSimpleInterface.a",
                 "src/jni/prebuilt/ios/${it}/libgmp.a",
                 "src/jni/prebuilt/ios/${it}/libmpfr.a")
         }
         ["arm64", "x86_64"].each {
             mergeLibraries("Giac", "${output}/iphonesimulator_${it}", clangIphonesimulatorPath,
-                "${buildDir}/libs/giac/static/iphonesimulator_${it}/libgiac.a",
-                "${buildDir}/libs/simpleInterface/static/iphonesimulator_${it}/libSimpleInterface.a",
+                "${build}/libs/giac/static/iphonesimulator_${it}/libgiac.a",
+                "${build}/libs/simpleInterface/static/iphonesimulator_${it}/libSimpleInterface.a",
                 "src/jni/prebuilt/iphonesimulator/${it}/libgmp.a",
                 "src/jni/prebuilt/iphonesimulator/${it}/libmpfr.a")
         }
         ["arm64", "x86_64"].each {
             mergeLibraries("Giac", "${output}/maccatalyst_${it}", clangIphonesimulatorPath,
-                "${buildDir}/libs/giac/static/maccatalyst_${it}/libgiac.a",
-                "${buildDir}/libs/simpleInterface/static/maccatalyst_${it}/libSimpleInterface.a",
+                "${build}/libs/giac/static/maccatalyst_${it}/libgiac.a",
+                "${build}/libs/simpleInterface/static/maccatalyst_${it}/libSimpleInterface.a",
                 "src/jni/prebuilt/maccatalyst/${it}/libgmp.a",
                 "src/jni/prebuilt/maccatalyst/${it}/libmpfr.a")
         }
@@ -731,7 +732,7 @@ tasks.register('createFatIosStaticLibrary') {
 tasks.register('createIosFramework', Copy) {
     dependsOn createFatIosStaticLibrary
     description "Creates iOS framework"
-    from("${buildDir}/libs/merged/ios") {
+    from("${layout.buildDirectory.get()}/libs/merged/ios") {
         include "Giac.a"
         rename "Giac.a", "Giac"
         into "Giac.framework"
@@ -745,13 +746,13 @@ tasks.register('createIosFramework', Copy) {
         into "Giac.framework/Resources"
     }
 
-    destinationDir = file("${buildDir}/libs/framework/ios")
+    destinationDir = file("${layout.buildDirectory.get()}/libs/framework/ios")
 }
 
 tasks.register('createIphonesimulatorFramework', Copy) {
     dependsOn createFatIosStaticLibrary
     description "Creates iPhone Simulator framework"
-    from("${buildDir}/libs/merged/iphonesimulator") {
+    from("${layout.buildDirectory.get()}/libs/merged/iphonesimulator") {
         include "Giac.a"
         rename "Giac.a", "Giac"
         into "Giac.framework"
@@ -766,13 +767,13 @@ tasks.register('createIphonesimulatorFramework', Copy) {
         into "Giac.framework/Resources"
     }
 
-    destinationDir = file("${buildDir}/libs/framework/iphonesimulator")
+    destinationDir = file("${layout.buildDirectory.get()}/libs/framework/iphonesimulator")
 }
 
 tasks.register('createMaccatalystFramework', Copy) {
     dependsOn createFatIosStaticLibrary
     description "Creates Mac Catalyst framework"
-    from("${buildDir}/libs/merged/maccatalyst") {
+    from("${layout.buildDirectory.get()}/libs/merged/maccatalyst") {
         include "Giac.a"
         rename "Giac.a", "Giac"
         into "Giac.framework"
@@ -782,20 +783,20 @@ tasks.register('createMaccatalystFramework', Copy) {
         into "Giac.framework/Headers"
     }
 
-    destinationDir = file("${buildDir}/libs/framework/maccatalyst")
+    destinationDir = file("${layout.buildDirectory.get()}/libs/framework/maccatalyst")
 }
 
 
 tasks.register('createIosXcframework', Copy) {
     dependsOn = [createIosFramework, createIphonesimulatorFramework, createMaccatalystFramework]
     description "Creates XCFramework"
-    from("${buildDir}/libs/framework/iphonesimulator") {
+    from("${layout.buildDirectory.get()}/libs/framework/iphonesimulator") {
         into "ios-arm64_x86_64-simulator"
     }
-    from("${buildDir}/libs/framework/ios") {
+    from("${layout.buildDirectory.get()}/libs/framework/ios") {
         into "ios-arm64"
     }
-    from("${buildDir}/libs/framework/maccatalyst") {
+    from("${layout.buildDirectory.get()}/libs/framework/maccatalyst") {
         into "ios-arm64_x86_64-maccatalyst"
     }
     from("src/simpleInterface/framework") {
@@ -803,16 +804,16 @@ tasks.register('createIosXcframework', Copy) {
         rename "xcframework.plist", "Info.plist"
     }
 
-    destinationDir = file("${buildDir}/libs/framework/Giac.xcframework")
+    destinationDir = file("${layout.buildDirectory.get()}/libs/framework/Giac.xcframework")
 }
 
 tasks.register('cocoapodsZip', Zip) {
     dependsOn 'createIosXcframework'
     archiveBaseName = 'Giac'
-    from("${buildDir}/libs/framework/Giac.xcframework") {
+    from("${layout.buildDirectory.get()}/libs/framework/Giac.xcframework") {
         into "Frameworks/Giac.xcframework"
     }
-    destinationDirectory = file("${buildDir}/cocoapods/")
+    destinationDirectory = file("${layout.buildDirectory.get()}/cocoapods/")
 }
 
 tasks.register('installMinigiacExecutable') { dependsOn 'installMinigiacLinux64Executable' }

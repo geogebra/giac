@@ -6,7 +6,7 @@
 def ggMavenRepoUser = System.env.MAVEN_USR
 def ggMavenRepoPass = System.env.MAVEN_PSW
 
-def distDir = "$buildDir/distributions"
+def distDir = "${layout.buildDirectory.get()}/distributions"
 def javagiacDir = file("$distDir/javagiac/")
 def ggbGiacJsDir = file("$distDir/giac.js/")
 
@@ -35,7 +35,7 @@ task javagiacLinux64Jar (dependsOn: 'javagiacLinux64SharedLibrary', type: Jar) {
     description 'Creates the Linux 64 bit .jar package for the Java Giac library.'
     archiveBaseName = 'javagiac-linux64'
     destinationDirectory = javagiacDir
-    from "${buildDir}/libs/javagiac/shared/linux64"
+    from "${layout.buildDirectory.get()}/libs/javagiac/shared/linux64"
     include '*.so'
     rename 'libjavagiac.so', 'libjavagiac64.so'
     archiveClassifier = 'natives-linux-amd64'
@@ -49,10 +49,10 @@ task javagiacMacJar (type: Jar) {
     description 'Creates the Linux 32 bit .jar package for the Java Giac library.'
     archiveBaseName = 'javagiac-mac'
     destinationDirectory = javagiacDir
-    from("${buildDir}/binaries/javagiacSharedLibrary/osx_x86-64") { // FIXME: unify
+    from("${layout.buildDirectory.get()}/binaries/javagiacSharedLibrary/osx_x86-64") { // FIXME: unify
         include '*.jnilib'
     }
-    from("${buildDir}/binaries/javagiacSharedLibrary/osx_arm-v8") {
+    from("${layout.buildDirectory.get()}/binaries/javagiacSharedLibrary/osx_arm-v8") {
         include '*.jnilib'
         rename 'libjavagiac.jnilib', 'libjavagiac-arm64.jnilib'
     }
