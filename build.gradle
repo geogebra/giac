@@ -986,6 +986,7 @@ tasks.register('createGiacWasmJs', Exec) {
     description 'Creates WebAssembly version of Giac which can be embedded into GeoGebraWeb.'
     commandLine "bash", "-c", "base64 -w0 giacggb.wasm > giacggb.wasm.b64"
     workingDir binaryJsDir
+    outputs.dir(binaryJsDir)
     doLast {
         def wasmBase64 = file("${binaryJsDir}/giacggb.wasm.b64").text
         file("${binaryJsDir}/giac.wasm.js").text = file("${binaryJsDir}/giacggb.js").text
