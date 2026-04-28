@@ -31,7 +31,7 @@ pipeline {
                 sh "rm src/giac/cpp/kdisplay.cc"
                 sh "export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary javagiacOsx_arm64SharedLibrary --info"
                 stash name: 'giac-mac', includes: 'build/binaries/javagiacSharedLibrary/osx_x86-64/libjavagiac.jnilib'
-                stash name: 'giac-mac-arm64', includes: 'build/binaries/javagiacSharedLibrary/osx_arm-v8/libjavagiac.jnilib'
+                stash name: 'giac-mac-arm64', includes: 'build/binaries/javagiacSharedLibrary/osx_aarch64/libjavagiac.jnilib'
               }
             }
             stage('Objective C') {
