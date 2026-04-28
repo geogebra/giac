@@ -61,21 +61,21 @@ task copyLibcShared {
 }
 
 afterEvaluate {
-tasks['preBuild'].dependsOn(['copyLibcShared', ':androidCopyEabiLibjavagiacSo',
+    tasks['preBuild'].dependsOn(['copyLibcShared', ':androidCopyEabiLibjavagiacSo',
         ':androidCopyX86LibjavagiacSo', ':androidCopyX86_64LibjavagiacSo', ':androidCopyArm64LibjavagiacSo'])
-/*publishing {
-    publications {
-        release(MavenPublication) {
-            artifactId = 'giac-android'
-            groupId = 'org.geogebra'
-            version = project.getParent().ggrev
-            from components.release
-            pom {
-                name = 'Giac for Android'
-                description = 'Android Giac library'
+    publishing {
+        publications {
+            release(MavenPublication) {
+                artifactId = 'giac-android'
+                groupId = 'org.geogebra'
+                version = project.getParent().ggrev
+                from components.release
+                pom {
+                    name = 'Giac for Android'
+                    description = 'Android Giac library'
+                }
             }
         }
     }
-}*/
 }
 
