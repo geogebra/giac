@@ -4231,7 +4231,7 @@ namespace giac {
   static define_unary_function_eval (__hidden_name,&_constants_catalog,_hidden_name_s);
   define_unary_function_ptr5( at_hidden_name ,alias_at_hidden_name,&__hidden_name,0,T_NUMBER);
 
-#if defined(VISUALC) || defined(BESTA_OS)
+#if !defined __GNUC__ && (defined(VISUALC) || defined(BESTA_OS))
   const double M_E=2.7182818284590452;
 #endif
 

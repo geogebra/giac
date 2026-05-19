@@ -2223,17 +2223,18 @@ namespace giac {
 #endif // POCKETCAS
 #endif // TIMEOUT
 
-#if defined KHICAS || defined SDL_KHICAS
+#if defined KHICAS
   void usleep(int t){
     os_wait_1ms(t/1000);
   }
-#else
-#ifdef NSPIRE_NEWLIB
+#elif defined NSPIRE_NEWLIB
   void usleep(int t){
     msleep(t/1000);
   }
-#endif
-  
+#elif defined FREERTOS
+  void usleep(int t){
+    Sleep(t/1000);
+  }  
 #endif
 
 #if defined VISUALC || defined BESTA_OS
@@ -3895,7 +3896,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   int debug_infolevel=0;
 #endif
   int printprog=0;
-#if defined __APPLE__ || defined VISUALC || defined __MINGW_H || defined BESTA_OS || defined NSPIRE || defined FXCG || defined NSPIRE_NEWLIB || defined KHICAS || defined SDL_KHICAS
+#if defined __APPLE__ || defined VISUALC || defined __MINGW_H || defined BESTA_OS || defined FREERTOS || defined NSPIRE || defined FXCG || defined NSPIRE_NEWLIB || defined KHICAS || defined SDL_KHICAS
 #ifdef _WIN32
   int threads=atoi(getenv("NUMBER_OF_PROCESSORS"));
 #else
@@ -5062,7 +5063,7 @@ extern "C" void Sleep(unsigned int miliSecond);
   }
 
   string giac_aide_dir(){
-#if defined NSPIRE || defined FXCG || defined MINGW32
+#if defined NSPIRE || defined FXCG || defined MINGW32 || defined FREERTOS
     return xcasroot();
 #else
     if (!access((xcasroot()+"aide_cas").c_str(),R_OK)){
@@ -7823,8 +7824,10 @@ unsigned int ConvertUTF8toUTF162 (
     newlinestobr(s,format.substr(pos,format.size()-pos));
     *logptr(contextptr) << s << '\n';
 #if !defined(UPSILON) && (defined(EMCC) || defined(EMCC2))
+    //*logptr(contextptr) << char(3);
+    //if (logptr(contextptr)) logptr(contextptr)->flush(); // end mixed text/mathml    
     *logptr(contextptr) << char(3) << '\n'; // end mixed text/mathml
-    *logptr(contextptr) << '\n';
+    //*logptr(contextptr) << '\n';
 #endif
   }
 

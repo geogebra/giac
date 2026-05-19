@@ -543,7 +543,7 @@ namespace giac {
     fclose(source);
   }
 
-#if !defined VISUALC && ! defined __MINGW_H && !defined BESTA_OS && !defined FXCG
+#if !defined VISUALC && ! defined __MINGW_H && !defined BESTA_OS && !defined(FREERTOS) && !defined FXCG
   int set_nonblock_flag (int desc, int value){
     int oldflags = fcntl (desc, F_GETFL, 0);
     /* If reading the flags failed, return error indication now. */

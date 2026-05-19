@@ -1490,7 +1490,7 @@ namespace giac {
     vecteur & v=*g._VECTptr;
     int s=int(v.size());
     FILE * f=0;
-#if !defined(BESTA_OS) && !defined(NSPIRE) && !defined(FXCG) && !defined(HP39)
+#if !defined(BESTA_OS) && !defined(FREERTOS) && !defined(NSPIRE) && !defined(FXCG) && !defined(HP39)
     if (v[0].type==_INT_ && v[0].subtype==_INT_FD)
       f= fdopen(v[0].val,"a");
 #endif    
@@ -1522,7 +1522,7 @@ namespace giac {
   gen _close(const gen & g0,GIAC_CONTEXT){
     gen g=eval(g0,1,contextptr);
     if ( g.type==_STRNG && g.subtype==-1) return  g;
-#if !defined(VISUALC) && !defined(BESTA_OS) && !defined(__MINGW_H) && !defined(NSPIRE) && !defined(FXCG)  && !defined(HP39)
+#if !defined(VISUALC) && !defined(BESTA_OS) && !defined(FREERTOS) && !defined(__MINGW_H) && !defined(NSPIRE) && !defined(FXCG)  && !defined(HP39)
     if (g.type==_INT_ && g.subtype==_INT_FD){
       purgenoassume(g0,contextptr);
       close(g.val);

@@ -996,6 +996,18 @@ void handle_flash(GIAC_CONTEXT){
   char * freeptr=0;
   const char * flash_buf=file_gettar_aligned("apps.tar",freeptr);
 #endif
+#ifdef NUMWORKS_SLOTAB
+  {
+    unsigned offset=0;
+    for (int i=0;i<2;i++){
+      // skip khi executable and icon
+      unsigned file_size = giac_readFileSize(flash_buf,offset);
+      offset += tar_filesize(file_size);
+    }
+    flash_buf += offset;
+    numworks_maxtarsize -= offset;
+  }
+#else
   // skip user apps
   while (numworks_maxtarsize>0 && (
                                    ((unsigned char) *flash_buf)==0xba ||
@@ -1004,6 +1016,7 @@ void handle_flash(GIAC_CONTEXT){
     flash_buf += 0x10000;
     numworks_maxtarsize -= 0x10000;
   }
+#endif
   Menu smallmenu;
   smallmenu.numitems=6;
   MenuItem smallmenuitems[smallmenu.numitems];
@@ -1127,9 +1140,9 @@ void save_sheet(tableur & t,GIAC_CONTEXT){
 void sheet_status(tableur & t,GIAC_CONTEXT){
   string st;
   if (python_compat(contextptr))
-    st="tabl Py ";
+    st=" CAS Py ";
   else
-    st="tabl Xcas ";
+    st=" CAS Xcas ";
   if (t.var.type==_IDNT)
     st += t.var.print(contextptr);
   else

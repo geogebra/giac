@@ -139,7 +139,7 @@ extern "C" int flash_filebrowser(const char ** filenames,int maxrecords,const ch
   return tar_filebrowser(flash_buf,filenames,maxrecords,extension);
 }
 #else
-#ifdef NUMWORKS_SLOTAB
+#if defined NUMWORKS_SLOTAB || defined TAR90400000
 const char * flash_buf=(const char *)0x90400000;
 #else
 const char * flash_buf=(const char *)0x90200000;
@@ -4957,7 +4957,7 @@ string longhelp(const char * s){
 #ifdef NSPIRE_NEWLIB
 	PrintMini7(0,200,(category==CAT_CATEGORY_ALL?"menu: help | ret: ex1 | tab: ex2 | calc: QRcode":"menu: help | ret: ex1 | tab: ex2 | calc: QRcode"),4,33333,SDK_WHITE,false);
 #else
-	PrintMini7(0,200,(category==CAT_CATEGORY_ALL?"Tool help|10^ QR|Ans ex1|EXE ex2":"Tool help|10^ QR|Ans ex1|EXE ex2"),4,33333,SDK_WHITE,false);
+	PrintMini7(0,200,(category==CAT_CATEGORY_ALL?"->: help |10^ QR|Ans ex1|EXE ex2":"Tool help|10^ QR|Ans ex1|EXE ex2"),4,33333,SDK_WHITE,false);
 #endif
 #endif
 	int sres = 0;
@@ -16991,7 +16991,7 @@ namespace xcas {
     if (text->editable && text->clipline>=0)
       DefineStatusMessage((char *)"PAD: select, COPY: copy, DEL: cut",1,0,0);
     else {
-      std::string status("edit ");
+      std::string status(" CAS ");
 #ifdef GIAC_SHOWTIME
       int d=(int(millis()/60000) +time_shift) % (24*60); // minutes
       int heure=d/60;
@@ -19598,7 +19598,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 
   void console_disp_status(GIAC_CONTEXT){
     int i=python_compat(contextptr);
-    string msg("shell ");
+    string msg(" CAS ");
     if (i<0)
       msg += "QuickJS";
     else {
@@ -19624,6 +19624,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       msg += " *";
     statuslinemsg(msg.c_str());
     set_xcas_status();
+    os_fill_rect(2,-18,4,18,COLOR_RED);
     Bdisp_PutDisp_DD();
   }
 
@@ -20797,7 +20798,7 @@ void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONT
     int pos=1;
     // string qrs=lang?"https://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasfr.html#":"https://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasen.html#";//"https://xcas.univ-grenoble-alpes.fr/xcasjs/#";
     string qrs=fourier_url;
-    qrs += "kcasfr.html#";
+    qrs += "khicas/khicas.html#";
     qrs += "filename=";
     qrs += filename;
     qrs += '&';

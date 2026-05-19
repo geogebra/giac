@@ -58,7 +58,7 @@ extern "C" int xcas_python_eval;
 #include <sys/param.h>
 #endif
 
-#if !defined BESTA_OS && !defined NSPIRE && !defined FXCG && !defined KHICAS // test should always return true
+#if !defined BESTA_OS && !defined FREERTOS && !defined NSPIRE && !defined FXCG && !defined KHICAS // test should always return true
 #include <dirent.h>
 #endif
 

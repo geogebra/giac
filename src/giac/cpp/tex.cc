@@ -1363,7 +1363,8 @@ namespace giac {
 	return "\\sqrt{"+gen2tex(v.front(),contextptr)+"}";
       if ( v.back()==minus_one_half || v.back()==fraction(minus_one,plus_two) )
 	return "\\frac{1}{\\sqrt{"+gen2tex(v.front(),contextptr)+"}}";
-      if (v.front().type==_SYMB && v.front()._SYMBptr->sommet!=at_exp && equalposcomp(primitive_tab_op,v.front()._SYMBptr->sommet)){
+      // not active anymore because mathlive does not parse correctly
+      if (0 && v.front().type==_SYMB && v.front()._SYMBptr->sommet!=at_exp && equalposcomp(primitive_tab_op,v.front()._SYMBptr->sommet)){
         string res=string("\\")+v.front()._SYMBptr->sommet.ptr()->s+"\\^{";
         res += gen2tex(v.back(),contextptr);
         res += "}";
@@ -1410,9 +1411,16 @@ namespace giac {
       return s;
 #endif
     switch (e.type){
-    case _INT_: case _ZINT: case _REAL:
+    case _INT_: 
       if (e.subtype==_INT_BOOLEAN)
-	return "\\mbox{"+e.print(contextptr)+'}';      
+	return "\\mbox{"+e.print(contextptr)+'}';
+      {
+        string tmp=e.print(contextptr);
+        if (tmp[0]>='0' && tmp[0]<='9')
+          return tmp;
+        return "\\mathrm{"+tmp+'}';
+      }
+    case _ZINT: case _REAL:      
       return e.print(contextptr);
     case _DOUBLE_:
       if (specialtexprint_double(contextptr))

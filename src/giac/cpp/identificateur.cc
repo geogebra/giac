@@ -1162,7 +1162,7 @@ namespace giac {
     }
     // look in current directory for a value
     if ( secure_run || (!variables_are_files(contextptr)) 
-#if !defined __MINGW_H && !defined NSPIRE && !defined FXCG
+#if !defined __MINGW_H && !defined NSPIRE && !defined FXCG && !defined FREERTOS
 	 || (access((name()+string(cas_suffixe)).c_str(),R_OK))
 #endif
 	 ){

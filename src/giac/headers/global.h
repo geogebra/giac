@@ -33,7 +33,9 @@
 #include <sys/times.h>
 #else
 #if defined VISUALC || defined BESTA_OS || defined FREERTOS
+#ifndef __GNUC__
 typedef long pid_t;
+#endif
 #else // VISUALC
 #if !defined(__MINGW_H) && !defined(HP39) && !defined(NSPIRE) && !defined(FXCG) && !defined(__ANDROID__) && !defined(NSPIRE_NEWLIB) && !defined(OSX) && !defined(IOS) && !defined(OSXIOS) && !defined(FIR_LINUX) && !defined(PRIMEWEBASM)
 #include "wince_replacements.h"
