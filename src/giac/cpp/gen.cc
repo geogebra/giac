@@ -14786,7 +14786,7 @@ void sprint_double(char * s,double d){
  }
 #endif
 #ifndef NSPIRE
-  ostream & operator << (ostream & os,const gen & a) { return os << a.print(context0); }
+  ostream & operator << (ostream & os,const gen & a) { return &os ? os << a.print(context0):os; }
 #endif
 
   string monome::print(GIAC_CONTEXT) const {

@@ -2793,7 +2793,7 @@ namespace giac {
     if (env && env->moduloon &&
 	other.size()>FFTMUL_SIZE && th.size()-other.size()>FFTMUL_SIZE){
       if (debug_infolevel>2)
-	CERR << CLOCK()*1e-6 << " DivRem mod start" << endl;
+	CERR << CLOCK()*1e-6 << " DivRem mod start\n" ;
       int l=sizeinbase2(other.size()),p=env->modulo.val;
       if (env->modulo.type==_INT_ && p-1==((p-1)>>l)<<l){
 	vector<int> a,b,q,r;
@@ -2802,7 +2802,7 @@ namespace giac {
 	divquores=DivQuo(a,b,p,q,true); // check for exact quotient
 	vector_int2vecteur(q,quo);
 	if (debug_infolevel>2)
-	  CERR << CLOCK()*1e-6 << " DivQuo mod Fourier prime end" << endl;
+	  CERR << CLOCK()*1e-6 << " DivQuo mod Fourier prime end" << "\n";
 	rem.clear();
 	if (divquores==2) 
 	  return true;
@@ -2811,7 +2811,7 @@ namespace giac {
 	  submodneg(r,a,p);
 	  vector_int2vecteur(r,rem);
 	  if (debug_infolevel>2)
-	    CERR << CLOCK()*1e-6 << " DivRem mod Fourier prime end" << endl;
+	    CERR << CLOCK()*1e-6 << " DivRem mod Fourier prime end" << "\n";
 	  return true;
 	}
       }
@@ -5201,7 +5201,7 @@ namespace giac {
       if (wp!=p-1){
 	w=0; Wp.clear();
       }
-      //CERR << Wp << endl;
+      //CERR << Wp << "\n";
     }
     if (w==0 && p!=p1 && p!=p2 && p!=p3)
       w=nthroot(p,shift);
@@ -10084,7 +10084,7 @@ namespace giac {
       probamax=1+int(-std::log(eps)/30/std::log(2.0));
     int maxp=std::sqrt(p1p2/4./maxdeg);int niter=1;
     if (debug_infolevel>1)
-      CERR << CLOCK()*1e-6 << " resultant modular algo max #primes " << h/30 << endl;
+      CERR << CLOCK()*1e-6 << " resultant modular algo max #primes " << h/30 << "\n";
     for (;h>sizeinbase2(pim) && proba<probamax;++niter){
       if (debug_infolevel>1)
 	CERR << CLOCK()*1e-6 << " prevfourier start\n";
@@ -10121,7 +10121,7 @@ namespace giac {
 	  ntlresultant(P,Q,m,R,false);
 	  if ((R-r)%m!=0){
 	    CERR << "bug\n";
-	    CERR << m << endl;
+	    CERR << m << "\n";
 	    break;
 	  }
 #endif
@@ -10161,7 +10161,7 @@ namespace giac {
 	CERR << CLOCK()*1e-6 << " resultant begin niter " << niter << " proba " << proba << " p= " << m << "\n";
       r=resultant_int(p,q,tmp1,tmp2,m,w); 
       if (debug_infolevel>1)
-	CERR << CLOCK()*1e-6 << " resultant end " << niter << endl;
+	CERR << CLOCK()*1e-6 << " resultant end " << niter << "\n";
 #if 0
       ntlresultant(P,Q,m,R,false);
       if ((R-r)%m!=0)
@@ -12556,7 +12556,7 @@ namespace giac {
 
   static void fft2p1nopermbefore( int *A, int n, int *W,int step=1) {  
     if (n==0)
-      CERR << "bug" << endl;
+      CERR << "bug" << "\n";
     if ( n==1 ) return;
     // if p is fixed, the code is about 2* faster
     if (n==4){
@@ -12796,7 +12796,7 @@ namespace giac {
 #else // de-recurse
   static void fft2pnopermbefore( int *A, int n, int *W,int p,double invp,int step) {  
     if (n==0)
-      CERR << "bug" << endl;
+      CERR << "bug" << "\n";
     if ( n==1 ) return;
     // if p is fixed, the code is about 2* faster
     if (n==4){
@@ -12805,7 +12805,7 @@ namespace giac {
 #else
       int w1=W[step];
 #endif
-      //CERR << n << " " << w1 << endl;
+      //CERR << n << " " << w1 << "\n";
       int f0=A[0],f1=A[1],f2=A[2],f3=A[3],
 #ifdef GIAC_PRECOND
 	f01=precond_mulmodp(f1-f3+p,w1,W[3*step],p),
@@ -14650,7 +14650,7 @@ namespace giac {
       P.push_back(p);
       pip=p*pip;
     }
-    //CERR << P.size() << endl;
+    //CERR << P.size() << "\n";
     f.v.resize(P.size());
     for (int i=0;i<P.size();++i){
       to_fft(A,P[i],Wp1,Wp2,Wp3,a,n,f.v[i],reverse,makeplus);

@@ -178,12 +178,18 @@ extern "C" void glcontext(int);
 #ifdef GIAC_SILENT
 struct Bidon {
   int i;
-Bidon(int i_=0):i(i_){}
-  flush(){}
+  Bidon(int i_=0):i(i_){}
+  void flush(){}
 };
 template<class T> Bidon operator << (Bidon ,const T&){ return Bidon(); }
 inline Bidon operator << (Bidon,const char *){return Bidon();}
 // #define CIN 0 //std::cin
+#ifdef COUT
+#undef COUT
+#endif
+#ifdef CERR
+#undef CERR
+#endif
 #define COUT Bidon(0) //std::cout
 #define CERR Bidon(0) //std::cout
 #endif

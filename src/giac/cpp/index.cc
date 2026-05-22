@@ -410,7 +410,7 @@ namespace giac {
 #endif
 
   void dbgprint(const index_t & i){
-    COUT << i << endl;
+    COUT << i << "\n";
   }
 
   index_t mergeindex(const index_t & i,const index_t & j){

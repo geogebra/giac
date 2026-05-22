@@ -43,7 +43,7 @@ namespace giac {
 
   const char * unary_function_ptr::dbgprint() const {
 #ifndef NSPIRE
-    CERR << ptr()->s << endl; 
+    CERR << ptr()->s << "\n"; 
 #endif
     return ptr()->s;
   }

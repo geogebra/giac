@@ -3255,10 +3255,25 @@ extern "C" void Sleep(unsigned int miliSecond);
     return &CERR;
   }
 #else
-#ifdef FXCG
+#if defined FXCG 
   static ostream * _logptr_=0;
+#elif GIAC_SILENT
+  // 1. On crée un tampon qui accepte tout et ne fait rien
+  class NullBuffer : public std::streambuf {
+  public:
+    // overflow est appelée quand le tampon est plein (ici, tout le temps)
+    int overflow(int c) override {
+      return c; // On dit que tout s'est bien passé
+    }
+  };
+  
+  // 2. On instancie le tampon ET le flux
+  static NullBuffer null_buffer;
+  // On lui donne l'adresse de notre vrai tampon vide
+  std::ostream cnull(&null_buffer);
+  static ostream * _logptr_=&cnull;
 #else
-#if defined KHICAS || defined SDL_KHICAS
+#if defined KHICAS || defined SDL_KHICAS 
   stdostream os_cerr;
   static my_ostream * _logptr_=&os_cerr;
 #else
@@ -3274,8 +3289,10 @@ extern "C" void Sleep(unsigned int miliSecond);
 #if (defined(EMCC) || defined(EMCC2)) && !defined SDL_KHICAS
     return res?res:&COUT;
 #else
-#ifdef FXCG
+#if defined FXCG 
     return 0;
+#elif GIAC_SILENT
+    return res?res:&cnull;
 #else
 #if defined KHICAS || defined SDL_KHICAS
     return res?res:&os_cerr;
@@ -6438,7 +6455,7 @@ NULL,NULL,SW_SHOWNORMAL);
 #if (defined(EMCC) || defined(EMCC2)) && !defined SDL_KHICAS
 		     _logptr_(&COUT), 
 #else
-#ifdef FXCG
+#if defined FXCG || defined GIAC_SILENT
 		     _logptr_(0),
 #else
 #if defined KHICAS || defined SDL_KHICAS

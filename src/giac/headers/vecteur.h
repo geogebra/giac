@@ -512,12 +512,12 @@ namespace giac {
 
   gen _cholesky(const gen & a,GIAC_CONTEXT);
   extern const unary_function_ptr * const  at_cholesky ;
-#if defined SDL_KHICAS
+#if defined SDL_KHICAS || defined GIAC_SILENT
   struct log_output_redirect { // fake
     log_output_redirect(GIAC_CONTEXT){}
   };
 #endif
-#if !defined KHICAS && !defined SDL_KHICAS && !defined GIAC_HAS_STO_38
+#if !defined KHICAS && !defined SDL_KHICAS && !defined GIAC_HAS_STO_38 && !defined GIAC_SILENT
   // additions by L. Marohnić:
   struct log_output_redirect { // redirecting log output to string
     log_output_redirect(GIAC_CONTEXT) { old=logptr(ctx=contextptr)->rdbuf(buffer.rdbuf()); }
