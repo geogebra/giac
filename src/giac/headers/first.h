@@ -181,8 +181,9 @@ struct Bidon {
   Bidon(int i_=0):i(i_){}
   void flush(){}
 };
-template<class T> Bidon operator << (Bidon ,const T&){ return Bidon(); }
-inline Bidon operator << (Bidon,const char *){return Bidon();}
+extern Bidon Bidon0;
+template<class T> Bidon operator << (Bidon ,const T&){ return Bidon0; }
+inline Bidon operator << (Bidon,const char *){return Bidon0;}
 // #define CIN 0 //std::cin
 #ifdef COUT
 #undef COUT

@@ -12688,10 +12688,10 @@ namespace giac {
     my_ostream newptr(&warnstream);
     logptr(&newptr,contextptr);
 #else
-#if !defined HAVE_SSTREAM || defined NSPIRE 
+#if !defined GIAC_SILENT && (!defined HAVE_SSTREAM || defined NSPIRE)
     logptr(&COUT,contextptr);
 #else
-#ifndef KHICAS
+#if !defined KHICAS && !defined GIAC_SILENT
     logptr(&warnstream,contextptr);
 #endif
 #endif // HAVE_SSTREAM
@@ -12712,10 +12712,10 @@ namespace giac {
 #endif
       type=_STRNG;
     }
-#if !defined NSPIRE && !defined SDL_KHICAS
+#if !defined NSPIRE && !defined SDL_KHICAS && !defined GIAC_SILENT
     logptr(oldptr,contextptr);
 #endif
-#if !defined HAVE_SSTREAM || defined NSPIRE
+#if !defined HAVE_SSTREAM || defined NSPIRE || defined GIAC_SILENT
 #else
     if (!warnstream.str().empty())
       parser_error(warnstream.str(),contextptr);

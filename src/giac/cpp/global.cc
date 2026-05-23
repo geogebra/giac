@@ -14,6 +14,9 @@
 #include <emscripten.h>
 #endif
 
+#ifdef GIAC_SILENT
+Bidon Bidon0(0);
+#endif
 /*  
  *  Copyright (C) 2000,14 B. Parisse, Institut Fourier, 38402 St Martin d'Heres
  *
