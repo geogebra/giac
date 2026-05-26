@@ -1486,6 +1486,29 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     return true;
   }
 
+  bool has_rational_infos(const gen & f,const gen &x,const gen & y,gen & eq,gen &parameq,GIAC_CONTEXT){
+    eq=0; parameq=undef;
+    vecteur l(lvar(f));
+    for (int i=0;i<l.size();++i){
+      if (l[i]==x)
+        continue;
+      if (contains(l[i],x))
+        return false;
+    }
+    eq=_numer(y-f,contextptr);
+    parameq=x+cst_i*f;
+    return true;
+  }
+
+  void add_rational_infos(vecteur & v,const gen & eq,const gen & parameq){
+    if (v.size()!=5)
+      return;
+    // must add equation (6th component), rat param x+i*f (7th), undef
+    v.push_back(eq);
+    v.push_back(parameq);
+    v.push_back(undef);
+  }
+
   gen plotfunc(const gen & f_,const gen & vars,const vecteur & attributs,int densityplot,double function_xmin,double function_xmax,double function_ymin,double function_ymax,double function_zmin, double function_zmax,int nstep,int jstep,bool showeq,const context * contextptr){
     int pal=-1;
     if (!attributs.empty() && attributs[0].type==_INT_){
@@ -1658,6 +1681,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       int protect=giac_bind(vecteur(1,xmin),localvar,newcontextptr);
       vecteur chemin;
       double i=xmin;
+      gen eq,parameq; bool rat=has_rational_infos(f,vars,y__IDNT_e,eq,parameq,contextptr);
       for (;!ctrl_c && !interrupted && i<xmax;i+= step){
 	// yy=evalf_double(subst(f,vars,i,false,contextptr),1,contextptr);
 	local_sto_double(i,*vars._IDNTptr,newcontextptr);
@@ -1670,8 +1694,11 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 	if (yy.type!=_DOUBLE_){
 	  if (debug_infolevel)
 	    CERR << y << " not real at " << i << " value " << yy << " type " << int(yy.type) << '\n';
-	  if (!chemin.empty())
-	    res.push_back(pnt_attrib(symb_curve(gen(makevecteur(vars+cst_i*f,vars,xmin,i-step,showeq),_PNT__VECT),gen(chemin,_GROUP__VECT)),attributs.empty()?color:attributs,contextptr));
+	  if (!chemin.empty()){
+            vecteur component=makevecteur(vars+cst_i*f,vars,xmin,i-step,showeq);
+            if (rat) add_rational_infos(component,eq,parameq); 
+	    res.push_back(pnt_attrib(symb_curve(gen(component,_PNT__VECT),gen(chemin,_GROUP__VECT)),attributs.empty()?color:attributs,contextptr));
+          }
 	  xmin=i;
 	  chemin.clear();
 	  continue;
@@ -1715,7 +1742,9 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
 	      CERR << y << " step at " << i << " " << yy << '\n';
 	      CERR << "curve " << chemin.size() << " " << chemin.front() << " .. " << chemin.back() << '\n';
 	    }
-	    res.push_back(pnt_attrib(symb_curve(gen(makevecteur(vars+cst_i*f,vars,xmin,i-step,showeq),_PNT__VECT),gen(chemin,_GROUP__VECT)),attributs.empty()?color:attributs,contextptr));
+            vecteur component=makevecteur(vars+cst_i*f,vars,xmin,i-step,showeq);
+            if (rat) add_rational_infos(component,eq,parameq); 
+	    res.push_back(pnt_attrib(symb_curve(gen(component,_PNT__VECT),gen(chemin,_GROUP__VECT)),attributs.empty()?color:attributs,contextptr));
 	  }
 	  xmin=i;
 	  chemin=vecteur(1,gen(i,j));
@@ -1725,7 +1754,9 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       if (!chemin.empty()){
 	if (debug_infolevel)
 	  CERR << "curve " << chemin.size() << " " << chemin.front() << " .. " << chemin.back() << '\n';
-	res.push_back(pnt_attrib(symb_curve(gen(makevecteur(vars+cst_i*f,vars,xmin,i-step,showeq),_PNT__VECT),gen(chemin,_GROUP__VECT)),attributs.empty()?color:attributs,contextptr));
+        vecteur component=makevecteur(vars+cst_i*f,vars,xmin,i-step,showeq);
+        if (rat) add_rational_infos(component,eq,parameq); 
+	res.push_back(pnt_attrib(symb_curve(gen(component,_PNT__VECT),gen(chemin,_GROUP__VECT)),attributs.empty()?color:attributs,contextptr));
       }
       leave(protect,localvar,newcontextptr);
 #ifndef WIN32
