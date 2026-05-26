@@ -3737,8 +3737,13 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
           gen x0,y0,z0,equation_reduite;
           vecteur propre,V0,V1,V2,param_surface,centrev;
           int ctype=quadrique_reduite(eq,undef,vars,x0,y0,z0,V0,V1,V2,propre,equation_reduite,param_surface,centrev,true,contextptr);
-          if (ctype>0){
-            centre=gen(centrev,_POINT__VECT);
+          if (ctype>0 && !is_undef(centrev)){
+            gen deq=_derive(makesequence(eq,vars),contextptr);
+            gen S=_solve(makesequence(deq,vars),contextptr);
+            if (S.type==_VECT && S._VECTptr->size()==1 && S[0].type==_VECT)
+              centre=gen(*S[0]._VECTptr,_POINT__VECT);
+            else
+              centre=gen(centrev,_POINT__VECT);
             return true;
           }
         }
