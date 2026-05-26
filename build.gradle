@@ -506,7 +506,7 @@ model {
                     || targetPlatform.operatingSystem.name == 'iphonesimulator'
                     || targetPlatform.operatingSystem.name == 'maccatalyst') {
                     giacIosDefines(cppCompiler)
-                    if (targetPlatform.architecture.name == 'arm-v8') {
+                    if (targetPlatform.architecture.name == 'aarch64') {
                         cppCompiler.define 'x86_64'
                     }
                 } else if (targetPlatform.operatingSystem.name == 'osx') {
@@ -529,7 +529,7 @@ model {
                 if (targetPlatform.operatingSystem.name == 'ios'
                     || targetPlatform.operatingSystem.name == 'iphonesimulator') {
                     giacIosDefines(cppCompiler)
-                    if (targetPlatform.architecture.name == 'arm-v8') {
+                    if (targetPlatform.architecture.name == 'aarch64') {
                         cppCompiler.define 'x86_64'
                     }
                 }
@@ -610,7 +610,7 @@ model {
                     if (targetPlatform.architecture.name == 'i386') {
                         cppCompiler.args '-m32'
                         linker.args '-m32'
-                    } else if (targetPlatform.architecture.name == 'arm-v8') {
+                    } else if (targetPlatform.architecture.name == 'aarch64') {
                         linker.args '-target', 'arm64-apple-macos11'
                     }
                 } else {
@@ -656,7 +656,7 @@ model {
                     cppCompiler.args '-stdlib=libc++'
                     linker.args '-stdlib=libc++', '-lc++'
                     linker.args '-lgmp', '-lmpfr', '-lpthread'
-                    linker.args '-L', file("src/jni/prebuilt/maccatalyst/${targetPlatform.architecture.name == "arm-v8" ? "arm64" : "x86_64"}").toString(), '-dynamiclib'
+                    linker.args '-L', file("src/jni/prebuilt/maccatalyst/${targetPlatform.architecture.name == "arch64" ? "arm64" : "x86_64"}").toString(), '-dynamiclib'
                 }
             }
         }

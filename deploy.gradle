@@ -52,7 +52,7 @@ task javagiacMacJar (type: Jar) {
     from("${layout.buildDirectory.get()}/binaries/javagiacSharedLibrary/osx_x86-64") { // FIXME: unify
         include '*.jnilib'
     }
-    from("${layout.buildDirectory.get()}/binaries/javagiacSharedLibrary/osx_arm-v8") {
+    from("${layout.buildDirectory.get()}/binaries/javagiacSharedLibrary/osx_aarch64") {
         include '*.jnilib'
         rename 'libjavagiac.jnilib', 'libjavagiac-arm64.jnilib'
     }

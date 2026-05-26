@@ -64,7 +64,7 @@ echo "Cleaning giac prebuilt dirs"
 rm -rf $GIAC_ROOT/src/giac/headers/android/* 
 rm -rf $GIAC_ROOT/src/jni/prebuilt/android/*
 cd $INSTALL_DIR
-for ARCH in "armeabi-v7a arm-v7" "arm64-v8a arm-v8" "x86 x86" "x86_64 x86-64"
+for ARCH in "armeabi-v7a arm-v7" "arm64-v8a aarch64" "x86 x86" "x86_64 x86-64"
 do
   set -- $ARCH
   cd $1
