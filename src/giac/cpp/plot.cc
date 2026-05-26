@@ -3726,6 +3726,23 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       return true;
     }
     if ( (c.type!=_SYMB) || (c._SYMBptr->sommet!=at_cercle)){
+      if (detect_conic && c.is_symb_of_sommet(at_hypersurface)){
+	gen & f=c._SYMBptr->feuille;
+        int i=f._VECTptr->size();
+        if (i>=2){
+          gen eq=f[1];
+          vecteur vars=makevecteur(x__IDNT_e,y__IDNT_e,z__IDNT_e);
+          if (i>=3 && f[2].type==_VECT)
+            vars=*f[2]._VECTptr;
+          gen x0,y0,z0,equation_reduite;
+          vecteur propre,V0,V1,V2,param_surface,centrev;
+          int ctype=quadrique_reduite(eq,undef,vars,x0,y0,z0,V0,V1,V2,propre,equation_reduite,param_surface,centrev,true,contextptr);
+          if (ctype>0){
+            centre=gen(centrev,_POINT__VECT);
+            return true;
+          }
+        }
+      }
       if (detect_conic && c.is_symb_of_sommet(at_curve)){
 	gen & f=c._SYMBptr->feuille;
 	if (f.type!=_VECT || f._VECTptr->size()<2)
@@ -4321,7 +4338,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       return gensizeerr(contextptr);
     vecteur attributs(1,default_color(contextptr));
     read_attributs(gen2vecteur(args),attributs,contextptr);
-    if (centre.type==_VECT){ 
+    if (centre.type==_VECT && centre.subtype!=_POINT__VECT){ 
       // conic: return center, 1 focus, 1 point
       vecteur w=*centre._VECTptr;
       for (int i=1;i<w.size();++i)
