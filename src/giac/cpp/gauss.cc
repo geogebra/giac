@@ -578,14 +578,14 @@ namespace giac {
 	swapgen(vp0,vp1);
 	std::swap(V0,V1);
       }
-      if (aptr) *aptr=-vp0/f;
-      if (bptr) *bptr=-vp1/f;
       //coord du centre
       x0=(-d*c+b*e)/(a*c-b*b);
       y0=(-a*e+d*b)/(a*c-b*b);
       gen z0=x0+cst_i*y0;
       gen zV0=V0[0]+cst_i*V0[1];
       gen coeffcst=normal(d*x0+e*y0+f,contextptr);
+      if (aptr) *aptr=-vp0/coeffcst;
+      if (bptr) *bptr=-vp1/coeffcst;
       equation_reduite=vp0*pow(x[0],2)+vp1*pow(x[1],2)+ coeffcst;  
       // parametric equations
       gen svp0(exact(sign(vp0,contextptr),contextptr)),
