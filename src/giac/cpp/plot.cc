@@ -6167,6 +6167,8 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       return ref*ref+ief*ief;
     }
     gen ef=e-f,r,i;
+    if (is_inf(ef))
+      return plus_inf;
     reim(ef,r,i,contextptr);
     return pow(r,2)+pow(i,2);
 #endif

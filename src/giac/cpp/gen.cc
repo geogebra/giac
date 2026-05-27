@@ -7806,7 +7806,7 @@ namespace giac {
       inpow(base,exponent,res);
       return(res);
     case _IDNT:
-      if (is_undef(base))
+      if (is_undef(base)) // FIXME? || is_inf(base))
 	return base;
       if (!exponent)
 	return 1;
