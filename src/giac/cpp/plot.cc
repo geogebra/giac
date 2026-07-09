@@ -3810,7 +3810,14 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       return false;
     gen a=remove_at_pnt(diam._VECTptr->front());
     gen b=remove_at_pnt(diam._VECTptr->back());
-    centre=recursive_normal(ratnormal(rdiv(a+b,plus_two,contextptr),contextptr),contextptr);
+
+    gen ar,ai,br,bi,cr,ci,rr,ri;
+    reim(a,ar,ai,contextptr);
+    reim(b,br,bi,contextptr);
+    cr=recursive_normal(ratnormal((ar+br)/2,contextptr),contextptr);
+    ci=recursive_normal(ratnormal((ai+bi)/2,contextptr),contextptr);
+    centre=cr+cst_i*ci;
+
     rayon=rdiv(b-a,plus_two,contextptr);
     if (absrayon)
       rayon=abs(recursive_normal(ratnormal(rayon,contextptr),contextptr),contextptr);
