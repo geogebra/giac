@@ -3716,7 +3716,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
   define_unary_function_ptr5( at_pnt ,alias_at_pnt,&__pnt,0,true);
 
   bool centre_rayon(const gen & cercle,gen & centre,gen & rayon,bool absrayon,GIAC_CONTEXT,bool detect_conic){
-    return centre_rayon(a, b, centre, rayon, absrayon, GIAC_CONTEXT, detect_conic, NULL);
+    return centre_rayon(cercle, centre, rayon, absrayon, contextptr, detect_conic, NULL);
   }
 
   bool centre_rayon(const gen & cercle,gen & centre,gen & rayon,bool absrayon,GIAC_CONTEXT,bool detect_conic, gen & rayon_sq){
@@ -3827,7 +3827,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       rayon=abs(recursive_normal(ratnormal(rayon,contextptr),contextptr),contextptr);
     if (rayon_sq) {
       rr=ratnormal((ar-br)/2,contextptr);
-      ci=ratnormal((ai+bi)/2,contextptr);
+      ci=ratnormal((ai-bi)/2,contextptr);
       rayon_sq=recursive_normal(ratnormal(rr*rr+ri*ri,contextptr),contextptr);
     }
     return true;
