@@ -68,30 +68,26 @@ pipeline {
         }
       }
     }
-    stage('Build') {
-      parallel {
-        stage('Java and JS') {
-          agent {label 'deploy2'}
-          environment {
-            MAVEN = credentials('maven-repo')
-            ANDROID_SDK_ROOT='/var/lib/jenkins/.android-sdk'
-            NDK="$ANDROID_SDK_ROOT/ndk/28.0.12916984"
-            NDK_TOOLCHAIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64"
-            PATH="$NDK_TOOLCHAIN/bin:$NDK_TOOLCHAIN/sysroot/usr/lib/arm-linux-androideabi:/var/lib/jenkins/glibc/build/elf:$PATH"
-          }
-          steps {
-            unstash name: 'giac-clang'
-            unstash name: 'giac-mac'
-            unstash name: 'giac-mac-arm64'
-            sh "rm src/giac/cpp/kdisplay.cc"
-            sh '''
-               export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
-              ./gradlew :updateGiac --no-daemon -Prevision=$SVN_REVISION --info'''
-          }
-          post {
-            always { deleteDir() }
-          }
-        }
+    stage('Java Desktop and Android') {
+      agent {label 'deploy2'}
+      environment {
+        MAVEN = credentials('maven-repo')
+        ANDROID_SDK_ROOT='/var/lib/jenkins/.android-sdk'
+        NDK="$ANDROID_SDK_ROOT/ndk/28.0.12916984"
+        NDK_TOOLCHAIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64"
+        PATH="$NDK_TOOLCHAIN/bin:$NDK_TOOLCHAIN/sysroot/usr/lib/arm-linux-androideabi:/var/lib/jenkins/glibc/build/elf:$PATH"
+      }
+      steps {
+        unstash name: 'giac-clang'
+        unstash name: 'giac-mac'
+        unstash name: 'giac-mac-arm64'
+        sh "rm src/giac/cpp/kdisplay.cc"
+        sh '''
+            export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
+          ./gradlew :updateGiac --no-daemon -Prevision=$SVN_REVISION --info'''
+      }
+      post {
+        always { deleteDir() }
       }
     }
   }
