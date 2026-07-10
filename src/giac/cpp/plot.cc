@@ -9865,7 +9865,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     }
     if ((e.type==_SYMB) && (e._SYMBptr->sommet==at_cercle)){
       gen centre,rayon,r,i,rayon_sq;
-      if (!centre_rayon(e,centre,rayon,false,contextptr,false,&rayon_sq))
+      if (!centre_rayon_sq(e,centre,rayon,false,contextptr,false,&rayon_sq))
 	return gensizeerr(contextptr);
       return symbolic(at_equal,makesequence(pow(x-re(centre,contextptr),2)+pow(y-im(centre,contextptr),2),rayon_sq));
     }
