@@ -3818,12 +3818,9 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     ci=recursive_normal(ratnormal((ai+bi)/2,contextptr),contextptr);
     centre=cr+cst_i*ci;
 
-    rr=(br-ar)/2;
-    ri=(bi-ai)/2;
+    rayon=rdiv(b-a,plus_two,contextptr);
     if (absrayon)
-      rayon=recursive_normal(ratnormal(sqrt(rr*rr+ri*ri,contextptr),contextptr),contextptr);
-    else
-      rayon=rr+cst_i*ri;
+      rayon=abs(recursive_normal(ratnormal(rayon,contextptr),contextptr),contextptr);
     return true;
   }
 
