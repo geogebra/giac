@@ -3715,11 +3715,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
   static define_unary_function_eval2_index (24,__pnt,&_pnt,_pnt_s,&printaspnt);
   define_unary_function_ptr5( at_pnt ,alias_at_pnt,&__pnt,0,true);
 
-  bool centre_rayon(const gen & cercle,gen & centre,gen & rayon,bool absrayon,GIAC_CONTEXT,bool detect_conic){
-    return centre_rayon(cercle, centre, rayon, absrayon, contextptr, detect_conic, NULL);
-  }
-
-  bool centre_rayon(const gen & cercle,gen & centre,gen & rayon,bool absrayon,GIAC_CONTEXT,bool detect_conic, gen* rayon_sq){
+  bool centre_rayon_sq(const gen & cercle,gen & centre,gen & rayon,bool absrayon,GIAC_CONTEXT,bool detect_conic, gen* rayon_sq){
     gen c=remove_at_pnt(cercle);
     if (c.is_symb_of_sommet(at_hypersphere)){
       gen & f=c._SYMBptr->feuille;
@@ -3831,6 +3827,10 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       *rayon_sq=recursive_normal(ratnormal(rr*rr+ri*ri,contextptr),contextptr);
     }
     return true;
+  }
+
+  bool centre_rayon(const gen & cercle,gen & centre,gen & rayon,bool absrayon,GIAC_CONTEXT,bool detect_conic){
+    return centre_rayon_sq(cercle, centre, rayon, absrayon, contextptr, detect_conic, NULL);
   }
 
   // for a point nothing, segment/line/vect->1st point
