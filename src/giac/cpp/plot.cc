@@ -3716,6 +3716,10 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
   define_unary_function_ptr5( at_pnt ,alias_at_pnt,&__pnt,0,true);
 
   bool centre_rayon(const gen & cercle,gen & centre,gen & rayon,bool absrayon,GIAC_CONTEXT,bool detect_conic){
+    return centre_rayon(a, b, centre, rayon, absrayon, GIAC_CONTEXT, detect_conic, NULL);
+  }
+
+  bool centre_rayon(const gen & cercle,gen & centre,gen & rayon,bool absrayon,GIAC_CONTEXT,bool detect_conic, gen & rayon_sq){
     gen c=remove_at_pnt(cercle);
     if (c.is_symb_of_sommet(at_hypersphere)){
       gen & f=c._SYMBptr->feuille;
@@ -3821,6 +3825,11 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     rayon=rdiv(b-a,plus_two,contextptr);
     if (absrayon)
       rayon=abs(recursive_normal(ratnormal(rayon,contextptr),contextptr),contextptr);
+    if (rayon_sq) {
+      rr=ratnormal((ar-br)/2,contextptr);
+      ci=ratnormal((ai+bi)/2,contextptr);
+      rayon_sq=recursive_normal(ratnormal(rr*rr+ri*ri,contextptr),contextptr);
+    }
     return true;
   }
 
@@ -9855,13 +9864,10 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       return symbolic(at_equal,makesequence(f,zero));
     }
     if ((e.type==_SYMB) && (e._SYMBptr->sommet==at_cercle)){
-      gen centre,rayon,r,i;
-      if (!centre_rayon(e,centre,rayon,false,contextptr))
+      gen centre,rayon,r,i,rayon_sq;
+      if (!centre_rayon(e,centre,rayon,false,contextptr,false,rayon_sq))
 	return gensizeerr(contextptr);
-      rayon=recursive_normal(rayon,contextptr);
-      reim(rayon,r,i,contextptr);
-      r=recursive_normal(r*r+i*i,contextptr);
-      return symbolic(at_equal,makesequence(pow(x-re(centre,contextptr),2)+pow(y-im(centre,contextptr),2),r));
+      return symbolic(at_equal,makesequence(pow(x-re(centre,contextptr),2)+pow(y-im(centre,contextptr),2),rayon_sq));
     }
     if ( (e.type==_VECT) && (e._VECTptr->size()==2) ){
       gen A=e._VECTptr->front();
