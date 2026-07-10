@@ -3,7 +3,8 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:9.2.0'
+        // 9.0.1 is the latest version supported by IntelliJ
+        classpath 'com.android.tools.build:gradle:9.0.1'
     }
 }
 plugins {

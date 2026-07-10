@@ -46,6 +46,26 @@ pipeline {
             always { deleteDir() }
           }
         }
+        stage('JS') {
+          agent {label 'deploy2'}
+          environment {
+            MAVEN = credentials('maven-repo')
+            ANDROID_SDK_ROOT='/var/lib/jenkins/.android-sdk'
+            EM_BINARYEN_ROOT="${env.WORKSPACE}/emsdk/upstream"
+            EMSDK_PYTHON='/usr/bin/python3.10'
+          }
+          steps {
+            sh "rm src/giac/cpp/kdisplay.cc"
+            sh '''
+               export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
+              ./gradlew downloadEmsdk installEmsdk activateEmsdk
+              ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --refresh-dependencies
+              '''
+          }
+          post {
+            always { deleteDir() }
+          }
+        }
       }
     }
     stage('Build') {
@@ -55,8 +75,6 @@ pipeline {
           environment {
             MAVEN = credentials('maven-repo')
             ANDROID_SDK_ROOT='/var/lib/jenkins/.android-sdk'
-            EM_BINARYEN_ROOT="${env.WORKSPACE}/emsdk/upstream"
-            EMSDK_PYTHON='/usr/bin/python3.10'
             NDK="$ANDROID_SDK_ROOT/ndk/28.0.12916984"
             NDK_TOOLCHAIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64"
             PATH="$NDK_TOOLCHAIN/bin:$NDK_TOOLCHAIN/sysroot/usr/lib/arm-linux-androideabi:/var/lib/jenkins/glibc/build/elf:$PATH"
@@ -68,8 +86,6 @@ pipeline {
             sh "rm src/giac/cpp/kdisplay.cc"
             sh '''
                export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
-              ./gradlew downloadEmsdk installEmsdk activateEmsdk
-              ./gradlew :emccClean :giac-gwt:publish --no-daemon -Prevision=$SVN_REVISION --refresh-dependencies
               ./gradlew :updateGiac --no-daemon -Prevision=$SVN_REVISION --info'''
           }
           post {
