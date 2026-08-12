@@ -9,6 +9,12 @@
 #include <ctype.h>
 #define HAVE_TIME_H
 #include <time.h>
+#if defined HPG1 && defined LCD_WIDTH_PX
+#undef LCD_WIDTH_PX
+#undef LCD_HEIGHT_PX
+extern  const int LCD_WIDTH_PX;
+extern   const int LCD_HEIGHT_PX;
+#endif
 
 #ifndef NO_NAMESPACE_GIAC
 namespace giac {
@@ -796,7 +802,7 @@ int khicas_addins_menu(GIAC_CONTEXT){
       if (smallmenu.selection==7){
 	// Exemple simple d'application tierce: la suite de Syracuse
 	// on entre la valeur de u0
-	double d; int i;
+	double d=25; int i;
 	for (;;){
 	  inputdouble(gettext("Suite de Syracuse. u0?"),d,contextptr);
 	  i=(d);
@@ -1815,7 +1821,7 @@ giac::gen sheet(GIAC_CONTEXT){
   tableur & t=*sheetptr;
   sheet_eval(t,contextptr,true);
   t.changed=false;
-  bool status_freeze=false;
+  bool status_freeze=false,absolute=true;
   t.keytooltip=false;
   for (;;){
     int R=t.cur_row,C=t.cur_col;
@@ -1828,7 +1834,45 @@ giac::gen sheet(GIAC_CONTEXT){
     if (!status_freeze)
       sheet_status(t,contextptr);
     sheet_display(t,contextptr);
+#ifdef HPG1 // sheet touchscreen
+    int key=menu_getkey(1,"stat1d| regr | sequ | edit | view | graph"," real | list | arit |     | plot | prog","poly | cplx | ",65039);
+    if (key==KEY_MOUSE_PUSH){
+      absolute=true;
+    }
+    if (key==KEY_MOUSE_MOVE){
+      int newx=prime_mousex;
+      int newy=prime_mousey;
+      if (newy>LCD_HEIGHT_PX-prime_statusarea-row_height && (t.cmd_pos>=0 && t.cmd_row==t.cur_row && t.cmd_col==t.cur_col && t.sel_row_begin==-1) ){
+	t.cmd_pos=newx/8;
+	if (t.cmd_pos>t.cmdline.size())
+	  t.cmd_pos=t.cmdline.size();	
+	continue;
+      }
+      int mousedx=newx-prime_pushx;
+      int mousedy=newy-prime_pushy;
+      prime_pushx = newx;
+      prime_pushy = newy;
+      if (mousedy>-mousedelta && mousedy<mousedelta && mousedx>-mousedelta && mousedx<mousedelta){ // about the same position
+      }
+      else
+	absolute=false;
+      if (absolute){
+	t.cur_row = (newy-prime_statusarea)/row_height -1 + t.disp_row_begin;
+	t.cur_col = newx/col_width -1 + t.disp_col_begin;
+      }
+      else {
+	t.cur_row += mousedy/15;
+	t.cur_col += mousedx/20;
+      }
+      if (t.cur_row<0) t.cur_row=0;
+      if (t.cur_row>=t.nrows) t.cur_row=t.nrows-1;
+      if (t.cur_col<0) t.cur_col=0;
+      if (t.cur_col>=t.ncols) t.cur_col=t.ncols-1;	  
+      continue;
+    } // end KEY_MOUSE_MOVE
+#else
     int key=getkey(1);
+#endif
     if (key==KEY_SHUTDOWN)
       return key;
     if (t.keytooltip){
@@ -2028,10 +2072,17 @@ giac::gen sheet(GIAC_CONTEXT){
       }
       continue;
     case KEY_CTRL_F5: // view
-      {
-	string value((*t.m[t.cur_row]._VECTptr)[t.cur_col][1].print(contextptr));
+      if (ckmatrix(t.m) && t.cur_row>=0 && t.cur_row<t.m.size() && t.cur_col>=0 && t.cur_col<t.m[t.cur_row]._VECTptr->size()){
+	gen cell=(t.m[t.cur_row])[t.cur_col];
+	string value;
+	if (cell.type==_VECT)
+	  value=cell[1].print(contextptr);
+	else
+	  value=cell.print(contextptr);
+	if (value.size()>1023)
+	  value=value.substr(0,1023);
 	char buf[1024];
-	strcpy(buf,value.substr(0,1024-1).c_str());
+	strcpy(buf,value.c_str());
 	textedit(buf,1024-1,contextptr );
       }
       continue;
@@ -2057,7 +2108,7 @@ giac::gen sheet(GIAC_CONTEXT){
     if ( (key >= KEY_CTRL_F1 && key <= KEY_CTRL_F6) ||
 	  (key >= KEY_CTRL_F7 && key <= KEY_CTRL_F14) 
 	 ){
-      const char tmenu[]= "F1 stat1d\nsum(\nmean(\nstddev(\nmedian(\nhistogram(\nbarplot(\nboxwhisker(\nF2 stat2d\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\npolygonscatterplot(\nF3 seq\nrange(\nseq(\ntableseq(\nplotseq(\ntablefunc(\nrandvector(\nrandmatrix(\nF4 edt\n$\n:\nedit_cell\nundo\ncopy_down\ncopy_right\ninsert_row\ninsert_col\nF6 graph\nreserved\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF: arit\nF9 mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF7 real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF= misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \n\n";
+      const char tmenu[]= "F1 stat1d\nsum(\nmean(\nstddev(\nmedian(\nhistogram(\nbarplot(\nboxwhisker(\nF2 stat2d\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\npolygonscatterplot(\nF3 seq\nrange(\nseq(\ntableseq(\nplotseq(\ntablefunc(\nrandvector(\nrandmatrix(\nF4 edt\n$\n:\nedit_cell\nundo\ncopy_down\ncopy_right\ninsert_row\ninsert_col\nF6 graph\nreserved\nF= poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF8 list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF; plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF7 real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF> cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF= misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n\\\n % \n\n";
       const char * s=console_menu(key,(char *)tmenu,0);
       if (s && strlen(s)){
 	if (strcmp(s,"undo")==0){
@@ -2160,6 +2211,13 @@ giac::gen sheet(GIAC_CONTEXT){
 }
 
 int geoapp(GIAC_CONTEXT){
+  if (xcas_python_eval ||  giac::python_compat(contextptr) ){
+    bool ok=do_confirm(lang==1?"Passage en mode Xcas pur ?":"Switching to pure Xcas mode ?");
+    if (!ok)
+      return 0;
+  }
+  xcas_python_eval=0;
+  giac::python_compat(0,contextptr);
   int res=newgeo(contextptr);
   if (res<0) return res;
   // load a figure?

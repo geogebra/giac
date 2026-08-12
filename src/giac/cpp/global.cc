@@ -5,6 +5,7 @@
 #endif
 #include "first.h"
 #ifdef __MINGW_H
+typedef unsigned char byte;
 #include <windows.h>
 #endif
 #endif
@@ -1236,9 +1237,9 @@ const int dfupos=15; // position of ...-a0 or -a1 in dfu command
 
 bool dfu_get_scriptstore_addr(size_t & start,size_t & taille,char & altdfu){
   // first try multi-boot
-  const char * slots[]={"0x90000000","0x90180000","0x90400000"};
-  const char * slots1[]={"0x90010000","0x90190000","0x90410000"};
-  const char * slots2[]={"0x90020000","0x90190000","0x90420000"};
+  const char * slots[]={"0x90000000","0x90000000","0x90180000","0x90400000"};
+  const char * slots1[]={"0x90010000","0x901b0000","0x90190000","0x90410000"};
+  const char * slots2[]={"0x90020000","0x901b0000","0x90190000","0x90420000"};
   unsigned char r[32];
   altdfu='0';
   for (int j=0;j<sizeof(slots)/sizeof(char *);++j){
@@ -1462,7 +1463,7 @@ bool dfu_get_slot(const char * fname,int slot){
     s += "0x90180000:0x80000";
     break;
   case 0:
-    s += "0x90000000:0x200000";
+    s += "0x90000000:0x300000";
     break;
   case 26:
     s += "0x90260000:0x190000";
@@ -2062,15 +2063,24 @@ namespace giac {
     fclose(f);
     unsigned char * ptr=(unsigned char *)text.c_str();
     for (int i=0;i<nkeys;++i){
+      int offset=0;
+      string current=fnames[i];
+      if (current.size()>=7 && current.substr(0,7)=="certif1")
+        current="certif1";
+      if (current.size()>=14 && current.substr(0,8)=="epsilon."){
+        if (current.substr(9,2)=="9b")
+          offset=0x1b0000;
+        current="epsilon.";
+      }
       if (debug_infolevel)
-	CERR << i << " " << firmwarename << " " << taille << " " << fnames[i] << " " << tailles[i] << '\n';
-      if (firmwarename!=fnames[i] || taille<tailles[i])
+	CERR << "shakeys_index=" << i << ", shakeys_name=" << fnames[i] << " as " << current << ", size=" << tailles[i] << ", offset=" << offset << ", firmwarename=" << firmwarename << ", size=" << taille << '\n';
+      if (firmwarename!=current || taille<tailles[i])
 	continue;
       // now try for all compatible sizes
       // we do not know the firmware size, we extract 2M or 6M
       // the part after the end is not known
       giac_sha256_init(&ctx);
-      giac_sha256_update(&ctx, ptr, tailles[i]);
+      giac_sha256_update(&ctx, ptr+offset, tailles[i]);
       giac_sha256_final(&ctx, buf);
       if (!memcmp(hash[i], buf, SHA256_BLOCK_SIZE))
 	return true;
@@ -2112,6 +2122,12 @@ namespace giac {
     *logptr(contextptr) << "Extraction du firmware externe slot A\n" ;
     if (!dfu_get_slot(epsilon,0)) return false;
     *logptr(contextptr) << "Verification de signature externe slot A\n" ;
+    if (sha256_check(sig.c_str(),epsilon,"epsilon.")){
+      if (!dfu_get_slot(epsilon,40)) return false;
+      *logptr(contextptr) << "Verification de signature externe KhiCAS B\n" ;
+      if (!sha256_check(sig.c_str(),epsilon,"certif1")) return false;
+      return true;
+    }
     if (!sha256_check(sig.c_str(),epsilon,"khi.A.bin")){
       if (!sha256_check(sig.c_str(),epsilon,"epsilona"))
         return false;
@@ -9388,7 +9404,7 @@ void update_lexer_localization(const std::vector<int> & v,std::map<std::string,s
     charptr_gen * builtin_lexer_functions(){
       static charptr_gen * ans=0;
       if (!ans){
-	ans = new charptr_gen[1999];
+	ans = new charptr_gen[2999];
 	builtin_lexer_functions_number=0;
       }
       return ans;

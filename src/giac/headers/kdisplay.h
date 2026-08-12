@@ -35,6 +35,14 @@ class autoshutdown : public std::exception{
   }
 };
 
+#if defined HPG1
+#define mousedelta 20
+#ifdef LCD_WIDTH_PX
+#undef LCD_WIDTH_PX
+#undef LCD_HEIGHT_PX
+#endif
+#endif // HPG1
+
 #ifndef LCD_WIDTH_PX
 extern  const int LCD_WIDTH_PX;
 extern   const int LCD_HEIGHT_PX;
@@ -48,7 +56,7 @@ extern char* fmenu_cfg;
 #define color_gris 46491
 #define MENUHEIGHT 12
 #endif
-#define STATUS_AREA_PX 0 // 24
+#define STATUS_AREA_PX 0 // 24 // already included in os_draw_string/os_fill_rect/os_set_pixel
 #define GIAC_HISTORY_MAX_TAILLE 32
 #define GIAC_HISTORY_SIZE 2
 
@@ -481,11 +489,11 @@ namespace xcas {
   giac::gen eqw(const giac::gen & ge,bool editable,const giac::context * contextptr);
   void print(int &X,int&Y,const char * buf,int color,bool revert,bool fake,bool minimini);
 
-  void save_session(const giac::context * );
+  void save_session(const giac::context * ,int offon=0);
 #if 1
 #define MAX_FILENAME_SIZE 270
   bool QRdisp(const char * text,const char *msg);
-  void save_console_state_smem(const char * filename,bool xwaspy,bool qr,const giac::context *);
+  bool save_console_state_smem(const char * filename,bool xwaspy,bool qr,const giac::context *);
   bool load_console_state_smem(const char * filename,const giac::context *);
 
   struct DISPBOX {

@@ -12,7 +12,6 @@
 #define KEY_CHAR_7          0x37
 #define KEY_CHAR_8          0x38
 #define KEY_CHAR_9          0x39
-#define KEY_CHAR_DP         0x2e
 #define KEY_CHAR_EXP        0x0f
 #define KEY_CHAR_PMINUS     30200
 #define KEY_CHAR_PLUS       43
@@ -22,6 +21,7 @@
 #define KEY_CHAR_FRAC       0xbb
 #define KEY_CHAR_LPAR       0x28
 #define KEY_CHAR_RPAR       0x29
+#define KEY_CHAR_DP         0x2e
 #define KEY_CHAR_COMMA      0x2c
 #define KEY_CHAR_STORE      0x0e
 #define KEY_CHAR_LOG        0x95
@@ -153,7 +153,9 @@
 #define KEY_LEFT_CTRL 31062
 #define KEY_RIGHT_CTRL 31063
 #define KEY_CALCULATOR 31064
+#ifndef HPG1
 #define KEY_SAVE 31065
+#endif
 #define KEY_LOAD 31066
 #define KEY_CTRL_A 31001
 #define KEY_CTRL_D 31004
@@ -168,10 +170,18 @@
 #define KEY_AFFECT 31101
 #define KEY_FLAG 31102
 #define KEY_BOOK 31103
-//#define KEY_CTRL_APPS 31104
+#define KEY_CTRL_APPS 31104
 #define KEY_CTRL_SYMB 31105
-//#define KEY_CTRL_NUM 31106
-//#define KEY_CTRL_PLOT 31107
+#define KEY_CTRL_PLOT 31106
+#define KEY_CTRL_NUM 31107
+#define KEY_CTRL_HELP 31108
+#define KEY_CTRL_VIEW 31109
+#define KEY_CTRL_CAS 31110
+#define KEY_CTRL_MATR 31111
+#define KEY_CTRL_HOME 31112
+#define KEY_CTRL_USER 31113
+#define KEY_MOUSE_PUSH 31120
+#define KEY_MOUSE_MOVE 31121
 #define KEY_SELECT_LEFT       31200
 #define KEY_SELECT_UP         31201
 #define KEY_SELECT_DOWN       31202
@@ -215,5 +225,54 @@
 #define KEY_CTRL_PGDOWN     30066
 #define KEY_CTRL_TOOLS      30068
 #define KEY_CTRL_FORMAT2    30067
+
+// numworks scan codes
+#define SCANCODE_Left ((uint64_t)1 << 0)
+#define SCANCODE_Up ((uint64_t)1 << 1)
+#define SCANCODE_Down ((uint64_t)1 << 2)
+#define SCANCODE_Right ((uint64_t)1 << 3)
+#define SCANCODE_OK ((uint64_t)1 << 4)
+#define SCANCODE_Back ((uint64_t)1 << 5)
+#define SCANCODE_Home ((uint64_t)1 << 6)
+#define SCANCODE_OnOff (((uint64_t)1 << 7) || ((uint64_t)1 << 8))
+#define SCANCODE_Shift ((uint64_t)1 << 12)
+#define SCANCODE_Alpha ((uint64_t)1 << 13)
+#define SCANCODE_XNT ((uint64_t)1 << 14)
+#define SCANCODE_Var ((uint64_t)1 << 15)
+#define SCANCODE_Toolbox ((uint64_t)1 << 16)
+#define SCANCODE_Backspace ((uint64_t)1 << 17)
+#define SCANCODE_Exp ((uint64_t)1 << 18)
+#define SCANCODE_Ln ((uint64_t)1 << 19)
+#define SCANCODE_Log ((uint64_t)1 << 20)
+#define SCANCODE_Imaginary ((uint64_t)1 << 21)
+#define SCANCODE_Comma ((uint64_t)1 << 22)
+#define SCANCODE_Power ((uint64_t)1 << 23)
+#define SCANCODE_Sine ((uint64_t)1 << 24)
+#define SCANCODE_Cosine ((uint64_t)1 << 25)
+#define SCANCODE_Tangent ((uint64_t)1 << 26)
+#define SCANCODE_Pi ((uint64_t)1 << 27)
+#define SCANCODE_Sqrt ((uint64_t)1 << 28)
+#define SCANCODE_Square ((uint64_t)1 << 29)
+#define SCANCODE_Seven ((uint64_t)1 << 30)
+#define SCANCODE_Eight ((uint64_t)1 << 31)
+#define SCANCODE_Nine ((uint64_t)1 << 32)
+#define SCANCODE_LeftParenthesis ((uint64_t)1 << 33)
+#define SCANCODE_RightParenthesis ((uint64_t)1 << 34)
+#define SCANCODE_Four ((uint64_t)1 << 36)
+#define SCANCODE_Five ((uint64_t)1 << 37)
+#define SCANCODE_Six ((uint64_t)1 << 38)
+#define SCANCODE_Multiplication ((uint64_t)1 << 39)
+#define SCANCODE_Division ((uint64_t)1 << 40)
+#define SCANCODE_One ((uint64_t)1 << 42)
+#define SCANCODE_Two ((uint64_t)1 << 43)
+#define SCANCODE_Three ((uint64_t)1 << 44)
+#define SCANCODE_Plus ((uint64_t)1 << 45)
+#define SCANCODE_Minus ((uint64_t)1 << 46)
+#define SCANCODE_Zero ((uint64_t)1 << 48)
+#define SCANCODE_Dot ((uint64_t)1 << 49)
+#define SCANCODE_EE ((uint64_t)1 << 50)
+#define SCANCODE_Ans ((uint64_t)1 << 51)
+#define SCANCODE_EXE ((uint64_t)1 << 52)
+#define SCANCODE_None  ((uint64_t)1 <<  54)
 
 #endif

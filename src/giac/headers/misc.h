@@ -101,6 +101,7 @@ namespace giac {
   gen _float(const gen & g,GIAC_CONTEXT);
   gen _hold(const gen & g,GIAC_CONTEXT);
   gen _eigenvals(const gen & g,GIAC_CONTEXT);
+  gen _eigenvects(const gen & g,GIAC_CONTEXT);
   gen _Gcd(const gen & g,GIAC_CONTEXT);
   gen _Gcdex(const gen & g,GIAC_CONTEXT);
   gen _Factor(const gen & g,GIAC_CONTEXT);

@@ -2320,8 +2320,8 @@ namespace giac {
       control_c();
 #endif
     if (ctrl_c || interrupted || !stack_check(contextptr)) { 
+      if (ctrl_c) *logptr(contextptr) << "Stopped in in_eval" << '\n';
       interrupted = true; ctrl_c=false;
-      *logptr(contextptr) << "Stopped in in_eval" << '\n';
       gensizeerr(gettext("Stopped by user interruption or stack overflow."),evaled);
       return true;
     }    

@@ -4307,7 +4307,7 @@ namespace giac {
     }
     if (v0.type==_VECT){
       if ( (v[1].type==_VECT && v0._VECTptr->size()!=v[1]._VECTptr->size())
-	   || (v[1].type!=_VECT && v[1]._VECTptr->size()!=1))
+	   || (v[1].type!=_VECT && v0._VECTptr->size()!=1))
 	return gendimerr(contextptr);
     }
     // check method

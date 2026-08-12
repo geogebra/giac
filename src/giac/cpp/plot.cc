@@ -3810,17 +3810,28 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       return false;
     gen a=remove_at_pnt(diam._VECTptr->front());
     gen b=remove_at_pnt(diam._VECTptr->back());
-
+#if 1
     gen ar,ai,br,bi,cr,ci,rr,ri;
     reim(a,ar,ai,contextptr);
     reim(b,br,bi,contextptr);
     cr=recursive_normal(ratnormal((ar+br)/2,contextptr),contextptr);
     ci=recursive_normal(ratnormal((ai+bi)/2,contextptr),contextptr);
     centre=cr+cst_i*ci;
-
+#else
+    centre=recursive_normal(ratnormal(rdiv(a+b,plus_two,contextptr),contextptr),contextptr);
+#endif
     rayon=rdiv(b-a,plus_two,contextptr);
+#if 0
+    rr=(br-ar)/2;
+    ri=(bi-ai)/2;
+    if (absrayon)
+      rayon=recursive_normal(ratnormal(sqrt(rr*rr+ri*ri,contextptr),contextptr),contextptr);
+    else
+      rayon=rr+cst_i*ri;
+#else
     if (absrayon)
       rayon=abs(recursive_normal(ratnormal(rayon,contextptr),contextptr),contextptr);
+#endif
     return true;
   }
 
@@ -9858,7 +9869,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       gen centre,rayon,r,i;
       if (!centre_rayon(e,centre,rayon,false,contextptr))
 	return gensizeerr(contextptr);
-      rayon=ratnormal(rayon,contextptr);
+      rayon=ratnormal(rayon,contextptr); // recursive_normal(rayon,contextptr);
       reim(rayon,r,i,contextptr);
       r=recursive_normal(r*r+i*i,contextptr);
       return symbolic(at_equal,makesequence(pow(x-re(centre,contextptr),2)+pow(y-im(centre,contextptr),2),r));

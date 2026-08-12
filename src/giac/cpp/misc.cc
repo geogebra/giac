@@ -19,7 +19,7 @@
 
 using namespace std;
 #ifdef HAVE_UNISTD_H
-#if !defined NUMWORKS && !defined HP39
+#if !defined NUMWORKS && !defined HP39 && !defined HPG1
 #include <dirent.h>
 #endif
 #include <sys/stat.h>
@@ -3706,6 +3706,13 @@ static define_unary_function_eval (__variance,&_variance,_variance_s);
     }
     else {
       gv=genpoint2vecteur(g,contextptr);
+      if (!gv._VECTptr->empty() && gv._VECTptr->front().type!=_VECT && gv._VECTptr->size()%2==0){
+        vecteur & v=*gv._VECTptr;
+        vecteur w; w.reserve(v.size()/2);
+        for (int i=0;i<v.size();i+=2)
+          w.push_back(makevecteur(v[i],v[i+1]));
+        gv=w;
+      }
       if (!ckmatrix(gv) || gv._VECTptr->empty()){
 	gv=gensizeerr(contextptr);
 	return;
@@ -9159,7 +9166,11 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     int plot=0;
 #endif
     bool return_tabvar=false,return_equation=false,return_coordonnees=false;
+#ifdef KHICAS
+    int do_inflex_tabsign=0;
+#else
     int do_inflex_tabsign=1;
+#endif
     for (int i=0;i<s;++i){
       if (v[i]==at_sign){
 	v.erase(v.begin()+i);
@@ -10818,7 +10829,7 @@ void sync_screen(){}
   static define_unary_function_eval (__leafsize,&_leafsize,_leafsize_s);
   define_unary_function_ptr5( at_leafsize ,alias_at_leafsize,&__leafsize,0,true);
   
-#if defined HAVE_UNISTD_H && !defined NUMWORKS && !defined HP39
+#if defined HAVE_UNISTD_H && !defined NUMWORKS && !defined HP39 && !defined HPG1
   void locate_files(const char * dirname,const char * ext_,vector<string> & v,bool recurse,GIAC_CONTEXT){
     DIR *dp;
     struct dirent *ep;

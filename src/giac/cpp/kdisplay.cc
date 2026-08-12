@@ -20,7 +20,7 @@ const char fourier_url[]="https://www-fourier.univ-grenoble-alpes.fr/~parisse/";
 #define MAX_DISP_RADIUS 2048 // max displayable circle radius in pixels 
 #include "config.h"
 #include "giacPCH.h"
-#if defined HAVE_UNISTD_H && !defined NUMWORKS && !defined HP39
+#if defined HAVE_UNISTD_H && !defined NUMWORKS && !defined HP39 && !defined HPG1
 #include <dirent.h>
 #endif
 #ifdef NSPIRE_NEWLIB
@@ -50,12 +50,23 @@ int fileBrowser(char* filename, char* filter, char* title);
 #define _red 0
 #define dbgprintf printf
 #else
-int shell_x=0,shell_y=0,shell_fontw=12,shell_fonth=18;
+int shell_x=0,shell_y=0,
+#ifdef HPG1
+  shell_fontw=8,
+#else
+  shell_fontw=12,
+#endif
+  shell_fonth=18;
 #define _green _GREEN
 #define _red _RED
+//#define dbgprintf Printf
 #define dbgprintf(...) 
 #endif
 
+#ifdef HPG1
+#define QRHELP
+extern "C" void PrintfXY(short x, short y, const char *format, ...);
+#endif
 
 
 // pour le mode examen cx2, il y a 2 endroits ou is_cx2 est utilise dans smallmenu.selection==1
@@ -85,6 +96,7 @@ extern "C" unsigned tlsf_avail(); // memory available
 #if !defined NUMWORKS_SLOTB // || defined SDL_KHICAS || defined SIMU
 #define QRHELP
 #endif
+
 
 #if defined NUMWORKS && defined DEVICE
 unsigned ram_avail(){
@@ -230,7 +242,7 @@ int python_init(int stack_size,int heap_size){
 }
 
 int micropy_ck_eval(const char *line){
-  giac::ctrl_c=giac::interrupted=false;
+  sdk_ctrl_c=giac::ctrl_c=giac::interrupted=0;
   giac::freeze=false;
   if (python_heap && line[0]==0)
     return 1;
@@ -271,13 +283,23 @@ int micropy_ck_eval(const char *line){
 
 using namespace std;
 using namespace giac;
+
 #ifdef HP39
 const int LCD_WIDTH_PX=256;
 const int LCD_HEIGHT_PX=127;
-#else
-//const int LCD_WIDTH_PX=320;
-//const int LCD_HEIGHT_PX=222;
+#elif HPG1
+extern "C" void (*offon_handler)(const void *);
+extern "C" const void * offon_param;
+extern "C" short _achdir(const char *);
+extern "C" short _amkdir(const char *);
+#ifdef LCD_WIDTH_PX
+#undef LCD_WIDTH_PX
+#undef LCD_HEIGHT_PX
 #endif
+const int LCD_WIDTH_PX=320;
+const int LCD_HEIGHT_PX=222;
+#endif
+
 char* fmenu_cfg=0;
 int khicas_addins_menu(GIAC_CONTEXT); // in kadd.cc
 #ifdef MICROPY_LIB
@@ -488,7 +510,7 @@ namespace giac {
   }
 
   bool do_confirm(const char * s){
-#ifdef NSPIRE_NEWLIB
+#if defined NSPIRE_NEWLIB || defined HPG1
     return confirm(s,((lang==1)?"enter: oui,  esc:annuler":"enter: yes,   esc: cancel"))==KEY_CTRL_F1;
 #else
     return confirm(s,((lang==1)?"OK: oui,  Back:annuler":"OK: yes,   Back: cancel"))==KEY_CTRL_F1;
@@ -514,7 +536,7 @@ namespace giac {
   }  
   
   bool confirm_overwrite(){
-#ifdef NSPIRE_NEWLIB
+#if defined NSPIRE_NEWLIB || defined HPG1
     return do_confirm((lang==1)?"enter: oui,  esc:annuler":"enter: yes,   esc: cancel")==KEY_CTRL_F1;
 #else
     return do_confirm((lang==1)?"OK: oui,  Back:annuler":"OK: yes,   Back: cancel")==KEY_CTRL_F1;
@@ -523,7 +545,7 @@ namespace giac {
   
   void invalid_varname(){
     confirm((lang==1)?"Nom de variable incorrect":"Invalid variable name",
-#ifdef NSPIRE_NEWLIB
+#if defined NSPIRE_NEWLIB || defined HPG1
 	    (lang==1)?"enter: ok":"enter: ok"
 #else
 	    (lang==1)?"OK: ok":"OK: ok"
@@ -630,7 +652,7 @@ namespace giac {
       menu->scroll = menu->selection -(menu->numitems>itemsHeight ? itemsHeight : menu->numitems);
     if(menu->selection-1 < menu->scroll)
       menu->scroll = menu->selection -1;
-  
+    bool absolute=true;
     while(1) {
       // Cursor_SetFlashOff();
       if (menu->selection <=1)
@@ -773,7 +795,44 @@ namespace giac {
 	}*/
       if(menu->type == MENUTYPE_NO_KEY_HANDLING) return MENU_RETURN_INSTANT; // we don't want to handle keys
       int key;
-      GetKey(&key);
+      GetKey(&key); // menu touchscreen
+      if (key==KEY_MOUSE_PUSH){
+	absolute=true;
+      }
+      if (key==KEY_MOUSE_MOVE){
+	int newx=prime_mousex;
+	int newy=prime_mousey;
+	int mousedx=newx-prime_pushx;
+	int mousedy=newy-prime_pushy;
+	//Printf("\f%i %i %i\n",mousedy,shell_fonth,mousemove);loopsleep(500);
+	if (absolute && mousedy>-C18 && mousedy<C18){ // about the same position
+	  // absolute, no scroll
+	  int item=(prime_mousey-prime_statusarea+C18/2)/C18-(showtitle?1:0);
+	  menu->selection=menu->scroll+item;
+	  if (menu->selection>menu->numitems)
+	    menu->selection=menu->numitems;
+	  prime_pushx = newx;
+	  prime_pushy = newy;
+	}
+	else {
+	  // relative move: scroll + move selection
+	  int dl=-mousedy/C18;
+	  if (dl)
+	    absolute=false;
+	  menu->selection += dl;
+	  if (menu->selection<1)
+	    menu->selection=1;
+	  else if (menu->selection>=menu->numitems)
+	    menu->selection=menu->numitems-1;
+	  if (menu->selection > menu->scroll+(menu->numitems>itemsHeight ? itemsHeight : menu->numitems))
+	    menu->scroll = menu->selection -(menu->numitems>itemsHeight ? itemsHeight : menu->numitems);
+	  if(menu->selection-1 < menu->scroll)
+	      menu->scroll = menu->selection -1;
+	  prime_pushx = newx;
+	  prime_pushy = newy;
+	}
+	continue;
+      }
       if (key==KEY_SHUTDOWN)
 	return key;
       if (key==KEY_CTRL_MENU){
@@ -816,7 +875,7 @@ namespace giac {
 	  menu->scroll = menu->selection -(menu->numitems>itemsHeight ? itemsHeight : menu->numitems);
 	break;
       case KEY_CTRL_DOWN:
-	if(menu->selection == menu->numitems)
+	if (menu->selection == menu->numitems)
 	  {
 	    if(menu->returnOnInfiniteScrolling) {
 	      return MENU_RETURN_SCROLLING;
@@ -828,7 +887,7 @@ namespace giac {
 	else
 	  {
 	    menu->selection++;
-	    if(menu->selection > menu->scroll+(menu->numitems>itemsHeight ? itemsHeight : menu->numitems))
+	    if (menu->selection > menu->scroll+(menu->numitems>itemsHeight ? itemsHeight : menu->numitems))
 	      menu->scroll = menu->selection -(menu->numitems>itemsHeight ? itemsHeight : menu->numitems);
 	  }
 	if(menu->pBaRtR==1) return MENU_RETURN_INSTANT;
@@ -4647,7 +4706,7 @@ string longhelp(const char * s){
     // search in catalog: dichotomy would be more efficient
     // but leading spaces cmdnames would be missed
     int nfunc=(lang==1)?CAT_COMPLETE_COUNT_FR:CAT_COMPLETE_COUNT_EN;//sizeof(completeCat)/sizeof(catalogFunc);
-#if !defined BW && !defined NUMWORKS_SLOTB && (defined NSPIRE_NEWLIB || defined NUMWORKS) // should match static_help[] in help.cc
+#if !defined BW && !defined NUMWORKS_SLOTB && (defined NSPIRE_NEWLIB || defined NUMWORKS || defined HPG1) // should match static_help[] in help.cc
     int iii=nfunc; // no search in completeCat, directly in static_help.h
     //if (xcas_python_eval) iii=0;
 #else
@@ -4723,7 +4782,11 @@ string longhelp(const char * s){
       xcas::textArea text;
       text.editable=false;
       text.clipline=-1;
+#ifdef HPG1
+      text.title = (char*)((lang==1)?"Aide sur la commande (touche Help QR)":"Help on command (Help key: QR)");
+#else
       text.title = (char*)((lang==1)?"Aide sur la commande":"Help on command");
+#endif
       text.allowF1=true;
       text.python=false;
       std::vector<xcas::textElement> & elem=text.elements;
@@ -4753,7 +4816,7 @@ string longhelp(const char * s){
         elem[2].s=elem[0].s+"(args)";
       }
       else {
-#ifdef NUMWORKS
+#if defined NUMWORKS || defined HPG1
         elem[2].s = remove_accents(catf?catf->desc:fhowto);
 #else
         elem[2].s = catf?catf->desc:fhowto;
@@ -4761,6 +4824,8 @@ string longhelp(const char * s){
       }
 #ifdef NSPIRE_NEWLIB
       std::string ex("tab: ");
+#elif HPG1
+      std::string ex("1: ");
 #else
       std::string ex("Ans: ");
 #endif
@@ -4783,6 +4848,8 @@ string longhelp(const char * s){
         if (example2){
 #ifdef NSPIRE_NEWLIB
           string ex2="ret: ";
+#elif defined HPG1
+          string ex2="2: ";
 #else
           string ex2="EXE: ";
 #endif
@@ -4810,8 +4877,17 @@ string longhelp(const char * s){
           elem.pop_back();
       }
       exec=doTextArea(&text,contextptr);
+#ifdef HPG1
+      if (exec==KEY_CTRL_EXE)
+	exec=MENU_RETURN_SELECTION;
+      if (exec=='1' || exec=='y')
+	exec=KEY_CHAR_ANS;
+      if (exec=='2' || exec=='z')
+	exec=KEY_CTRL_EXE;
+#endif
+      //PrintfXY(0,0,"exec=%x",exec); loopsleep(1000);
 #ifdef QRHELP
-      if (exec==KEY_CHAR_EXPN10 || exec==KEY_CTRL_SETUP){
+      if (exec=='\t' || exec==KEY_CHAR_EXPN10 || exec==KEY_CTRL_SETUP){
         string url=fourier_url;
         url += "giac/doc";
         url += (lang==1?"/fr/cascmd_fr/":"en/cascmd_en/")+longhelp(elem[0].s.c_str());
@@ -4825,7 +4901,12 @@ string longhelp(const char * s){
       while (*cmdname && *cmdname==*cmdnameorig){
         ++cmdname; ++cmdnameorig;
       }
-      return cmdname;
+      static string help_insert_s="";
+      help_insert_s=cmdname;
+      int help_insert_l=help_insert_s.size();
+      //if (help_insert_l && my_isalpha(help_insert_s[l-1]))
+	help_insert_s += '(';
+      return help_insert_s.c_str();
     }
     if (exec == KEY_CHAR_ANS || exec==KEY_BOOK || exec=='\t' || exec==KEY_CTRL_EXE) {
       reset_kbd();
@@ -4956,6 +5037,8 @@ string longhelp(const char * s){
 	drawRectangle(0,200,LCD_WIDTH_PX,22,SDK_WHITE);
 #ifdef NSPIRE_NEWLIB
 	PrintMini7(0,200,(category==CAT_CATEGORY_ALL?"menu: help | ret: ex1 | tab: ex2 | calc: QRcode":"menu: help | ret: ex1 | tab: ex2 | calc: QRcode"),4,33333,SDK_WHITE,false);
+#elif defined HPG1
+	PrintMini7(0,200,"input | ex1 | ex2 |     |  QR  | help  ",4,33333,SDK_WHITE,false);
 #else
 	PrintMini7(0,200,(category==CAT_CATEGORY_ALL?"->: help |10^ QR|Ans ex1|EXE ex2":"Tool help|10^ QR|Ans ex1|EXE ex2"),4,33333,SDK_WHITE,false);
 #endif
@@ -4979,7 +5062,7 @@ string longhelp(const char * s){
 	}
 	int index=menuitems[menu.selection-1].isfolder;
 #ifdef QRHELP
-        if (sres==KEY_CHAR_EXPN10 || sres==KEY_CTRL_SETUP){
+        if (sres==KEY_CHAR_EXPN10 || sres==KEY_CTRL_SETUP || sres==KEY_CTRL_F5 ){
           const char * fcmdname=menuitems[menu.selection-1].text;
           string url=fourier_url;
           url += "giac/doc";
@@ -5051,6 +5134,8 @@ string longhelp(const char * s){
 	  }
 #ifdef NSPIRE_NEWLIB
 	  std::string ex("ret: ");
+#elif defined HPG1
+	  std::string ex("enter: ");
 #else
 	  std::string ex("EXE: ");
 #endif
@@ -5289,7 +5374,7 @@ string longhelp(const char * s){
 #ifndef BW
   gen select_var(GIAC_CONTEXT){
     giac::history_plot(contextptr).clear();
-    kbd_interrupted=giac::ctrl_c=giac::interrupted=false;
+    sdk_ctrl_c=kbd_interrupted=giac::ctrl_c=giac::interrupted=false;
 #ifdef QUICKJS
     if (xcas_python_eval<0){
       update_js_vars();
@@ -6938,6 +7023,9 @@ namespace xcas {
   }
 
   int text_width(int fontsize,const char * s){
+#ifdef HPG1
+    return (fontsize<14?6:8)*strlen(s);
+#endif
 #ifdef NSPIRE_NEWLIB
     int x=0;
     if (fontsize>=18)
@@ -8168,6 +8256,7 @@ namespace xcas {
     // Equation_draw(eq.data,x,y,LCD_WIDTH_PX,0,&eq,contextptr);
     int xleft,ytop,xright,ybottom,gselpos; gen * gsel,*gselparent;
     eqwdata eqdata=Equation_total_size(eq.data);
+#if 0
     if ( (eqdata.dx>LCD_WIDTH_PX || eqdata.dy>LCD_HEIGHT_PX-STATUS_AREA_PX) && Equation_adjust_xy(eq.data,xleft,ytop,xright,ybottom,gsel,gselparent,gselpos)){
       if (x<xleft){
 	if (x+LCD_WIDTH_PX<xright)
@@ -8177,7 +8266,6 @@ namespace xcas {
 	if (xright-x<LCD_WIDTH_PX)
 	  x=giacmax(xright-LCD_WIDTH_PX,0);
       }
-#if 0
       cout << "avant " << y << " " << ytop << " " << ybottom << "\n";
       if (y<ytop){
 	if (y+LCD_HEIGHT_PX<ybottom)
@@ -8188,8 +8276,8 @@ namespace xcas {
 	  y=giacmax(ybottom-LCD_HEIGHT_PX,0);
       }
       cout << "apres " << y << " " << ytop << " " << ybottom << "\n";
-#endif
     }
+#endif
     int save_ymin_clip=clip_ymin;
     clip_ymin=STATUS_AREA_PX;
     Equation_draw(eq.data,x,y,RAND_MAX,0,&eq,contextptr);
@@ -9271,7 +9359,7 @@ namespace xcas {
       control_c();
       if (ctrl_c || interrupted){
 	// w+=2; h+=2;
-	ctrl_c=interrupted=false;
+	sdk_ctrl_c=ctrl_c=interrupted=false;
 	return true;
       }
 #endif
@@ -11915,6 +12003,8 @@ namespace xcas {
 #else
 #if defined NUMWORKS_SLOTB || defined NUMWORKS_SLOTAB
       DefineStatusMessage((char*)"shift-1:help |-EXE:menu |back:quit", 1, 0, 0);
+#elif defined HPG1
+      DefineStatusMessage((char*)"Help/Menu/Toolbox|ESC:quit", 1, 0, 0);
 #else
       DefineStatusMessage((char*)"shift-1: help, home: menu, back: quit", 1, 0, 0);
 #endif
@@ -11923,7 +12013,7 @@ namespace xcas {
       if (hp || tracemode)
         draw_decorations(title_tmp);
       return;
-    }
+    } // end is3d
 #endif //BW
     int save_clip_ymin=clip_ymin;
     clip_ymin=STATUS_AREA_PX;
@@ -12015,7 +12105,7 @@ namespace xcas {
 	}
       }
     }
-    
+    //Printf("\f%i %i\n",LCD_HEIGHT_PX,STATUS_AREA_PX);
     // draw
     fltk_draw(*this,g,x_scale,y_scale,clip_x,clip_y,clip_w,clip_h,contextptr);
     clip_ymin=save_clip_ymin;
@@ -12642,7 +12732,7 @@ namespace xcas {
       g=protecteval(g,level,contextptr);
       clear_abort();
       giac::ctrl_c=false;
-      kbd_interrupted=giac::interrupted=false;
+      sdk_ctrl_c=kbd_interrupted=giac::interrupted=false;
       if (i<plot_instructions.size())
 	plot_instructions[i]=g;
       else
@@ -13377,7 +13467,7 @@ namespace xcas {
       selected.pop_back();
   }
 
-  gen Graph2d::geometry_round(double x,double y,double z,double eps,gen & original,int & pos,bool selectfirstlevel,bool setscroller) {
+gen Graph2d::geometry_round(double x,double y,double z,double eps,gen & original,int & pos,bool selectfirstlevel,bool setscroller /* not used currently, would set history level */) {
     if (!hp)
       return undef;
     gen tmp;
@@ -13946,8 +14036,8 @@ namespace xcas {
     text.allowF1=false;
     text.python=false;
     add(&text,lang==1?
-	"x,n,t ou tab: etude courbe\nshift-2: info courbe\nshift-3: tangente, pente\nshift-4: normale\nshift-5: cercle osculateur\nshift-7: infos courbe on/off\nhaut/bas/droit/gauche: deplace pointeur ou change point de vue\nalpha-haut/bas/droit/gauche: modifie fenetre\ny^x ou e^x: trace 3d precis\nEsc/Back: quitte ou interrompt le trace 3d en cours\n( et ): modifie le rendu des surfaces raides 3d\n0: surfaces cachees 3d ON/OFF\n.: remplissage surface 3d raide ON/OFF\n5 reset 3d view\n7,8,9,1,2,3: deplacement 3d\n\nGeometrie\nF4: change le mode\nLe mode repere (shift 7) permet de changer le point de vue\nLe mode pointeur (shift 8) permet de bouger un objet et les objets dependants avec enter/OK et les touches de deplacement\nLes autres modes permettent de creer des objets\nEsc/Back: permet de passer en vue symbolique et de creer/modifier des objets par des commandes, taper enter/OK pour revenir en vue graphique\n4,6: modifie la profondeur du clic":
-	"x,n,t or tab: curve study\nshift-2: curve info\nshift-3: tangent, slope\nshift-4: normal\nshift-5: osculating circle\nshift-7: curve infos on/off\nup/down/right/left: move pointer or modify viewpoint\nalpha-up/down/right/left: move window\nEsc/Back: leave or interrupt 3d rendering\ny^x or e^x: precise 3d\n( and ): modify stiff surfaces 3d rendering\n0: hidden 3d surfaces ON/OFF\n.: fill stiff 3d surfacesON/OFF\n5 reset 3d view\n7,8,9,1,2,3: move 3d view\n\nGeometry\nF4: change geometry mode\nFrame mode (shift F1): modify viewpoint\nPointer mode (shift F2): select an object and move it with enter/OK and cursor keys\nOther modes: create an object\nEsc/Back: go to symbolic view where you can create/modify objects with commands, press enter/OK to go back to graphic view");
+	"x,n,t ou tab: etude courbe\nshift-2: info courbe\nshift-3: tangente, pente\nshift-4: normale\nshift-5: cercle osculateur\nshift-7: infos courbe on/off\nhaut/bas/droit/gauche: deplace pointeur ou change point de vue\nalpha-haut/bas/droit/gauche: modifie fenetre\ny^x ou e^x: trace 3d precis\nEsc/Back: quitte ou interrompt le trace 3d en cours\n( et ): modifie le rendu des surfaces raides 3d\n0: surfaces cachees 3d ON/OFF\n.: remplissage surface 3d raide ON/OFF\n5 reset 3d view\n7,8,9,1,2,3: deplacement 3d\n\nGeometrie\nToolbox: change le mode\nLe mode repere (shift 7) permet de changer le point de vue\nLe mode pointeur (shift 8) permet de bouger un objet et les objets dependants avec enter/OK et les touches de deplacement\nLes autres modes permettent de creer des objets\nEsc/Back: permet de passer en vue symbolique et de creer/modifier des objets par des commandes, taper enter/OK pour revenir en vue graphique\n4,6: modifie la profondeur du clic":
+	"x,n,t or tab: curve study\nshift-2: curve info\nshift-3: tangent, slope\nshift-4: normal\nshift-5: osculating circle\nshift-7: curve infos on/off\nup/down/right/left: move pointer or modify viewpoint\nalpha-up/down/right/left: move window\nEsc/Back: leave or interrupt 3d rendering\ny^x or e^x: precise 3d\n( and ): modify stiff surfaces 3d rendering\n0: hidden 3d surfaces ON/OFF\n.: fill stiff 3d surfacesON/OFF\n5 reset 3d view\n7,8,9,1,2,3: move 3d view\n\nGeometry\nToolbox: change geometry mode\nFrame mode (shift F1): modify viewpoint\nPointer mode (shift F2): select an object and move it with enter/OK and cursor keys\nOther modes: create an object\nEsc/Back: go to symbolic view where you can create/modify objects with commands, press enter/OK to go back to graphic view");
     int exec=doTextArea(&text,contextptr);
   }
 #endif
@@ -14122,12 +14212,15 @@ namespace xcas {
     gr.draw();
     gr.precision=saveprecision;    
     gr.must_redraw=true;
+    bool absolute=true;
     for (;;){
 #ifdef NSPIRE_NEWLIB
       DefineStatusMessage((char*)"shift-1: help, menu: menu, esc: quit", 1, 0, 0);
 #else
 #if defined NUMWORKS_SLOTB || defined NUMWORKS_SLOTAB
       DefineStatusMessage((char*)"shift-1: help|-EXE: menu|back: quit", 1, 0, 0);
+#elif defined HPG1
+      DefineStatusMessage((char*)"Toolbox/help/menu|ESC: quit", 1, 0, 0);
 #else
       DefineStatusMessage((char*)"shift-1: help, home: menu, back: quit", 1, 0, 0);
 #endif
@@ -14141,7 +14234,11 @@ namespace xcas {
       if (gr.must_redraw)
         gr.draw();
       if (hp){
+#ifdef HPG1
+        string msg=hp->filename+":"+(mode==255?" Frame. Toolbox":modestr);
+#else
         string msg=hp->filename+":"+(mode==255?" Frame. Shift-1: help":modestr);
+#endif
         // help
         int help_pos=args_tmp.empty()?0:args_tmp.size()-1;
         if (help_pos<args_help.size()){
@@ -14161,6 +14258,106 @@ namespace xcas {
       }
       int key=-1;
       GetKey(&key);
+#ifdef HPG1 // graph touchscreen
+      if (key==KEY_MOUSE_PUSH){
+	current_i=prime_mousex;
+	current_j=prime_mousey-prime_statusarea;
+	double newx,newy,newz;
+	find_xyz(current_i,current_j,current_depth,newx,newy,newz);
+	int pos=-1;
+	gen orig;
+	gen res=geometry_round(newx,newy,newz,find_eps(),orig,pos,true/* prefer selecting point*/);
+	absolute=true;
+	//Printf("\f%i %s\n",pos,res.print().c_str());loopsleep(1000);
+	if (hp && pos>=0 && mode==255 && !moving){
+	  // in frame mode, push on a point will select the point and set to pointer mode
+	  gen g=symbolic_instructions[pos];
+	  if (g.is_symb_of_sommet(at_plus) && g._SYMBptr->feuille.type==_VECT && !g._SYMBptr->feuille._VECTptr->empty())
+	    g=g._SYMBptr->feuille._VECTptr->front();
+	  //Printf("%s\n",g.print().c_str());loopsleep(1000);
+	  if (g.is_symb_of_sommet(at_sto) && g._SYMBptr->feuille.type==_VECT ){
+	    vecteur & v = *g._SYMBptr->feuille._VECTptr;
+	    if (v.size()==2){
+	      gen original = v[0];
+	      gen tmp = v[1];
+	      //Printf("%s %s\n",original.print().c_str(),tmp.print().c_str());loopsleep(1000);
+	      if (tmp.type==_IDNT && original.is_symb_of_sommet(at_point)){
+		pushed=true;
+		push_i=current_i;
+		push_j=current_j;
+		push_depth = current_depth;
+		set_mode(0,0,0,"");
+		geo_handle(FL_PUSH,KEY_CTRL_OK);
+		if (moving)
+		  update_g();
+		absolute=false;
+	      }
+	    }
+	  }	 
+	}
+      }
+      if (key==KEY_MOUSE_MOVE){
+	int newx=prime_mousex;
+	int newy=prime_mousey;
+	int mousedx=newx-prime_pushx;
+	int mousedy=newy-prime_pushy;
+	prime_pushx = newx;
+	prime_pushy = newy;
+	//Printf("\f%i %i %i\n",mousedx,mousedy,absolute);loopsleep(500);
+	if (absolute && mousedy>-mousedelta && mousedy<mousedelta && mousedx>-mousedelta && mousedx<mousedelta){ // about the same position
+	  // absolute, no scroll, select object
+	  gr.current_i = newx;
+	  gr.current_j = newy - prime_statusarea;
+	  if (hp && mode!=255){
+	    gr.geo_handle(moving?FL_DRAG:FL_MOVE,key);
+	  } 
+	  update_g();
+	  continue;
+	}
+	else {
+	  absolute=false;
+	  if (gr.is3d){
+	    int curprec=gr.precision;
+	    gr.precision += 2;
+	    if (gr.precision>9) gr.precision=9;
+	    while (1){
+	      gr.q=quaternion_double(0,mousedx,0)*gr.q; // + left - right
+	      gr.q=rotation_2_quaternion_double(0.707,0.707,0,mousedy)*gr.q;// + up - down
+	      gr.update_rotation();
+	      gr.draw();
+	      gr.must_redraw=gr.solid3d;
+	      if (prime_keydown!=KEY_MOUSE_MOVE)
+		break;
+	      newx=prime_mousex;
+	      newy=prime_mousey;
+	      mousedx=newx-prime_pushx;
+	      mousedy=newy-prime_pushy;
+	      prime_pushx = newx;
+	      prime_pushy = newy;
+	    }
+	    gr.precision=curprec;
+	    continue;
+	  }
+	  else {
+	    if (hp && mode!=255){
+	      gr.current_i += mousedx;
+	      gr.current_j += mousedy;
+	      gr.geo_handle(moving?FL_DRAG:FL_MOVE,key);
+	      update_g();
+	      continue;
+	    } 
+	    double windy=gr.window_ymax-gr.window_ymin,windx=gr.window_xmax-gr.window_xmin;
+	    //Printf("\f%i %i %i\n",int(gr.window_xmin),int(gr.window_xmax),mousedx);
+	    double dy=mousedy*windy/LCD_HEIGHT_PX,dx=-mousedx*windx/LCD_WIDTH_PX;
+	    gr.window_ymax += dy; gr.window_ymin += dy;
+	    gr.window_xmax += dx; gr.window_xmin += dx;
+	    //Printf("%i %i %i",int(gr.window_xmin),int(gr.window_xmax),mousedx); loopsleep(500);
+	    if (hp) update_g();
+	  }
+	}
+	continue;
+      }
+#endif
       bool alph=alphawasactive(&key);
       if (key==KEY_SHUTDOWN || key==KEY_CTRL_SYMB)
         return key;
@@ -15177,6 +15374,20 @@ namespace xcas {
       clip_ymin=save_ymin;
       int key;
       GetKey(&key);
+#ifdef HPG1
+      if (key==KEY_MOUSE_MOVE){
+	int newx=prime_mousex;
+	int newy=prime_mousey;
+	int mousedx=newx-prime_pushx;
+	int mousedy=newy-prime_pushy;
+	prime_pushx = newx;
+	prime_pushy = newy;
+	t.turtlex -= mousedx;
+	t.turtley += mousedy;
+	redisplaylogo(t);
+	continue;
+      }
+#endif
       if (key==KEY_SHUTDOWN)
 	return key;
       if (key==KEY_CTRL_EXIT || key==KEY_CTRL_OK || key==KEY_PRGM_ACON || key==KEY_CTRL_MENU || key==KEY_CTRL_EXE || key==KEY_CTRL_VARS || key==KEY_CHAR_ANS)
@@ -15248,7 +15459,7 @@ namespace xcas {
       eq.data=xcas::Equation_compute_size(geq,eq.attr,LCD_WIDTH_PX,contextptr);
       eqdata=xcas::Equation_total_size(eq.data);
     }
-    int dx=(eqdata.dx-LCD_WIDTH_PX)/2,dy=LCD_HEIGHT_PX-2*margin+eqdata.y;
+    int dx=eqdata.dx>LCD_WIDTH_PX?0:(eqdata.dx-LCD_WIDTH_PX)/2,dy=LCD_HEIGHT_PX-2*margin+eqdata.y;
     if (geq.type==_VECT){
       nlines=geq._VECTptr->size();
       if (eqdata.dx>=LCD_WIDTH_PX)
@@ -15274,6 +15485,7 @@ namespace xcas {
     //cout << eq.data << "\n";
     int firstrun=2;
     for (;;){
+      //Bdisp_AllClr_VRAM();
 #if 1
       if (firstrun==2){
 #ifdef NSPIRE_NEWLIB
@@ -15293,19 +15505,24 @@ namespace xcas {
       gen value;
       if (listormat) // select line l, col c
 	xcas::eqw_select(eq.data,line,col,true,value);
-#define EQW_TAILLE 54
+#define EQW_TAILLEX 54
+#define EQW_TAILLEY 54
+      if (dx<-LCD_WIDTH_PX/2)
+	dx=-LCD_WIDTH_PX/2;
       if (eqdata.dx>LCD_WIDTH_PX){
-	if (dx<-EQW_TAILLE)
-	  dx=-EQW_TAILLE;
-	if (dx>eqdata.dx-LCD_WIDTH_PX+EQW_TAILLE)
-	  dx=eqdata.dx-LCD_WIDTH_PX+EQW_TAILLE;
+	if (dx>eqdata.dx-LCD_WIDTH_PX+EQW_TAILLEX)
+	  dx=eqdata.dx-LCD_WIDTH_PX+EQW_TAILLEX;
       }
-      if (eqdata.dy>LCD_HEIGHT_PX-EQW_TAILLE){
-	if (dy-eqdata.y<LCD_HEIGHT_PX-EQW_TAILLE)
-	  dy=eqdata.y+LCD_HEIGHT_PX-EQW_TAILLE;
-	if (dy-eqdata.y>eqdata.dy+EQW_TAILLE)
-	  dy=eqdata.y+eqdata.dy+EQW_TAILLE;
+      else if (dx>eqdata.dx/2)
+	dx=eqdata.dx/2;
+      if (dy-eqdata.y>eqdata.dy+LCD_HEIGHT_PX/2)
+	dy=eqdata.y+eqdata.dy+LCD_HEIGHT_PX/2;
+      if (eqdata.dy>LCD_HEIGHT_PX){
+	if (dy-eqdata.y<LCD_HEIGHT_PX-EQW_TAILLEY)
+	  dy=eqdata.y+LCD_HEIGHT_PX-EQW_TAILLEY;
       }
+      else if (dy-eqdata.y<eqdata.dy/2)
+	dy=eqdata.y+eqdata.dy/2;
       waitforvblank();
       drawRectangle(0, STATUS_AREA_PX, LCD_WIDTH_PX, LCD_HEIGHT_PX-STATUS_AREA_PX,COLOR_WHITE);
       // Bdisp_AllClr_VRAM();
@@ -15340,7 +15557,26 @@ namespace xcas {
       }
       int key;
       //cout << eq.data << "\n";
+#ifdef HPG1 // console touchscreen
+      statuslinemsg("Esc: exit, Enter: OK");
+      set_xcas_status();
+      key=menu_getkey(1,"algb | calc | undo | edit |  +-  | evalf","matr | cplx | arit | edit | real | poly","list | prog | color|     | misc | geom",22222);
+      if (key==KEY_CTRL_VIEW) key=KEY_CTRL_F4;
+      // if (key!=KEY_MOUSE_PUSH) Printf("\fk=%i dx=%i+%i dy=%i+%i\n",key,dx,prime_mousex-prime_pushx,dy,prime_mousey-prime_pushy); OSSleep(1000); 
+      if (key==KEY_MOUSE_MOVE){
+	int newx=prime_mousex;
+	int newy=prime_mousey;
+	int mousedx=newx-prime_pushx;
+	int mousedy=newy-prime_pushy;
+	dx -= mousedx;
+	dy += mousedy;
+	prime_pushx = newx;
+	prime_pushy = newy;
+	continue;
+      }
+#else
       GetKey(&key);
+#endif
       if (key==KEY_SHUTDOWN)
 	return undef;
       bool alph=alphawasactive(&key);
@@ -15558,6 +15794,8 @@ namespace xcas {
       if (key==KEY_CTRL_F6 || key==KEY_CTRL_EXE){
 	adds= (key==KEY_CTRL_F6?"evalf":"eval");
       }
+      if (key==KEY_CHAR_POW)
+	adds="^"; // otherwise ** in Python mode will crash
       if (key==KEY_CHAR_MINUS)
 	adds="-";
       if (key==KEY_CHAR_EQUAL)
@@ -15887,14 +16125,14 @@ namespace xcas {
 		clear_abort();
 		esc_flag=0;
 		giac::ctrl_c=false;
-		kbd_interrupted=giac::interrupted=false;
+		sdk_ctrl_c=kbd_interrupted=giac::interrupted=false;
 	      }
 	      else
 		tmp=symbolic(*op._FUNCptr,args);
 	      //cout << "sel " << value._EQWptr->g << " " << tmp << " " << goto_sel << "\n";
 	      esc_flag=0;
 	      giac::ctrl_c=false;
-	      kbd_interrupted=giac::interrupted=false;
+	      sdk_ctrl_c=kbd_interrupted=giac::interrupted=false;
 	      if (!is_undef(tmp)){
 		xcas::replace_selection(eq,tmp,gsel,&goto_sel,contextptr);
 		if (addarg){
@@ -15930,19 +16168,45 @@ namespace xcas {
       _restart(0,contextptr);
   }
 
+  void switch_to_xcas(GIAC_CONTEXT){
+    if (xcas_python_eval==0)
+      return;
+    xcas_python_eval=0;
+    int p=python_compat(contextptr);
+    python_compat(p>0?p&3:0,contextptr);
+    if (edptr)
+      edptr->python=p>0?p&3:0;
+#if defined MICROPY_LIB && !defined HPG1
+    if (p==4 && do_confirm((lang==1)?"Effacer le tas MicroPython?":"Clear MicroPython heap?"))
+      python_free();
+#endif
+#ifdef QUICKJS
+    if (0 && p==-1 && do_confirm((lang==1)?"Effacer le tas QuickJS?":"Clear QuickJS heap?"))
+      js_end(global_js_context);
+#endif
+    *logptr(contextptr) << "Xcas interpreter\n";
+    //Console_Output("Xcas interpreter\n");
+    Console_FMenu_Init(contextptr);
+}
+
   void switch_to_micropy(GIAC_CONTEXT){
+    if (xcas_python_eval==1)
+      return;
     xcas_python_eval=1;
     int p=python_compat(contextptr);
     if (p<0) p=0;
     python_compat(4|p,contextptr);
     if (edptr)
       edptr->python=1;
+#ifndef HPG1
     if (do_confirm((lang==1)?"Effacer les variables Xcas?":"Clear Xcas variables?"))
       do_restart(contextptr);
+#endif
 #ifdef MICROPY_LIB
     micropy_ck_eval("1"); // insure initialization
 #endif
     *logptr(contextptr) << "Micropython interpreter\n";
+    //Console_Output("Micropython interpreter\n");
     Console_FMenu_Init(contextptr);
   }
 
@@ -15960,6 +16224,7 @@ namespace xcas {
 
   void do_run(const char * s,gen & g,gen & ge,const context * & contextptr){
     warn_nr=true;
+    sdk_ctrl_c=0;
 #ifndef BW
     os_shell=true;
 #endif
@@ -15993,7 +16258,7 @@ namespace xcas {
     clear_abort();
     // execution_in_progress = 0;
     if (esc_flag || ctrl_c){
-      esc_flag=ctrl_c=interrupted=false;
+      sdk_ctrl_c=esc_flag=ctrl_c=interrupted=false;
       while (confirm("Interrupted","OK",true)==-1)
 	; // insure ON has been removed from keyboard buffer
       ge=string2gen("Interrupted",false);
@@ -16025,7 +16290,7 @@ namespace xcas {
     //Console_Output("Done"); return ;
     esc_flag=0;
     giac::ctrl_c=false;
-    giac::kbd_interrupted=giac::interrupted=false;
+    sdk_ctrl_c=giac::kbd_interrupted=giac::interrupted=false;
   }
 
 #if defined NSPIRE_NEWLIB && !defined BW
@@ -16394,7 +16659,7 @@ namespace xcas {
     duration=h+m/100.0;
     return ch;
   }
-  const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF4 menu\nreserved\nF5  2d \nreserved\nF6 reg\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF> prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF? color\ndisplay=\nfilled\nred\ncyan\ngreen\nblue\nmagenta\nyellow\nFA misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n and \n or \nperiodic_table\nFB geo\npoint(\nline(\ncircle(\nplane(\n";
+  const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF4 menu\nreserved\nF5 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF6 poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF9 regr\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< logo\navance\nrecule\ntourne_gauche\ntourne_droite\ncrayon\ndisque\nefface\nF= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF> prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF@ color\ndisplay=\nfilled\nred\ncyan\ngreen\nblue\nmagenta\nyellow\nFA misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n and \n or \nperiodic_table\nFB geo\npoint(\nline(\ncircle(\nplane(\n";
 
   const char python_conf_standard[] = "F1 misc\nprint(\ninput(\n;\n:\n[]\ndef f(x): return \ntime()\nfrom time import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nabs(\nsqrt(\nfrom math import *\nF3 c&rand\nrandint(\nrandom()\nchoice(\nfrom random import *\n.real\n.imag\nphase(\nfrom cmath import *;i=1j\nF4 menu\nreserved\nF5  2d\nreserved\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF7 linalg\nmatrix(\nadd(\nsub(\nmul(\ninv(\nrref(\ntranspose(\nfrom linalg import *;i=1j\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *;i=1j\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF: plot\nclf()\nplot(\ntext(\narrow(\nscatter(\nbar(\nshow()\nfrom matplotl import *\nF= list\nlist(\nrange(\nlen(\nappend(\nzip(\nsorted(\nmap(\nreversed(\nF> prog\n|\n&\n#\nhex(\nbin(\ndebug(\nfrom cas import *\ncaseval(\"\")\n";
   
@@ -16442,10 +16707,12 @@ namespace xcas {
     int xp=xcas_python_eval;
     xcas_python_eval=0;
     Console_FMenu_Init(contextptr);
+    dconsole_mode=0;
     gen tmp=eqw(ge,true,contextptr);
+    dconsole_mode=dconsole_save;
     xcas_python_eval=xp;
     Console_FMenu_Init(contextptr);
-    if (is_undef(tmp) || tmp==ge || taille(ge,64)>=64)
+    if (is_undef(tmp) || tmp==ge || taille(tmp,256)>=256)
       return 0;
     string S(tmp.print(contextptr));
     if (S.size()>=512)
@@ -16697,7 +16964,7 @@ namespace xcas {
       g=protecteval(g,1,contextptr);
       clear_abort();
       giac::ctrl_c=false;
-      kbd_interrupted=giac::interrupted=false;
+      sdk_ctrl_c=kbd_interrupted=giac::interrupted=false;
       // define the function
       if (check_do_graph(g,gs,7,contextptr)==KEY_SHUTDOWN)
 	return KEY_SHUTDOWN;
@@ -16991,7 +17258,11 @@ namespace xcas {
     if (text->editable && text->clipline>=0)
       DefineStatusMessage((char *)"PAD: select, COPY: copy, DEL: cut",1,0,0);
     else {
+#ifdef HPG1
+      std::string status("");
+#else
       std::string status(" CAS ");
+#endif
 #ifdef GIAC_SHOWTIME
       int d=(int(millis()/60000) +time_shift) % (24*60); // minutes
       int heure=d/60;
@@ -17011,7 +17282,7 @@ namespace xcas {
         }
         else {
           if (text->python & 4)
-            status += " MicroPython ";
+            status += " MicroPy ";
           else
             status += text->python?(text->python==2?" Py ^xor ":" Py ^=** "):" Xcas ";
         }
@@ -17722,12 +17993,12 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       linesbefore += v[cur].nlines;
     }
     // line begin Y is at scroll+linesbefore*17, must be positive
-    if (linesbefore * C19 + scroll < 0)
-      scroll = -C19 * linesbefore;
+    if (linesbefore*C19+scroll < 0)
+      scroll = -C19*linesbefore;
     linesbefore += v[text->line].nlines;
     // after line Y is at scroll+linesbefore*17
-    if (linesbefore * C19 + scroll > C154)
-      scroll = C154 - C19 * linesbefore;
+    if (linesbefore*C19+scroll > C154)
+      scroll = C154 - C19*linesbefore;
   }
   textY = scroll + (showtitle ? C24 : 0) + text->y; // 24 pixels for title (or not)
   int deltax = 0;
@@ -18094,7 +18365,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     //drawRectangle(text->x, text->y+24, text->width, LCD_HEIGHT_PX-24, COLOR_WHITE);
     // insure cursor is visible
     if (editable && !isFirstDraw){
-      int linesbefore=0,cur;
+      int linesbefore=0,cur,scroll_linesbefore=172;
       for (cur=0;cur<text->line;++cur){
 	linesbefore += (v[cur].newLine+(v[cur].nlines-1))*(text->lineHeight+v[cur].lineSpacing); //*logptr(contextptr) << cur << "," << v[cur].nlines << " ";
       }
@@ -18103,8 +18374,8 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	scroll = -linesbefore;
       linesbefore += (v[cur].newLine+(v[cur].nlines-1))*(text->lineHeight+v[cur].lineSpacing); //*logptr(contextptr) << '\n';
       // after line Y is at scroll+linesbefore*17
-      if (linesbefore+scroll>148)
-	scroll = 148-linesbefore;
+      if (linesbefore+scroll>scroll_linesbefore)
+	scroll = scroll_linesbefore-linesbefore;
     }
     textY = scroll+(showtitle ? 24 : 0)+text->y; // 24 pixels for title (or not)
     int deltax=0;
@@ -18777,13 +19048,13 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       y-=4;
       x+=7;
       int bg=65529; // background
-      x=os_draw_string_small(x,y,_BLACK,bg,": ",false);
+      //x=os_draw_string_small(x,y,_BLACK,bg,": ",false)-3;
       if (howto && strlen(howto)){
 #ifdef NSPIRE_NEWLIB
 	y-=2;
 #endif
 	os_draw_string_small(x,y,_BLACK,bg,
-#ifdef NUMWORKS
+#if defined NUMWORKS || defined HPG1
 			     remove_accents(howto).c_str(),
 #else
 			     howto,
@@ -18851,16 +19122,92 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     if (text->line>=v.size())
       text->line=0;
     display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
-    bool keytooltip=false;
+    bool keytooltip=false,absolute=false;
+    const int interligne=16;
     while(1) {
       if (text->line>=v.size())
 	text->line=0;
       if (!keytooltip)
         display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);
-      if(text->type == TEXTAREATYPE_INSTANT_RETURN) return 0;
+      if (text->type == TEXTAREATYPE_INSTANT_RETURN) return 0;
       int keyflag = GetSetupSetting( (unsigned int)0x14);
       int key;
+#ifdef HPG1 // eqw touchscreen
+      if (editable){
+	if (text->gr)
+	  key=menu_getkey(1," pnts | line | undo | color | +-  | curve "," tria | polyg | 3d | trnsf | misc | mesur"," test | coord | ",44444); 
+	else if (xcas_python_eval==1)
+	  key=menu_getkey(1," test | loop | undo | misc | +-  | logo "," lin | numpy | arit | plot | graph | color"," list | misc | geom | color",44444); 
+	else
+	  key=menu_getkey(1," test | loop | undo | misc | +-  | logo ","matr | cplx | arit | misc| real plot "," list | misc | geom | color | ",44444);
+      }
+      else
+	key=getkey(1);
+      // editor touchscreen
+      if (key==KEY_MOUSE_PUSH){
+	absolute=true;
+      }
+      if (key==KEY_MOUSE_MOVE){
+	int newx=prime_mousex;
+	int newy=prime_mousey;
+	int mousedx=newx-prime_pushx;
+	int mousedy=newy-prime_pushy;
+	text->pos=(newx-10)/8;
+	//Printf("\f%i %i %i\n",mousedy,shell_fonth,mousemove);loopsleep(500);
+	if (absolute && mousedy>-C18 && mousedy<C18){ // about the same position
+	  // absolute, no scroll
+	  int scrollmousepush= newy-prime_statusarea - (scroll + (showtitle ? C24 : 0) + text->y) ;
+	  text->line = scrollmousepush/C18;
+	  prime_pushx = newx;
+	  prime_pushy = newy;
+	}
+	else if (v.size()>=11){
+	  // relative move: scroll + move selection
+	  bool texted=text->editable;
+	  text->editable=false;
+	  while (prime_keydown==KEY_MOUSE_MOVE){
+	    newx=prime_mousex;
+	    newy=prime_mousey;
+	    mousedx=newx-prime_pushx;
+	    mousedy=newy-prime_pushy;
+	    prime_pushx = newx;
+	    prime_pushy = newy;
+	    int screenvsize=LCD_HEIGHT_PX-36;
+	    scroll += mousedy;
+	    // display scroll to scroll+totaltexty
+	    if (scroll>0) scroll=0;
+	    if (scroll+totalTextY<screenvsize)
+	      scroll=screenvsize-totalTextY;
+	    display(text,isFirstDraw,totalTextY,scroll,textY,contextptr);  
+	  }
+	  text->editable=texted;
+	  int scrollmousepush= newy-prime_statusarea - (scroll + (showtitle ? C24 : 0) + text->y) ;
+	  int l=scrollmousepush/C18;
+	  if (l<0)
+	    text->line = 0;
+	  else if (l>=v.size())
+	    text->line=v.size()-1;
+	  else
+	    text->line=l;
+	  absolute=false;
+	  prime_pushx = newx;
+	  prime_pushy = newy;
+	}
+	continue;
+      } // end key==mouse_move
+      if (key==KEY_CTRL_HOME){
+	switch_to_micropy(contextptr);
+	continue;
+      }
+      if (key==KEY_CTRL_CAS){
+	switch_to_xcas(contextptr);
+	continue;
+      }
+      if (!text->editable && (key=='1' || key=='2' || key=='y' || key=='z' || key==KEY_CTRL_HELP) )
+	return key;
+#else
       GetKey(&key);
+#endif
 #ifdef HP39
       show_status(text,"","");
       if (key==KEY_CTRL_F5){
@@ -19046,7 +19393,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	    if (text->gr) { // geometry menu
 	      le_menu="F1 points\npoint(\nmidpoint(\ncenter(\nelement(\nsingle_inter(\ninter(\nlegende(\ntrace(\nF2 lines\nsegment(\nline(\nhalf_line(\nvector(\nparallel(\nperpendicular(\ntangent(\nplane(\ncircle(\nF4 disp\ndisplay=\nfilled\nred\nblue\ngreen\ncyan\nmagenta\nyellow\nF6 curves\ncircle(\nellipse(\nhyperbola(\nparabola(\nplot(\nplotparam(\nplotpolar(\nplotode(\nF7 triangle\ntriangle(\nequilateral_triangle(\nmedian(\nperpen_bisector(\nbisector(\nisobarycenter(\nincircle(\ncircumcircle(\nF8 polygon\nsquare(\nrectangle(\nquadrilateral(\nhexagon(\npolygon(\nisopolygon(\nvertices(\nF9 3d\nplane(\ncube(\ntetrahedron(\nsphere(\ncone(\nhalf_cone(\ncylinder(\nplot3d(\nF: transf\nprojection(\nreflection(\ntranslation(\nrotation(\nhomothety(\nsimilarity(\nF; geodiff\ntangent(\nosculating_circle(\nevolute(\ncurvature(\nfrenet(\noctahedron(\ndodecahedron(\nicosahedron(\nF< mesures\ndistance(\ndistance2(\nradius(\naire(\nperimetre(\npente(\nangle(\nF= test\nis_collinear(\nis_concyclic(\nis_coplanar(\nis_cospherical(\nis_element(\nis_parallel(\nis_perpendicular(\nF> analyt\ncoordonnees(\nequation(\nparameq(\nabscisse(\nordonnee(\naffixe(\narg(\n";
 	    } else {
-	      if (xcas_python_eval==1)//text->python?
+	      if (xcas_python_eval==1)
 		le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\n&&\n||\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\ndef\nreturn \n#\nF4 misc\nchartab\n:\n;\n_\n%\nfrom  import *\nprint(\ninput(\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF: plot\nplot(\ntext(\narrow(\nlinear_regression_plot(\nscatter(\naxis(\nbar(\nfrom matplotl import *\nF7 linalg\nadd(\nsub(\nmul(\ninv(\ndet(\nrref(\ntranspose(\nfrom linalg import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nset_pixel(\ndraw_line(\ndraw_rectangle(\nfill_rect(\ndraw_polygon(\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\n";
 	      if (xcas_python_eval<=0)
 		le_menu="F1 test\nif \nelse \n<\n>\n==\n!=\nand\nor\nF2 loop\nfor \nfor in\nrange(\nwhile \nbreak\nf(x):=\nreturn \nvar\nF4 misc\nchartab\n;\n:\n_\n!\n&\nprint(\ninput(\nF6 tortue\navance\nrecule\ntourne_gauche\ntourne_droite\nrond\ndisque\nrepete\nefface\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF9 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF< plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF: misc\n<\n>\n_\n!\n % \nrand(\nbinomial(\nnormald(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\n";
@@ -19134,7 +19481,6 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	}
       }
       textElement * ptr=& v[textline];
-      const int interligne=16;
       switch(key){
       case KEY_CTRL_DEL:
 	if (clipline>=0){
@@ -19206,7 +19552,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  continue;
 	}
 	break;
-      case KEY_CTRL_EXE: 
+      case KEY_CTRL_EXE: case KEY_CTRL_VIEW:
 	if (search.size()){
 	  for (;;){
 	    if (!move_to_word(text,search,replace,isFirstDraw,totalTextY,scroll,textY,contextptr))
@@ -19215,6 +19561,26 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  show_status(text,search,replace);
 	  continue;
 	}
+#ifdef HPG1
+	else {
+          if (text->gr || !text->OKparse) return TEXTAREA_RETURN_EXE;
+	  if (key==KEY_CTRL_EXE && clipline<0 && editable){ // enter==newline
+	    set_undo(text);
+	    add_indented_line(v,textline,textpos);
+	    show_status(text,search,replace);
+	  }
+	  else { // view == parse
+	    int err=check_parse(text,v,text->python,contextptr);
+	    if (err==KEY_SHUTDOWN)
+	      return err;
+	    if (err) // move cursor to the error line
+	      textline=err-1;
+	    continue;
+	  }
+	}
+	break;
+      case '\n': // shift-enter
+#endif
 	if (clipline<0 && editable){
 	  set_undo(text);
 	  add_indented_line(v,textline,textpos);
@@ -19284,7 +19650,8 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	else {
 	  if (textY > scrollableHeight-(showtitle ? 0 : interligne)) {
 	    scroll = scroll - interligne;
-	    if(scroll < -totalTextY+scrollableHeight-(showtitle ? 0 : interligne)) scroll = -totalTextY+scrollableHeight-(showtitle ? 0 : interligne);
+	    if (scroll < -totalTextY+scrollableHeight-(showtitle ? 0 : interligne))
+	      scroll = -totalTextY+scrollableHeight-(showtitle ? 0 : interligne);
 	  }
 	}
 	break;
@@ -19296,7 +19663,8 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	else {
 	  if (textY > scrollableHeight-(showtitle ? 0 : interligne)) {
 	    scroll = scroll - scrollableHeight;
-	    if(scroll < -totalTextY+scrollableHeight-(showtitle ? 0 : interligne)) scroll = -totalTextY+scrollableHeight-(showtitle ? 0 : interligne);
+	    if (scroll < -totalTextY+scrollableHeight-(showtitle ? 0 : interligne))
+	      scroll = -totalTextY+scrollableHeight-(showtitle ? 0 : interligne);
 	  }
 	}
 	break;
@@ -19310,6 +19678,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	  }
 	}
 	break;
+#ifndef HPG1
       case KEY_SAVE:
 	if (nspire_exam_mode==2)
 	  continue;
@@ -19319,7 +19688,8 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	sprintf(status,(lang==1)?"%s sauvegarde":"%s saved",text->filename.c_str());
 	DefineStatusMessage(status, 1, 0, 0);
 	DisplayStatusArea();    	    
-	continue;      
+	continue;
+#endif
       case KEY_CTRL_F1:
 	if(text->allowF1) return KEY_CTRL_F1;
 	break;
@@ -19598,7 +19968,11 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 
   void console_disp_status(GIAC_CONTEXT){
     int i=python_compat(contextptr);
+#ifdef HPG1
+    string msg("");
+#else
     string msg(" CAS ");
+#endif
     if (i<0)
       msg += "QuickJS";
     else {
@@ -19624,7 +19998,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       msg += " *";
     statuslinemsg(msg.c_str());
     set_xcas_status();
+#ifndef HPG1
     os_fill_rect(2,-18,4,18,COLOR_RED);
+#endif
     Bdisp_PutDisp_DD();
   }
 
@@ -20044,12 +20420,14 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	    giac::python_compat(p<0?0:p,contextptr);
 	    if (edptr)
 	      edptr->python=p;
+#ifndef HPG1
 	    if (xcas_python_eval!=old_xcas_python_eval){
 	      if (old_xcas_python_eval==0 && xcas_python_eval>0 &&
 		  do_confirm((lang==1)?"Effacer les variables Xcas?":"Clear Xcas variables?"))
 		do_restart(contextptr);
 	    }
-#ifdef MICROPY_LIB
+#endif
+#if defined MICROPY_LIB && !defined HPG1
 	    if (old_xcas_python_eval==1 && do_confirm((lang==1)?"Effacer le tas MicroPython?":"Clear MicroPython heap?"))
 	      python_free();
 #endif
@@ -20378,22 +20756,12 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 			 (s[0]=='/' && (s[1]=='/' || s[1]=='*'))
 			 ))
       return 0;
-    if (strcmp(s,"caseval(\"\")")==0 || strcmp(s,"eval_expr(\"\")")==0 || (strlen(s)>=4 && strlen(s)<6 && strncmp(s,"xcas",4)==0)){
-      xcas_python_eval=0;
-      int p=python_compat(contextptr);
-      python_compat(p>0?p&3:0,contextptr);
-      if (edptr)
-	edptr->python=p>0?p&3:0;
-#ifdef MICROPY_LIB
-      if (p==4 && do_confirm((lang==1)?"Effacer le tas MicroPython?":"Clear MicroPython heap?"))
-	python_free();
+    if (
+#ifdef HPG1
+	strncmp(s,"Xcas interpreter",17)==0 ||
 #endif
-#ifdef QUICKJS
-      if (0 && p==-1 && do_confirm((lang==1)?"Effacer le tas QuickJS?":"Clear QuickJS heap?"))
-	js_end(global_js_context);
-#endif
-      *logptr(contextptr) << "Xcas interpreter\n";
-      Console_FMenu_Init(contextptr);
+	strcmp(s,"caseval(\"\")")==0 || strcmp(s,"eval_expr(\"\")")==0 || (strlen(s)>=4 && strlen(s)<6 && strncmp(s,"xcas",4)==0)){
+      switch_to_xcas(contextptr);
       return 0;
     }
     gen g,ge;
@@ -20422,7 +20790,12 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     }
 #endif
 #ifdef MICROPY_LIB
-    if (strlen(s)>=6 && strlen(s)<8 && strncmp(s,"python",6)==0){
+    if (
+#ifdef HPG1
+	strncmp(s,"Micropython interpreter",24)==0 ||
+#endif
+	(strlen(s)>=6 && strlen(s)<8 && strncmp(s,"python",6)==0)
+	){
       switch_to_micropy(contextptr);
       return 0;
     }
@@ -20435,6 +20808,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 #else
     do_run(s,g,ge,contextptr);
 #endif
+    //Printf("\frun\n"); loopsleep(500);
     process_freeze();
 #ifdef MICROPY_LIB
     if (xcas_python_eval==1)
@@ -20448,6 +20822,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
     int te=giac::taille(ge,GIAC_HISTORY_MAX_TAILLE);
     bool do_tex=false;
     if (t<GIAC_HISTORY_MAX_TAILLE && te<GIAC_HISTORY_MAX_TAILLE){
+      //Printf("run1\n"); loopsleep(500);
       giac::vecteur &vin=history_in(contextptr);
       giac::vecteur &vout=history_out(contextptr);
       if (vin.size()>GIAC_HISTORY_SIZE)
@@ -20457,6 +20832,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	vout.erase(vout.begin());
       vout.push_back(ge);
     }
+    //Printf("run 2\n"); loopsleep(500);
     if (check_do_graph(ge,g,do_logo_graph_eqw,contextptr)==KEY_SHUTDOWN)
       return KEY_SHUTDOWN;
     string s_;
@@ -20476,6 +20852,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	}
       }
     }
+    //Printf("run 3\n"); loopsleep(500);
 #ifdef NUMWORKS
     if (s_.size()>512)
       s_=s_.substr(0,509)+"...";
@@ -20484,7 +20861,9 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       s_=s_.substr(0,8189)+"...";
 #endif
     char* edit_line = (char*)Console_GetEditLine();
+    // Printf("run %s\n",s_.c_str()); loopsleep(500);
     Console_Output((const char*)s_.c_str());
+    //Printf("run 5\n"); loopsleep(500);
     return 0; 
   }
 
@@ -20519,7 +20898,7 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
       //int j=Last_Line;
       Console_NewLine(LINE_TYPE_INPUT, 1);
       // Line[j].type=LINE_TYPE_INPUT;
-      Console_Disp(1,contextptr);
+      Console_Disp(1,contextptr); 
       run(v[i].c_str(),6,contextptr); /* show logo and graph but not eqw */
 #ifdef NUMWORKS
       //confirm(v[i].c_str(),Line[Last_Line].str);
@@ -20736,7 +21115,7 @@ bool QRdisp(const char * text,const char *msg){
     while (1) {
       do_QRdisp(qrcode,msg);
       int key; ck_getkey(&key);
-      if (key==KEY_CTRL_OK || key==KEY_CTRL_EXIT || key==KEY_CTRL_MENU)
+      if (key==KEY_CTRL_EXE || key==KEY_CTRL_OK || key==KEY_CTRL_EXIT || key==KEY_CTRL_MENU)
 	break;
     }
   }
@@ -20762,15 +21141,16 @@ string replace_html5(const string & s){
   return res;
 }
 
-void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONTEXT){
+bool save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONTEXT){
 #if 0 // def NUMWORKS_SLOTB
   qr=false;
 #endif
     console_changed=0;
-    dbgprintf("save_console_state %s\n",filename);
+    dbgprintf("\fsave_console_state %s\n",filename);
     string state(khicas_state(contextptr));
     int statesize=state.size();
-    dbgprintf("save_console_state %s %i\n",filename,statesize);
+    dbgprintf("save_console_state %s %i\n",filename,statesize); 
+    // Printf("save_console_state %s %i\n",filename,statesize); 
     string script;
     if (edptr)
       script=merge_area(edptr->elements);
@@ -20886,10 +21266,10 @@ void save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONT
       }
       //*hFile=0; ++hFile; 
       //*hFile=0; ++hFile;
-      write_file(filename,newbuf,hFile-newbuf);
+      return write_file(filename,newbuf,hFile-newbuf);
     }
     else {
-      write_file(filename,savebuf,len);
+      return write_file(filename,savebuf,len);
     }
   }
 
@@ -21131,7 +21511,7 @@ int char2int(char c){
   }
 
   bool load_console_state_smem(const char * filename,GIAC_CONTEXT){
-    dbgprintf("load_console_state %s\n",filename);
+    dbgprintf("load_console_state %s\n",filename); 
     const char * hf=read_file(filename);
     //if (!hf){ console_output(filename,strlen(filename)); console_output(" not found\n",11); return true; }
     // if (strcmp(filename,"session.xw")){ console_output(hf,8); return true; }
@@ -21246,6 +21626,7 @@ int char2int(char c){
       console_log("exec after");
       console_log(edptr?"edptr":"no edptr");
       if (edptr){
+#ifdef HAVE_MICROPYLIB
 	if (parse_py){
 	  string tmp=merge_area(edptr->elements);
 	  console_log("micropy");
@@ -21253,6 +21634,7 @@ int char2int(char c){
 	  micropy_ck_eval(tmp.c_str());
 	}
 	else
+#endif
 	  check_parse(edptr,edptr->elements,python_compat(contextptr),contextptr);
       }
       if (do_confirm("Run session?"))
@@ -21344,7 +21726,11 @@ int char2int(char c){
     for (i = 0; i < ins_len; i++)
       {
 	char c=src[i];
+#ifdef HPG1 
+	if (c=='\n') c=' '; // non ascii char are not printable on the HP G1 (for now)
+#else
 	if (c=='\n') c=0x9c;
+#endif
 	dest[actual_pos + i] = (c==0x0a?' ':c);
       }
 
@@ -21631,9 +22017,8 @@ int char2int(char c){
   /*
     The following functions are used to output the string to the current line.
   */
-
-  int Console_Output(const char *str)  {
-    if (!Line) return 0;
+int Console_Output(const char *str)  {
+    if (!dconsole_mode || !Line) return 0;
     console_changed=1;
     int return_val, old_len, i;
 
@@ -21650,6 +22035,7 @@ int char2int(char c){
 	  {
 	    Console_MoveCursor(CURSOR_RIGHT);
 	  }
+	//if (as_input) Console_NewLine(LINE_TYPE_INPUT, 1); // crash!
 	return CONSOLE_SUCCEEDED;
       }
     else
@@ -21938,7 +22324,8 @@ int char2int(char c){
 #ifdef NSPIRE_NEWLIB
     filename+=".tns";
 #endif
-    save_console_state_smem(filename.c_str(),xwaspy,qr,contextptr); // call before save_khicas_symbols_smem(), because this calls create_data_folder if necessary!
+    if (!save_console_state_smem(filename.c_str(),xwaspy,qr,contextptr))
+      *logptr(contextptr) << "Unable to save state file\n"; // call before save_khicas_symbols_smem(), because this calls create_data_folder if necessary!
     // save_khicas_symbols_smem(("\\\\fls0\\"+filename+".xw").c_str());
     if (edptr)
       check_leave(edptr);
@@ -22561,14 +22948,72 @@ void numworks_certify_internal(){
   int Console_GetKey(GIAC_CONTEXT){
     int key;
     bool keytooltip=false;
-    unsigned int i, move_line, move_col;
+    unsigned int i, move_line, move_col,mousemove;
     char tmp_str[2];
     char *tmp;
     for (;;){
       if (shutdown_state)
         return KEY_SHUTDOWN;
       int keyflag = GetSetupSetting(0x14);
+#ifdef HPG1 // console touchscreen
+      int xcas_color=65055,python_color=52832,js_color=63048;
+      int interp_color=xcas_python_eval==-1?js_color:(xcas_python_eval==1?python_color:xcas_color);
+      if (xcas_python_eval==1)
+	key=menu_getkey(1,"prog | math | crand | edit |     | logo","matr | numpy | arit | plot | graph | color","list | prog |      |     |     |      ",python_color);
+      else
+	key=menu_getkey(1,"algb | calc | plot | edit | arit | poly","matr | cplx | regr | edit | real | logo","list | prog |    | color | misc | geom",interp_color);
+      if (key==KEY_CTRL_VIEW) key=KEY_CTRL_PRGM;
+      if (key==KEY_CTRL_HOME){
+	switch_to_micropy(contextptr);
+	continue;
+      }
+      if (key==KEY_CTRL_CAS){
+	switch_to_xcas(contextptr);
+	continue;
+      }
+      if (key==KEY_MOUSE_PUSH){
+	continue;
+      }
+      if (key==KEY_MOUSE_MOVE){
+	int newx=prime_mousex;
+	int newy=prime_mousey;
+	if (Current_Line==Last_Line)
+	  editline_cursor=Cursor.x;
+	int mousedx=newx-prime_pushx;
+	int mousedy=newy-prime_pushy;
+	int dl=0;
+	//Printf("\f%i %i %i\n",mousedy,shell_fonth,mousemove);loopsleep(500);
+	if (mousedy>-shell_fonth && mousedy<shell_fonth){ // about the same position
+	  // absolute move: focus on level at prime_mousey
+	  // displayed line i+Start_Line for i<LINE_DISP_MAX && i+Start_Line<Last_Line
+	  // if i==Cursor.y it's the current cursor line
+	  // position of line is at y=i*shell_fonth
+	  int push_is=(newy-prime_statusarea)/shell_fonth; // expected line i+Start_Line
+	  dl=Cursor.y-push_is;
+	  //Printf("\f%i %i\n",newy,dl); loopsleep(500);
+	}
+	else {
+	// relative move: scroll + move selection
+	  dl=mousedy/shell_fonth;
+	  prime_pushx = newx;
+	  prime_pushy = newy;
+	}
+	for (int i=0;i<dl;++i)
+	  Console_MoveCursor(CURSOR_UP);
+	for (int i=0;i<-dl;++i)
+	  Console_MoveCursor(CURSOR_DOWN);
+	if (Current_Line==Last_Line){
+	  Cursor.x=newx/shell_fontw;
+	  if (Cursor.x > Line[Current_Line].disp_len){
+	    Cursor.x = Line[Current_Line].disp_len;
+	  }
+	}
+	Console_Disp(1,contextptr);
+	continue;
+      }
+#else
       GetKey(&key);
+#endif
       if (key==KEY_SHUTDOWN)
         return key;
       if (keytooltip){
@@ -22604,6 +23049,20 @@ void numworks_certify_internal(){
       bool alph=alphawasactive(&key);
       if (key==KEY_PRGM_ACON)
         Console_Disp(1,contextptr);
+      if (key==KEY_CTRL_PRGM){
+	if (!edptr)
+	  edit_script((char *)(giac::remove_extension(session_filename)+".py").c_str(),contextptr);
+	else {
+#ifdef HP39
+	  edptr->y=12;
+#else
+	  edptr->y=0;
+#endif
+	  doTextArea(edptr,contextptr);
+	}
+	Console_Disp(1,contextptr);
+	continue;
+      }
       translate_fkey(key);
       if (key==KEY_CTRL_PASTE)
 	return Console_Input((const char*) paste_clipboard());
@@ -22659,11 +23118,15 @@ void numworks_certify_internal(){
 	keytooltip=Console_tooltip(contextptr);
 	continue;
       }
-      if (key == KEY_CTRL_F5 || key==KEY_EQW_TEMPLATE || key==KEY_CTRL_F4 || ( (key==KEY_CTRL_RIGHT || key==KEY_CTRL_LEFT) && Current_Line<Last_Line) ){
+      if (
+#ifndef HPG1
+	  key == KEY_CTRL_F5 ||
+#endif
+	  key==KEY_EQW_TEMPLATE || key==KEY_CTRL_F4 || ( (key==KEY_CTRL_RIGHT || key==KEY_CTRL_LEFT) && Current_Line<Last_Line) ){
 	int l=Current_Line;
 	bool graph=strcmp((const char *)Line[l].str,"Graphic object")==0;
 	if (graph && l>0) --l;
-	char buf[giacmax(512,strlen((const char *)Line[l].str+1))];
+	char buf[giacmax(512,strlen((const char *)Line[l].str)+1)];
 	strcpy(buf,(const char *)Line[l].str);
 	int ret=(alph || key==KEY_CTRL_RIGHT || key==KEY_CTRL_F4) ?textedit(buf,512,false,contextptr):eqws(buf,graph,contextptr);
 	if (ret==KEY_SHUTDOWN)
@@ -22680,8 +23143,9 @@ void numworks_certify_internal(){
 	    else {
 	      console_free(Line[l].str);
 	      Line[l].str=(char*)console_malloc(strlen(buf)+1);
-	      Line[l].disp_len = Console_GetDispLen(Line[l].str);
+	      //Line[i].start_col=0;
 	      strcpy((char *)Line[l].str,buf);
+	      Line[l].disp_len = Console_GetDispLen(Line[l].str);
 	    }
 #else
 	    int x=editline_cursor;
@@ -22707,12 +23171,14 @@ void numworks_certify_internal(){
         continue;
       }
 #endif
+#ifndef HPG1
       if (key==KEY_SAVE){
 	save(session_filename,false,contextptr);
 	console_changed=false;
 	console_disp_status(contextptr);
 	continue;
       }
+#endif
       if (key==KEY_LOAD){
 	load(contextptr);
 	Console_Disp(1,contextptr);
@@ -23016,7 +23482,12 @@ void numworks_certify_internal(){
 	keytooltip=Console_tooltip(contextptr);
 	continue;
       }
-      if (key==KEY_CTRL_PAGEDOWN){
+      if (key==KEY_CTRL_PAGEDOWN || key==KEY_DOWN_CTRL){
+	if (Current_Line==Last_Line && !Line[Current_Line].readonly && Current_Col>0){
+	  console_help_insert(0,contextptr);
+	  Console_Disp(1,contextptr);	  
+	  continue;
+	}
 	int j=0;
 	for (int i=0;i<10;++i)
 	  j=Console_MoveCursor(CURSOR_DOWN);
@@ -23058,23 +23529,19 @@ void numworks_certify_internal(){
       }
       if (key == KEY_CTRL_EXIT){
 	if (Last_Line==Current_Line){
-	  if (!edptr)
-	    edit_script((char *)(giac::remove_extension(session_filename)+".py").c_str(),contextptr);
-	  else {
-#ifdef HP39
-	    edptr->y=12;
-#else
-	    edptr->y=0;
-#endif
-	    doTextArea(edptr,contextptr);
-	  }
-	  Console_Disp(1,contextptr);
+	  Edit_Line[0] = '\0';
+	  Line[Current_Line].start_col = 0;
+	  Line[Current_Line].type = LINE_TYPE_INPUT;
+	  Line[Current_Line].disp_len = 0;
+	  Cursor.x = 0;
+	  return CONSOLE_SUCCEEDED;
 	}
 	else {
 	  move_line = Last_Line - Current_Line;
-	  for (i = 0; i <= move_line; i++) Console_MoveCursor(CURSOR_DOWN);
+	  for (i = 0; i <= move_line; i++)
+	    Console_MoveCursor(CURSOR_DOWN);
+	  return CONSOLE_SUCCEEDED;
 	}
-	return CONSOLE_SUCCEEDED;
       }
       if (key == KEY_CTRL_AC)
 	{
@@ -23445,6 +23912,22 @@ const char *Console_Draw_FMenu(int key, struct FMenu *menu, char *cfg, int activ
       }
       PrintMini(3+position_x+quick_len*4,box.bottom-7*selector, entries[selector], 4);
       GetKey(&input_key);
+#ifdef HPG1
+      // translate touchscreen push/move
+      if (input_key==KEY_MOUSE_PUSH || input_key==KEY_MOUSE_MOVE){
+	//Printf("\f\n\n%i x=%i y=%i l=%i r=%i t=%i b=%i",input_key,prime_mousex,prime_mousey,box3.left,box3.right,box3.top,box3.bottom); OSSleep(5000);
+	int mx=prime_mousex,my=prime_mousey-prime_statusarea;
+	wait_key_released(1000);
+	if (mx<box3.left || mx>box3.right || my<box3.top || my>box3.bottom) // click outside box
+	  return 0;
+	int mouse_selector=(3*box.bottom+10-my)/21;
+	if (mouse_selector<0) mouse_selector=0;
+	if (mouse_selector>=nb_entries) mouse_selector=nb_entries-1;
+	if (mouse_selector==selector) // longpress or push again at the same location
+	  return entries[selector];
+	selector=mouse_selector;
+      }
+#endif
       if (input_key==KEY_PRGM_ACON) Console_Disp(1,0);
       if (input_key == KEY_CTRL_EXIT || input_key==KEY_CTRL_AC) return 0;
       if (input_key == KEY_CTRL_UP && selector < nb_entries-1) selector++;	
@@ -24058,10 +24541,19 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
     return Edit_Line;
   }
 
-  void save_session(GIAC_CONTEXT){
+  void offon_handle(const void *p){
+    if (console_changed){
+      const context * contextptr=(context *) p;
+      save_session(contextptr,1);
+      console_changed=false;
+      Console_Disp(1,contextptr);
+    }
+  }
+
+void save_session(GIAC_CONTEXT,int offon){
     if (nspire_exam_mode==2)
       return;
-    if (strcmp(session_filename,"session") && console_changed){
+    if (offon==0 && strcmp(session_filename,"session") && console_changed){
       string tmp(session_filename);
       tmp += (lang==1)?" a ete modifie!":" was modified!";
       if (confirm(tmp.c_str(),
@@ -24075,9 +24567,9 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
 	console_changed=0;
       }    
     }
-    save("session",true,contextptr);
+    save("session",offon?false:true,contextptr);
     // this is only called on exit, no need to reinstall the check_execution_abort timer.
-    if (edptr && edptr->changed && edptr->filename!="session.py"){
+    if (offon==0 && edptr && edptr->changed && edptr->filename!="session.py"){
       if (!check_leave(edptr)){
 	save_script("lastprg.py",merge_area(edptr->elements));
       }
@@ -24371,6 +24863,17 @@ void PrintRev(const char *s,int color,bool colorsyntax,GIAC_CONTEXT) {
       err=chdir("ndless");
     bool b=nspire_fr();
     lang=b?1:0;
+#endif
+#ifdef HPG1
+    int res=_achdir("c:\\xcas");
+    if (res!=0){
+      res=_amkdir("c:\\xcas");
+      if (res==0)
+	res=_achdir("c:\\xcas");
+    }
+    if (res!=0){ Printf("Unable to open xcas directory"); OSSleep(3000); }
+    offon_handler=offon_handle;
+    offon_param=contextptr;
 #endif
     console_log("console main 3");
     // SetQuitHandler(save_session); // automatically save session when exiting
@@ -24846,7 +25349,7 @@ void drawAtom(uint8_t id) {
 } // namespace xcas
 #endif // ndef NO_NAMESPACE_XCAS
 
-#if defined MICROPY_LIB && !defined SDL_KHICAS && !defined NUMWORKS && !defined NSPIRE_NEWLIB
+#if defined MICROPY_LIB && !defined SDL_KHICAS && !defined NUMWORKS && !defined NSPIRE_NEWLIB && !defined HPG1
 // FIXME, already defined in mphalport.c libmicropy
 #else
 void console_output(const char * s,int l){
@@ -26309,7 +26812,10 @@ int giac2aspen(int lang){
   return 0;
 }
 
-const char * gettext(const char * s) { 
+const char * gettext(const char * s) {
+#ifdef HPG1 // FIXME HPG1!!!
+  return s;
+#else
   // 0 and 2 english 1 french 3 sp 4 el 5 de 6 it 7 tr 8 zh 9 pt
   int aspenlang=giac2aspen(lang);
   char4 s4={s};
@@ -26320,6 +26826,7 @@ const char * gettext(const char * s) {
     return (*pp.first)[aspenlang];
   }
   return s;
+#endif
 }
 
   void process_freeze(){

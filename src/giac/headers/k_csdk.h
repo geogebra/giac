@@ -1,7 +1,11 @@
-
 /* C header for Khicas interface with calculator OS */
 #ifndef K_CSDK_H
 #define K_CSDK_H
+
+#ifndef HPG1
+#include "gint.h"
+#endif
+
 #include "k_defs.h"
 // Defaults parameters do not work if included from C 
 #define SDK_BLACK 0
@@ -29,10 +33,36 @@
 #define LCD_HEIGHT_PX 240
 #endif
 #endif
+
+#define VIR_LCD_PIX_W   320
+#define VIR_LCD_PIX_H   240
+
+#ifdef HPG1
+typedef unsigned fb_screen_t;
+#else
+typedef unsigned short fb_screen_t;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+  extern int sdk_ctrl_c; // works only on HPG1 for now  
 #include "stdio.h"
+
+  // string drawing
+  // fb_screen must be initialized
+  // screen synchronization might be required
+  int vGL_putString(int x0, int y0, const char *s, int fg, int bg, int fontSize);
+  void vGL_putChar(int x0, int y0, char ch, int fg, int bg, int fontSize);
+  void vGL_reverseArea(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1) ;
+  void vGL_clearArea(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1) ;
+  void vGL_setArea(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, unsigned int color) ;
+  int vGL_GetPoint(unsigned int x, unsigned int y);
+  void vGL_SetPoint(unsigned int x, unsigned int y, int c);
+  
+  void vGL_ConsLocate(int x, int y);
+  void vGL_ConsOut(char *s, int rev);
+  
 #ifdef NSPIRE_NEWLIB
   inline int min(int a,int b){ return a<b?a:b;}
   inline int max(int a,int b){ return a<b?b:a;}
@@ -66,21 +96,82 @@ extern "C" {
 #define false 0
 #define true 1
 #endif // not FX and not FXCG
+
   
+#ifdef HPG1
+  // There are 2 ways to handle event
+  // with sdk_init/sdk_end and read prime_keydown,prime_pushx,prime_pushy,prime_mousex,prime_mousey,prime_event : no queue, might miss some events, mouse event are translated to special keys, porting softs using getkey() should be easy
+  // or (only HPG1 currently) like SDL: init with SDL_Init(0); poll with SDL_PollEvent, end with SDL_Quit()
+  // Note that init/quit or end couple call creates a thread that handles BestaOS events and destroys it
+
+  typedef enum {
+    SDL_NOEVENT = 0,
+    SDL_KEYDOWN,
+    SDL_KEYUP,
+    SDL_MOUSEMOTION,
+    SDL_MOUSEBUTTONDOWN,
+    SDL_MOUSEBUTTONUP,
+    SDL_QUIT
+  } SDL_EventType;
+  
+  typedef struct {
+    unsigned char type;
+    struct {
+      int x, y;
+      unsigned char button;
+    } button;
+    struct {
+      int x, y;
+    } motion;
+    struct {
+      int sym;
+    } key;
+  } SDL_Event;
+  int SDL_PollEvent(SDL_Event *event);
+  int SDL_Init(unsigned flags);
+  void SDL_Quit(void) ;
+
+  int wait_key_released(int T); // also wait for mouse released
+  int menu_getkey(int allow_suspend,const char * menu,const char * menushift,const char * menualpha,int menubg); // getkey with 3 menus
+  extern void (*offon_handler)(const void *);
+  extern const void * offon_param;
+#define HPG1_FILEBUFFER 512*1024
+  unsigned getbrightness();
+  short setbrightness(short level);
+#define COLOR_ORANGE ((31<<11)|(7<<5)|31)
+#define COLOR_CYAN ((63<<5)|31)
+#define COLOR_GREEN (63<<5)
+#define COLOR_MAGENTA ((31<<11)|31)
+#define COLOR_RED (31<<11)
+#define COLOR_BLUE 31
+#define COLOR_PURPLE ((15<<11)| 24)
+#define COLOR_BROWN ((15<<11)|(15<<5))
+  int event_manager(void * p);
+  int sdk_init();
+  int get_fb(); // get framebuffer address in fb_screen
+  extern unsigned * fb_screen;
+  void sdk_end();
+  extern void * ev_threadptr;
+
+  // event_manager must be created in a thread like this
+  // extern thread_t * ev_threadptr;
+  // ev_threadptr=OSCreateThread(event_manager,0 /* pointer passed to event_manager*/,0 /* system default stack size*/,0 /* run immediatly*/);
+  extern volatile unsigned prime_keydown,prime_pushx,prime_pushy,prime_mousex,prime_mousey,prime_event;
+  extern int prime_statusarea;
+#endif
+
 #ifdef TICE
 #include "dbg.h"
 #define max_heap_size 60
   void sdk_init(void);
   void sdk_end(void);
   void clear_screen(void);
-#else //TICE
-#ifdef NSPIRE_NEWLIB
+#elif NSPIRE_NEWLIB
   void sdk_init(void);
   void sdk_end(void);
-#else
+#elif !defined HPG1
   inline void sdk_init(void){}
   inline void sdk_end(void){}
-#endif
 #endif
 
   extern short exam_mode,nspire_exam_mode;
@@ -164,6 +255,7 @@ extern "C" {
   
   int file_exists(const char * filename);
   int erase_file(const char * filename);
+  const char * read_file_size(const char * filename,unsigned * sizeptr);
   const char * read_file(const char * filename);
 #ifdef __cplusplus
   int write_file(const char * filename,const char * s,int len=0);
@@ -282,7 +374,7 @@ inline int do_getkey(){
 }
 
 inline void dtext(int x,int y,int fg,const char * s){
-  os_draw_string_medium(x,y,fg,SDK_WHITE,s);
+  os_draw_string_medium(x,y,fg,SDK_WHITE,s,false);
 }
 
 inline void dclear(int c){
@@ -296,6 +388,7 @@ inline void dupdate(){
 #define C_BLACK SDK_BLACK
 #define C_RED (31<<11)
 #define C_BLUE 31
+#ifndef HPG1
 #define KEY_EXIT KEY_CTRL_EXIT
 #define KEY_MENU KEY_CTRL_MENU
 #define KEY_OPTN KEY_CTRL_OPTN
@@ -311,7 +404,8 @@ inline void dupdate(){
 #define KEY_DIV KEY_CHAR_DIV
 #define KEY_1 KEY_CHAR_1
 #define KEY_9 KEY_CHAR_9
-
+#endif
+  
 #ifdef __cplusplus
 }
 #endif
