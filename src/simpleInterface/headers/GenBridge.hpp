@@ -1,4 +1,4 @@
-#include <Giac/ContextBridge.hpp>
+#include "ContextBridge.hpp"
 #include <string>
 
 using namespace std;
