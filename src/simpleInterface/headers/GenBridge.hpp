@@ -3,7 +3,7 @@
 
 using namespace std;
 namespace giac {
-	class gen;	
+	class gen;
 }
 
 class GenBridge {

@@ -28,7 +28,7 @@ pipeline {
           stages {
             stage('Mac JNI') {
               steps {
-                sh "rm src/giac/cpp/kdisplay.cc src/giac/cpp/k_sdkc.cc"
+                sh "rm src/giac/cpp/kdisplay.cc src/giac/cpp/k_csdk.cc"
                 sh "export ANDROID_SDK_ROOT=~/.android-sdk/; ./gradlew javagiacOsx_amd64SharedLibrary javagiacOsx_arm64SharedLibrary --info"
                 stash name: 'giac-mac', includes: 'build/binaries/javagiacSharedLibrary/osx_x86-64/libjavagiac.jnilib'
                 stash name: 'giac-mac-arm64', includes: 'build/binaries/javagiacSharedLibrary/osx_aarch64/libjavagiac.jnilib'
@@ -55,7 +55,7 @@ pipeline {
             EMSDK_PYTHON='/usr/bin/python3.10'
           }
           steps {
-            sh "rm src/giac/cpp/kdisplay.cc src/giac/cpp/k_sdkc.cc"
+            sh "rm src/giac/cpp/kdisplay.cc src/giac/cpp/k_csdk.cc"
             sh '''
                export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
               ./gradlew downloadEmsdk installEmsdk activateEmsdk
@@ -81,7 +81,7 @@ pipeline {
         unstash name: 'giac-clang'
         unstash name: 'giac-mac'
         unstash name: 'giac-mac-arm64'
-        sh "rm src/giac/cpp/kdisplay.cc src/giac/cpp/k_sdkc.cc"
+        sh "rm src/giac/cpp/kdisplay.cc src/giac/cpp/k_csdk.cc"
         sh '''
             export SVN_REVISION=`git log -1 | grep "\\S" | tail -n 1 | sed "s/.*@\\([0-9]*\\).*/\\1/"`
           ./gradlew :updateGiac --no-daemon -Prevision=$SVN_REVISION --info'''
