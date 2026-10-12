@@ -71,9 +71,9 @@ extern "C" {
 
 #ifndef GIAC_GGB
 #ifdef KHICAS
-void sha256_init(SHA256_CTX *ctx);
-void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len);
-void sha256_final(SHA256_CTX *ctx, BYTE hash[]);
+extern "C" void sha256_init(SHA256_CTX *ctx);
+extern "C" void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len);
+extern "C" void sha256_final(SHA256_CTX *ctx, BYTE hash[]);
 #else
 #if !defined EMCC2 && !defined USE_GMP_REPLACEMENTS 
 #include "sha256.h"
@@ -1609,7 +1609,7 @@ namespace giac {
     control_c();
 #endif
     if (ctrl_c || interrupted || args._VECTptr->size()!=3){
-      gensizeerr(res,contextptr);
+      res=gen_oom();//gensizeerr(res,contextptr);
       return res;
     }
     calc_save=calc_mode(contextptr)==38;
@@ -2769,7 +2769,7 @@ namespace giac {
 	      if (ctrl_c || interrupted || (res.type==_STRNG && res.subtype==-1)){
 		interrupted = true; ctrl_c=false;
 		*logptr(contextptr) << gettext("Stopped in loop") << '\n';
-		gensizeerr(gettext("Stopped by user interruption."),res);
+		res=gen_oom(); // gensizeerr(gettext("Stopped by user interruption."),res);
 		break;
 	      }
 	      res=*it;
@@ -7261,9 +7261,11 @@ namespace giac {
 	}
 	context * cascontextptr=(context *)caseval("caseval contextptr");
 	if (freezeturtle || turt){
+#ifndef __EMSCRIPTEN__
 	  // copy caseval turtle to this context
 	  turtle(contextptr)=turtle(cascontextptr);
 	  turtle_stack(contextptr)=turtle_stack(cascontextptr);
+#endif
 	  return _avance(0,contextptr);
 	}
 	if (freeze || pix)

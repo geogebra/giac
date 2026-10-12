@@ -2689,7 +2689,7 @@ namespace giac {
 #else // HAVE_LIBMPFR
     int nbits=45;
     rprec = 37;
-    vecteur v_accurate(*evalf_double(v,1,contextptr)._VECTptr);
+    vecteur v_accurate(gen2vecteur(evalf_double(v,1,contextptr)));
     if (crystalball.empty()){
       in_proot(v,eps,rprec,crystalball,true,contextptr);
       // CERR << crystalball << '\n';
@@ -2713,7 +2713,7 @@ namespace giac {
 	crystalball.pop_back();
       }
       else
-	r=a_root(*evalf_double(cur_v,1,contextptr)._VECTptr,0,eps); // ok
+	r=a_root(gen2vecteur(evalf_double(cur_v,1,contextptr)),0,eps); // ok
       if (debug_infolevel)
 	CERR << "Approx float root " << r << '\n';
       if (is_undef(r))
@@ -5098,19 +5098,20 @@ namespace giac {
 
   gen exact_div(const gen & a,const gen & b){
     if (a.type==_POLY && b.type==_POLY){
+#if 1
+      polynome quo, rem;
+      if (!divrem1(*a._POLYptr,*b._POLYptr,quo,rem,2)) 
+	CERR << "bad quo("+a.print()+","+b.print()+")" << '\n';
+      gen res=quo;
+#else
       polynome *quoptr=new polynome, rem;
       if (!divrem1(*a._POLYptr,*b._POLYptr,*quoptr,rem,2)) 
 	CERR << "bad quo("+a.print()+","+b.print()+")" << '\n';
       gen res= *quoptr;
+#endif
       // if (!is_zero(a-b*res))
       //	CERR << "Bad division" << '\n';
       return res;
-#if 0
-      polynome quo;
-      if (!a._POLYptr->Texactquotient(*b._POLYptr,quo))
-	CERR << "bad quo("+a.print()+","+b.print()+")" << '\n';
-      return quo;
-#endif
     }
     return rdiv(a,b,context0);
   }
@@ -13613,9 +13614,9 @@ namespace giac {
       P[i][i]=1;
     if (modulo<0){
 #ifdef HAVE_LIBMPFR
-      matrice2std_matrix_gen(*evalf(gen(M),1,contextptr)._VECTptr,H);
+      matrice2std_matrix_gen(gen2vecteur(evalf(gen(M),1,contextptr)),H);
 #else
-      matrice2std_matrix_gen(*evalf_double(gen(M),1,contextptr)._VECTptr,H);
+      matrice2std_matrix_gen(gen2vecteur(evalf_double(gen(M),1,contextptr)),H);
 #endif
     }
     else

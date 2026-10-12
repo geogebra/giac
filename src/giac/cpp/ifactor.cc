@@ -401,6 +401,20 @@ namespace giac {
       mpz_neg(*(mpz_t *)&a,a);
       return b-res;
     }
+#ifdef TICE
+    if (b>0xffff){
+      // mp_mod_d takes a 16-bit mp_digit (MP_16BIT): larger moduli (e.g. the 8388593 used by
+      // the modular resultant) were silently reduced mod b&0xffff
+      mp_int B,R;
+      mp_init_set_int(&B,b);
+      mp_init(&R);
+      mp_mod((mp_int *)&a,&B,&R);
+      int res=mp_get_int(&R);
+      mp_clear(&R);
+      mp_clear(&B);
+      return res;
+    }
+#endif
     mp_digit C; 
     mp_mod_d((mp_int *)&a,b,&C);
     return C;
@@ -3858,7 +3872,7 @@ namespace giac {
     control_c();
 #endif
     if (ctrl_c || interrupted)
-      return gensizeerr("Interrupted");
+      return gen_oom();//gensizeerr("Interrupted");
     gen ba=n/a;
     if (a!=n)
       a=ifactor2(a,v,do_pollard,contextptr);

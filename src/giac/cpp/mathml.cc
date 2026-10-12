@@ -60,6 +60,21 @@ namespace giac {
   static define_unary_function_eval (__spread2mathml,&_mathml_error,_spread2mathml_s);
   define_unary_function_ptr5( at_spread2mathml ,alias_at_spread2mathml,&__spread2mathml,0,true);
 
+#ifdef HPG2 // stubs for emscripten
+  gen _svg(const gen & g,GIAC_CONTEXT){
+    return gensizeerr(gettext("No svg support"));
+  }
+  string gen2svg(const gen &e,double xmin,double xmax,double ymin,double ymax,double ysurx,GIAC_CONTEXT,bool withpreamble){
+    return "No svg support";
+  }
+  string svg_preamble_pixel(const gen &g,double svg_width_cm, double svg_height_cm,double xmin,double xmax,double ymin,double ymax,bool ortho,bool xml,int color){
+    return "no_svg_preamble_pixel";
+  }
+  string svg_grid(double xmin,double xmax,double ymin,double ymax,const plot_attr & p,int color){
+    return "no_svg_grid";
+  }  
+#endif
+
 #else //RTOS_THREADX
 
 #ifndef NO_NAMESPACE_GIAC

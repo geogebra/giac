@@ -443,7 +443,7 @@ namespace giac {
   symbolic symb_pow(const gen & a,const gen & b);
   std::string cprintaspow(const gen & feuille,const char * sommetstr_orig,GIAC_CONTEXT);
 #ifndef GIAC_HAS_STO_38
-#if defined NSPIRE || defined FXCG
+#if (defined NSPIRE || defined FXCG || defined HPG2) && !defined __EMSCRIPTEN__
   extern const alias_unary_function_eval __pow;
 #else
   extern unary_function_eval __pow;
@@ -546,6 +546,8 @@ namespace giac {
 #else
 #define gen_zero zero
 #endif
+
+  gen gen_oom();
 
 #if defined(GIAC_GENERIC_CONSTANTS) // || (defined(VISUALC) && !defined(RTOS_THREADX)) || defined(x86_64)
   extern const gen zero;

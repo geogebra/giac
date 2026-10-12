@@ -277,7 +277,7 @@ namespace giac {
       if (ctrl_c || interrupted) { 
 	interrupted = true; ctrl_c=false;
 	gen res;
-	gensizeerr(gettext("Stopped by user interruption."),res);
+	res=gen_oom(); // gensizeerr(gettext("Stopped by user interruption."),res);
 	return res;
       }
       sparse_poly1 s=series__SPOL1(g,*x._IDNTptr,a,ordre,0,contextptr);

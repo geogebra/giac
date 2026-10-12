@@ -81,7 +81,7 @@ namespace giac {
   };
 
   const static_help_t static_help[]={
-#if defined NSPIRE_NEWLIB || (defined NUMWORKS && !defined NUMWORKS_SLOTB ) || ( !defined(KHICAS) && !defined POCKETCAS)
+#if defined NSPIRE_NEWLIB || (defined NUMWORKS && !defined NUMWORKS_SLOTB ) || ( !defined(KHICAS) && !defined POCKETCAS) || defined HPG1 || defined HPG2
 #include "static_help.h"
 #else
     { "", { "", "", "", "",""}, "", "", "" },

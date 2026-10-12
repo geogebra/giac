@@ -4386,7 +4386,7 @@ namespace giac {
 #endif
 	    if (ctrl_c || interrupted) { 
 	      interrupted = true; ctrl_c=false;
-	      gensizeerr(gettext("Stopped by user interruption."),res);
+	      res=gen_oom(); // gensizeerr(gettext("Stopped by user interruption."),res);
 	      return res;
 	    }
 	    if (is_undef(res))

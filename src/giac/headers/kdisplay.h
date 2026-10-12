@@ -35,7 +35,7 @@ class autoshutdown : public std::exception{
   }
 };
 
-#if defined HPG1
+#if defined HPG1 || defined HPG2
 #define mousedelta 20
 #ifdef LCD_WIDTH_PX
 #undef LCD_WIDTH_PX
@@ -542,6 +542,8 @@ namespace xcas {
      _LINE_MAX = 48,
 #ifdef NUMWORKS
      COL_DISP_MAX = 30,//32
+#elif defined HPG1 || defined HPG2
+     COL_DISP_MAX = 35, // 40,//32
 #else // HP39
      COL_DISP_MAX = 35,//21  //!!!!!!! 21     
 #endif

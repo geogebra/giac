@@ -15,6 +15,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#ifdef HPG2
+#define HPG1
+#endif
 const char fourier_url[]="https://www-fourier.univ-grenoble-alpes.fr/~parisse/";
 
 #define MAX_DISP_RADIUS 2048 // max displayable circle radius in pixels 
@@ -228,7 +231,10 @@ extern "C" int mp_token(const char * line);
 
 void python_free(){
   if (!python_heap) return;
-  mp_deinit(); free(python_heap); python_heap=0;
+  mp_deinit();
+  if ( ((size_t)python_heap & 3)==0)
+    free(python_heap);
+  python_heap=0;
 }
 
 int python_init(int stack_size,int heap_size){
@@ -287,7 +293,7 @@ using namespace giac;
 #ifdef HP39
 const int LCD_WIDTH_PX=256;
 const int LCD_HEIGHT_PX=127;
-#elif HPG1
+#elif defined HPG1
 extern "C" void (*offon_handler)(const void *);
 extern "C" const void * offon_param;
 extern "C" short _achdir(const char *);
@@ -593,10 +599,17 @@ namespace giac {
   int PrintMiniMini(int x,int y,const char * s,int mode,int c=SDK_BLACK,int bg=SDK_WHITE,bool fake=false){
 #ifdef SDL_KHICAS
     // console_log(("printminimini "+string(s)+" "+print_INT_(x)+","+print_INT_(y)+" mode="+print_INT_(mode)+" c="+print_INT_(c)+" bg="+print_INT_(bg)+(fake?"fake":"")).c_str());
+#ifdef HPG2
+    if (mode==TEXT_MODE_NORMAL)
+      return os_draw_string_small(x,y,c,bg,s,fake);
+    else 
+      return os_draw_string_small(x,y,bg,c,s,fake);
+#else
     if (mode==TEXT_MODE_NORMAL)
       return numworks_draw_string_small(x,y,c,bg,s,fake);
     else 
       return numworks_draw_string_small(x,y,bg,c,s,fake);
+#endif
 #else
     if (mode==TEXT_MODE_NORMAL)
       return os_draw_string_small(x,y,c,bg,s,fake);
@@ -4824,7 +4837,7 @@ string longhelp(const char * s){
       }
 #ifdef NSPIRE_NEWLIB
       std::string ex("tab: ");
-#elif HPG1
+#elif defined HPG1
       std::string ex("1: ");
 #else
       std::string ex("Ans: ");
@@ -5713,7 +5726,26 @@ string longhelp(const char * s){
       int key;
       GetKey(&key);
       if (key==KEY_SHUTDOWN)
-	return key;      
+	return key;
+      if (key==KEY_MOUSE_PUSH){
+	continue;
+      }
+      if (key==KEY_MOUSE_MOVE){
+	int newx=prime_mousex;
+	int newy=prime_mousey;
+	int mousedx=newx-prime_pushx;
+	int mousedy=newy-prime_pushy;
+        newy-=prime_statusarea;
+	int dl=0;
+	//Printf("\f%i %i %i\n",mousedy,shell_fonth,mousemove);loopsleep(500);
+	if (newx>=X1 && newy>textY-shell_fonth && newy<textY+shell_fonth && mousedy>-shell_fonth && mousedy<shell_fonth && mousedx>-shell_fontw && mousedx<shell_fontw){ // about the same position, move cursor position accordingly
+          pos=beg+(newx-X1)/shell_fontw;
+        }
+        else
+          beg += mousedx/shell_fontw;
+        if (beg<0) beg=0;
+        continue;        
+      } // MOUSE_MOVE
       // if (!giac::freeze) set_xcas_status();    
       if (key==KEY_CTRL_EXE || key==KEY_CTRL_OK || key==KEY_CHAR_CR){
         reset_kbd();
@@ -7024,7 +7056,7 @@ namespace xcas {
 
   int text_width(int fontsize,const char * s){
 #ifdef HPG1
-    return (fontsize<14?6:8)*strlen(s);
+    return (fontsize<18?6:8)*strlen(s);
 #endif
 #ifdef NSPIRE_NEWLIB
     int x=0;
@@ -16659,7 +16691,11 @@ gen Graph2d::geometry_round(double x,double y,double z,double eps,gen & original
     duration=h+m/100.0;
     return ch;
   }
+#ifdef HPG1
+  const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF3 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF2 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF4 menu\nreserved\nF5 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF6 poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF9 regr\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< logo\navance\nrecule\ntourne_gauche\ntourne_droite\ncrayon\ndisque\nefface\nF= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF> prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF@ color\ndisplay=\nfilled\nred\ncyan\ngreen\nblue\nmagenta\nyellow\nFA misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n and \n or \nperiodic_table\nFB geo\npoint(\nline(\ncircle(\nplane(\n";
+#else
   const char conf_standard[] = "F1 algb\nsimplify(\nfactor(\npartfrac(\ntcollect(\ntexpand(\nsum(\noo\nproduct(\nF2 calc\n'\ndiff(\nintegrate(\nlimit(\nseries(\nsolve(\ndesolve(\nrsolve(\nF3 plot\nplot(\nplotseq(\nplotlist(\nplotparam(\nplotpolar(\nplotfield(\nhistogram(\nbarplot(\nF4 menu\nreserved\nF5 arit\n mod \nirem(\nifactor(\ngcd(\nisprime(\nnextprime(\npowmod(\niegcd(\nF6 poly\nproot(\npcoeff(\nquo(\nrem(\ngcd(\negcd(\nresultant(\nGF(\nF7 lin\nmatrix(\ndet(\nmatpow(\nranm(\nrref(\ntran(\negvl(\negv(\nF8 cplx\nabs(\narg(\nre(\nim(\nconj(\ncsolve(\ncfactor(\ncpartfrac(\nF9 regr\nlinear_regression_plot(\nlogarithmic_regression_plot(\nexponential_regression_plot(\npower_regression_plot(\npolynomial_regression_plot(\nsin_regression_plot(\nscatterplot(\nmatrix(\nF; real\nexact(\napprox(\nfloor(\nceil(\nround(\nsign(\nmax(\nmin(\nF< logo\navance\nrecule\ntourne_gauche\ntourne_droite\ncrayon\ndisque\nefface\nF= list\nmakelist(\nrange(\nseq(\nlen(\nappend(\nranv(\nsort(\napply(\nF> prog\n:\n&\n#\nhexprint(\nbinprint(\nf(x):=\ndebug(\npython(\nF@ color\ndisplay=\nfilled\nred\ncyan\ngreen\nblue\nmagenta\nyellow\nFA misc\n!\nrand(\nbinomial(\nnormald(\nexponentiald(\n and \n or \nperiodic_table\nFB geo\npoint(\nline(\ncircle(\nplane(\n";
+#endif
 
   const char python_conf_standard[] = "F1 misc\nprint(\ninput(\n;\n:\n[]\ndef f(x): return \ntime()\nfrom time import *\nF2 math\nfloor(\nceil(\nround(\nmin(\nmax(\nabs(\nsqrt(\nfrom math import *\nF3 c&rand\nrandint(\nrandom()\nchoice(\nfrom random import *\n.real\n.imag\nphase(\nfrom cmath import *;i=1j\nF4 menu\nreserved\nF5  2d\nreserved\nF6 tortue\nforward(\nbackward(\nleft(\nright(\npencolor(\ncircle(\nreset()\nfrom turtle import *\nF7 linalg\nmatrix(\nadd(\nsub(\nmul(\ninv(\nrref(\ntranspose(\nfrom linalg import *;i=1j\nF8 numpy\narray(\nreshape(\narange(\nlinspace(\nsolve(\neig(\ninv(\nfrom numpy import *;i=1j\nF9 arit\npow(\nisprime(\nnextprime(\nifactor(\ngcd(\nlcm(\niegcd(\nfrom arit import *\nF< color\nred\nblue\ngreen\ncyan\nyellow\nmagenta\nblack\nwhite\nF; draw\nclear_screen();\nshow_screen();\nset_pixel(\ndraw_line(\ndraw_rectangle(\n\ndraw_circle(\ndraw_string(\nfrom graphic import *\nF: plot\nclf()\nplot(\ntext(\narrow(\nscatter(\nbar(\nshow()\nfrom matplotl import *\nF= list\nlist(\nrange(\nlen(\nappend(\nzip(\nsorted(\nmap(\nreversed(\nF> prog\n|\n&\n#\nhex(\nbin(\ndebug(\nfrom cas import *\ncaseval(\"\")\n";
   
@@ -19196,8 +19232,12 @@ static void display(textArea *text, int &isFirstDraw, int &totalTextY, int &scro
 	continue;
       } // end key==mouse_move
       if (key==KEY_CTRL_HOME){
+#ifdef HPG2
+        key=KEY_CTRL_EXIT;
+#else
 	switch_to_micropy(contextptr);
 	continue;
+#endif
       }
       if (key==KEY_CTRL_CAS){
 	switch_to_xcas(contextptr);
@@ -21141,80 +21181,92 @@ string replace_html5(const string & s){
   return res;
 }
 
-bool save_console_state_smem(const char * filename,bool xwaspy,bool qr,GIAC_CONTEXT){
+bool save_console_state_smem(const char * filename,bool xwaspy,int qr,GIAC_CONTEXT){
 #if 0 // def NUMWORKS_SLOTB
   qr=false;
 #endif
+  if (qr!=-1)
     console_changed=0;
-    dbgprintf("\fsave_console_state %s\n",filename);
-    string state(khicas_state(contextptr));
-    int statesize=state.size();
-    dbgprintf("save_console_state %s %i\n",filename,statesize); 
-    // Printf("save_console_state %s %i\n",filename,statesize); 
-    string script;
-    if (edptr)
-      script=merge_area(edptr->elements);
-    int scriptsize=script.size();
-    // save format: line_size (2), start_col(2), line_type (1), readonly (1), line
-    int size=2*sizeof(int)+statesize+scriptsize;
-    int start_row=Last_Line-max_lines_saved; 
-    if (start_row<0) start_row=0;
-    for (int i=start_row;i<=Last_Line;++i){
-      size += 2*sizeof(short)+2*sizeof(char)+strlen((const char *)Line[i].str)+1;
-    }
-    char savebuf[size+4];
+  dbgprintf("\fsave_console_state %s\n",filename);
+  string state(khicas_state(contextptr));
+  int statesize=state.size();
+  dbgprintf("save_console_state %s %i\n",filename,statesize); 
+  // Printf("save_console_state %s %i\n",filename,statesize); 
+  string script;
+  if (edptr)
+    script=merge_area(edptr->elements);
+  int scriptsize=script.size();
+  // save format: line_size (2), start_col(2), line_type (1), readonly (1), line
+  int size=2*sizeof(int)+statesize+scriptsize;
+  int start_row=Last_Line-max_lines_saved; 
+  if (start_row<0) start_row=0;
+  for (int i=start_row;i<=Last_Line;++i){
+    size += 2*sizeof(short)+2*sizeof(char)+strlen((const char *)Line[i].str)+1;
+  }
+  char savebuf[size+4];
 #ifdef NUMWORKS
-    char * hFile=savebuf+1;
+  char * hFile=savebuf+1;
 #else
-    char * hFile=savebuf;
+  char * hFile=savebuf;
 #endif
-    // save variables and modes
-    Bfile_WriteFile_OS4(hFile, statesize);
-    Bfile_WriteFile_OS(hFile, state.c_str(), statesize);
-    // save script
-    Bfile_WriteFile_OS4(hFile, scriptsize);
-    Bfile_WriteFile_OS(hFile, script.c_str(), scriptsize);
-    // save console state
-    int pos=1;
-    // string qrs=lang?"https://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasfr.html#":"https://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasen.html#";//"https://xcas.univ-grenoble-alpes.fr/xcasjs/#";
-    string qrs=fourier_url;
-    qrs += "khicas/khicas.html#";
-    qrs += "filename=";
-    qrs += filename;
-    qrs += '&';
-    qrs += xcas_python_eval==1?"micropy=":"cas=";
-    if (qr) qrs += "0,0,"+replace_html5(script)+'&';
-    // save console state
-    for (int i=start_row;i<=Last_Line;++i){
-      console_line & cur=Line[i];
-      unsigned short l=strlen((const char *)cur.str);
-      Bfile_WriteFile_OS2(hFile, l);
-      unsigned short s=cur.start_col;
-      Bfile_WriteFile_OS2(hFile, s);
-      unsigned char c=cur.type;
-      Bfile_WriteFile_OS(hFile, &c, sizeof(c));
-      if (qr && c==0){ // qrcode write input
-        string qrsadd = replace_html5((const char *)cur.str);
-        int xpos=(pos%2)*400;
-        int ypos=(pos/2)*400;
-        ++pos;
-        string spos=print_INT_(xpos)+","+print_INT_(ypos)+ ",";
-        qrs += xcas_python_eval==1?"micropy=":"cas=";
-        qrs += spos+qrsadd+'&';
-      }
-      c=1;//cur.readonly;
-      Bfile_WriteFile_OS(hFile, &c, sizeof(c));
-      unsigned char buf[l+1];
-      buf[l]=0;
-      strcpy((char *)buf,(const char*)cur.str); 
-      unsigned char *ptr=buf,*strend=ptr+l;
-      for (;ptr<strend;++ptr){
-        if (*ptr==0x9c)
-          *ptr='\n';
-      }
-      Bfile_WriteFile_OS(hFile, buf, l);
+  // save variables and modes
+  Bfile_WriteFile_OS4(hFile, statesize);
+  Bfile_WriteFile_OS(hFile, state.c_str(), statesize);
+  // save script
+  Bfile_WriteFile_OS4(hFile, scriptsize);
+  Bfile_WriteFile_OS(hFile, script.c_str(), scriptsize);
+  // save console state
+  int pos=1;
+  // string qrs=lang?"https://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasfr.html#":"https://www-fourier.univ-grenoble-alpes.fr/~parisse/xcasen.html#";//"https://xcas.univ-grenoble-alpes.fr/xcasjs/#";
+  string qrs=fourier_url;
+  qrs += "khicasg2/khicas.html#";
+  qrs += "filename=";
+  qrs += filename;
+  qrs += '&';
+  qrs += xcas_python_eval==1?"micropy=":"cas=";
+  if (qr) qrs += "0,0,"+replace_html5(script)+'&';
+  // save console state
+  for (int i=start_row;i<=Last_Line;++i){
+    console_line & cur=Line[i];
+    unsigned short l=strlen((const char *)cur.str);
+    Bfile_WriteFile_OS2(hFile, l);
+    unsigned short s=cur.start_col;
+    Bfile_WriteFile_OS2(hFile, s);
+    unsigned char c=cur.type;
+    Bfile_WriteFile_OS(hFile, &c, sizeof(c));
+    if (qr && c==0){ // qrcode write input
+      string qrsadd = replace_html5((const char *)cur.str);
+      int xpos=(pos%2)*400;
+      int ypos=(pos/2)*400;
+      ++pos;
+      string spos=print_INT_(xpos)+","+print_INT_(ypos)+ ",";
+      qrs += xcas_python_eval==1?"micropy=":"cas=";
+      qrs += spos+qrsadd+'&';
     }
-    if (qr) QRdisp(qrs.c_str(),"Flash me to clone your session");
+    c=1;//cur.readonly;
+    Bfile_WriteFile_OS(hFile, &c, sizeof(c));
+    unsigned char buf[l+1];
+    buf[l]=0;
+    strcpy((char *)buf,(const char*)cur.str); 
+    unsigned char *ptr=buf,*strend=ptr+l;
+    for (;ptr<strend;++ptr){
+      if (*ptr==0x9c)
+	*ptr='\n';
+    }
+    Bfile_WriteFile_OS(hFile, buf, l);
+  }
+  if (qr){
+#if defined EMCC || defined EMCC2 //|| defined KHICAS || defined SDL_KHICAS
+    EM_ASM({
+	var value = UTF8ToString($0);
+	console.log(value);
+	UI.updatemaillink(value);
+      },qrs.c_str());
+#endif
+      if (qr==-1)
+	return 0;
+      QRdisp(qrs.c_str(),"Flash me to clone your session");
+    }
     char BUF[2]={0,0};
     Bfile_WriteFile_OS(hFile, BUF, sizeof(BUF));
 #ifdef NUMWORKS
@@ -21288,6 +21340,7 @@ int char2int(char c){
   // convert URL link to xw or xw.py session
   // mode==0 save only link.nws, mode==1 save as xw session
   int save_link(const char * s,const char * filename,int mode){
+    //fprintf(stderr,"save_link %s filename=%s mode=%i\n",s,filename,mode);
     string Filename(filename);
     int xcas_mode=0;
     vector<string> Line; vector<unsigned char> Type;
@@ -21299,6 +21352,7 @@ int char2int(char c){
     }
     if (!*s) // no & found
       return -1;
+    //fprintf(stderr,"save_link2 %s\n",s);
     for (;*s;){
       string cur;
       for (++s;*s;++s){
@@ -21319,6 +21373,7 @@ int char2int(char c){
 	continue; // ignored
       string cmd=cur.substr(0,pos);
       string value=cur.substr(pos+1,cur.size()-pos-1);
+      //fprintf(stderr,"cmd=%s value=%s\n",cmd.c_str(),value.c_str());
       if (cmd=="filename"){
         if (value[0]=='@')
           value=value.substr(1,value.size()-1);
@@ -21383,6 +21438,7 @@ int char2int(char c){
 #else
     char * hFile=savebuf;
 #endif
+    //fprintf(stderr,"save_link script=%s nitems=%i\n",script.c_str(),n);
     // save variables and modes
     Bfile_WriteFile_OS4(hFile, statesize);
     Bfile_WriteFile_OS(hFile, state.c_str(), statesize);
@@ -21414,6 +21470,7 @@ int char2int(char c){
     }
     char BUF[2]={0,0};
     Bfile_WriteFile_OS(hFile, BUF, sizeof(BUF));
+    //fprintf(stderr,"save_link2\n");
 #ifdef NUMWORKS
     savebuf[0]=1;
 #endif
@@ -21481,7 +21538,7 @@ int char2int(char c){
         write_file(Filename.c_str(),newbuf,totalsize);
       return write_file("link.nws",newbuf_,totalsize+17);
 #else
-      write_file(Filename.c_str(),newbuf,totalsize);
+      return write_file(Filename.c_str(),newbuf,totalsize);
 #endif
     }
     else {
@@ -21489,6 +21546,7 @@ int char2int(char c){
         write_file(filename,savebuf,len);
       return write_file(Filename.c_str(),savebuf,len);
     }
+    return 0;
   }
 
   size_t Bfile_ReadFile_OS4(const char * & hf_){
@@ -22961,10 +23019,52 @@ void numworks_certify_internal(){
       if (xcas_python_eval==1)
 	key=menu_getkey(1,"prog | math | crand | edit |     | logo","matr | numpy | arit | plot | graph | color","list | prog |      |     |     |      ",python_color);
       else
-	key=menu_getkey(1,"algb | calc | plot | edit | arit | poly","matr | cplx | regr | edit | real | logo","list | prog |    | color | misc | geom",interp_color);
+	key=menu_getkey(1,"algb | plot | calc | edit | arit | poly","matr | cplx | regr | edit | real | logo","list | prog |    | color | misc | geom",interp_color);
+      if (key==KEY_CTRL_NOP){ // off called restore console
+        fprintf(stdout,"%s\n","Console restore");
+        Console_Disp(1,contextptr);
+        continue;
+      }
       if (key==KEY_CTRL_VIEW) key=KEY_CTRL_PRGM;
+      if (key==KEY_CTRL_RESERVE1){
+        string s;
+        int h,m;
+        get_time(&h,&m);
+        s=giac::print_INT_(h)+","+(m<10?"0":"")+giac::print_INT_(m);
+        int key=inputline((lang==1?"Heure,minutes":"Hour,minutes"),((lang==1)?"Nouvelle valeur? ":"New value? "),s,false,64,contextptr);
+        if (key==KEY_CTRL_EXE){
+          int pos=s.find(",");
+          if (pos>0 && pos<=3){
+            h=m=0;
+            bool ok=true;
+            for (int i=0;i<pos;++i){
+              if (s[i]>='0' && s[i]<='9')
+                h=h*10+s[i]-'0';
+              else ok=false;
+            }
+            for (int i=pos+1;i<s.size();++i){
+              if (s[i]>='0' && s[i]<='9')
+                m=m*10+s[i]-'0';
+              else ok=false;
+            }
+            if (ok) set_time(h,m);
+          }    
+        }
+        Console_Disp(1,contextptr);
+        continue;
+      }
       if (key==KEY_CTRL_HOME){
+#ifdef HPG2
+#if 1        
+#else // def MICROPY_LIB // crash NLR not caught 
+        if (xcas_python_eval==1)
+          switch_to_xcas(contextptr);
+        else
+          switch_to_micropy(contextptr);
+#endif
+#else // HPG1 only
 	switch_to_micropy(contextptr);
+#endif
 	continue;
       }
       if (key==KEY_CTRL_CAS){
@@ -23869,6 +23969,7 @@ const char *Console_Draw_FMenu(int key, struct FMenu *menu, char *cfg, int activ
     int quick_len = 2;
     char **entries;
     DISPBOX box,box3;
+    // clear_events();
     
     position_number = key - KEY_CTRL_F1;
     if (position_number<0 || position_number>=5)
@@ -24864,7 +24965,7 @@ void save_session(GIAC_CONTEXT,int offon){
     bool b=nspire_fr();
     lang=b?1:0;
 #endif
-#ifdef HPG1
+#if defined HPG1 && !defined HPG2
     int res=_achdir("c:\\xcas");
     if (res!=0){
       res=_amkdir("c:\\xcas");
@@ -24924,7 +25025,9 @@ void save_session(GIAC_CONTEXT,int offon){
         python_free();
 #endif
         Console_Free();
+#ifndef HPG2
         release_globals();
+#endif
         if (sheetptr){
           // sheetptr->m.clear();
           delete sheetptr;
@@ -24965,6 +25068,9 @@ void save_session(GIAC_CONTEXT,int offon){
       Console_NewLine(LINE_TYPE_OUTPUT,1);
       //GetKey(&key);
       Console_Disp(1,contextptr);
+#ifdef __EMSCRIPTEN__
+      save_console_state_smem("session.xw",false,-1,contextptr);
+#endif
     }
 #ifndef NO_STDEXCEPT
     } catch(autoshutdown & e) {
@@ -24975,7 +25081,9 @@ void save_session(GIAC_CONTEXT,int offon){
 #endif
     check_nspire_exam_mode(contextptr);
     Console_Free();
+#ifndef HPG2
     release_globals();
+#endif
 #ifdef MICROPY_LIB
     python_free();
 #endif

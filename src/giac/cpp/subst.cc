@@ -400,7 +400,7 @@ namespace giac {
     vecteur v=*e._SYMBptr->feuille._VECTptr;
     int s=int(v.size());
     if ( (s>1) && (v[1]==i) ){
-      vecteur l(*_lname(newi,contextptr)._VECTptr);
+      vecteur l(gen2vecteur(_lname(newi,contextptr)));
       if (!l.empty() && l.front()==cst_pi)
 	l.erase(l.begin());
       if (l.empty())
@@ -1603,7 +1603,7 @@ namespace giac {
       control_c();
 #endif
       if (ctrl_c || interrupted) 
-	return gensizeerr(contextptr);
+	return gen_oom(); // gensizeerr(contextptr);
       if (is_undef(gg))
 	gg=0;
 #else
@@ -1622,7 +1622,7 @@ namespace giac {
     control_c();
 #endif
     if (ctrl_c || interrupted) 
-      return gensizeerr(contextptr);
+      return gen_oom(); // gensizeerr(contextptr);
     gen res,gg,a=a_orig;
     int k;
     if (is_algebraic_extension(a)){
@@ -2009,20 +2009,20 @@ namespace giac {
 	control_c();
 #endif
 	if (ctrl_c || interrupted) 
-	  return gensizeerr(contextptr);
+	  return gen_oom(); // gensizeerr(contextptr);
 	fxnd(argln[i],num,den);	
 	newln[i]=expanded_ln(num,primeargs,extargs,lnprimeargs,lnextargs,vars,contextptr)-expanded_ln(den,primeargs,extargs,lnprimeargs,lnextargs,vars,contextptr);
 #ifdef TIMEOUT
 	control_c();
 #endif
 	if (ctrl_c || interrupted) 
-	  return gensizeerr(contextptr);
+	  return gen_oom(); // gensizeerr(contextptr);
 	gen gg=evalf_double(re(branch_evalf(rdiv(l[i]-newln[i],cst_two_pi*cst_i,contextptr),contextptr),contextptr),0,contextptr); 
 #ifdef TIMEOUT
 	control_c();
 #endif
 	if (ctrl_c || interrupted) 
-	  return gensizeerr(contextptr);
+	  return gen_oom(); // gensizeerr(contextptr);
 	if (gg.type==_DOUBLE_)
 	  newln[i]=newln[i]+cst_two_pi*cst_i*gen(int(std::floor(gg._DOUBLE_val+0.5)));
       }

@@ -4583,12 +4583,12 @@ static define_unary_function_eval (__parabolic_interpolate,&_parabolic_interpola
     if (ckmatrix(v)){
       int s=int(v.front()._VECTptr->size());
       if (s==1)
-	w=*evalf_double(mtran(v)[0],1,contextptr)._VECTptr;
+	w=gen2vecteur(evalf_double(mtran(v)[0],1,contextptr));
       else
 	return vector<double>(0);
     }
     else
-      w=*evalf_double(v,1,contextptr)._VECTptr;
+      w=gen2vecteur(evalf_double(v,1,contextptr));
     // vector will be sorted keeping only DOUBLE data
     int s=int(w.size());
     vector<double> w1;
@@ -4616,7 +4616,7 @@ static define_unary_function_eval (__parabolic_interpolate,&_parabolic_interpola
 	matrice tmp=data;
 	gen_sort_f(tmp.begin(),tmp.end(),first_ascend_sort);
 	tmp=mtran(tmp);
-	vecteur tmpval=*evalf_double(tmp[0],1,contextptr)._VECTptr;
+	vecteur tmpval=gen2vecteur(evalf_double(tmp[0],1,contextptr));
 	vecteur tmpeff=*tmp[1]._VECTptr;
 	if (tmpval.front().type!=_DOUBLE_ || tmpval.back().type!=_DOUBLE_)
 	  return vecteur(1,undef);
@@ -4968,7 +4968,7 @@ static define_unary_function_eval (__center2interval,&_center2interval,_center2i
 	y=subst(res,vx_var,i,false,contextptr);
         maxh=max(maxh,y,contextptr);
 	vecteur w=makevecteur(i-.5,i+.5,i+.5+cst_i*y,i-.5+cst_i*y);
-	w.push_back(w.front());
+	gen w0(w.front()); w.push_back(w0);
 	v.push_back(pnt_attrib(gen(w,_GROUP__VECT),attributs,contextptr));
         v.push_back(_segment(makevecteur(i-.5,i-.5+cst_i*y),contextptr));
         v.push_back(_segment(makevecteur(i-.5+cst_i*y,i+.5+cst_i*y),contextptr));
@@ -6911,7 +6911,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     int n=int(A.size());
     matrice B(A);
     vecteur D(n);
-    vecteur b=*evalf_double(b_orig,1,contextptr)._VECTptr;
+    vecteur b=gen2vecteur(evalf_double(b_orig,1,contextptr));
     for (int i=0;i<n;++i){
       vecteur Ai=*evalf(A[i],1,contextptr)._VECTptr;
       D[i]=Ai[i];
@@ -6942,7 +6942,7 @@ static define_unary_function_eval (__os_version,&_os_version,_os_version_s);
     int n=int(A.size());
     double invomega=1/omega;
     matrice L(n),U(n);
-    vecteur b=*evalf_double(b_orig,1,contextptr)._VECTptr;
+    vecteur b=gen2vecteur(evalf_double(b_orig,1,contextptr));
     for (int i=0;i<n;++i){
       vecteur Ai=*evalf(A[i],1,contextptr)._VECTptr;
       L[i]=vecteur(Ai.begin(),Ai.begin()+i); 
@@ -10022,8 +10022,9 @@ void sync_screen(){}
 
   void draw_polygon(vector< vector<int> > & v1,int color,GIAC_CONTEXT){
     if (v1.empty()) return;
-    if (!(v1.back()==v1.front()))
-      v1.push_back(v1.front());
+    if (!(v1.back()==v1.front())){
+      vector<int> v10(v1.front());v1.push_back(v10);
+    }
     int n=v1.size()-1;
     for (int i=0;i<n;++i){
       int x1=v1[i][0],y1=v1[i][1],x2=v1[i+1][0],y2=v1[i+1][1];
@@ -10627,7 +10628,7 @@ void sync_screen(){}
       S=g._VECTptr->at(1);
       V=g._VECTptr->at(2);
     }
-    vecteur hsv=*evalf_double(makevecteur(H,S,V),1,contextptr)._VECTptr;
+    vecteur hsv=gen2vecteur(evalf_double(makevecteur(H,S,V),1,contextptr));
     if (hsv[0].type!=_DOUBLE_ || hsv[1].type!=_DOUBLE_ || hsv[2].type!=_DOUBLE_)
       return gentypeerr(contextptr);
     if (!is_greater(_min(hsv,contextptr),0,contextptr) || !is_greater(1,_max(hsv,contextptr),contextptr))

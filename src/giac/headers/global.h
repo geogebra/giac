@@ -497,6 +497,20 @@ throw(std::runtime_error("Stopped by user interruption.")); \
     dbgprint_vector(const T * b,const T * e) : std::vector<T>::vector(b,e) { };
     dbgprint_vector(size_t i) : std::vector<T>::vector(i) { };
     dbgprint_vector(size_t i,const T & t) : std::vector<T>::vector(i,t) { };
+#ifdef USTL
+    // uSTL assigns element by element into the old elements: in v=*v.front()._VECTptr (a giac
+    // idiom) the source belongs to an element of v and is freed half-way. Copy, then swap.
+    dbgprint_vector(const dbgprint_vector<T> & w) = default;
+    dbgprint_vector(dbgprint_vector<T> && w) = default;
+    dbgprint_vector & operator =(const dbgprint_vector<T> & w){
+      if (this!=&w){
+        std::vector<T> tmp(w);
+        this->swap(tmp);
+      }
+      return *this;
+    }
+    dbgprint_vector & operator =(dbgprint_vector<T> && w){ this->swap(w); return *this; }
+#endif
     // ~dbgprint_vector() { };
     // inherited destructors
     void dbgprint() const { COUT << *this << '\n'; }

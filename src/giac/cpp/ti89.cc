@@ -2745,7 +2745,7 @@ namespace giac {
 #endif
       if (ctrl_c || interrupted) { 
 	interrupted = true; ctrl_c=false;
-	return gensizeerr(gettext("Stopped by user interruption.")); 
+	return gen_oom(); // gensizeerr(gettext("Stopped by user interruption.")); 
       }
       res.push_back(int(d*eps1));
       d=d-int(d*eps1);

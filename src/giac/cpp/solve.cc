@@ -1100,7 +1100,7 @@ namespace giac {
 	if (debug_infolevel) // abs_calc_mode(contextptr)!=38)
 	  *logptr(contextptr) << gettext("Warning! Algebraic extension not implemented yet for poly ") << r2sym(w,lv,contextptr) << '\n';
 	gen w_orig;
-	w=*evalf((w_orig=r2sym(w,lv,contextptr)),1,contextptr)._VECTptr;
+	w=gen2vecteur(evalf((w_orig=r2sym(w,lv,contextptr)),1,contextptr));
 	if (has_num_coeff(w)){ // FIXME: test is always true...
 #ifndef NO_STDEXCEPT
 	  try {
@@ -5992,7 +5992,7 @@ namespace giac {
 #endif
 	  if (ctrl_c || interrupted) { 
 	    interrupted = true; ctrl_c=false;
-	    return gensizeerr(gettext("Stopped by user interruption.")); 
+	    return gen_oom(); // gensizeerr(gettext("Stopped by user interruption.")); 
 	  }
 	  d=subst(invdf,x,a,false,contextptr);
 	  // of << k << " " << d << " " << invdf << " " << x << " " << a << " ";
@@ -6074,7 +6074,7 @@ namespace giac {
 #endif
 	  if (ctrl_c || interrupted) { 
 	    interrupted = true; ctrl_c=false;
-	    return gensizeerr(gettext("Stopped by user interruption.")); 
+	    return gen_oom(); // gensizeerr(gettext("Stopped by user interruption.")); 
 	  }
 	  if (inv_after)
 	    d=linsolve(evalf(subst(invdf,x,a,false,contextptr),1,contextptr),-subst(f,x,a,false,contextptr),contextptr);
@@ -8067,7 +8067,7 @@ namespace giac {
     bool convertapprox=has_num_coeff(eq);
     gen eqs=eq;
     if (convertapprox)
-      eq=*exact(evalf(eq,1,contextptr),contextptr)._VECTptr;
+      eq=gen2vecteur(exact(evalf(eq,1,contextptr),contextptr));
     // check rational
     int varn=0;
     for (it=var.begin();it!=itend;++it,++varn){

@@ -5465,7 +5465,7 @@ namespace giac {
   */
   const char _pow_s []="^";
 #ifndef GIAC_HAS_STO_38
-#if defined NSPIRE || defined FXCG
+#if (defined NSPIRE || defined FXCG || defined HPG2) && !defined __EMSCRIPTEN__
   define_unary_function_eval2_index (14,__pow,&_pow,_pow_s,&printsommetasoperator);
 #else
   unary_function_eval __pow(14,&_pow,0,_pow_s,&printsommetasoperator,0);
@@ -5478,7 +5478,7 @@ namespace giac {
 
   // print power like a^b (args==1), pow(a,b) (args==0) or a**b (args==-1)
   static gen _printpow(const gen & args,GIAC_CONTEXT){
-#if defined NSPIRE || defined FXCG
+#if defined NSPIRE || defined FXCG || defined HPG2
     return undef;
 #else
     if ( args.type==_STRNG && args.subtype==-1) return  args;
@@ -7227,7 +7227,7 @@ namespace giac {
 	return Iquo(n,d,contextptr)+1;
     }
     vecteur l(lidnt(args));
-    vecteur lnew=*evalf(l,1,contextptr)._VECTptr;
+    vecteur lnew=gen2vecteur(evalf(l,1,contextptr));
     gen tmp=subst(args,l,lnew,false,contextptr);
     if (tmp.type==_REAL || tmp.type==_FLOAT_)
       return -_floor(-tmp,contextptr);
@@ -11275,6 +11275,18 @@ namespace giac {
   // #ifndef GNUWINCE
   // #ifndef WIN32
   // #endif
+  gen gen_oom(){
+#if !defined NO_STDEXCEPT && !defined EMCC
+    if (debug_infolevel!=-5)
+      throw(std::runtime_error("User interrupt or Out of memory"));
+#endif
+    static gen gen_oom_s;
+    if (gen_oom_s.type==0){
+      gen_oom_s=string2gen("User interrupt or Out of memory",false);
+      gen_oom_s.subtype=-1;
+    }
+    return gen_oom_s;
+  }
 #if defined(GIAC_GENERIC_CONSTANTS) // || (defined(VISUALC) && !defined(RTOS_THREADX)) || defined( x86_64)
   const gen zero(0);
   const gen plus_one(1);

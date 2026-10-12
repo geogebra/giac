@@ -9,7 +9,7 @@
 #include <ctype.h>
 #define HAVE_TIME_H
 #include <time.h>
-#if defined HPG1 && defined LCD_WIDTH_PX
+#if (defined HPG1 || defined HPG2) && defined LCD_WIDTH_PX
 #undef LCD_WIDTH_PX
 #undef LCD_HEIGHT_PX
 extern  const int LCD_WIDTH_PX;
@@ -1834,7 +1834,7 @@ giac::gen sheet(GIAC_CONTEXT){
     if (!status_freeze)
       sheet_status(t,contextptr);
     sheet_display(t,contextptr);
-#ifdef HPG1 // sheet touchscreen
+#if defined HPG1 || defined HPG2 // sheet touchscreen
     int key=menu_getkey(1,"stat1d| regr | sequ | edit | view | graph"," real | list | arit |     | plot | prog","poly | cplx | ",65039);
     if (key==KEY_MOUSE_PUSH){
       absolute=true;

@@ -1268,6 +1268,8 @@ namespace giac {
     T b=other.coord.front().value;
     while (a_max >= b_max){
       // errors should be trapped here and false returned if error occured
+      if (ctrl_c || interrupted) // (stopped, each coefficient becomes an error, err-err is not 0:
+        return false; // the leading term never cancels, the loop filled memory)
       T q=rdiv(rem.coord.front().value,b);
       if (!allowrational){
 	if ( has_denominator(q) || 
@@ -1301,6 +1303,12 @@ namespace giac {
     index_m ishift(dim);
     tensor<T> b0(Tfirstcoeff(other));
     for (int i=m;i>=n;--i){
+      if (ctrl_c || interrupted){
+        // stopped: an empty remainder ends the callers' remainder sequences (gcd, egcd, Sturm,
+        // resultant), which looped forever on the unfinished one (rem stays of degree >= n)
+        rem.coord.clear();
+        break;
+      }   
 #if defined NSPIRE || defined(FXCG)
       a=a*b0;
       quo=quo*b0;

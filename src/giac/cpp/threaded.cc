@@ -3995,7 +3995,7 @@ mpz_class smod(const mpz_class & a,int reduce){
 #endif
     if (ctrl_c || interrupted) { 
       interrupted = true; ctrl_c=false;
-      new_coord=vecteur(1, gensizeerr(gettext("Stopped by user interruption."))); 
+      new_coord=vecteur(1, gen_oom()); 
       return;
     }
     modpoly::const_iterator ita=a.begin(),ita_end=a.end(),itb=b.begin(),itb_end=b.end();

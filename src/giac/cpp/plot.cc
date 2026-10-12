@@ -1100,7 +1100,7 @@ namespace giac {
   }
 
 #if defined KHICAS || defined SDL_KHICAS || defined GIAC_HAS_STO_38 || defined USE_GMP_REPLACEMENTS
-#ifndef SDL_KHICAS
+#if !defined SDL_KHICAS || defined HPG2
   void arc_en_ciel(int k,int & r,int & g,int & b){
     k += 21;
     k %= 126;
@@ -5134,7 +5134,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
     if (s<2)
       return gendimerr(contextptr);
     v=vecteur(v.begin(),v.begin()+s);
-    v.push_back(v.front());
+    gen v0(v.front()); v.push_back(v0);
     polygonify(v,contextptr);
     return pnt_attrib(gen(v,_GROUP__VECT),attributs,contextptr);
   }
@@ -6501,7 +6501,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       return undef;
     if (v.front()!=v.back()){
       ++s;
-      v.push_back(v.front());
+      gen v0(v.front()); v.push_back(v0);
     }
     gen res;
     for (int i=3;i<s;++i){
@@ -6555,7 +6555,7 @@ static vecteur densityscale(double xmin,double xmax,double ymin,double ymax,doub
       return undef;
     if (v.front()!=v.back()){
       ++s;
-      v.push_back(v.front());
+      gen v0(v.front());v.push_back(v0);
     }
     gen res;
     for (int i=0;i<s-1;++i){
@@ -15893,7 +15893,7 @@ gen _vers(const gen & g,GIAC_CONTEXT){
       for (int i=0;i<=50;i++){
 	v.push_back(c+ec*exp(cst_i*g*gen(i/50.0),contextptr));
       }
-      v.push_back(v.front());
+      gen v0(v.front()); v.push_back(v0);
       polygonify(v,contextptr);
       res=pnt_attrib(gen(v,_GROUP__VECT),attributs,contextptr);
     }

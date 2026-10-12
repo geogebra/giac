@@ -2,7 +2,7 @@
 #ifndef K_CSDK_H
 #define K_CSDK_H
 
-#ifndef HPG1
+#if !defined HPG1 && !defined HPG2 && !defined SDL
 #include "gint.h"
 #endif
 
@@ -22,7 +22,7 @@
 #if defined FX
 #define LCD_WIDTH_PX 128
 #define LCD_HEIGHT_PX 64
-#elseif defined FXCG
+#elif defined FXCG
 #define LCD_WIDTH_PX 384
 #define LCD_HEIGHT_PX 128
 #else
@@ -37,7 +37,7 @@
 #define VIR_LCD_PIX_W   320
 #define VIR_LCD_PIX_H   240
 
-#ifdef HPG1
+#if defined HPG1 || defined HPG2 || defined SDL
 typedef unsigned fb_screen_t;
 #else
 typedef unsigned short fb_screen_t;
@@ -45,6 +45,16 @@ typedef unsigned short fb_screen_t;
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+#if defined HPG1 || defined HPG2 || defined SDL
+  extern int prime_shift;
+  extern int prime_alpha;
+  int clear_events();
+  void wait_no_key_pressed();
+  void os_fill_rect_nock(int x,int y,int w,int h,int c);
+  
+#else
+  inline int clear_events(){}
 #endif
   extern int sdk_ctrl_c; // works only on HPG1 for now  
 #include "stdio.h"
@@ -97,8 +107,32 @@ extern "C" {
 #define true 1
 #endif // not FX and not FXCG
 
+/* ================
+   =    SDL       =
+   ================ */
+#ifdef SDL
+#include <time.h>
+#if defined __EMSCRIPTEN__ 
+#include <SDL.h>
+  Uint8 * SDL_GetKeyboardState(int * numkeys);
+#define SDL_GetKeyState(numkeys) ((Uint8 *)SDL_GetKeyboardState(numkeys))
+#else
+#include <SDL/SDL.h>
+#include <SDL/SDL_keysym.h>
+#endif
+#define G2_ALPHA 0xFD20  // Orange RGB565
+#define G2_SHIFT 0x31  // Bleu 
+  typedef struct {
+    short int x, y, w, h; // Rectangle de la touche (relatif au clavier)
+    int keycode;  // Code de la touche envoyé à la SDL
+    const char * main;  // Label principal (ex: "sin") - imprimé sur la touche
+    const char * shift; // Label Shift (ex: "asin") - imprimé au-dessus à gauche
+    const char * alpha; // Label Alpha (ex: "D") - imprimé au-dessus à droite
+    unsigned short bg;    // Couleurs
+} vkey;
+#endif
   
-#ifdef HPG1
+#if defined HPG1 && !defined HPG2
   // There are 2 ways to handle event
   // with sdk_init/sdk_end and read prime_keydown,prime_pushx,prime_pushy,prime_mousex,prime_mousey,prime_event : no queue, might miss some events, mouse event are translated to special keys, porting softs using getkey() should be easy
   // or (only HPG1 currently) like SDL: init with SDL_Init(0); poll with SDL_PollEvent, end with SDL_Quit()
@@ -130,7 +164,18 @@ extern "C" {
   int SDL_PollEvent(SDL_Event *event);
   int SDL_Init(unsigned flags);
   void SDL_Quit(void) ;
+#endif
 
+#if defined HPG2 || defined FXCG
+  void rgbSetColor(unsigned c);
+  void rgbSetBkColor(unsigned c);
+  void PrintfXY(int x, int y, const char *format, ...) ;
+  void Printf(const char *format, ...) ;
+#endif
+  
+#if defined HPG1 || defined HPG2 || defined SDL
+  void OSSleep(int ms);
+  void SysPowerOff(void);  
   int wait_key_released(int T); // also wait for mouse released
   int menu_getkey(int allow_suspend,const char * menu,const char * menushift,const char * menualpha,int menubg); // getkey with 3 menus
   extern void (*offon_handler)(const void *);
@@ -150,13 +195,13 @@ extern "C" {
   int sdk_init();
   int get_fb(); // get framebuffer address in fb_screen
   extern unsigned * fb_screen;
-  void sdk_end();
+  int sdk_end();
   extern void * ev_threadptr;
 
   // event_manager must be created in a thread like this
   // extern thread_t * ev_threadptr;
   // ev_threadptr=OSCreateThread(event_manager,0 /* pointer passed to event_manager*/,0 /* system default stack size*/,0 /* run immediatly*/);
-  extern volatile unsigned prime_keydown,prime_pushx,prime_pushy,prime_mousex,prime_mousey,prime_event;
+  extern volatile unsigned prime_keydown,prime_pushx,prime_pushy,prime_mousex,prime_mousey,prime_event,prime_pushcount;
   extern int prime_statusarea;
 #endif
 
@@ -169,7 +214,10 @@ extern "C" {
 #elif NSPIRE_NEWLIB
   void sdk_init(void);
   void sdk_end(void);
-#elif !defined HPG1
+#elif SDL
+  int sdk_init(void);
+  int sdk_end(void);  
+#elif !defined HPG1 && !defined HPG2
   inline void sdk_init(void){}
   inline void sdk_end(void){}
 #endif

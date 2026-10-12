@@ -561,7 +561,7 @@ namespace giac {
       }
     }
     if (k_init){
-      vecteur v1=*evalf_double(va,1,contextptr)._VECTptr;
+      vecteur v1=gen2vecteur(evalf_double(va,1,contextptr));
       if (is_fully_numeric(v1)){
 	// when theta2 depends on theta1, theta1+k*theta2 is not necessarily
 	// the largest root, because the numeric value of v2 depends
@@ -678,7 +678,9 @@ namespace giac {
       m.clear();
       vecteur ligne;
       for (int j=0;j<=na*nb;++j){
-	if (!polynome2vecteur(p,na,nb,ligne))
+        if (ctrl_c || interrupted)
+	  return gen_oom();//gensizeerr(contextptr);
+        if (!polynome2vecteur(p,na,nb,ligne))
 	  return gensizeerr(gettext("alg_ext.cc/polynome2vecteur"));
 	// ligne.push_back(pow(theta,j));
 	m.push_back(ligne);
@@ -715,6 +717,8 @@ namespace giac {
 	return gensizeerr(contextptr);
       }
       step_infolevel(contextptr)=st;
+      if (ctrl_c || interrupted || m_red.size()<unsigned(na*nb) || m_red[na*nb-1].type!=_VECT)
+	return gen_oom();//gensizeerr(contextptr);
       m=m_red;
       // the reduced matrix m should have the form
       // * 0      ... 0 * * *
@@ -1097,7 +1101,7 @@ namespace giac {
       else {
         gen tmp=evalf(b__VECT,1,contextptr);
         if (is_undef(tmp)) return gensizeerr(contextptr);
-	racines=proot(*tmp._VECTptr,contextptr); // evalf to avoid recursion if computing exact roots of b__VECT
+	racines=proot(gen2vecteur(tmp),contextptr); // evalf to avoid recursion if computing exact roots of b__VECT
       }
       if (is_undef(racines)) return gensizeerr(contextptr);
       // racines= list of approx roots if b__VECT is numeric

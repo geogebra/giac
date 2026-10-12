@@ -1666,7 +1666,7 @@ namespace giac {
       control_c();
 #endif
       if (ctrl_c || interrupted)
-	return gensizeerr(gettext("Stopped by user interruption."));
+	return gen_oom(); // gensizeerr(gettext("Stopped by user interruption."));
       vecteur v(s+1);
       v[i]=x;
       if (i<s)
@@ -1955,13 +1955,13 @@ namespace giac {
       return _lagrange(g,contextptr);
     // fast spline interpolation (uses GSL)
     if (args.size()>1 && ckmatrix(a) && b.type==_VECT && mrows(*a._VECTptr)==2 && is_approx(a)) {
-      matrice A=*evalf_double(a,1,contextptr)._VECTptr;
-      vecteur B=*evalf_double(b,1,contextptr)._VECTptr;
+      matrice A=gen2vecteur(evalf_double(a,1,contextptr));
+      vecteur B=gen2vecteur(evalf_double(b,1,contextptr));
       return fast_spline_interp(*A[0]._VECTptr,*A[1]._VECTptr,B,vecteur(args.begin()+2,args.end()),contextptr);
     }
     if (args.size()>2 && a.type==_VECT && b.type==_VECT && args[2].type==_VECT)
-      return fast_spline_interp(*evalf_double(a,1,contextptr)._VECTptr,*evalf_double(b,1,contextptr)._VECTptr,
-                                *evalf_double(args[2],1,contextptr)._VECTptr,vecteur(args.begin()+3,args.end()),contextptr);
+      return fast_spline_interp(gen2vecteur(evalf_double(a,1,contextptr)),gen2vecteur(evalf_double(b,1,contextptr)),
+                                gen2vecteur(evalf_double(args[2],1,contextptr)),vecteur(args.begin()+3,args.end()),contextptr);
     // color interpolation
     if (a.is_integer() && a.subtype==_INT_COLOR) {
       if (args.size()!=3)
@@ -3432,7 +3432,7 @@ namespace giac {
     if (!is_zero(derive(m,n,contextptr)))
       return symbolic(at_seqsolve,args);
     if (has_num_coeff(m))
-      m=*evalf(m,1,contextptr)._VECTptr;
+      m=gen2vecteur(evalf(m,1,contextptr));
     matrice P,Pinv,D;
     bool b=complex_mode(contextptr);
     complex_mode(true,contextptr);
