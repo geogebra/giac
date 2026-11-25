@@ -75,7 +75,7 @@ pipeline {
         ANDROID_SDK_ROOT='/var/lib/jenkins/.android-sdk'
         NDK="$ANDROID_SDK_ROOT/ndk/28.0.12916984"
         NDK_TOOLCHAIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64"
-        PATH="$NDK_TOOLCHAIN/bin:$NDK_TOOLCHAIN/sysroot/usr/lib/arm-linux-androideabi:/var/lib/jenkins/glibc/build/elf:$PATH"
+        PATH="$NDK_TOOLCHAIN/bin:$NDK_TOOLCHAIN/sysroot/usr/lib/aarch64-linux-android:/var/lib/jenkins/glibc/build/elf:$PATH"
       }
       steps {
         unstash name: 'giac-clang'

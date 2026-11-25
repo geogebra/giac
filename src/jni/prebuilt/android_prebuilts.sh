@@ -31,7 +31,7 @@ echo "Ceaning install dir"
 rm -rf $INSTALL_DIR/*
 
 cd $GMP_DIR
-for ARCH in "armv7a-linux-androideabi armeabi-v7a" "aarch64-linux-android arm64-v8a" "i686-linux-android x86" "x86_64-linux-android x86_64"
+for ARCH in "aarch64-linux-android arm64-v8a"
 do
   make distclean
   set -- $ARCH
@@ -46,7 +46,7 @@ do
 done
 
 cd $MPFR_DIR
-for ARCH in "armv7a-linux-androideabi armeabi-v7a" "aarch64-linux-android arm64-v8a" "i686-linux-android x86" "x86_64-linux-android x86_64"
+for ARCH in "aarch64-linux-android arm64-v8a"
 do
   make clean
   make distclean
@@ -64,7 +64,7 @@ echo "Cleaning giac prebuilt dirs"
 rm -rf $GIAC_ROOT/src/giac/headers/android/* 
 rm -rf $GIAC_ROOT/src/jni/prebuilt/android/*
 cd $INSTALL_DIR
-for ARCH in "armeabi-v7a arm-v7" "arm64-v8a aarch64" "x86 x86" "x86_64 x86-64"
+for ARCH in "arm64-v8a aarch64"
 do
   set -- $ARCH
   cd $1

@@ -46,7 +46,7 @@ task testJavagiacLinux64 (dependsOn: 'javagiacLinux64Jar') {
 }
 
 task javagiacMacJar (type: Jar) {
-    description 'Creates the Linux 32 bit .jar package for the Java Giac library.'
+    description 'Creates the Mac .jar package for the Java Giac library.'
     archiveBaseName = 'javagiac-mac'
     destinationDirectory = javagiacDir
     from("${layout.buildDirectory.get()}/binaries/javagiacSharedLibrary/osx_x86-64") { // FIXME: unify
@@ -63,17 +63,9 @@ task testJavagiacMac (dependsOn: 'javagiacMacJar') {
     description 'Tests the Mac version of Java Giac. [incubating]'
 }
 
-task testJavagiacAndroidArm (dependsOn: 'javagiacAndroideabiSharedLibrary') {
-    description 'Tests the Android ARM version of Java Giac. [incubating]'
-}
-
-task testJavagiacAndroidX86 (dependsOn: 'javagiacAndroidx86SharedLibrary') {
-    description 'Tests the Android x86 version of Java Giac. [incubating]'
-}
-
 task testJavagiac (dependsOn: ['testJavagiacLinux64',
-                               'testJavagiacWin64', 'testJavagiacMac', 'testJavagiacAndroidArm', 'testJavagiacAndroidX86']) {
-    description 'Tests the Linux, Windows, Mac and Android versions of the Java Giac library. [incubating]'
+                               'testJavagiacWin64', 'testJavagiacMac']) {
+    description 'Tests the Linux, Windows and Mac versions of the Java Giac library. [incubating]'
 }
 
 task javagiacJars (dependsOn: ['javagiacMacJar', 'javagiacLinux64Jar',
