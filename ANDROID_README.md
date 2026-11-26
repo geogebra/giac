@@ -1,5 +1,5 @@
-This tutorial explains how to create Linux -> android-eabi, android-x86
-cross compilers and compile the Giac library. The tutorial has been
+This tutorial explains how to create a Linux -> android-arm64
+cross compiler and compile the Giac library for arm64-v8a. The tutorial has been
 tested on Kubuntu 14.04, Ubuntu 14.10 and Ubuntu 16.04 systems.
 
 Prerequisites
@@ -16,8 +16,8 @@ Prerequisites
    ```
 4. Set
    ```
-   ARCH=arm
-   HOST=arm-linux-androideabi
+   ARCH=arm64
+   HOST=aarch64-linux-android
    ```
 5. Run
    ```
@@ -35,25 +35,7 @@ Prerequisites
 
 8. The static and shared libraries can be found in `$CC_DIR/$ARCH/sysroot/usr/lib`
 
-9. Repeat the steps 4-8 above but instead in step 4 use
-   ```
-   ARCH=x86
-   HOST=i686-linux-android
-   ```
-   
-10. Repeat the steps 4-8 above but instead in step 4 use
-    ```
-    ARCH=x86_64
-    HOST=x86_64-linux-android
-    ```
-    
-11. Repeat the steps 4-8 above but instead in step 4 use
-    ```
-    ARCH=arm64
-    HOST=aarch64-linux-android
-    ```
-
-11. Now you may remove the `$NDK_DIR` folder and save some disk space.
+9. Now you may remove the `$NDK_DIR` folder and save some disk space.
 
 Compilation
 -----------

@@ -191,12 +191,7 @@ def giacSpecificSettings(cppCompiler, linker, targetPlatform) {
     cppCompiler.args '-I.'
 
     // Architecture based settings:
-    if (targetPlatform.architecture.name == 'i386') {
-        cppCompiler.define 'SMARTPTR64'
-        cppCompiler.define 'SIZEOF_LONG', '8'
-    } else {
-        cppCompiler.define 'SIZEOF_LONG', '4'
-    }
+    cppCompiler.define 'SIZEOF_LONG', '4'
     // OS based settings:
     if (targetPlatform.operatingSystem.name == 'windows') {
         cppCompiler.define 'GIAC_MPQS'
@@ -225,12 +220,6 @@ def giacSpecificSettings(cppCompiler, linker, targetPlatform) {
     }
 
     if (targetPlatform.operatingSystem.name == 'linux') {
-        if (targetPlatform.architecture.name == 'arm-v7') {
-            cppCompiler.define 'HAVE_GETTEXT'
-            linker.args '-lstdc++'
-        }
-
-
         cppCompiler.define 'HAVE_UNISTD_H'
         cppCompiler.define 'SIZEOF_VOID_P', '8'
 
@@ -336,10 +325,6 @@ model {
             architecture 'x64'
             operatingSystem 'linux'
         }
-        rpi {
-            architecture 'arm'
-            operatingSystem 'linux'
-        }
         osx_amd64 {
             architecture 'amd64'
             operatingSystem 'osx'
@@ -347,18 +332,6 @@ model {
         osx_arm64 {
             architecture 'arm64'
             operatingSystem 'osx'
-        }
-        androideabi {
-            architecture 'arm'
-            operatingSystem 'android'
-        }
-        androidx86 {
-            architecture 'x86'
-            operatingSystem 'android'
-        }
-        androidx86_64 {
-            architecture 'x86_64'
-            operatingSystem 'android'
         }
         androidarm64 {
             architecture 'arm64'
@@ -391,12 +364,6 @@ model {
             target('win64') {
                 cppCompiler.executable 'x86_64-w64-mingw32-g++'
                 linker.executable 'x86_64-w64-mingw32-g++'
-            }
-        }
-        gcc(Gcc) {
-            target('rpi') {
-                cppCompiler.executable 'gcc'
-                linker.executable 'gcc'
             }
         }
         clang(Clang) {
@@ -465,18 +432,6 @@ model {
         }
         // Note: Make sure manually that these executables are on the PATH.
         android(Clang) {
-            target('androideabi') {
-                cppCompiler.executable 'armv7a-linux-androideabi35-clang++'
-                linker.executable 'armv7a-linux-androideabi35-clang++'
-            }
-            target('androidx86') {
-                cppCompiler.executable 'i686-linux-android35-clang++'
-                linker.executable 'i686-linux-android35-clang++'
-            }
-            target('androidx86_64') {
-                cppCompiler.executable 'x86_64-linux-android35-clang++'
-                linker.executable 'x86_64-linux-android35-clang++'
-            }
             target('androidarm64') {
                 cppCompiler.executable 'aarch64-linux-android35-clang++'
                 linker.executable 'aarch64-linux-android35-clang++'
@@ -497,7 +452,6 @@ model {
                 targetPlatform 'osx_amd64'
                 targetPlatform 'osx_arm64'
             }
-            targetPlatform 'rpi'
 
             binaries.all {
                 giacCommonDefines(cppCompiler)
@@ -566,11 +520,7 @@ model {
                 targetPlatform 'osx_amd64'
                 targetPlatform 'osx_arm64'
             }
-            targetPlatform 'androideabi'
-            targetPlatform 'androidx86'
-            targetPlatform 'androidx86_64'
             targetPlatform 'androidarm64'
-            targetPlatform 'rpi'
 
             sources.cpp {
                 source {
@@ -607,10 +557,7 @@ model {
                 if (targetPlatform.operatingSystem.name == 'osx') {
                     cppCompiler.args '-stdlib=libc++'
                     linker.args '-stdlib=libc++', '-lc++'
-                    if (targetPlatform.architecture.name == 'i386') {
-                        cppCompiler.args '-m32'
-                        linker.args '-m32'
-                    } else if (targetPlatform.architecture.name == 'aarch64') {
+                    if (targetPlatform.architecture.name == 'aarch64') {
                         linker.args '-target', 'arm64-apple-macos11'
                     }
                 } else {
@@ -843,30 +790,6 @@ tasks.register('testExecutables') {
 }
 
 
-tasks.register('androidCopyEabiLibjavagiacSo', Copy) {
-    dependsOn 'javagiacAndroideabiSharedLibrary'
-    description 'Copies libjavagiac.so files to the src/android folder.'
-    from 'build/libs/javagiac/shared/androideabi'
-    into 'giac-android/src/main/jniLibs/armeabi-v7a'
-    include('libjavagiac.so')
-}
-
-tasks.register('androidCopyX86LibjavagiacSo', Copy) {
-    dependsOn 'javagiacAndroidx86SharedLibrary'
-    description 'Copies libjavagiac.so files to the src/android folder.'
-    from 'build/libs/javagiac/shared/androidx86'
-    into 'giac-android/src/main/jniLibs/x86'
-    include('libjavagiac.so')
-}
-
-tasks.register('androidCopyX86_64LibjavagiacSo', Copy) {
-    dependsOn 'javagiacAndroidx86_64SharedLibrary'
-    description 'Copies libjavagiac.so files to the src/android folder.'
-    from 'build/libs/javagiac/shared/androidx86_64'
-    into 'giac-android/src/main/jniLibs/x86_64'
-    include('libjavagiac.so')
-}
-
 tasks.register('androidCopyArm64LibjavagiacSo', Copy) {
     dependsOn 'javagiacAndroidarm64SharedLibrary'
     description 'Copies libjavagiac.so files to the src/android folder.'
@@ -1078,8 +1001,7 @@ tasks.register('emMakeMpfr', Exec) {
 }
 
 tasks.register('androidAar') {
-    dependsOn = ['giac-android:copyLibcShared', 'androidCopyEabiLibjavagiacSo',
-            'androidCopyX86LibjavagiacSo', 'androidCopyX86_64LibjavagiacSo', 'androidCopyArm64LibjavagiacSo', 'giac-android:assemble']
+    dependsOn = ['giac-android:copyLibcShared', 'androidCopyArm64LibjavagiacSo', 'giac-android:assemble']
     description 'Creates .aar package'
 }
 
