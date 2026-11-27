@@ -728,9 +728,9 @@ namespace giac {
 	    for (;it!=itend;++it){
 	      if (is_strictly_greater(m1,*it,contextptr))
 		continue;
-	      v.push_back((b-_LambertW(*it,contextptr))/a);
+	      v.push_back((-b-_LambertW(*it,contextptr))/a);
 	      if (is_strictly_positive(-*it,contextptr))
-		v.push_back((b-_LambertW(makesequence(*it,-1),contextptr))/a);
+		v.push_back((-b-_LambertW(makesequence(*it,-1),contextptr))/a);
 	    }
 	    return;
 	  }
